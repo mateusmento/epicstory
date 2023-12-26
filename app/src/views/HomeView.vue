@@ -5,5 +5,14 @@ import HelloWorld from '@/components/HelloWorld/HelloWorld.vue';
 <template>
   <main>
     <HelloWorld name="Vitest" />
+    <ul>
+      <li>Hello</li>
+      <li>
+        <a href="">World</a>
+      </li>
+      <li>
+        <input />
+      </li>
+    </ul>
   </main>
 </template>
