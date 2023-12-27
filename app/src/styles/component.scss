@@ -1,0 +1,7 @@
+@each $name, $size in $sizes {
+  .card-#{$name} {
+    border: 1px solid #ccc;
+    border-radius: #{$size};
+    @extend .p-#{$name};
+  }
+}

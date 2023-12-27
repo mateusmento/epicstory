@@ -1,0 +1,32 @@
+:root {
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+  }
+}
+
+body {
+  transition:
+    color 0.5s,
+    background-color 0.5s;
+
+  background: var(--color-background);
+
+  line-height: 1.6;
+  font-size: 15px;
+  color: var(--color-text);
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif;
+}
