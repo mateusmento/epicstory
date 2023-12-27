@@ -18,4 +18,9 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 'latest',
   },
+  rules: {
+    "vue/no-unused-vars": "off",
+    "no-empty": "off",
+    'vue/multi-word-component-names': 'off',
+  },
 };
