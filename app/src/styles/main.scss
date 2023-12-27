@@ -1,24 +1,4 @@
-$th: 5px;
-$sm: 10px;
-$md: 15px;
-$lg: 25px;
-$xl: 40px;
-
-$sizes:
-  'auto' auto,
-  th $th,
-  sm $sm,
-  md $md,
-  lg $lg,
-  xl $xl;
-
-$sides:
-  t top,
-  b bottom,
-  l left,
-  r right;
-
-@import './reset.scss';
-@import './base.scss';
-@import './utils.scss';
-@import './component.scss';
+@import "./variables.scss";
+@import "./base";
+@import "./patterns";
+@import './utils';

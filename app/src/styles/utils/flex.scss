@@ -1,0 +1,54 @@
+.flex, [class^="flex:"], [class*=" flex:"] {
+  display: flex;
+}
+
+.flex\:wrap {
+  flex-wrap: wrap;
+}
+
+.flex\:center {
+  align-items: center;
+  justify-content: center;
+}
+
+@each $size_name, $size in $sizes {
+  .flex\:rows-#{$size_name} {
+    flex-direction: column;
+    gap: #{$size};
+
+    &.flex\:x-center {
+      align-items: center;
+    }
+
+    &.flex\:y-center {
+      justify-content: center;
+    }
+  }
+
+  .flex\:cols-#{$size_name} {
+    flex-direction: row;
+    gap: #{$size};
+
+    &.flex\:x-center {
+      justify-content: center;
+    }
+
+    &.flex\:y-center {
+      align-items: center;
+    }
+  }
+}
+
+.flex\:rows-auto {
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.flex\:cols-auto {
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.flex\:fill {
+  flex: 1;
+}

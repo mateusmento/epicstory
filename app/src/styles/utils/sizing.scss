@@ -1,0 +1,59 @@
+@use 'sass:list';
+
+@each $size_name, $size in $sizes {
+  .m-#{$size_name} {
+    padding: #{$size};
+  }
+
+  .p-#{$size_name} {
+    padding: #{$size};
+  }
+
+  @each $side_name, $side in list.join($sides, $alignments) {
+    .m#{$side_name}-#{$size_name} {
+      margin-#{$side}: #{$size};
+    }
+
+    .p#{$side_name}-#{$size_name} {
+      padding-#{$side}: #{$size};
+
+      .h-screen {
+        height: calc(100vh - 2 * #{$size});
+      }
+    }
+  }
+}
+
+@each $size_name, $size in $sizes {
+  .g-#{$size_name} {
+    gap: #{$size};
+  }
+
+  .rounded-#{$size_name} {
+    border-radius: #{$size};
+  }
+}
+
+.w-fit {
+  width: fit-content;
+}
+
+.w-auto {
+  width: auto;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.w-md {
+  width: 460px;
+}
+
+.w-xl {
+  width: 1080px;
+}
+
+.h-screen {
+  height: 100vh;
+}

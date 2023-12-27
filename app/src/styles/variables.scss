@@ -1,0 +1,33 @@
+$th: 5px;
+$sm: 10px;
+$md: 15px;
+$lg: 25px;
+$xl: 40px;
+$xl2: 60px;
+$xl3: 80px;
+$xl4: 120px;
+
+$sizes:
+  'auto' auto,
+  th $th,
+  sm $sm,
+  md $md,
+  lg $lg,
+  xl $xl,
+  2xl $xl2,
+  3xl $xl3
+  4xl $xl4;
+
+$sides:
+  t top,
+  b bottom,
+  l left,
+  r right;
+
+$alignments:
+  y block,
+  x inline;
+
+$grey-blue: #dbd6e4;
+$blue: #3b37ff;
+$dark-blue: #3e3cbb;
