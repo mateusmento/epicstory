@@ -11,8 +11,8 @@ import Form from '@/components/Form.vue';
         <b class="logo-title mb-xl">Epicstory</b>
 
         <div class="flex:rows-md">
-          <h1 class="headline_title">Create epic<br>stories with us.</h1>
-          <p class="headline_subtitle">Discover a better communication<br>tool for Scrum teams.</p>
+          <h1 class="headline_title">Create epic<br> stories with us.</h1>
+          <p class="headline_subtitle">Discover a better communication<br> tool for Scrum teams.</p>
         </div>
 
         <div class="flex:space"></div>
