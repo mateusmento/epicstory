@@ -3,12 +3,12 @@ $grey: #ddd;
 $light-grey: #eee;
 
 @mixin border-reset() {
-  border: 1px solid #{$grey};
+  border: 1px solid #{$grey-blue};
 }
 
-@mixin outline-reset($offset: false) {
-  outline-width: 1px;
-  outline-color: #{$grey};
+@mixin outline-reset() {
+  outline-width: 3px;
+  outline-color: #{$light-blue};
 
   &:focus {
     outline-style: solid;

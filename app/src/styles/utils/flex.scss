@@ -16,11 +16,11 @@
     flex-direction: column;
     gap: #{$size};
 
-    &.flex\:x-center {
+    &.flex\:center-x {
       align-items: center;
     }
 
-    &.flex\:y-center {
+    &.flex\:center-y {
       justify-content: center;
     }
   }
@@ -29,11 +29,11 @@
     flex-direction: row;
     gap: #{$size};
 
-    &.flex\:x-center {
+    &.flex\:center-x {
       justify-content: center;
     }
 
-    &.flex\:y-center {
+    &.flex\:center-y {
       align-items: center;
     }
   }

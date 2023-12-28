@@ -35,6 +35,26 @@ textarea,
 select {
   padding: 10px 15px;
   border-radius: 5px;
+
+  transition: outline 3ms;
+
+  &:focus {
+    border-color: #{$blue};
+    background-color: #f4f7ff;
+  }
+}
+
+label, input, textarea, select {
+  font-size: .9em;
+  color: #{$dark-grey-blue};
+}
+
+label {
+  font-weight: 600;
+}
+
+.field:focus-within label {
+  color: #{$blue}
 }
 
 button,
@@ -43,4 +63,10 @@ input[type='reset'],
 input[type='submit'] {
   padding: 10px 15px;
   border-radius: 5px;
+}
+
+article {
+  background-color: #{$dark-blue};
+  padding: 20px;
+  border-radius: 10px;
 }
