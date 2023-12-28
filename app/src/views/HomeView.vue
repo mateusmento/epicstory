@@ -40,9 +40,9 @@ import Form from '@/components/Form.vue';
         </div>
 
         <Form class="flex:rows-md">
-          <Field class="flex:rows-sm" label="Your name" name="name"/>
-          <Field class="flex:rows-sm" label="Email" name="email"/>
-          <Field class="flex:rows-sm" type="password" label="Password" name="password"/>
+          <Field class="flex:rows-sm" label="Name" name="name" placeholder="Enter your name"/>
+          <Field class="flex:rows-sm" label="Email" name="email" placeholder="Enter your email"/>
+          <Field class="flex:rows-sm" type="password" label="Password" name="password" placeholder="Create password"/>
           <div class="flex:cols-md mt-md ml-auto">
             <Button type="submit" class="btn--primary p-sm">Create account</Button>
           </div>
