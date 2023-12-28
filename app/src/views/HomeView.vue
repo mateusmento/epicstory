@@ -44,7 +44,7 @@ import Form from '@/components/Form.vue';
           <Field class="flex:rows-sm" label="Email" name="email"/>
           <Field class="flex:rows-sm" type="password" label="Password" name="password"/>
           <div class="flex:cols-md mt-md ml-auto">
-            <Button type="submit" class="btn--primary p-sm">Create Account</Button>
+            <Button type="submit" class="btn--primary p-sm">Create account</Button>
           </div>
         </Form>
       </section>
