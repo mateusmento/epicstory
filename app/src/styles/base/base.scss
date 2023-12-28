@@ -45,7 +45,7 @@ select {
 }
 
 label, input, textarea, select {
-  font-size: .9em;
+  font-size: .9rem;
   color: #{$dark-grey-blue};
 }
 
@@ -65,8 +65,10 @@ input[type='submit'] {
   border-radius: 5px;
 }
 
-article {
-  background-color: #{$dark-blue};
-  padding: 20px;
-  border-radius: 10px;
+dl {
+  font-size: .9rem;
+}
+
+dt {
+  font-weight: 600;
 }
