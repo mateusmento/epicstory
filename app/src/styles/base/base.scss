@@ -46,11 +46,11 @@ select {
 
 label, input, textarea, select {
   font-size: .9rem;
-  color: #{$dark-grey-blue};
 }
 
 label {
   font-weight: 600;
+  color: #{$dark-grey-blue};
 }
 
 .field:focus-within label {
