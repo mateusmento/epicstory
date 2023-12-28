@@ -37,17 +37,14 @@ $light-grey: #eee;
 }
 
 ::selection {
-  background-color: $grey;
+  background-color: #{$blue};
+  color: white;
 }
 
 *::before,
 *::after {
   display: block;
   box-sizing: border-box;
-}
-
-::selection {
-  background-color: #ccc;
 }
 
 body {
