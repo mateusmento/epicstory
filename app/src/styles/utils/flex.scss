@@ -1,4 +1,6 @@
-.flex, [class^="flex:"], [class*=" flex:"] {
+.flex,
+[class^='flex:'],
+[class*=' flex:'] {
   display: flex;
 }
 

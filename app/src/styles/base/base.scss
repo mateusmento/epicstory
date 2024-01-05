@@ -44,8 +44,11 @@ select {
   }
 }
 
-label, input, textarea, select {
-  font-size: .9rem;
+label,
+input,
+textarea,
+select {
+  font-size: 0.9rem;
 }
 
 label {
@@ -54,7 +57,7 @@ label {
 }
 
 .field:focus-within label {
-  color: #{$blue}
+  color: #{$blue};
 }
 
 button,
@@ -66,7 +69,7 @@ input[type='submit'] {
 }
 
 dl {
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
 
 dt {

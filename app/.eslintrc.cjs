@@ -3,7 +3,13 @@ require('@rushstack/eslint-patch/modern-module-resolution');
 
 module.exports = {
   root: true,
-  extends: ['plugin:vue/vue3-essential', 'eslint:recommended', '@vue/eslint-config-typescript', '@vue/eslint-config-prettier/skip-formatting', 'plugin:storybook/recommended'],
+  extends: [
+    'plugin:vue/vue3-essential',
+    'eslint:recommended',
+    '@vue/eslint-config-typescript',
+    '@vue/eslint-config-prettier/skip-formatting',
+    'plugin:storybook/recommended',
+  ],
   overrides: [
     {
       files: ['cypress/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}', 'cypress/support/**/*.{js,ts,jsx,tsx}'],
@@ -14,8 +20,8 @@ module.exports = {
     ecmaVersion: 'latest',
   },
   rules: {
-    "vue/no-unused-vars": "off",
-    "no-empty": "off",
+    'vue/no-unused-vars': 'off',
+    'no-empty': 'off',
     'vue/multi-word-component-names': 'off',
   },
 };
