@@ -10,12 +10,17 @@ const props = withDefaults(
   {
     type: 'default',
     title: 'Hello',
+    outline: false,
   }
 );
 
 type ButtonType = 'default' | 'primary' | 'secondary';
 
-const buttonCss = computed(() => ['button', `button--${props.type}`]);
+const buttonCss = computed(() => [
+  'button',
+  `button--${props.variant}`,
+  !!props.outline && 'button--outline',
+]);
 </script>
 
 <template>
@@ -31,24 +36,36 @@ const buttonCss = computed(() => ['button', `button--${props.type}`]);
   font-weight: 600;
 }
 
+.button--outline {
+  border-color: var(--bg-color);
+  color: var(--bg-color);
+  background-color: transparent;
+  &:hover {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+}
+
+.button:active {
+  background-color: var(--active-color);
+}
+
 .button--default {
-  background-color: white;
+  --text-color: #{$dark-grey-blue};
+  --bg-color: white;
+  --active-color: #{$grey-blue};
 }
 
 .button--primary {
-  background-color: $blue;
-  color: white;
-
-  &:hover {
-    background-color: $dark-blue;
-  }
+  --text-color: white;
+  --bg-color: #{$blue};
+  --active-color: #{$dark-blue};
+  outline-color: #{$light-blue};
 }
 
 .button--secondary {
-  background-color: $grey-blue;
-  color: $dark-grey-blue;
-  &:hover {
-    background-color: #cfc9da;
-  }
+  --text-color: #{$dark-grey-blue};
+  --bg-color: #{$grey-blue};
+  --active-color: #cfc9da;
 }
 </style>
