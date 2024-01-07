@@ -1,6 +1,6 @@
 $black: #333;
 $grey: #ddd;
-$light-grey: #eee;
+$light-grey: #ddd;
 
 @mixin border-reset() {
   border: 1px solid #{$grey-blue};
@@ -8,7 +8,7 @@ $light-grey: #eee;
 
 @mixin outline-reset() {
   outline-width: 3px;
-  outline-color: #{$light-blue};
+  outline-color: #{$light-grey};
 
   &:focus {
     outline-style: solid;
