@@ -8,16 +8,24 @@ const meta: Meta<typeof MyButton> = {
   title: 'Button',
   tags: ['autodocs'],
   argTypes: {
+    outline: {
+      defaultValue: true,
+    },
     variant: {
       options: ['default', 'primary', 'secondary'],
       control: { type: 'radio' },
+      defaultValue: 'primary',
     },
   },
 };
 
 export default meta;
 
-export const Default: StoryObj<typeof MyButton> = {
+type Story = StoryObj<typeof MyButton>;
+
+export const Default: Story = {};
+
+export const Combinations: StoryObj<typeof MyButton> = {
   render: (args) => ({
     components: { MyButton, MyForm, MyField },
     setup: () => ({ args }),
@@ -26,8 +34,8 @@ export const Default: StoryObj<typeof MyButton> = {
         <my-field class="flex:rows-sm" label="Email" name="email"/>
         <my-field class="flex:rows-sm" type="password" label="Password" name="password"/>
         <div class="flex:cols-md ml-auto">
-          <my-button v-bind="args" type="secondary">Cancel</my-button>
-          <my-button v-bind="args" type="primary">Confirm</my-button>
+          <my-button v-bind="args" variant="secondary">Cancel</my-button>
+          <my-button v-bind="args" variant="primary" outline>Confirm</my-button>
         </div>
       </my-form>
     `,
