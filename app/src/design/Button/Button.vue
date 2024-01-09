@@ -4,17 +4,17 @@ import { computed } from 'vue';
 const props = withDefaults(
   defineProps<{
     title?: string;
-    variant: ButtonType;
+    variant: ButtonVariant;
     outline: boolean;
   }>(),
   {
-    type: 'default',
     title: 'Hello',
+    variant: 'default',
     outline: false,
   }
 );
 
-type ButtonType = 'default' | 'primary' | 'secondary';
+type ButtonVariant = 'default' | 'primary' | 'secondary';
 
 const buttonCss = computed(() => [
   'button',
