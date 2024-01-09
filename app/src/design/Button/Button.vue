@@ -34,6 +34,9 @@ const buttonCss = computed(() => [
 
 .button {
   font-weight: 600;
+  border-color: var(--bg-color);
+  color: var(--text-color);
+  background-color: var(--bg-color);
 }
 
 .button--outline {
