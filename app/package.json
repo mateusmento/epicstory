@@ -20,6 +20,8 @@
   "dependencies": {
     "lodash": "^4.17.21",
     "pinia": "^2.1.7",
+    "reflect-metadata": "^0.2.1",
+    "tsyringe": "^4.8.0",
     "uniqid": "^5.4.0",
     "vue": "^3.3.11",
     "vue-router": "^4.2.5"
