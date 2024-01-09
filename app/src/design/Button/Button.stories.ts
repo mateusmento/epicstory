@@ -7,11 +7,17 @@ const meta: Meta<typeof MyButton> = {
   component: MyButton,
   title: 'Button',
   tags: ['autodocs'],
+  args: {
+    title: 'Hello, world!',
+    size: 'md',
+  },
   argTypes: {
+    title: {
+      control: { type: 'text' },
+    },
     variant: {
-      options: ['default', 'primary'],
       control: { type: 'radio' },
-      defaultValue: 'primary',
+      options: ['default', 'primary'],
     },
   },
 };
@@ -29,11 +35,11 @@ export const DefaultVariant: Story = {
     setup: () => ({ args }),
     template: /*html*/ `
       <div class="flex:cols-md flex:center-y">
-        <my-button v-bind="args" size="th">Hello World</my-button>
-        <my-button v-bind="args" size="sm">Hello World</my-button>
-        <my-button v-bind="args" size="md">Hello World</my-button>
-        <my-button v-bind="args" size="lg">Hello World</my-button>
-        <my-button v-bind="args" size="xl">Hello World</my-button>
+        <my-button v-bind="args" size="th"/>
+        <my-button v-bind="args" size="sm"/>
+        <my-button v-bind="args" size="md"/>
+        <my-button v-bind="args" size="lg"/>
+        <my-button v-bind="args" size="xl"/>
       </div>
     `,
   }),
@@ -48,11 +54,31 @@ export const PrimaryVariant: Story = {
     setup: () => ({ args }),
     template: /*html*/ `
       <div class="flex:cols-md flex:center-y">
-        <my-button v-bind="args" variant="primary" size="th">Hello World</my-button>
-        <my-button v-bind="args" variant="primary" size="sm">Hello World</my-button>
-        <my-button v-bind="args" variant="primary" size="md">Hello World</my-button>
-        <my-button v-bind="args" variant="primary" size="lg">Hello World</my-button>
-        <my-button v-bind="args" variant="primary" size="xl">Hello World</my-button>
+        <my-button v-bind="args" size="th"/>
+        <my-button v-bind="args" size="sm"/>
+        <my-button v-bind="args" size="md"/>
+        <my-button v-bind="args" size="lg"/>
+        <my-button v-bind="args" size="xl"/>
+      </div>
+    `,
+  }),
+};
+
+export const HighlightedPrimaryVariant: Story = {
+  args: {
+    variant: 'primary',
+    highlight: true,
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: /*html*/ `
+      <div class="flex:cols-md flex:center-y">
+        <my-button v-bind="args" size="th"/>
+        <my-button v-bind="args" size="sm"/>
+        <my-button v-bind="args" size="md"/>
+        <my-button v-bind="args" size="lg"/>
+        <my-button v-bind="args" size="xl"/>
       </div>
     `,
   }),
@@ -68,7 +94,7 @@ export const FormDemo: StoryObj<typeof MyButton> = {
         <my-field class="flex:rows-sm" type="password" label="Password" name="password"/>
         <div class="flex:cols-md ml-auto">
           <my-button v-bind="args">Cancel</my-button>
-          <my-button v-bind="args" variant="primary">Login</my-button>
+          <my-button v-bind="args" variant="primary" highlight>Login</my-button>
         </div>
       </my-form>
     `,
