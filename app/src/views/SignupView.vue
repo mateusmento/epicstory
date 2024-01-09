@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Button from '@/design/Button/Button.vue';
+import Button from '@/components/Button/Button.vue';
 import Field from '@/components/Field.vue';
 import Form from '@/components/Form.vue';
 import { useRouter } from 'vue-router';
