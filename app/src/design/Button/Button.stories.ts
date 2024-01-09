@@ -9,7 +9,8 @@ const meta: Meta<typeof MyButton> = {
   tags: ['autodocs'],
   argTypes: {
     outline: {
-      defaultValue: true,
+      defaultValue: false,
+      control: { type: 'boolean' },
     },
     variant: {
       options: ['default', 'primary', 'secondary'],
@@ -25,11 +26,11 @@ type Story = StoryObj<typeof MyButton>;
 
 export const Default: Story = {};
 
-export const Combinations: StoryObj<typeof MyButton> = {
+export const FormDemo: StoryObj<typeof MyButton> = {
   render: (args) => ({
     components: { MyButton, MyForm, MyField },
     setup: () => ({ args }),
-    template: `
+    template: /*html*/ `
       <my-form class="flex:rows-md">
         <my-field class="flex:rows-sm" label="Email" name="email"/>
         <my-field class="flex:rows-sm" type="password" label="Password" name="password"/>
