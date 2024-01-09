@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Button from '@/components/Button.vue';
+import Button from '@/design/Button/Button.vue';
 import Field from '@/components/Field.vue';
 import Form from '@/components/Form.vue';
 import { useRouter } from 'vue-router';
@@ -67,8 +67,10 @@ function signup() {
             name="password"
             placeholder="Create password"
           />
-          <div class="flex:cols-md mt-lg mx-lg">
-            <Button type="submit" class="btn--primary p-sm w-100">Create account</Button>
+          <div class="flex:cols-md mt-lg">
+            <Button type="submit" class="w-100" variant="primary" highlight size="md"
+              >Create account</Button
+            >
           </div>
         </Form>
       </section>
@@ -81,11 +83,6 @@ function signup() {
 
 main {
   background-color: #e3e8f8;
-}
-
-.btn--primary {
-  box-shadow: inset 0 0 4px #e3e8f8;
-  border: 1px solid $blue;
 }
 
 .signup {
