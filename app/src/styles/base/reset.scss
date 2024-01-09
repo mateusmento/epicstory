@@ -1,7 +1,3 @@
-$black: #333;
-$grey: #ddd;
-$light-grey: #ddd;
-
 @mixin border-reset() {
   border: 1px solid #{$grey-blue};
 }
