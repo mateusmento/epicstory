@@ -17,7 +17,7 @@ const meta: Meta<typeof MyButton> = {
     },
     variant: {
       control: { type: 'radio' },
-      options: ['default', 'primary'],
+      options: ['default', 'primary', 'special'],
     },
   },
 };
@@ -64,10 +64,9 @@ export const PrimaryVariant: Story = {
   }),
 };
 
-export const HighlightedPrimaryVariant: Story = {
+export const SpecialVariant: Story = {
   args: {
-    variant: 'primary',
-    highlight: true,
+    variant: 'special',
   },
   render: (args) => ({
     components: { MyButton },

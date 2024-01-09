@@ -68,9 +68,7 @@ function signup() {
             placeholder="Create password"
           />
           <div class="flex:cols-md mt-lg">
-            <Button type="submit" class="w-100" variant="primary" highlight size="md"
-              >Create account</Button
-            >
+            <Button type="submit" class="w-100" variant="special" size="md">Create account</Button>
           </div>
         </Form>
       </section>
