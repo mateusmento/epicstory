@@ -1,4 +1,5 @@
-import '../styles/main.scss';
+import 'reflect-metadata';
+import '@/styles/main.scss';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
