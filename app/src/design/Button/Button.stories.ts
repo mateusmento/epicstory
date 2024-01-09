@@ -8,12 +8,8 @@ const meta: Meta<typeof MyButton> = {
   title: 'Button',
   tags: ['autodocs'],
   argTypes: {
-    outline: {
-      defaultValue: false,
-      control: { type: 'boolean' },
-    },
     variant: {
-      options: ['default', 'primary', 'secondary'],
+      options: ['default', 'primary'],
       control: { type: 'radio' },
       defaultValue: 'primary',
     },
@@ -24,7 +20,43 @@ export default meta;
 
 type Story = StoryObj<typeof MyButton>;
 
-export const Default: Story = {};
+export const DefaultVariant: Story = {
+  args: {
+    variant: 'default',
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: /*html*/ `
+      <div class="flex:cols-md flex:center-y">
+        <my-button v-bind="args" size="th">Hello World</my-button>
+        <my-button v-bind="args" size="sm">Hello World</my-button>
+        <my-button v-bind="args" size="md">Hello World</my-button>
+        <my-button v-bind="args" size="lg">Hello World</my-button>
+        <my-button v-bind="args" size="xl">Hello World</my-button>
+      </div>
+    `,
+  }),
+};
+
+export const PrimaryVariant: Story = {
+  args: {
+    variant: 'primary',
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: /*html*/ `
+      <div class="flex:cols-md flex:center-y">
+        <my-button v-bind="args" variant="primary" size="th">Hello World</my-button>
+        <my-button v-bind="args" variant="primary" size="sm">Hello World</my-button>
+        <my-button v-bind="args" variant="primary" size="md">Hello World</my-button>
+        <my-button v-bind="args" variant="primary" size="lg">Hello World</my-button>
+        <my-button v-bind="args" variant="primary" size="xl">Hello World</my-button>
+      </div>
+    `,
+  }),
+};
 
 export const FormDemo: StoryObj<typeof MyButton> = {
   render: (args) => ({
@@ -35,8 +67,8 @@ export const FormDemo: StoryObj<typeof MyButton> = {
         <my-field class="flex:rows-sm" label="Email" name="email"/>
         <my-field class="flex:rows-sm" type="password" label="Password" name="password"/>
         <div class="flex:cols-md ml-auto">
-          <my-button v-bind="args" variant="secondary">Cancel</my-button>
-          <my-button v-bind="args" variant="primary" outline>Confirm</my-button>
+          <my-button v-bind="args">Cancel</my-button>
+          <my-button v-bind="args" variant="primary">Login</my-button>
         </div>
       </my-form>
     `,
