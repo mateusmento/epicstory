@@ -83,6 +83,11 @@ main {
   background-color: #e3e8f8;
 }
 
+.btn--primary {
+  box-shadow: inset 0 0 4px #e3e8f8;
+  border: 1px solid $blue;
+}
+
 .signup {
   background-color: #fff;
 }
