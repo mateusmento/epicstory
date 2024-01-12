@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { provideDependencyContainer } from '@/core/dependency-injection';
+import { provideDependencyInjection } from '@/core/dependency-injection';
 import { RouterView } from 'vue-router';
 
-provideDependencyContainer();
+provideDependencyInjection();
 </script>
 
 <template>

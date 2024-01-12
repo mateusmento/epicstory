@@ -4,12 +4,16 @@ import {
   type InjectionToken,
 } from 'tsyringe';
 import { inject, provide } from 'vue';
+import { createAxios } from './axios';
+import { InboxApi } from '@/domain/Inbox/inbox.api';
 
 const DI_CONTAINER_TOKEN = 'dependencyContainer';
 
-export function provideDependencyContainer() {
+export function provideDependencyInjection() {
   const container = globalContainer.createChildContainer();
   provide(DI_CONTAINER_TOKEN, container);
+  container.registerInstance('axios', createAxios());
+  container.register('InboxApi', InboxApi);
   return container;
 }
 
