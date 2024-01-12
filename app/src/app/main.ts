@@ -3,13 +3,25 @@ import '@/styles/main.scss';
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import { addIcons } from 'oh-vue-icons';
 
 import App from './App.vue';
 import router from './router';
+import icons from './icons';
 
-const app = createApp(App);
+async function main() {
+  if (import.meta.env.DEV) {
+    await import('@/msw').then(({ setupMockApi }) => setupMockApi());
+  }
 
-app.use(createPinia());
-app.use(router);
+  addIcons(...icons);
 
-app.mount('#app');
+  const app = createApp(App);
+
+  app.use(createPinia());
+  app.use(router);
+
+  app.mount('#app');
+}
+
+main();
