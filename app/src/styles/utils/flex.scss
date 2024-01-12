@@ -13,6 +13,18 @@
   justify-content: center;
 }
 
+.flex\:rows {
+  flex-direction: column;
+
+  &.flex\:center-x {
+    align-items: center;
+  }
+
+  &.flex\:center-y {
+    justify-content: center;
+  }
+}
+
 @each $size_name, $size in $sizes {
   .flex\:rows-#{$size_name} {
     flex-direction: column;
@@ -52,5 +64,9 @@
 }
 
 .self\:fill {
+  flex: 1;
+}
+
+.flex\:space {
   flex: 1;
 }
