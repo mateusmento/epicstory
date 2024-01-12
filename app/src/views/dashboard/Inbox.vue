@@ -23,9 +23,11 @@ withDefaults(
         <div v-for="message of inbox.messages" :key="message.id" class="message flex:rows-md p-md">
           <div class="card-header flex:cols-md">
             <div class="circle"></div>
-            <div class="user-input">{{ message.author.name }}</div>
+            <div class="flex:rows-sm">
+              <div class="user-input">{{ message.author.name }}</div>
+              <div class="card-content user-input">{{ message.text }}</div>
+            </div>
           </div>
-          <div class="card-content user-input">{{ message.text }}</div>
         </div>
       </div>
     </div>
@@ -44,10 +46,15 @@ withDefaults(
   height: 40px;
 }
 
-.messages {
-  border-top: 1px solid #ccc;
-}
 .message {
+  cursor: pointer;
+}
+
+.message:hover {
+  background-color: #eee;
+}
+
+.message:not(:last-child) {
   border-bottom: 1px solid #ccc;
 }
 </style>

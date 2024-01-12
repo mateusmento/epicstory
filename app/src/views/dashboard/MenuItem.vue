@@ -1,18 +1,38 @@
 <script lang="ts" setup>
-import { inject } from 'vue';
+import { inject, ref, type Ref } from 'vue';
 
-defineProps<{
-  name?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    name?: string;
+    secondary: boolean;
+  }>(),
+  {
+    secondary: false,
+  }
+);
 
-const activeMenuItem = inject('activeMenuItem');
+const activeMenuItem = inject<Ref<string | undefined>>('activeMenuItem', ref<string>());
+
+const secondaryActiveMenuItem = inject<Ref<string | undefined>>(
+  'secondaryActiveMenuItem',
+  ref<string>()
+);
+
+function activateMenuItem() {
+  if (props.secondary) {
+    secondaryActiveMenuItem.value =
+      secondaryActiveMenuItem.value === props.name ? undefined : props.name;
+  } else {
+    activeMenuItem.value = activeMenuItem.value === props.name ? undefined : props.name;
+  }
+}
 </script>
 
 <template>
   <div
     class="menu-item"
-    :class="{ active: activeMenuItem === name }"
-    @click="activeMenuItem = name"
+    :class="{ active: activeMenuItem === name, secondaryActive: secondaryActiveMenuItem === name }"
+    @click="activateMenuItem"
   >
     <slot />
   </div>
@@ -29,17 +49,21 @@ const activeMenuItem = inject('activeMenuItem');
   border: 1px solid transparent;
   cursor: pointer;
   font-size: 1.1rem;
-  color: #57575e;
+  color: #686870;
   transition: 100ms;
 
-  &:is(:hover, .active):not(.isInboxOpen) {
+  &:hover {
+    color: #000;
+  }
+
+  &.active {
     background-color: white;
     border-color: #dadada;
     box-shadow: 0 1px 1px #ddd;
     color: #000;
   }
 
-  &.isInboxOpen {
+  &.secondaryActive {
     color: #000;
     &:not(:hover) {
       background-color: #e5e5e5;

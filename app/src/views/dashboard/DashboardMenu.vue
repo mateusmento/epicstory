@@ -18,8 +18,9 @@ defineEmits(['update:isInboxOpen']);
     </v-menu-item>
     <v-menu-item
       class="menu-item"
+      name="inbox"
+      secondary
       @click="$emit('update:isInboxOpen', !isInboxOpen)"
-      :class="{ isInboxOpen }"
     >
       <OhVueIcon name="hi-inbox" />
       Inbox

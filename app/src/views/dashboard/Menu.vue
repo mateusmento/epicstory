@@ -2,8 +2,10 @@
 import { provide, ref } from 'vue';
 
 const activeMenuItem = ref<string>();
+const secondaryActiveMenuItem = ref<string>();
 
 provide('activeMenuItem', activeMenuItem);
+provide('secondaryActiveMenuItem', secondaryActiveMenuItem);
 </script>
 
 <template>
