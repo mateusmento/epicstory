@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import { useInjectable } from '@/core/dependency-injection';
-import { InboxApi } from '@/domain/Inbox/inbox.api';
-import type { IMessage } from '@/domain/Inbox/message.type';
+import { InboxApi } from '@/domain/inbox/inbox.api';
+import type { IMessage } from '@/domain/inbox/inbox.type';
 import { onMounted, ref } from 'vue';
 import { OhVueIcon } from 'oh-vue-icons';
+import VMenu from './Menu.vue';
 
 const inboxApi = useInjectable<InboxApi>(InboxApi.name);
 
@@ -21,7 +22,7 @@ const activeMenuItem = ref<string>();
 
 <template>
   <main :class="{ isInboxOpen }">
-    <div class="sidebar menu flex:rows-th px-lg pt-lg">
+    <v-menu class="sidebar">
       <div
         class="menu-item"
         :class="{ active: activeMenuItem === 'home' }"
@@ -66,7 +67,7 @@ const activeMenuItem = ref<string>();
         <OhVueIcon name="bi-calendar-range" />
         Calendar
       </div>
-    </div>
+    </v-menu>
 
     <div class="inbox" :class="{ isInboxOpen }">
       <div class="flex:rows-md p-md">

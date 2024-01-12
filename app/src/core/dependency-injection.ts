@@ -5,7 +5,7 @@ import {
 } from 'tsyringe';
 import { inject, provide } from 'vue';
 import { createAxios } from './axios';
-import { InboxApi } from '@/domain/Inbox/inbox.api';
+import { InboxApi } from '@/domain/inbox/inbox.api';
 
 const DI_CONTAINER_TOKEN = 'dependencyContainer';
 
