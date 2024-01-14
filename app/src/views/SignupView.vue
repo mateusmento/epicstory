@@ -81,6 +81,7 @@ function signup() {
 
 main {
   background-color: #e3e8f8;
+  font-family: 'Plus Jakarta Sans';
 }
 
 .signup {
@@ -108,11 +109,11 @@ main {
   background-color: #{$dark-blue};
   padding: 20px;
   border-radius: 10px;
-  font-family: 'Manrope';
+  font-family: 'Lato';
 
   p {
     grid-column: span 2;
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 
   img {

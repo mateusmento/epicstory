@@ -61,10 +61,12 @@ function activateMenuItem() {
     border-color: #dadada;
     box-shadow: 0 1px 1px #ddd;
     color: #000;
+    font-weight: 500;
   }
 
   &.secondaryActive {
     color: #000;
+    font-weight: 500;
     &:not(:hover) {
       background-color: #e5e5e5;
       border-color: #e5e5e5;

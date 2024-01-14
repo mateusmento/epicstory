@@ -43,3 +43,9 @@ defineEmits(['update:isInboxOpen']);
     </v-menu-item>
   </v-menu>
 </template>
+
+<style lang="scss" scoped>
+svg {
+  color: #686870;
+}
+</style>
