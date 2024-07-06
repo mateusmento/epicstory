@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/button';
 import { Field } from '@/components/field';
-import { vForm } from '@/components/form';
+import { Form } from '@/components/form';
 import IconGoogle from '@/components/icons/IconGoogle.vue';
 import { useDependency } from '@/core/dependency-injection';
 import { AuthService } from '@/domain/auth/auth.service';
@@ -74,7 +74,7 @@ async function signup(data: SignupRequest) {
           <div class="subtitle text-neutral-600">Start your journey with Epicstory.</div>
         </div>
 
-        <vForm class="flex:rows-3xl" @submit="signup" data-testid="signup-form">
+        <Form class="flex:rows-3xl" @submit="signup" data-testid="signup-form">
           <Field
             class="flex:rows-xl"
             label="Name"
@@ -119,7 +119,7 @@ async function signup(data: SignupRequest) {
             <IconGoogle class="h-8" />
             Sign up with Google
           </vButton>
-        </vForm>
+        </Form>
       </section>
     </div>
   </main>

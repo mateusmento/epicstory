@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/button';
 import { Field } from '@/components/field';
-import { vForm } from '@/components/form';
+import { Form } from '@/components/form';
 import { useDependency } from '@/core/dependency-injection';
 import { AuthService } from '@/domain/auth/auth.service';
 import type { SigninRequest } from '@/domain/auth/dtos/singin.dto';
@@ -25,12 +25,12 @@ async function signin(data: SigninRequest) {
   <main>
     <h1>Sign in</h1>
     <h2>Continue your journey with Epicstory.</h2>
-    <vForm @submit="signin">
+    <Form @submit="signin">
       <Field v-model="signinEmail" label="Email" name="email" data-testid="signin-email-input" />
       <Field type="password" label="Password" name="password" data-testid="signin-password-input" />
       <Button variant="invitational" size="md" type="submit" data-testid="signin-submit-button">
         Sign in
       </Button>
-    </vForm>
+    </Form>
   </main>
 </template>

@@ -11,7 +11,7 @@ import { useDependency } from '@/core/dependency-injection';
 import { AuthService } from '@/domain/auth/auth.service';
 import { useForm } from 'vee-validate';
 import { useRouter } from 'vue-router';
-import { vForm } from '@/components/form';
+import { Form } from '@/components/form';
 import { Field } from '@/components/field';
 import { vButton } from '@mateussarmento/epicstory-ui';
 
@@ -52,7 +52,7 @@ const signin = form.handleSubmit(async (values) => {
     </div>
 
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-      <v-form @submit="signin">
+      <Form @submit="signin">
         <Field label="Email" name="email" data-testid="signin-email-input" />
         <Field
           type="password"
@@ -63,7 +63,7 @@ const signin = form.handleSubmit(async (values) => {
         <vButton variant="invitational" size="md" type="submit" data-testid="signin-submit-button">
           Sign in
         </vButton>
-      </v-form>
+      </Form>
 
       <form class="space-y-6" @submit="signin">
         <FormField v-slot="{ componentField }" name="email" required>
