@@ -1,4 +1,4 @@
-@use 'sass:list';
+@use "sass:list";
 
 @each $size_name, $size in $sizes {
   .g-#{$size_name} {

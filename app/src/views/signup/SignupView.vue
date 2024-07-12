@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { Button } from "@/components/button";
-import { Field } from "@/components/field";
-import { Form } from "@/components/form";
-import IconGoogle from "@/components/icons/IconGoogle.vue";
+import { IconGoogle } from "@/design-system/icons";
 import { useDependency } from "@/core/dependency-injection";
 import { AuthService } from "@/domain/auth/auth.service";
 import type { SignupRequest } from "@/domain/auth/dtos/signup.dto";
-import { Button as vButton } from "@/design-system";
+import { Button, Form, FormField as Field } from "@/design-system";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import type { SubmissionHandler } from "vee-validate";
 
 const router = useRouter();
 
@@ -74,7 +72,7 @@ async function signup(data: SignupRequest) {
           <div class="subtitle text-neutral-600">Start your journey with Epicstory.</div>
         </div>
 
-        <Form class="flex:rows-3xl" @submit="signup" data-testid="signup-form">
+        <Form class="flex:rows-3xl" @submit="signup as SubmissionHandler<any, any>" data-testid="signup-form">
           <Field
             class="flex:rows-xl"
             label="Name"
@@ -99,7 +97,7 @@ async function signup(data: SignupRequest) {
           />
 
           <div class="flex:rows-2xl mt-3xl">
-            <Button type="submit" variant="invitational" class="w-full" data-testid="signup-button">
+            <Button type="submit" variant="default" class="w-full" data-testid="signup-button">
               Create account
             </Button>
           </div>
@@ -110,7 +108,7 @@ async function signup(data: SignupRequest) {
             <div class="border border-solid border-slate-200 flex-1"></div>
           </div>
 
-          <vButton
+          <Button
             as="a"
             :href="`${apiUrl}/auth/google`"
             class="flex:cols-lg w-full"
@@ -118,7 +116,7 @@ async function signup(data: SignupRequest) {
           >
             <IconGoogle class="h-8" />
             Sign up with Google
-          </vButton>
+          </Button>
         </Form>
       </section>
     </div>
