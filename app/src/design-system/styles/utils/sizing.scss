@@ -1,0 +1,15 @@
+@use 'sass:list';
+
+@each $size_name, $size in $sizes {
+  .g-#{$size_name} {
+    gap: #{$size};
+  }
+}
+
+.w-md {
+  width: 460px;
+}
+
+.w-xl {
+  width: 1080px;
+}

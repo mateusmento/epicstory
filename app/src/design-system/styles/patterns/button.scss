@@ -1,0 +1,11 @@
+.btn--primary {
+  background-color: $blue;
+  color: white;
+  border: none;
+  font-weight: 600;
+  outline-color: $light-blue;
+
+  &:active {
+    background-color: $dark-blue;
+  }
+}

@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import "@/design-system/styles/style.css";
+import "@/design-system/styles/main.css";
 import "@/design-system/styles/main.scss";
 
 import { createApp } from "vue";

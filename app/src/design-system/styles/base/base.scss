@@ -1,0 +1,73 @@
+:root {
+  --th: 5px;
+  --sm: 10px;
+  --md: 15px;
+  --lg: 20px;
+  --xl: 30px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-color: white;
+  }
+}
+
+body {
+  background: var(--color-background);
+
+  font-family: 'Inter', 'Gabarito', 'DM Sans';
+  color: var(--color-text);
+
+  font-size: 1rem;
+  line-height: normal;
+
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  transition:
+    color 0.5s,
+    background-color 0.5s;
+}
+
+dt {
+  font-weight: 600;
+}
+
+input,
+textarea,
+select {
+  padding: 6px 12px;
+  padding: 8px 16px;
+  border-radius: 6px;
+
+  transition: outline 3ms;
+
+  &:focus {
+    border-color: #{$blue};
+    background-color: #f4f7ff;
+  }
+}
+
+label,
+input,
+textarea,
+select {
+  font-size: 0.9rem;
+}
+
+label {
+  font-weight: 600;
+}
+
+.field:focus-within label {
+  color: #{$blue};
+}
+
+button,
+input[type='button'],
+input[type='reset'],
+input[type='submit'] {
+  padding: 6px 12px;
+  border-radius: 6px;
+}

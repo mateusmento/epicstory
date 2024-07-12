@@ -1,0 +1,117 @@
+@mixin border-reset() {
+  border: 1px solid #{$grey-blue};
+}
+
+@mixin outline-reset() {
+  outline-width: 3px;
+  outline-color: #{$light-grey};
+
+  &:focus {
+    outline-style: solid;
+  }
+}
+
+@mixin font-reset() {
+  font-size: inherit;
+  font-family: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+*,
+*::after,
+*::before {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+
+  @include font-reset();
+}
+
+::placeholder {
+  @include font-reset();
+}
+
+::selection {
+  background-color: #{$blue};
+  color: white;
+}
+
+*::before,
+*::after {
+  display: block;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+
+  color: #{$black};
+
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.01rem;
+}
+
+li {
+  list-style-type: none;
+}
+
+a {
+  text-decoration: none;
+  @include outline-reset();
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+input,
+textarea,
+select {
+  display: block;
+  width: 100%;
+  background-color: white;
+
+  @include border-reset();
+  @include outline-reset();
+}
+
+textarea {
+  resize: none;
+}
+
+button,
+input[type="button"],
+input[type="reset"],
+input[type="submit"] {
+  display: block;
+  width: fit-content;
+  cursor: pointer;
+  background-color: #{$light-grey};
+  font-size: 0.9em;
+
+  @include border-reset();
+  @include outline-reset();
+
+  &:active {
+    background-color: #{$grey};
+  }
+}
+
+fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: none;
+}
+
+legend {
+  float: left;
+}

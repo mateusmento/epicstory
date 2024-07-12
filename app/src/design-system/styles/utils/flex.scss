@@ -1,0 +1,82 @@
+.flex,
+[class^='flex:'],
+[class*=' flex:'] {
+  display: flex;
+}
+
+.flex\:wrap {
+  flex-wrap: wrap;
+}
+
+.flex\:center {
+  align-items: center;
+  justify-content: center;
+}
+
+.flex {
+  &.flex\:center-x {
+    justify-content: center;
+  }
+
+  &.flex\:center-y {
+    align-items: center;
+  }
+}
+
+.flex\:rows {
+  flex-direction: column;
+
+  &.flex\:center-x {
+    align-items: center;
+  }
+
+  &.flex\:center-y {
+    justify-content: center;
+  }
+}
+
+@each $size_name, $size in $sizes {
+  .flex\:rows-#{$size_name} {
+    flex-direction: column;
+    gap: #{$size};
+
+    &.flex\:center-x {
+      align-items: center;
+    }
+
+    &.flex\:center-y {
+      justify-content: center;
+    }
+  }
+
+  .flex\:cols-#{$size_name} {
+    flex-direction: row;
+    gap: #{$size};
+
+    &.flex\:center-x {
+      justify-content: center;
+    }
+
+    &.flex\:center-y {
+      align-items: center;
+    }
+  }
+}
+
+.flex\:rows-auto {
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.flex\:cols-auto {
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.self\:fill {
+  flex: 1;
+}
+
+.flex\:space {
+  flex: 1;
+}
