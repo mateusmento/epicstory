@@ -19,12 +19,14 @@
   },
   "dependencies": {
     "@radix-icons/vue": "^1.0.0",
+    "axios": "^1.7.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "pinia": "^2.1.7",
     "radix-vue": "^1.9.1",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
+    "tsyringe": "^4.8.0",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3"
   },
@@ -55,6 +57,7 @@
     "eslint-plugin-storybook": "^0.8.0",
     "eslint-plugin-vue": "^9.23.0",
     "jsdom": "^24.1.0",
+    "msw": "^2.3.1",
     "npm-run-all2": "^6.2.0",
     "postcss": "^8.4.39",
     "prettier": "^3.2.5",
