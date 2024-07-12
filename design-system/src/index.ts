@@ -1,3 +1,6 @@
 import '@/style.css'
 import '@/styles/main.scss'
-export { vButton } from '@/components/ui/button'
+export * from '@/components/ui/button'
+export * from '@/components/ui/form'
+export * from '@/components/ui/input'
+export * from '@/components/ui/input'

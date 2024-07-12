@@ -1,29 +1,29 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
-import vButton from './vButton.vue'
+import Button from './Button.vue'
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories
 const meta = {
   title: 'shadcn-vue/Button',
   render: (args) => ({
-    components: { vButton },
+    components: { Button },
     render() {
       return (
         <div class="flex flex-cols gap-3 items-center">
-          <vButton {...args} size="xs">
+          <Button {...args} size="xs">
             extra small
-          </vButton>
-          <vButton {...args} size="sm">
+          </Button>
+          <Button {...args} size="sm">
             small
-          </vButton>
-          <vButton {...args} size="default">
+          </Button>
+          <Button {...args} size="default">
             default
-          </vButton>
-          <vButton {...args} size="lg">
+          </Button>
+          <Button {...args} size="lg">
             really large
-          </vButton>
-          <vButton {...args} size="xl">
+          </Button>
+          <Button {...args} size="xl">
             extra extra lage
-          </vButton>
+          </Button>
         </div>
       )
     }
@@ -37,7 +37,7 @@ const meta = {
       options: ['default', 'outline', 'destructive', 'link', 'text', 'ghost']
     }
   }
-} satisfies Meta<typeof vButton>
+} satisfies Meta<typeof Button>
 
 export default meta
 type Story = StoryObj<typeof meta>
