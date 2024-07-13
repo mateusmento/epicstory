@@ -11,9 +11,7 @@ describe("Form", () => {
     const { defineField } = useForm({ initialValues: expected });
     const [name, inputProps] = defineField("name");
 
-    const Render = defineComponent({
-      render: () => <input v-model={name.value} {...inputProps} />,
-    });
+    const Render = () => <input v-model={name.value} {...inputProps} />;
 
     const inputEl = await mount(Render).find<HTMLInputElement>("input");
     expect(inputEl.element.value).toStrictEqual(expected.name);
@@ -24,13 +22,11 @@ describe("Form", () => {
     const expected = "My book title";
     const data = ref({ title: expected });
 
-    const Render = defineComponent({
-      render: () => (
-        <Form v-model={data.value}>
-          <Field name="title" />
-        </Form>
-      ),
-    });
+    const Render = () => (
+      <Form v-model={data.value}>
+        <Field name="title" />
+      </Form>
+    );
 
     // Act
     const wrapper = mount(Render, {});
@@ -44,13 +40,11 @@ describe("Form", () => {
     // Arrange
     const data = ref({ title: "Wrong message" });
 
-    const Render = defineComponent({
-      render: () => (
-        <Form v-model={data.value}>
-          <Field name="title" />
-        </Form>
-      ),
-    });
+    const Render = () => (
+      <Form v-model={data.value}>
+        <Field name="title" />
+      </Form>
+    );
 
     const expected = "Hello world";
 
@@ -69,13 +63,11 @@ describe("Form", () => {
     const data = ref({ title: "" });
     const title = ref();
 
-    const Render = defineComponent({
-      render: () => (
-        <Form v-model={data.value}>
-          <Field v-model={title.value} name="title" />
-        </Form>
-      ),
-    });
+    const Render = () => (
+      <Form v-model={data.value}>
+        <Field v-model={title.value} name="title" />
+      </Form>
+    );
 
     // Act
     const expected = "1994";
@@ -97,13 +89,11 @@ describe("Form", () => {
       }),
     );
 
-    const Render = defineComponent({
-      render: () => (
-        <Form v-model={data.value} validationSchema={schema}>
-          <Field name="password" />
-        </Form>
-      ),
-    });
+    const Render = () => (
+      <Form v-model={data.value} validationSchema={schema}>
+        <Field name="password" />
+      </Form>
+    );
 
     // Assert
     const wrapper = mount(Render);

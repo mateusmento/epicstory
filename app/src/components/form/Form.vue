@@ -1,11 +1,13 @@
 <script lang="ts" setup>
 import { provide, ref, watch } from "vue";
 import { get, set } from "lodash";
+import type { TypedSchema } from "vee-validate";
 
 const props = withDefaults(
   defineProps<{
     modelValue?: any;
     mode?: "create" | "update";
+    validationSchema?: TypedSchema;
   }>(),
   {
     mode: "create",

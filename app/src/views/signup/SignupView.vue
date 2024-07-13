@@ -4,7 +4,8 @@ import { useDependency } from "@/core/dependency-injection";
 import { AuthService } from "@/domain/auth/auth.service";
 import type { SignupRequest } from "@/domain/auth/dtos/signup.dto";
 import { Form as SomeForm, Field } from "@/components/form";
-import { Button } from "@/design-system";
+import { Button } from "@/components/button";
+import { Button as vButton } from "@/design-system";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import type { SubmissionHandler } from "vee-validate";
@@ -102,7 +103,7 @@ async function signup(data: SignupRequest) {
           />
 
           <div class="flex:rows-2xl mt-3xl">
-            <Button type="submit" variant="default" class="w-full" data-testid="signup-button">
+            <Button type="submit" variant="invitational" class="w-full" data-testid="signup-button">
               Create account
             </Button>
           </div>
@@ -113,7 +114,7 @@ async function signup(data: SignupRequest) {
             <div class="border border-solid border-slate-200 flex-1"></div>
           </div>
 
-          <Button
+          <vButton
             as="a"
             :href="`${apiUrl}/auth/google`"
             class="flex:cols-lg w-full"
@@ -121,7 +122,7 @@ async function signup(data: SignupRequest) {
           >
             <IconGoogle class="h-8" />
             Sign up with Google
-          </Button>
+          </vButton>
         </SomeForm>
       </section>
     </div>

@@ -1,6 +1,5 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { Field, ErrorMessage as FieldErrorMessage, Form } from "vee-validate";
-import { describe, expect, it } from "vitest";
 import type { FunctionalComponent as FC } from "vue";
 
 const ErrorMessage = FieldErrorMessage as any;
