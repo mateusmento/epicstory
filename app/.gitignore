@@ -19,8 +19,8 @@ coverage
 
 # Editor directories and files
 .vscode/*
-!.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/extensions.json
 .idea
 *.suo
 *.ntvs*
@@ -29,5 +29,20 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# terraform files
+
+.terraform*
+terraform.*
+terraform-apply
+terraform-destroy
+
+# aws ssh keys
+/deploy/aws-epicstory.pem
+/deploy/aws-epicstory.pem.pub
+
+# others
+
+/.ignore
 
 *storybook.log
