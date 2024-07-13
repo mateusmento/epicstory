@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button } from "@/components/button";
+import { Button } from "@/design-system";
 import { Field } from "@/components/form";
 import { Form } from "@/components/form";
 import { useDependency } from "@/core/dependency-injection";
@@ -28,7 +28,13 @@ async function signin(data: SigninRequest) {
     <Form @submit="signin">
       <Field v-model="signinEmail" label="Email" name="email" data-testid="signin-email-input" />
       <Field type="password" label="Password" name="password" data-testid="signin-password-input" />
-      <Button variant="invitational" size="md" type="submit" data-testid="signin-submit-button">
+      <Button
+        legacy
+        legacy-variant="invitational"
+        legacy-size="md"
+        type="submit"
+        data-testid="signin-submit-button"
+      >
         Sign in
       </Button>
     </Form>

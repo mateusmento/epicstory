@@ -19,6 +19,8 @@ interface Props extends /* @vue-ignore */ ButtonHTMLAttributes, PrimitiveProps {
 
 const props = withDefaults(defineProps<Props>(), {
   as: "button",
+  legacyVariant: "default",
+  legacySize: "md",
 });
 </script>
 
@@ -28,7 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
     :as-child="asChild"
     :class="
       legacy
-        ? ['button', `button--${props.legacyVariant}`, `button--${props.legacySize}`]
+        ? cn(['button', `button--${props.legacyVariant}`, `button--${props.legacySize}`], props.class)
         : cn(buttonVariants({ variant, size }), props.class)
     "
   >

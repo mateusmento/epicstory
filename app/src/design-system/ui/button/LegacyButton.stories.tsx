@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import Button from "./Button.vue";
-import Form from "@/components/form/Form.vue";
-import Field from "@/components/form/Field.vue";
 
 const meta: Meta<typeof Button> = {
   title: "Design System/Legacy Button",
@@ -37,11 +35,11 @@ export const DefaultVariant: Story = {
     setup: () => ({ args }),
     template: /*html*/ `
       <div class="flex:cols-md flex:center-y">
-        <Button v-bind="args" size="th"/>
-        <Button v-bind="args" size="sm"/>
-        <Button v-bind="args" size="md"/>
-        <Button v-bind="args" size="lg"/>
-        <Button v-bind="args" size="xl"/>
+        <Button v-bind="args" legacy-size="th"/>
+        <Button v-bind="args" legacy-size="sm"/>
+        <Button v-bind="args" legacy-size="md"/>
+        <Button v-bind="args" legacy-size="lg"/>
+        <Button v-bind="args" legacy-size="xl"/>
       </div>
     `,
   }),
@@ -56,11 +54,11 @@ export const PrimaryVariant: Story = {
     setup: () => ({ args }),
     template: /*html*/ `
       <div class="flex:cols-md flex:center-y">
-        <Button v-bind="args" size="th"/>
-        <Button v-bind="args" size="sm"/>
-        <Button v-bind="args" size="md"/>
-        <Button v-bind="args" size="lg"/>
-        <Button v-bind="args" size="xl"/>
+        <Button v-bind="args" legacy-size="th"/>
+        <Button v-bind="args" legacy-size="sm"/>
+        <Button v-bind="args" legacy-size="md"/>
+        <Button v-bind="args" legacy-size="lg"/>
+        <Button v-bind="args" legacy-size="xl"/>
       </div>
     `,
   }),
@@ -75,29 +73,12 @@ export const InvitationalVariant: Story = {
     setup: () => ({ args }),
     template: /*html*/ `
       <div class="flex:cols-md flex:center-y">
-        <Button v-bind="args" size="th"/>
-        <Button v-bind="args" size="sm"/>
-        <Button v-bind="args" size="md"/>
-        <Button v-bind="args" size="lg"/>
-        <Button v-bind="args" size="xl"/>
+        <Button v-bind="args" legacy-size="th"/>
+        <Button v-bind="args" legacy-size="sm"/>
+        <Button v-bind="args" legacy-size="md"/>
+        <Button v-bind="args" legacy-size="lg"/>
+        <Button v-bind="args" legacy-size="xl"/>
       </div>
-    `,
-  }),
-};
-
-export const FormDemo: StoryObj<typeof Button> = {
-  render: (args) => ({
-    components: { Button, Form, Field },
-    setup: () => ({ args }),
-    template: /*html*/ `
-      <Form class="flex:rows-md">
-        <Field class="flex:rows-sm" label="Email" name="email"/>
-        <Field class="flex:rows-sm" type="password" label="Password" name="password"/>
-        <div class="flex:cols-md ml-auto">
-          <Button v-bind="args">Cancel</Button>
-          <Button v-bind="args" legacy legacyVariant="primary">Login</Button>
-        </div>
-      </Form>
     `,
   }),
 };

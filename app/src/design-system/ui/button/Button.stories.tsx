@@ -11,12 +11,10 @@ const meta = {
     variant: "default",
   },
   argTypes: {
-    title: {
-      control: { type: "text" },
-    },
+    title: { control: { type: "text" } },
     size: { control: "select", options: ["xs", "sm", "default", "lg", "icon"] },
     variant: {
-      control: { type: "radio" },
+      control: { type: "select" },
       options: ["default", "destructive", "outline", "secondary", "ghost", "link"],
     },
   },
