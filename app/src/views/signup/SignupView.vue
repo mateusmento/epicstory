@@ -3,7 +3,8 @@ import { IconGoogle } from "@/design-system/icons";
 import { useDependency } from "@/core/dependency-injection";
 import { AuthService } from "@/domain/auth/auth.service";
 import type { SignupRequest } from "@/domain/auth/dtos/signup.dto";
-import { Button, Form, FormField as Field } from "@/design-system";
+import { Form as SomeForm, Field } from "@/components/form";
+import { Button } from "@/design-system";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import type { SubmissionHandler } from "vee-validate";
@@ -72,7 +73,11 @@ async function signup(data: SignupRequest) {
           <div class="subtitle text-neutral-600">Start your journey with Epicstory.</div>
         </div>
 
-        <Form class="flex:rows-3xl" @submit="signup as SubmissionHandler<any, any>" data-testid="signup-form">
+        <SomeForm
+          class="flex:rows-3xl"
+          @submit="signup as SubmissionHandler<any, any>"
+          data-testid="signup-form"
+        >
           <Field
             class="flex:rows-xl"
             label="Name"
@@ -117,7 +122,7 @@ async function signup(data: SignupRequest) {
             <IconGoogle class="h-8" />
             Sign up with Google
           </Button>
-        </Form>
+        </SomeForm>
       </section>
     </div>
   </main>

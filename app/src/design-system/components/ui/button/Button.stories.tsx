@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/vue3";
 import Button from "./Button.vue";
 
 const meta = {
-  title: "Design System/Atoms/Button",
+  title: "Design System/Button",
   component: Button,
   render() {
     return <Button variant="outline">Hello world</Button>;

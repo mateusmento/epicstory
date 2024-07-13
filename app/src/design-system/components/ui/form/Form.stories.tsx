@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/design-system";
 import type { Meta, StoryObj } from "@storybook/vue3";
-import { ErrorMessage as FieldErrorMessage, Field, Form } from "vee-validate";
+import { Field, ErrorMessage as FieldErrorMessage, Form } from "vee-validate";
 import type { FunctionalComponent as FC } from "vue";
 
 const ErrorMessage = FieldErrorMessage as any;
@@ -16,9 +16,9 @@ const Render: FC<any, ["submitted"]> = (props, { emit }) => (
 );
 
 const meta = {
-  name: "VeeValidate/ComponentBasics",
+  title: "Design System/Form",
   component: Render,
-} as Meta<typeof Render>;
+} satisfies Meta<typeof Render>;
 
 export default meta;
 

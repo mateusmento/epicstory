@@ -1,6 +1,6 @@
 @use "sass:list";
 
-@each $size_name, $size in $sizes {
+@each $size_name, $size in $sizes_no_auto {
   .g-#{$size_name} {
     gap: #{$size};
   }

@@ -1,6 +1,5 @@
 import "reflect-metadata";
 
-import "./fonts.css";
 import "@/design-system/styles/main.css";
 import "@/design-system/styles/main.scss";
 

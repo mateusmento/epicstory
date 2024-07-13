@@ -5,7 +5,7 @@ import { toTypedSchema } from "@vee-validate/zod";
 import { z } from "zod";
 
 const meta = {
-  title: "Form/Form",
+  title: "components/Form",
   component: Form,
   tags: ["autodocs"],
 } satisfies Meta;
