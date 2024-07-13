@@ -3,9 +3,22 @@ import Button from "./Button.vue";
 
 const meta = {
   title: "Design System/Button",
+  tags: ["autodocs"],
   component: Button,
-  render() {
-    return <Button variant="outline">Hello world</Button>;
+  args: {
+    title: "Hello, world!",
+    size: "default",
+    variant: "default",
+  },
+  argTypes: {
+    title: {
+      control: { type: "text" },
+    },
+    size: { control: "select", options: ["xs", "sm", "default", "lg", "icon"] },
+    variant: {
+      control: { type: "radio" },
+      options: ["default", "destructive", "outline", "secondary", "ghost", "link"],
+    },
   },
 } satisfies Meta<typeof Button>;
 
