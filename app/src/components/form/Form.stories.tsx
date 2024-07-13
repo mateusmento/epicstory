@@ -1,33 +1,36 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
-import { Form, FormField as Field } from "../../design-system/components/ui/form";
+import { Form, Field } from "@/components/form";
 import { ref } from "vue";
-import { toTypedSchema } from "@vee-validate/zod";
-import { z } from "zod";
+import { Button } from "../button";
 
 const meta = {
-  title: "components/Form",
+  title: "Components/Form",
   component: Form,
   tags: ["autodocs"],
-} satisfies Meta;
+  render: () => ({
+    setup() {
+      const data = ref({ password: "" });
+      return () => (
+        <Form v-model={data.value} class="flex:rows-2xl w-96 mx-auto">
+          <Field name="email" label="Email" placeholder="Email..." class="flex:rows-xl" />
+          <Field
+            type="password"
+            name="password"
+            label="Password"
+            placeholder="Password..."
+            class="flex:rows-xl"
+          />
+          <Button variant="invitational" class="ml-auto">
+            Sign in
+          </Button>
+        </Form>
+      );
+    },
+  }),
+} satisfies Meta<typeof Form>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const FormDemo: Story = {
-  render: (args) => ({
-    render: () => {
-      const data = ref({ password: "" });
-      const schema = toTypedSchema(
-        z.object({
-          password: z.string().min(3),
-        }),
-      );
-      return (
-        <Form v-model={data.value} validationSchema={schema}>
-          <Field name="password" />
-        </Form>
-      );
-    },
-  }),
-};
+export const FormDemo: Story = {};

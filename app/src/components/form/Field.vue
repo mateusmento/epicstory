@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, inject, provide, ref } from "vue";
+import { computed, inject, provide, ref, type InputHTMLAttributes } from "vue";
 import Input from "./Input.vue";
 import uniqid from "uniqid";
 import { omit, pick } from "lodash";
@@ -8,11 +8,13 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = defineProps<{
+interface Props extends /* @vue-ignore */ InputHTMLAttributes {
   label?: string;
   name?: string;
   classInput?: any;
-}>();
+}
+
+const props = defineProps<Props>();
 
 const form = inject<any>("form");
 
