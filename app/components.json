@@ -11,7 +11,7 @@
   },
   "framework": "vite",
   "aliases": {
-    "components": "@/design-system/components",
-    "utils": "@/design-system/lib/utils"
+    "components": "@/design-system",
+    "utils": "@/design-system/utils"
   }
 }

@@ -2,7 +2,7 @@
 import type { ButtonHTMLAttributes, HTMLAttributes } from "vue";
 import { Primitive, type PrimitiveProps } from "radix-vue";
 import { type ButtonVariants, buttonVariants } from ".";
-import { cn } from "@/design-system/lib/utils";
+import { cn } from "@/design-system/utils";
 
 type Props = /* @vue-ignore */ ButtonHTMLAttributes &
   PrimitiveProps & {
