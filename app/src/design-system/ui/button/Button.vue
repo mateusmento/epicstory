@@ -40,7 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 <style scoped>
 .button {
-  font-weight: 600;
+  /* font-weight: 500; */
   border-color: var(--border-color);
   background-color: var(--bg-color);
   color: var(--text-color);
@@ -50,7 +50,7 @@ const props = withDefaults(defineProps<Props>(), {
     background-color 100ms;
 
   &:hover {
-    background-color: var(--active-color);
+    background-color: var(--hover-color);
   }
 }
 
@@ -58,35 +58,34 @@ const props = withDefaults(defineProps<Props>(), {
   padding: 4px 8px;
   border-radius: 4px;
   /* font-size: 0.8rem; */
-  outline-width: 2px;
+  outline-width: 1px;
 }
 
 .button--sm {
   padding: 6px 12px;
   border-radius: 6px;
   /* font-size: 0.9rem; */
-  outline-width: 3px;
+  outline-width: 1px;
 }
 
 .button--md {
   padding: 8px 16px;
   border-radius: 6px;
   /* font-size: 0.9rem; */
-  /* font-size: 1rem; */
-  outline-width: 3px;
+  outline-width: 1px;
 }
 
 .button--lg {
   padding: 16px 32px;
   border-radius: 10px;
   font-size: 1.1rem;
-  outline-width: 4px;
+  outline-width: 2px;
 }
 
 .button--xl {
   padding: 18px 64px;
   border-radius: 10px;
-  outline-width: 4px;
+  outline-width: 2px;
   font-size: 1.2rem;
 }
 
@@ -94,7 +93,7 @@ const props = withDefaults(defineProps<Props>(), {
   --border-color: #ccc;
   --bg-color: #fff;
   --text-color: var(--black);
-  --active-color: #f6f6f6;
+  --hover-color: #f6f6f6;
 
   outline-color: #dedede;
   box-shadow: 0 1px 1px #ccc;
@@ -111,7 +110,7 @@ const props = withDefaults(defineProps<Props>(), {
   --text-color: white;
   --border-color: var(--blue);
   --bg-color: var(--blue);
-  --active-color: #3734f1;
+  --hover-color: #3734f1;
 
   outline-color: #c4d5ff;
 
