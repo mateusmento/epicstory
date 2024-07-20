@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/design-system";
-import { TabsContent, TabsList, TabsRoot } from "radix-vue";
-import { ref } from "vue";
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "radix-vue";
+import { computed, ref, watch } from "vue";
 import Channels from "./Channels.vue";
 import { IconLeftCollapse } from "@/design-system/icons";
 import Workspaces from "./Workspaces.vue";
@@ -27,24 +27,26 @@ const currentWorkspace = {
 const currentSidebar = ref("");
 const isAppSidebarOpen = ref(false);
 
-function toggleSidebar(sidebar: string) {
-  isAppSidebarOpen.value = currentSidebar.value === sidebar ? !isAppSidebarOpen.value : true;
-  currentSidebar.value = sidebar;
-}
+const tabControl = computed({
+  get: () => currentSidebar.value,
+  set: (v) => {
+    isAppSidebarOpen.value = currentSidebar.value === v ? !isAppSidebarOpen.value : true;
+    currentSidebar.value = v;
+  },
+});
 </script>
 
 <template>
-  <TabsRoot as-child v-model="currentSidebar" default-value="channels">
-    <Collapsible v-model:open="isAppSidebarOpen" class="absolute inset-0">
+  <TabsRoot as-child v-model="tabControl" default-value="channels">
+    <Collapsible :open="isAppSidebarOpen" class="absolute inset-0">
       <div class="flex:cols w-full h-full bg-zinc-100">
         <!-- Navigation sidebar -->
         <aside class="flex:rows-xl p-2 w-64 text-xs text-neutral-700">
           <TabsList as-child>
-            <div class="flex:cols-auto flex:center-y">
+            <TabsTrigger as-child value="workspaces">
               <div
                 class="flex:cols-auto flex:center-y p-2 pr-4 w-full rounded-md hover:bg-zinc-200/60 cursor-pointer"
                 :class="{ 'bg-zinc-200/60 hover:bg-transparent': isAppSidebarOpen }"
-                @click="toggleSidebar('workspaces')"
               >
                 <div class="flex:rows-sm">
                   <div class="text-xs text-zinc-500">Workspace</div>
@@ -52,7 +54,7 @@ function toggleSidebar(sidebar: string) {
                 </div>
                 <IconLeftCollapse :class="{ 'scale-x-[-1]': !isAppSidebarOpen }" />
               </div>
-            </div>
+            </TabsTrigger>
             <nav class="flex:rows-md font-semibold">
               <Collapsible class="flex:rows-md">
                 <CollapsibleTrigger as-child>
@@ -75,12 +77,11 @@ function toggleSidebar(sidebar: string) {
                 </CollapsibleContent>
               </Collapsible>
 
-              <div
-                class="px-3 py-2 rounded-md text-zinc-500 hover:bg-zinc-200/60 cursor-pointer"
-                @click="toggleSidebar('channels')"
-              >
-                Channels
-              </div>
+              <TabsTrigger as-child value="channels">
+                <div class="px-3 py-2 rounded-md text-zinc-500 hover:bg-zinc-200/60 cursor-pointer">
+                  Channels
+                </div>
+              </TabsTrigger>
             </nav>
           </TabsList>
         </aside>
