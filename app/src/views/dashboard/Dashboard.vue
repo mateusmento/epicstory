@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/design-system";
+import { IconArrowDown, IconLeftCollapse } from "@/design-system/icons";
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "radix-vue";
-import IconArrowDown from "./IconArrowDown.vue";
-import IconLeftCollapise from "./IconLeftCollapise.vue";
 
 const currentWorkspace = "Epicstory";
 </script>
@@ -30,7 +29,7 @@ const currentWorkspace = "Epicstory";
               </CollapsibleTrigger>
 
               <div class="flex flex:center mx-2 p-2 rounded-md hover:bg-zinc-200/60 cursor-pointer">
-                <IconLeftCollapise />
+                <IconLeftCollapse />
               </div>
             </div>
             <nav class="flex:rows-md font-semibold">
@@ -69,11 +68,7 @@ const currentWorkspace = "Epicstory";
           class="self:fill bg-white mt-2 rounded-tl-md border border-zinc-300/60 shadow-md shadow-zinc-300/60"
         >
           <!-- Application sidebar -->
-          <CollapsibleContent
-            as="aside"
-            transition="fade"
-            class="h-full w-96 p-2 border-r border-r-zinc-300/60"
-          >
+          <CollapsibleContent as="aside" class="h-full w-96 p-2 border-r border-r-zinc-300/60">
             <TabsContent value="workspaces">My workspaces</TabsContent>
             <TabsContent value="channels">
               My channels
