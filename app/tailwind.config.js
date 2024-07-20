@@ -114,6 +114,14 @@ module.exports = {
           from: { transform: "scale(0.99)", opacity: 0 },
           to: { transform: "scale(1)", opacity: 1 },
         },
+        fadeout: {
+          from: { transform: "scale(1)", opacity: 1 },
+          to: { transform: "scale(0.99)", opacity: 0 },
+        },
+        fadein: {
+          from: { transform: "scale(0.99)", opacity: 0 },
+          to: { transform: "scale(1)", opacity: 1 },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -124,6 +132,8 @@ module.exports = {
         "collapsible-horizontally-hide": "collapsible-horizontally-hide .2s ease-in-out",
         "collapsible-fadein": "collapsible-fadein .2s ease-in-out",
         "collapsible-fadeout": "collapsible-fadeout .2s ease-in-out",
+        fadein: "fadein .2s ease-in-out",
+        fadeout: "fadeout .2s ease-in-out",
       },
     },
   },

@@ -3,6 +3,10 @@ import * as mocks from "./mocks";
 import type { RequestHandler } from "msw";
 
 export async function enableMocking() {
-  const worker = setupWorker(...Object.values(mocks).map((mock) => mock() as RequestHandler));
+  const worker = setupWorker(
+    ...Object.values(mocks)
+      .map((mock) => mock() as RequestHandler | RequestHandler[])
+      .flat(),
+  );
   await worker.start({ quiet: true });
 }

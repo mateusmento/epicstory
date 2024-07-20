@@ -48,22 +48,25 @@ async function signup(data: SignupRequest) {
         <div class="flex:space"></div>
 
         <article class="testimony m-2xl">
-          <p>
-            It's simply wonderful to still be aligned with Scrum values when communicating remotely. Epicstory
-            helped our teams to best perform when fast communication is required.
-          </p>
+          <div class="testimony-backdrop"></div>
+          <div class="testimony-content">
+            <p>
+              It's simply wonderful to still be aligned with Scrum values when communicating remotely.
+              Epicstory helped our teams to best perform when fast communication is required.
+            </p>
 
-          <figure>
-            <figcaption></figcaption>
-            <!-- <img
-              src="https://media.licdn.com/dms/image/C4D03AQFdHIdfUdeyTQ/profile-displayphoto-shrink_800_800/0/1605708160283?e=1709164800&v=beta&t=62Kg-gat3PqZ6AtuaUq1NMR4KLOXiWYc5V05HtjhNKw"
-            /> -->
-          </figure>
+            <figure>
+              <figcaption></figcaption>
+              <!-- <img
+                src="https://media.licdn.com/dms/image/C4D03AQFdHIdfUdeyTQ/profile-displayphoto-shrink_800_800/0/1605708160283?e=1709164800&v=beta&t=62Kg-gat3PqZ6AtuaUq1NMR4KLOXiWYc5V05HtjhNKw"
+              /> -->
+            </figure>
 
-          <dl>
-            <dt>Mateus Sarmento</dt>
-            <dd>Co-founder of Epicstory</dd>
-          </dl>
+            <dl>
+              <dt>Mateus Sarmento</dt>
+              <dd>Co-founder of Epicstory</dd>
+            </dl>
+          </div>
         </article>
       </aside>
 
@@ -157,14 +160,22 @@ main {
 }
 
 .testimony {
+  position: relative;
+}
+
+.testimony .testimony-content {
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
   gap: 20px;
 
-  background-color: var(--dark-blue);
   padding: 20px;
   border-radius: 10px;
+
+  background-color: var(--dark-blue);
+  // background-image: radial-gradient(transparent 1px, var(--dark-blue) 1px);
+  // background-size: 4px 4px;
+
   font-family: "Lato";
 
   p {

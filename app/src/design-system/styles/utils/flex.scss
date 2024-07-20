@@ -35,7 +35,7 @@
   }
 }
 
-@each $size_name, $size in $sizes {
+@each $size_name, $size in $sizes_no_auto {
   .flex\:rows-#{$size_name} {
     flex-direction: column;
     gap: #{$size};
@@ -66,11 +66,27 @@
 .flex\:rows-auto {
   flex-direction: column;
   justify-content: space-between;
+
+  &.flex\:center-x {
+    align-items: center;
+  }
+
+  &.flex\:center-y {
+    justify-content: center;
+  }
 }
 
 .flex\:cols-auto {
   flex-direction: row;
   justify-content: space-between;
+
+  &.flex\:center-x {
+    justify-content: center;
+  }
+
+  &.flex\:center-y {
+    align-items: center;
+  }
 }
 
 .self\:fill {

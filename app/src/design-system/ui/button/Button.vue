@@ -56,7 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 .button--th {
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   /* font-size: 0.8rem; */
   outline-width: 1px;
 }

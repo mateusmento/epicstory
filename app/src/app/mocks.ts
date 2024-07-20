@@ -31,6 +31,27 @@ export function mockCreateWorkspaceEndpoint() {
   });
 }
 
+export function mockWorkspacesEndpoint() {
+  let counter = 1;
+
+  return [
+    http.get(`${API_URL}/workspaces`, async ({ request }) => {
+      const raw = localStorage.getItem("workspaces") ?? "[]";
+      const workspaces: any[] = JSON.parse(raw);
+      return HttpResponse.json({ content: workspaces });
+    }),
+    http.post(`${API_URL}/workspaces`, async ({ request }) => {
+      const body = (await request.json()) as any;
+      const raw = localStorage.getItem("workspaces") ?? "[]";
+      const workspaces: any[] = JSON.parse(raw);
+      const workspace = { id: counter++, name: body.name };
+      workspaces.push(workspace);
+      localStorage.setItem("workspaces", JSON.stringify(workspaces));
+      return HttpResponse.json(workspace);
+    }),
+  ];
+}
+
 export function mockCreateProjectEndpoint() {
   let counter = 1;
   return http.post(`${API_URL}/workspaces/1/projects`, async ({ request }) => {

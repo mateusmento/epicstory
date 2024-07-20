@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/design-system";
+import { IconLeftCollapse, IconVerticallyCollapse, IconVerticallyExpand } from "@/design-system/icons";
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "radix-vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import Channels from "./Channels.vue";
-import { IconLeftCollapse } from "@/design-system/icons";
 import Workspaces from "./Workspaces.vue";
 
 const currentWorkspace = {
@@ -34,6 +34,8 @@ const tabControl = computed({
     currentSidebar.value = v;
   },
 });
+
+const isProjectsMenuOpen = ref(false);
 </script>
 
 <template>
@@ -56,10 +58,17 @@ const tabControl = computed({
               </div>
             </TabsTrigger>
             <nav class="flex:rows-md font-semibold">
-              <Collapsible class="flex:rows-md">
+              <Collapsible v-model:open="isProjectsMenuOpen" class="flex:rows-md">
                 <CollapsibleTrigger as-child>
-                  <div class="px-3 py-2 rounded-md text-zinc-500 hover:bg-zinc-200/60 cursor-pointer">
+                  <div
+                    class="flex:cols-auto flex:center-y px-2 py-1.5 rounded-md text-xs text-zinc-500 hover:bg-zinc-200/60 cursor-pointer"
+                  >
                     Projects
+                    <div class="flex:cols-xl flex:center-y">
+                      <div class="px-1.5 py-0.5 rounded-sm bg-zinc-300">3</div>
+                      <IconVerticallyCollapse v-if="isProjectsMenuOpen" />
+                      <IconVerticallyExpand v-else />
+                    </div>
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>

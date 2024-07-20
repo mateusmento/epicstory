@@ -4,8 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system";
 
 <template>
   <div>
-    <Tabs class="mx-auto block w-fit pt-2">
-      <TabsList>
+    <Tabs class="mx-auto block">
+      <TabsList class="w-full">
         <TabsTrigger value="messages">Messages</TabsTrigger>
         <TabsTrigger value="mentions">Mentions</TabsTrigger>
         <TabsTrigger value="threads">Threads</TabsTrigger>

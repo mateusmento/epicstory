@@ -8,7 +8,7 @@ export class WorkspaceService {
   constructor(@InjectAxios() private axios: Axios) {}
 
   findWorkspaces() {
-    return this.axios.get<Workspace[]>("workspaces").then((res) => res.data);
+    return this.axios.get<{ content: Workspace[] }>("workspaces").then((res) => res.data);
   }
 
   create(data: { name: string }) {
