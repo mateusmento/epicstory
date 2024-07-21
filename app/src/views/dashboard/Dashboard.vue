@@ -6,7 +6,7 @@ import { computed, ref } from "vue";
 import Channels from "./Channels.vue";
 import Workspaces from "./Workspaces.vue";
 
-const currentWorkspace = {
+const currentWorkspace = ref({
   name: "Epicstory",
   members: [],
   teams: [],
@@ -22,7 +22,7 @@ const currentWorkspace = {
       members: [],
     },
   ],
-};
+});
 
 const currentSidebar = ref("");
 const isAppSidebarOpen = ref(false);
@@ -65,7 +65,7 @@ const isProjectsMenuOpen = ref(false);
                   >
                     Projects
                     <div class="flex:cols-xl flex:center-y">
-                      <div class="px-1.5 py-0.5 rounded-sm bg-zinc-300">3</div>
+                      <!-- <div class="px-1.5 py-0.5 rounded-sm bg-zinc-300">3</div> -->
                       <IconVerticallyCollapse v-if="isProjectsMenuOpen" />
                       <IconVerticallyExpand v-else />
                     </div>
@@ -87,7 +87,7 @@ const isProjectsMenuOpen = ref(false);
               </Collapsible>
 
               <TabsTrigger as-child value="channels">
-                <div class="px-3 py-2 rounded-md text-zinc-500 hover:bg-zinc-200/60 cursor-pointer">
+                <div class="px-2 py-1.5 rounded-md text-zinc-500 hover:bg-zinc-200/60 cursor-pointer">
                   Channels
                 </div>
               </TabsTrigger>
@@ -101,18 +101,18 @@ const isProjectsMenuOpen = ref(false);
           <CollapsibleContent
             as="aside"
             transition="horizontal"
-            class="h-full w-96 p-4 border-r border-r-zinc-300/60"
+            class="h-full w-96 border-r border-r-zinc-300/60"
           >
             <TabsContent
               value="workspaces"
-              class="data-[state=open]:animate-collapsible-fadein data-[state=closed]:animate-collapsible-fadeout"
+              class="h-full p-4 data-[state=open]:animate-collapsible-fadein"
               :data-state="currentSidebar === 'workspaces' ? 'open' : 'closed'"
             >
-              <Workspaces :current-workspace="currentWorkspace" />
+              <Workspaces v-model:current-workspace="currentWorkspace" />
             </TabsContent>
             <TabsContent
               value="channels"
-              class="data-[state=open]:animate-collapsible-fadein data-[state=closed]:animate-collapsible-fadeout"
+              class="h-full data-[state=open]:animate-collapsible-fadein"
               :data-state="currentSidebar === 'channels' ? 'open' : 'closed'"
             >
               <Channels />
