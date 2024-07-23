@@ -18,13 +18,16 @@ async function bootstrap() {
     new ValidationPipe({
       transform: true,
       whitelist: true,
-      transformOptions: { enableImplicitConversion: true },
+      transformOptions: {
+        enableCircularCheck: true,
+        enableImplicitConversion: true,
+      },
     }),
   );
 
   setupSwagger(app);
 
-  await app.listen(3000);
+  await app.listen(config.API_PORT);
 }
 
 function setupSwagger(app: INestApplication) {
