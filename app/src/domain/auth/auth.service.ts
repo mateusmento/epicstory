@@ -2,7 +2,7 @@ import { InjectAxios } from "@/core/axios";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { SignupRequest, SignupResponse } from "./dtos/signup.dto";
-import type { SigninRequest, SigninResponse } from "./dtos/singin.dto";
+import type { AuthenticateResponse, SigninRequest, SigninResponse } from "./dtos/singin.dto";
 
 @injectable()
 export class AuthService {
@@ -14,5 +14,9 @@ export class AuthService {
 
   signin(data: SigninRequest) {
     return this.axios.post<SigninResponse>("/auth/tokens", data).then((res) => res.data);
+  }
+
+  authenticate() {
+    return this.axios.get<AuthenticateResponse>("/auth/tokens/current").then((res) => res.data);
   }
 }

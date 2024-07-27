@@ -1,7 +1,8 @@
 import { create } from 'src/core/objects';
 import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { WorkspaceRole } from '../values/workspace-role.value';
+import { User } from 'src/auth/domain/entities/user.entity';
 
 @Entity({ schema: WORKSPACE_SCHEMA })
 export class WorkspaceMember {
@@ -13,6 +14,9 @@ export class WorkspaceMember {
 
   @Column()
   userId: number;
+
+  @ManyToOne(() => User)
+  user: User;
 
   @Column()
   role: WorkspaceRole;

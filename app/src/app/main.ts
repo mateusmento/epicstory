@@ -13,11 +13,11 @@ import { createDependenciesPlugin } from "@/core/dependency-injection";
 async function main() {
   const app = createApp(App);
 
-  app.use(createPinia());
-  app.use(router);
-
   const dependencies = await createDependencies();
   app.use(createDependenciesPlugin(dependencies));
+
+  app.use(createPinia());
+  app.use(router);
 
   app.mount("#app");
 }

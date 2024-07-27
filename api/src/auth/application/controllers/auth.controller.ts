@@ -1,4 +1,13 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Request, Response } from 'express';
 import { AppConfig } from 'src/core/app.config';
@@ -16,6 +25,12 @@ export class AuthController {
   @Post('users')
   signup(@Body() command: Signup) {
     return this.commandBus.execute(command);
+  }
+
+  @Get('tokens/current')
+  getToken(@Req() request: Request) {
+    if (!request.user) throw new UnauthorizedException();
+    return { user: request.user };
   }
 
   @Post('tokens')

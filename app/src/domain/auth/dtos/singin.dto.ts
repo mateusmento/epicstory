@@ -7,3 +7,7 @@ export type SigninResponse = {
   token: string;
   user: any;
 };
+
+export type AuthenticateResponse = {
+  user: any;
+};

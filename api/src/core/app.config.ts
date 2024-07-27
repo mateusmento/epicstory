@@ -23,6 +23,7 @@ export class AppConfig {
   JWT_SECRET: string;
 
   @IsNumber()
+  @Transform(({ value }) => +value)
   JWT_EXPIRES_IN: number;
 
   @IsNotEmpty()

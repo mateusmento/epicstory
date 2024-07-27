@@ -8,6 +8,8 @@ import { AppConfig } from './core/app.config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.setGlobalPrefix('/api');
+
   const config = app.get(AppConfig);
 
   app.enableCors({
