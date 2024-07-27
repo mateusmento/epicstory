@@ -4,12 +4,40 @@ import {
   IconArrowDown,
   IconChannel,
   IconContacts,
-  IconHashtag,
   IconInbox,
   IconMention,
   IconSearch,
   IconThreads,
 } from "@/design-system/icons";
+import { type InboxMessage } from "@/domain/channels/types";
+import VInboxMessage from "./InboxMessage.vue";
+
+const messages: InboxMessage[] = [
+  {
+    id: 1,
+    channel: { type: "direct" },
+    sender: { name: "Leon", image: "/images/leon.png" },
+    sentAt: "14min ago",
+    content: "Leon is typing something...",
+    unreadMessagesCount: 0,
+  },
+  {
+    id: 2,
+    channel: { type: "group" },
+    sender: { name: "#tech-help", image: "/images/hashtag.svg" },
+    sentAt: "3h ago",
+    content: "It seems to be a bug in latest version...",
+    unreadMessagesCount: 2,
+  },
+  {
+    id: 3,
+    channel: { type: "direct" },
+    sender: { name: "Daiana", image: "/images/daiana.png" },
+    sentAt: "3h ago",
+    content: "Hey, Mateus! The proposal is great and...",
+    unreadMessagesCount: 1,
+  },
+];
 </script>
 
 <template>
@@ -46,42 +74,13 @@ import {
       </TabsList>
     </div>
     <TabsContent value="messages" class="flex:rows self:fill">
-      <div class="flex:cols-2xl flex:center-y p-4 border-t hover:bg-neutral-200/60 cursor-pointer">
-        <img src="@/assets/images/leon.png" class="w-10 h-10" />
-        <div class="self:fill flex:rows-md">
-          <div class="flex:cols-auto flex:center-y">
-            <div class="text-base font-semibold text-zinc-800">Leon</div>
-            <div class="text-xs text-zinc-500">14min ago</div>
-          </div>
-          <div class="text-sm text-zinc-500">Leon is typing something...</div>
-        </div>
-      </div>
-      <div class="flex:cols-2xl flex:center-y p-4 border-t hover:bg-neutral-200/60 cursor-pointer">
-        <IconHashtag class="w-10 h-10" />
-        <div class="self:fill flex:rows-md">
-          <div class="flex:cols-auto flex:center-y">
-            <div class="text-base font-semibold text-zinc-800">#tech-help</div>
-            <div class="text-xs text-zinc-500">3h ago</div>
-          </div>
-          <div class="flex:cols-auto flex:center-y">
-            <div class="text-sm text-zinc-800">It seems to be a bug in latest version...</div>
-            <div class="w-fit px-1 py-0 rounded-sm bg-zinc-200 text-xs text-zinc-500">2</div>
-          </div>
-        </div>
-      </div>
-      <div class="flex:cols-2xl flex:center-y p-4 border-t hover:bg-neutral-200/60 cursor-pointer">
-        <img src="@/assets/images/daiana.png" class="w-10 h-10" />
-        <div class="self:fill flex:rows-md">
-          <div class="flex:cols-auto flex:center-y">
-            <div class="text-base font-semibold text-zinc-800">Daiana</div>
-            <div class="text-xs text-zinc-500">3h ago</div>
-          </div>
-          <div class="flex:cols-auto flex:center-y">
-            <div class="text-sm text-zinc-800">Hey, Mateus! The proposal is great and...</div>
-            <div class="w-fit px-1 py-0 rounded-sm bg-zinc-200 text-xs text-zinc-500">1</div>
-          </div>
-        </div>
-      </div>
+      <v-inbox-message
+        v-for="message of messages"
+        :key="message.id"
+        :image="message.channel.type === 'direct' ? message.sender.image : '/images/hashtag.svg'"
+        :message="message"
+      />
+
       <div class="w-fit mt-4 mx-auto text-xs text-zinc-500">You have no more messages</div>
       <Button
         legacy
