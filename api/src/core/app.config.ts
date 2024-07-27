@@ -22,6 +22,9 @@ export class AppConfig {
   @IsNotEmpty()
   JWT_SECRET: string;
 
+  @IsNumber()
+  JWT_EXPIRES_IN: number;
+
   @IsNotEmpty()
   GOOGLE_CLIENT_ID: string;
 

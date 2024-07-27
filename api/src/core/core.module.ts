@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TypedConfigModule, dotenvLoader } from 'nest-typed-config';
 import { AppConfig } from './app.config';
+import { JwtStrategy } from './auth/jwt.strategy';
 
 @Global()
 @Module({
@@ -15,5 +16,6 @@ import { AppConfig } from './app.config';
     CqrsModule.forRoot(),
     EventEmitterModule.forRoot({ global: true }),
   ],
+  providers: [JwtStrategy],
 })
 export class CoreModule {}
