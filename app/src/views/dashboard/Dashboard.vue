@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { Collapsible, CollapsibleContent } from "@/design-system";
-import { useWorkspace } from "@/domain/workspace/composables/workspace";
+import { useWorkspace } from "@/domain/workspace";
 import { TabsContent, TabsRoot } from "radix-vue";
 import { computed, ref } from "vue";
-import Channels from "./Channels.vue";
-import Projects from "./Projects.vue";
-import Workspaces from "./Workspaces.vue";
+import Channels from "./channels/Channels.vue";
+import Projects from "./projects/Projects.vue";
+import Workspaces from "./workspaces/Workspaces.vue";
 import NavigationSidebar from "./NavigationSidebar.vue";
+import WorkspaceMembers from "./workspace-members/WorkspaceMembers.vue";
+import { Teams } from "./teams";
 
 const { workspace } = useWorkspace();
 
@@ -56,6 +58,20 @@ const tabControl = computed({
               :data-state="currentSidebar === 'channels' ? 'open' : 'closed'"
             >
               <Channels />
+            </TabsContent>
+            <TabsContent
+              value="teams"
+              class="h-full p-4 data-[state=open]:animate-collapsible-fadein"
+              :data-state="currentSidebar === 'teams' ? 'open' : 'closed'"
+            >
+              <Teams v-model:current-workspace="workspace" />
+            </TabsContent>
+            <TabsContent
+              value="workspace-members"
+              class="h-full p-4 data-[state=open]:animate-collapsible-fadein"
+              :data-state="currentSidebar === 'workspace-members' ? 'open' : 'closed'"
+            >
+              <WorkspaceMembers v-model:current-workspace="workspace" />
             </TabsContent>
           </CollapsibleContent>
         </main>
