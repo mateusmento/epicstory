@@ -1,28 +1,14 @@
 <script setup lang="ts">
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/design-system";
-import { IconLeftCollapse, IconVerticallyCollapse, IconVerticallyExpand } from "@/design-system/icons";
-import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "radix-vue";
+import { Collapsible, CollapsibleContent } from "@/design-system";
+import { useWorkspace } from "@/domain/workspace/composables/workspace";
+import { TabsContent, TabsRoot } from "radix-vue";
 import { computed, ref } from "vue";
 import Channels from "./Channels.vue";
+import Projects from "./Projects.vue";
 import Workspaces from "./Workspaces.vue";
+import NavigationSidebar from "./NavigationSidebar.vue";
 
-const currentWorkspace = ref({
-  name: "Epicstory",
-  members: [],
-  teams: [],
-  projects: [
-    {
-      name: "Epicstory Design System",
-      team: [],
-      members: [],
-    },
-    {
-      name: "Epicstory App",
-      team: [],
-      members: [],
-    },
-  ],
-});
+const { workspace } = useWorkspace();
 
 const currentSidebar = ref("");
 const isAppSidebarOpen = ref(false);
@@ -34,66 +20,13 @@ const tabControl = computed({
     currentSidebar.value = v;
   },
 });
-
-const isProjectsMenuOpen = ref(false);
 </script>
 
 <template>
   <TabsRoot as-child v-model="tabControl" default-value="channels">
     <Collapsible :open="isAppSidebarOpen" class="absolute inset-0">
       <div class="flex:cols w-full h-full bg-zinc-100">
-        <!-- Navigation sidebar -->
-        <aside class="flex:rows-xl p-2 w-64 text-xs text-neutral-700">
-          <TabsList as-child>
-            <TabsTrigger as-child value="workspaces">
-              <div
-                class="flex:cols-auto flex:center-y p-2 pr-4 w-full rounded-md hover:bg-zinc-200/60 cursor-pointer"
-                :class="{ 'bg-zinc-200/60 hover:bg-transparent': isAppSidebarOpen }"
-              >
-                <div class="flex:rows-sm">
-                  <div class="text-xs text-zinc-500">Workspace</div>
-                  <div class="text-lg text-neutral-800">{{ currentWorkspace.name }}</div>
-                </div>
-                <IconLeftCollapse :class="{ 'scale-x-[-1]': !isAppSidebarOpen }" />
-              </div>
-            </TabsTrigger>
-            <nav class="flex:rows-md font-semibold">
-              <Collapsible v-model:open="isProjectsMenuOpen" class="flex:rows-md">
-                <CollapsibleTrigger as-child>
-                  <div
-                    class="flex:cols-auto flex:center-y px-2 py-1.5 rounded-md text-xs text-zinc-500 hover:bg-zinc-200/60 cursor-pointer"
-                  >
-                    Projects
-                    <div class="flex:cols-xl flex:center-y">
-                      <!-- <div class="px-1.5 py-0.5 rounded-sm bg-zinc-300">3</div> -->
-                      <IconVerticallyCollapse v-if="isProjectsMenuOpen" />
-                      <IconVerticallyExpand v-else />
-                    </div>
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div class="flex:rows-sm px-1 rounded-sm font-normal">
-                    <div class="px-2 py-1 w-fit rounded-sm text-zinc-500 hover:font-semibold cursor-pointer">
-                      Clients
-                    </div>
-                    <div class="px-2 py-1 w-fit rounded-sm text-zinc-500 hover:font-semibold cursor-pointer">
-                      Designers
-                    </div>
-                    <div class="px-2 py-1 w-fit rounded-sm text-zinc-500 hover:font-semibold cursor-pointer">
-                      Developers
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-              <TabsTrigger as-child value="channels">
-                <div class="px-2 py-1.5 rounded-md text-zinc-500 hover:bg-zinc-200/60 cursor-pointer">
-                  Channels
-                </div>
-              </TabsTrigger>
-            </nav>
-          </TabsList>
-        </aside>
+        <NavigationSidebar :is-app-sidebar-open="isAppSidebarOpen" />
         <main
           class="self:fill bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
         >
@@ -108,7 +41,14 @@ const isProjectsMenuOpen = ref(false);
               class="h-full p-4 data-[state=open]:animate-collapsible-fadein"
               :data-state="currentSidebar === 'workspaces' ? 'open' : 'closed'"
             >
-              <Workspaces v-model:current-workspace="currentWorkspace" />
+              <Workspaces v-model:current-workspace="workspace" />
+            </TabsContent>
+            <TabsContent
+              value="projects"
+              class="h-full p-4 data-[state=open]:animate-collapsible-fadein"
+              :data-state="currentSidebar === 'projects' ? 'open' : 'closed'"
+            >
+              <Projects v-if="workspace" :workspace="workspace" />
             </TabsContent>
             <TabsContent
               value="channels"

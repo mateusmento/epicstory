@@ -1,5 +1,5 @@
 import { InjectAxios } from "@/core/axios";
-import type { Project } from "@/domain/project/project.type";
+import type { Project } from "../types/project.type";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 

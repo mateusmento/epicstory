@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { computed, inject, provide, ref, type InputHTMLAttributes } from "vue";
-import Input from "./Input.vue";
-import uniqid from "uniqid";
+import { FormControl, FormField, FormItem, FormLabel, Input } from "@/design-system";
 import { omit, pick } from "lodash";
+import uniqid from "uniqid";
+import { computed, inject, provide, ref, type InputHTMLAttributes } from "vue";
 
 defineOptions({
   inheritAttrs: false,
@@ -40,16 +40,14 @@ const fieldId = computed(() => uniqid(props.name ? props.name + "-" : ""));
 </script>
 
 <template>
-  <div class="field" v-bind="pick($attrs, 'class', 'id') as any">
-    <label v-if="label" class="text-neutral-800" :for="fieldId">{{ label }}</label>
-    <slot>
-      <Input v-bind="omit($attrs, 'class', 'id')" :id="fieldId" :class="classInput" />
-    </slot>
-  </div>
+  <FormField v-slot="{ componentField }" v-bind="omit($attrs, 'class', 'id')" name="email" required>
+    <FormItem v-bind="pick($attrs, 'class', 'id') as any">
+      <FormLabel v-if="label" class="text-neutral-800" :for="fieldId">{{ label }}</FormLabel>
+      <FormControl>
+        <Input v-bind="componentField" :id="fieldId" :class="classInput" />
+      </FormControl>
+    </FormItem>
+  </FormField>
 </template>
 
-<style scoped>
-.field {
-  /* color: #aaa; */
-}
-</style>
+<style scoped></style>

@@ -1,7 +1,8 @@
 import { InjectAxios } from "@/core/axios";
-import type { Project, Workspace } from "@/domain/workspace/workspace.types";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
+import type { Project, Workspace } from "../types/workspace.type";
+import type { WorkspaceMember } from "../types";
 
 @injectable()
 export class WorkspaceService {
@@ -20,7 +21,7 @@ export class WorkspaceService {
   }
 
   findMembers(workspaceId: number) {
-    return this.axios.get(`workspaces/${workspaceId}/members`).then((res) => res.data);
+    return this.axios.get<WorkspaceMember[]>(`workspaces/${workspaceId}/members`).then((res) => res.data);
   }
 
   addMember(workspaceId: number, data: { userId: number }) {

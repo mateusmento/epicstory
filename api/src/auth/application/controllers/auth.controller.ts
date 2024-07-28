@@ -14,6 +14,7 @@ import { AppConfig } from 'src/core/app.config';
 import { Signin } from '../features/signin.command';
 import { Signup } from '../features/signup.command';
 import { LocalAuthGuard } from '../passport/local.strategy';
+import { JwtAuthGuard } from 'src/core/auth/jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
@@ -28,6 +29,7 @@ export class AuthController {
   }
 
   @Get('tokens/current')
+  @UseGuards(JwtAuthGuard)
   getToken(@Req() request: Request) {
     if (!request.user) throw new UnauthorizedException();
     return { user: request.user };

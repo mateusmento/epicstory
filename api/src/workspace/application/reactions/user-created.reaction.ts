@@ -19,6 +19,8 @@ export class UserCreatedReaction {
       }),
     );
 
+    console.log(workspace);
+
     await this.commandBus.execute(
       create(CreateProject, {
         name: `My project`,

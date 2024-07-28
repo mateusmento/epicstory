@@ -1,5 +1,6 @@
 import { useDependency } from "@/core/dependency-injection";
 import { AuthService } from "@/domain/auth/auth.service";
+import { useAuthStore } from "@/domain/auth/user.store";
 import { isAxiosError } from "axios";
 import {
   createRouter,
@@ -46,9 +47,11 @@ const openRoutes = defineRoutes({
 const authenticatedRoutes = defineRoutes({
   beforeEnter: async (to, from, next) => {
     const authService = useDependency(AuthService);
+    const authStore = useAuthStore();
 
     try {
-      await authService.authenticate();
+      const { user } = await authService.authenticate();
+      authStore.user = user;
       next();
     } catch (ex) {
       if (isAxiosError(ex) && ex.response?.status === 401) {
@@ -61,12 +64,6 @@ const authenticatedRoutes = defineRoutes({
   routes: [
     {
       path: "/",
-      name: "home",
-      component: () => import("@/views/HomeView.vue"),
-    },
-    {
-      path: "/dashboard",
-      name: "/dashboard",
       component: () => import("@/views/dashboard/Dashboard.vue"),
     },
   ],

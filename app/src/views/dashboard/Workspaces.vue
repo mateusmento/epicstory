@@ -1,43 +1,31 @@
 <script setup lang="ts">
-import { useDependency } from "@/core/dependency-injection";
 import {
   Button,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  Input,
+  Field,
+  Form,
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/design-system";
-import { WorkspaceService } from "@/domain/workspace/workspace.service";
-import { onMounted, reactive, ref } from "vue";
+import { useWorkspace, useWorkspaces } from "@/domain/workspace";
+import { onMounted } from "vue";
+import WorkspaceMembers from "./WorkspaceMembers.vue";
 
 const currentWorkspace = defineModel<{
   id?: number;
   name: string;
 }>("currentWorkspace");
 
-const workspaceService = useDependency(WorkspaceService);
-const workspaces = ref<any[]>([]);
-const workspaceData = reactive({
-  name: "",
-});
+const { workspaces, createWorkspace, fetchWorkspaces } = useWorkspaces();
+const { selectWorkspace } = useWorkspace();
 
 onMounted(async () => {
-  const { content } = await workspaceService.findWorkspaces();
-  workspaces.value = content;
+  fetchWorkspaces();
 });
-
-async function addWorkspace() {
-  const workspace = await workspaceService.createWorkspace(workspaceData.name);
-  workspaces.value.push(workspace);
-  workspaceData.name = "";
-}
-
-async function selectWorkspace(workspace: any) {
-  currentWorkspace.value = workspace;
-}
 </script>
 
 <template>
@@ -62,10 +50,15 @@ async function selectWorkspace(workspace: any) {
               >
             </div>
             <CollapsibleContent>
-              <div class="p-0.5 flex:cols-md">
-                <Input v-model="workspaceData.name" class="p-1 h-fit text-xs bg-white" />
-                <Button size="xs" @click="addWorkspace" class="px-2 py-0 h-auto text-xs">Add</Button>
-              </div>
+              <Form @submit="createWorkspace as any" class="p-0.5 flex:cols-md">
+                <Field
+                  name="name"
+                  placeholder="Create workspace..."
+                  class="self:fill"
+                  :classes="{ input: 'p-1 h-fit text-xs bg-white' }"
+                />
+                <Button size="xs" class="px-2 py-0 h-auto text-xs">Add</Button>
+              </Form>
             </CollapsibleContent>
 
             <div
@@ -88,6 +81,9 @@ async function selectWorkspace(workspace: any) {
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
+        <TabsContent value="members">
+          <WorkspaceMembers />
+        </TabsContent>
       </Tabs>
     </div>
   </div>

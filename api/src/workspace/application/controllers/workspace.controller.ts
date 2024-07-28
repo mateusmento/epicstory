@@ -37,8 +37,11 @@ export class WorkspaceController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findWorkspaces(@Auth() issuer: Issuer) {
-    return this.queryBus.execute(new FindWorkspaces({ issuerId: issuer.id }));
+  async findWorkspaces(@Auth() issuer: Issuer) {
+    const content = await this.queryBus.execute(
+      new FindWorkspaces({ issuerId: issuer.id }),
+    );
+    return { content };
   }
 
   @Post()

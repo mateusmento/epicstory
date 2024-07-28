@@ -5,3 +5,4 @@ export { default as FormControl } from "./FormControl.vue";
 export { default as FormMessage } from "./FormMessage.vue";
 export { default as FormDescription } from "./FormDescription.vue";
 export { FORM_ITEM_INJECTION_KEY } from "./injectionKeys";
+export { default as Field } from "./Field.vue";

@@ -3,7 +3,7 @@ import { injectWithTransform } from "tsyringe";
 import type { Transform } from "tsyringe/dist/typings/types";
 
 export function createAxios(options?: CreateAxiosDefaults) {
-  return axios.create(options);
+  return axios.create({ ...options, withCredentials: true });
 }
 
 class TransformAxios implements Transform<Axios, Axios> {

@@ -1,3 +1,5 @@
+import type { User } from "../user.type";
+
 export type SigninRequest = {
   email: string;
   password: string;
@@ -5,9 +7,9 @@ export type SigninRequest = {
 
 export type SigninResponse = {
   token: string;
-  user: any;
+  user: User;
 };
 
 export type AuthenticateResponse = {
-  user: any;
+  user: User;
 };
