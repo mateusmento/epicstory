@@ -43,5 +43,6 @@ import { FindTeamsQuery } from './application/features/find-teams.query';
     CreateTeamCommand,
     UserCreatedReaction,
   ],
+  exports: [WorkspaceRepository],
 })
 export class WorkspaceModule {}

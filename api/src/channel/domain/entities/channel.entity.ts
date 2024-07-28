@@ -1,3 +1,4 @@
+import { create } from 'src/core/objects';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 const CHANNEL_SCHEMA = 'channel';
@@ -10,4 +11,8 @@ export class Channel {
   name: string;
   @Column()
   workspaceId: number;
+
+  static create(data: { workspaceId: number; name: string }) {
+    return create(Channel, data);
+  }
 }
