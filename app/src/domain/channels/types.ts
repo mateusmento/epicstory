@@ -1,8 +1,15 @@
-export type InboxMessage = {
+export type Message = {
   id: number;
-  channel: { type: "direct" | "group" };
   sender: { name: string; image: string };
   sentAt: string;
   content: string;
   unreadMessagesCount: number;
+};
+
+export type Channel = {
+  id: number;
+  type: "direct" | "group";
+  name?: string;
+  image?: string;
+  lastMessage: Message;
 };

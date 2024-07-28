@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import type { InboxMessage } from "@/domain/channels/types";
+import type { Channel } from "@/domain/channels/types";
+import { computed } from "vue";
 
-defineProps<{
-  image: string;
-  message: InboxMessage;
+const props = defineProps<{
+  channel: Channel;
 }>();
+
+const message = computed(() => props.channel.lastMessage);
+const image = computed(() =>
+  props.channel.type === "direct" ? props.channel.lastMessage.sender.image : "/images/hashtag.svg",
+);
 </script>
 
 <template>
@@ -12,7 +17,9 @@ defineProps<{
     <img :src="image" class="w-10 h-10" />
     <div class="self:fill flex:rows-md">
       <div class="flex:cols-auto flex:center-y">
-        <div class="text-base font-semibold text-zinc-800">{{ message.sender.name }}</div>
+        <div class="text-base font-semibold text-zinc-800">
+          {{ channel.type === "direct" ? message.sender.name : channel.name }}
+        </div>
         <div class="text-xs text-zinc-500">{{ message.sentAt }}</div>
       </div>
       <div class="flex:cols-auto flex:center-y">
