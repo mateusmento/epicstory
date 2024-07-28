@@ -2,12 +2,15 @@ import { useDependency } from "@/core/dependency-injection";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
 import { WorkspaceService } from "../services";
-import type { Workspace, WorkspaceMember } from "../types";
+import type { Project, Team, Workspace, WorkspaceMember } from "../types";
 
 const useWorkspaceStore = defineStore("workspace", () => {
   const workspace = ref<Workspace>();
   const members = ref<WorkspaceMember[]>([]);
-  return { workspace, members };
+  const teams = ref<Team[]>([]);
+  const projects = ref<Project[]>([]);
+
+  return { workspace, members, teams, projects };
 });
 
 export function useWorkspace() {
@@ -26,7 +29,31 @@ export function useWorkspace() {
 
   async function addWorkspaceMember(userId: number) {
     if (!store.workspace) return;
-    await workspaceService.addMember(store.workspace.id, { userId });
+    const member = await workspaceService.addMember(store.workspace.id, { userId });
+    store.members.push(member);
+  }
+
+  async function fetchProjects() {
+    if (!store.workspace) return;
+    store.projects = await workspaceService.findProjects(store.workspace.id);
+  }
+
+  async function createProject(data: { name: string }) {
+    if (!store.workspace) return;
+    const project = await workspaceService.createProject(store.workspace.id, data);
+    store.projects.push(project);
+  }
+
+  async function fetchTeams() {
+    if (!store.workspace) return;
+    store.teams = await workspaceService.findTeams(store.workspace.id);
+  }
+
+  async function createTeam(name: string, members: WorkspaceMember[] = []) {
+    if (!store.workspace) return;
+    const ids = members.map((m) => m.id);
+    const team = await workspaceService.createTeam(store.workspace.id, { name, members: ids });
+    store.teams.push(team);
   }
 
   return {
@@ -34,5 +61,9 @@ export function useWorkspace() {
     selectWorkspace,
     fetchWorkspaceMembers,
     addWorkspaceMember,
+    fetchProjects,
+    createProject,
+    fetchTeams,
+    createTeam,
   };
 }

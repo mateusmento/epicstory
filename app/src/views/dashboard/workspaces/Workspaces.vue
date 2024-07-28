@@ -34,16 +34,16 @@ onMounted(async () => {
       <div class="text-xs text-zinc-500">Workspace</div>
       <div class="flex:cols-xl">
         <div class="text-lg text-neutral-800">{{ currentWorkspace?.name }}</div>
-        <Button variant="outline" size="xs" class="text-xs text-zinc-500">Switch</Button>
+        <!-- <Button variant="outline" size="xs" class="text-xs text-zinc-500">Switch</Button> -->
       </div>
     </div>
     <Collapsible>
       <div class="flex:rows-md p-1 rounded-md bg-zinc-100 text-zinc-500 text-sm">
         <div class="flex:cols-auto flex:center-y px-2 py-1 font-semibold select-none">
           Workspaces
-          <CollapsibleTrigger class="px-1.5 py-0.5 rounded-sm hover:bg-zinc-200 cursor-pointer"
-            >+</CollapsibleTrigger
-          >
+          <CollapsibleTrigger class="px-1.5 py-0.5 rounded-sm hover:bg-zinc-200 cursor-pointer">
+            +
+          </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
           <Form @submit="createWorkspace as any" class="p-0.5 flex:cols-md">

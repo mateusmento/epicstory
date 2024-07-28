@@ -27,6 +27,7 @@ import { FindWorkspaceMembers } from '../features/find-workspace-members.query';
 import { FindWorkspaces } from '../features/find-workspaces.query';
 import { RemoveWorkspaceMember } from '../features/remove-workspace.member.command';
 import { UpdateWorkspaceMember } from '../features/update-workspace-member.command';
+import { FindTeams } from '../features/find-teams.query';
 
 @Controller('workspaces')
 export class WorkspaceController {
@@ -133,8 +134,15 @@ export class WorkspaceController {
     );
   }
 
+  @Get(':id/teams')
+  @UseGuards(JwtAuthGuard)
+  findTeams(@Param('id') workspaceId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(new FindTeams({ workspaceId, issuer }));
+  }
+
   @Post(':id/teams')
   @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
   createTeam(
     @Param('id') workspaceId: number,
     @Body() command: CreateTeam,
