@@ -7,14 +7,29 @@ export class AppConfig {
   API_PORT: number = process.env.NODE_ENV === 'production' ? 80 : 3000;
 
   @IsNotEmpty()
-  DATABASE_NAME: string = 'epicstory';
-
-  @IsNotEmpty()
   @Transform(({ value }) => value.split(',').map((v) => v.trim()))
   CORS_ORIGINS: string[] =
     process.env.NODE_ENV === 'production'
       ? []
       : ['http://localhost:8080', 'http://localhost:4173'];
+
+  @IsNotEmpty()
+  DATABASE_NAME: string = 'epicstory';
+
+  @IsNotEmpty()
+  DATABASE_USER: string;
+
+  @IsNotEmpty()
+  DATABASE_PASSWORD: string;
+
+  @IsNotEmpty()
+  DATABASE_HOST: string;
+
+  @IsNotEmpty()
+  DATABASE_MIGRATION_HOST: string;
+
+  @IsNotEmpty()
+  DATABASE_PORT: number;
 
   @IsNotEmpty()
   COOKIE_SECRET: string;
