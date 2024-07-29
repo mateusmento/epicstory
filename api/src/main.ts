@@ -1,11 +1,19 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import {
+  ClassSerializerInterceptor,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AppConfig } from './core/app.config';
+import { initializeTransactionalContext } from 'typeorm-transactional';
 
 async function bootstrap() {
+  process.env.TZ = 'America/Sao_Paulo';
+  initializeTransactionalContext();
+
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('/api');
@@ -30,8 +38,11 @@ async function bootstrap() {
     }),
   );
 
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
   setupSwagger(app);
 
+  app.enableShutdownHooks();
   await app.listen(config.API_PORT);
 }
 

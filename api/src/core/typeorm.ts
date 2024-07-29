@@ -1,7 +1,8 @@
 import { AppConfig } from './app.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { patch } from './objects';
-import { DataSourceOptions } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
+import { addTransactionalDataSource } from 'typeorm-transactional';
 
 export const createTypeOrmModule = (
   options: (
@@ -10,6 +11,8 @@ export const createTypeOrmModule = (
 ) =>
   TypeOrmModule.forRootAsync({
     inject: [AppConfig],
+    dataSourceFactory: async (config) =>
+      addTransactionalDataSource(new DataSource(config)),
     useFactory: async (config: AppConfig) =>
       patch(
         {
