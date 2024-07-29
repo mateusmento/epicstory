@@ -1,11 +1,23 @@
 import { useDependency } from "@/core/dependency-injection";
 import { defineStore, storeToRefs } from "pinia";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { WorkspaceService } from "../services";
 import type { Project, Team, Workspace, WorkspaceMember } from "../types";
 
+const getLocalStorage = (name: string) => {
+  const json = localStorage.getItem(name);
+  return json ? JSON.parse(json) : null;
+};
+
+const setLocalStorage = (name: string, value: Record<any, any> | null) => {
+  if (value) localStorage.setItem(name, JSON.stringify(value));
+  else localStorage.removeItem(name);
+};
+
 const useWorkspaceStore = defineStore("workspace", () => {
-  const workspace = ref<Workspace>();
+  const workspace = ref<Workspace | null>(getLocalStorage("workspace"));
+  watch(workspace, (value) => setLocalStorage("workspace", value));
+
   const members = ref<WorkspaceMember[]>([]);
   const teams = ref<Team[]>([]);
   const projects = ref<Project[]>([]);

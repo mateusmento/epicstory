@@ -34,5 +34,6 @@ import { UserRepository } from './infrastructure/repositories/user.repository';
     AuthenticateCommand,
     SigninCommand,
   ],
+  exports: [UserRepository, JwtModule],
 })
 export class AuthModule {}

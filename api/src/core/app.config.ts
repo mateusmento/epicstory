@@ -19,6 +19,10 @@ export class AppConfig {
   @IsNotEmpty()
   COOKIE_SECRET: string;
 
+  @IsNumber()
+  @Transform(({ value }) => +value)
+  PASSWORD_ROUNDS: number;
+
   @IsNotEmpty()
   JWT_SECRET: string;
 

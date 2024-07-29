@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { FindChannels } from '../features/find-channels.query';
-import { CreateChannel } from '../features/create-channel.command';
+import { CreateChannel } from '../features/create-direct-channel.command';
 
 @Controller('workspaces/:workspaceId/channels')
 export class ChannelController {

@@ -5,6 +5,7 @@ import { IsEmail, IsNotEmpty } from 'class-validator';
 import { UserCreatedEvent } from 'src/auth/contracts/user-created.event';
 import { User } from 'src/auth/domain/entities/user.entity';
 import { UserRepository } from 'src/auth/infrastructure/repositories/user.repository';
+import { AppConfig } from 'src/core/app.config';
 
 export class Signup {
   @IsNotEmpty()
@@ -20,10 +21,11 @@ export class SignupCommand implements ICommandHandler<Signup> {
   constructor(
     private userRepo: UserRepository,
     private eventEmitter: EventEmitter2,
+    private config: AppConfig,
   ) {}
 
   async execute({ name, email, password }: Signup) {
-    password = await hash(password, await genSalt(10));
+    password = await hash(password, await genSalt(this.config.PASSWORD_ROUNDS));
     const user = await this.userRepo.save(
       User.create({ name, email, password }),
     );

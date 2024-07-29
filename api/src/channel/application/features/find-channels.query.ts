@@ -24,6 +24,24 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
   async execute({ issuer, workspaceId }: FindChannels) {
     const member = await this.workspaceRepo.findMember(workspaceId, issuer.id);
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
-    return this.channelRepo.find({ where: { workspaceId } });
+
+    const channels = await this.channelRepo
+      .createQueryBuilder('c')
+      // .innerJoin('c.peers', 'peer', 'peer.id = :userId', { userId: issuer.id })
+      .leftJoinAndSelect('c.peers', 'p')
+      .leftJoinAndSelect('c.meeting', 'm')
+      .leftJoinAndSelect('c.lastMessage', 'msg')
+      .where('c.workspaceId = :workspaceId', { workspaceId })
+      .orderBy(
+        'CASE WHEN msg.id is null THEN c.createdAt ELSE msg.sentAt END',
+        'DESC',
+      )
+      .getMany();
+
+    for (const channel of channels)
+      if (channel.type === 'direct')
+        channel.speakingTo = channel.peers.find((p) => p.id !== issuer.id);
+
+    return channels;
   }
 }
