@@ -23,7 +23,7 @@ import {
 } from "@/design-system/icons";
 import { useChannels } from "@/domain/channels/composables/channels";
 import type { Channel } from "@/domain/channels/types";
-import VInboxMessage from "./InboxMessage.vue";
+import InboxMessage from "./InboxMessage.vue";
 import { computed } from "vue";
 
 const { channels, createChannel } = useChannels();
@@ -66,7 +66,15 @@ const mock: Channel[] = [
   },
 ];
 
-const augmentedChannels = computed(() => channels.value.map((c) => mock.find((m) => m.id === c.id) ?? c));
+const augmentedChannels = computed(() =>
+  channels.value.map(
+    (c) =>
+      mock.find((m) => m.id === c.id) ?? {
+        ...c,
+        lastMessage: { ...c.lastMessage, sender: { name: "Daiana", image: "/images/daiana.png" } },
+      },
+  ),
+);
 </script>
 
 <template>
@@ -103,7 +111,7 @@ const augmentedChannels = computed(() => channels.value.map((c) => mock.find((m)
       </TabsList>
     </div>
     <TabsContent value="messages" class="flex:rows self:fill">
-      <v-inbox-message v-for="channel of augmentedChannels" :key="channel.id" :channel="channel" />
+      <InboxMessage v-for="channel of augmentedChannels" :key="channel.id" :channel="channel" />
 
       <div class="w-fit mt-4 mx-auto text-xs text-zinc-500">You have no more messages</div>
       <Dialog>
