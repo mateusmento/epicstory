@@ -14,9 +14,6 @@ export class CreateDirectChannel {
   issuer: Issuer;
 
   @IsNotEmpty()
-  name: string;
-
-  @IsNotEmpty()
   username: string;
 
   constructor(partial: Partial<CreateDirectChannel>) {

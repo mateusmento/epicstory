@@ -7,6 +7,9 @@ import {
   DialogTrigger,
   Field,
   Form,
+  Label,
+  RadioGroup,
+  RadioGroupItem,
   Tabs,
   TabsContent,
   TabsList,
@@ -22,59 +25,65 @@ import {
   IconThreads,
 } from "@/design-system/icons";
 import { useChannels } from "@/domain/channels/composables/channels";
-import type { Channel } from "@/domain/channels/types";
+import { ref } from "vue";
 import InboxMessage from "./InboxMessage.vue";
-import { computed } from "vue";
 
 const { channels, createChannel } = useChannels();
 
-const mock: Channel[] = [
+const channelType = ref("group");
+
+const mock: any[] = [
   {
     id: 1,
     type: "direct",
     lastMessage: {
       id: 1,
-      sender: { name: "Leon", image: "/images/leon.png" },
+      sender: { name: "Leon", picture: "/images/leon.png" },
       sentAt: "14min ago",
       content: "Leon is typing something...",
       unreadMessagesCount: 0,
     },
+    speakingTo: { name: "Leon", picture: "/images/leon.png" },
   },
   {
     id: 2,
     type: "group",
     name: "#tech-help",
-    image: "/images/hashtag.svg",
+    picture: "/images/hashtag.svg",
     lastMessage: {
       id: 2,
-      sender: { name: "Daiana", image: "/images/daiana.png" },
+      sender: { name: "Daiana", picture: "/images/daiana.png" },
       sentAt: "3h ago",
       content: "It seems to be a bug in latest version...",
       unreadMessagesCount: 2,
     },
+    speakingTo: { name: "Leon", picture: "/images/leon.png" },
   },
   {
     id: 3,
     type: "direct",
     lastMessage: {
       id: 3,
-      sender: { name: "Daiana", image: "/images/daiana.png" },
+      sender: { name: "Daiana", picture: "/images/daiana.png" },
       sentAt: "3h ago",
       content: "Hey, Mateus! The proposal is great and...",
       unreadMessagesCount: 1,
     },
+    speakingTo: { name: "Daiana", picture: "/images/daiana.png" },
+  },
+  {
+    id: 5,
+    type: "direct",
+    lastMessage: {
+      id: 1,
+      sender: { name: "Leon", picture: "/images/leon.png" },
+      sentAt: "14min ago",
+      content: "Leon is typing something...",
+      unreadMessagesCount: 0,
+    },
+    speakingTo: { name: "Mateus", picture: "/images/leon.png" },
   },
 ];
-
-const augmentedChannels = computed(() =>
-  channels.value.map(
-    (c) =>
-      mock.find((m) => m.id === c.id) ?? {
-        ...c,
-        lastMessage: { ...c.lastMessage, sender: { name: "Daiana", image: "/images/daiana.png" } },
-      },
-  ),
-);
 </script>
 
 <template>
@@ -111,7 +120,7 @@ const augmentedChannels = computed(() =>
       </TabsList>
     </div>
     <TabsContent value="messages" class="flex:rows self:fill">
-      <InboxMessage v-for="channel of augmentedChannels" :key="channel.id" :channel="channel" />
+      <InboxMessage v-for="channel of channels" :key="channel.id" :channel="channel" />
 
       <div class="w-fit mt-4 mx-auto text-xs text-zinc-500">You have no more messages</div>
       <Dialog>
@@ -129,7 +138,17 @@ const augmentedChannels = computed(() =>
         <DialogContent>
           <DialogHeader>Create channel</DialogHeader>
           <Form @submit="createChannel($event as any)" class="flex:rows-lg">
-            <Field label="Name" name="name" placeholder="Create channel..." />
+            <RadioGroup
+              v-model="channelType"
+              type="single"
+              class="grid-cols-[auto_auto] gap-4 place-content-center"
+            >
+              <Label><RadioGroupItem value="direct" /> Direct</Label>
+              <Label><RadioGroupItem value="group" /> Group</Label>
+            </RadioGroup>
+            <Field v-model="channelType" name="type" type="hidden" />
+            <Field v-if="channelType === 'group'" label="Name" name="name" placeholder="Create channel..." />
+            <Field v-if="channelType === 'direct'" label="Email" name="username" placeholder="Email..." />
             <Button size="xs">Create</Button>
           </Form>
         </DialogContent>

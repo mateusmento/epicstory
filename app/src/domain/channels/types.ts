@@ -1,6 +1,8 @@
+import type { User } from "../user";
+
 export type Message = {
   id: number;
-  sender: { name: string; image: string };
+  sender: User;
   sentAt: string;
   content: string;
   unreadMessagesCount: number;
@@ -11,5 +13,6 @@ export type Channel = {
   type: "direct" | "group";
   name?: string;
   image?: string;
+  speakingTo: User;
   lastMessage: Message;
 };

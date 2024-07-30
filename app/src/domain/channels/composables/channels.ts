@@ -20,8 +20,16 @@ export class ChannelService {
     return this.axios.get<Channel[]>(`/workspaces/${workspaceId}/channels`).then((res) => res.data);
   }
 
-  createChannel(workspaceId: number, data: { name: string }) {
-    return this.axios.post<Channel>(`/workspaces/${workspaceId}/channels`, data).then((res) => res.data);
+  createGroupChannel(workspaceId: number, data: { name: string }) {
+    return this.axios
+      .post<Channel>(`/workspaces/${workspaceId}/channels/group`, data)
+      .then((res) => res.data);
+  }
+
+  createDirectChannel(workspaceId: number, data: { name: string }) {
+    return this.axios
+      .post<Channel>(`/workspaces/${workspaceId}/channels/direct`, data)
+      .then((res) => res.data);
   }
 }
 
@@ -36,9 +44,12 @@ export function useChannels() {
     store.channels = await channelService.findChannels(workspace.value.id);
   }
 
-  async function createChannel(data: { name: string }) {
+  async function createChannel({ type, ...data }: { type: string; name: string; username: string }) {
     if (!workspace.value) return;
-    const channel = await channelService.createChannel(workspace.value.id, data);
+    const channel =
+      type === "direct"
+        ? await channelService.createDirectChannel(workspace.value.id, data)
+        : await channelService.createGroupChannel(workspace.value.id, data);
     store.channels.push(channel);
     return channel;
   }

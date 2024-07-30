@@ -1,4 +1,5 @@
 import { compare } from 'bcryptjs';
+import { Exclude } from 'class-transformer';
 import { create } from 'src/core/objects';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -14,7 +15,11 @@ export class User {
   email: string;
 
   @Column()
+  @Exclude()
   password: string;
+
+  @Column({ nullable: true })
+  picture?: string;
 
   static create(data: { name: string; email: string; password: string }) {
     return create(User, data);

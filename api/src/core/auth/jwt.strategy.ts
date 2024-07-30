@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ExtractJwt, Strategy, StrategyOptions } from 'passport-jwt';
+import { UserRepository } from 'src/auth';
 import { AppConfig } from 'src/core/app.config';
 
 type RequestWithCookie = Request & {
@@ -13,7 +14,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(config: AppConfig) {
+  constructor(
+    config: AppConfig,
+    private userRepo: UserRepository,
+  ) {
     super({
       secretOrKey: config.JWT_SECRET,
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -26,6 +30,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(user: any) {
-    return user;
+    return this.userRepo.findOneBy({ id: user.id });
   }
 }

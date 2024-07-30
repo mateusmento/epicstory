@@ -22,7 +22,7 @@ export class Channel {
   // @PrimaryGeneratedColumn('identity', { generatedIdentity: 'ALWAYS' })
   id: number;
 
-  @Column()
+  @Column({ default: '' })
   name: string;
 
   @Column()

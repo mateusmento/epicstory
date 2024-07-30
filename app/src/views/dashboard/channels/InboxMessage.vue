@@ -6,9 +6,9 @@ const props = defineProps<{
   channel: Channel;
 }>();
 
-const message = computed(() => props.channel.lastMessage);
+const message = computed(() => props.channel.lastMessage ?? {});
 const image = computed(() =>
-  props.channel.type === "direct" ? props.channel.lastMessage.sender.image : "/images/hashtag.svg",
+  props.channel.type === "direct" ? props.channel.speakingTo.picture : "/images/hashtag.svg",
 );
 </script>
 
@@ -18,7 +18,7 @@ const image = computed(() =>
     <div class="self:fill flex:rows-md">
       <div class="flex:cols-auto flex:center-y">
         <div class="text-base font-semibold text-zinc-800">
-          {{ channel.type === "direct" ? message.sender.name : channel.name }}
+          {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
         </div>
         <div class="text-xs text-zinc-500">{{ message.sentAt }}</div>
       </div>

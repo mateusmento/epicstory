@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { UpdateUser, UserProfile } from "@/components/user";
+import { Dialog, DialogContent, DialogTrigger } from "@/design-system";
 import { IconLeftCollapse } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
 import { TabsList, TabsTrigger } from "radix-vue";
@@ -43,5 +45,15 @@ const { workspace } = useWorkspace();
         </TabsTrigger>
       </nav>
     </TabsList>
+    <div class="self:fill"></div>
+
+    <Dialog>
+      <DialogTrigger as-child>
+        <UserProfile />
+      </DialogTrigger>
+      <DialogContent>
+        <UpdateUser />
+      </DialogContent>
+    </Dialog>
   </aside>
 </template>

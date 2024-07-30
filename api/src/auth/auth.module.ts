@@ -11,6 +11,8 @@ import { GoogleStrategy } from './application/passport/google.strategy';
 import { LocalStrategy } from './application/passport/local.strategy';
 import { User } from './domain/entities/user.entity';
 import { UserRepository } from './infrastructure/repositories/user.repository';
+import { UserController } from './application/controllers/user.controller';
+import { UpdateUserPictureCommand } from './application/features/update-user-picture.command';
 
 @Module({
   imports: [
@@ -25,7 +27,7 @@ import { UserRepository } from './infrastructure/repositories/user.repository';
       }),
     }),
   ],
-  controllers: [AuthController, GoogleAuthController],
+  controllers: [AuthController, GoogleAuthController, UserController],
   providers: [
     GoogleStrategy,
     LocalStrategy,
@@ -33,6 +35,7 @@ import { UserRepository } from './infrastructure/repositories/user.repository';
     SignupCommand,
     AuthenticateCommand,
     SigninCommand,
+    UpdateUserPictureCommand,
   ],
   exports: [UserRepository, JwtModule],
 })

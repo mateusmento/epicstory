@@ -5,3 +5,7 @@ export * from "./ui/label";
 export * from "./ui/tabs";
 export * from "./ui/collapsible";
 export * from "./ui/dialog";
+export * from "./ui/switch";
+export * from "./ui/toggle";
+export * from "./ui/toggle-group";
+export * from "./ui/radio-group";
