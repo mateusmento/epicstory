@@ -18,6 +18,7 @@ import { MeetingGateway } from './application/gateways/meeting.gateway';
 import { MeetingService } from './application/services/meeting.service';
 import { MessageService } from './application/services/message.service';
 import { AuthModule } from 'src/auth';
+import { CreateGroupChannelCommand } from './application/features/create-group-channel.command';
 
 const repositories = [
   ChannelRepository,
@@ -28,7 +29,11 @@ const repositories = [
 
 const services = [MessageService, MeetingService];
 
-const features = [FindChannelsQuery, CreateDirectChannelCommand];
+const features = [
+  FindChannelsQuery,
+  CreateGroupChannelCommand,
+  CreateDirectChannelCommand,
+];
 
 const gateways = [ChannelGateway, MeetingGateway];
 

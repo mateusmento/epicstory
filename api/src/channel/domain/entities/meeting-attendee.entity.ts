@@ -1,8 +1,9 @@
 import { User } from 'src/auth';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Meeting } from './meeting.entity';
+import { CHANNEL_SCHEMA } from 'src/channel/constants';
 
-@Entity({ name: 'meeting_attendees' })
+@Entity({ schema: CHANNEL_SCHEMA, name: 'meeting_attendees' })
 export class MeetingAttendee {
   @PrimaryGeneratedColumn()
   // @PrimaryGeneratedColumn('identity', { generatedIdentity: 'ALWAYS' })

@@ -8,8 +8,9 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { MeetingAttendee } from './meeting-attendee.entity';
+import { CHANNEL_SCHEMA } from 'src/channel/constants';
 
-@Entity({ name: 'meetings' })
+@Entity({ schema: CHANNEL_SCHEMA, name: 'meetings' })
 export class Meeting {
   @PrimaryGeneratedColumn()
   // @PrimaryGeneratedColumn('identity', { generatedIdentity: 'ALWAYS' })

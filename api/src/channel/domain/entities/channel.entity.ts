@@ -12,8 +12,7 @@ import {
 } from 'typeorm';
 import { Meeting } from './meeting.entity';
 import { Message } from './message.entity';
-
-const CHANNEL_SCHEMA = 'channel';
+import { CHANNEL_SCHEMA } from 'src/channel/constants';
 
 type ChannelType = 'direct' | 'group';
 

@@ -7,8 +7,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { CHANNEL_SCHEMA } from 'src/channel/constants';
 
-@Entity({ name: 'messages' })
+@Entity({ schema: CHANNEL_SCHEMA, name: 'messages' })
 export class Message {
   @PrimaryGeneratedColumn()
   // @PrimaryGeneratedColumn('identity', { generatedIdentity: 'ALWAYS' })

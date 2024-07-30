@@ -19,8 +19,9 @@ const config = selectConfig(
 
 export default new DataSource(
   typeorm.postgres(() => ({
-    host: 'localhost',
+    host: config.DATABASE_MIGRATION_HOST ?? config.DATABASE_HOST,
     migrations: migrations(),
+    entities: [],
   }))(config),
 );
 

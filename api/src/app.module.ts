@@ -10,7 +10,11 @@ import { typeorm } from './core/typeorm';
 @Module({
   imports: [
     CoreModule,
-    typeorm.createModule(typeorm.postgres()),
+    typeorm.createModule(
+      typeorm.postgres(() => ({
+        synchronize: true,
+      })),
+    ),
     AuthModule,
     WorkspaceModule,
     ChannelModule,

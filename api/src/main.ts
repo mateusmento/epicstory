@@ -9,10 +9,13 @@ import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AppConfig } from './core/app.config';
 import { initializeTransactionalContext } from 'typeorm-transactional';
+import { createSchemas } from './core/typeorm';
 
 async function bootstrap() {
   process.env.TZ = 'America/Sao_Paulo';
   initializeTransactionalContext();
+
+  createSchemas();
 
   const app = await NestFactory.create(AppModule);
 

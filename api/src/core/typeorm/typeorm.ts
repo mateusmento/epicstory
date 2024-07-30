@@ -4,6 +4,7 @@ import { addTransactionalDataSource } from 'typeorm-transactional';
 import { AppConfig } from '../app.config';
 import { BetterSqlite3ConnectionOptions } from 'typeorm/driver/better-sqlite3/BetterSqlite3ConnectionOptions';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 type OptionsFactory<T> = (c: AppConfig) => Partial<T>;
 
@@ -29,9 +30,10 @@ const postgres =
       database: config.DATABASE_NAME,
       logging: 'all',
       logger: 'advanced-console',
-      entities: [],
+      autoLoadEntities: true,
+      namingStrategy: new SnakeNamingStrategy(),
       ...options(config),
-    }) satisfies DataSourceOptions;
+    }) satisfies TypeOrmModuleOptions;
 
 const betterSqlite =
   (options: OptionsFactory<BetterSqlite3ConnectionOptions> = () => ({})) =>
@@ -43,6 +45,8 @@ const betterSqlite =
       synchronize: true,
       logging: 'all',
       logger: 'advanced-console',
+      autoLoadEntities: true,
+      namingStrategy: new SnakeNamingStrategy(),
       ...options(config),
     }) satisfies TypeOrmModuleOptions;
 

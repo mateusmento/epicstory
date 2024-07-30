@@ -9,7 +9,7 @@ import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions/issuer-user-is-not-workspace-member';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 
-export class CreateChannel {
+export class CreateDirectChannel {
   workspaceId: number;
   issuer: Issuer;
 
@@ -19,14 +19,14 @@ export class CreateChannel {
   @IsNotEmpty()
   username: string;
 
-  constructor(partial: Partial<CreateChannel>) {
+  constructor(partial: Partial<CreateDirectChannel>) {
     patch(this, partial);
   }
 }
 
-@CommandHandler(CreateChannel)
+@CommandHandler(CreateDirectChannel)
 export class CreateDirectChannelCommand
-  implements ICommandHandler<CreateChannel>
+  implements ICommandHandler<CreateDirectChannel>
 {
   constructor(
     private workspaceRepo: WorkspaceRepository,
@@ -34,14 +34,18 @@ export class CreateDirectChannelCommand
     private userRepo: UserRepository,
   ) {}
 
-  async execute(command: CreateChannel) {
+  async execute(command: CreateDirectChannel) {
     const { workspaceId, issuer } = command;
     const member = await this.workspaceRepo.findMember(workspaceId, issuer.id);
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
     return this.createDirectChannel(command);
   }
 
-  async createDirectChannel({ issuer, username, ...data }: CreateChannel) {
+  async createDirectChannel({
+    issuer,
+    username,
+    ...data
+  }: CreateDirectChannel) {
     const [me, peer] = [issuer.id, username];
 
     const peers = await this.userRepo

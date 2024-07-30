@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { CreateGroupChannel } from '../features/create-group-channel.command';
 import { FindChannels } from '../features/find-channels.query';
-import { CreateChannel } from '../features/create-direct-channel.command';
 
 @Controller('workspaces/:workspaceId/channels')
 export class ChannelController {
@@ -24,11 +24,11 @@ export class ChannelController {
   @UseGuards(JwtAuthGuard)
   createChannel(
     @Param('workspaceId') workspaceId: number,
-    @Body() command: CreateChannel,
+    @Body() command: CreateGroupChannel,
     @Auth() issuer: Issuer,
   ) {
     return this.commandBus.execute(
-      new CreateChannel({ ...command, workspaceId, issuer }),
+      new CreateGroupChannel({ ...command, workspaceId, issuer }),
     );
   }
 }

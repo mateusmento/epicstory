@@ -48,6 +48,7 @@
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.5",
     "typeorm": "^0.3.20",
+    "typeorm-naming-strategies": "^4.1.0",
     "typeorm-transactional": "^0.5.0"
   },
   "devDependencies": {
@@ -64,6 +65,7 @@
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
+    "@types/pg": "^8.11.6",
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",

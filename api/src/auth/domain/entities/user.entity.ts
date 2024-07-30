@@ -2,7 +2,7 @@ import { compare } from 'bcryptjs';
 import { create } from 'src/core/objects';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity({ schema: 'auth' })
+@Entity({ schema: 'auth', name: 'users' })
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
