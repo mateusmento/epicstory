@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Post,
   Req,
@@ -49,5 +50,11 @@ export class AuthController {
       maxAge: this.config.JWT_EXPIRES_IN * 1000,
     });
     return user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('tokens')
+  async signout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('token');
   }
 }

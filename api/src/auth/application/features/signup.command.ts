@@ -26,6 +26,7 @@ export class SignupCommand implements ICommandHandler<Signup> {
 
   async execute({ name, email, password }: Signup) {
     password = await hash(password, await genSalt(this.config.PASSWORD_ROUNDS));
+    console.log(User.create({ name, email, password }));
     const user = await this.userRepo.save(
       User.create({ name, email, password }),
     );

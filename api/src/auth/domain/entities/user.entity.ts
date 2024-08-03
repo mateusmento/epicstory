@@ -15,7 +15,7 @@ export class User {
   email: string;
 
   @Column()
-  @Exclude()
+  @Exclude({ toPlainOnly: true })
   password: string;
 
   @Column({ nullable: true })

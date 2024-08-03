@@ -16,6 +16,10 @@ export class AuthService {
     return this.axios.post<SigninResponse>("/auth/tokens", data).then((res) => res.data);
   }
 
+  signout() {
+    return this.axios.delete("/auth/tokens").then((res) => res.data);
+  }
+
   authenticate() {
     return this.axios.get<AuthenticateResponse>("/auth/tokens/current").then((res) => res.data);
   }
