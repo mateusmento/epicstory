@@ -31,7 +31,7 @@ export class ChannelGateway {
     const token = socket.request.headers.authorization;
     const user = await this.jwtService.verifyAsync(token);
     message = await this.channelService.createMessage(
-      message.text,
+      message.content,
       channelId,
       user.id,
     );

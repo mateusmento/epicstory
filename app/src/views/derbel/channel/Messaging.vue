@@ -15,7 +15,7 @@ const sockets = useWebSockets();
 
 const { messages: rawMessages, fetchMessages } = useChannel();
 const message = reactive({
-  text: "",
+  content: "",
 });
 const messagesEl = ref<HTMLElement | null>(null);
 const messageTextEl = ref<HTMLElement | null>(null);
@@ -63,11 +63,11 @@ async function fetchChannelMessages() {
 }
 
 function sendMessage() {
-  if (!message.text) return;
+  if (!message.content) return;
   const data = { channelId: props.channel.id, message };
   sockets.websocket?.emit("send-message", data, (msg: any) => {
     addMessage(msg);
-    message.text = "";
+    message.content = "";
   });
 }
 
@@ -123,7 +123,7 @@ function formatDate(date: string | Moment) {
     </div>
   </div>
   <form @submit.prevent="sendMessage" class="new-message" @click="messageTextEl?.focus()">
-    <input v-model="message.text" placeholder="Type a message here..." ref="messageTextEl" />
+    <input v-model="message.content" placeholder="Type a message here..." ref="messageTextEl" />
     <button type="submit">
       <IconSendMessage />
     </button>
