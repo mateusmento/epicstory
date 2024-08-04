@@ -94,6 +94,10 @@ async function signin(data: SigninRequest) {
             placeholder="Enter your password"
             data-testid="signin-password-input"
           />
+          <div class="text-sm">
+            Don't have an account yet?
+            <RouterLink to="/signup" class="text-blue-600">Sign up.</RouterLink>
+          </div>
 
           <div class="flex:rows-2xl mt-3xl">
             <Button

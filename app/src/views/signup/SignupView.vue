@@ -80,7 +80,7 @@ async function signup(data: SignupRequest) {
             class="flex:rows-xl"
             label="Name"
             name="name"
-            placeholder="name"
+            placeholder="Name"
             data-testid="signup-name-input"
           />
           <Field
@@ -98,6 +98,10 @@ async function signup(data: SignupRequest) {
             placeholder="Create password"
             data-testid="signup-password-input"
           />
+          <div class="text-sm">
+            Already have an account?
+            <RouterLink to="/signin" class="text-blue-600">Sign in.</RouterLink>
+          </div>
 
           <div class="flex:rows-2xl mt-3xl">
             <Button
