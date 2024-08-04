@@ -32,6 +32,9 @@ export class AppConfig {
   DATABASE_PORT: number;
 
   @IsNotEmpty()
+  REDIS_URL: string;
+
+  @IsNotEmpty()
   COOKIE_SECRET: string;
 
   @IsNumber()

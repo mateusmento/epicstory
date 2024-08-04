@@ -9,6 +9,8 @@ services:
       - epicstory-postgres:/var/lib/postgresql/data
     env_file:
       - .env
+    labels:
+      - traefik.enable=false
   epicstory-pgadmin:
     image: dpage/pgadmin4
     container_name: epicstory-pgadmin
@@ -19,6 +21,39 @@ services:
       - epicstory-pgadmin:/var/lib/pgadmin
     env_file:
       - .env
+    labels:
+      - traefik.enable=false
+  epicstory-peerjs:
+    image: peerjs/peerjs-server
+    command: peerjs -p 3001
+    restart: always
+    ports:
+      - 3001:3001
+    labels:
+      - traefik.enable=false
+  # epicstory-redis:
+  #   image: redis:7
+  #   restart: always
+  #   ports:
+  #     - 6379:6379
+  #   labels:
+  #     - traefik.enable=false
+  # epicstory-traefik:
+  #   image: traefik:2.10
+  #   command: --api.insecure=true --providers.docker
+  #   ports:
+  #     - 3000:80
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  # epicstory-api:
+  #   build: .
+  #   image: epicstory-api
+  #   volumes:
+  #     - .:/usr/app
+  #   labels:
+  #     - 'traefik.http.routers.derbel.rule=PathPrefix(`/`)'
+  #     - traefik.http.services.derbel.loadBalancer.sticky.cookie.name=server_id
+  #     - traefik.http.services.derbel.loadBalancer.sticky.cookie.httpOnly=true
 
 volumes:
   epicstory-postgres:

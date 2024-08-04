@@ -31,59 +31,6 @@ import InboxMessage from "./InboxMessage.vue";
 const { channels, createChannel } = useChannels();
 
 const channelType = ref("group");
-
-const mock: any[] = [
-  {
-    id: 1,
-    type: "direct",
-    lastMessage: {
-      id: 1,
-      sender: { name: "Leon", picture: "/images/leon.png" },
-      sentAt: "14min ago",
-      content: "Leon is typing something...",
-      unreadMessagesCount: 0,
-    },
-    speakingTo: { name: "Leon", picture: "/images/leon.png" },
-  },
-  {
-    id: 2,
-    type: "group",
-    name: "#tech-help",
-    picture: "/images/hashtag.svg",
-    lastMessage: {
-      id: 2,
-      sender: { name: "Daiana", picture: "/images/daiana.png" },
-      sentAt: "3h ago",
-      content: "It seems to be a bug in latest version...",
-      unreadMessagesCount: 2,
-    },
-    speakingTo: { name: "Leon", picture: "/images/leon.png" },
-  },
-  {
-    id: 3,
-    type: "direct",
-    lastMessage: {
-      id: 3,
-      sender: { name: "Daiana", picture: "/images/daiana.png" },
-      sentAt: "3h ago",
-      content: "Hey, Mateus! The proposal is great and...",
-      unreadMessagesCount: 1,
-    },
-    speakingTo: { name: "Daiana", picture: "/images/daiana.png" },
-  },
-  {
-    id: 5,
-    type: "direct",
-    lastMessage: {
-      id: 1,
-      sender: { name: "Leon", picture: "/images/leon.png" },
-      sentAt: "14min ago",
-      content: "Leon is typing something...",
-      unreadMessagesCount: 0,
-    },
-    speakingTo: { name: "Mateus", picture: "/images/leon.png" },
-  },
-];
 </script>
 
 <template>

@@ -26,7 +26,6 @@ export class UpdateUserPictureCommand
     const user = await this.userRepo.findOneBy({ id: userId });
     if (!user) throw new NotFoundException('User not found');
     user.picture = picture;
-    console.log(picture);
     return this.userRepo.save(user);
   }
 }

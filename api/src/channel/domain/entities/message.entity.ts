@@ -16,16 +16,16 @@ export class Message {
   id: number;
 
   @Column()
-  text: string;
+  content: string;
 
   @CreateDateColumn()
   sentAt: Date;
 
   @Column()
-  speakerId: number;
+  senderId: number;
 
   @ManyToOne(() => User)
-  speaker: User;
+  sender: User;
 
   @Column()
   channelId: number;

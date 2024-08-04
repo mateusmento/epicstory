@@ -1,24 +1,12 @@
 <script setup lang="ts">
-import {
-  Button,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  Field,
-  Form,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/design-system";
+import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Field, Form } from "@/design-system";
 import { useWorkspace, useWorkspaces } from "@/domain/workspace";
 import { onMounted } from "vue";
-import WorkspaceMembers from "../workspace-members/WorkspaceMembers.vue";
 
 const currentWorkspace = defineModel<{
   id?: number;
   name: string;
-}>("currentWorkspace");
+} | null>("currentWorkspace");
 
 const { workspaces, createWorkspace, fetchWorkspaces } = useWorkspaces();
 const { selectWorkspace } = useWorkspace();

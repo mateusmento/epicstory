@@ -14,7 +14,7 @@ export class MessageService {
   async findMessages(channelId: number) {
     return this.messageRepo.find({
       where: { channelId: channelId },
-      relations: { speaker: true },
+      relations: { sender: true },
     });
   }
 

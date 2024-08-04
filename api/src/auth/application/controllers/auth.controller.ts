@@ -33,7 +33,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getToken(@Req() request: Request) {
     if (!request.user) throw new UnauthorizedException();
-    return { user: request.user };
+    return { user: request.user, token: request.cookies.token };
   }
 
   @Post('tokens')

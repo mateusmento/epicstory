@@ -1,4 +1,4 @@
-import type { User } from "../user.type";
+import type { User } from "../types/user.type";
 
 export type SigninRequest = {
   email: string;
@@ -11,5 +11,6 @@ export type SigninResponse = {
 };
 
 export type AuthenticateResponse = {
+  token: string;
   user: User;
 };
