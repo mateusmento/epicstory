@@ -9,3 +9,6 @@ export * from "./ui/switch";
 export * from "./ui/toggle";
 export * from "./ui/toggle-group";
 export * from "./ui/radio-group";
+export * from "./ui/popover";
+export * from "./ui/command";
+export * from "./ui/combobox";
