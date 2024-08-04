@@ -13,6 +13,7 @@ import { User } from './domain/entities/user.entity';
 import { UserRepository } from './infrastructure/repositories/user.repository';
 import { UserController } from './application/controllers/user.controller';
 import { UpdateUserPictureCommand } from './application/features/update-user-picture.command';
+import { FindUsersQuery } from './application/features/find-users.query';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { UpdateUserPictureCommand } from './application/features/update-user-pic
     AuthenticateCommand,
     SigninCommand,
     UpdateUserPictureCommand,
+    FindUsersQuery,
   ],
   exports: [UserRepository, JwtModule],
 })

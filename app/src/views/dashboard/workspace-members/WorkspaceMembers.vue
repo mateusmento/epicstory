@@ -1,13 +1,19 @@
 <script lang="ts" setup>
 import { Button, Field, Form } from "@/design-system";
+import Combobox from "@/design-system/ui/combobox/Combobox.vue";
+import type { User } from "@/domain/auth";
+import { useUsers } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
-import { onMounted, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 const { workspace, members, fetchWorkspaceMembers, addWorkspaceMember } = useWorkspace();
-
 onMounted(() => fetchWorkspaceMembers());
-
 watch(workspace, () => fetchWorkspaceMembers());
+
+const { users, fetchUsers } = useUsers();
+const query = ref("");
+const selectedUser = ref<User>();
+watch(query, () => fetchUsers(query.value));
 </script>
 
 <template>
@@ -23,9 +29,21 @@ watch(workspace, () => fetchWorkspaceMembers());
         {{ member.user.name }}
       </div>
     </div>
-
+    {{ selectedUser }}
     <Form @submit="addWorkspaceMember($event.userId)" class="flex:rows-lg">
-      <Field label="User id" name="userId" placeholder="Add workspace member..." />
+      <Combobox
+        v-model="selectedUser"
+        v-model:searchTerm="query"
+        :options="users"
+        track-by="id"
+        label-by="name"
+      />
+      <Field
+        :modelValue="selectedUser?.id"
+        type="hidden"
+        name="userId"
+        placeholder="Add workspace member..."
+      />
       <Button type="submit" size="xs">Add</Button>
     </Form>
   </div>

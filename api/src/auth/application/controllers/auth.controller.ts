@@ -4,25 +4,33 @@ import {
   Delete,
   Get,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Request, Response } from 'express';
 import { AppConfig } from 'src/core/app.config';
+import { JwtAuthGuard } from 'src/core/auth/jwt.strategy';
+import { FindUsers } from '../features/find-users.query';
 import { Signin } from '../features/signin.command';
 import { Signup } from '../features/signup.command';
 import { LocalAuthGuard } from '../passport/local.strategy';
-import { JwtAuthGuard } from 'src/core/auth/jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
   constructor(
+    private queryBus: QueryBus,
     private commandBus: CommandBus,
     private config: AppConfig,
   ) {}
+
+  @Get('users')
+  findUsers(@Query() query: FindUsers) {
+    return this.queryBus.execute(query);
+  }
 
   @Post('users')
   signup(@Body() command: Signup) {
