@@ -8,6 +8,7 @@ import { createDependenciesPlugin } from "@/core/dependency-injection";
 
 import { setup, type Preview } from "@storybook/vue3";
 import { enableMocking } from "@/app/enable-mocks";
+import { createPinia } from "pinia";
 
 const preview: Preview = {
   parameters: {
@@ -23,6 +24,7 @@ const preview: Preview = {
 setup(async (app) => {
   const dependencies = await createDependencies();
   app.use(createDependenciesPlugin(dependencies));
+  app.use(createPinia());
   await enableMocking();
 });
 
