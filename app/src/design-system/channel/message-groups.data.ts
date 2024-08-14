@@ -5,10 +5,11 @@ export default {
   messageGroups: [
     {
       id: 1,
+      senderId: 1,
       sender: {
         id: 1,
         name: "Daiana",
-        photo: daianaPhoto,
+        picture: daianaPhoto,
       },
       sentAt: "2024-07-23T21:07:30",
       messages: [

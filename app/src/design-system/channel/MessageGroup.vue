@@ -40,7 +40,7 @@ function formatDate(date: string | Moment) {
 
 <template>
   <div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] gap-x-2">
-    <img :src="messageGroup.sender.photo" class="w-8 h-8" />
+    <img :src="messageGroup.sender.picture" class="w-8 h-8" />
     <div class="flex:cols-md flex:baseline">
       <div>{{ meId === messageGroup.sender.id ? "You" : messageGroup.sender.name }}</div>
       <div class="ml-lg text-xs text-zinc-400">{{ formatDate(messageGroup.sentAt) }}</div>
