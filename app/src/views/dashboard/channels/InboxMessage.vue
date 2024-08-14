@@ -14,7 +14,7 @@ const props = defineProps<{
 const emit = defineEmits(["join-meeting"]);
 const router = useRouter();
 
-const { meeting } = useMeeting();
+const { ongoingMeeting } = useMeeting();
 const { openChannel } = useChannel();
 
 const image = computed(() =>
@@ -61,7 +61,7 @@ function formatDate(date: string | Moment) {
         </div>
       </div>
     </div>
-    <div v-if="channel.meeting && !meeting" class="accept-call flex gap-5">
+    <div v-if="channel.meeting && !ongoingMeeting" class="accept-call flex gap-5">
       <button @click.stop="emit('join-meeting')" class="p-2 border-none rounded-full bg-green-500">
         <IconAcceptCall />
       </button>

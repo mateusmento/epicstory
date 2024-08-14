@@ -3,8 +3,8 @@ import { ref } from "vue";
 import type { IMeeting } from "../types";
 
 const useMeetingStore = defineStore("meeting", () => {
-  const meeting = ref<IMeeting | null>();
-  return { meeting };
+  const ongoingMeeting = ref<IMeeting | null>();
+  return { ongoingMeeting };
 });
 
 export function useMeeting() {

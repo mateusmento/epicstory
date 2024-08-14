@@ -10,7 +10,7 @@ const { channels, fetchChannels } = useChannels();
 const { channel: openChannel } = useChannel();
 
 const sockets = useWebSockets();
-const { meeting } = useMeeting();
+const { ongoingMeeting } = useMeeting();
 
 onMounted(async () => {
   fetchChannels();
@@ -26,7 +26,7 @@ onMounted(async () => {
   sockets.websocket.on("meeting-ended", ({ channelId }: any) => {
     const channel = channels.value.find((c) => c.id === channelId);
     if (channel) channel.meeting = null;
-    meeting.value = null;
+    ongoingMeeting.value = null;
   });
 });
 
@@ -34,23 +34,23 @@ async function requestMeeting() {
   if (!openChannel.value) return;
   const channel = openChannel.value;
   sockets.websocket.emit("request-meeting", { channelId: channel.id }, (data: any) => {
-    meeting.value = data;
+    ongoingMeeting.value = data;
     channel.meeting = data;
   });
 }
 
 async function joinMeeting(channel: IChannel) {
   openChannel.value = channel;
-  meeting.value = channel.meeting;
+  ongoingMeeting.value = channel.meeting;
 }
 
 async function meetingEnded() {
-  meeting.value = null;
+  ongoingMeeting.value = null;
   if (openChannel.value) openChannel.value.meeting = null;
 }
 
 async function leftMeeting() {
-  meeting.value = null;
+  ongoingMeeting.value = null;
 }
 </script>
 
@@ -61,15 +61,15 @@ async function leftMeeting() {
     <main class="main-section flex-1 rounded-r-xl bg-slate-100">
       <TransitionGroup v-if="openChannel">
         <Meeting
-          v-if="meeting"
-          v-show="meeting"
-          :meetingId="meeting.id"
+          v-if="ongoingMeeting"
+          v-show="ongoingMeeting"
+          :meetingId="ongoingMeeting.id"
           @meeting-ended="meetingEnded"
           @left-meeting="leftMeeting"
           :key="1"
         />
         <Channel
-          v-show="!meeting"
+          v-show="!ongoingMeeting"
           :channel="openChannel"
           class="h-full"
           @request-meeting="requestMeeting"

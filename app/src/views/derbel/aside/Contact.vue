@@ -11,7 +11,7 @@ defineProps<{
 
 const emit = defineEmits(["join-meeting"]);
 
-const { meeting } = useMeeting();
+const { ongoingMeeting } = useMeeting();
 
 function formatDate(date: string | Moment) {
   if (!date) return;
@@ -33,7 +33,7 @@ function formatDate(date: string | Moment) {
       </div>
       <small class="channel-last-message line-fit">{{ channel.lastMessage?.content }}</small>
     </div>
-    <div v-if="channel.meeting && !meeting" class="accept-call flex gap-5">
+    <div v-if="channel.meeting && !ongoingMeeting" class="accept-call flex gap-5">
       <button @click.stop="emit('join-meeting')" class="p-2 border-none rounded-full bg-green-500">
         <IconAcceptCall />
       </button>
