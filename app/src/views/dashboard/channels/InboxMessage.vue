@@ -38,6 +38,7 @@ function formatDate(date: string | Moment) {
   <div
     @click="onOpenChannel()"
     class="flex:cols-2xl flex:center-y p-4 border-t hover:bg-neutral-200/60 cursor-pointer"
+    :class="{ 'bg-zinc-200/60': open }"
   >
     <img :src="image" class="w-10 h-10 rounded-full" />
     <div class="self:fill flex:rows-md">

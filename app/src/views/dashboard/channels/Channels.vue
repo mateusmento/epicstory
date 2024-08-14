@@ -8,8 +8,10 @@ import { IconInbox, IconMention, IconSearch, IconThreads } from "@/design-system
 import { useChannels } from "@/domain/channels/composables/channels";
 import { ref } from "vue";
 import InboxMessage from "./InboxMessage.vue";
+import { useChannel } from "@/domain/channels";
 
 const { channels, createChannel } = useChannels();
+const { channel: currentChannel } = useChannel();
 
 const channelType = ref("group");
 </script>
@@ -48,7 +50,12 @@ const channelType = ref("group");
       </TabsList>
     </div>
     <TabsContent value="messages" class="flex:rows self:fill">
-      <InboxMessage v-for="channel of channels" :key="channel.id" :channel="channel" />
+      <InboxMessage
+        v-for="channel of channels"
+        :key="channel.id"
+        :channel="channel"
+        :open="!!currentChannel && currentChannel.id === channel.id"
+      />
 
       <div class="w-fit mt-4 mx-auto text-xs text-zinc-500">You have no more messages</div>
       <Dialog>
