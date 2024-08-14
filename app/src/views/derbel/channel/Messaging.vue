@@ -14,9 +14,7 @@ const { user: authUser } = useAuth();
 const sockets = useWebSockets();
 
 const { messages: rawMessages, fetchMessages } = useChannel();
-const message = reactive({
-  content: "",
-});
+const message = reactive({ content: "" });
 const messagesEl = ref<HTMLElement | null>(null);
 const messageTextEl = ref<HTMLElement | null>(null);
 

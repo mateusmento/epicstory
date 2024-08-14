@@ -35,6 +35,22 @@
   }
 }
 
+.flex\:cols {
+  flex-direction: row;
+
+  &.flex\:center-x {
+    justify-content: center;
+  }
+
+  &.flex\:center-y {
+    align-items: center;
+  }
+
+  &.flex\:baseline {
+    align-items: baseline;
+  }
+}
+
 @each $size_name, $size in $sizes_no_auto {
   .flex\:rows-#{$size_name} {
     flex-direction: column;
@@ -59,6 +75,10 @@
 
     &.flex\:center-y {
       align-items: center;
+    }
+
+    &.flex\:baseline {
+      align-items: baseline;
     }
   }
 }

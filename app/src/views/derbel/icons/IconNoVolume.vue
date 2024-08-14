@@ -29,13 +29,7 @@
         stroke-linecap="round"
         stroke-linejoin="round"
       />
-      <path
-        d="M21 1L1 21"
-        stroke="white"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
+      <path d="M21 1L1 21" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
   </div>
 </template>

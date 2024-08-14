@@ -1,29 +1,10 @@
 <script setup lang="ts">
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTrigger,
-  Field,
-  Form,
-  Label,
-  RadioGroup,
-  RadioGroupItem,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/design-system";
-import {
-  IconArrowDown,
-  IconChannel,
-  IconContacts,
-  IconInbox,
-  IconMention,
-  IconSearch,
-  IconThreads,
-} from "@/design-system/icons";
+import { Button, Field, Form, Label } from "@/design-system";
+import { Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/design-system";
+import { RadioGroup, RadioGroupItem } from "@/design-system";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system/ui/tabs";
+import { IconArrowDown, IconChannel, IconContacts } from "@/design-system/icons";
+import { IconInbox, IconMention, IconSearch, IconThreads } from "@/design-system/icons";
 import { useChannels } from "@/domain/channels/composables/channels";
 import { ref } from "vue";
 import InboxMessage from "./InboxMessage.vue";
