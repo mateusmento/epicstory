@@ -1,85 +1,27 @@
 <script lang="ts" setup>
-import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
-import { useChannel, type IChannel, type IMessage } from "@/domain/channels";
+import { useChannel } from "@/domain/channels";
 import moment, { type Moment } from "moment";
-import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import IconSendMessage from "../icons/IconSendMessage.vue";
-
-const props = defineProps<{
-  channel: IChannel;
-}>();
+import Scrollable from "./Scrollable.vue";
 
 const { user: authUser } = useAuth();
-const sockets = useWebSockets();
 
-const { messages: rawMessages, fetchMessages } = useChannel();
+const { messageGroups: messages, fetchMessages, joinChannel, sendMessage } = useChannel();
+
 const message = reactive({ content: "" });
-const messagesEl = ref<HTMLElement | null>(null);
 const messageTextEl = ref<HTMLElement | null>(null);
 
-interface IMessageGroup {
-  messageId: number;
-  senderId: number;
-  messages: IMessage[];
-}
-
-const messages = computed(() => {
-  return rawMessages.value.reduce((messages, message) => {
-    const lastGroup = messages[messages.length - 1];
-    if (lastGroup && message.senderId === lastGroup.senderId) {
-      lastGroup.messages.push(message);
-    } else {
-      messages.push({
-        messageId: message.id,
-        senderId: message.senderId,
-        messages: [message],
-      });
-    }
-    return messages;
-  }, [] as IMessageGroup[]);
-});
-
 onMounted(async () => {
-  sockets.websocket?.emit("join-channel", { channelId: props.channel.id });
-
-  sockets.websocket?.on("receive-message", (msg) => {
-    addMessage(msg);
-  });
-
-  fetchChannelMessages();
+  joinChannel();
+  fetchMessages();
 });
 
-watch(
-  () => props.channel,
-  () => fetchChannelMessages(),
-);
-
-async function fetchChannelMessages() {
-  await fetchMessages();
-  scrollMessagesToBottom();
-}
-
-function sendMessage() {
+async function onSendMessage() {
   if (!message.content) return;
-  const data = { channelId: props.channel.id, message };
-  sockets.websocket?.emit("send-message", data, (msg: any) => {
-    addMessage(msg);
-    message.content = "";
-  });
-}
-
-function addMessage(msg: IMessage) {
-  rawMessages.value.push(msg);
-  scrollMessagesToBottom();
-}
-
-function scrollMessagesToBottom() {
-  nextTick(() => messagesEl.value && scrollToBottom(messagesEl.value));
-}
-
-function scrollToBottom(el: HTMLElement) {
-  el.scrollTop = el.scrollHeight - el.clientHeight;
+  await sendMessage(message.content);
+  message.content = "";
 }
 
 function formatDate(date: string | Moment) {
@@ -90,10 +32,10 @@ function formatDate(date: string | Moment) {
 </script>
 
 <template>
-  <div class="message-groups" ref="messagesEl">
+  <Scrollable class="message-groups" ref="messagesEl">
     <div
       v-for="messageGroup of messages"
-      :key="messageGroup.messageId"
+      :key="messageGroup.id"
       class="message-group flex gap gap-1.5"
       :class="{
         'self-end': messageGroup.senderId === authUser?.id,
@@ -119,8 +61,8 @@ function formatDate(date: string | Moment) {
         </div>
       </div>
     </div>
-  </div>
-  <form @submit.prevent="sendMessage" class="new-message" @click="messageTextEl?.focus()">
+  </Scrollable>
+  <form @submit.prevent="onSendMessage" class="new-message" @click="messageTextEl?.focus()">
     <input v-model="message.content" placeholder="Type a message here..." ref="messageTextEl" />
     <button type="submit">
       <IconSendMessage />
@@ -138,7 +80,6 @@ function formatDate(date: string | Moment) {
   flex: 1;
   padding: 10px 10px;
   padding-right: 15px;
-  overflow: overlay;
 }
 
 .message-groups::-webkit-scrollbar {

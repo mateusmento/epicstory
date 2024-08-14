@@ -10,3 +10,11 @@ export interface IMessage {
   channelId: number;
   channel: IChannel;
 }
+
+export type IMessageGroup = {
+  id: number;
+  senderId: number;
+  sender: User;
+  sentAt: string;
+  messages: IMessage[];
+};
