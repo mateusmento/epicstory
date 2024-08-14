@@ -1,21 +1,30 @@
 <script setup lang="ts">
-import { useMeeting } from "@/domain/channels";
+import { useChannel, useMeeting } from "@/domain/channels";
 import type { IChannel } from "@/domain/channels/types/channel.type";
 import IconAcceptCall from "@/views/derbel/icons/IconAcceptCall.vue";
 import moment, { type Moment } from "moment";
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 
 const props = defineProps<{
   channel: IChannel;
   open?: boolean;
 }>();
 
-const { meeting } = useMeeting();
 const emit = defineEmits(["join-meeting"]);
+const router = useRouter();
+
+const { meeting } = useMeeting();
+const { openChannel } = useChannel();
 
 const image = computed(() =>
   props.channel.type === "direct" ? props.channel.speakingTo.picture : "/images/hashtag.svg",
 );
+
+function onOpenChannel() {
+  openChannel(props.channel);
+  router.push(`/channel/${props.channel.id}`);
+}
 
 function formatDate(date: string | Moment) {
   if (!date) return;
@@ -26,7 +35,10 @@ function formatDate(date: string | Moment) {
 </script>
 
 <template>
-  <div class="flex:cols-2xl flex:center-y p-4 border-t hover:bg-neutral-200/60 cursor-pointer">
+  <div
+    @click="onOpenChannel()"
+    class="flex:cols-2xl flex:center-y p-4 border-t hover:bg-neutral-200/60 cursor-pointer"
+  >
     <img :src="image" class="w-10 h-10 rounded-full" />
     <div class="self:fill flex:rows-md">
       <div class="flex:cols-auto flex:center-y">

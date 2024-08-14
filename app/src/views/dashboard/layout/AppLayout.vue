@@ -28,7 +28,7 @@ provide("appLayout", { appSidebarContent });
         </TabsList>
 
         <main
-          class="self:fill bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
+          class="flex:cols self:fill bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
         >
           <!-- Application sidebar -->
           <CollapsibleContent
@@ -39,7 +39,7 @@ provide("appLayout", { appSidebarContent });
             <slot name="app-sidebar" />
           </CollapsibleContent>
 
-          <section>
+          <section class="self:fill">
             <slot name="main-section" />
           </section>
         </main>

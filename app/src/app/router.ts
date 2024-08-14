@@ -31,6 +31,12 @@ const authenticatedRoutes = defineRoutes({
     {
       path: "/",
       component: () => import("@/views/dashboard/Dashboard.vue"),
+      children: [
+        {
+          path: "/channel/:channelId",
+          component: () => import("@/views/channel/Channel.vue"),
+        },
+      ],
     },
     {
       path: "/derbel",
