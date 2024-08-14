@@ -17,7 +17,7 @@ watch(query, () => fetchUsers(query.value));
 </script>
 
 <template>
-  <div class="flex:rows-xl">
+  <div class="flex:rows-xl p-4">
     <h1 class="text-lg">Workspace Members</h1>
 
     <div class="flex:rows-lg p-1 rounded-md bg-zinc-100 text-zinc-500 text-sm">

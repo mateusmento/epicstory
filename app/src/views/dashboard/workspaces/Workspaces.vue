@@ -17,7 +17,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex:rows-3xl">
+  <div class="flex:rows-3xl p-4">
     <div class="flex:rows-sm">
       <div class="text-xs text-zinc-500">Workspace</div>
       <div class="flex:cols-xl">

@@ -9,7 +9,7 @@ onMounted(() => fetchTeams());
 </script>
 
 <template>
-  <div class="flex:rows-xl">
+  <div class="flex:rows-xl p-4">
     <h1>Teams</h1>
     <div class="flex:rows-lg p-1 rounded-md bg-zinc-100 text-zinc-500 text-sm">
       <div

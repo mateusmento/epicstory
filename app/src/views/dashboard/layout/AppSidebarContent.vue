@@ -12,7 +12,7 @@ const { appSidebarContent } = inject("appLayout") as any;
 <template>
   <TabsContent
     :value="name"
-    class="h-full p-4 data-[state=open]:animate-collapsible-fadein"
+    class="h-full data-[state=open]:animate-collapsible-fadein"
     :data-state="appSidebarContent === name ? 'open' : 'closed'"
   >
     <slot />
