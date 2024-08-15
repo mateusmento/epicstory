@@ -4,6 +4,7 @@ import type { IMessageGroup } from "./message-group.type";
 import type { Moment } from "moment";
 import moment from "moment";
 import IconEmoji from "../icons/IconEmoji.vue";
+import { computed } from "vue";
 
 const props = defineProps<{
   meId: number;
@@ -11,6 +12,14 @@ const props = defineProps<{
 }>();
 
 const styles = {
+  messageGroup: cva("w-96", {
+    variants: {
+      sender: {
+        me: "ml-auto",
+        someoneElse: "mr-auto",
+      },
+    },
+  }),
   messageBox: cva(
     [
       "group",
@@ -36,21 +45,22 @@ function formatDate(date: string | Moment) {
     ? moment(date).format("H:mm A")
     : moment(date).format("MMM D");
 }
+
+const sender = computed(() => (props.meId === props.messageGroup.sender.id ? "me" : "someoneElse"));
 </script>
 
 <template>
-  <div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] gap-x-2">
+  <div
+    class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] gap-x-2"
+    :class="styles.messageGroup({ sender })"
+  >
     <img :src="messageGroup.sender.picture" class="w-8 h-8" />
     <div class="flex:cols-md flex:baseline">
       <div>{{ meId === messageGroup.sender.id ? "You" : messageGroup.sender.name }}</div>
       <div class="ml-lg text-xs text-zinc-400">{{ formatDate(messageGroup.sentAt) }}</div>
     </div>
     <div class="flex:rows-sm col-start-2">
-      <div
-        v-for="message of messageGroup.messages"
-        :key="message.id"
-        :class="styles.messageBox({ sender: meId === messageGroup.sender.id ? 'me' : 'someoneElse' })"
-      >
+      <div v-for="message of messageGroup.messages" :key="message.id" :class="styles.messageBox({ sender })">
         {{ message.content }}
         <div
           class="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-zinc-200/60 rounded-full p-1"
