@@ -20,7 +20,7 @@ onMounted(async () => {
 
 async function onSendMessage() {
   if (!message.content) return;
-  await sendMessage(message.content);
+  await sendMessage(message);
   message.content = "";
 }
 

@@ -41,7 +41,7 @@ export function useChannel() {
     });
   }
 
-  function sendMessage(message: string) {
+  function sendMessage(message: { content: string }) {
     if (!store.channel) return;
     if (!message) return;
     const data = { channelId: store.channel.id, message };

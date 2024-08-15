@@ -20,7 +20,5 @@ watch(channel, () => {
 </script>
 
 <template>
-  <Scrollable class="p-4 h-full">
-    <Chatbox v-if="user" :message-groups="messageGroups" :me-id="user.id" />
-  </Scrollable>
+  <Chatbox v-if="user" :message-groups="messageGroups" :me-id="user.id" />
 </template>

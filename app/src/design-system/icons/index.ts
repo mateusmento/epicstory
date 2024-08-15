@@ -17,3 +17,4 @@ export { default as IconSmallInbox } from "./IconSmallInbox.vue";
 export { default as IconThreads } from "./IconThreads.vue";
 export { default as IconVerticallyCollapse } from "./IconVerticallyCollapse.vue";
 export { default as IconVerticallyExpand } from "./IconVerticallyExpand.vue";
+export { default as IconSendMessage } from "./IconSendMessage.vue";
