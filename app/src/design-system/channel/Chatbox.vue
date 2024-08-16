@@ -1,12 +1,11 @@
 <script lang="ts" setup>
-import Scrollable from "@/views/derbel/channel/Scrollable.vue";
-import MessageGroup from "./MessageGroup.vue";
-import type { IMessageGroup } from "./types";
-import { Button } from "../ui/button";
-import { IconSendMessage } from "../icons";
-import { reactive, ref } from "vue";
 import { useChannel, useMeeting } from "@/domain/channels";
+import Scrollable from "@/views/derbel/channel/Scrollable.vue";
 import IconAcceptCall from "@/views/derbel/icons/IconAcceptCall.vue";
+import { reactive } from "vue";
+import MessageGroup from "./MessageGroup.vue";
+import MessageWriter from "./MessageWriter.vue";
+import type { IMessageGroup } from "./types";
 
 const props = defineProps<{
   meId: number;
@@ -20,7 +19,6 @@ const { channel, sendMessage } = useChannel();
 const { requestMeeting, joinIncomingMeeting, incomingMeeting } = useMeeting();
 
 const message = reactive({ content: "" });
-const messageTextEl = ref<HTMLElement | null>(null);
 
 async function onSendMessage() {
   if (!message.content) return;
@@ -63,28 +61,7 @@ async function onSendMessage() {
     </Scrollable>
 
     <div class="p-4">
-      <div
-        class="p-2 border border-zinc-200 rounded-xl focus-within:outline outline-1 outline-zinc-300/60"
-        @click="messageTextEl?.focus()"
-      >
-        <textarea
-          v-model="message.content"
-          class="w-full h-full px-2 rounded-md resize-none outline-none"
-          ref="messageTextEl"
-        />
-        <div class="">
-          <Button
-            legacy
-            legacy-variant="primary"
-            legacy-size="sm"
-            class="flex:cols-lg flex:center-y text-sm ml-auto"
-            @click="onSendMessage"
-          >
-            <IconSendMessage />
-            Send
-          </Button>
-        </div>
-      </div>
+      <MessageWriter v-model:mesage-content="message.content" @send-message="onSendMessage" />
     </div>
   </div>
 </template>
