@@ -43,7 +43,7 @@ export function useChannel() {
 
   function sendMessage(message: { content: string }) {
     if (!store.channel) return;
-    if (!message) return;
+    if (!message.content) return;
     const data = { channelId: store.channel.id, message };
     return new Promise((resolve) => {
       sockets.websocket?.emit("send-message", data, (msg: any) => {

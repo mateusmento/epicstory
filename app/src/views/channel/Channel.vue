@@ -19,5 +19,11 @@ watch(channel, () => {
 </script>
 
 <template>
-  <Chatbox v-if="user" :message-groups="messageGroups" :me-id="user.id" />
+  <Chatbox
+    v-if="user"
+    :chat-title="channel?.speakingTo.name"
+    :chat-picture="channel?.speakingTo.picture"
+    :message-groups="messageGroups"
+    :me-id="user.id"
+  />
 </template>

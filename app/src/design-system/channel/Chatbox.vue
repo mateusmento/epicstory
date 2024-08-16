@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import Scrollable from "@/views/derbel/channel/Scrollable.vue";
 import MessageGroup from "./MessageGroup.vue";
-import type { IMessageGroup } from "./message-group.type";
+import type { IMessageGroup } from "./types";
 import { Button } from "../ui/button";
 import { IconSendMessage } from "../icons";
 import { reactive, ref } from "vue";
@@ -10,6 +10,8 @@ import IconAcceptCall from "@/views/derbel/icons/IconAcceptCall.vue";
 
 const props = defineProps<{
   meId: number;
+  chatTitle?: string;
+  chatPicture?: string;
   messageGroups: IMessageGroup[];
 }>();
 
@@ -30,13 +32,15 @@ async function onSendMessage() {
 <template>
   <div class="flex:rows h-full">
     <div class="topbar flex gap-2.5 border-b border-zinc-200">
-      <div class="channel-photos">
+      <img v-if="chatPicture" :src="chatPicture" class="channel-photo" />
+      <div v-else class="channel-photos">
         <div class="channel-photo" style="background: #b2bdbd"></div>
         <div class="channel-photo" style="background: #ccc9c6"></div>
         <div class="channel-photo" style="background: #bcc2bc"></div>
       </div>
 
-      <div class="channel-name">{{ channel?.speakingTo.name }}</div>
+      <div class="channel-name">{{ chatTitle }}</div>
+
       <button
         @click="incomingMeeting ? joinIncomingMeeting() : channel && requestMeeting(channel.id)"
         class="p-2 ml-auto border-none rounded-full bg-green"
@@ -44,16 +48,28 @@ async function onSendMessage() {
         <IconAcceptCall />
       </button>
     </div>
+
     <Scrollable class="self:fill min-h-0">
       <div class="flex:rows-xl p-4">
-        <MessageGroup v-for="group of messageGroups" :key="group.id" :message-group="group" :me-id="meId" />
+        <MessageGroup
+          v-for="group of messageGroups"
+          :key="group.id"
+          :sender="group.id === meId ? 'me' : 'someoneElse'"
+          :message-group="group"
+        >
+          <MessageBox v-for="message of group.messages" :key="message.id" :message="message" />
+        </MessageGroup>
       </div>
     </Scrollable>
+
     <div class="p-4">
-      <div class="p-2 border border-zinc-200 rounded-xl">
+      <div
+        class="p-2 border border-zinc-200 rounded-xl focus-within:outline outline-1 outline-zinc-300/60"
+        @click="messageTextEl?.focus()"
+      >
         <textarea
           v-model="message.content"
-          class="w-full h-full rounded-md resize-none"
+          class="w-full h-full px-2 rounded-md resize-none outline-none"
           ref="messageTextEl"
         />
         <div class="">
