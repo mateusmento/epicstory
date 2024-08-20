@@ -1,43 +1,43 @@
 <script setup lang="ts">
 import { useWorkspace } from "@/domain/workspace";
+import { RouterView } from "vue-router";
 import Channels from "./channels/Channels.vue";
+import AppLayout from "./layout/AppLayout.vue";
+import AppPaneContent from "./layout/app-pane/AppPaneContent.vue";
+import NavigationSidebar from "./NavigationSidebar.vue";
 import Projects from "./projects/Projects.vue";
 import { Teams } from "./teams";
 import WorkspaceMembers from "./workspace-members/WorkspaceMembers.vue";
 import Workspaces from "./workspaces/Workspaces.vue";
-import AppSidebarContent from "./layout/AppSidebarContent.vue";
-import AppLayout from "./layout/AppLayout.vue";
-import NavigationSidebar from "./NavigationSidebar.vue";
-import { RouterView } from "vue-router";
 
 const { workspace } = useWorkspace();
 </script>
 
 <template>
   <AppLayout>
-    <template #nav-sidebar="{ isAppSidebarOpen }">
-      <NavigationSidebar :is-app-sidebar-open="isAppSidebarOpen" />
+    <template #nav-sidebar="{ isAppPaneOpen }">
+      <NavigationSidebar :is-app-sidebar-open="isAppPaneOpen" />
     </template>
 
-    <template #app-sidebar>
-      <AppSidebarContent name="workspaces">
+    <template #app-pane>
+      <AppPaneContent content="workspaces">
         <Workspaces v-model:current-workspace="workspace" />
-      </AppSidebarContent>
-      <AppSidebarContent name="projects">
+      </AppPaneContent>
+      <AppPaneContent content="projects">
         <Projects v-if="workspace" :workspace="workspace" />
-      </AppSidebarContent>
-      <AppSidebarContent name="channels">
+      </AppPaneContent>
+      <AppPaneContent content="channels">
         <Channels />
-      </AppSidebarContent>
-      <AppSidebarContent name="teams">
+      </AppPaneContent>
+      <AppPaneContent content="teams">
         <Teams v-model:current-workspace="workspace" />
-      </AppSidebarContent>
-      <AppSidebarContent name="workspace-members">
+      </AppPaneContent>
+      <AppPaneContent content="workspace-members">
         <WorkspaceMembers v-model:current-workspace="workspace" />
-      </AppSidebarContent>
+      </AppPaneContent>
     </template>
 
-    <template #main-section>
+    <template #main-content>
       <RouterView />
     </template>
   </AppLayout>

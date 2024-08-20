@@ -1,51 +1,31 @@
 <script setup lang="ts">
-import { Collapsible, CollapsibleContent } from "@/design-system";
-import { TabsRoot, TabsList } from "radix-vue";
-import { computed, provide, ref } from "vue";
+import { ref } from "vue";
+import AppPane from "./app-pane/AppPane.vue";
 
-const appSidebarContent = ref("");
-const isAppSidebarOpen = ref(false);
-
-const tabControl = computed({
-  get: () => appSidebarContent.value,
-  set: (v) => {
-    isAppSidebarOpen.value = appSidebarContent.value === v ? !isAppSidebarOpen.value : true;
-    appSidebarContent.value = v;
-  },
-});
-
-provide("appLayout", { appSidebarContent });
+const isAppPaneOpen = ref(true);
 </script>
 
 <template>
-  <TabsRoot as-child v-model="tabControl" default-value="channels">
-    <Collapsible :open="isAppSidebarOpen" class="absolute inset-0">
-      <div class="flex:cols w-full h-full bg-zinc-100">
-        <TabsList as-child>
-          <aside class="flex:rows-xl p-2 w-64 text-xs text-neutral-700">
-            <slot name="nav-sidebar" :isAppSidebarOpen="isAppSidebarOpen" />
-          </aside>
-        </TabsList>
+  <div class="absolute inset-0">
+    <div class="flex:cols w-full h-full bg-zinc-100">
+      <aside class="flex:rows-xl p-2 w-64 text-xs text-neutral-700">
+        <slot name="nav-sidebar" :isAppPaneOpen="isAppPaneOpen" />
+      </aside>
 
-        <main
-          class="flex:cols self:fill bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
-        >
-          <!-- Application sidebar -->
-          <CollapsibleContent
-            as="aside"
-            transition="horizontal"
-            class="h-full w-96 border-r border-r-zinc-300/60"
-          >
-            <slot name="app-sidebar" />
-          </CollapsibleContent>
+      <main
+        class="flex:cols self:fill bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
+      >
+        <AppPane v-model:open="isAppPaneOpen">
+          <slot name="app-pane" />
+        </AppPane>
 
-          <section class="self:fill">
-            <slot name="main-section" />
-          </section>
-        </main>
-      </div>
-    </Collapsible>
-  </TabsRoot>
+        <!-- Main Content -->
+        <section class="self:fill">
+          <slot name="main-content" />
+        </section>
+      </main>
+    </div>
+  </div>
 </template>
 
 <style lang="scss" scoped></style>

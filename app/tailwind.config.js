@@ -21,6 +21,10 @@ module.exports = {
         "2xl": "1400px",
       },
     },
+    fontFamily: {
+      lato: ["Lato"],
+      dmSans: ["DM Sans"],
+    },
     extend: {
       spacing: {
         th: "0.0625rem",

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CollapsibleContent, type CollapsibleContentProps } from "radix-vue";
-import { omit } from "lodash";
+
 type Props = CollapsibleContentProps & { transition?: "vertical" | "horizontal" };
 
 const props = withDefaults(defineProps<Props>(), {
@@ -10,8 +10,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 <template>
   <CollapsibleContent
-    v-bind="omit(props, ['direction'])"
-    class="overflow-hidden transition-all"
+    v-bind="props"
+    class="overflow-hidden"
     :class="{
       'data-[state=open]:animate-collapsible-vertically-show data-[state=closed]:animate-collapsible-vertically-hide':
         transition === 'vertical',
