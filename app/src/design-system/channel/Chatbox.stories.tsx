@@ -1,11 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import Chatbox from "./Chatbox.vue";
-import messageGroupsData from "./message-groups.data";
+import { messageGroups } from "./message-groups.data";
 import daianaPhoto from "@/assets/images/daiana.png";
 
 const meta = {
   title: "Design System/Channel/Chatbox",
   component: Chatbox,
+  parameters: {
+    layout: "fullscreen",
+  },
 } satisfies Meta<typeof Chatbox>;
 
 export default meta;
@@ -17,6 +20,6 @@ export const Default: Story = {
     meId: 2,
     chatTitle: "Daiana",
     chatPicture: daianaPhoto,
-    messageGroups: messageGroupsData.messageGroups,
+    messageGroups,
   },
 };

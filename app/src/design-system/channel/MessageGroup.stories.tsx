@@ -20,7 +20,7 @@ export const Default: Story = {
   render: (props) => (
     <MessageGroup {...props}>
       {messageGroup.messages.map((message) => (
-        <MessageBox messageContent={message.content} />
+        <MessageBox content={message.content} />
       ))}
     </MessageGroup>
   ),

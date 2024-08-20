@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import { ref } from "vue";
+import { Button } from "../ui/button";
+import IconSendMessage from "../icons/IconSendMessage.vue";
 
 const emit = defineEmits<{
   (e: "send-message", value: { content: string }): void;
@@ -29,7 +31,7 @@ function onSendMessage() {
         legacy
         legacy-variant="primary"
         legacy-size="sm"
-        class="flex:cols-lg flex:center-y text-sm ml-auto"
+        class="flex:cols-lg flex:center-y text-sm ml-auto bg-[#3A66FF]"
         @click="onSendMessage"
       >
         <IconSendMessage />

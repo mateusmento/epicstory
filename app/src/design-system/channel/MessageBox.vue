@@ -4,7 +4,7 @@ import IconEmoji from "../icons/IconEmoji.vue";
 import { inject } from "vue";
 
 const props = defineProps<{
-  messageContent: string;
+  content: string;
 }>();
 
 function useMessageGroup() {
@@ -20,14 +20,14 @@ const styles = {
     [
       "group",
       "flex:cols-auto items-end",
-      "px-3 py-1.5 border border-[#E4E4E4]",
-      "first:rounded-t-xl last:rounded-b-xl rounded-md",
-      "shadow-sm",
+      "px-3 py-1 border border-[#E4E4E4]",
+      "first:rounded-t-xl last:rounded-b-xl rounded-lg",
+      "shadow-sm text-[15px] font-lato",
     ].join(" "),
     {
       variants: {
         sender: {
-          me: "first:rounded-tr-none",
+          me: "first:rounded-tr-none bg-[#3A66FF] text-zinc-50 border-none shadow-none",
           someoneElse: "first:rounded-tl-none",
         },
       },
@@ -38,7 +38,7 @@ const styles = {
 
 <template>
   <div :class="styles.messageBox({ sender })">
-    {{ messageContent }}
+    {{ content }}
     <div
       class="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-zinc-200/60 rounded-full p-1"
     >
