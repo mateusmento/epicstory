@@ -17,7 +17,7 @@ const { workspace } = useWorkspace();
   <AppLayout>
     <template #navbar="{ isAppPaneOpen }">
       <NavbarContent content="workspace">
-        <WorkspaceNavbar :is-app-sidebar-open="isAppPaneOpen" />
+        <WorkspaceNavbar :isAppPaneOpen="isAppPaneOpen" />
       </NavbarContent>
       <NavbarContent content="switch-workspace">
         <SwitchWorkspaceNavbar v-model:current-workspace="workspace" />

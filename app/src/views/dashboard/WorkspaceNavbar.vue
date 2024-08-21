@@ -5,7 +5,7 @@ import { IconLeftCollapse } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
 import NavListItem from "./NavListItem.vue";
 
-defineProps<{ isAppSidebarOpen: boolean }>();
+defineProps<{ isAppPaneOpen: boolean }>();
 
 const { workspace } = useWorkspace();
 </script>
@@ -16,7 +16,7 @@ const { workspace } = useWorkspace();
       view="app-pane"
       content="workspaces"
       class="flex:cols-auto flex:center-y p-2 pr-4 w-full rounded-md hover:bg-zinc-200/60 cursor-pointer"
-      :class="{ 'bg-zinc-200/60 hover:bg-transparent': isAppSidebarOpen }"
+      :class="{ 'bg-zinc-200/60 hover:bg-transparent': isAppPaneOpen }"
     >
       <div class="flex:rows-sm w-full">
         <div class="text-xs text-zinc-500">Workspace</div>
@@ -24,7 +24,7 @@ const { workspace } = useWorkspace();
           {{ workspace?.name }}
         </div>
       </div>
-      <IconLeftCollapse :class="{ 'scale-x-[-1]': !isAppSidebarOpen }" />
+      <IconLeftCollapse :class="{ 'scale-x-[-1]': !isAppPaneOpen }" />
     </NavTrigger>
 
     <nav class="flex:rows-md font-semibold">
