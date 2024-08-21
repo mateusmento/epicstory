@@ -12,8 +12,8 @@ export function useWorkspaces() {
     workspaces.value = content;
   }
 
-  async function createWorkspace(name: string) {
-    const workspace = await workspaceService.createWorkspace(name);
+  async function createWorkspace(data: { name: string }) {
+    const workspace = await workspaceService.createWorkspace(data.name);
     workspaces.value.push(workspace);
     return workspace;
   }
