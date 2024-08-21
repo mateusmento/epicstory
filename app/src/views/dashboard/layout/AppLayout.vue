@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import AppPane from "./app-pane/AppPane.vue";
+import { AppPane } from "./app-pane";
+import { Navbar } from "./navbar";
 
 const isAppPaneOpen = ref(true);
 </script>
@@ -8,9 +9,9 @@ const isAppPaneOpen = ref(true);
 <template>
   <div class="absolute inset-0">
     <div class="flex:cols w-full h-full bg-zinc-100">
-      <aside class="flex:rows-xl p-2 w-64 text-xs text-neutral-700">
-        <slot name="nav-sidebar" :isAppPaneOpen="isAppPaneOpen" />
-      </aside>
+      <Navbar>
+        <slot name="navbar" :isAppPaneOpen="isAppPaneOpen" />
+      </Navbar>
 
       <main
         class="flex:cols self:fill bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"

@@ -1,7 +1,6 @@
 <script lang="ts" setup>
-import { Collapsible, CollapsibleContent } from "@/design-system";
+import { Collapsible, CollapsibleContent, NavView } from "@/design-system";
 import { ref } from "vue";
-import { NavView } from "../nav-view";
 
 const open = defineModel<boolean>("open");
 const content = ref("channels");

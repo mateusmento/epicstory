@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <NavViewContent :content="content" class="h-full animate-collapsible-fadein">
+  <NavViewContent :content="content" class="animate-collapsible-fadein">
     <slot />
   </NavViewContent>
 </template>

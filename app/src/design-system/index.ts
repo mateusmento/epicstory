@@ -12,3 +12,4 @@ export * from "./ui/radio-group";
 export * from "./ui/popover";
 export * from "./ui/command";
 export * from "./ui/combobox";
+export * from "./ui/nav-view";

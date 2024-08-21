@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { Slot } from "radix-vue";
 import { useNavViewContent } from "./nav-view";
 
 defineProps<{
@@ -9,7 +10,7 @@ const { viewContent } = useNavViewContent();
 </script>
 
 <template>
-  <div v-if="viewContent === content" :key="viewContent">
+  <Slot v-if="viewContent === content" :key="viewContent">
     <slot />
-  </div>
+  </Slot>
 </template>

@@ -2,12 +2,12 @@
 import { useWorkspace } from "@/domain/workspace";
 import { RouterView } from "vue-router";
 import Channels from "./channels/Channels.vue";
-import AppLayout from "./layout/AppLayout.vue";
-import AppPaneContent from "./layout/app-pane/AppPaneContent.vue";
-import NavigationSidebar from "./NavigationSidebar.vue";
+import { AppLayout, AppPaneContent, NavbarContent } from "./layout";
 import Projects from "./projects/Projects.vue";
+import SwitchWorkspaceNavbar from "./SwitchWorkspaceNavbar.vue";
 import { Teams } from "./teams";
 import WorkspaceMembers from "./workspace-members/WorkspaceMembers.vue";
+import WorkspaceNavbar from "./WorkspaceNavbar.vue";
 import Workspaces from "./workspaces/Workspaces.vue";
 
 const { workspace } = useWorkspace();
@@ -15,8 +15,13 @@ const { workspace } = useWorkspace();
 
 <template>
   <AppLayout>
-    <template #nav-sidebar="{ isAppPaneOpen }">
-      <NavigationSidebar :is-app-sidebar-open="isAppPaneOpen" />
+    <template #navbar="{ isAppPaneOpen }">
+      <NavbarContent content="workspace">
+        <WorkspaceNavbar :is-app-sidebar-open="isAppPaneOpen" />
+      </NavbarContent>
+      <NavbarContent content="switch-workspace">
+        <SwitchWorkspaceNavbar v-model:current-workspace="workspace" />
+      </NavbarContent>
     </template>
 
     <template #app-pane>

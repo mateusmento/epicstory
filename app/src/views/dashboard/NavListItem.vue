@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import NavTrigger from "./layout/nav-view/NavTrigger.vue";
+import { NavTrigger } from "@/design-system";
 
 const props = defineProps<{
   view: string;
