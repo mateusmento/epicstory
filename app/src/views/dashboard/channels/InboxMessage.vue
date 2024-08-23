@@ -44,7 +44,7 @@ function formatDate(date: string | Moment) {
 
     <div class="self:fill flex:rows-sm">
       <div class="flex:cols-auto flex:center-y">
-        <div class="text-base font-semibold font-dmSans text-zinc-800">
+        <div class="text-base font-medium font-dmSans text-zinc-800">
           {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
         </div>
         <div class="text-xs text-zinc-500 font-dmSans">
@@ -55,7 +55,7 @@ function formatDate(date: string | Moment) {
       <div class="flex:cols-auto flex:center-y">
         <div
           class="text-sm font-lato"
-          :class="[channel.unreadMessagesCount === 0 ? 'text-zinc-500' : 'text-zinc-800']"
+          :class="[channel.unreadMessagesCount > 0 ? 'text-zinc-800' : 'text-zinc-500']"
         >
           {{ channel.lastMessage?.content }}
         </div>
