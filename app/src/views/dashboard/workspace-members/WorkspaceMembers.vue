@@ -5,11 +5,11 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  Combobox,
   Field,
   Form,
 } from "@/design-system";
 import { IconSearch } from "@/design-system/icons";
-import Combobox from "@/design-system/ui/combobox/Combobox.vue";
 import type { User } from "@/domain/auth";
 import { useUsers } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
