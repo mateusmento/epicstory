@@ -1,8 +1,8 @@
 import { CommandBus } from '@nestjs/cqrs';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { WorkspaceMemberAlreadyExists } from 'src/workspace/domain/exceptions/workspace-member-already-exists';
-import { AddWorkspaceMember } from '../add-workspace-member.command';
-import { CreateWorkspace } from '../create-workspace.command';
+import { AddWorkspaceMember } from '../workspace/add-workspace-member.command';
+import { CreateWorkspace } from '../workspace/create-workspace.command';
 import { createWorkspaceTestingModule } from './workspace.test-module';
 
 describe('Create workspace member command', () => {

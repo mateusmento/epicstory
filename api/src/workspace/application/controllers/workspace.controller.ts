@@ -18,16 +18,16 @@ import { IssuerUserCanNotAddWorkspaceMember } from 'src/workspace/domain/excepti
 import { IssuerUserCanNotCreateProject } from 'src/workspace/domain/exceptions/issuer-user-can-not-create-project';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions/issuer-user-is-not-workspace-member';
 import { WorkspaceMemberAlreadyExists } from 'src/workspace/domain/exceptions/workspace-member-already-exists';
-import { AddWorkspaceMember } from '../features/add-workspace-member.command';
-import { CreateProject } from '../features/create-project.command';
-import { CreateTeam } from '../features/create-team.command';
-import { CreateWorkspace } from '../features/create-workspace.command';
-import { FindProjects } from '../features/find-projects.query';
-import { FindWorkspaceMembers } from '../features/find-workspace-members.query';
-import { FindWorkspaces } from '../features/find-workspaces.query';
-import { RemoveWorkspaceMember } from '../features/remove-workspace.member.command';
-import { UpdateWorkspaceMember } from '../features/update-workspace-member.command';
-import { FindTeams } from '../features/find-teams.query';
+import { AddWorkspaceMember } from '../features/workspace/add-workspace-member.command';
+import { CreateProject } from '../features/project/create-project.command';
+import { CreateTeam } from '../features/team/create-team.command';
+import { CreateWorkspace } from '../features/workspace/create-workspace.command';
+import { FindProjects } from '../features/project/find-projects.query';
+import { FindWorkspaceMembers } from '../features/workspace/find-workspace-members.query';
+import { FindWorkspaces } from '../features/workspace/find-workspaces.query';
+import { RemoveWorkspaceMember } from '../features/workspace/remove-workspace.member.command';
+import { UpdateWorkspaceMember } from '../features/workspace/update-workspace-member.command';
+import { FindTeams } from '../features/team/find-teams.query';
 
 @Controller('workspaces')
 export class WorkspaceController {

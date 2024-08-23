@@ -1,10 +1,10 @@
 import { CommandBus } from '@nestjs/cqrs';
 import { CreateProject } from '../create-project.command';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
-import { CreateWorkspace } from '../create-workspace.command';
+import { CreateWorkspace } from '../workspace/create-workspace.command';
 import { Project } from 'src/workspace/domain/entities/project.entity';
 import { createWorkspaceTestingModule } from './workspace.test-module';
-import { AddWorkspaceMember } from '../add-workspace-member.command';
+import { AddWorkspaceMember } from '../workspace/add-workspace-member.command';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 
 describe('Create project command', () => {

@@ -1,6 +1,6 @@
 import { CommandBus } from '@nestjs/cqrs';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
-import { CreateWorkspace } from '../create-workspace.command';
+import { CreateWorkspace } from '../workspace/create-workspace.command';
 import { createWorkspaceTestingModule } from './workspace.test-module';
 
 describe('Create workspace command', () => {

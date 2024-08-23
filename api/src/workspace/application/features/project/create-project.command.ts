@@ -3,9 +3,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { IsNotEmpty } from 'class-validator';
 import { patch } from 'src/core/objects';
+import { WorkspaceProjectCreated } from 'src/workspace/contracts/events/workspace-project-created';
 import { ProjectRepository } from 'src/workspace/infrastructure/repositories/project.repository';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
-import { WorkspaceProjectCreated } from '../../contracts/events/workspace-project-created';
 
 export class CreateProject {
   issuerId: number;

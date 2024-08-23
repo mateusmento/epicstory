@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WorkspaceController } from './application/controllers/workspace.controller';
-import { AddWorkspaceMemberCommand } from './application/features/add-workspace-member.command';
+import { AddWorkspaceMemberCommand } from './application/features/workspace/add-workspace-member.command';
 import { CreateProjectCommand } from './application/features/create-project.command';
-import { CreateTeamCommand } from './application/features/create-team.command';
-import { CreateWorkspaceCommand } from './application/features/create-workspace.command';
-import { FindProjectsQuery } from './application/features/find-projects.query';
-import { FindWorkspaceMemberQuery } from './application/features/find-workspace-members.query';
-import { FindWorkspacesQuery } from './application/features/find-workspaces.query';
-import { RemoveWorkspaceMemberCommand } from './application/features/remove-workspace.member.command';
-import { UpdateWorkspaceMemberCommand } from './application/features/update-workspace-member.command';
+import { CreateTeamCommand } from './application/features/team/create-team.command';
+import { CreateWorkspaceCommand } from './application/features/workspace/create-workspace.command';
+import { FindProjectsQuery } from './application/features/project/find-projects.query';
+import { FindWorkspaceMemberQuery } from './application/features/workspace/find-workspace-members.query';
+import { FindWorkspacesQuery } from './application/features/workspace/find-workspaces.query';
+import { RemoveWorkspaceMemberCommand } from './application/features/workspace/remove-workspace.member.command';
+import { UpdateWorkspaceMemberCommand } from './application/features/workspace/update-workspace-member.command';
 import { UserCreatedReaction } from './application/reactions/user-created.reaction';
 import { Project } from './domain/entities/project.entity';
 import { Team } from './domain/entities/team.entity';
@@ -19,7 +19,7 @@ import { ProjectRepository } from './infrastructure/repositories/project.reposit
 import { TeamRepository } from './infrastructure/repositories/team.repository';
 import { WorkspaceMemberRepository } from './infrastructure/repositories/workspace-member.repository';
 import { WorkspaceRepository } from './infrastructure/repositories/workspace.repository';
-import { FindTeamsQuery } from './application/features/find-teams.query';
+import { FindTeamsQuery } from './application/features/team/find-teams.query';
 
 @Module({
   imports: [
