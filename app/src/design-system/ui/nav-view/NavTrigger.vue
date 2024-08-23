@@ -12,7 +12,7 @@ const { viewContent } = useNavTrigger(props.view);
 </script>
 
 <template>
-  <component :is="as ?? 'div'" @click="viewContent = content">
+  <component :is="as ?? 'div'" @click.stop="viewContent = content">
     <slot />
   </component>
 </template>

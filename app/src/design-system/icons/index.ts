@@ -1,3 +1,4 @@
+export { OhVueIcon as Icon } from "oh-vue-icons";
 export { default as IconArchive } from "./IconArchive.vue";
 export { default as IconArrowDown } from "./IconArrowDown.vue";
 export { default as IconBoard } from "./IconBoard.vue";

@@ -2,6 +2,8 @@ import "reflect-metadata";
 import "@/design-system/styles/main.css";
 import "@/design-system/styles/main.scss";
 
+import "./icons";
+
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 

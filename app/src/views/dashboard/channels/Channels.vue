@@ -3,7 +3,7 @@ import { Button, Field, Form, Label } from "@/design-system";
 import { Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/design-system";
 import { RadioGroup, RadioGroupItem } from "@/design-system";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system/ui/tabs";
-import { IconArrowDown, IconChannel, IconContacts } from "@/design-system/icons";
+import { Icon, IconArrowDown, IconChannel, IconContacts } from "@/design-system/icons";
 import { IconInbox, IconMention, IconSearch, IconThreads } from "@/design-system/icons";
 import { useChannels } from "@/domain/channels/composables/channels";
 import { ref } from "vue";
@@ -21,7 +21,8 @@ const channelType = ref("group");
     <div class="p-4 flex:rows-xl mx-auto">
       <div class="flex:cols-auto flex:center-y mb-3">
         <div class="flex:cols-md flex:center-y text-xl text-zinc-800 font-semibold">
-          <IconInbox />
+          <!-- <IconInbox /> -->
+          <Icon name="oi-inbox" />
           Inbox
         </div>
         <div class="flex:cols-md flex:center-y text-zinc-500 text-sm">
@@ -36,7 +37,8 @@ const channelType = ref("group");
       </div>
       <TabsList class="w-full mt-4">
         <TabsTrigger value="messages" class="flex:cols-md">
-          <IconContacts />
+          <!-- <IconContacts /> -->
+          <Icon name="bi-person-lines-fill" />
           Messages
         </TabsTrigger>
         <TabsTrigger value="mentions" class="flex:cols-md">
