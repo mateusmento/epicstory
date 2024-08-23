@@ -58,6 +58,10 @@ const { workspace } = useWorkspace();
     </div>
 
     <nav class="flex:rows-md font-semibold">
+      <NavListItem view="app-pane" content="inbox" class="flex:cols-md flex:center-y">
+        <Icon name="oi-inbox" />
+        Inbox
+      </NavListItem>
       <NavListItem view="app-pane" content="projects" class="flex:cols-md flex:center-y">
         <Icon name="hi-clipboard-list" />
         Projects

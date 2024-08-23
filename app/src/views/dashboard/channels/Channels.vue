@@ -36,7 +36,6 @@ const channelType = ref("group");
     <div class="p-4 flex:rows-xl mx-auto">
       <div class="flex:cols-auto flex:center-y mb-3">
         <div class="flex:cols-md flex:center-y text-xl text-zinc-800 font-semibold">
-          <!-- <IconInbox /> -->
           <Icon name="oi-inbox" />
           Inbox
         </div>
