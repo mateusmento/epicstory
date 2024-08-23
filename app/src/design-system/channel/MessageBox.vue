@@ -2,6 +2,7 @@
 import { cva } from "class-variance-authority";
 import IconEmoji from "../icons/IconEmoji.vue";
 import { inject } from "vue";
+import { Icon } from "../icons";
 
 const props = defineProps<{
   content: string;
@@ -19,7 +20,7 @@ const styles = {
   messageBox: cva(
     [
       "group",
-      "flex:cols-auto items-end",
+      "flex:cols-auto flex:center-y",
       "px-3 py-1 border border-[#E4E4E4]",
       "first:rounded-t-xl last:rounded-b-xl rounded-lg",
       "shadow-sm text-[15px] font-lato",
@@ -33,15 +34,21 @@ const styles = {
       },
     },
   ),
+  emoji: cva("p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer", {
+    variants: {
+      sender: {
+        me: "text-zinc-50 ",
+        someoneElse: "text-[#686870] hover:bg-zinc-200/60",
+      },
+    },
+  }),
 };
 </script>
 
 <template>
   <div :class="styles.messageBox({ sender })">
     {{ content }}
-    <div
-      class="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-zinc-200/60 rounded-full p-1"
-    >
+    <div class="" :class="styles.emoji({ sender })">
       <IconEmoji />
     </div>
   </div>

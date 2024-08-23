@@ -17,4 +17,5 @@ export {
   OiSidebarCollapse,
   MdDraghandleRound,
   MdDragindicator,
+  HiEmojiHappy,
 } from "oh-vue-icons/icons";

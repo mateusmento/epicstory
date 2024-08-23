@@ -6,7 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="topbar flex gap-2.5 border-b border-zinc-200">
+  <div class="topbar flex:cols flex:center-y gap-2.5 border-b border-zinc-200">
     <img v-if="chatPicture" :src="chatPicture" class="channel-photo" />
 
     <div v-else class="channel-photos">
@@ -17,7 +17,7 @@ defineProps<{
 
     <div class="flex:rows g-0.5">
       <div class="channel-name font-dmSans">{{ chatTitle }}</div>
-      <div class="font-dmSans text-[12px] text-[#888]">{{ chatTitle }} is typing something...</div>
+      <div class="font-dmSans text-[13px] text-[#888]">{{ chatTitle }} is typing something...</div>
     </div>
 
     <slot />
