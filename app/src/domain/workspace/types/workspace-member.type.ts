@@ -1,9 +1,9 @@
+import type { User } from "@/domain/auth";
+
 export type WorkspaceMember = {
   id: number;
   name: string;
   userId: number;
-  user: {
-    name: string;
-    email: string;
-  };
+  role: number;
+  user: User;
 };

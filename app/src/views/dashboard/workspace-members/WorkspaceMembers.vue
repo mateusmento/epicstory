@@ -1,5 +1,14 @@
 <script lang="ts" setup>
-import { Button, Field, Form } from "@/design-system";
+import {
+  Badge,
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Field,
+  Form,
+} from "@/design-system";
+import { IconSearch } from "@/design-system/icons";
 import Combobox from "@/design-system/ui/combobox/Combobox.vue";
 import type { User } from "@/domain/auth";
 import { useUsers } from "@/domain/user";
@@ -17,34 +26,57 @@ watch(query, () => fetchUsers(query.value));
 </script>
 
 <template>
-  <div class="flex:rows-xl p-4">
-    <h1 class="text-lg">Workspace Members</h1>
+  <div class="flex:rows">
+    <div class="flex:rows-3xl p-4">
+      <Collapsible as-child>
+        <div class="flex:cols-auto flex:center-y">
+          <h1 class="text-lg">Workspace Members</h1>
+          <CollapsibleTrigger as-child>
+            <Button variant="outline" size="badge" class="block ml-auto">Invite people</Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          <Form @submit="addWorkspaceMember($event.userId)" class="flex:rows-lg">
+            <Combobox
+              v-model="selectedUser"
+              v-model:searchTerm="query"
+              :options="users"
+              track-by="id"
+              label-by="name"
+            />
+            <Field
+              :modelValue="selectedUser?.id"
+              type="hidden"
+              name="userId"
+              placeholder="Add workspace member..."
+            />
+            <Button type="submit" size="xs">Add</Button>
+          </Form>
+        </CollapsibleContent>
+      </Collapsible>
 
-    <div class="flex:rows-lg p-1 rounded-md bg-zinc-100 text-zinc-500 text-sm">
+      <div
+        class="flex:cols-md flex:center-y flex:center-x p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm"
+      >
+        <IconSearch /> Search
+      </div>
+    </div>
+
+    <div class="flex:rows text-sm">
       <div
         v-for="member in members"
         :key="member.id"
-        class="px-2 py-1 rounded-sm hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:cols-lg p-3 border-t rounded-sm hover:bg-zinc-200/60 cursor-pointer"
       >
-        {{ member.user.name }}
+        <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
+        <div class="flex:rows-sm">
+          <div class="text-base font-medium font-dmSans">{{ member.user.name }}</div>
+          <div class="text-xs text-zinc-500">Member since april 2019</div>
+        </div>
+        <div class="ml-auto">
+          <Badge variant="outline">{{ member.role === 1 ? "Admin" : "Member" }}</Badge>
+        </div>
       </div>
     </div>
-    {{ selectedUser }}
-    <Form @submit="addWorkspaceMember($event.userId)" class="flex:rows-lg">
-      <Combobox
-        v-model="selectedUser"
-        v-model:searchTerm="query"
-        :options="users"
-        track-by="id"
-        label-by="name"
-      />
-      <Field
-        :modelValue="selectedUser?.id"
-        type="hidden"
-        name="userId"
-        placeholder="Add workspace member..."
-      />
-      <Button type="submit" size="xs">Add</Button>
-    </Form>
   </div>
 </template>

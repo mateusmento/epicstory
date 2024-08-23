@@ -13,6 +13,7 @@ const props = defineProps<
     options: any[];
     trackBy: string;
     labelBy: string;
+    buttonClass?: string;
   }
 >();
 
@@ -37,12 +38,12 @@ const open = ref(false);
 <template>
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
-      <Button variant="outline" role="combobox" :aria-expanded="open" class="w-[200px] justify-between">
+      <Button variant="outline" role="combobox" :aria-expanded="open" class="justify-between">
         {{ value ? labelOf(value) : "Select an option..." }}
         <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="w-[200px] p-0">
+    <PopoverContent class="p-0">
       <Command v-bind="forwarded" v-model="value">
         <CommandInput placeholder="Search for options..." />
         <CommandEmpty>No options found.</CommandEmpty>
