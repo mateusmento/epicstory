@@ -9,7 +9,7 @@ import {
   Field,
   Form,
 } from "@/design-system";
-import { IconSearch } from "@/design-system/icons";
+import { Icon, IconSearch } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { useUsers } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
@@ -30,7 +30,10 @@ watch(query, () => fetchUsers(query.value));
     <div class="flex:rows-3xl p-4">
       <Collapsible as-child>
         <div class="flex:cols-auto flex:center-y">
-          <h1 class="text-lg">Workspace Members</h1>
+          <h1 class="flex:cols-md flex:center-y text-lg font-medium whitespace-nowrap">
+            <Icon name="bi-people-fill" />
+            Workspace Members
+          </h1>
           <CollapsibleTrigger as-child>
             <Button variant="outline" size="badge" class="block ml-auto">Invite people</Button>
           </CollapsibleTrigger>

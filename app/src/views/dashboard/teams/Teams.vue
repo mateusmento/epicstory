@@ -15,7 +15,7 @@ onMounted(() => fetchTeams());
       <Collapsible as-child>
         <div class="flex:cols-auto flex:center-y">
           <h1 class="flex:cols-md flex:center-y text-lg">
-            <Icon name="hi-clipboard-list" />
+            <Icon name="bi-person-workspace" />
             <div>Teams</div>
           </h1>
 

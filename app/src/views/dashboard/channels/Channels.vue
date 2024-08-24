@@ -35,9 +35,9 @@ const channelType = ref("group");
   <Tabs class="flex:rows h-full" default-value="messages">
     <div class="p-4 flex:rows-xl mx-auto">
       <div class="flex:cols-auto flex:center-y mb-3">
-        <div class="flex:cols-md flex:center-y text-xl text-zinc-800 font-semibold">
-          <Icon name="oi-inbox" />
-          Inbox
+        <div class="flex:cols-sm flex:center-y text-lg text-zinc-800 font-medium">
+          <Icon name="fa-slack-hash" scale="1.2" />
+          Channels
         </div>
         <div class="flex:cols-md flex:center-y text-zinc-500 text-sm">
           Recent
@@ -51,7 +51,6 @@ const channelType = ref("group");
       </div>
       <TabsList class="w-full mt-4">
         <TabsTrigger value="messages" class="flex:cols-md">
-          <!-- <IconContacts /> -->
           <Icon name="bi-person-lines-fill" />
           Messages
         </TabsTrigger>
