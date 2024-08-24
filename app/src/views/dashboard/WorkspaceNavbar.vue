@@ -41,7 +41,7 @@ const { workspace } = useWorkspace();
         <Icon name="oi-inbox" />
         Inbox
       </NavListItem>
-      <NavListItem view="app-pane" content="inbox" class="flex:cols-md flex:center-y">
+      <NavListItem view="app-pane" content="issues" class="flex:cols-md flex:center-y">
         <Icon name="oi-apps" />
         Issues
       </NavListItem>
