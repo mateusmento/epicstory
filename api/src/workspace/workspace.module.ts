@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WorkspaceController } from './application/controllers/workspace.controller';
 import { AddWorkspaceMemberCommand } from './application/features/workspace/add-workspace-member.command';
-import { CreateProjectCommand } from './application/features/create-project.command';
+import { CreateProjectCommand } from './application/features/project/create-project.command';
 import { CreateTeamCommand } from './application/features/team/create-team.command';
 import { CreateWorkspaceCommand } from './application/features/workspace/create-workspace.command';
 import { FindProjectsQuery } from './application/features/project/find-projects.query';
