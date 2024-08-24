@@ -36,7 +36,7 @@ export function useNavViewContent() {
 
 export function useNavTrigger(view: string) {
   const viewContent = computed({
-    get: () => views[view].viewContent.value,
+    get: () => views[view]?.viewContent.value,
     set: (value: string) => {
       views[view].viewContent.value = value;
     },
