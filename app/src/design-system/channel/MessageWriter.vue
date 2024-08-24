@@ -25,7 +25,7 @@ function onSendMessage() {
     <textarea
       v-model="messageContent"
       placeholder="Send a message to channel..."
-      class="w-full h-full px-2 rounded-md resize-none outline-none"
+      class="w-full h-full px-2 text-sm rounded-md resize-none outline-none"
       ref="messageTextEl"
     />
 
