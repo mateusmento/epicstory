@@ -1,3 +1,3 @@
 export * from "./navbar";
-export * from "./app-pane";
+export * from "../../../components/app-pane";
 export { default as AppLayout } from "./AppLayout.vue";
