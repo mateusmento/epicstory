@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import {
+  Channels,
+  Inbox,
+  Issues,
+  Projects,
+  Teams,
+  WorkspaceMembers,
+  Workspaces,
+} from "@/components/app-pane";
+import { AppLayout, AppPaneContent, NavbarContent } from "@/components/layout";
+import { SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { useWorkspace } from "@/domain/workspace";
 import { RouterView } from "vue-router";
-import Channels from "./channels/Channels.vue";
-import { AppLayout, AppPaneContent, NavbarContent } from "./layout";
-import Projects from "./projects/Projects.vue";
-import SwitchWorkspaceNavbar from "./SwitchWorkspaceNavbar.vue";
-import { Teams } from "./teams";
-import WorkspaceMembers from "./workspace-members/WorkspaceMembers.vue";
-import WorkspaceNavbar from "./WorkspaceNavbar.vue";
-import Workspaces from "./workspaces/Workspaces.vue";
-import { Inbox } from "./inbox";
-import { Issues } from "./issues";
 
 const { workspace } = useWorkspace();
 </script>

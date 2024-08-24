@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { AppPane } from "../../../components/app-pane";
+import { AppPane } from "./app-pane";
 import { Navbar } from "./navbar";
 
 const isAppPaneOpen = ref(true);

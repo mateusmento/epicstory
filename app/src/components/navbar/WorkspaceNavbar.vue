@@ -3,7 +3,7 @@ import { UpdateUser, UserProfile } from "@/components/user";
 import { Button, Dialog, DialogContent, DialogTrigger, NavTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
-import NavListItem from "./NavListItem.vue";
+import { NavListItem } from "../layout";
 
 defineProps<{ isAppPaneOpen: boolean }>();
 

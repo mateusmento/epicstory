@@ -1,2 +1,7 @@
-export { default as AppPane } from "./AppPane.vue";
-export { default as AppPaneContent } from "./AppPaneContent.vue";
+export * from "./channels";
+export * from "./inbox";
+export * from "./issues";
+export * from "./projects";
+export * from "./teams";
+export * from "./workspace-members";
+export * from "./workspaces";
