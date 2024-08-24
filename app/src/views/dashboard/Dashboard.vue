@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-  Channels,
-  Inbox,
-  Issues,
-  Projects,
-  Teams,
-  WorkspaceMembers,
-  Workspaces,
-} from "@/components/app-pane";
+import { Channels, Inbox, Issues, Projects, Teams, WorkspaceMembers } from "@/components/app-pane";
 import { AppLayout, AppPaneContent, NavbarContent } from "@/components/layout";
 import { SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { useWorkspace } from "@/domain/workspace";
@@ -33,9 +25,6 @@ const { workspace } = useWorkspace();
       </AppPaneContent>
       <AppPaneContent content="issues">
         <Issues />
-      </AppPaneContent>
-      <AppPaneContent content="workspaces">
-        <Workspaces v-model:current-workspace="workspace" />
       </AppPaneContent>
       <AppPaneContent content="projects">
         <Projects v-if="workspace" :workspace="workspace" />
