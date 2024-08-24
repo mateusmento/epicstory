@@ -69,15 +69,16 @@ watch(query, () => fetchUsers(query.value));
       <div
         v-for="member in members"
         :key="member.id"
-        class="flex:cols-lg p-3 border-t rounded-sm hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:cols-lg p-3 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
         <div class="flex:rows-sm">
-          <div class="text-base font-medium font-dmSans">{{ member.user.name }}</div>
-          <div class="text-xs text-zinc-500">Member since april 2019</div>
+          <div class="text-base font-medium font-dmSans whitespace-nowrap">{{ member.user.name }}</div>
+          <div class="text-xs text-zinc-500 whitespace-nowrap">{{ member.user.email }}</div>
         </div>
-        <div class="ml-auto">
-          <Badge variant="outline">{{ member.role === 1 ? "Admin" : "Member" }}</Badge>
+        <div class="flex:rows-auto ml-auto">
+          <Badge variant="outline" class="self-end">{{ member.role === 1 ? "Admin" : "Member" }}</Badge>
+          <div class="text-xs text-zinc-500 whitespace-nowrap">Member since april 2019</div>
         </div>
       </div>
     </div>
