@@ -9,6 +9,7 @@ import { Teams } from "./teams";
 import WorkspaceMembers from "./workspace-members/WorkspaceMembers.vue";
 import WorkspaceNavbar from "./WorkspaceNavbar.vue";
 import Workspaces from "./workspaces/Workspaces.vue";
+import { Inbox } from "./inbox";
 
 const { workspace } = useWorkspace();
 </script>
@@ -25,6 +26,9 @@ const { workspace } = useWorkspace();
     </template>
 
     <template #app-pane>
+      <AppPaneContent content="inbox">
+        <Inbox />
+      </AppPaneContent>
       <AppPaneContent content="workspaces">
         <Workspaces v-model:current-workspace="workspace" />
       </AppPaneContent>
