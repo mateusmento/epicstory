@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { WorkspaceController } from './application/controllers';
+import {
+  WorkspaceController,
+  ProjectController,
+} from './application/controllers';
 import {
   AddWorkspaceMemberCommand,
   CreateIssueCommand,
@@ -41,7 +44,7 @@ import {
       Issue,
     ]),
   ],
-  controllers: [WorkspaceController],
+  controllers: [WorkspaceController, ProjectController],
   providers: [
     WorkspaceRepository,
     WorkspaceMemberRepository,

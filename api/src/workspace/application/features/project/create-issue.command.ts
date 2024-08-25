@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Issuer } from 'src/core/auth';
+import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions/issuer-user-is-not-workspace-member';
 import { IssueRepository } from 'src/workspace/infrastructure/repositories/issue.repository';
 import { ProjectRepository } from 'src/workspace/infrastructure/repositories/project.repository';
@@ -16,6 +17,10 @@ export class CreateIssue {
   description?: string;
   @IsNumber()
   projectId: number;
+
+  constructor(data: Partial<CreateIssue> = {}) {
+    patch(this, data);
+  }
 }
 
 @CommandHandler(CreateIssue)
