@@ -22,6 +22,7 @@ import { WorkspaceRepository } from './infrastructure/repositories/workspace.rep
 import { FindTeamsQuery } from './application/features/team/find-teams.query';
 import { FindIssuesQuery } from './application/features/project/find-issues.query';
 import { Issue } from './domain/entities';
+import { IssueRepository } from './infrastructure/repositories/issue.repository';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { Issue } from './domain/entities';
     WorkspaceMemberRepository,
     ProjectRepository,
     TeamRepository,
+    IssueRepository,
     FindWorkspacesQuery,
     CreateWorkspaceCommand,
     FindWorkspaceMemberQuery,
