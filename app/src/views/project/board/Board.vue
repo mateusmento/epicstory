@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-defineProps<{ projectId: number }>();
+defineProps<{ projectId: string }>();
 </script>
 
 <template>

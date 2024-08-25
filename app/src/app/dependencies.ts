@@ -1,5 +1,5 @@
 import { createAxios } from "@/core/axios";
-import { IssueService } from "@/domain/issue/issue.service";
+import { IssueApi } from "@/domain/issues";
 import { WorkspaceService } from "@/domain/workspace";
 import { Axios } from "axios";
 import { container as tsyringe } from "tsyringe";
@@ -12,6 +12,6 @@ export async function createDependencies() {
   container.registerInstance(Axios, axios);
   container.registerSingleton(WorkspaceService);
   container.registerSingleton(ProjectService);
-  container.registerSingleton(IssueService);
+  container.registerSingleton(IssueApi);
   return container;
 }

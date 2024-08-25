@@ -2,7 +2,7 @@
 import { Button, Separator } from "@/design-system";
 import { RouterLink } from "vue-router";
 
-defineProps<{ projectId: number }>();
+defineProps<{ projectId: string }>();
 </script>
 
 <template>
