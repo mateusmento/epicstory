@@ -20,6 +20,7 @@ import { TeamRepository } from './infrastructure/repositories/team.repository';
 import { WorkspaceMemberRepository } from './infrastructure/repositories/workspace-member.repository';
 import { WorkspaceRepository } from './infrastructure/repositories/workspace.repository';
 import { FindTeamsQuery } from './application/features/team/find-teams.query';
+import { FindIssuesQuery } from './application/features/project/find-issues.query';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { FindTeamsQuery } from './application/features/team/find-teams.query';
     FindTeamsQuery,
     CreateTeamCommand,
     UserCreatedReaction,
+    FindIssuesQuery,
   ],
   exports: [WorkspaceRepository],
 })
