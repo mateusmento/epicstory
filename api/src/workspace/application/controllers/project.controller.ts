@@ -6,7 +6,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CreateIssue } from '../features/project/create-issue.command';
+import { CreateIssue } from '../features/issue/create-issue.command';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { ExceptionFilter } from 'src/core/convert-exception.filter';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';

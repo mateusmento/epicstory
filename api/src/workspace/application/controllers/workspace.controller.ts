@@ -29,7 +29,7 @@ import { FindWorkspaces } from '../features/workspace/find-workspaces.query';
 import { RemoveWorkspaceMember } from '../features/workspace/remove-workspace.member.command';
 import { UpdateWorkspaceMember } from '../features/workspace/update-workspace-member.command';
 import { FindTeams } from '../features/team/find-teams.query';
-import { FindIssues } from '../features/project/find-issues.query';
+import { FindIssues } from '../features/issue/find-issues.query';
 
 @Controller('workspaces')
 export class WorkspaceController {
