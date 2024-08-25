@@ -25,9 +25,9 @@ watch(
     <div class="flex:rows-xl p-4">
       <Collapsible as-child>
         <div class="flex:cols-auto flex:center-y">
-          <h1 class="flex:cols-md flex:center-y text-lg">
+          <h1 class="flex:cols-md flex:center-y">
             <Icon name="hi-clipboard-list" />
-            <div>Projects</div>
+            <div class="text-lg font-medium">Projects</div>
           </h1>
 
           <CollapsibleTrigger as-child>

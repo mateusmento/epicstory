@@ -72,7 +72,7 @@ watch(query, () => fetchUsers(query.value));
         class="flex:cols-lg p-3 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
-        <div class="flex:rows-sm">
+        <div class="flex:rows-md">
           <div class="text-base font-medium font-dmSans whitespace-nowrap">{{ member.user.name }}</div>
           <div class="text-xs text-zinc-500 whitespace-nowrap">{{ member.user.email }}</div>
         </div>

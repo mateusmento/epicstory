@@ -4,9 +4,9 @@ import { Icon } from "@/design-system/icons";
 
 <template>
   <div class="flex:rows">
-    <div class="flex:cols-md flex:center-y p-4 text-lg font-medium">
+    <div class="flex:cols-md flex:center-y p-4">
       <Icon name="oi-inbox" />
-      Inbox
+      <div class="text-lg font-medium">Inbox</div>
     </div>
   </div>
 </template>
