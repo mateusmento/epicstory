@@ -3,10 +3,12 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions/issuer-user-is-not-workspace-member';
-import { IssueRepository } from 'src/workspace/infrastructure/repositories/issue.repository';
-import { ProjectRepository } from 'src/workspace/infrastructure/repositories/project.repository';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
+import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import {
+  IssueRepository,
+  ProjectRepository,
+  WorkspaceRepository,
+} from 'src/workspace/infrastructure/repositories';
 
 export class CreateIssue {
   issuer: Issuer;
