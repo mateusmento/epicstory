@@ -23,7 +23,7 @@ export class Issue {
   projectId: number;
 
   @Column()
-  createdBy: number;
+  createdById: number;
 
   @CreateDateColumn()
   createdAt: Date;
