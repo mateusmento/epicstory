@@ -35,10 +35,9 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
       skip: page * count,
       take: count + 1,
     });
-
     const hasPrevious = page > 0;
     const hasNext = content.length === count + 1;
-    content.pop();
+    if (hasNext) content.pop();
     return { content, page, count, hasNext, hasPrevious };
   }
 }
