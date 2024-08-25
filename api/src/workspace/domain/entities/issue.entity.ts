@@ -27,4 +27,7 @@ export class Issue {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ default: 'todo' })
+  status: string;
 }

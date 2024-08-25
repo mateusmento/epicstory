@@ -33,6 +33,8 @@ import {
   WorkspaceMemberRepository,
   WorkspaceRepository,
 } from './infrastructure/repositories';
+import { IssueController } from './application/controllers/issue.controller';
+import { UpdateIssueCommand } from './application/features/issue/update-issue.command';
 
 @Module({
   imports: [
@@ -44,7 +46,7 @@ import {
       Issue,
     ]),
   ],
-  controllers: [WorkspaceController, ProjectController],
+  controllers: [WorkspaceController, ProjectController, IssueController],
   providers: [
     WorkspaceRepository,
     WorkspaceMemberRepository,
@@ -64,6 +66,7 @@ import {
     UserCreatedReaction,
     FindIssuesQuery,
     CreateIssueCommand,
+    UpdateIssueCommand,
   ],
   exports: [WorkspaceRepository],
 })
