@@ -3,6 +3,7 @@ import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Field, For
 import { Icon } from "@/design-system/icons";
 import { useWorkspace, type Workspace } from "@/domain/workspace";
 import { onMounted, watch } from "vue";
+import { RouterLink } from "vue-router";
 
 const props = defineProps<{
   workspace: Workspace;
@@ -46,14 +47,15 @@ watch(
     </div>
 
     <div class="flex:rows">
-      <div
+      <RouterLink
         v-for="project of projects"
         :key="project.id"
+        :to="`/project/${project.id}/`"
         class="flex:rows-md p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
         <div class="text-base text-zinc-800 font-dmSans font-medium">{{ project.name }}</div>
         <div class="text-xs text-zinc-500">4 members</div>
-      </div>
+      </RouterLink>
     </div>
   </div>
 </template>

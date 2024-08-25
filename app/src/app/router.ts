@@ -30,11 +30,28 @@ const authenticatedRoutes = defineRoutes({
   routes: [
     {
       path: "/",
-      component: () => import("@/views/dashboard/Dashboard.vue"),
+      component: () => import("@/views/Dashboard.vue"),
       children: [
         {
           path: "/channel/:channelId",
           component: () => import("@/views/channel/Channel.vue"),
+        },
+        {
+          path: "/project/:projectId",
+          component: () => import("@/views/project/Project.vue"),
+          props: true,
+          children: [
+            {
+              path: "backlog",
+              props: true,
+              component: () => import("@/views/project/backlog/Backlog.vue"),
+            },
+            {
+              path: "board",
+              props: true,
+              component: () => import("@/views/project/board/Board.vue"),
+            },
+          ],
         },
       ],
     },
@@ -64,7 +81,7 @@ const authenticatedRoutes = defineRoutes({
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [...openRoutes, ...authenticatedRoutes],
+  routes: [openRoutes, authenticatedRoutes].flat(),
 });
 
 export default router;
