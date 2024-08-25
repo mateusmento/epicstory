@@ -1,7 +1,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
-import { IssueApi } from "../api";
+import { IssueApi, type UpdateIssueData } from "../api";
 import type { Issue } from "../types";
 
 const useIssueStore = defineStore("issue", () => {
@@ -25,9 +25,17 @@ export function useIssues() {
     return issue;
   }
 
+  async function updateIssue(issueId: number, data: UpdateIssueData) {
+    const issue = await issueApi.updateIssue(issueId, data);
+    const index = store.issues.findIndex((is) => is.id === issueId);
+    if (index > 0) store.issues[index] = issue;
+    return issue;
+  }
+
   return {
     ...storeToRefs(store),
     fetchIssues,
     createIssue,
+    updateIssue,
   };
 }

@@ -11,6 +11,12 @@ export type Page<T> = {
   hasPrevious: boolean;
 };
 
+export type UpdateIssueData = {
+  title?: string;
+  description?: string;
+  status?: string;
+};
+
 @injectable()
 export class IssueApi {
   constructor(@InjectAxios() private axios: Axios) {}
@@ -23,5 +29,9 @@ export class IssueApi {
 
   createIssue(projectId: number, title: string) {
     return this.axios.post<Issue>(`/projects/${projectId}/issues`, { title }).then((res) => res.data);
+  }
+
+  updateIssue(issueId: number, data: UpdateIssueData) {
+    return this.axios.patch<Issue>(`/issues/${issueId}`, data).then((res) => res.data);
   }
 }

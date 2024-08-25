@@ -6,4 +6,5 @@ export type Issue = {
   projectId: number;
   createdById: number;
   createdAt: string;
+  status: string;
 };
