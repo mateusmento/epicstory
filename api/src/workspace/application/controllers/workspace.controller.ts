@@ -12,24 +12,27 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { Auth, Issuer } from 'src/core/auth/auth-user';
-import { JwtAuthGuard } from 'src/core/auth/jwt.strategy';
-import { ExceptionFilter } from 'src/core/convert-exception.filter';
-import { IssuerUserCanNotAddWorkspaceMember } from 'src/workspace/domain/exceptions/issuer-user-can-not-add-workspace-member';
-import { IssuerUserCanNotCreateProject } from 'src/workspace/domain/exceptions/issuer-user-can-not-create-project';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions/issuer-user-is-not-workspace-member';
-import { WorkspaceMemberAlreadyExists } from 'src/workspace/domain/exceptions/workspace-member-already-exists';
-import { AddWorkspaceMember } from '../features/workspace/add-workspace-member.command';
-import { CreateProject } from '../features/project/create-project.command';
-import { CreateTeam } from '../features/team/create-team.command';
-import { CreateWorkspace } from '../features/workspace/create-workspace.command';
-import { FindProjects } from '../features/project/find-projects.query';
-import { FindWorkspaceMembers } from '../features/workspace/find-workspace-members.query';
-import { FindWorkspaces } from '../features/workspace/find-workspaces.query';
-import { RemoveWorkspaceMember } from '../features/workspace/remove-workspace.member.command';
-import { UpdateWorkspaceMember } from '../features/workspace/update-workspace-member.command';
-import { FindTeams } from '../features/team/find-teams.query';
-import { FindIssues } from '../features/issue/find-issues.query';
+import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { ExceptionFilter } from 'src/core';
+import {
+  IssuerUserCanNotAddWorkspaceMember,
+  IssuerUserCanNotCreateProject,
+  IssuerUserIsNotWorkspaceMember,
+  WorkspaceMemberAlreadyExists,
+} from 'src/workspace/domain/exceptions';
+import {
+  AddWorkspaceMember,
+  CreateProject,
+  CreateTeam,
+  CreateWorkspace,
+  FindIssues,
+  FindProjects,
+  FindTeams,
+  FindWorkspaceMembers,
+  FindWorkspaces,
+  RemoveWorkspaceMember,
+  UpdateWorkspaceMember,
+} from '../features';
 
 @Controller('workspaces')
 export class WorkspaceController {
