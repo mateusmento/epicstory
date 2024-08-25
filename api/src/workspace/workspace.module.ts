@@ -35,6 +35,7 @@ import {
 } from './infrastructure/repositories';
 import { IssueController } from './application/controllers/issue.controller';
 import { UpdateIssueCommand } from './application/features/issue/update-issue.command';
+import { RemoveIssueCommand } from './application/features/issue/remove-issue.command';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { UpdateIssueCommand } from './application/features/issue/update-issue.co
     FindIssuesQuery,
     CreateIssueCommand,
     UpdateIssueCommand,
+    RemoveIssueCommand,
   ],
   exports: [WorkspaceRepository],
 })
