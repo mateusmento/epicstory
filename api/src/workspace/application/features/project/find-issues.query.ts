@@ -4,7 +4,6 @@ import { patch } from 'src/core/objects';
 import { IssueRepository } from 'src/workspace/infrastructure/repositories/issue.repository';
 
 export class FindIssues {
-  @IsNumber()
   workspaceId: number;
 
   @IsNumber()

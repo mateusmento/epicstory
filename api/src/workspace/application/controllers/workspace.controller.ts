@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
@@ -28,6 +29,7 @@ import { FindWorkspaces } from '../features/workspace/find-workspaces.query';
 import { RemoveWorkspaceMember } from '../features/workspace/remove-workspace.member.command';
 import { UpdateWorkspaceMember } from '../features/workspace/update-workspace-member.command';
 import { FindTeams } from '../features/team/find-teams.query';
+import { FindIssues } from '../features/project/find-issues.query';
 
 @Controller('workspaces')
 export class WorkspaceController {
@@ -151,5 +153,11 @@ export class WorkspaceController {
     return this.commandBus.execute(
       new CreateTeam({ ...command, workspaceId, issuerId: issuer.id }),
     );
+  }
+
+  @Get(':id/issues')
+  @UseGuards(JwtAuthGuard)
+  findIssues(@Param('id') workspaceId: number, @Query() query: FindIssues) {
+    return this.queryBus.execute(new FindIssues({ workspaceId, ...query }));
   }
 }
