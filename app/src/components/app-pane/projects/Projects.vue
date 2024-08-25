@@ -50,7 +50,7 @@ watch(
       <RouterLink
         v-for="project of projects"
         :key="project.id"
-        :to="`/project/${project.id}/`"
+        :to="`/project/${project.id}/backlog`"
         class="flex:rows-md p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
         <div class="text-base text-zinc-800 font-dmSans font-medium">{{ project.name }}</div>
