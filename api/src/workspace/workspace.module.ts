@@ -21,10 +21,17 @@ import { WorkspaceMemberRepository } from './infrastructure/repositories/workspa
 import { WorkspaceRepository } from './infrastructure/repositories/workspace.repository';
 import { FindTeamsQuery } from './application/features/team/find-teams.query';
 import { FindIssuesQuery } from './application/features/project/find-issues.query';
+import { Issue } from './domain/entities';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Workspace, WorkspaceMember, Project, Team]),
+    TypeOrmModule.forFeature([
+      Workspace,
+      WorkspaceMember,
+      Project,
+      Team,
+      Issue,
+    ]),
   ],
   controllers: [WorkspaceController],
   providers: [
