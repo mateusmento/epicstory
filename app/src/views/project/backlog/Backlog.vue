@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import { Button, Field, Form } from "@/design-system";
+import { Icon } from "@/design-system/icons";
 import { useIssues, type Issue } from "@/domain/issues";
 import { onMounted, reactive, watch } from "vue";
 
 const props = defineProps<{ projectId: string }>();
 
-const { issues, fetchIssues, createIssue, updateIssue } = useIssues();
+const { issues, fetchIssues, createIssue, updateIssue, removeIssue } = useIssues();
 
 onMounted(() => {
   fetchIssues(+props.projectId, 0, 10);
@@ -28,15 +29,15 @@ function openIssueEdit(issue: Issue) {
   edittingIssue.title = issue.title;
 }
 
+function closeIssueEdit() {
+  edittingIssue.id = null;
+  edittingIssue.title = "";
+}
+
 function saveEdit() {
   const { id, ...data } = edittingIssue;
   if (id) updateIssue(id, data);
   closeIssueEdit();
-}
-
-function closeIssueEdit() {
-  edittingIssue.id = null;
-  edittingIssue.title = "";
 }
 
 function updateIssueStatus(issue: Issue) {
@@ -46,8 +47,9 @@ function updateIssueStatus(issue: Issue) {
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="flex:rows-xl flex:center-y m-auto p-4 w-96 h-full">
     <h2 class="text-lg font-semibold">Issues</h2>
+
     <div class="flex:rows-md">
       <div v-for="issue of issues" :key="issue.id" class="flex:cols-md flex:center-y">
         <div v-if="edittingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
@@ -58,11 +60,14 @@ function updateIssueStatus(issue: Issue) {
           <Button type="submit" size="badge">Save</Button>
           <Button size="badge">Cancel</Button>
         </Form>
+        <div class="self:fill"></div>
         <Button variant="outline" size="badge" @click="updateIssueStatus(issue)">{{ issue.status }}</Button>
+        <Icon name="io-trash-bin" @click="removeIssue(issue.id)" class="cursor-pointer text-zinc-800" />
       </div>
     </div>
-    <Form @submit="createIssue(+projectId, $event.title)" class="flex:cols-md mt-2">
-      <Field name="title" size="xs" placeholder="Describe an issue..." />
+
+    <Form @submit="createIssue(+projectId, $event.title)" class="flex:cols-md">
+      <Field name="title" size="xs" placeholder="Describe an issue..." class="flex-1" />
       <Button type="submit" size="xs">Add</Button>
     </Form>
   </div>

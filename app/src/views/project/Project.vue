@@ -6,7 +6,7 @@ defineProps<{ projectId: string }>();
 </script>
 
 <template>
-  <div>
+  <div class="h-full flex:rows">
     <nav class="flex:cols-lg flex:center-y p-2">
       <RouterLink to="backlog">
         <Button variant="ghost" size="xs">Backlog</Button>
@@ -16,7 +16,7 @@ defineProps<{ projectId: string }>();
       </RouterLink>
     </nav>
     <Separator />
-    <section>
+    <section class="flex-1">
       <RouterView />
     </section>
   </div>

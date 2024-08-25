@@ -32,4 +32,5 @@ export {
   BiSendFill,
   IoPaperPlane,
   CoChatBubble,
+  IoTrashBin,
 } from "oh-vue-icons/icons";

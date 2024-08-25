@@ -34,4 +34,8 @@ export class IssueApi {
   updateIssue(issueId: number, data: UpdateIssueData) {
     return this.axios.patch<Issue>(`/issues/${issueId}`, data).then((res) => res.data);
   }
+
+  async removeIssue(issueId: number) {
+    await this.axios.delete(`/issues/${issueId}`);
+  }
 }
