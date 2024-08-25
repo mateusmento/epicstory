@@ -1,7 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CreateIssue } from '../features/project/create-issue.command';
-import { Auth, Issuer } from 'src/core/auth';
+import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { ExceptionFilter } from 'src/core/convert-exception.filter';
+import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 
 @Controller('projects')
 export class ProjectController {
@@ -11,6 +19,8 @@ export class ProjectController {
   ) {}
 
   @Post(':id/issues')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
   createIssue(@Body() data, @Auth() issuer: Issuer) {
     return this.commandBus.execute(new CreateIssue({ ...data, issuer }));
   }
