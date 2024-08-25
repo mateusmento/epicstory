@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Button, Field, Form } from "@/design-system";
 import { useIssues, type Issue } from "@/domain/issues";
-import { onMounted, reactive } from "vue";
+import { onMounted, reactive, watch } from "vue";
 
 const props = defineProps<{ projectId: string }>();
 
@@ -10,6 +10,13 @@ const { issues, fetchIssues, createIssue, updateIssue } = useIssues();
 onMounted(() => {
   fetchIssues(+props.projectId, 0, 10);
 });
+
+watch(
+  () => props.projectId,
+  () => {
+    fetchIssues(+props.projectId, 0, 10);
+  },
+);
 
 const edittingIssue = reactive<{
   id: number | null;
