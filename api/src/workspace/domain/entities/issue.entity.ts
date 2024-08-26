@@ -30,4 +30,7 @@ export class Issue {
 
   @Column({ default: 'todo' })
   status: string;
+
+  @Column({ nullable: true })
+  dueDate: Date;
 }

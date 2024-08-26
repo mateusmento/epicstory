@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { IsDate, IsNotEmpty, IsOptional } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -23,6 +23,10 @@ export class UpdateIssue {
   @IsNotEmpty()
   @IsOptional()
   status?: string;
+
+  @IsDate()
+  @IsOptional()
+  dueDate: Date;
 
   constructor(data: Partial<UpdateIssue> = {}) {
     patch(this, data);

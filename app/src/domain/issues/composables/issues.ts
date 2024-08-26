@@ -3,6 +3,7 @@ import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
 import { IssueApi, type UpdateIssueData } from "../api";
 import type { Issue } from "../types";
+import { sortBy } from "lodash";
 
 const useIssueStore = defineStore("issue", () => {
   const issues = ref<Issue[]>([]);
@@ -16,7 +17,7 @@ export function useIssues() {
 
   async function fetchIssues(projectId: number, page: number, count: number) {
     const { content } = await issueApi.fetchIssues(projectId, page, count);
-    store.issues = content;
+    store.issues = sortBy(content, "id");
   }
 
   async function createIssue(projectId: number, title: string) {

@@ -15,6 +15,7 @@ export type UpdateIssueData = {
   title?: string;
   description?: string;
   status?: string;
+  dueDate?: string;
 };
 
 @injectable()

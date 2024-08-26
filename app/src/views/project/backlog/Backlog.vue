@@ -2,6 +2,7 @@
 import { Button, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useIssues, type Issue } from "@/domain/issues";
+import { parseAbsolute } from "@internationalized/date";
 import { onMounted, reactive, watch } from "vue";
 import { DueDatePicker } from "./date-picker";
 
@@ -63,7 +64,11 @@ function updateIssueStatus(issue: Issue) {
         </Form>
         <div class="self:fill"></div>
         <Button variant="outline" size="badge" @click="updateIssueStatus(issue)">{{ issue.status }}</Button>
-        <DueDatePicker size="badge" />
+        <DueDatePicker
+          size="badge"
+          :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"
+          @update:model-value="updateIssue(issue.id, { dueDate: $event.toString() })"
+        />
         <Icon name="io-trash-bin" @click="removeIssue(issue.id)" class="cursor-pointer text-zinc-800" />
       </div>
     </div>
