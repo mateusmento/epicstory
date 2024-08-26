@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Channels, Inbox, Issues, Projects, Teams, WorkspaceMembers } from "@/components/app-pane";
 import { AppLayout, AppPaneContent, NavbarContent } from "@/components/layout";
-import { SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
+import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { useWorkspace } from "@/domain/workspace";
 import { RouterView } from "vue-router";
 
@@ -16,6 +16,9 @@ const { workspace } = useWorkspace();
       </NavbarContent>
       <NavbarContent content="switch-workspace">
         <SwitchWorkspaceNavbar v-model:current-workspace="workspace" />
+      </NavbarContent>
+      <NavbarContent content="settings">
+        <SettingsNavbar />
       </NavbarContent>
     </template>
 
