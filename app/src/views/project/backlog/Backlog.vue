@@ -3,6 +3,7 @@ import { Button, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useIssues, type Issue } from "@/domain/issues";
 import { onMounted, reactive, watch } from "vue";
+import { DueDatePicker } from "./date-picker";
 
 const props = defineProps<{ projectId: string }>();
 
@@ -47,7 +48,7 @@ function updateIssueStatus(issue: Issue) {
 </script>
 
 <template>
-  <div class="flex:rows-xl flex:center-y m-auto p-4 w-96 h-full">
+  <div class="flex:rows-xl flex:center-y m-auto p-4 w-[40rem] h-full">
     <h2 class="text-lg font-semibold">Issues</h2>
 
     <div class="flex:rows-md">
@@ -62,6 +63,7 @@ function updateIssueStatus(issue: Issue) {
         </Form>
         <div class="self:fill"></div>
         <Button variant="outline" size="badge" @click="updateIssueStatus(issue)">{{ issue.status }}</Button>
+        <DueDatePicker size="badge" />
         <Icon name="io-trash-bin" @click="removeIssue(issue.id)" class="cursor-pointer text-zinc-800" />
       </div>
     </div>
