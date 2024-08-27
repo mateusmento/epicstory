@@ -1,7 +1,10 @@
+import { User } from 'src/auth';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -33,4 +36,12 @@ export class Issue {
 
   @Column({ nullable: true })
   dueDate: Date;
+
+  @ManyToMany(() => User)
+  @JoinTable({
+    name: 'issue_assignee',
+    joinColumn: { name: 'issue_id' },
+    inverseJoinColumn: { name: 'user_id' },
+  })
+  assignees: User[];
 }

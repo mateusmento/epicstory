@@ -32,6 +32,7 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
   async execute({ workspaceId, projectId, page, count }: FindIssues) {
     const content = await this.issueRepo.find({
       where: { workspaceId, projectId },
+      relations: { assignees: true },
       skip: page * count,
       take: count + 1,
     });

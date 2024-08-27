@@ -36,6 +36,8 @@ import {
 import { IssueController } from './application/controllers/issue.controller';
 import { UpdateIssueCommand } from './application/features/issue/update-issue.command';
 import { RemoveIssueCommand } from './application/features/issue/remove-issue.command';
+import { AddAssigneeCommand } from './application/features/issue/add-assignee.command';
+import { AuthModule } from 'src/auth';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { RemoveIssueCommand } from './application/features/issue/remove-issue.co
       Team,
       Issue,
     ]),
+    AuthModule,
   ],
   controllers: [WorkspaceController, ProjectController, IssueController],
   providers: [
@@ -69,6 +72,7 @@ import { RemoveIssueCommand } from './application/features/issue/remove-issue.co
     CreateIssueCommand,
     UpdateIssueCommand,
     RemoveIssueCommand,
+    AddAssigneeCommand,
   ],
   exports: [WorkspaceRepository],
 })

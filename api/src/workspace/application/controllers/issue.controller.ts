@@ -5,14 +5,14 @@ import {
   ForbiddenException,
   Param,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
-import { UpdateIssue } from '../features/issue/update-issue.command';
-import { RemoveIssue } from '../features/issue/remove-issue.command';
+import { UpdateIssue, RemoveIssue, AddAssignee } from '../features';
 
 @Controller('issues')
 export class IssueController {
@@ -39,5 +39,18 @@ export class IssueController {
   @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
   removeIssue(@Param('id') issueId: number, @Auth() issuer: Issuer) {
     return this.commandBus.execute(new RemoveIssue({ issueId, issuer }));
+  }
+
+  @Post(':id/assignees')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  addAssignee(
+    @Param('id') issueId: number,
+    @Body() data: AddAssignee,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new AddAssignee({ ...data, issueId, issuer }),
+    );
   }
 }

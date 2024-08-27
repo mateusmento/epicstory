@@ -39,4 +39,8 @@ export class IssueApi {
   async removeIssue(issueId: number) {
     await this.axios.delete(`/issues/${issueId}`);
   }
+
+  async addAssignee(issueId: number, userId: number) {
+    return this.axios.post<Issue>(`/issues/${issueId}/assignees`, { userId }).then((res) => res.data);
+  }
 }

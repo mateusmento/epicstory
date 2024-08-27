@@ -38,11 +38,19 @@ export function useIssues() {
     store.issues = store.issues.filter((i) => i.id !== issueId);
   }
 
+  async function addAssignee(issueId: number, userId: number) {
+    const issue = await issueApi.addAssignee(issueId, userId);
+    const index = store.issues.findIndex((i) => i.id === issueId);
+    if (index >= 0) store.issues[index] = issue;
+    return issue;
+  }
+
   return {
     ...storeToRefs(store),
     fetchIssues,
     createIssue,
     updateIssue,
     removeIssue,
+    addAssignee,
   };
 }

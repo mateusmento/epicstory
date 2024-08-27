@@ -1,3 +1,5 @@
+import type { User } from "@/domain/auth";
+
 export type Issue = {
   id: number;
   title: string;
@@ -8,4 +10,5 @@ export type Issue = {
   createdAt: string;
   status: string;
   dueDate: string;
+  assignees: User[];
 };

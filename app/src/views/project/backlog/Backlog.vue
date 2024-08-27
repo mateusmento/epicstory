@@ -1,15 +1,17 @@
 <script lang="ts" setup>
-import { Button, Field, Form } from "@/design-system";
+import { Button, Combobox, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useIssues, type Issue } from "@/domain/issues";
 import { parseAbsolute } from "@internationalized/date";
-import { onMounted, reactive, watch } from "vue";
+import { onMounted, reactive, ref, watch } from "vue";
 import { DueDatePicker } from "./date-picker";
+import { useUsers } from "@/domain/user";
+import type { User } from "@/domain/auth";
+import { cn } from "@/design-system/utils";
 
 const props = defineProps<{ projectId: string }>();
 
-const { issues, fetchIssues, createIssue, updateIssue, removeIssue } = useIssues();
-
+const { issues, fetchIssues, createIssue, updateIssue, removeIssue, addAssignee } = useIssues();
 onMounted(() => {
   fetchIssues(+props.projectId, 0, 10);
 });
@@ -20,6 +22,11 @@ watch(
     fetchIssues(+props.projectId, 0, 10);
   },
 );
+
+const { users, fetchUsers } = useUsers();
+const query = ref("");
+const selectedUser = ref<User>();
+watch(query, () => fetchUsers(query.value));
 
 const edittingIssue = reactive<{
   id: number | null;
@@ -64,9 +71,31 @@ function updateIssueStatus(issue: Issue) {
           <Button size="badge">Cancel</Button>
         </Form>
         <div class="self:fill"></div>
-        <div class="rounded-full border border-2 border-dashed flex flex:center p-0.5 cursor-pointer">
-          <Icon name="fa-user-plus" class="w-4 h-4 text-zinc-400" />
+        <div class="flex:cols">
+          <img
+            v-for="(assignee, i) of issue.assignees"
+            :key="assignee.id"
+            :src="assignee.picture"
+            :class="cn('w-5 h-5', i > 0 && 'ml-[-0.5rem]')"
+          />
         </div>
+        <Combobox
+          v-model="selectedUser"
+          v-model:searchTerm="query"
+          :options="users"
+          track-by="id"
+          label-by="name"
+          @update:model-value="
+            selectedUser && addAssignee(issue.id, selectedUser.id);
+            selectedUser = undefined;
+          "
+        >
+          <template #trigger>
+            <div class="rounded-full border border-2 border-dashed flex flex:center p-0.5 cursor-pointer">
+              <Icon name="fa-user-plus" class="w-4 h-4 text-zinc-400" />
+            </div>
+          </template>
+        </Combobox>
         <DueDatePicker
           size="badge"
           :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"
