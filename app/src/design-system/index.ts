@@ -17,3 +17,4 @@ export * from "./ui/combobox";
 export * from "./ui/nav-view";
 export * from "./ui/calendar";
 export * from "./ui/range-calendar";
+export * from "./ui/scroll-area";
