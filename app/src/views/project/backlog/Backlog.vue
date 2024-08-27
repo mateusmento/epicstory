@@ -54,6 +54,7 @@ function updateIssueStatus(issue: Issue) {
 
     <div class="flex:rows-md">
       <div v-for="issue of issues" :key="issue.id" class="flex:cols-md flex:center-y">
+        <Button variant="outline" size="badge" @click="updateIssueStatus(issue)">{{ issue.status }}</Button>
         <div v-if="edittingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
           {{ issue.title }}
         </div>
