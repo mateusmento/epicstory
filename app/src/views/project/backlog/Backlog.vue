@@ -54,6 +54,11 @@ function updateIssueStatus(issue: Issue) {
   const status = issue.status === "todo" ? "doing" : issue.status === "doing" ? "done" : "todo";
   updateIssue(issue.id, { status });
 }
+
+function issueStatusColor(status: string) {
+  if (status === "doing") return "text-blue-600 border-blue-600 bg-blue-200";
+  if (status === "done") return "text-green-600 border-green-600 bg-green-200";
+}
 </script>
 
 <template>
@@ -63,7 +68,13 @@ function updateIssueStatus(issue: Issue) {
     <ScrollArea class="flex-1 min-h-0 pr-4">
       <div class="flex:rows-md">
         <div v-for="issue of issues" :key="issue.id" class="flex:cols-md flex:center-y">
-          <Button variant="outline" size="badge" @click="updateIssueStatus(issue)">{{ issue.status }}</Button>
+          <Button
+            variant="outline"
+            size="badge"
+            @click="updateIssueStatus(issue)"
+            :class="cn(issueStatusColor(issue.status))"
+            >{{ issue.status }}</Button
+          >
           <div v-if="edittingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
             {{ issue.title }}
           </div>
