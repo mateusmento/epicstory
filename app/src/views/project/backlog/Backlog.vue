@@ -63,7 +63,9 @@ function updateIssueStatus(issue: Issue) {
           <Button size="badge">Cancel</Button>
         </Form>
         <div class="self:fill"></div>
-        <Button variant="outline" size="badge" @click="updateIssueStatus(issue)">{{ issue.status }}</Button>
+        <div class="rounded-full border border-2 border-dashed flex flex:center p-0.5 cursor-pointer">
+          <Icon name="fa-user-plus" class="w-4 h-4 text-zinc-400" />
+        </div>
         <DueDatePicker
           size="badge"
           :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"

@@ -33,4 +33,5 @@ export {
   IoPaperPlane,
   CoChatBubble,
   IoTrashBin,
+  FaUserPlus,
 } from "oh-vue-icons/icons";
