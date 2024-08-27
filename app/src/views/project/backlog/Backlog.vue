@@ -8,6 +8,7 @@ import { DueDatePicker } from "./date-picker";
 import { useUsers } from "@/domain/user";
 import type { User } from "@/domain/auth";
 import { cn } from "@/design-system/utils";
+import { PriorityToggler } from "./priority-toggler";
 
 const props = defineProps<{ projectId: string }>();
 
@@ -71,6 +72,12 @@ function updateIssueStatus(issue: Issue) {
           <Button size="badge">Cancel</Button>
         </Form>
         <div class="self:fill"></div>
+        <div>
+          <PriorityToggler
+            :value="issue.priority"
+            @update:value="updateIssue(issue.id, { priority: $event })"
+          />
+        </div>
         <div class="flex:cols">
           <img
             v-for="(assignee, i) of issue.assignees"

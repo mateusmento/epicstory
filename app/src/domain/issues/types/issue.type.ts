@@ -11,4 +11,5 @@ export type Issue = {
   status: string;
   dueDate: string;
   assignees: User[];
+  priority: number | null;
 };

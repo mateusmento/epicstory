@@ -34,4 +34,6 @@ export {
   CoChatBubble,
   IoTrashBin,
   FaUserPlus,
+  MdSignalcellularaltRound,
+  BiExclamationSquareFill,
 } from "oh-vue-icons/icons";

@@ -37,6 +37,9 @@ export class Issue {
   @Column({ nullable: true })
   dueDate: Date;
 
+  @Column({ nullable: true })
+  priority: number | null;
+
   @ManyToMany(() => User)
   @JoinTable({
     name: 'issue_assignee',
