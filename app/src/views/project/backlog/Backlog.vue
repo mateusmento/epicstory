@@ -106,7 +106,9 @@ function updateIssueStatus(issue: Issue) {
         <DueDatePicker
           size="badge"
           :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"
-          @update:model-value="updateIssue(issue.id, { dueDate: $event.toString() })"
+          @update:model-value="
+            updateIssue(issue.id, { dueDate: $event.toDate('America/Sao_Paulo').toString() })
+          "
         />
         <Icon name="io-trash-bin" @click="removeIssue(issue.id)" class="cursor-pointer text-zinc-800" />
       </div>
