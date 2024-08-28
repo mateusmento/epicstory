@@ -20,3 +20,4 @@ export * from "./ui/range-calendar";
 export * from "./ui/scroll-area";
 export * from "./ui/select";
 export * from "./ui/dropdown-menu";
+export * from "./ui/table";
