@@ -1,15 +1,7 @@
 <script lang="ts" setup>
-import {
-  Button,
-  Combobox,
-  Command,
-  CommandItem,
-  CommandList,
-  Field,
-  Form,
-  ScrollArea,
-} from "@/design-system";
+import { Button, Combobox, Field, Form, ScrollArea } from "@/design-system";
 import { Icon } from "@/design-system/icons";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/design-system/ui/select";
 import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
 import { useIssues, type Issue } from "@/domain/issues";
@@ -23,13 +15,13 @@ const props = defineProps<{ projectId: string }>();
 
 const { issues, fetchIssues, createIssue, updateIssue, removeIssue, addAssignee } = useIssues();
 
-const orderBy = ref({ value: "createdAt" });
+const orderBy = ref("createdAt");
 
 onMounted(() => {
   fetchIssues({
     projectId: +props.projectId,
     order: "desc",
-    orderBy: orderBy.value.value,
+    orderBy: orderBy.value,
     page: 0,
     count: 50,
   });
@@ -41,7 +33,7 @@ watch(
     fetchIssues({
       projectId: +props.projectId,
       order: "desc",
-      orderBy: orderBy.value.value,
+      orderBy: orderBy.value,
       page: 0,
       count: 50,
     });
@@ -89,12 +81,15 @@ function issueStatusColor(status: string) {
   <div class="flex:rows-xl m-auto py-8 px-12 w-full h-full">
     <div class="flex:cols-auto">
       <h2 class="text-lg font-semibold">Issues</h2>
-      <Command v-model="orderBy">
-        <CommandList>
-          <CommandItem :value="{ value: 'priority' }">Priority</CommandItem>
-          <CommandItem :value="{ value: 'createdAt' }">Create date</CommandItem>
-        </CommandList>
-      </Command>
+      <Select v-model="orderBy">
+        <SelectTrigger class="w-36">
+          <SelectValue placeholder="Select a fruit" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="priority">Priority</SelectItem>
+          <SelectItem value="createdAt">Create date</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
     <ScrollArea class="flex-1 min-h-0 pr-4">
