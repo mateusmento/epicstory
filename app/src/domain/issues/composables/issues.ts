@@ -1,9 +1,8 @@
 import { useDependency } from "@/core/dependency-injection";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
-import { IssueApi, type UpdateIssueData } from "../api";
+import { IssueApi, type FindIssuesQuery, type UpdateIssueData } from "../api";
 import type { Issue } from "../types";
-import { sortBy } from "lodash";
 
 const useIssueStore = defineStore("issue", () => {
   const issues = ref<Issue[]>([]);
@@ -15,9 +14,9 @@ export function useIssues() {
 
   const issueApi = useDependency(IssueApi);
 
-  async function fetchIssues(projectId: number, page: number, count: number) {
-    const { content } = await issueApi.fetchIssues(projectId, page, count);
-    store.issues = sortBy(content, "id");
+  async function fetchIssues(query: FindIssuesQuery) {
+    const { content } = await issueApi.fetchIssues(query);
+    store.issues = content;
   }
 
   async function createIssue(projectId: number, title: string) {

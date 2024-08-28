@@ -19,13 +19,21 @@ export type UpdateIssueData = {
   priority?: number | null;
 };
 
+export type FindIssuesQuery = {
+  projectId: number;
+  orderBy: string;
+  order: string;
+  page: number;
+  count: number;
+};
+
 @injectable()
 export class IssueApi {
   constructor(@InjectAxios() private axios: Axios) {}
 
-  fetchIssues(projectId: number, page: number, count: number) {
+  fetchIssues({ projectId, ...query }: FindIssuesQuery) {
     return this.axios
-      .get<Page<Issue>>(`/projects/${projectId}/issues`, { params: { page, count } })
+      .get<Page<Issue>>(`/projects/${projectId}/issues`, { params: query })
       .then((res) => res.data);
   }
 

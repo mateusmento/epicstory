@@ -1,5 +1,14 @@
 <script lang="ts" setup>
-import { Button, Combobox, Field, Form, ScrollArea } from "@/design-system";
+import {
+  Button,
+  Combobox,
+  Command,
+  CommandItem,
+  CommandList,
+  Field,
+  Form,
+  ScrollArea,
+} from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
@@ -13,14 +22,29 @@ import { PriorityToggler } from "./priority-toggler";
 const props = defineProps<{ projectId: string }>();
 
 const { issues, fetchIssues, createIssue, updateIssue, removeIssue, addAssignee } = useIssues();
+
+const orderBy = ref({ value: "createdAt" });
+
 onMounted(() => {
-  fetchIssues(+props.projectId, 0, 50);
+  fetchIssues({
+    projectId: +props.projectId,
+    order: "desc",
+    orderBy: orderBy.value.value,
+    page: 0,
+    count: 50,
+  });
 });
 
 watch(
-  () => props.projectId,
+  () => [props.projectId, orderBy.value],
   () => {
-    fetchIssues(+props.projectId, 0, 50);
+    fetchIssues({
+      projectId: +props.projectId,
+      order: "desc",
+      orderBy: orderBy.value.value,
+      page: 0,
+      count: 50,
+    });
   },
 );
 
@@ -63,7 +87,15 @@ function issueStatusColor(status: string) {
 
 <template>
   <div class="flex:rows-xl m-auto py-8 px-12 w-full h-full">
-    <h2 class="text-lg font-semibold">Issues</h2>
+    <div class="flex:cols-auto">
+      <h2 class="text-lg font-semibold">Issues</h2>
+      <Command v-model="orderBy">
+        <CommandList>
+          <CommandItem :value="{ value: 'priority' }">Priority</CommandItem>
+          <CommandItem :value="{ value: 'createdAt' }">Create date</CommandItem>
+        </CommandList>
+      </Command>
+    </div>
 
     <ScrollArea class="flex-1 min-h-0 pr-4">
       <div class="flex:rows-md">

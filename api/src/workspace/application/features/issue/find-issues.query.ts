@@ -1,5 +1,5 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { IssueRepository } from 'src/workspace/infrastructure/repositories';
 
@@ -13,6 +13,12 @@ export class FindIssues {
   @IsNumber()
   @IsOptional()
   assigneeId?: number;
+
+  @IsString()
+  orderBy: string;
+
+  @IsString()
+  order: 'asc' | 'desc';
 
   @IsNumber()
   page: number;
@@ -29,10 +35,21 @@ export class FindIssues {
 export class FindIssuesQuery implements IQueryHandler<FindIssues> {
   constructor(private issueRepo: IssueRepository) {}
 
-  async execute({ workspaceId, projectId, page, count }: FindIssues) {
+  async execute({
+    workspaceId,
+    projectId,
+    orderBy,
+    order,
+    page,
+    count,
+  }: FindIssues) {
     const content = await this.issueRepo.find({
       where: { workspaceId, projectId },
       relations: { assignees: true },
+      order: {
+        createdAt: orderBy === 'createdAt' ? (order ?? 'asc') : undefined,
+        priority: orderBy === 'priority' ? (order ?? 'asc') : undefined,
+      },
       skip: page * count,
       take: count + 1,
     });
