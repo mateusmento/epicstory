@@ -81,7 +81,7 @@ function issueStatusColor(status: string) {
           <Form v-else @submit="saveEdit" class="flex:cols-md flex:center-y">
             <Field v-model="edittingIssue.title" size="badge" name="title" />
             <Button type="submit" size="badge">Save</Button>
-            <Button size="badge">Cancel</Button>
+            <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
           </Form>
           <div class="self:fill"></div>
           <div>
