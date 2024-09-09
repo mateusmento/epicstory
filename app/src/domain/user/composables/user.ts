@@ -7,7 +7,7 @@ export function useUser() {
 
   const userApi = useDependency(UserApi);
 
-  async function updateUserPicture(data: { picture: string }) {
+  async function updateUserPicture(data: FormData) {
     user.value = await userApi.updatePicture(data);
   }
 

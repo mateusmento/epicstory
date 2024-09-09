@@ -98,7 +98,7 @@ function issueStatusColor(status: string) {
     </div>
 
     <div class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] gap-y-md flex-1 min-h-0 pr-4">
-      <div class="grid grid-cols-subgrid col-span-7 gap-x-lg">
+      <div class="grid grid-cols-subgrid col-span-7 gap-x-md">
         <div>Status</div>
         <div>Title</div>
         <div

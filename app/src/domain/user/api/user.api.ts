@@ -11,7 +11,7 @@ export class UserApi {
     return this.axios.get<User[]>(`/auth/users`, { params: { username } }).then((res) => res.data);
   }
 
-  updatePicture(data: { picture: string }) {
+  updatePicture(data: FormData) {
     return this.axios.put(`/users/picture`, data).then((res) => res.data);
   }
 }
