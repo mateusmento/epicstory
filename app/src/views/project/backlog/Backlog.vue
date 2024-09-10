@@ -97,8 +97,10 @@ function issueStatusColor(status: string) {
       </Select>
     </div>
 
-    <div class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] gap-y-md flex-1 min-h-0 pr-4">
-      <div class="grid grid-cols-subgrid col-span-7 gap-x-md">
+    <div
+      class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0"
+    >
+      <div class="grid grid-cols-subgrid col-span-7 gap-x-6">
         <div>Status</div>
         <div>Title</div>
         <div
@@ -112,12 +114,15 @@ function issueStatusColor(status: string) {
         <div class="col-span-2">Assignees</div>
         <div class="col-span-2">Due date</div>
       </div>
-      <div class="grid grid-cols-subgrid col-span-7 overflow-y-auto">
-        <div class="grid grid-cols-subgrid col-span-7 gap-y-md">
+      <div
+        class="grid grid-cols-subgrid col-span-7 pr-2 overflow-y-auto overflow-x-hidden"
+        style="scrollbar-gutter: stable"
+      >
+        <div class="grid grid-cols-subgrid col-span-7 gap-y-4">
           <div
             v-for="issue of issues"
             :key="issue.id"
-            class="grid grid-cols-subgrid col-span-7 gap-x-lg items-center"
+            class="grid grid-cols-subgrid col-span-7 gap-x-6 items-start"
           >
             <Button
               variant="outline"
@@ -145,7 +150,7 @@ function issueStatusColor(status: string) {
                 v-for="(assignee, i) of issue.assignees"
                 :key="assignee.id"
                 :src="assignee.picture"
-                :class="cn('w-5 h-5', i > 0 && 'ml-[-0.5rem]')"
+                :class="cn('w-5 h-5 rounded-full', i > 0 && 'ml-[-0.5rem]')"
               />
             </div>
             <Combobox
