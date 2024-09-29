@@ -33,6 +33,10 @@ const authenticatedRoutes = defineRoutes({
       component: () => import("@/views/Dashboard.vue"),
       children: [
         {
+          path: "/settings/user-account",
+          component: () => import("@/views/user/UserAccountSettings.vue"),
+        },
+        {
           path: "/channel/:channelId",
           component: () => import("@/views/channel/Channel.vue"),
         },
@@ -50,6 +54,11 @@ const authenticatedRoutes = defineRoutes({
               path: "board",
               props: true,
               component: () => import("@/views/project/board/Board.vue"),
+            },
+            {
+              path: "issue/:issueId",
+              props: true,
+              component: () => import("@/views/issue/IssueView.vue"),
             },
           ],
         },

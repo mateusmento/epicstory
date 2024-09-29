@@ -11,8 +11,13 @@ export function useUser() {
     user.value = await userApi.updatePicture(data);
   }
 
+  async function updateUser(data: { name?: string }) {
+    user.value = await userApi.update(data);
+  }
+
   return {
     user,
+    updateUser,
     updateUserPicture,
   };
 }

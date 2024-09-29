@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   ForbiddenException,
+  Get,
   Param,
   Patch,
   Post,
@@ -13,6 +14,7 @@ import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { UpdateIssue, RemoveIssue, AddAssignee } from '../features';
+import { FindIssue } from '../features/issue/find-issue.query';
 
 @Controller('issues')
 export class IssueController {
@@ -20,6 +22,12 @@ export class IssueController {
     private commandBus: CommandBus,
     private queryBus: QueryBus,
   ) {}
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  findIssue(@Param('id') issueId: number) {
+    return this.queryBus.execute(new FindIssue({ issueId }));
+  }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)

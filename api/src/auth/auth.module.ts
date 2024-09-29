@@ -14,6 +14,7 @@ import { UserRepository } from './infrastructure/repositories/user.repository';
 import { UserController } from './application/controllers/user.controller';
 import { UpdateUserPictureCommand } from './application/features/update-user-picture.command';
 import { FindUsersQuery } from './application/features/find-users.query';
+import { UpdateUserCommand } from './application/features/update-user.command';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { FindUsersQuery } from './application/features/find-users.query';
     SigninCommand,
     UpdateUserPictureCommand,
     FindUsersQuery,
+    UpdateUserCommand,
   ],
   exports: [UserRepository, JwtModule],
 })

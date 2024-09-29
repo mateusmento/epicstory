@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { UpdateUser, UserProfile } from "@/components/user";
-import { Button, Dialog, DialogContent, DialogTrigger, NavTrigger } from "@/design-system";
+import { UserProfile } from "@/components/user";
+import { Button, NavTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
 import { NavListItem } from "../layout";
@@ -66,13 +66,8 @@ const { workspace } = useWorkspace();
 
     <div class="self:fill"></div>
 
-    <Dialog>
-      <DialogTrigger as-child>
-        <UserProfile />
-      </DialogTrigger>
-      <DialogContent>
-        <UpdateUser />
-      </DialogContent>
-    </Dialog>
+    <RouterLink to="/settings/user-account">
+      <UserProfile />
+    </RouterLink>
   </div>
 </template>

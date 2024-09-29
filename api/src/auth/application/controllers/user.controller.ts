@@ -3,6 +3,7 @@ import { Upload } from '@aws-sdk/lib-storage';
 import {
   Body,
   Controller,
+  Patch,
   Put,
   UploadedFile,
   UseGuards,
@@ -15,6 +16,7 @@ import { StorageEngine } from 'multer';
 import * as sharp from 'sharp';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { UpdateUserPicture } from '../features/update-user-picture.command';
+import { UpdateUser } from '../features/update-user.command';
 
 class S3StorageEngine implements StorageEngine {
   private s3: S3Client;
@@ -34,7 +36,7 @@ class S3StorageEngine implements StorageEngine {
     const upload = new Upload({
       client: this.s3,
       params: {
-        Bucket: 'mateusmentodemo',
+        Bucket: 'epicstory-nk2jb3kj2',
         Key: file.originalname,
         ContentType: file.mimetype,
         Body: finalImage,
@@ -71,6 +73,12 @@ class S3StorageEngine implements StorageEngine {
 @Controller('/users')
 export class UserController {
   constructor(private commandBus: CommandBus) {}
+
+  @Patch()
+  @UseGuards(JwtAuthGuard)
+  updateUser(@Body() command: UpdateUser, @Auth() issuer: Issuer) {
+    return this.commandBus.execute(new UpdateUser({ ...command, issuer }));
+  }
 
   @Put('/picture')
   @UseGuards(JwtAuthGuard)

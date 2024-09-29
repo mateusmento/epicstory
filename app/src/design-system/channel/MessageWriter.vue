@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { Icon } from "../icons";
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
+import { vTextareaAutosize } from "../directives/textarea-autosize.directive";
 
 const emit = defineEmits<{
   (e: "send-message", value: { content: string }): void;
@@ -24,6 +25,9 @@ function onSendMessage() {
   >
     <textarea
       v-model="messageContent"
+      v-textarea-autosize
+      min-rows="2"
+      max-rows="10"
       placeholder="Send a message to channel..."
       class="w-full h-full px-2 text-sm rounded-md resize-none outline-none"
       ref="messageTextEl"

@@ -1,12 +1,10 @@
 <script lang="ts" setup>
 import { Button } from "@/design-system";
-import { useAuth } from "@/domain/auth";
 import { useUser } from "@/domain/user";
 import { useDropZone } from "@vueuse/core";
 import { ref } from "vue";
 
 const { user, updateUserPicture } = useUser();
-const { signOut } = useAuth();
 
 const fileDrop = ref<HTMLElement>();
 const pictureFile = ref<File>();
@@ -51,14 +49,13 @@ function onSave() {
 </script>
 
 <template>
-  <div class="flex:rows-lg">
+  <div class="flex:cols-lg">
     <label ref="fileDrop" class="self-center">
       <img v-if="!newPictureIsOver" :src="pictureUrl" class="rounded-full" />
       <div v-else class="dropzone w-96 h-96 flex items-center justify-center">Drop a new picture</div>
       <input type="file" hidden @change="setPicture((($event.target as any).files ?? [])[0])" />
     </label>
     <Button size="xs" @click="onSave">Save</Button>
-    <Button @click="signOut">Sign out</Button>
   </div>
 </template>
 

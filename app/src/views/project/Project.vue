@@ -8,10 +8,10 @@ defineProps<{ projectId: string }>();
 <template>
   <div class="h-full flex:rows">
     <nav class="flex:cols-lg flex:center-y p-2">
-      <RouterLink to="backlog">
+      <RouterLink :to="`/project/${projectId}/backlog`">
         <Button variant="ghost" size="xs">Backlog</Button>
       </RouterLink>
-      <RouterLink to="board">
+      <RouterLink :to="`/project/${projectId}/board`">
         <Button variant="ghost" size="xs">Board</Button>
       </RouterLink>
     </nav>

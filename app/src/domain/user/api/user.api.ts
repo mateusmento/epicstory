@@ -14,4 +14,8 @@ export class UserApi {
   updatePicture(data: FormData) {
     return this.axios.put(`/users/picture`, data).then((res) => res.data);
   }
+
+  update(data: any) {
+    return this.axios.patch(`/users`, data).then((res) => res.data);
+  }
 }

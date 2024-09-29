@@ -37,6 +37,10 @@ export class IssueApi {
       .then((res) => res.data);
   }
 
+  fetchIssue(issueId: number) {
+    return this.axios.get<Issue>(`/issues/${issueId}`).then((res) => res.data);
+  }
+
   createIssue(projectId: number, title: string) {
     return this.axios.post<Issue>(`/projects/${projectId}/issues`, { title }).then((res) => res.data);
   }

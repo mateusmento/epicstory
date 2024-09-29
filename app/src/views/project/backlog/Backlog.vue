@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Button, Combobox, Field, Form, ScrollArea } from "@/design-system";
+import { Button, Combobox, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/design-system/ui/select";
 import { cn } from "@/design-system/utils";
@@ -10,13 +10,14 @@ import { parseAbsolute } from "@internationalized/date";
 import { onMounted, reactive, ref, watch } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
+import { useStorage } from "@vueuse/core";
 
 const props = defineProps<{ projectId: string }>();
 
 const { issues, fetchIssues, createIssue, updateIssue, removeIssue, addAssignee } = useIssues();
 
-const orderBy = ref("createdAt");
-const order = ref("desc");
+const orderBy = useStorage("backlog.orderBy", "createdAt");
+const order = useStorage("backlog.order", "desc");
 
 function toggleOrder() {
   order.value = order.value === "asc" ? "desc" : "asc";
@@ -132,7 +133,7 @@ function issueStatusColor(status: string) {
               >{{ issue.status }}</Button
             >
             <div v-if="edittingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
-              {{ issue.title }}
+              <RouterLink :to="`issue/${issue.id}`">{{ issue.title }}</RouterLink>
             </div>
             <Form v-else @submit="saveEdit" class="flex:cols-md flex:center-y">
               <Field v-model="edittingIssue.title" size="badge" name="title" />

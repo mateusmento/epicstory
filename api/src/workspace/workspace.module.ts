@@ -38,6 +38,7 @@ import { UpdateIssueCommand } from './application/features/issue/update-issue.co
 import { RemoveIssueCommand } from './application/features/issue/remove-issue.command';
 import { AddAssigneeCommand } from './application/features/issue/add-assignee.command';
 import { AuthModule } from 'src/auth';
+import { FindIssueQuery } from './application/features/issue/find-issue.query';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { AuthModule } from 'src/auth';
     CreateTeamCommand,
     UserCreatedReaction,
     FindIssuesQuery,
+    FindIssueQuery,
     CreateIssueCommand,
     UpdateIssueCommand,
     RemoveIssueCommand,
