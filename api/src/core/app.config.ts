@@ -59,4 +59,14 @@ export class AppConfig {
 
   @IsNotEmpty()
   GOOGLE_APP_REDIRECT_URL: string;
+
+  @IsNotEmpty()
+  DEFAULT_SENDER_EMAIL_ADDRESS: string;
+
+  @IsNotEmpty()
+  EMAIL_SMTP_URL: string;
+  @IsNotEmpty()
+  EMAIL_SMTP_USER: string;
+  @IsNotEmpty()
+  EMAIL_SMTP_PASSWORD: string;
 }

@@ -12,8 +12,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { ExceptionFilter } from 'src/core';
+import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
   IssuerUserCanNotAddWorkspaceMember,
   IssuerUserCanNotCreateProject,
@@ -31,9 +31,9 @@ import {
   FindWorkspaceMembers,
   FindWorkspaces,
   RemoveWorkspaceMember,
+  SendWorkspaceMemberInvite,
   UpdateWorkspaceMember,
 } from '../features';
-import { SendWorkspaceMemberInvite } from '../features/workspace/send-workspace-member-invite.command';
 
 @Controller('workspaces')
 export class WorkspaceController {
