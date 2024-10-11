@@ -45,6 +45,11 @@ export function useWorkspace() {
     store.members.push(member);
   }
 
+  async function sendWorkspaceMemberInvite(email: string) {
+    if (!store.workspace) return;
+    await workspaceService.sendMemberInvite(store.workspace.id, { email });
+  }
+
   async function fetchProjects() {
     if (!store.workspace) return;
     store.projects = await workspaceService.findProjects(store.workspace.id);
@@ -73,6 +78,7 @@ export function useWorkspace() {
     selectWorkspace,
     fetchWorkspaceMembers,
     addWorkspaceMember,
+    sendWorkspaceMemberInvite,
     fetchProjects,
     createProject,
     fetchTeams,

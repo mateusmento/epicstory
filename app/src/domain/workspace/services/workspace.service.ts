@@ -27,6 +27,10 @@ export class WorkspaceService {
     return this.axios.post(`workspaces/${workspaceId}/members`, data).then((res) => res.data);
   }
 
+  sendMemberInvite(workspaceId: number, data: { email: string }) {
+    return this.axios.post(`workspaces/${workspaceId}/member-invites`, data).then((res) => res.data);
+  }
+
   removeMember(workspaceId: number, memberId: number) {
     return this.axios.delete(`workspaces/${workspaceId}/members/${memberId}`);
   }

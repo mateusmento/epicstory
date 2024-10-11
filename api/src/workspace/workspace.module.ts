@@ -39,6 +39,7 @@ import { RemoveIssueCommand } from './application/features/issue/remove-issue.co
 import { AddAssigneeCommand } from './application/features/issue/add-assignee.command';
 import { AuthModule } from 'src/auth';
 import { FindIssueQuery } from './application/features/issue/find-issue.query';
+import { SendWorkspaceMemberInviteCommand } from './application/features/workspace/send-workspace-member-invite.command';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { FindIssueQuery } from './application/features/issue/find-issue.query';
     CreateWorkspaceCommand,
     FindWorkspaceMemberQuery,
     AddWorkspaceMemberCommand,
+    SendWorkspaceMemberInviteCommand,
     RemoveWorkspaceMemberCommand,
     UpdateWorkspaceMemberCommand,
     FindProjectsQuery,

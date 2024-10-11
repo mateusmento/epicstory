@@ -15,7 +15,7 @@ import { useUsers } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
 import { onMounted, ref, watch } from "vue";
 
-const { workspace, members, fetchWorkspaceMembers, addWorkspaceMember } = useWorkspace();
+const { workspace, members, fetchWorkspaceMembers, sendWorkspaceMemberInvite } = useWorkspace();
 onMounted(() => fetchWorkspaceMembers());
 watch(workspace, () => fetchWorkspaceMembers());
 
@@ -39,7 +39,7 @@ watch(query, () => fetchUsers(query.value));
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <Form @submit="addWorkspaceMember($event.userId)" class="flex:rows-lg">
+          <Form @submit="sendWorkspaceMemberInvite($event.email)" class="flex:rows-lg">
             <Combobox
               v-model="selectedUser"
               v-model:searchTerm="query"
@@ -47,12 +47,7 @@ watch(query, () => fetchUsers(query.value));
               track-by="id"
               label-by="name"
             />
-            <Field
-              :modelValue="selectedUser?.id"
-              type="hidden"
-              name="userId"
-              placeholder="Add workspace member..."
-            />
+            <Field :modelValue="selectedUser?.email" name="email" placeholder="Email..." />
             <Button type="submit" size="xs">Add</Button>
           </Form>
         </CollapsibleContent>

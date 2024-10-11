@@ -33,6 +33,7 @@ import {
   RemoveWorkspaceMember,
   UpdateWorkspaceMember,
 } from '../features';
+import { SendWorkspaceMemberInvite } from '../features/workspace/send-workspace-member-invite.command';
 
 @Controller('workspaces')
 export class WorkspaceController {
@@ -105,6 +106,26 @@ export class WorkspaceController {
       ...command,
       workspaceId,
       issuerId: issuer.id,
+    });
+    return this.commandBus.execute(command);
+  }
+
+  @Post(':id/member-invites')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter(
+    [IssuerUserIsNotWorkspaceMember, ForbiddenException],
+    [IssuerUserCanNotAddWorkspaceMember, ForbiddenException],
+    [WorkspaceMemberAlreadyExists, ConflictException],
+  )
+  sendMemberInvite(
+    @Param('id') workspaceId: number,
+    @Body() command: SendWorkspaceMemberInvite,
+    @Auth() issuer: Issuer,
+  ) {
+    command = new SendWorkspaceMemberInvite({
+      ...command,
+      workspaceId,
+      issuer,
     });
     return this.commandBus.execute(command);
   }
