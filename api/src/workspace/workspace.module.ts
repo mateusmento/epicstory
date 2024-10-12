@@ -1,21 +1,30 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from 'src/auth';
 import {
-  WorkspaceController,
+  IssueController,
   ProjectController,
+  WorkspaceController,
+  WorkspaceMemberInviteController,
 } from './application/controllers';
 import {
+  AcceptWorkspaceMemberInviteCommand,
+  AddAssigneeCommand,
   AddWorkspaceMemberCommand,
   CreateIssueCommand,
   CreateProjectCommand,
   CreateTeamCommand,
   CreateWorkspaceCommand,
+  FindIssueQuery,
   FindIssuesQuery,
   FindProjectsQuery,
   FindTeamsQuery,
   FindWorkspaceMemberQuery,
   FindWorkspacesQuery,
+  RemoveIssueCommand,
   RemoveWorkspaceMemberCommand,
+  SendWorkspaceMemberInviteCommand,
+  UpdateIssueCommand,
   UpdateWorkspaceMemberCommand,
 } from './application/features';
 import { UserCreatedReaction } from './application/reactions';
@@ -25,37 +34,39 @@ import {
   Team,
   Workspace,
   WorkspaceMember,
+  WorkspaceMemberInvite,
 } from './domain/entities';
 import {
   IssueRepository,
   ProjectRepository,
   TeamRepository,
+  WorkspaceMemberInviteRepository,
   WorkspaceMemberRepository,
   WorkspaceRepository,
 } from './infrastructure/repositories';
-import { IssueController } from './application/controllers/issue.controller';
-import { UpdateIssueCommand } from './application/features/issue/update-issue.command';
-import { RemoveIssueCommand } from './application/features/issue/remove-issue.command';
-import { AddAssigneeCommand } from './application/features/issue/add-assignee.command';
-import { AuthModule } from 'src/auth';
-import { FindIssueQuery } from './application/features/issue/find-issue.query';
-import { SendWorkspaceMemberInviteCommand } from './application/features/workspace/send-workspace-member-invite.command';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Workspace,
       WorkspaceMember,
+      WorkspaceMemberInvite,
       Project,
       Team,
       Issue,
     ]),
     AuthModule,
   ],
-  controllers: [WorkspaceController, ProjectController, IssueController],
+  controllers: [
+    WorkspaceController,
+    WorkspaceMemberInviteController,
+    ProjectController,
+    IssueController,
+  ],
   providers: [
     WorkspaceRepository,
     WorkspaceMemberRepository,
+    WorkspaceMemberInviteRepository,
     ProjectRepository,
     TeamRepository,
     IssueRepository,
@@ -64,6 +75,7 @@ import { SendWorkspaceMemberInviteCommand } from './application/features/workspa
     FindWorkspaceMemberQuery,
     AddWorkspaceMemberCommand,
     SendWorkspaceMemberInviteCommand,
+    AcceptWorkspaceMemberInviteCommand,
     RemoveWorkspaceMemberCommand,
     UpdateWorkspaceMemberCommand,
     FindProjectsQuery,

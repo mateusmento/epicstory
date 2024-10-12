@@ -65,6 +65,11 @@ const authenticatedRoutes = defineRoutes({
       ],
     },
     {
+      path: "/workspace-member-invite/:inviteId",
+      component: () => import("@/views/workspace/MemberInvite.vue"),
+      props: true,
+    },
+    {
       path: "/derbel",
       component: () => import("@/views/derbel/Derbel.vue"),
     },
