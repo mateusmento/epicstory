@@ -11,6 +11,7 @@ import { WorkspaceMemberAlreadyExists } from '../exceptions/workspace-member-alr
 import { IssuerUserCanNotCreateProject } from '../exceptions/issuer-user-can-not-create-project';
 import { Team } from './team.entity';
 import { IssuerCanNotCreateTeam } from '../exceptions/issuer-can-not-create-team';
+import { Backlog } from './backlog.entity';
 
 @Entity({ schema: WORKSPACE_SCHEMA })
 export class Workspace {
@@ -44,7 +45,11 @@ export class Workspace {
   createProject(issuer: WorkspaceMember, name: string) {
     if (!issuer.hasRole(WorkspaceRole.ADMIN))
       throw new IssuerUserCanNotCreateProject();
-    return Project.create({ workspaceId: this.id, name });
+    return Project.create({
+      workspaceId: this.id,
+      name,
+      backlog: new Backlog(),
+    });
   }
 
   createTeam(issuer: WorkspaceMember, name: string) {

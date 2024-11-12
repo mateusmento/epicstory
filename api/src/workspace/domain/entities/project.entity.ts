@@ -1,6 +1,7 @@
 import { create } from 'src/core/objects';
 import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Backlog } from './backlog.entity';
 
 @Entity({ schema: WORKSPACE_SCHEMA, name: 'workspace_project' })
 export class Project {
@@ -13,7 +14,13 @@ export class Project {
   @Column()
   workspaceId: number;
 
-  static create(data: { name: string; workspaceId: number }) {
+  @Column()
+  backlogId: number;
+
+  @ManyToOne(() => Backlog, { cascade: ['insert'] })
+  backlog: Backlog;
+
+  static create(data: { name: string; workspaceId: number; backlog: Backlog }) {
     return create(Project, data);
   }
 }

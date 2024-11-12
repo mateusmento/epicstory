@@ -2,14 +2,7 @@ import { InjectAxios } from "@/core/axios";
 import type { Issue } from "../types";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
-
-export type Page<T> = {
-  content: T[];
-  page: number;
-  count: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
-};
+import type { Page, PageQuery } from "@/core/types";
 
 export type UpdateIssueData = {
   title?: string;
@@ -19,12 +12,8 @@ export type UpdateIssueData = {
   priority?: number | null;
 };
 
-export type FindIssuesQuery = {
+export type FindIssuesQuery = PageQuery & {
   projectId: number;
-  orderBy: string;
-  order: string;
-  page: number;
-  count: number;
 };
 
 @injectable()

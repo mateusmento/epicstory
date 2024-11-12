@@ -1,0 +1,20 @@
+{
+  // https://code.visualstudio.com/docs/nodejs/nodejs-debugging
+  // https://dev.to/gentax/nestjs-right-settings-for-debugging-kl0
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug EpicStory Api",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:debug", "--", "--inspect-brk"],
+      "localRoot": "${workspaceFolder}/api",
+      "autoAttachChildProcesses": true,
+      "restart": true,
+      "sourceMaps": true,
+      "stopOnEntry": false,
+      "console": "integratedTerminal"
+    }
+  ]
+}

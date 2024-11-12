@@ -9,7 +9,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CreateIssue, FindIssues } from '../features';
+import {
+  CreateIssue,
+  FindIssues,
+  FindProject,
+  FindProjectBacklogItems,
+} from '../features';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { ExceptionFilter } from 'src/core';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -20,6 +25,18 @@ export class ProjectController {
     private commandBus: CommandBus,
     private queryBus: QueryBus,
   ) {}
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  findProject(@Param('id') projectId: number) {
+    return this.queryBus.execute(new FindProject({ projectId }));
+  }
+
+  @Get(':id/backlog-items')
+  @UseGuards(JwtAuthGuard)
+  findProjectBacklogItems(@Param('id') projectId: number) {
+    return this.queryBus.execute(new FindProjectBacklogItems({ projectId }));
+  }
 
   @Get(':id/issues')
   @UseGuards(JwtAuthGuard)

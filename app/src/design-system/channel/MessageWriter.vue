@@ -31,6 +31,7 @@ function onSendMessage() {
       placeholder="Send a message to channel..."
       class="w-full h-full px-2 text-sm rounded-md resize-none outline-none"
       ref="messageTextEl"
+      @keydown.ctrl.enter="onSendMessage"
     />
 
     <div class="flex:cols-xl flex:center-y text-zinc-500">

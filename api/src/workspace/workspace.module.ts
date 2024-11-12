@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
 import {
+  BacklogItemController,
   IssueController,
   ProjectController,
   WorkspaceController,
@@ -11,16 +12,20 @@ import {
   AcceptWorkspaceMemberInviteCommand,
   AddAssigneeCommand,
   AddWorkspaceMemberCommand,
+  CreateBacklogItemCommand,
   CreateIssueCommand,
   CreateProjectCommand,
   CreateTeamCommand,
   CreateWorkspaceCommand,
+  FindBacklogItemsQuery,
   FindIssueQuery,
   FindIssuesQuery,
+  FindProjectQuery,
   FindProjectsQuery,
   FindTeamsQuery,
   FindWorkspaceMemberQuery,
   FindWorkspacesQuery,
+  MoveBacklogItemCommand,
   RemoveIssueCommand,
   RemoveWorkspaceMemberCommand,
   SendWorkspaceMemberInviteCommand,
@@ -29,6 +34,8 @@ import {
 } from './application/features';
 import { UserCreatedReaction } from './application/reactions';
 import {
+  Backlog,
+  BacklogItem,
   Issue,
   Project,
   Team,
@@ -37,6 +44,8 @@ import {
   WorkspaceMemberInvite,
 } from './domain/entities';
 import {
+  BacklogItemRepository,
+  BacklogRepository,
   IssueRepository,
   ProjectRepository,
   TeamRepository,
@@ -54,6 +63,8 @@ import {
       Project,
       Team,
       Issue,
+      Backlog,
+      BacklogItem,
     ]),
     AuthModule,
   ],
@@ -62,6 +73,7 @@ import {
     WorkspaceMemberInviteController,
     ProjectController,
     IssueController,
+    BacklogItemController,
   ],
   providers: [
     WorkspaceRepository,
@@ -70,6 +82,8 @@ import {
     ProjectRepository,
     TeamRepository,
     IssueRepository,
+    BacklogRepository,
+    BacklogItemRepository,
     FindWorkspacesQuery,
     CreateWorkspaceCommand,
     FindWorkspaceMemberQuery,
@@ -89,6 +103,10 @@ import {
     UpdateIssueCommand,
     RemoveIssueCommand,
     AddAssigneeCommand,
+    CreateBacklogItemCommand,
+    FindBacklogItemsQuery,
+    MoveBacklogItemCommand,
+    FindProjectQuery,
   ],
   exports: [WorkspaceRepository],
 })

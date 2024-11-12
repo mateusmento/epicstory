@@ -3,6 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNumber } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
+import { Backlog } from 'src/workspace/domain/entities';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import {
   ProjectRepository,
@@ -44,6 +45,7 @@ export class CreateSprintCommand implements ICommandHandler<CreateSprint> {
       ...data,
       workspaceId,
       createdById: issuer.id,
+      backlog: new Backlog(),
     });
   }
 }

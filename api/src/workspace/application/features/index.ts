@@ -1,3 +1,7 @@
+export * from './backlog/create-backlog-item.command';
+export * from './backlog/find-backlog-items.query';
+export * from './backlog/find-project-backlog-items.query';
+export * from './backlog/move-backlog-item.command';
 export * from './issue/add-assignee.command';
 export * from './issue/create-issue.command';
 export * from './issue/find-issue.query';
@@ -5,6 +9,7 @@ export * from './issue/find-issues.query';
 export * from './issue/remove-issue.command';
 export * from './issue/update-issue.command';
 export * from './project/create-project.command';
+export * from './project/find-project.query';
 export * from './project/find-projects.query';
 export * from './team/create-team.command';
 export * from './team/find-teams.query';

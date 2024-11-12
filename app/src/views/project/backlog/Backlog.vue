@@ -1,20 +1,29 @@
 <script lang="ts" setup>
+import { useDependency } from "@/core/dependency-injection";
 import { Button, Combobox, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/design-system/ui/select";
 import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
+import { useBacklog } from "@/domain/backlog";
 import { useIssues, type Issue } from "@/domain/issues";
+import { ProjectService } from "@/domain/project";
 import { useUsers } from "@/domain/user";
+import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { parseAbsolute } from "@internationalized/date";
+import { useStorage } from "@vueuse/core";
 import { onMounted, reactive, ref, watch } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
-import { useStorage } from "@vueuse/core";
+import { debounce } from "lodash";
 
 const props = defineProps<{ projectId: string }>();
 
-const { issues, fetchIssues, createIssue, updateIssue, removeIssue, addAssignee } = useIssues();
+const { removeIssue } = useIssues();
+const itemsContainer = ref<HTMLElement>();
+
+const { backlogItems, fetchBacklogItems, createBacklogItem, moveBacklogItem, updateIssue, addAssignee } =
+  useBacklog();
 
 const orderBy = useStorage("backlog.orderBy", "createdAt");
 const order = useStorage("backlog.order", "desc");
@@ -23,9 +32,48 @@ function toggleOrder() {
   order.value = order.value === "asc" ? "desc" : "asc";
 }
 
+const onMoveBacklogItem = debounce(moveBacklogItem, 500, { leading: false });
+
 onMounted(() => {
-  fetchIssues({
-    projectId: +props.projectId,
+  dragAndDrop({
+    parent: itemsContainer,
+    values: backlogItems,
+    onDragend() {
+      console.log("dragend");
+    },
+    async onSort({ draggedNode, position, values }) {
+      const { id } = draggedNode.data.value as any;
+      const { id: insertedAfterOfId } = (values[position - 1] as any) ?? {};
+      onMoveBacklogItem(
+        id,
+        {
+          backlogId: backlogId.value,
+          insertedAfterOfId,
+        },
+        () => {
+          console.log("order");
+          // fetchBacklogItems({
+          //   backlogId: backlogId.value,
+          //   order: order.value,
+          //   orderBy: orderBy.value,
+          //   page: 0,
+          //   count: 50,
+          // });
+        },
+      );
+    },
+  });
+});
+
+const projectApi = useDependency(ProjectService);
+
+const backlogId = ref<number>(0);
+
+onMounted(async () => {
+  const project = await projectApi.findProject(+props.projectId);
+  backlogId.value = project.backlogId;
+  fetchBacklogItems({
+    backlogId: backlogId.value,
     order: order.value,
     orderBy: orderBy.value,
     page: 0,
@@ -35,9 +83,11 @@ onMounted(() => {
 
 watch(
   () => [props.projectId, orderBy.value, order.value],
-  () => {
-    fetchIssues({
-      projectId: +props.projectId,
+  async () => {
+    const project = await projectApi.findProject(+props.projectId);
+    backlogId.value = project.backlogId;
+    fetchBacklogItems({
+      backlogId: backlogId.value,
       order: order.value,
       orderBy: orderBy.value,
       page: 0,
@@ -46,28 +96,36 @@ watch(
   },
 );
 
+function onCreateBacklogItem(data: any) {
+  createBacklogItem(backlogId.value, {
+    ...data,
+    backlogId: backlogId.value,
+    projectId: +props.projectId,
+  });
+}
+
 const { users, fetchUsers } = useUsers();
 const query = ref("");
 const selectedUser = ref<User>();
 watch(query, () => fetchUsers(query.value));
 
-const edittingIssue = reactive<{
+const editingIssue = reactive<{
   id: number | null;
   title: string;
 }>({ id: null, title: "" });
 
 function openIssueEdit(issue: Issue) {
-  edittingIssue.id = issue.id;
-  edittingIssue.title = issue.title;
+  editingIssue.id = issue.id;
+  editingIssue.title = issue.title;
 }
 
 function closeIssueEdit() {
-  edittingIssue.id = null;
-  edittingIssue.title = "";
+  editingIssue.id = null;
+  editingIssue.title = "";
 }
 
 function saveEdit() {
-  const { id, ...data } = edittingIssue;
+  const { id, ...data } = editingIssue;
   if (id) updateIssue(id, data);
   closeIssueEdit();
 }
@@ -94,6 +152,7 @@ function issueStatusColor(status: string) {
         <SelectContent>
           <SelectItem value="priority">Priority</SelectItem>
           <SelectItem value="createdAt">Create date</SelectItem>
+          <SelectItem value="manual">Manual</SelectItem>
         </SelectContent>
       </Select>
     </div>
@@ -106,8 +165,8 @@ function issueStatusColor(status: string) {
         <div>Title</div>
         <div
           @click="
-            orderBy = 'priority';
-            toggleOrder();
+            // orderBy = 'priority';
+            toggleOrder()
           "
         >
           Priority
@@ -119,11 +178,11 @@ function issueStatusColor(status: string) {
         class="grid grid-cols-subgrid col-span-7 pr-2 overflow-y-auto overflow-x-hidden"
         style="scrollbar-gutter: stable"
       >
-        <div class="grid grid-cols-subgrid col-span-7 gap-y-4">
+        <div class="grid grid-cols-subgrid auto-rows-max col-span-7 gap-y-4" ref="itemsContainer">
           <div
-            v-for="issue of issues"
+            v-for="{ id, issue, previousId, nextId, order } of backlogItems"
             :key="issue.id"
-            class="grid grid-cols-subgrid col-span-7 gap-x-6 items-start"
+            class="grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white"
           >
             <Button
               variant="outline"
@@ -132,11 +191,14 @@ function issueStatusColor(status: string) {
               :class="cn(issueStatusColor(issue.status))"
               >{{ issue.status }}</Button
             >
-            <div v-if="edittingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
-              <RouterLink :to="`issue/${issue.id}`">{{ issue.title }}</RouterLink>
+            <div v-if="editingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
+              <RouterLink :to="`issue/${issue.id}`"
+                >{{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }})
+                {{ order }}</RouterLink
+              >
             </div>
             <Form v-else @submit="saveEdit" class="flex:cols-md flex:center-y">
-              <Field v-model="edittingIssue.title" size="badge" name="title" />
+              <Field v-model="editingIssue.title" size="badge" name="title" />
               <Button type="submit" size="badge">Save</Button>
               <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
             </Form>
@@ -184,7 +246,7 @@ function issueStatusColor(status: string) {
       </div>
     </div>
 
-    <Form @submit="createIssue(+projectId, $event.title)" class="flex:cols-md">
+    <Form @submit="onCreateBacklogItem" class="flex:cols-md">
       <Field name="title" size="xs" placeholder="Describe an issue..." class="flex-1" />
       <Button type="submit" size="xs">Add</Button>
     </Form>
