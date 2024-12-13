@@ -1,5 +1,6 @@
 export * from './team/create-team.command';
 export * from './team/find-teams.query';
+export * from './team/add-team-member.command';
 export * from './workspace/accept-workspace-member-invite.command';
 export * from './workspace/add-workspace-member.command';
 export * from './workspace/create-workspace.command';

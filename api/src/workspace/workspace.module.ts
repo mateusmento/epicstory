@@ -1,66 +1,20 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
-import {
-  WorkspaceController,
-  WorkspaceMemberInviteController,
-} from './application/controllers';
-import {
-  AcceptWorkspaceMemberInviteCommand,
-  AddWorkspaceMemberCommand,
-  CreateTeamCommand,
-  CreateWorkspaceCommand,
-  FindTeamsQuery,
-  FindWorkspaceMemberQuery,
-  FindWorkspacesQuery,
-  RemoveWorkspaceMemberCommand,
-  SendWorkspaceMemberInviteCommand,
-  UpdateWorkspaceMemberCommand,
-} from './application/features';
-import { UserCreatedReaction } from './application/reactions';
-import {
-  Team,
-  Workspace,
-  WorkspaceMember,
-  WorkspaceMemberInvite,
-} from './domain/entities';
-import {
-  TeamRepository,
-  WorkspaceMemberInviteRepository,
-  WorkspaceMemberRepository,
-  WorkspaceRepository,
-} from './infrastructure/repositories';
-import { TeamMemberRepository } from './infrastructure/repositories/team-member.repository';
+import * as controllers from './application/controllers';
+import * as features from './application/features';
+import * as reactions from './application/reactions';
+import * as entities from './domain/entities';
+import * as repositories from './infrastructure/repositories';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      Workspace,
-      WorkspaceMember,
-      WorkspaceMemberInvite,
-      Team,
-    ]),
-    AuthModule,
-  ],
-  controllers: [WorkspaceController, WorkspaceMemberInviteController],
+  imports: [TypeOrmModule.forFeature(Object.values(entities)), AuthModule],
+  controllers: Object.values(controllers),
   providers: [
-    WorkspaceRepository,
-    WorkspaceMemberRepository,
-    WorkspaceMemberInviteRepository,
-    TeamRepository,
-    TeamMemberRepository,
-    FindWorkspacesQuery,
-    CreateWorkspaceCommand,
-    FindWorkspaceMemberQuery,
-    AddWorkspaceMemberCommand,
-    SendWorkspaceMemberInviteCommand,
-    AcceptWorkspaceMemberInviteCommand,
-    RemoveWorkspaceMemberCommand,
-    UpdateWorkspaceMemberCommand,
-    FindTeamsQuery,
-    CreateTeamCommand,
-    UserCreatedReaction,
+    ...Object.values(repositories),
+    ...Object.values(features),
+    ...Object.values(reactions),
   ],
-  exports: [WorkspaceRepository],
+  exports: [repositories.WorkspaceRepository],
 })
 export class WorkspaceModule {}
