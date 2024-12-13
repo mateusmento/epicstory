@@ -30,6 +30,7 @@ import {
   WorkspaceMemberRepository,
   WorkspaceRepository,
 } from './infrastructure/repositories';
+import { TeamMemberRepository } from './infrastructure/repositories/team-member.repository';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import {
     WorkspaceMemberRepository,
     WorkspaceMemberInviteRepository,
     TeamRepository,
+    TeamMemberRepository,
     FindWorkspacesQuery,
     CreateWorkspaceCommand,
     FindWorkspaceMemberQuery,
