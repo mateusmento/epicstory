@@ -20,6 +20,7 @@ import {
   FindBacklogItemsQuery,
   FindIssueQuery,
   FindIssuesQuery,
+  FindProjectBacklogItemsQuery,
   FindProjectQuery,
   FindProjectsQuery,
   FindTeamsQuery,
@@ -53,6 +54,8 @@ import {
   WorkspaceMemberRepository,
   WorkspaceRepository,
 } from './infrastructure/repositories';
+import { RemoveBacklogItemCommand } from './application/features/backlog/remove-backlog-item.command';
+import { RemoveProjectCommand } from './application/features/project/remove-project.command';
 
 @Module({
   imports: [
@@ -103,10 +106,13 @@ import {
     UpdateIssueCommand,
     RemoveIssueCommand,
     AddAssigneeCommand,
-    CreateBacklogItemCommand,
     FindBacklogItemsQuery,
+    CreateBacklogItemCommand,
+    RemoveBacklogItemCommand,
     MoveBacklogItemCommand,
     FindProjectQuery,
+    FindProjectBacklogItemsQuery,
+    RemoveProjectCommand,
   ],
   exports: [WorkspaceRepository],
 })

@@ -33,6 +33,11 @@ export function useBacklog() {
     then();
   }
 
+  async function removeBacklogItem(itemId: number) {
+    await backlogItemApi.remove(itemId);
+    store.backlogItems = store.backlogItems.filter((item) => item.id !== itemId);
+  }
+
   async function updateIssue(issueId: number, data: UpdateIssueData) {
     const issue = await issueApi.updateIssue(issueId, data);
     const index = store.backlogItems.findIndex((item) => item.issue.id === issueId);
@@ -52,6 +57,7 @@ export function useBacklog() {
     fetchBacklogItems,
     createBacklogItem,
     moveBacklogItem,
+    removeBacklogItem,
     updateIssue,
     addAssignee,
   };

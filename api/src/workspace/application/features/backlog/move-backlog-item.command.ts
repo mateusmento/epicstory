@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNumber, IsOptional } from 'class-validator';
 import { patch } from 'src/core/objects';
@@ -37,26 +37,45 @@ export class MoveBacklogItemCommand
     backlogItemId,
     insertedAfterOfId,
   }: MoveBacklogItem) {
-    await this.findBacklog(backlogId);
-    const item = await this.findBacklogItem(backlogItemId, backlogId);
+    if (backlogItemId === insertedAfterOfId) {
+      throw new BadRequestException('Can not insert backlog item after itself');
+    }
+
+    const backlog = await this.findBacklog(backlogId);
+    const item = await this.findBacklogItem(backlogItemId);
 
     const itemBefore = insertedAfterOfId
-      ? await this.findBacklogItem(insertedAfterOfId, backlogId)
+      ? await this.findBacklogItem(insertedAfterOfId)
       : null;
 
+    if (itemBefore.nextId === item.id) {
+      console.log();
+      throw new Error('Can not move backlog item to same position');
+    }
+
+    if (itemBefore && backlog.id !== itemBefore.backlogId)
+      throw new BadRequestException(
+        'Backlog item inserted after of does not belong to the target backlog',
+      );
+
+    if (itemBefore && item.projectId !== itemBefore.projectId)
+      throw new BadRequestException(
+        'Can not move backlog item to a different project',
+      );
+
     if (itemBefore) {
-      this.moveNextTo(item, itemBefore);
+      this.moveNextToItem(item, itemBefore);
     } else {
-      this.placeAtTheTop(backlogId, item);
+      this.moveToTopOfBacklog(item, backlogId);
     }
   }
 
-  private async placeAtTheTop(backlogId: number, item: BacklogItem) {
+  private async moveToTopOfBacklog(item: BacklogItem, backlogId: number) {
     const firstItem = await this.findFirstBacklogItem(backlogId);
 
-    this.connectNodesFromPreviousPosition(item);
+    this.connectAdjacentNodes(item);
 
-    const order = firstItem ? firstItem.order / 2 : 0;
+    const order = firstItem ? firstItem.order / 2 : 1;
 
     if (firstItem)
       await this.backlogItemRepo.update(
@@ -66,16 +85,16 @@ export class MoveBacklogItemCommand
 
     await this.backlogItemRepo.update(
       { id: item.id },
-      { order, nextId: firstItem?.id ?? null, previousId: null },
+      { backlogId, order, nextId: firstItem?.id ?? null, previousId: null },
     );
   }
 
-  private async moveNextTo(item: BacklogItem, itemBefore: BacklogItem) {
+  private async moveNextToItem(item: BacklogItem, itemBefore: BacklogItem) {
     const order = itemBefore.nextId
       ? (itemBefore.order + itemBefore.next.order) / 2
       : itemBefore.order + 1;
 
-    this.connectNodesFromPreviousPosition(item);
+    this.connectAdjacentNodes(item);
 
     if (itemBefore.nextId)
       await this.backlogItemRepo.update(
@@ -90,11 +109,16 @@ export class MoveBacklogItemCommand
 
     await this.backlogItemRepo.update(
       { id: item.id },
-      { order, nextId: itemBefore.nextId, previousId: itemBefore.id },
+      {
+        backlogId: itemBefore.backlogId,
+        order,
+        nextId: itemBefore.nextId,
+        previousId: itemBefore.id,
+      },
     );
   }
 
-  private async connectNodesFromPreviousPosition(item: BacklogItem) {
+  private async connectAdjacentNodes(item: BacklogItem) {
     if (item.previousId)
       await this.backlogItemRepo.update(
         { id: item.previousId },
@@ -113,11 +137,13 @@ export class MoveBacklogItemCommand
     return backlog;
   }
 
-  private async findBacklogItem(id: number, backlogId: number) {
-    return this.backlogItemRepo.findOne({
-      where: { id, backlogId },
+  private async findBacklogItem(id: number) {
+    const item = this.backlogItemRepo.findOne({
+      where: { id },
       relations: { next: true },
     });
+    if (!item) throw new NotFoundException('Backlog item not found');
+    return item;
   }
 
   private async findFirstBacklogItem(backlogId: number) {

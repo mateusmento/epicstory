@@ -9,7 +9,7 @@ const props = defineProps<{
   workspace: Workspace;
 }>();
 
-const { projects, createProject, fetchProjects } = useWorkspace();
+const { projects, createProject, fetchProjects, removeProject } = useWorkspace();
 
 onMounted(async () => {
   fetchProjects();
@@ -51,10 +51,13 @@ watch(
         v-for="project of projects"
         :key="project.id"
         :to="`/project/${project.id}/backlog`"
-        class="flex:rows-md p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:cols-auto flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
-        <div class="text-base text-zinc-800 font-dmSans font-medium">{{ project.name }}</div>
-        <div class="text-xs text-zinc-500">4 members</div>
+        <div class="flex:rows-md">
+          <div class="text-base text-zinc-800 font-dmSans font-medium">{{ project.name }}</div>
+          <div class="text-xs text-zinc-500">4 members</div>
+        </div>
+        <Icon name="io-trash-bin" @click="removeProject(project.id)" class="cursor-pointer text-zinc-800" />
       </RouterLink>
     </div>
   </div>

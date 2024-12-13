@@ -25,7 +25,7 @@ export class FindProjectBacklogItemsQuery
     });
 
     return this.queryBus.execute(
-      new FindProjectBacklogItems({ ...query, backlogId: project.backlogId }),
+      new FindBacklogItems({ ...query, backlogId: project.backlogId }),
     );
   }
 }

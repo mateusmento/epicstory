@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -10,11 +11,13 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { create } from 'src/core/objects';
 import {
   CreateBacklogItem,
   FindBacklogItems,
   MoveBacklogItem,
 } from '../features';
+import { RemoveBacklogItem } from '../features/backlog/remove-backlog-item.command';
 
 @Controller()
 export class BacklogItemController {
@@ -53,5 +56,11 @@ export class BacklogItemController {
     return this.commandBus.execute(
       new MoveBacklogItem({ backlogItemId, ...command }),
     );
+  }
+
+  @Delete('backlog-items/:id')
+  @UseGuards(JwtAuthGuard)
+  removeProject(@Param('id') itemId: number) {
+    return this.commandBus.execute(create(RemoveBacklogItem, { itemId }));
   }
 }

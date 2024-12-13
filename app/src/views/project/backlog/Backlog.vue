@@ -6,33 +6,39 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
-import { useIssues, type Issue } from "@/domain/issues";
+import { type Issue } from "@/domain/issues";
 import { ProjectService } from "@/domain/project";
 import { useUsers } from "@/domain/user";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { parseAbsolute } from "@internationalized/date";
 import { useStorage } from "@vueuse/core";
+import { debounce } from "lodash";
 import { onMounted, reactive, ref, watch } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
-import { debounce } from "lodash";
 
 const props = defineProps<{ projectId: string }>();
 
-const { removeIssue } = useIssues();
-const itemsContainer = ref<HTMLElement>();
+const {
+  backlogItems,
+  fetchBacklogItems,
+  createBacklogItem,
+  removeBacklogItem,
+  moveBacklogItem,
+  updateIssue,
+  addAssignee,
+} = useBacklog();
 
-const { backlogItems, fetchBacklogItems, createBacklogItem, moveBacklogItem, updateIssue, addAssignee } =
-  useBacklog();
-
-const orderBy = useStorage("backlog.orderBy", "createdAt");
-const order = useStorage("backlog.order", "desc");
+const orderBy = useStorage("backlog.orderBy", "manual");
+const order = useStorage("backlog.order", "asc");
 
 function toggleOrder() {
   order.value = order.value === "asc" ? "desc" : "asc";
 }
 
 const onMoveBacklogItem = debounce(moveBacklogItem, 500, { leading: false });
+
+const itemsContainer = ref<HTMLElement>();
 
 onMounted(() => {
   dragAndDrop({
@@ -51,14 +57,13 @@ onMounted(() => {
           insertedAfterOfId,
         },
         () => {
-          console.log("order");
-          // fetchBacklogItems({
-          //   backlogId: backlogId.value,
-          //   order: order.value,
-          //   orderBy: orderBy.value,
-          //   page: 0,
-          //   count: 50,
-          // });
+          fetchBacklogItems({
+            backlogId: backlogId.value,
+            order: order.value,
+            orderBy: orderBy.value,
+            page: 0,
+            count: 50,
+          });
         },
       );
     },
@@ -101,6 +106,8 @@ function onCreateBacklogItem(data: any) {
     ...data,
     backlogId: backlogId.value,
     projectId: +props.projectId,
+    insertedAfterOfId:
+      backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined,
   });
 }
 
@@ -240,7 +247,7 @@ function issueStatusColor(status: string) {
                 updateIssue(issue.id, { dueDate: $event.toDate('America/Sao_Paulo').toString() })
               "
             />
-            <Icon name="io-trash-bin" @click="removeIssue(issue.id)" class="cursor-pointer text-zinc-800" />
+            <Icon name="io-trash-bin" @click="removeBacklogItem(id)" class="cursor-pointer text-zinc-800" />
           </div>
         </div>
       </div>

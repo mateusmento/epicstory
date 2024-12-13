@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Param,
@@ -9,15 +10,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { ExceptionFilter } from 'src/core';
+import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { create } from 'src/core/objects';
+import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import {
   CreateIssue,
   FindIssues,
   FindProject,
   FindProjectBacklogItems,
 } from '../features';
-import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { ExceptionFilter } from 'src/core';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import { RemoveProject } from '../features/project/remove-project.command';
 
 @Controller('projects')
 export class ProjectController {
@@ -55,5 +58,11 @@ export class ProjectController {
     return this.commandBus.execute(
       new CreateIssue({ ...data, projectId, issuer }),
     );
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  removeProject(@Param('id') projectId: number) {
+    return this.commandBus.execute(create(RemoveProject, { projectId }));
   }
 }

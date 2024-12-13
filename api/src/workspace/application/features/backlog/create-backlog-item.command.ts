@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Issuer } from 'src/core/auth';
@@ -10,6 +10,7 @@ import {
 } from 'src/workspace/infrastructure/repositories';
 import { CreateIssue } from '../issue/create-issue.command';
 import { Transactional } from 'typeorm-transactional';
+import { BacklogItem } from 'src/workspace/domain/entities';
 
 export class CreateBacklogItem {
   issuer: Issuer;
@@ -55,24 +56,26 @@ export class CreateBacklogItemCommand
     title,
     description,
   }: CreateBacklogItem) {
-    await this.findBacklog(backlogId);
+    const backlog = await this.findBacklog(backlogId);
 
     const itemBefore = insertedAfterOfId
       ? await this.findBacklogItem(insertedAfterOfId, backlogId)
-      : await this.findLastBacklogItem(backlogId);
+      : null;
+
+    if (itemBefore && backlog.id !== itemBefore.backlogId)
+      throw new BadRequestException(
+        'Backlog item inserted after of does not belong to the target backlog',
+      );
 
     const issue = await this.commandBus.execute(
       new CreateIssue({ issuer, projectId, title, description }),
     );
 
-    const order = !itemBefore
-      ? 1
-      : itemBefore.nextId
-        ? (itemBefore.order + itemBefore.next.order) / 2
-        : itemBefore.order + 1;
+    const order = await this.calculateOrder(backlogId, itemBefore);
 
     const backlogItem = await this.backlogItemRepo.save({
       backlogId,
+      projectId,
       issueId: issue.id,
       issue,
       order,
@@ -88,19 +91,13 @@ export class CreateBacklogItemCommand
     return backlogItem;
   }
 
-  async findBacklog(id: number) {
+  private async findBacklog(id: number) {
     const backlog = await this.backlogRepo.findOneBy({ id });
     if (!backlog) throw new NotFoundException('Backlog not found');
     return backlog;
   }
 
-  async findIssue(id: number) {
-    const issue = this.issueRepo.findOneBy({ id });
-    if (!issue) throw new NotFoundException('Issue not found');
-    return issue;
-  }
-
-  async findBacklogItem(id: number, backlogId: number) {
+  private async findBacklogItem(id: number, backlogId: number) {
     const item = this.backlogItemRepo.findOne({
       where: { id, backlogId },
       relations: { next: true },
@@ -109,10 +106,21 @@ export class CreateBacklogItemCommand
     return item;
   }
 
-  async findLastBacklogItem(backlogId: number) {
+  private async calculateOrder(backlogId: number, itemBefore: BacklogItem) {
+    if (itemBefore) {
+      return itemBefore.nextId
+        ? (itemBefore.order + itemBefore.next.order) / 2
+        : itemBefore.order + 1;
+    } else {
+      const firstItem = await this.findFirstBacklogItem(backlogId);
+      return firstItem ? firstItem.order / 2 : 1;
+    }
+  }
+
+  private async findFirstBacklogItem(backlogId: number) {
     return this.backlogItemRepo.findOne({
       where: { backlogId },
-      order: { order: 'desc' },
+      order: { order: 'asc' },
       relations: { next: true },
     });
   }

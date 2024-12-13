@@ -16,5 +16,10 @@ export function useProjects(workspaceId: number) {
     projects.value.push(project);
   }
 
-  return { projects, fetchProjects, createProject };
+  async function removeProject(projectId: number) {
+    await workspaceService.removeProject(projectId);
+    projects.value = projects.value.filter((p) => p.id !== projectId);
+  }
+
+  return { projects, fetchProjects, createProject, removeProject };
 }

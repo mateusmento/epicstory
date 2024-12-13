@@ -43,6 +43,10 @@ export class WorkspaceService {
     return this.axios.post(`workspaces/${workspaceId}/projects`, data).then((res) => res.data);
   }
 
+  removeProject(projectId: number) {
+    return this.axios.delete(`projects/${projectId}`).then((res) => res.data);
+  }
+
   findTeams(workspaceId: number) {
     return this.axios.get<Team[]>(`workspaces/${workspaceId}/teams`).then((res) => res.data);
   }

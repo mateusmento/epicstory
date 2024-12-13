@@ -25,4 +25,8 @@ export class BacklogItemApi {
   move(itemId: number, data: any) {
     return this.axios.put(`/backlog-items/${itemId}/order`, data).then((res) => res.data);
   }
+
+  remove(itemId: number) {
+    return this.axios.delete(`backlog-items/${itemId}`).then((res) => res.data);
+  }
 }

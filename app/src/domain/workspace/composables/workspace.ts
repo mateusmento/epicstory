@@ -54,6 +54,11 @@ export function useWorkspace() {
     store.projects.push(project);
   }
 
+  async function removeProject(projectId: number) {
+    await workspaceService.removeProject(projectId);
+    store.projects = store.projects.filter((p) => p.id !== projectId);
+  }
+
   async function fetchTeams() {
     if (!store.workspace) return;
     store.teams = await workspaceService.findTeams(store.workspace.id);
@@ -74,6 +79,7 @@ export function useWorkspace() {
     sendWorkspaceMemberInvite,
     fetchProjects,
     createProject,
+    removeProject,
     fetchTeams,
     createTeam,
   };

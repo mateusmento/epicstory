@@ -1,17 +1,16 @@
 import { create } from 'src/core/objects';
 import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { IssuerCanNotCreateTeam } from '../exceptions/issuer-can-not-create-team';
+import { IssuerUserCanNotAddWorkspaceMember } from '../exceptions/issuer-user-can-not-add-workspace-member';
+import { IssuerUserCanNotCreateProject } from '../exceptions/issuer-user-can-not-create-project';
+import { IssuerUserIsNotWorkspaceMember } from '../exceptions/issuer-user-is-not-workspace-member';
+import { WorkspaceMemberAlreadyExists } from '../exceptions/workspace-member-already-exists';
 import { AddWorkspaceMemberPrerequisite } from '../values/add-workspace-member-prerequisite.value';
 import { WorkspaceRole } from '../values/workspace-role.value';
 import { Project } from './project.entity';
-import { WorkspaceMember } from './workspace-member.entity';
-import { IssuerUserIsNotWorkspaceMember } from '../exceptions/issuer-user-is-not-workspace-member';
-import { IssuerUserCanNotAddWorkspaceMember } from '../exceptions/issuer-user-can-not-add-workspace-member';
-import { WorkspaceMemberAlreadyExists } from '../exceptions/workspace-member-already-exists';
-import { IssuerUserCanNotCreateProject } from '../exceptions/issuer-user-can-not-create-project';
 import { Team } from './team.entity';
-import { IssuerCanNotCreateTeam } from '../exceptions/issuer-can-not-create-team';
-import { Backlog } from './backlog.entity';
+import { WorkspaceMember } from './workspace-member.entity';
 
 @Entity({ schema: WORKSPACE_SCHEMA })
 export class Workspace {
@@ -48,7 +47,6 @@ export class Workspace {
     return Project.create({
       workspaceId: this.id,
       name,
-      backlog: new Backlog(),
     });
   }
 
