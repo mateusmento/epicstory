@@ -28,6 +28,9 @@ export class Channel {
   @Column()
   workspaceId: number;
 
+  @Column({ nullable: true })
+  teamId?: number;
+
   @Column({ default: 'direct' })
   type: ChannelType;
 

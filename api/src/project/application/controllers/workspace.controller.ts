@@ -3,6 +3,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Post,
   Query,
@@ -14,6 +15,7 @@ import { CreateProject, FindIssues, FindProjects } from '../features';
 import { ExceptionFilter } from 'src/core';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { IssuerUserCanNotCreateProject } from 'src/project/domain/exceptions';
+import { TeamNotFound } from 'src/workspace/domain/exceptions';
 
 @Controller('workspaces')
 export class WorkspaceController {
@@ -24,8 +26,8 @@ export class WorkspaceController {
 
   @Get(':id/projects')
   @UseGuards(JwtAuthGuard)
-  findProjects(@Param('id') workspaceId: number) {
-    return this.queryBus.execute(new FindProjects({ workspaceId }));
+  findProjects(@Param('id') workspaceId: number, @Query() query: FindProjects) {
+    return this.queryBus.execute(new FindProjects({ ...query, workspaceId }));
   }
 
   @Post(':id/projects')
@@ -33,6 +35,7 @@ export class WorkspaceController {
   @ExceptionFilter(
     [IssuerUserIsNotWorkspaceMember, ForbiddenException],
     [IssuerUserCanNotCreateProject, ForbiddenException],
+    [TeamNotFound, NotFoundException],
   )
   createProject(
     @Param('id') workspaceId: number,

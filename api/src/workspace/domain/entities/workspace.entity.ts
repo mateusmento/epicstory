@@ -41,11 +41,12 @@ export class Workspace {
     });
   }
 
-  createProject(issuer: WorkspaceMember, name: string) {
+  createProject(issuer: WorkspaceMember, teamId: number, name: string) {
     if (!issuer.hasRole(WorkspaceRole.ADMIN))
       throw new IssuerUserCanNotCreateProject();
     return Project.create({
       workspaceId: this.id,
+      teamId,
       name,
     });
   }

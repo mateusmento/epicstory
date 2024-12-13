@@ -1,9 +1,11 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Issuer } from 'src/core/auth/auth-user';
 import { patch } from 'src/core/objects';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions/issuer-user-is-not-workspace-member';
-import { TeamRepository } from 'src/workspace/infrastructure/repositories/team.repository';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
+import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import {
+  TeamRepository,
+  WorkspaceRepository,
+} from 'src/workspace/infrastructure/repositories';
 
 export class FindTeams {
   workspaceId: number;

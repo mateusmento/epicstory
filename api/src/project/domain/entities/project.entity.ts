@@ -15,12 +15,15 @@ export class Project {
   workspaceId: number;
 
   @Column({ nullable: true })
+  teamId?: number;
+
+  @Column({ nullable: true })
   backlogId: number;
 
   @ManyToOne(() => Backlog, { cascade: ['insert'] })
   backlog: Backlog;
 
-  static create(data: { name: string; workspaceId: number }) {
+  static create(data: { name: string; workspaceId: number; teamId?: number }) {
     return create(Project, data);
   }
 }
