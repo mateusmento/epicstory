@@ -1,10 +1,10 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Issue } from './issue.entity';
-import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
+import { PROJECT_SCHEMA } from 'src/project/constants';
 import { Backlog } from './backlog.entity';
 import { Project } from './project.entity';
 
-@Entity({ schema: WORKSPACE_SCHEMA })
+@Entity({ schema: PROJECT_SCHEMA })
 export class BacklogItem {
   @PrimaryGeneratedColumn()
   id: number;

@@ -1,9 +1,9 @@
 import { create } from 'src/core/objects';
-import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
+import { PROJECT_SCHEMA } from 'src/project/constants';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Backlog } from './backlog.entity';
 
-@Entity({ schema: WORKSPACE_SCHEMA, name: 'workspace_project' })
+@Entity({ schema: PROJECT_SCHEMA, name: 'workspace_project' })
 export class Project {
   @PrimaryGeneratedColumn()
   id: number;

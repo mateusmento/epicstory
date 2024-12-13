@@ -1,4 +1,4 @@
-import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
+import { PROJECT_SCHEMA } from 'src/project/constants';
 import {
   Column,
   Entity,
@@ -10,7 +10,7 @@ import { BacklogItem } from './backlog-item.entity';
 import { Project } from './project.entity';
 import { patch } from 'src/core/objects';
 
-@Entity({ schema: WORKSPACE_SCHEMA })
+@Entity({ schema: PROJECT_SCHEMA })
 export class Backlog {
   @PrimaryGeneratedColumn()
   id: number;

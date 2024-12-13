@@ -1,4 +1,5 @@
 import { User } from 'src/auth';
+import { PROJECT_SCHEMA } from 'src/project/constants';
 import {
   Column,
   CreateDateColumn,
@@ -8,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity({ schema: 'workspace' })
+@Entity({ schema: PROJECT_SCHEMA })
 export class Issue {
   @PrimaryGeneratedColumn()
   id: number;

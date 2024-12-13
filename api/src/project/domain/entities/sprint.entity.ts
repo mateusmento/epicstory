@@ -6,8 +6,9 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Backlog } from './backlog.entity';
+import { PROJECT_SCHEMA } from 'src/project/constants';
 
-@Entity({ schema: 'workspace' })
+@Entity({ schema: PROJECT_SCHEMA })
 export class Sprint {
   @PrimaryGeneratedColumn()
   id: number;
