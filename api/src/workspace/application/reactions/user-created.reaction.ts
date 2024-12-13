@@ -3,7 +3,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { OnEvent } from '@nestjs/event-emitter';
 import { UserCreatedEvent } from 'src/auth/contracts/user-created.event';
 import { create } from 'src/core/objects';
-import { CreateProject } from '../features/project/create-project.command';
+import { CreateProject } from 'src/project/application/features/project/create-project.command';
 import { CreateWorkspace } from '../features/workspace/create-workspace.command';
 
 @Injectable()

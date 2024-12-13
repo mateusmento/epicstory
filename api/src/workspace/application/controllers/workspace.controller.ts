@@ -8,7 +8,6 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
@@ -16,17 +15,13 @@ import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
   IssuerUserCanNotAddWorkspaceMember,
-  IssuerUserCanNotCreateProject,
   IssuerUserIsNotWorkspaceMember,
   WorkspaceMemberAlreadyExists,
 } from 'src/workspace/domain/exceptions';
 import {
   AddWorkspaceMember,
-  CreateProject,
   CreateTeam,
   CreateWorkspace,
-  FindIssues,
-  FindProjects,
   FindTeams,
   FindWorkspaceMembers,
   FindWorkspaces,
@@ -57,31 +52,6 @@ export class WorkspaceController {
     return this.commandBus.execute(
       new CreateWorkspace({ ...command, issuerId: issuer.id }),
     );
-  }
-
-  @Get(':id/projects')
-  @UseGuards(JwtAuthGuard)
-  findProjects(@Param('id') workspaceId: number) {
-    return this.queryBus.execute(new FindProjects({ workspaceId }));
-  }
-
-  @Post(':id/projects')
-  @UseGuards(JwtAuthGuard)
-  @ExceptionFilter(
-    [IssuerUserIsNotWorkspaceMember, ForbiddenException],
-    [IssuerUserCanNotCreateProject, ForbiddenException],
-  )
-  createProject(
-    @Param('id') workspaceId: number,
-    @Body() command: CreateProject,
-    @Auth() issuer: Issuer,
-  ) {
-    command = new CreateProject({
-      ...command,
-      workspaceId,
-      issuerId: issuer.id,
-    });
-    return this.commandBus.execute(command);
   }
 
   @Get(':id/members')
@@ -177,11 +147,5 @@ export class WorkspaceController {
     return this.commandBus.execute(
       new CreateTeam({ ...command, workspaceId, issuerId: issuer.id }),
     );
-  }
-
-  @Get(':id/issues')
-  @UseGuards(JwtAuthGuard)
-  findIssues(@Param('id') workspaceId: number, @Query() query: FindIssues) {
-    return this.queryBus.execute(new FindIssues({ workspaceId, ...query }));
   }
 }

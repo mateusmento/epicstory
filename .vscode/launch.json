@@ -6,7 +6,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug EpicStory Api",
+      "name": "Debug Epicstory Api",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "start:debug", "--", "--inspect-brk"],
       "localRoot": "${workspaceFolder}/api",
