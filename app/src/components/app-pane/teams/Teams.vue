@@ -18,7 +18,7 @@ onMounted(() => fetchTeams());
 </script>
 
 <template>
-  <div class="flex:rows">
+  <div class="flex:rows w-96">
     <div class="flex:rows-xl p-4">
       <Collapsible as-child>
         <div class="flex:cols-auto flex:center-y">

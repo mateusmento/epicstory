@@ -17,7 +17,8 @@ function onNavViewTrigger(v: string) {
       <CollapsibleContent
         as="aside"
         transition="horizontal"
-        class="h-full w-96 border-r border-r-zinc-300/60"
+        class="h-full w-fit border-r border-r-zinc-300/60"
+        :class="$props.class"
       >
         <slot />
       </CollapsibleContent>
