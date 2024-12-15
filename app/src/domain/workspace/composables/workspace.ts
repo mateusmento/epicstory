@@ -71,6 +71,11 @@ export function useWorkspace() {
     store.teams.push(team);
   }
 
+  async function removeTeam(teamId: number) {
+    await workspaceService.removeTeam(teamId);
+    store.teams = store.teams.filter((t) => t.id !== teamId);
+  }
+
   return {
     ...storeToRefs(store),
     selectWorkspace,
@@ -82,5 +87,6 @@ export function useWorkspace() {
     removeProject,
     fetchTeams,
     createTeam,
+    removeTeam,
   };
 }

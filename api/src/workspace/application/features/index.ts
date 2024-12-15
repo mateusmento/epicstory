@@ -1,6 +1,7 @@
 export * from './team/find-teams.query';
 export * from './team/find-team.query';
 export * from './team/create-team.command';
+export * from './team/remove-team.command';
 export * from './team/find-team-members.query';
 export * from './team/add-team-member.command';
 export * from './team/remove-team-member.command';

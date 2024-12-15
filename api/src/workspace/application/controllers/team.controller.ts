@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   NotFoundException,
@@ -9,13 +10,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { FindTeam, AddTeamMember, FindTeamMembers } from '../features';
 import { ExceptionFilter } from 'src/core';
+import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { Issue } from 'src/project/domain/entities';
 import {
   IssuerUserIsNotWorkspaceMember,
   TeamNotFound,
 } from 'src/workspace/domain/exceptions';
+import { AddTeamMember, FindTeam, FindTeamMembers } from '../features';
+import { RemoveTeam } from '../features/team/remove-team.command';
 
 @Controller('teams')
 export class TeamController {
@@ -29,6 +32,18 @@ export class TeamController {
   @ExceptionFilter([TeamNotFound, NotFoundException])
   findTeam(@Param('id') teamId: number) {
     return this.queryBus.execute(new FindTeam(teamId));
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter(
+    [IssuerUserIsNotWorkspaceMember, ForbiddenException],
+    [TeamNotFound, NotFoundException],
+  )
+  removeTeam(@Param('id') teamId: number, @Auth() issuer: Issue) {
+    return this.commandBus.execute(
+      new RemoveTeam({ teamId, issuerId: issuer.id }),
+    );
   }
 
   @Get(':id/members')

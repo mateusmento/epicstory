@@ -54,4 +54,8 @@ export class WorkspaceService {
   createTeam(workspaceId: number, data: { name: string; members: number[] }) {
     return this.axios.post<Team>(`workspaces/${workspaceId}/teams`, data).then((res) => res.data);
   }
+
+  removeTeam(teamId: number) {
+    return this.axios.delete(`/teams/${teamId}`).then((res) => res.data);
+  }
 }

@@ -12,7 +12,7 @@ import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
 import { onMounted } from "vue";
 
-const { teams, fetchTeams, createTeam } = useWorkspace();
+const { teams, fetchTeams, createTeam, removeTeam } = useWorkspace();
 
 onMounted(() => fetchTeams());
 </script>
@@ -48,10 +48,17 @@ onMounted(() => fetchTeams());
         view="app-pane"
         content="team"
         :props="{ teamId: team.id }"
-        class="flex:rows-md p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:cols flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
-        <div class="text-base text-zinc-800 font-dmSans font-medium">{{ team.name }}</div>
-        <div class="text-xs text-zinc-500">4 members</div>
+        <div class="flex:rows-md">
+          <div class="text-base text-zinc-800 font-dmSans font-medium">{{ team.name }}</div>
+          <div class="text-xs text-zinc-500">4 members</div>
+        </div>
+        <Icon
+          name="io-trash-bin"
+          @click.stop="removeTeam(team.id)"
+          class="ml-auto cursor-pointer text-zinc-800"
+        />
       </NavTrigger>
     </div>
   </div>
