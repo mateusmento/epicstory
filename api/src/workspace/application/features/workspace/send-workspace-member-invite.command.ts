@@ -1,5 +1,6 @@
+import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsNumber } from 'class-validator';
 import * as moment from 'moment';
 import * as nodemailer from 'nodemailer';
 import { UserRepository } from 'src/auth';
@@ -16,6 +17,9 @@ import {
 export class SendWorkspaceMemberInvite {
   issuer: Issuer;
   workspaceId: number;
+
+  @IsNumber()
+  userId: number;
   @IsNotEmpty()
   email: string;
 
@@ -35,7 +39,18 @@ export class SendWorkspaceMemberInviteCommand
     private userRepo: UserRepository,
   ) {}
 
-  async execute({ issuer, email, workspaceId }: SendWorkspaceMemberInvite) {
+  async execute({
+    issuer,
+    userId,
+    email,
+    workspaceId,
+  }: SendWorkspaceMemberInvite) {
+    const workspace = await this.workspaceRepo.findOneBy({
+      id: workspaceId,
+    });
+
+    if (!workspace) throw new NotFoundException('Workspace not found');
+
     const user = await this.userRepo.findOneBy({ email });
 
     if (user) {
@@ -47,7 +62,7 @@ export class SendWorkspaceMemberInviteCommand
       WorkspaceMemberInvite.create({
         workspaceId,
         email,
-        userId: user?.id,
+        userId: userId ?? user?.id,
         status: 'sent',
         expiresAt: moment().add(15, 'days').toDate(),
       }),

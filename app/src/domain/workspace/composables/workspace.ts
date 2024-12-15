@@ -38,9 +38,9 @@ export function useWorkspace() {
     store.members.push(member);
   }
 
-  async function sendWorkspaceMemberInvite(email: string) {
+  async function sendWorkspaceMemberInvite(email: string, userId: number) {
     if (!store.workspace) return;
-    await workspaceService.sendMemberInvite(store.workspace.id, { email });
+    await workspaceService.sendMemberInvite(store.workspace.id, { email, userId });
   }
 
   async function fetchProjects() {

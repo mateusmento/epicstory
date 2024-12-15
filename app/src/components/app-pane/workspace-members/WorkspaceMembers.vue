@@ -39,7 +39,10 @@ watch(query, () => fetchUsers(query.value));
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <Form @submit="sendWorkspaceMemberInvite($event.email)" class="flex:rows-lg">
+          <Form
+            @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)"
+            class="flex:rows-lg"
+          >
             <Combobox
               v-model="selectedUser"
               v-model:searchTerm="query"

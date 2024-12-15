@@ -2,6 +2,10 @@ import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { patch } from 'src/core/objects';
+import {
+  IssuerUserCanNotAddWorkspaceMember,
+  IssuerUserIsNotWorkspaceMember,
+} from 'src/workspace/domain/exceptions';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories/workspace-member.repository';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
@@ -41,6 +45,10 @@ export class AddWorkspaceMemberCommand
         workspaceId,
         userId,
       );
+    if (!prerequisites.issuerIsWorkspaceMember)
+      throw new IssuerUserIsNotWorkspaceMember();
+    if (!prerequisites.issuer?.hasRole(WorkspaceRole.ADMIN))
+      throw new IssuerUserCanNotAddWorkspaceMember();
     const member = workspace.addMember(prerequisites, userId, role);
     return this.workspaceMemberRepo.save(member);
   }
