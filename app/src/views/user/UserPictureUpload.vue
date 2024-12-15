@@ -54,9 +54,10 @@ function onSave() {
       <img v-if="!newPictureIsOver && pictureUrl" :src="pictureUrl" class="rounded-full" />
       <div
         v-else
-        class="dropzone flex items-center justify-center w-40 h-40 text-sm rounded-full border border-dashed"
+        class="dropzone flex items-center justify-center w-40 h-40 text-sm text-center rounded-full border border-dashed"
       >
-        Drop a new picture
+        Drop <br />
+        new picture
       </div>
       <input type="file" hidden @change="setPicture((($event.target as any).files ?? [])[0])" />
     </label>
