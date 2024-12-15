@@ -2,8 +2,8 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { patch } from 'src/core/objects';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
-import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories/workspace-member.repository';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
+import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 export class RemoveWorkspaceMember {
   issuerId: number;

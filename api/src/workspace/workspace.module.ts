@@ -15,6 +15,6 @@ import * as repositories from './infrastructure/repositories';
     ...Object.values(features),
     ...Object.values(reactions),
   ],
-  exports: [repositories.WorkspaceRepository],
+  exports: [...Object.values(repositories)],
 })
 export class WorkspaceModule {}

@@ -1,17 +1,21 @@
 import { computed, inject, provide, type Ref, type WritableComputedRef } from "vue";
 
-type NavViewContext = { viewContent: WritableComputedRef<string> };
+type NavViewContext = {
+  viewContent: WritableComputedRef<string>;
+  contentProps: Ref<any>;
+};
 
 const views: Record<string, NavViewContext> = {};
 
 type NavViewOptions = {
   view: string;
   content: Ref<string>;
+  props: Ref<any>;
   onTrigger?: (content: string) => void;
   onChange?: (content: string) => void;
 };
 
-export function useNavView({ view, content, onChange, onTrigger }: NavViewOptions) {
+export function useNavView({ view, content, props, onChange, onTrigger }: NavViewOptions) {
   const viewContent = computed({
     get: () => content.value,
     set: (value: string) => {
@@ -21,7 +25,7 @@ export function useNavView({ view, content, onChange, onTrigger }: NavViewOption
     },
   });
 
-  views[view] = { viewContent };
+  views[view] = { viewContent, contentProps: props };
 
   provide("navView", views[view]);
 
@@ -42,5 +46,12 @@ export function useNavTrigger(view: string) {
     },
   });
 
-  return { viewContent };
+  const contentProps = computed({
+    get: () => views[view]?.contentProps.value,
+    set: (value: string) => {
+      views[view].contentProps.value = value;
+    },
+  });
+
+  return { viewContent, contentProps };
 }

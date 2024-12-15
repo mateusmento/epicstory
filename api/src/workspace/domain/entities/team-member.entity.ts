@@ -2,6 +2,7 @@ import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Team } from './team.entity';
 import { create } from 'src/core/objects';
+import { User } from 'src/auth';
 
 @Entity({ schema: WORKSPACE_SCHEMA })
 export class TeamMember {
@@ -10,6 +11,9 @@ export class TeamMember {
 
   @Column()
   userId: number;
+
+  @ManyToOne(() => User)
+  user: User;
 
   @Column()
   workspaceMemberId: number;

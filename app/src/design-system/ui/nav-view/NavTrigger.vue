@@ -6,13 +6,19 @@ const props = defineProps<{
   as?: VNodeTypes;
   view: string;
   content: string;
+  props?: any;
 }>();
 
-const { viewContent } = useNavTrigger(props.view);
+const { viewContent, contentProps } = useNavTrigger(props.view);
+
+function trigger() {
+  viewContent.value = props.content;
+  contentProps.value = props.props;
+}
 </script>
 
 <template>
-  <component :is="as ?? 'div'" @click.stop="viewContent = content">
+  <component :is="as ?? 'div'" @click.stop="trigger">
     <slot />
   </component>
 </template>

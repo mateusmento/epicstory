@@ -1,5 +1,13 @@
 <script lang="ts" setup>
-import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Field, Form } from "@/design-system";
+import {
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Field,
+  Form,
+  NavTrigger,
+} from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
 import { onMounted } from "vue";
@@ -34,14 +42,17 @@ onMounted(() => fetchTeams());
     </div>
 
     <div class="flex:rows">
-      <div
+      <NavTrigger
         v-for="team in teams"
         :key="team.id"
+        view="app-pane"
+        content="team"
+        :props="{ teamId: team.id }"
         class="flex:rows-md p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
         <div class="text-base text-zinc-800 font-dmSans font-medium">{{ team.name }}</div>
         <div class="text-xs text-zinc-500">4 members</div>
-      </div>
+      </NavTrigger>
     </div>
   </div>
 </template>

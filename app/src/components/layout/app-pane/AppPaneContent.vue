@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import { NavViewContent } from "@/design-system";
 
-defineProps<{
+const props = defineProps<{
   content: string;
 }>();
 </script>
 
 <template>
-  <NavViewContent :content="content" class="h-full animate-collapsible-fadein">
-    <slot />
+  <NavViewContent :content="content" class="h-full animate-collapsible-fadein" #default="slotData">
+    <slot v-bind="slotData" />
   </NavViewContent>
 </template>

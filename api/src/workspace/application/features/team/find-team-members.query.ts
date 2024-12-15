@@ -34,6 +34,9 @@ export class FindTeamMembersQuery implements IQueryHandler<FindTeamMembers> {
       issuer.id,
     );
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
-    return this.teamMemberRepo.find({ where: { teamId } });
+    return this.teamMemberRepo.find({
+      where: { teamId },
+      relations: { user: true },
+    });
   }
 }

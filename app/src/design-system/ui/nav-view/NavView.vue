@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { ref } from "vue";
 import { useNavView } from "./nav-view";
 
 const props = defineProps<{
@@ -15,6 +16,7 @@ const content = defineModel<string>("content", { required: true });
 useNavView({
   view: props.view,
   content,
+  props: ref<any>(),
   onTrigger: (content) => emit("trigger", content),
   onChange: (content) => emit("change", content),
 });

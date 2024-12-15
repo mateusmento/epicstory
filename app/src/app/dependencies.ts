@@ -4,6 +4,7 @@ import { WorkspaceService } from "@/domain/workspace";
 import { Axios } from "axios";
 import { container as tsyringe } from "tsyringe";
 import { ProjectService } from "@/domain/project";
+import { TeamApi } from "@/domain/team/team.api";
 
 export async function createDependencies() {
   const { default: config } = await import("./config");
@@ -13,5 +14,6 @@ export async function createDependencies() {
   container.registerSingleton(WorkspaceService);
   container.registerSingleton(ProjectService);
   container.registerSingleton(IssueApi);
+  container.registerSingleton(TeamApi);
   return container;
 }

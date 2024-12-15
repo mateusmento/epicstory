@@ -1,18 +1,25 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { IsNumber } from 'class-validator';
+import { UserRepository } from 'src/auth';
 import { patch } from 'src/core/objects';
 import { TeamMember } from 'src/workspace/domain/entities/team-member.entity';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import {
+  IssuerUserIsNotWorkspaceMember,
+  TeamNotFound,
+} from 'src/workspace/domain/exceptions';
 import {
   TeamMemberRepository,
   TeamRepository,
   WorkspaceRepository,
 } from 'src/workspace/infrastructure/repositories';
 
-class AddTeamMember {
+export class AddTeamMember {
   teamId: number;
-  userId: number;
   issuerId: number;
+
+  @IsNumber()
+  userId: number;
 
   constructor(data: Partial<AddTeamMember>) {
     patch(this, data);
@@ -23,12 +30,18 @@ class AddTeamMember {
 export class AddTeamMemberCommand implements ICommandHandler<AddTeamMember> {
   constructor(
     private workspaceRepo: WorkspaceRepository,
+    private userRepo: UserRepository,
     private teamRepo: TeamRepository,
     private teamMemberRepo: TeamMemberRepository,
   ) {}
 
   async execute({ teamId, userId, issuerId }: AddTeamMember) {
+    const user = await this.userRepo.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('User not found');
+
     const team = await this.teamRepo.findOneBy({ id: teamId });
+
+    if (!team) throw new TeamNotFound();
 
     const issuer = await this.workspaceRepo.findMember(
       team.workspaceId,
@@ -53,6 +66,7 @@ export class AddTeamMemberCommand implements ICommandHandler<AddTeamMember> {
       }),
     );
 
+    teamMember.user = user;
     return teamMember;
   }
 }

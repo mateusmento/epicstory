@@ -5,7 +5,7 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRole } from 'src/workspace/domain/values';
 import {
   TeamMemberRepository,
-  WorkspaceMemberRepository,
+  TeamRepository,
   WorkspaceRepository,
 } from 'src/workspace/infrastructure/repositories';
 
@@ -23,9 +23,9 @@ export class RemoveTeamMemberCommand
   implements ICommandHandler<RemoveTeamMember>
 {
   constructor(
-    private workspaceRepo: WorkspaceRepository,
-    private workspaceMemberRepo: WorkspaceMemberRepository,
+    private teamRepo: TeamRepository,
     private teamMemberRepo: TeamMemberRepository,
+    private workspaceRepo: WorkspaceRepository,
   ) {}
 
   async execute({ teamMemberId, issuerId }: RemoveTeamMember) {
@@ -35,12 +35,12 @@ export class RemoveTeamMemberCommand
 
     if (!teamMember) throw new NotFoundException('Team member not found');
 
-    const workspaceMember = await this.workspaceMemberRepo.findOne({
-      where: { id: teamMember.workspaceMemberId },
+    const team = await this.teamRepo.findOne({
+      where: { id: teamMember.teamId },
     });
 
     const issuer = await this.workspaceRepo.findMember(
-      workspaceMember.workspaceId,
+      team.workspaceId,
       issuerId,
     );
 
