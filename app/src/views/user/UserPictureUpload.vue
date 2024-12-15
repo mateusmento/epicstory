@@ -15,7 +15,6 @@ function setPicture(file: File) {
 
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
-    console.log(event.target?.result);
     pictureUrl.value = (event.target?.result as string | null) ?? "";
   });
   reader.addEventListener("error", (err) => {
@@ -34,7 +33,6 @@ useDropZone(fileDrop, {
     newPictureIsOver.value = false;
   },
   onDrop(files) {
-    console.log(files);
     newPictureIsOver.value = false;
     setPicture((files ?? [])[0]);
   },

@@ -20,7 +20,9 @@ onMounted(async () => {
 
   sockets.websocket.on("incoming-meeting", ({ meeting }: any) => {
     const channel = channels.value.find((c) => c.id === meeting.channelId);
-    if (channel) channel.meeting = meeting;
+    if (channel) {
+      channel.meeting = meeting;
+    }
   });
 
   sockets.websocket.on("meeting-ended", ({ channelId }: any) => {

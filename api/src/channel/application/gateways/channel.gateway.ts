@@ -7,11 +7,13 @@ import {
 import { Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { MessageService } from '../services/message.service';
+import { MessageRepository } from 'src/channel/infrastructure';
 
 @WebSocketGateway()
 export class ChannelGateway {
   constructor(
-    private channelService: MessageService,
+    private messageRepo: MessageRepository,
+    private messageService: MessageService,
     private jwtService: JwtService,
   ) {}
 
@@ -30,11 +32,15 @@ export class ChannelGateway {
   ) {
     const token = socket.request.headers.authorization;
     const user = await this.jwtService.verifyAsync(token);
-    message = await this.channelService.createMessage(
+    const { id } = await this.messageService.createMessage(
       message.content,
       channelId,
       user.id,
     );
+    message = await this.messageRepo.findOne({
+      where: { id },
+      relations: { sender: true },
+    });
     socket.to(`channel:${channelId}`).emit('receive-message', message);
     return message;
   }

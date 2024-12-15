@@ -4,6 +4,7 @@ import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
 import { ChannelService } from "../services";
 import type { IChannel, IMessage, IMessageGroup } from "../types";
+import { last } from "lodash";
 
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
@@ -31,14 +32,16 @@ export function useChannel() {
     store.messages = await channelApi.findMessages(store.channel?.id);
   }
 
+  function onReceiveMessage(msg: any) {
+    addMessage(msg);
+  }
+
   function joinChannel() {
     if (!store.channel) return;
 
     sockets.websocket?.emit("join-channel", { channelId: store.channel.id });
-
-    sockets.websocket?.on("receive-message", (msg) => {
-      addMessage(msg);
-    });
+    sockets.websocket.off("receive-message", onReceiveMessage);
+    sockets.websocket?.on("receive-message", onReceiveMessage);
   }
 
   function sendMessage(message: { content: string }) {
@@ -70,13 +73,13 @@ export function useChannel() {
 
 function groupMessages(messages: IMessage[]) {
   return messages.reduce((groups, message) => {
-    const lastGroup = groups[groups.length - 1];
-    if (lastGroup && message.senderId === lastGroup.sender.id) {
+    const lastGroup = last(groups);
+    if (lastGroup && message.senderId === lastGroup.senderId) {
       lastGroup.messages.push(message);
     } else {
       groups.push({
         id: message.id,
-        senderId: message.sender.id,
+        senderId: message.senderId,
         sender: message.sender,
         sentAt: message.sentAt,
         messages: [message],

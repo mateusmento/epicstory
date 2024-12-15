@@ -30,7 +30,6 @@ export class AcceptWorkspaceMemberInviteCommand
   @Transactional()
   async execute({ issuerId, inviteId }: AcceptWorkspaceMemberInvite) {
     const invite = await this.inviteRepo.findOneBy({ id: inviteId });
-
     if (!invite) throw new NotFoundException('Workspace invite not found');
 
     if (invite.userId !== issuerId)

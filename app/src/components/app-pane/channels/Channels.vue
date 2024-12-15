@@ -32,7 +32,7 @@ const channelType = ref("group");
 </script>
 
 <template>
-  <Tabs class="flex:rows h-full" default-value="messages">
+  <Tabs class="flex:rows h-full w-96" default-value="messages">
     <div class="p-4 flex:rows-xl mx-auto">
       <div class="flex:cols-auto flex:center-y mb-3">
         <div class="flex:cols-sm flex:center-y text-lg text-zinc-800 font-medium">

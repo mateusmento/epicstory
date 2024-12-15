@@ -44,9 +44,6 @@ onMounted(() => {
   dragAndDrop({
     parent: itemsContainer,
     values: backlogItems,
-    onDragend() {
-      console.log("dragend");
-    },
     async onSort({ draggedNode, position, values }) {
       const { id } = draggedNode.data.value as any;
       const { id: insertedAfterOfId } = (values[position - 1] as any) ?? {};

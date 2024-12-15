@@ -46,7 +46,7 @@ export class WorkspaceRepository extends Repository<Workspace> {
     relations?: FindOptionsRelations<WorkspaceMember>,
   ) {
     return this.workspaceMemberRepo.find({
-      where: { workspaceId, user: { name: Like(`%${name}%`) } },
+      where: { workspaceId, user: { name: name && Like(`%${name}%`) } },
       relations,
     });
   }

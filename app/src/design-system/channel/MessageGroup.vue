@@ -38,9 +38,9 @@ const styles = {
     class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] gap-x-2"
     :class="styles.messageGroup({ sender })"
   >
-    <img v-if="sender === 'someoneElse'" :src="messageGroup.sender.picture" class="w-8 h-8 rounded-full" />
+    <img v-if="sender === 'someoneElse'" :src="messageGroup.sender?.picture" class="w-8 h-8 rounded-full" />
     <div class="flex:cols-md flex:baseline" :class="{ 'col-start-2': sender === 'me' }">
-      <div class="font-dmSans font-medium">{{ sender === "me" ? "You" : messageGroup.sender.name }}</div>
+      <div class="font-dmSans font-medium">{{ sender === "me" ? "You" : messageGroup.sender?.name }}</div>
       <div class="ml-lg text-xs text-zinc-400 font-dmSans">{{ formatDate(messageGroup.sentAt) }}</div>
     </div>
     <div class="flex:rows-sm col-start-2">

@@ -19,7 +19,7 @@ const emit = defineEmits(["request-meeting", "join-meeting"]);
         <div class="channel-photo" style="background: #bcc2bc"></div>
       </div>
 
-      <div class="channel-name">{{ channel.speakingTo.name }}</div>
+      <div class="channel-name">{{ channel.speakingTo?.name }}</div>
       <button
         @click="emit(channel.meeting ? 'join-meeting' : 'request-meeting')"
         class="p-2 ml-auto border-none rounded-full bg-green"

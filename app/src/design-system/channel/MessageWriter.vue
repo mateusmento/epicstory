@@ -9,7 +9,7 @@ const emit = defineEmits<{
   (e: "send-message", value: { content: string }): void;
 }>();
 
-const messageContent = defineModel<string>("message-content");
+const messageContent = defineModel<string>("messageContent");
 const messageTextEl = ref<HTMLElement | null>(null);
 
 function onSendMessage() {

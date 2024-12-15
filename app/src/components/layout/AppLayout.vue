@@ -3,7 +3,7 @@ import { ref } from "vue";
 import { AppPane } from "./app-pane";
 import { Navbar } from "./navbar";
 
-const isAppPaneOpen = ref(true);
+const isAppPaneOpen = ref(false);
 </script>
 
 <template>

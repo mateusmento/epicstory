@@ -2,13 +2,13 @@
 import { useAuth } from "@/domain/auth";
 import { useChannel } from "@/domain/channels";
 import moment, { type Moment } from "moment";
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, watch } from "vue";
 import IconSendMessage from "../icons/IconSendMessage.vue";
 import Scrollable from "./Scrollable.vue";
 
 const { user: authUser } = useAuth();
 
-const { messageGroups: messages, fetchMessages, joinChannel, sendMessage } = useChannel();
+const { channel, messageGroups: messages, fetchMessages, joinChannel, sendMessage } = useChannel();
 
 const message = reactive({ content: "" });
 const messageTextEl = ref<HTMLElement | null>(null);
@@ -17,6 +17,14 @@ onMounted(async () => {
   joinChannel();
   fetchMessages();
 });
+
+watch(
+  () => channel.value?.id,
+  () => {
+    joinChannel();
+    fetchMessages();
+  },
+);
 
 async function onSendMessage() {
   if (!message.content) return;

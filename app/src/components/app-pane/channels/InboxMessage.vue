@@ -42,7 +42,7 @@ function formatDate(date: string | Moment) {
   >
     <img :src="image" class="w-10 h-10 rounded-full" />
 
-    <div class="self:fill flex:rows-sm">
+    <div class="self:fill flex:rows-sm flex-1 overflow-hidden">
       <div class="flex:cols-auto flex:center-y">
         <div class="text-base font-medium font-dmSans text-zinc-800">
           {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
@@ -54,7 +54,7 @@ function formatDate(date: string | Moment) {
 
       <div class="flex:cols-auto flex:center-y">
         <div
-          class="text-sm font-lato"
+          class="text-sm font-lato text-ellipsis overflow-hidden whitespace-nowrap"
           :class="[channel.unreadMessagesCount > 0 ? 'text-zinc-800' : 'text-zinc-500']"
         >
           {{ channel.lastMessage?.content }}

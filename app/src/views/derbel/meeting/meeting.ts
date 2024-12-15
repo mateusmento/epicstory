@@ -10,7 +10,7 @@ export interface MeetingEvents {
 const getStream = (conn: MediaConnection) =>
   new Promise<MediaStream>((res) => conn.on("stream", (stream) => res(stream)));
 
-const awaitUntilOpen = (peer: Peer) =>
+const untilOpen = (peer: Peer) =>
   new Promise<Peer>((res, rej) => {
     peer.on("open", () => res(peer));
     peer.on("error", (error) => rej(error));
@@ -25,7 +25,7 @@ export class Meeting {
   ) {}
 
   static async join(websocket: Socket, meetingId: number, camera: MediaStream, events: MeetingEvents) {
-    const rtc = await awaitUntilOpen(new Peer({ host: "localhost", port: 3001 }));
+    const rtc = await untilOpen(new Peer({ host: "localhost", port: 3001 }));
     const meeting = new Meeting(meetingId, websocket, rtc, events);
     await meeting.join(camera);
     return meeting;

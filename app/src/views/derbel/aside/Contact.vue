@@ -26,7 +26,7 @@ function formatDate(date: string | Moment) {
     <div class="channel-photo"></div>
     <div class="channel-info">
       <div class="flex justify-between items-baseline">
-        <div class="channel-name line-fit">{{ channel.speakingTo.name }}</div>
+        <div class="channel-name line-fit">{{ channel.speakingTo?.name }}</div>
         <small class="last-message-time line-fit">{{
           channel.lastMessage ? formatDate(channel.lastMessage.sentAt) : ""
         }}</small>

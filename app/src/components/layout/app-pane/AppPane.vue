@@ -3,7 +3,7 @@ import { Collapsible, CollapsibleContent, NavView } from "@/design-system";
 import { ref } from "vue";
 
 const open = defineModel<boolean>("open");
-const content = ref("channels");
+const content = ref("");
 
 function onNavViewTrigger(v: string) {
   open.value = content.value === v ? !open.value : true;

@@ -15,6 +15,7 @@ export class MessageService {
     return this.messageRepo.find({
       where: { channelId: channelId },
       relations: { sender: true },
+      order: { sentAt: 'asc' },
     });
   }
 

@@ -45,7 +45,7 @@ async function onSendMessage() {
         <MessageGroup
           v-for="group of messageGroups"
           :key="group.id"
-          :sender="group.sender.id === meId ? 'me' : 'someoneElse'"
+          :sender="group.senderId === meId ? 'me' : 'someoneElse'"
           :message-group="group"
         >
           <MessageBox v-for="message of group.messages" :key="message.id" :content="message.content" />
@@ -54,7 +54,7 @@ async function onSendMessage() {
     </Scrollable>
 
     <div class="p-4">
-      <MessageWriter v-model:mesage-content="message.content" @send-message="onSendMessage" />
+      <MessageWriter v-model:message-content="message.content" @send-message="onSendMessage" />
     </div>
   </div>
 </template>
