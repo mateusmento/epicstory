@@ -13,7 +13,7 @@ const sockets = useWebSockets();
 const { ongoingMeeting } = useMeeting();
 
 onMounted(async () => {
-  fetchChannels();
+  await fetchChannels();
 
   for (const channel of channels.value)
     sockets.websocket.emit("meeting-notification", { channelId: channel.id });
