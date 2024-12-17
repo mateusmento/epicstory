@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import Chatbox from "@/design-system/channel/Chatbox.vue";
+import { Chatbox } from "@/components/channel";
 import { useAuth } from "@/domain/auth";
 import { useChannel } from "@/domain/channels";
 import { computed, onMounted, watch } from "vue";

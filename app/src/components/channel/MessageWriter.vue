@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { ref } from "vue";
-import { Icon } from "../icons";
-import { Button } from "../ui/button";
-import { Separator } from "../ui/separator";
-import { vTextareaAutosize } from "../directives/textarea-autosize.directive";
+import { Icon } from "@/design-system/icons";
+import { Button } from "@/design-system/ui/button";
+import { Separator } from "@/design-system/ui/separator";
+import { vTextareaAutosize } from "@/design-system/directives";
 
 const emit = defineEmits<{
   (e: "send-message", value: { content: string }): void;

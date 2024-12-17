@@ -1,8 +1,7 @@
 <script lang="ts" setup>
+import IconEmoji from "@/design-system/icons/IconEmoji.vue";
 import { cva } from "class-variance-authority";
-import IconEmoji from "../icons/IconEmoji.vue";
 import { inject } from "vue";
-import { Icon } from "../icons";
 
 const props = defineProps<{
   content: string;
