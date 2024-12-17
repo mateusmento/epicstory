@@ -56,6 +56,7 @@ export class AuthController {
     response.cookie('token', `Bearer ${token}`, {
       httpOnly: true,
       maxAge: this.config.JWT_EXPIRES_IN * 1000,
+      sameSite: 'lax',
     });
     return user;
   }
