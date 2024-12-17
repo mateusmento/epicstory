@@ -1,9 +1,9 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWorkspace } from "@/domain/workspace";
 import { defineStore, storeToRefs } from "pinia";
-import { onMounted, ref, watch } from "vue";
-import type { IChannel } from "../types";
+import { ref } from "vue";
 import { ChannelService, type CreateDirectChannel, type CreateGroupChannel } from "../services";
+import type { IChannel } from "../types";
 
 const useChannelsStore = defineStore("channels", () => {
   const channels = ref<IChannel[]>([]);
@@ -31,10 +31,6 @@ export function useChannels() {
     store.channels.unshift(channel);
     return channel;
   }
-
-  onMounted(fetchChannels);
-
-  watch(workspace, fetchChannels);
 
   return { ...storeToRefs(store), fetchChannels, createChannel };
 }

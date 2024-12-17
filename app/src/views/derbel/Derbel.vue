@@ -1,59 +1,24 @@
 <script setup lang="ts">
-import { useWebSockets } from "@/core/websockets";
-import { useChannel, useChannels, useMeeting, type IChannel as IChannel } from "@/domain/channels";
+import { useChannel, useChannels, useMeeting } from "@/domain/channels";
 import { onMounted } from "vue";
 import Aside from "./aside/Aside.vue";
 import Channel from "./channel/Channel.vue";
 import Meeting from "./meeting/Meeting.vue";
 
-const { channels, fetchChannels } = useChannels();
+const { fetchChannels } = useChannels();
 const { channel: openChannel } = useChannel();
 
-const sockets = useWebSockets();
-const { ongoingMeeting } = useMeeting();
-
-onMounted(async () => {
-  await fetchChannels();
-
-  for (const channel of channels.value)
-    sockets.websocket.emit("meeting-notification", { channelId: channel.id });
-
-  sockets.websocket.on("incoming-meeting", ({ meeting }: any) => {
-    const channel = channels.value.find((c) => c.id === meeting.channelId);
-    if (channel) {
-      channel.meeting = meeting;
-    }
-  });
-
-  sockets.websocket.on("meeting-ended", ({ channelId }: any) => {
-    const channel = channels.value.find((c) => c.id === channelId);
-    if (channel) channel.meeting = null;
-    ongoingMeeting.value = null;
-  });
-});
-
-async function requestMeeting() {
-  if (!openChannel.value) return;
-  const channel = openChannel.value;
-  sockets.websocket.emit("request-meeting", { channelId: channel.id }, (data: any) => {
-    ongoingMeeting.value = data;
-    channel.meeting = data;
-  });
-}
-
-async function joinMeeting(channel: IChannel) {
-  openChannel.value = channel;
-  ongoingMeeting.value = channel.meeting;
-}
+const { ongoingMeeting, subscribeMeetings, joinMeeting, requestMeeting, leaveOngoingMeeting } = useMeeting();
 
 async function meetingEnded() {
   ongoingMeeting.value = null;
   if (openChannel.value) openChannel.value.meeting = null;
 }
 
-async function leftMeeting() {
-  ongoingMeeting.value = null;
-}
+onMounted(async () => {
+  await fetchChannels();
+  subscribeMeetings();
+});
 </script>
 
 <template>
@@ -67,14 +32,14 @@ async function leftMeeting() {
           v-show="ongoingMeeting"
           :meetingId="ongoingMeeting.id"
           @meeting-ended="meetingEnded"
-          @left-meeting="leftMeeting"
+          @left-meeting="leaveOngoingMeeting"
           :key="1"
         />
         <Channel
           v-show="!ongoingMeeting"
           :channel="openChannel"
           class="h-full"
-          @request-meeting="requestMeeting"
+          @request-meeting="requestMeeting(openChannel)"
           @join-meeting="joinMeeting(openChannel)"
           :key="2"
         />

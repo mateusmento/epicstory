@@ -6,6 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { ChannelRepository } from 'src/channel/infrastructure';
 import { MeetingService } from '../services/meeting.service';
 
 @WebSocketGateway()
@@ -13,14 +14,25 @@ export class MeetingGateway {
   @WebSocketServer()
   server: Server;
 
-  constructor(private meetingService: MeetingService) {}
+  constructor(
+    private meetingService: MeetingService,
+    private channelRepo: ChannelRepository,
+  ) {}
 
-  @SubscribeMessage('meeting-notification')
-  async meetingNotification(
-    @MessageBody() { channelId }: any,
+  @SubscribeMessage('subscribe-meetings')
+  async subscribeMeeting(
+    @MessageBody() { userId, workspaceId }: any,
     @ConnectedSocket() socket: Socket,
   ) {
-    socket.join(`channel:${channelId}:meeting-notification`);
+    const channels = await this.channelRepo
+      .createQueryBuilder('channel')
+      .innerJoin('channel.peers', 'peer')
+      .where('peer.id = :userId', { userId })
+      .where('channel.workspaceId = :workspaceId', { workspaceId })
+      .getMany();
+
+    for (const channel of channels)
+      socket.join(`channel:${channel.id}:meeting-notification`);
   }
 
   @SubscribeMessage('request-meeting')
@@ -91,7 +103,6 @@ export class MeetingGateway {
     const meeting = await this.meetingService.findMeeting(meetingId);
     const roomId = `meeting:${meetingId}`;
     this.meetingService.endMeeting(meetingId);
-    socket.to(roomId).emit('meeting-ended', { meetingId });
     socket
       .to(`channel:${meeting.channelId}:meeting-notification`)
       .emit('meeting-ended', { meetingId, channelId: meeting.channelId });

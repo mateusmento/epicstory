@@ -4,10 +4,10 @@ import Scrollable from "@/views/derbel/channel/Scrollable.vue";
 import IconAcceptCall from "@/views/derbel/icons/IconAcceptCall.vue";
 import { reactive } from "vue";
 import ChatboxTopbar from "./ChatboxTopbar.vue";
+import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
 import type { IMessageGroup } from "./types";
-import MessageBox from "./MessageBox.vue";
 
 defineProps<{
   meId: number;
@@ -18,7 +18,7 @@ defineProps<{
 
 const { channel, sendMessage } = useChannel();
 
-const { requestMeeting, joinIncomingMeeting, incomingMeeting } = useMeeting();
+const { requestMeeting, joinMeeting } = useMeeting();
 
 const message = reactive({ content: "" });
 
@@ -30,10 +30,10 @@ async function onSendMessage() {
 </script>
 
 <template>
-  <div class="flex:rows h-full">
+  <div v-if="channel" class="flex:rows h-full">
     <ChatboxTopbar :chatTitle="chatTitle" :chatPicture="chatPicture">
       <button
-        @click="incomingMeeting ? joinIncomingMeeting() : channel && requestMeeting(channel.id)"
+        @click="channel.meeting ? joinMeeting(channel) : requestMeeting(channel)"
         class="p-2 ml-auto border-none rounded-full bg-green"
       >
         <IconAcceptCall />

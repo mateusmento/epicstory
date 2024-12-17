@@ -20,15 +20,27 @@ import {
   IconThreads,
 } from "@/design-system/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system/ui/tabs";
-import { useChannel } from "@/domain/channels";
-import { useChannels } from "@/domain/channels/composables/channels";
-import { ref } from "vue";
+import { useChannel, useChannels, useMeeting } from "@/domain/channels";
+import { onMounted, ref, watch } from "vue";
 import InboxMessage from "./InboxMessage.vue";
-
-const { channels, createChannel } = useChannels();
-const { channel: currentChannel } = useChannel();
+import { useWorkspace } from "@/domain/workspace";
 
 const channelType = ref("group");
+
+const { workspace } = useWorkspace();
+const { fetchChannels, channels, createChannel } = useChannels();
+const { channel: currentChannel } = useChannel();
+const { subscribeMeetings } = useMeeting();
+
+onMounted(async () => {
+  await fetchChannels();
+  subscribeMeetings();
+});
+
+watch(workspace, async () => {
+  await fetchChannels();
+  subscribeMeetings();
+});
 </script>
 
 <template>

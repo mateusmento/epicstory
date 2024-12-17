@@ -1,18 +1,25 @@
 <script lang="ts" setup>
 import { Chatbox } from "@/components/channel";
 import { useAuth } from "@/domain/auth";
-import { useChannel } from "@/domain/channels";
+import { useChannel, useMeeting } from "@/domain/channels";
 import { computed, onMounted, watch } from "vue";
+import Meeting from "../derbel/meeting/Meeting.vue";
 
 const { user } = useAuth();
-const { channel, messageGroups, fetchMessages, joinChannel } = useChannel();
+const { channel: openChannel, messageGroups, fetchMessages, joinChannel } = useChannel();
+const { ongoingMeeting, leaveOngoingMeeting } = useMeeting();
+
+async function meetingEnded() {
+  ongoingMeeting.value = null;
+  if (openChannel.value) openChannel.value.meeting = null;
+}
 
 const title = computed(() =>
-  channel.value?.type === "direct" ? channel.value?.speakingTo.name : channel.value?.name,
+  openChannel.value?.type === "direct" ? openChannel.value?.speakingTo.name : openChannel.value?.name,
 );
 
 const picture = computed(() =>
-  channel.value?.type === "direct" ? channel.value?.speakingTo.picture : "/images/hashtag.svg",
+  openChannel.value?.type === "direct" ? openChannel.value?.speakingTo.picture : "/images/hashtag.svg",
 );
 
 onMounted(async () => {
@@ -21,7 +28,7 @@ onMounted(async () => {
 });
 
 watch(
-  () => channel.value?.id,
+  () => openChannel.value?.id,
   () => {
     joinChannel();
     fetchMessages();
@@ -30,11 +37,24 @@ watch(
 </script>
 
 <template>
-  <Chatbox
-    v-if="user"
-    :chat-title="title"
-    :chat-picture="picture"
-    :message-groups="messageGroups"
-    :me-id="user.id"
-  />
+  <TransitionGroup v-if="openChannel">
+    <Meeting
+      v-if="ongoingMeeting"
+      v-show="ongoingMeeting"
+      :meetingId="ongoingMeeting.id"
+      @meeting-ended="meetingEnded"
+      @left-meeting="leaveOngoingMeeting"
+      :key="1"
+    />
+    <Chatbox
+      v-if="user"
+      v-show="!ongoingMeeting"
+      :channel="openChannel"
+      :chat-title="title"
+      :chat-picture="picture"
+      :message-groups="messageGroups"
+      :me-id="user.id"
+      :key="2"
+    />
+  </TransitionGroup>
 </template>

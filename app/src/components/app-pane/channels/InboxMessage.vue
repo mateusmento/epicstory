@@ -14,8 +14,8 @@ const props = defineProps<{
 const emit = defineEmits(["join-meeting"]);
 const router = useRouter();
 
-const { ongoingMeeting } = useMeeting();
 const { openChannel } = useChannel();
+const { ongoingMeeting, joinMeeting } = useMeeting();
 
 const image = computed(() =>
   props.channel.type === "direct" ? props.channel.speakingTo.picture : "/images/hashtag.svg",
@@ -69,7 +69,7 @@ function formatDate(date: string | Moment) {
     </div>
 
     <div v-if="channel.meeting && !ongoingMeeting" class="accept-call w-fit flex gap-5">
-      <button @click.stop="emit('join-meeting')" class="p-2 border-none rounded-full bg-green-500">
+      <button @click.stop="joinMeeting(channel)" class="p-2 border-none rounded-full bg-green-500">
         <IconAcceptCall />
       </button>
     </div>
