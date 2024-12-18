@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useChannel, useMeeting } from "@/domain/channels";
+import { useChannel } from "@/domain/channels";
 import Scrollable from "@/views/derbel/channel/Scrollable.vue";
 import IconAcceptCall from "@/views/derbel/icons/IconAcceptCall.vue";
 import { reactive } from "vue";
@@ -16,9 +16,9 @@ defineProps<{
   messageGroups: IMessageGroup[];
 }>();
 
-const { channel, sendMessage } = useChannel();
+const emit = defineEmits(["join-meeting"]);
 
-const { requestMeeting, joinMeeting } = useMeeting();
+const { channel, sendMessage } = useChannel();
 
 const message = reactive({ content: "" });
 
@@ -32,10 +32,7 @@ async function onSendMessage() {
 <template>
   <div v-if="channel" class="flex:rows h-full">
     <ChatboxTopbar :chatTitle="chatTitle" :chatPicture="chatPicture">
-      <button
-        @click="channel.meeting ? joinMeeting(channel) : requestMeeting(channel)"
-        class="p-2 ml-auto border-none rounded-full bg-green"
-      >
+      <button @click="emit('join-meeting')" class="p-2 ml-auto border-none rounded-full bg-green">
         <IconAcceptCall />
       </button>
     </ChatboxTopbar>

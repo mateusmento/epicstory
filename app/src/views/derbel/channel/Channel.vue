@@ -7,7 +7,7 @@ defineProps<{
   channel: IChannel;
 }>();
 
-const emit = defineEmits(["request-meeting", "join-meeting"]);
+const emit = defineEmits(["join-meeting"]);
 </script>
 
 <template>
@@ -20,10 +20,7 @@ const emit = defineEmits(["request-meeting", "join-meeting"]);
       </div>
 
       <div class="channel-name">{{ channel.speakingTo?.name }}</div>
-      <button
-        @click="emit(channel.meeting ? 'join-meeting' : 'request-meeting')"
-        class="p-2 ml-auto border-none rounded-full bg-green"
-      >
+      <button @click="emit('join-meeting')" class="p-2 ml-auto border-none rounded-full bg-green">
         <IconAcceptCall />
       </button>
     </div>

@@ -9,8 +9,7 @@ import { useChannel } from "./channel";
 
 const useMeetingStore = defineStore("meeting", () => {
   const ongoingMeeting = ref<IMeeting | null>();
-  const incomingMeeting = ref<IMeeting | null>();
-  return { ongoingMeeting, incomingMeeting };
+  return { ongoingMeeting };
 });
 
 export function useMeeting() {
@@ -25,15 +24,12 @@ export function useMeeting() {
     sockets.websocket.off("incoming-meeting");
     sockets.websocket.off("meeting-ended");
 
-    console.log("subscribe-meetings");
     sockets.websocket.emit("subscribe-meetings", {
       workspaceId: workspace.value?.id,
       userId: user.value?.id,
     });
 
     sockets.websocket.on("incoming-meeting", ({ meeting }: any) => {
-      console.log("incoming meeting", meeting);
-      store.incomingMeeting = meeting;
       const channel = channels.value.find((c) => c.id === meeting.channelId);
       if (channel) {
         channel.meeting = meeting;
@@ -41,7 +37,6 @@ export function useMeeting() {
     });
 
     sockets.websocket.on("meeting-ended", ({ meetingId, channelId }: any) => {
-      console.log("meeting-ended");
       if (store.ongoingMeeting?.id === meetingId) {
         store.ongoingMeeting = null;
         if (openChannel.value) openChannel.value.meeting = null;
@@ -61,12 +56,6 @@ export function useMeeting() {
   async function joinMeeting(channel: IChannel) {
     openChannel.value = channel;
     store.ongoingMeeting = channel.meeting;
-    store.incomingMeeting = null;
-  }
-
-  async function joinIncomingMeeting() {
-    store.ongoingMeeting = store.incomingMeeting;
-    store.incomingMeeting = null;
   }
 
   async function leaveOngoingMeeting() {
@@ -78,7 +67,6 @@ export function useMeeting() {
     subscribeMeetings,
     requestMeeting,
     joinMeeting,
-    joinIncomingMeeting,
     leaveOngoingMeeting,
   };
 }

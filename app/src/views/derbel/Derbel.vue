@@ -39,8 +39,7 @@ onMounted(async () => {
           v-show="!ongoingMeeting"
           :channel="openChannel"
           class="h-full"
-          @request-meeting="requestMeeting(openChannel)"
-          @join-meeting="joinMeeting(openChannel)"
+          @join-meeting="openChannel.meeting ? joinMeeting(openChannel) : requestMeeting(openChannel)"
           :key="2"
         />
       </TransitionGroup>

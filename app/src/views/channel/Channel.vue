@@ -7,7 +7,7 @@ import Meeting from "../derbel/meeting/Meeting.vue";
 
 const { user } = useAuth();
 const { channel: openChannel, messageGroups, fetchMessages, joinChannel } = useChannel();
-const { ongoingMeeting, leaveOngoingMeeting } = useMeeting();
+const { ongoingMeeting, requestMeeting, joinMeeting, leaveOngoingMeeting } = useMeeting();
 
 async function meetingEnded() {
   ongoingMeeting.value = null;
@@ -54,6 +54,7 @@ watch(
       :chat-picture="picture"
       :message-groups="messageGroups"
       :me-id="user.id"
+      @join-meeting="openChannel.meeting ? joinMeeting(openChannel) : requestMeeting(openChannel)"
       :key="2"
     />
   </TransitionGroup>

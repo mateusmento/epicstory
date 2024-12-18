@@ -43,17 +43,17 @@ export class Meeting {
       addPeer(remoteId, call, peerCamera);
     });
 
-    function addPeer(remoteId: string, call: MediaConnection, camera: MediaStream) {
-      if (remoteId in peers) return;
-      peers[remoteId] = call;
-      events.attendeeJoined(remoteId, camera);
-    }
-
     rtc.on("call", async (call) => {
       call.answer(camera);
       const peerCamera = await getStream(call);
       addPeer(call.peer, call, peerCamera);
     });
+
+    function addPeer(remoteId: string, call: MediaConnection, camera: MediaStream) {
+      if (remoteId in peers) return;
+      peers[remoteId] = call;
+      events.attendeeJoined(remoteId, camera);
+    }
 
     websocket.on("attendee-left", ({ remoteId }) => {
       if (!(remoteId in peers)) return;

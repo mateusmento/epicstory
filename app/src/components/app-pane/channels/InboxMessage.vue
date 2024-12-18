@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useChannel, useMeeting } from "@/domain/channels";
+import { useChannel } from "@/domain/channels";
 import type { IChannel } from "@/domain/channels/types/channel.type";
 import IconAcceptCall from "@/views/derbel/icons/IconAcceptCall.vue";
 import moment, { type Moment } from "moment";
@@ -9,13 +9,13 @@ import { useRouter } from "vue-router";
 const props = defineProps<{
   channel: IChannel;
   open?: boolean;
+  canJoinMeeting?: boolean;
 }>();
 
 const emit = defineEmits(["join-meeting"]);
 const router = useRouter();
 
 const { openChannel } = useChannel();
-const { ongoingMeeting, joinMeeting } = useMeeting();
 
 const image = computed(() =>
   props.channel.type === "direct" ? props.channel.speakingTo.picture : "/images/hashtag.svg",
@@ -68,8 +68,8 @@ function formatDate(date: string | Moment) {
       </div>
     </div>
 
-    <div v-if="channel.meeting && !ongoingMeeting" class="accept-call w-fit flex gap-5">
-      <button @click.stop="joinMeeting(channel)" class="p-2 border-none rounded-full bg-green-500">
+    <div v-if="canJoinMeeting" class="accept-call w-fit flex gap-5">
+      <button @click.stop="emit('join-meeting')" class="p-2 border-none rounded-full bg-green-500">
         <IconAcceptCall />
       </button>
     </div>

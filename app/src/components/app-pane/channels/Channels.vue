@@ -30,7 +30,7 @@ const channelType = ref("group");
 const { workspace } = useWorkspace();
 const { fetchChannels, channels, createChannel } = useChannels();
 const { channel: currentChannel } = useChannel();
-const { subscribeMeetings } = useMeeting();
+const { subscribeMeetings, ongoingMeeting, joinMeeting } = useMeeting();
 
 onMounted(async () => {
   await fetchChannels();
@@ -81,6 +81,8 @@ watch(workspace, async () => {
         v-for="channel of channels"
         :key="channel.id"
         :channel="channel"
+        :can-join-meeting="!!channel.meeting && !ongoingMeeting"
+        @join-meeting="joinMeeting(channel)"
         :open="!!currentChannel && currentChannel.id === channel.id"
       />
 
