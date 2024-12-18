@@ -182,7 +182,7 @@ function issueStatusColor(status: string) {
         class="grid grid-cols-subgrid col-span-7 pr-2 overflow-y-auto overflow-x-hidden"
         style="scrollbar-gutter: stable"
       >
-        <div class="grid grid-cols-subgrid auto-rows-max col-span-7 gap-y-4" ref="itemsContainer">
+        <div class="grid grid-cols-subgrid auto-rows-max col-span-7 gap-y-1" ref="itemsContainer">
           <div
             v-for="{ id, issue, previousId, nextId, order } of backlogItems"
             :key="issue.id"
