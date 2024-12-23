@@ -14,7 +14,7 @@ import { CreateGroupChannel } from '../features/create-group-channel.command';
 import { FindChannels } from '../features/find-channels.query';
 import { CreateDirectChannel } from '../features/create-direct-channel.command';
 import { AddChannelMember } from '../features';
-import { FindChannelPeers } from '../features/find-channel-peers.query';
+import { FindChannelPeers } from '../features/find-channel-members.query';
 import { FindChannel } from '../features/find-channel.query';
 
 @Controller('workspaces/:workspaceId/channels')
