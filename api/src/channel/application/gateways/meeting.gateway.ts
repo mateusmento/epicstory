@@ -52,7 +52,8 @@ export class MeetingGateway {
     @MessageBody() { meetingId, remoteId }: any,
     @ConnectedSocket() socket: Socket,
   ) {
-    const userId = (socket.request as any).user.id;
+    const user = (socket.request as any).user;
+    const userId = user?.id;
     const meeting = await this.meetingService.joinMeeting(
       meetingId,
       remoteId,
@@ -64,7 +65,7 @@ export class MeetingGateway {
     console.log({ join: roomId });
 
     socket.join(roomId);
-    socket.to(roomId).emit('attendee-joined', { meeting, remoteId });
+    socket.to(roomId).emit('attendee-joined', { meeting, remoteId, user });
 
     socket.on('disconnect', () => {
       console.log({

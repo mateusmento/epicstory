@@ -1,12 +1,18 @@
+import type { User } from "@/domain/auth";
+import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import Peer from "peerjs";
 import { type Socket } from "socket.io-client";
 import { createMediaStreaming, untilOpen, type MediaStreaming } from "./media-streaming";
 
 export interface MeetingEvents {
-  attendeeJoined(remoteId: string, camera: MediaStream): void;
+  attendeeJoined(remoteId: string, camera: MediaStream, user: User): void;
   attendeeLeft(remoteId: string): void;
   ended(): void;
 }
+
+export type MeetingOptions = MeetingEvents & {
+  meetingApi: MeetingApi;
+};
 
 export class Meeting {
   private constructor(
@@ -16,9 +22,24 @@ export class Meeting {
     private events: MeetingEvents,
   ) {}
 
-  static async join(websocket: Socket, meetingId: number, camera: MediaStream, events: MeetingEvents) {
+  static async join(
+    websocket: Socket,
+    meetingId: number,
+    camera: MediaStream,
+    { meetingApi, ...events }: MeetingOptions,
+  ) {
     const rtc = await untilOpen(new Peer({ host: "localhost", port: 3001 }));
-    const streaming = createMediaStreaming(rtc, camera, events.attendeeJoined);
+
+    const streaming = createMediaStreaming({
+      rtc,
+      media: camera,
+      findUser: async (remoteId) => {
+        const [attendee] = await meetingApi.findAttendees({ remoteId, meetingId });
+        return attendee?.user;
+      },
+      mediaAdded: events.attendeeJoined,
+    });
+
     const meeting = new Meeting(meetingId, websocket, streaming, events);
     meeting.join();
     return meeting;
@@ -29,8 +50,8 @@ export class Meeting {
 
     websocket.emit("join-meeting", { meetingId, remoteId: streaming.localId });
 
-    websocket.on("attendee-joined", async ({ remoteId }) => {
-      streaming.connect(remoteId);
+    websocket.on("attendee-joined", async ({ remoteId, user }) => {
+      streaming.connect(remoteId, user);
     });
 
     websocket.on("attendee-left", ({ remoteId }) => {

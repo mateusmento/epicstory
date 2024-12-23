@@ -37,7 +37,7 @@ watch(
   <TransitionGroup v-if="openChannel">
     <Meeting
       v-if="ongoingMeeting"
-      v-show="ongoingMeeting"
+      v-show="ongoingMeeting && ongoingMeeting.id === openChannel.meeting?.id"
       :meetingId="ongoingMeeting.id"
       @meeting-ended="endMeeting"
       @left-meeting="leaveOngoingMeeting"
@@ -45,7 +45,7 @@ watch(
     />
     <Chatbox
       v-if="user"
-      v-show="!ongoingMeeting"
+      v-show="!ongoingMeeting || ongoingMeeting.id !== openChannel.meeting?.id"
       class="flex-1"
       :channel="openChannel"
       :chat-title="title"

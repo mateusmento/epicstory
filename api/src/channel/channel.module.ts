@@ -27,6 +27,7 @@ import {
   FindChannelPeersQuery,
   RemoveChannelMemberCommand,
 } from './application/features';
+import { MeetingController } from './application/controllers/meeting.controller';
 
 const repositories = [
   ChannelRepository,
@@ -58,6 +59,7 @@ const gateways = [ChannelGateway, MeetingGateway];
     WorkspaceChannelController,
     ChannelController,
     MessageController,
+    MeetingController,
   ],
   providers: [repositories, services, features, gateways].flat(),
 })
