@@ -15,6 +15,7 @@ import { FindChannels } from '../features/find-channels.query';
 import { CreateDirectChannel } from '../features/create-direct-channel.command';
 import { AddChannelMember } from '../features';
 import { FindChannelPeers } from '../features/find-channel-peers.query';
+import { FindChannel } from '../features/find-channel.query';
 
 @Controller('workspaces/:workspaceId/channels')
 export class WorkspaceChannelController {
@@ -66,6 +67,14 @@ export class ChannelController {
     private queryBus: QueryBus,
     private commandBus: CommandBus,
   ) {}
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  findChannel(@Param('id') channelId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(
+      new FindChannel({ channelId, issuerId: issuer.id }),
+    );
+  }
 
   @Get(':id/peers')
   @UseGuards(JwtAuthGuard)

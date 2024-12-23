@@ -28,6 +28,7 @@ import {
   RemoveChannelMemberCommand,
 } from './application/features';
 import { MeetingController } from './application/controllers/meeting.controller';
+import { FindChannelQuery } from './application/features/find-channel.query';
 
 const repositories = [
   ChannelRepository,
@@ -40,6 +41,7 @@ const services = [MessageService, MeetingService];
 
 const features = [
   FindChannelsQuery,
+  FindChannelQuery,
   CreateGroupChannelCommand,
   CreateDirectChannelCommand,
   FindChannelPeersQuery,

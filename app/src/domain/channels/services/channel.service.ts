@@ -22,6 +22,10 @@ export class ChannelService {
     return this.axios.get<IChannel[]>(`/workspaces/${workspaceId}/channels`).then((res) => res.data);
   }
 
+  findChannel(channelId: number) {
+    return this.axios.get<IChannel>(`/channels/${channelId}`).then((res) => res.data);
+  }
+
   createGroupChannel(workspaceId: number, data: Omit<CreateGroupChannel, "type">) {
     return this.axios
       .post<IChannel>(`/workspaces/${workspaceId}/channels/group`, data)
