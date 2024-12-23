@@ -6,11 +6,43 @@ import { ref } from "vue";
 import type { IChannel, IMeeting } from "../types";
 import { useChannels } from "./channels";
 import { useChannel } from "./channel";
+import type { Socket } from "socket.io-client";
 
 const useMeetingStore = defineStore("meeting", () => {
   const ongoingMeeting = ref<IMeeting | null>();
   return { ongoingMeeting };
 });
+
+export function createMeetingNotifications(websocket: Socket) {
+  function subscribeMeetings(
+    workspaceId: number,
+    userId: number,
+    {
+      incomingMeeting,
+      meetingEnded,
+    }: {
+      incomingMeeting: (data: { meeting: IMeeting }) => void;
+      meetingEnded: (data: { meetingId: number; channelId: number }) => void;
+    },
+  ) {
+    websocket.off("incoming-meeting");
+    websocket.off("meeting-ended");
+    websocket.emit("subscribe-meetings", { workspaceId, userId });
+    websocket.on("incoming-meeting", incomingMeeting);
+    websocket.on("meeting-ended", meetingEnded);
+  }
+
+  function requestMeeting(channelId: number) {
+    return new Promise((res) => {
+      websocket.emit("request-meeting", { channelId }, res);
+    });
+  }
+
+  return {
+    subscribeMeetings,
+    requestMeeting,
+  };
+}
 
 export function useMeeting() {
   const store = useMeetingStore();
@@ -62,11 +94,17 @@ export function useMeeting() {
     store.ongoingMeeting = null;
   }
 
+  async function endMeeting() {
+    store.ongoingMeeting = null;
+    if (openChannel.value) openChannel.value.meeting = null;
+  }
+
   return {
     ...storeToRefs(store),
     subscribeMeetings,
     requestMeeting,
     joinMeeting,
     leaveOngoingMeeting,
+    endMeeting,
   };
 }

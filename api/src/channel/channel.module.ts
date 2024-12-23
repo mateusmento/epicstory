@@ -5,7 +5,10 @@ import { Channel } from './domain/entities/channel.entity';
 import { ChannelRepository } from './infrastructure/repositories/channel.repository';
 import { CreateDirectChannelCommand } from './application/features/create-direct-channel.command';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
-import { ChannelController } from './application/controllers/channel.controller';
+import {
+  ChannelController,
+  WorkspaceChannelController,
+} from './application/controllers/channel.controller';
 import { Meeting, MeetingAttendee, Message } from './domain';
 import {
   MeetingAttendeeRepository,
@@ -19,6 +22,11 @@ import { MeetingService } from './application/services/meeting.service';
 import { MessageService } from './application/services/message.service';
 import { AuthModule } from 'src/auth';
 import { CreateGroupChannelCommand } from './application/features/create-group-channel.command';
+import {
+  AddChannelMemberCommand,
+  FindChannelPeersQuery,
+  RemoveChannelMemberCommand,
+} from './application/features';
 
 const repositories = [
   ChannelRepository,
@@ -33,6 +41,9 @@ const features = [
   FindChannelsQuery,
   CreateGroupChannelCommand,
   CreateDirectChannelCommand,
+  FindChannelPeersQuery,
+  AddChannelMemberCommand,
+  RemoveChannelMemberCommand,
 ];
 
 const gateways = [ChannelGateway, MeetingGateway];
@@ -43,7 +54,11 @@ const gateways = [ChannelGateway, MeetingGateway];
     AuthModule,
     WorkspaceModule,
   ],
-  controllers: [ChannelController, MessageController],
+  controllers: [
+    WorkspaceChannelController,
+    ChannelController,
+    MessageController,
+  ],
   providers: [repositories, services, features, gateways].flat(),
 })
 export class ChannelModule {}

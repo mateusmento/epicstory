@@ -56,9 +56,7 @@ watch(workspace, async () => {
           <IconArrowDown />
         </div>
       </div>
-      <div
-        class="flex:cols-md flex:center-y flex:center-x p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm"
-      >
+      <div class="flex:cols-md flex:center p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm">
         <IconSearch /> Search
       </div>
       <TabsList class="w-full mt-4">

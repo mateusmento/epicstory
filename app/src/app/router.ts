@@ -41,6 +41,10 @@ const authenticatedRoutes = defineRoutes({
           component: () => import("@/views/channel/Channel.vue"),
         },
         {
+          path: "/channel/:channelId/meeting",
+          component: () => import("@/views/channel/Meeting.vue"),
+        },
+        {
           path: "/project/:projectId",
           component: () => import("@/views/project/Project.vue"),
           props: true,

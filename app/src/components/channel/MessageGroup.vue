@@ -22,7 +22,7 @@ function formatDate(date: string | Moment) {
 }
 
 const styles = {
-  messageGroup: cva("w-96", {
+  messageGroup: cva("", {
     variants: {
       sender: {
         me: "ml-auto gap-y-2",
@@ -43,7 +43,7 @@ const styles = {
       <div class="font-dmSans font-medium">{{ sender === "me" ? "You" : messageGroup.sender?.name }}</div>
       <div class="ml-lg text-xs text-zinc-400 font-dmSans">{{ formatDate(messageGroup.sentAt) }}</div>
     </div>
-    <div class="flex:rows-sm col-start-2">
+    <div class="flex:rows-sm col-start-2 min-w-40 max-w-[35rem]">
       <slot />
     </div>
   </div>

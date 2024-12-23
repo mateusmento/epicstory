@@ -3,6 +3,8 @@ defineProps<{
   chatTitle?: string;
   chatPicture?: string;
 }>();
+
+const emit = defineEmits(["more-details"]);
 </script>
 
 <template>
@@ -15,7 +17,7 @@ defineProps<{
       <div class="channel-photo" style="background: #bcc2bc"></div>
     </div>
 
-    <div class="flex:rows g-0.5">
+    <div class="flex:rows g-0.5" @click="emit('more-details')">
       <div class="channel-name font-dmSans">{{ chatTitle }}</div>
       <div class="font-dmSans text-[13px] text-[#888]">{{ chatTitle }} is typing something...</div>
     </div>

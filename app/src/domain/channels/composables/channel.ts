@@ -5,11 +5,13 @@ import { computed, ref } from "vue";
 import { ChannelService } from "../services";
 import type { IChannel, IMessage, IMessageGroup } from "../types";
 import { last } from "lodash";
+import type { User } from "@/domain/auth";
 
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
   const messages = ref<IMessage[]>([]);
-  return { channel, messages };
+  const members = ref<User[]>([]);
+  return { channel, messages, members };
 });
 
 export function useChannel() {
@@ -60,6 +62,17 @@ export function useChannel() {
     store.messages.push(msg);
   }
 
+  async function fetchMembers() {
+    if (!store.channel) return;
+    store.members = await channelApi.findMembers(store.channel.id);
+  }
+
+  async function addMember(userId: number) {
+    if (!store.channel) return;
+    const channel = await channelApi.addMember(store.channel.id, userId);
+    store.members = channel.peers;
+  }
+
   return {
     ...storeToRefs(store),
     messageGroups,
@@ -68,6 +81,8 @@ export function useChannel() {
     closeChannel,
     joinChannel,
     sendMessage,
+    fetchMembers,
+    addMember,
   };
 }
 

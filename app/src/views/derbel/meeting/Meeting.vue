@@ -24,8 +24,14 @@ onMounted(async () => {
   const camera = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
   mycamera.value = camera;
   meeting.value = await Meeting.join(sockets.websocket, props.meetingId, camera, {
-    attendeeJoined: (remoteId, camera) => attendees.value.push({ remoteId, camera }),
-    attendeeLeft: (remoteId) => (attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId)),
+    attendeeJoined: (remoteId, camera) => {
+      attendees.value.push({ remoteId, camera });
+      console.log(JSON.parse(JSON.stringify(attendees.value)), { camera, remoteId });
+    },
+    attendeeLeft: (remoteId) => {
+      attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId);
+      console.log(remoteId, JSON.parse(JSON.stringify(attendees.value)));
+    },
     ended: () => {
       removeCameras();
       emit("meeting-ended");
@@ -71,7 +77,7 @@ function stopMicrophone() {
 </script>
 
 <template>
-  <section class="meeting">
+  <section class="meeting flex:rows min-h-0">
     <template v-if="attendees.length === 0">
       <div class="meeting-conference">
         <video
@@ -119,14 +125,28 @@ function stopMicrophone() {
       </div>
     </template>
     <template v-else>
-      <div class="relative h-full" style="height: calc(100% - 180px)">
-        <video
-          v-if="mycamera"
-          class="rounded-3xl h-full"
-          autoplay
-          muted
-          :ref="(el) => el && ((el as HTMLVideoElement).srcObject = mycamera)"
-        />
+      <div class="flex:rows flex-1 relative">
+        <div class="flex:rows-md flex-1">
+          <div class="flex-1">
+            <video
+              v-if="mycamera"
+              class="rounded-3xl h-full m-auto object-cover"
+              autoplay
+              muted
+              :ref="(el) => el && ((el as HTMLVideoElement).srcObject = mycamera)"
+            />
+          </div>
+
+          <div class="flex flex:cols-md flex:center-x">
+            <video
+              v-for="attendee in attendees"
+              :key="attendee.remoteId"
+              class="w-60 rounded-3xl object-cover"
+              autoplay
+              :ref="(el) => el && ((el as HTMLVideoElement).srcObject = attendee.camera)"
+            />
+          </div>
+        </div>
         <MeetingControls
           :isCameraOn="isCameraOn"
           :isMicrophoneOn="isMicrophoneOn"
@@ -134,15 +154,6 @@ function stopMicrophone() {
           @toggle-microphone="stopMicrophone"
           @leave-meeting="leaveMeeting"
           @end-meeting="endMeeting"
-        />
-      </div>
-      <div class="flex gap-5">
-        <video
-          v-for="attendee in attendees"
-          :key="attendee.remoteId"
-          class="w-60 rounded-3xl"
-          autoplay
-          :ref="(el) => el && ((el as HTMLVideoElement).srcObject = attendee.camera)"
         />
       </div>
     </template>
@@ -153,8 +164,6 @@ function stopMicrophone() {
 
 <style scoped>
 .meeting {
-  display: flex;
-  justify-content: center;
   height: 100%;
   padding: 10px;
 }

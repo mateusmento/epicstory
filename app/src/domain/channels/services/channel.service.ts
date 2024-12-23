@@ -37,4 +37,16 @@ export class ChannelService {
   async findMessages(channelId: number) {
     return this.axios.get<IMessage[]>(`/channels/${channelId}/messages`).then((res) => res.data);
   }
+
+  findMembers(channelId: number) {
+    return this.axios.get(`/channels/${channelId}/peers`).then((res) => res.data);
+  }
+
+  addMember(channelId: number, userId: number) {
+    return this.axios.post(`/channels/${channelId}/peers`, { userId }).then((res) => res.data);
+  }
+
+  removeMember(channelId: number, userId: number) {
+    return this.axios.post(`/channels/${channelId}/peers/${userId}`).then((res) => res.data);
+  }
 }

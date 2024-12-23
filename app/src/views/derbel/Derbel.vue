@@ -8,12 +8,8 @@ import Meeting from "./meeting/Meeting.vue";
 const { fetchChannels } = useChannels();
 const { channel: openChannel } = useChannel();
 
-const { ongoingMeeting, subscribeMeetings, joinMeeting, requestMeeting, leaveOngoingMeeting } = useMeeting();
-
-async function meetingEnded() {
-  ongoingMeeting.value = null;
-  if (openChannel.value) openChannel.value.meeting = null;
-}
+const { ongoingMeeting, subscribeMeetings, joinMeeting, requestMeeting, leaveOngoingMeeting, endMeeting } =
+  useMeeting();
 
 onMounted(async () => {
   await fetchChannels();
@@ -31,7 +27,7 @@ onMounted(async () => {
           v-if="ongoingMeeting"
           v-show="ongoingMeeting"
           :meetingId="ongoingMeeting.id"
-          @meeting-ended="meetingEnded"
+          @meeting-ended="endMeeting"
           @left-meeting="leaveOngoingMeeting"
           :key="1"
         />

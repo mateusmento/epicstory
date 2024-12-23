@@ -60,10 +60,19 @@ export class MeetingGateway {
     );
 
     const roomId = `meeting:${meeting.id}`;
+
+    console.log({ join: roomId });
+
     socket.join(roomId);
     socket.to(roomId).emit('attendee-joined', { meeting, remoteId });
 
     socket.on('disconnect', () => {
+      console.log({
+        message: 'disconnected',
+        remoteId,
+        meetingId,
+      });
+
       this.leaveMeeting({ meetingId, remoteId }, socket);
     });
 

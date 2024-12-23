@@ -13,6 +13,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(["join-meeting"]);
+
 const router = useRouter();
 
 const { openChannel } = useChannel();

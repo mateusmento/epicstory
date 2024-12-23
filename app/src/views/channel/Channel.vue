@@ -6,13 +6,8 @@ import { computed, onMounted, watch } from "vue";
 import Meeting from "../derbel/meeting/Meeting.vue";
 
 const { user } = useAuth();
-const { channel: openChannel, messageGroups, fetchMessages, joinChannel } = useChannel();
-const { ongoingMeeting, requestMeeting, joinMeeting, leaveOngoingMeeting } = useMeeting();
-
-async function meetingEnded() {
-  ongoingMeeting.value = null;
-  if (openChannel.value) openChannel.value.meeting = null;
-}
+const { channel: openChannel, messageGroups, fetchMessages, joinChannel, fetchMembers } = useChannel();
+const { ongoingMeeting, requestMeeting, joinMeeting, leaveOngoingMeeting, endMeeting } = useMeeting();
 
 const title = computed(() =>
   openChannel.value?.type === "direct" ? openChannel.value?.speakingTo.name : openChannel.value?.name,
@@ -25,6 +20,7 @@ const picture = computed(() =>
 onMounted(async () => {
   joinChannel();
   fetchMessages();
+  fetchMembers();
 });
 
 watch(
@@ -32,6 +28,7 @@ watch(
   () => {
     joinChannel();
     fetchMessages();
+    fetchMembers();
   },
 );
 </script>
@@ -42,13 +39,14 @@ watch(
       v-if="ongoingMeeting"
       v-show="ongoingMeeting"
       :meetingId="ongoingMeeting.id"
-      @meeting-ended="meetingEnded"
+      @meeting-ended="endMeeting"
       @left-meeting="leaveOngoingMeeting"
       :key="1"
     />
     <Chatbox
       v-if="user"
       v-show="!ongoingMeeting"
+      class="flex-1"
       :channel="openChannel"
       :chat-title="title"
       :chat-picture="picture"
