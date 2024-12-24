@@ -1,16 +1,15 @@
 <script lang="ts" setup>
 import { Chatbox } from "@/components/channel";
 import { useAuth } from "@/domain/auth";
-import { ChannelService, useChannel, useMeeting } from "@/domain/channels";
+import { useChannel, useChannels, useMeeting } from "@/domain/channels";
 import { computed, onMounted, watch } from "vue";
-import Meeting from "../derbel/meeting/Meeting.vue";
-import { useDependency } from "@/core/dependency-injection";
 import { useRoute } from "vue-router";
+import Meeting from "../derbel/meeting/Meeting.vue";
 
 const route = useRoute();
 
 const { user } = useAuth();
-const channelApi = useDependency(ChannelService);
+const { channels, fetchChannels } = useChannels();
 const { channel, messageGroups, openChannel, fetchMessages, joinChannel, fetchMembers } = useChannel();
 const { ongoingMeeting, requestMeeting, joinMeeting, leaveOngoingMeeting, endMeeting } = useMeeting();
 
@@ -26,8 +25,9 @@ const picture = computed(() => {
 
 onMounted(async () => {
   if (!channel.value) {
-    const channel = await channelApi.findChannel(+route.params.channelId);
-    openChannel(channel);
+    await fetchChannels();
+    const channel = channels.value.find((c) => c.id === +route.params.channelId);
+    if (channel) openChannel(channel);
   }
   joinChannel();
   fetchMessages();

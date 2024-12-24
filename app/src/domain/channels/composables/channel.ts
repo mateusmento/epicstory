@@ -1,11 +1,12 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
+import { useAuth, type User } from "@/domain/auth";
+import { last } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
 import { ChannelService } from "../services";
 import type { IChannel, IMessage, IMessageGroup } from "../types";
-import { last } from "lodash";
-import type { User } from "@/domain/auth";
+import { useWorkspace } from "@/domain/workspace";
 
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
@@ -16,8 +17,10 @@ export const useChannelStore = defineStore("channel", () => {
 
 export function useChannel() {
   const store = useChannelStore();
-  const channelApi = useDependency(ChannelService);
   const sockets = useWebSockets();
+  const channelApi = useDependency(ChannelService);
+  const { workspace } = useWorkspace();
+  const { user } = useAuth();
 
   function openChannel(channel: IChannel | null) {
     store.channel = channel;
@@ -34,32 +37,32 @@ export function useChannel() {
     store.messages = await channelApi.findMessages(store.channel?.id);
   }
 
-  function onReceiveMessage(msg: any) {
-    addMessage(msg);
+  function onReceiveMessage({ message, channelId }: any) {
+    if (store.channel && store.channel.id === channelId) {
+      addMessage(message);
+    }
   }
 
   function joinChannel() {
-    if (!store.channel) return;
+    sockets.websocket.off("incoming-message", onReceiveMessage);
 
-    sockets.websocket?.emit("join-channel", { channelId: store.channel.id });
-    sockets.websocket.off("receive-message", onReceiveMessage);
-    sockets.websocket?.on("receive-message", onReceiveMessage);
+    sockets.websocket?.emit("subscribe-messages", {
+      workspaceId: workspace.value?.id,
+      userId: user.value?.id,
+    });
+
+    sockets.websocket?.on("incoming-message", onReceiveMessage);
   }
 
   function sendMessage(message: { content: string }) {
     if (!store.channel) return;
     if (!message.content) return;
-    const data = { channelId: store.channel.id, message };
-    return new Promise((resolve) => {
-      sockets.websocket?.emit("send-message", data, (msg: any) => {
-        addMessage(msg);
-        resolve(msg);
-      });
-    });
+    sockets.websocket?.emit("send-message", { channelId: store.channel.id, message, broadcastSelf: true });
   }
 
-  function addMessage(msg: IMessage) {
-    store.messages.push(msg);
+  function addMessage(message: IMessage) {
+    store.messages.push(message);
+    if (store.channel) store.channel.lastMessage = message;
   }
 
   async function fetchMembers() {

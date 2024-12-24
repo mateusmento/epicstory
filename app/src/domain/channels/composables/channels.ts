@@ -4,6 +4,8 @@ import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
 import { ChannelService, type CreateDirectChannel, type CreateGroupChannel } from "../services";
 import type { IChannel } from "../types";
+import { useWebSockets } from "@/core/websockets";
+import { useAuth } from "@/domain/auth";
 
 const useChannelsStore = defineStore("channels", () => {
   const channels = ref<IChannel[]>([]);
@@ -12,9 +14,27 @@ const useChannelsStore = defineStore("channels", () => {
 
 export function useChannels() {
   const store = useChannelsStore();
+  const sockets = useWebSockets();
   const { workspace } = useWorkspace();
+  const { user } = useAuth();
 
   const channelService = useDependency(ChannelService);
+
+  function onReceiveMessage({ message, channelId }: any) {
+    const channel = store.channels.find((c) => c.id === channelId);
+    if (channel) channel.lastMessage = message;
+  }
+
+  async function subscribeMessages() {
+    sockets.websocket.off("incoming-message", onReceiveMessage);
+
+    sockets.websocket?.emit("subscribe-messages", {
+      workspaceId: workspace.value?.id,
+      userId: user.value?.id,
+    });
+
+    sockets.websocket?.on("incoming-message", onReceiveMessage);
+  }
 
   async function fetchChannels() {
     if (!workspace.value) return;
@@ -32,5 +52,5 @@ export function useChannels() {
     return channel;
   }
 
-  return { ...storeToRefs(store), fetchChannels, createChannel };
+  return { ...storeToRefs(store), fetchChannels, subscribeMessages, createChannel };
 }

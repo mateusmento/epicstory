@@ -28,18 +28,20 @@ import { useWorkspace } from "@/domain/workspace";
 const channelType = ref("group");
 
 const { workspace } = useWorkspace();
-const { fetchChannels, channels, createChannel } = useChannels();
+const { fetchChannels, channels, createChannel, subscribeMessages } = useChannels();
 const { channel: currentChannel } = useChannel();
 const { subscribeMeetings, ongoingMeeting, joinMeeting } = useMeeting();
 
 onMounted(async () => {
   await fetchChannels();
   subscribeMeetings();
+  subscribeMessages();
 });
 
 watch(workspace, async () => {
   await fetchChannels();
   subscribeMeetings();
+  subscribeMessages();
 });
 </script>
 
