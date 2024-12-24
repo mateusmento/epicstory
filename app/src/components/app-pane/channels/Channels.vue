@@ -81,7 +81,7 @@ watch(workspace, async () => {
         v-for="channel of channels"
         :key="channel.id"
         :channel="channel"
-        :can-join-meeting="!!channel.meeting && !ongoingMeeting"
+        :can-join-meeting="!!channel.meeting && channel.meeting.id !== ongoingMeeting?.id"
         @join-meeting="joinMeeting(channel)"
         :open="!!currentChannel && currentChannel.id === channel.id"
       />

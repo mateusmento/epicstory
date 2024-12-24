@@ -61,20 +61,19 @@ export function useMeeting() {
       userId: user.value?.id,
     });
 
-    sockets.websocket.on("incoming-meeting", ({ meeting }: any) => {
-      const channel = channels.value.find((c) => c.id === meeting.channelId);
-      if (channel) {
-        channel.meeting = meeting;
-      }
+    sockets.websocket.on("incoming-meeting", ({ meeting, channelId }: any) => {
+      const channel = channels.value.find((c) => c.id === channelId);
+      if (channel) channel.meeting = meeting;
+      if (openChannel.value && openChannel.value?.id === channelId) openChannel.value.meeting = meeting;
     });
 
     sockets.websocket.on("meeting-ended", ({ meetingId, channelId }: any) => {
       if (store.ongoingMeeting?.id === meetingId) {
         store.ongoingMeeting = null;
-        if (openChannel.value) openChannel.value.meeting = null;
       }
       const channel = channels.value.find((c) => c.id === channelId);
       if (channel) channel.meeting = null;
+      if (openChannel.value && openChannel.value?.id === channelId) openChannel.value.meeting = null;
     });
   }
 
@@ -95,6 +94,7 @@ export function useMeeting() {
   }
 
   async function endMeeting() {
+    console.log("endMeeting");
     store.ongoingMeeting = null;
     if (openChannel.value) openChannel.value.meeting = null;
   }

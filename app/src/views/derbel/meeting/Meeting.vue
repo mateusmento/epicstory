@@ -31,12 +31,9 @@ onMounted(async () => {
     meetingApi,
     attendeeJoined: (remoteId, camera, user) => {
       attendees.value.push({ remoteId, camera, user });
-      console.log("attendee joined", user);
-      console.log(JSON.parse(JSON.stringify(attendees.value)), { camera, remoteId });
     },
     attendeeLeft: (remoteId) => {
       attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId);
-      console.log(remoteId, JSON.parse(JSON.stringify(attendees.value)));
     },
     ended: () => {
       removeCameras();
@@ -52,9 +49,7 @@ async function leaveMeeting() {
 }
 
 function endMeeting() {
-  removeCameras();
   meeting.value?.end();
-  emit("meeting-ended");
 }
 
 function removeCameras() {

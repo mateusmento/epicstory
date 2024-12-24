@@ -41,12 +41,6 @@ export class Meeting {
     });
 
     const meeting = new Meeting(meetingId, websocket, streaming, events);
-    meeting.join();
-    return meeting;
-  }
-
-  private join() {
-    const { meetingId, websocket, streaming, events } = this;
 
     websocket.emit("join-meeting", { meetingId, remoteId: streaming.localId });
 
@@ -59,10 +53,14 @@ export class Meeting {
       events.attendeeLeft(remoteId);
     });
 
-    websocket.on("meeting-ended", () => {
-      streaming.close();
-      events.ended();
+    websocket.on("meeting-ended", (event) => {
+      if (event.meetingId === meetingId) {
+        streaming.close();
+        events.ended();
+      }
     });
+
+    return meeting;
   }
 
   leave() {

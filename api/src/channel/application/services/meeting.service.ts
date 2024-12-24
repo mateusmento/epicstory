@@ -1,11 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Meeting } from 'src/channel/domain';
 import {
   MeetingAttendeeRepository,
   MeetingRepository,
 } from 'src/channel/infrastructure';
 
-export class MeetingHasntStartedException extends Error {}
+export class MeetingHasntStartedException extends Error {
+  constructor() {
+    super('Meeting hasnt started');
+  }
+}
+
+export class MeetingOngoingException extends Error {
+  constructor() {
+    super('Meeting already ongoing');
+  }
+}
 
 @Injectable()
 export class MeetingService {
@@ -14,11 +24,15 @@ export class MeetingService {
     private meetingAttendeeRepo: MeetingAttendeeRepository,
   ) {}
 
-  findMeeting(id: number) {
-    return this.meetingRepo.findOneBy({ id });
+  async findMeeting(id: number) {
+    const meeting = await this.meetingRepo.findOneBy({ id });
+    if (!meeting) throw new NotFoundException('Meeting not found');
+    return meeting;
   }
 
   async startMeeting(channelId: number) {
+    const meeting = await this.meetingRepo.findOneBy({ channelId });
+    if (meeting) throw new MeetingOngoingException();
     const ongoingMeeting = Meeting.ongoing(channelId);
     return await this.meetingRepo.save(ongoingMeeting);
   }
