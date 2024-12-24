@@ -73,10 +73,6 @@ const authenticatedRoutes = defineRoutes({
       component: () => import("@/views/workspace/MemberInvite.vue"),
       props: true,
     },
-    {
-      path: "/derbel",
-      component: () => import("@/views/derbel/Derbel.vue"),
-    },
   ],
   beforeEnter: async (to, from, next) => {
     const authService = useDependency(AuthService);

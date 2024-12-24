@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useMeeting } from "@/domain/channels";
-import Meeting from "../derbel/meeting/Meeting.vue";
+import Meeting from "@/components/meeting/Meeting.vue";
 
 const { ongoingMeeting, leaveOngoingMeeting, endMeeting } = useMeeting();
 </script>

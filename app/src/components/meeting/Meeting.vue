@@ -2,7 +2,7 @@
 import { useWebSockets } from "@/core/websockets";
 import { onMounted, ref } from "vue";
 import MeetingControls from "./MeetingControls.vue";
-import { Meeting } from "./meeting";
+import { Meeting } from "@/domain/channels/utils/meeting";
 import { useDependency } from "@/core/dependency-injection";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 
@@ -171,8 +171,6 @@ function stopMicrophone() {
     </template>
   </section>
 </template>
-
-<style scoped src="@/views/derbel/styles/main.css"></style>
 
 <style scoped>
 .meeting {

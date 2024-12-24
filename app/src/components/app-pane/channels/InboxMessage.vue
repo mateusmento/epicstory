@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useChannel } from "@/domain/channels";
 import type { IChannel } from "@/domain/channels/types/channel.type";
-import IconAcceptCall from "@/views/derbel/icons/IconAcceptCall.vue";
+import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
 import moment, { type Moment } from "moment";
 import { computed } from "vue";
 import { useRouter } from "vue-router";

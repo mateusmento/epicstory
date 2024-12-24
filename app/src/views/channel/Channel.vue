@@ -4,7 +4,7 @@ import { useAuth } from "@/domain/auth";
 import { useChannel, useChannels, useMeeting } from "@/domain/channels";
 import { computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import Meeting from "../derbel/meeting/Meeting.vue";
+import Meeting from "@/components/meeting/Meeting.vue";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 
 const route = useRoute();

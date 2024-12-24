@@ -1,10 +1,12 @@
 <script lang="ts" setup>
-import IconCameraOff from "../icons/IconCameraOff.vue";
-import IconCameraOn from "../icons/IconCameraOn.vue";
-import IconHangupCall from "../icons/IconHangupCall.vue";
-import IconMicrophoneOff from "../icons/IconMicrophoneOff.vue";
-import IconMicrophoneOn from "../icons/IconMicrophoneOn.vue";
-import IconRefuseCall from "../icons/IconRefuseCall.vue";
+import {
+  IconCameraOff,
+  IconCameraOn,
+  IconHangupCall,
+  IconMicrophoneOff,
+  IconMicrophoneOn,
+  IconRefuseCall,
+} from "../icons";
 
 defineProps<{
   isCameraOn: boolean;
@@ -41,8 +43,6 @@ const emit = defineEmits(["toggle-camera", "toggle-microphone", "leave-meeting",
     </button>
   </div>
 </template>
-
-<style scoped src="@/views/derbel/styles/main.css"></style>
 
 <style scoped>
 .meeting-controls {
