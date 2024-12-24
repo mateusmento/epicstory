@@ -16,14 +16,11 @@ const emit = defineEmits(["join-meeting"]);
 
 const router = useRouter();
 
-const { openChannel } = useChannel();
-
 const image = computed(() =>
   props.channel.type === "direct" ? props.channel.speakingTo.picture : "/images/hashtag.svg",
 );
 
 function onOpenChannel() {
-  openChannel(props.channel);
   router.push(`/channel/${props.channel.id}`);
 }
 

@@ -5,13 +5,16 @@ import { useChannel, useChannels, useMeeting } from "@/domain/channels";
 import { computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import Meeting from "../derbel/meeting/Meeting.vue";
+import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 
 const route = useRoute();
 
 const { user } = useAuth();
-const { channels, fetchChannels } = useChannels();
+const { channels, fetchChannels, subscribeMessages } = useChannels();
 const { channel, messageGroups, openChannel, fetchMessages, joinChannel, fetchMembers } = useChannel();
-const { ongoingMeeting, requestMeeting, joinMeeting, leaveOngoingMeeting, endMeeting } = useMeeting();
+const { ongoingMeeting, subscribeMeetings, requestMeeting, joinMeeting, leaveOngoingMeeting, endMeeting } =
+  useMeeting();
+const { viewContent } = useNavTrigger("app-pane");
 
 const title = computed(() => {
   if (!channel.value) return "";
@@ -23,20 +26,26 @@ const picture = computed(() => {
   return channel.value?.type === "direct" ? channel.value?.speakingTo.picture : "/images/hashtag.svg";
 });
 
+function selectChannel(channelId: number) {
+  const channel = channels.value.find((c) => c.id === channelId);
+  if (channel) openChannel(channel);
+}
+
 onMounted(async () => {
-  if (!channel.value) {
-    await fetchChannels();
-    const channel = channels.value.find((c) => c.id === +route.params.channelId);
-    if (channel) openChannel(channel);
-  }
+  if (channels.value.length === 0) await fetchChannels();
+  if (viewContent.value !== "channels") viewContent.value = "channels";
+  selectChannel(+route.params.channelId);
   joinChannel();
   fetchMessages();
   fetchMembers();
+  subscribeMeetings();
+  subscribeMessages();
 });
 
 watch(
-  () => channel.value?.id,
+  () => route.params.channelId,
   () => {
+    selectChannel(+route.params.channelId);
     joinChannel();
     fetchMessages();
     fetchMembers();

@@ -33,7 +33,7 @@ const { channel: currentChannel } = useChannel();
 const { subscribeMeetings, ongoingMeeting, joinMeeting } = useMeeting();
 
 onMounted(async () => {
-  await fetchChannels();
+  if (channels.value.length === 0) await fetchChannels();
   subscribeMeetings();
   subscribeMessages();
 });
