@@ -22,12 +22,8 @@ export function useChannel() {
   const { workspace } = useWorkspace();
   const { user } = useAuth();
 
-  function openChannel(channel: IChannel | null) {
-    store.channel = channel;
-  }
-
-  function closeChannel() {
-    store.channel = null;
+  async function fetchChannel(channelId: number) {
+    store.channel = await channelApi.findChannel(channelId);
   }
 
   const messageGroups = computed(() => groupMessages(store.messages));
@@ -79,9 +75,8 @@ export function useChannel() {
   return {
     ...storeToRefs(store),
     messageGroups,
-    openChannel,
+    fetchChannel,
     fetchMessages,
-    closeChannel,
     joinChannel,
     sendMessage,
     fetchMembers,
