@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { RedisClientOptions, createClient } from 'redis';
@@ -6,14 +7,32 @@ import { ServerOptions } from 'socket.io';
 
 export class SocketIoAdapter extends IoAdapter {
   constructor(
-    app: INestApplication,
+    private app: INestApplication,
     private options: Partial<ServerOptions>,
   ) {
     super(app);
   }
 
   createIOServer(port: number, options?: ServerOptions) {
-    return super.createIOServer(port, { ...options, ...this.options });
+    const jwtService = this.app.get(JwtService);
+
+    async function allowRequest(req, decide) {
+      try {
+        const user = await jwtService.verifyAsync(
+          req.headers.authorization.replace('Bearer ', ''),
+        );
+        (req as any).user = user;
+        decide('', true);
+      } catch (ex) {
+        decide('Unauthorized', false);
+      }
+    }
+
+    return super.createIOServer(port, {
+      ...options,
+      allowRequest,
+      ...this.options,
+    });
   }
 }
 

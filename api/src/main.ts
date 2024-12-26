@@ -6,12 +6,11 @@ import {
 import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import { initializeTransactionalContext } from 'typeorm-transactional';
 import { AppModule } from './app.module';
 import { AppConfig } from './core/app.config';
-import { initializeTransactionalContext } from 'typeorm-transactional';
 import { createSchemas } from './core/typeorm';
 import { SocketIoAdapter } from './core/websockets';
-import { JwtService } from '@nestjs/jwt';
 
 async function bootstrap() {
   process.env.TZ = 'America/Sao_Paulo';
@@ -45,24 +44,11 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-  const jwtService = app.get(JwtService);
-
   app.useWebSocketAdapter(
     new SocketIoAdapter(app, {
       cors: {
         origin: config.CORS_ORIGINS,
         credentials: true,
-      },
-      allowRequest: async (req, decide) => {
-        try {
-          const user = await jwtService.verifyAsync(
-            req.headers.authorization.replace('Bearer ', ''),
-          );
-          (req as any).user = user;
-          decide('', true);
-        } catch (ex) {
-          decide('Unauthorized', false);
-        }
       },
       // adapter: await createRedisAdapter({ url: config.REDIS_URL }),
     }),
