@@ -86,8 +86,6 @@ const useMeetingStore = defineStore("meeting", () => {
     currentMeeting.value = meeting;
   }
 
-  console.log(attendeeJoined);
-
   function attendeeJoined({ remoteId }: { remoteId: string }) {
     console.log("attendee joined", streaming.value);
     streaming.value?.connect(remoteId);
@@ -100,6 +98,23 @@ const useMeetingStore = defineStore("meeting", () => {
 
   function onMeetingEnded({ meetingId }: { meetingId: number }) {
     console.log(`meeting:${meetingId}:ended`);
+    closeMeeting();
+  }
+
+  async function leaveMeeting() {
+    sockets.websocket.emit("leave-meeting", {
+      meetingId: currentMeeting.value?.id,
+      remoteId: streaming.value?.localId,
+    });
+    closeMeeting();
+  }
+
+  function endMeeting() {
+    sockets.websocket.emit("end-meeting", { meetingId: currentMeeting.value?.id });
+    streaming.value?.close();
+  }
+
+  function closeMeeting() {
     streaming.value?.close();
     removeCameras();
     currentMeeting.value = null;
@@ -109,21 +124,6 @@ const useMeetingStore = defineStore("meeting", () => {
     mycamera.value?.getTracks().forEach((track) => track.stop());
     mycamera.value = null;
     attendees.value = [];
-  }
-
-  async function leaveMeeting() {
-    sockets.websocket.emit("leave-meeting", {
-      meetingId: currentMeeting.value?.id,
-      remoteId: streaming.value?.localId,
-    });
-    streaming.value?.close();
-    removeCameras();
-    currentMeeting.value = null;
-  }
-
-  function endMeeting() {
-    sockets.websocket.emit("end-meeting", { meetingId: currentMeeting.value?.id });
-    streaming.value?.close();
   }
 
   function stopCamera() {
