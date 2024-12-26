@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNotEmpty, IsNumber } from 'class-validator';
-import * as moment from 'moment';
+import { add } from 'date-fns';
 import * as nodemailer from 'nodemailer';
 import { UserRepository } from 'src/auth';
 import { AppConfig } from 'src/core';
@@ -13,7 +13,6 @@ import {
   WorkspaceMemberInviteRepository,
   WorkspaceRepository,
 } from 'src/workspace/infrastructure/repositories';
-
 export class SendWorkspaceMemberInvite {
   issuer: Issuer;
   workspaceId: number;
@@ -64,7 +63,7 @@ export class SendWorkspaceMemberInviteCommand
         email,
         userId: userId ?? user?.id,
         status: 'sent',
-        expiresAt: moment().add(15, 'days').toDate(),
+        expiresAt: add(new Date(), { days: 15 }),
       }),
     );
 

@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { cva } from "class-variance-authority";
-import type { Moment } from "moment";
-import moment from "moment";
+import { formatDate, isToday } from "date-fns";
 import { provide } from "vue";
 import type { IMessageGroup } from "./types";
 
@@ -14,11 +13,9 @@ provide("messageGroup", {
   sender: props.sender,
 });
 
-function formatDate(date: string | Moment) {
+function formatMessageDate(date: string) {
   if (!date) return;
-  return moment().startOf("day").isSame(moment(date).startOf("day"))
-    ? moment(date).format("H:mm A")
-    : moment(date).format("MMM D");
+  return isToday(date) ? formatDate(date, "H:mm a") : formatDate(date, "MMM d");
 }
 
 const styles = {
@@ -41,7 +38,7 @@ const styles = {
     <img v-if="sender === 'someoneElse'" :src="messageGroup.sender?.picture" class="w-8 h-8 rounded-full" />
     <div class="flex:cols-md flex:baseline" :class="{ 'col-start-2': sender === 'me' }">
       <div class="font-dmSans font-medium">{{ sender === "me" ? "You" : messageGroup.sender?.name }}</div>
-      <div class="ml-lg text-xs text-zinc-400 font-dmSans">{{ formatDate(messageGroup.sentAt) }}</div>
+      <div class="ml-lg text-xs text-zinc-400 font-dmSans">{{ formatMessageDate(messageGroup.sentAt) }}</div>
     </div>
     <div class="flex:rows-sm col-start-2 min-w-40 max-w-[35rem]">
       <slot />

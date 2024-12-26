@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
-import { useChannel } from "@/domain/channels";
-import type { IChannel } from "@/domain/channels/types/channel.type";
-import moment, { type Moment } from "moment";
+import { useChannel, type IChannel } from "@/domain/channels";
+import { formatDate, isToday } from "date-fns";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -23,11 +22,9 @@ function onOpenChannel() {
   openChannel(props.channel);
 }
 
-function formatDate(date: string | Moment) {
+function formatMessageDate(date: string) {
   if (!date) return;
-  return moment().startOf("day").isSame(moment(date).startOf("day"))
-    ? moment(date).format("H:mm A")
-    : moment(date).format("MMM D");
+  return isToday(date) ? formatDate(date, "H:mm a") : formatDate(date, "MMM d");
 }
 </script>
 
@@ -45,7 +42,7 @@ function formatDate(date: string | Moment) {
           {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
         </div>
         <div class="text-xs text-zinc-500 font-dmSans">
-          {{ channel.lastMessage ? formatDate(channel.lastMessage.sentAt) : "" }}
+          {{ channel.lastMessage ? formatMessageDate(channel.lastMessage.sentAt) : "" }}
         </div>
       </div>
 
