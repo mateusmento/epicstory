@@ -7,7 +7,7 @@ const isAppPaneOpen = ref(false);
 </script>
 
 <template>
-  <div class="absolute inset-0">
+  <div class="h-screen">
     <div class="flex:cols w-full h-full bg-zinc-100">
       <Navbar>
         <slot name="navbar" :isAppPaneOpen="isAppPaneOpen" />
