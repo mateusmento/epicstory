@@ -9,7 +9,8 @@ import {
   NavTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { useWorkspace, useWorkspaces } from "@/domain/workspace";
+import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
+import { useWorkspace, useWorkspaces, type Workspace } from "@/domain/workspace";
 import { onMounted } from "vue";
 
 const currentWorkspace = defineModel<{
@@ -19,10 +20,16 @@ const currentWorkspace = defineModel<{
 
 const { workspaces, createWorkspace, fetchWorkspaces } = useWorkspaces();
 const { selectWorkspace } = useWorkspace();
+const { viewContent } = useNavTrigger("navbar");
 
 onMounted(async () => {
   fetchWorkspaces();
 });
+
+function onSelectWorkspace(workspace: Workspace) {
+  selectWorkspace(workspace);
+  viewContent.value = "workspace";
+}
 </script>
 
 <template>
@@ -64,7 +71,7 @@ onMounted(async () => {
         :key="workspace.id"
         class="px-2 py-1 rounded-sm hover:bg-zinc-200/60 cursor-pointer"
         :class="{ 'bg-zinc-200/60': currentWorkspace?.id === workspace.id }"
-        @click="selectWorkspace(workspace)"
+        @click="onSelectWorkspace(workspace)"
       >
         {{ workspace.name }}
       </div>
