@@ -1,7 +1,6 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import type { User } from "@/domain/auth";
-import { useAuth } from "@/domain/auth";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import {
   createMediaStreaming,
@@ -32,7 +31,6 @@ export function useMeeting() {
 const useMeetingStore = defineStore("meeting", () => {
   const sockets = useWebSockets();
   const { workspace } = useWorkspace();
-  const { user } = useAuth();
   const { openChannel } = useChannel();
 
   const currentMeeting = ref<IMeeting | null>();
@@ -49,7 +47,6 @@ const useMeetingStore = defineStore("meeting", () => {
   async function subscribeMeetings() {
     sockets.websocket.emit("subscribe-meetings", {
       workspaceId: workspace.value?.id,
-      userId: user.value?.id,
     });
   }
 

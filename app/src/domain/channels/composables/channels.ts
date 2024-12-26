@@ -1,6 +1,5 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
-import { useAuth } from "@/domain/auth";
 import { useWorkspace } from "@/domain/workspace";
 import { defineStore, storeToRefs } from "pinia";
 import { onMounted, ref, watch } from "vue";
@@ -16,7 +15,6 @@ export function useChannels() {
   const store = useChannelsStore();
   const sockets = useWebSockets();
   const { workspace } = useWorkspace();
-  const { user } = useAuth();
 
   const channelService = useDependency(ChannelService);
 
@@ -28,7 +26,6 @@ export function useChannels() {
   function subscribeMessages() {
     sockets.websocket?.emit("subscribe-messages", {
       workspaceId: workspace.value?.id,
-      userId: user.value?.id,
     });
 
     sockets.websocket.off("incoming-message", onReceiveMessage);
@@ -50,7 +47,6 @@ export function useChannels() {
   function subscribeMeetings() {
     sockets.websocket?.emit("subscribe-meetings", {
       workspaceId: workspace.value?.id,
-      userId: user.value?.id,
     });
 
     console.log("channels subscribe meetings");

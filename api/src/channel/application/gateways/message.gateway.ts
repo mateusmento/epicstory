@@ -25,9 +25,12 @@ export class MessageGateway {
 
   @SubscribeMessage('subscribe-messages')
   async subscribeMessages(
-    @MessageBody() { workspaceId, userId }: any,
+    @MessageBody() { workspaceId }: any,
     @ConnectedSocket() socket: Socket,
   ) {
+    const user = (socket.request as any).user;
+    const userId = user?.id;
+
     const channels = await this.channelRepo
       .createQueryBuilder('channel')
       .innerJoin('channel.peers', 'peer')
@@ -46,8 +49,7 @@ export class MessageGateway {
     @MessageBody() { channelId, message, broadcastSelf }: any,
     @ConnectedSocket() socket: Socket,
   ) {
-    const token = socket.request.headers.authorization;
-    const user = await this.jwtService.verifyAsync(token);
+    const user = (socket.request as any).user;
     const { id } = await this.messageService.createMessage(
       message.content,
       channelId,

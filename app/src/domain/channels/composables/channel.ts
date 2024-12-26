@@ -1,6 +1,6 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
-import { useAuth, type User } from "@/domain/auth";
+import { type User } from "@/domain/auth";
 import { useWorkspace } from "@/domain/workspace";
 import { last } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
@@ -21,7 +21,6 @@ export function useChannel() {
   const sockets = useWebSockets();
   const channelApi = useDependency(ChannelService);
   const { workspace } = useWorkspace();
-  const { user } = useAuth();
 
   const messageGroups = computed(() => groupMessages(store.messages));
 
@@ -49,7 +48,6 @@ export function useChannel() {
   function joinChannel() {
     sockets.websocket?.emit("subscribe-messages", {
       workspaceId: workspace.value?.id,
-      userId: user.value?.id,
     });
 
     sockets.websocket.off("incoming-message", onReceiveMessage);
@@ -68,7 +66,6 @@ export function useChannel() {
   function subscribeMeetings() {
     sockets.websocket?.emit("subscribe-meetings", {
       workspaceId: workspace.value?.id,
-      userId: user.value?.id,
     });
 
     sockets.websocket.off("incoming-meeting", onIncomingMeeting);
