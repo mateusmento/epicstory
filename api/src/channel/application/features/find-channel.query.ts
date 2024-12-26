@@ -33,15 +33,15 @@ export class FindChannelQuery implements IQueryHandler<FindChannel> {
 
     if (!channel) throw new NotFoundException('Channel not found');
 
-    const issuer = await this.workspaceRepo.findMember(
+    const issuerMember = await this.workspaceRepo.findMember(
       channel.workspaceId,
       issuerId,
     );
 
-    if (!issuer) throw new IssuerUserIsNotWorkspaceMember();
+    if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
 
     if (channel.type === 'direct')
-      channel.speakingTo = channel.peers.find((p) => p.id !== issuer.id);
+      channel.speakingTo = channel.peers.find((p) => p.id !== issuerId);
 
     return channel;
   }

@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
 import { useChannel } from "@/domain/channels";
 import type { IChannel } from "@/domain/channels/types/channel.type";
-import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
 import moment, { type Moment } from "moment";
 import { computed } from "vue";
-import { useRouter } from "vue-router";
 
 const props = defineProps<{
   channel: IChannel;
@@ -14,14 +13,14 @@ const props = defineProps<{
 
 const emit = defineEmits(["join-meeting"]);
 
-const router = useRouter();
+const { openChannel } = useChannel();
 
 const image = computed(() =>
   props.channel.type === "direct" ? props.channel.speakingTo.picture : "/images/hashtag.svg",
 );
 
 function onOpenChannel() {
-  router.push(`/channel/${props.channel.id}`);
+  openChannel(props.channel);
 }
 
 function formatDate(date: string | Moment) {

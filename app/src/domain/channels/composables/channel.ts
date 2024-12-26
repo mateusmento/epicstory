@@ -1,12 +1,13 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth, type User } from "@/domain/auth";
+import { useWorkspace } from "@/domain/workspace";
 import { last } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { ChannelService } from "../services";
-import type { IChannel, IMessage, IMessageGroup } from "../types";
-import { useWorkspace } from "@/domain/workspace";
+import type { IChannel, IMeeting, IMessage, IMessageGroup } from "../types";
 
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
@@ -22,11 +23,17 @@ export function useChannel() {
   const { workspace } = useWorkspace();
   const { user } = useAuth();
 
+  const messageGroups = computed(() => groupMessages(store.messages));
+
+  const router = useRouter();
+
+  function openChannel(channel: IChannel) {
+    router.push(`/channel/${channel.id}`);
+  }
+
   async function fetchChannel(channelId: number) {
     store.channel = await channelApi.findChannel(channelId);
   }
-
-  const messageGroups = computed(() => groupMessages(store.messages));
 
   async function fetchMessages() {
     if (!store.channel) return [];
@@ -40,14 +47,35 @@ export function useChannel() {
   }
 
   function joinChannel() {
-    sockets.websocket.off("incoming-message", onReceiveMessage);
-
     sockets.websocket?.emit("subscribe-messages", {
       workspaceId: workspace.value?.id,
       userId: user.value?.id,
     });
 
+    sockets.websocket.off("incoming-message", onReceiveMessage);
     sockets.websocket?.on("incoming-message", onReceiveMessage);
+  }
+
+  function onIncomingMeeting({ meeting, channelId }: { meeting: IMeeting; channelId: number }) {
+    if (store.channel?.id === channelId) store.channel.meeting = meeting;
+  }
+
+  function onMeetingEnded({ channelId }: { channelId: number }) {
+    console.log("channel meeting-ended", { channelId });
+    if (store.channel?.id === channelId) store.channel.meeting = null;
+  }
+
+  function subscribeMeetings() {
+    sockets.websocket?.emit("subscribe-meetings", {
+      workspaceId: workspace.value?.id,
+      userId: user.value?.id,
+    });
+
+    sockets.websocket.off("incoming-meeting", onIncomingMeeting);
+    sockets.websocket.on("incoming-meeting", onIncomingMeeting);
+
+    sockets.websocket.off("meeting-ended", onMeetingEnded);
+    sockets.websocket.on("meeting-ended", onMeetingEnded);
   }
 
   function sendMessage(message: { content: string }) {
@@ -75,9 +103,11 @@ export function useChannel() {
   return {
     ...storeToRefs(store),
     messageGroups,
+    openChannel,
     fetchChannel,
     fetchMessages,
     joinChannel,
+    subscribeMeetings,
     sendMessage,
     fetchMembers,
     addMember,
@@ -100,4 +130,31 @@ function groupMessages(messages: IMessage[]) {
     }
     return groups;
   }, [] as IMessageGroup[]);
+}
+
+export function useSyncedChannel() {
+  const context = useChannel();
+  const { fetchChannel, fetchMessages, joinChannel, fetchMembers, subscribeMeetings } = context;
+
+  const route = useRoute();
+  const channelId = computed(() => +route.params.channelId);
+
+  onMounted(async () => {
+    await fetchChannel(channelId.value);
+    console.log("channel", context.channel.value?.id);
+    joinChannel();
+    fetchMessages();
+    fetchMembers();
+    subscribeMeetings();
+  });
+
+  watch(channelId, async () => {
+    await fetchChannel(channelId.value);
+    console.log("channel", context.channel.value?.id);
+    joinChannel();
+    fetchMessages();
+    fetchMembers();
+  });
+
+  return context;
 }

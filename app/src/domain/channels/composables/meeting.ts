@@ -1,78 +1,162 @@
+import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
+import type { User } from "@/domain/auth";
 import { useAuth } from "@/domain/auth";
+import { MeetingApi } from "@/domain/channels/services/meeting.api";
+import {
+  createMediaStreaming,
+  untilOpen,
+  type MediaStreaming,
+} from "@/domain/channels/utils/media-streaming";
 import { useWorkspace } from "@/domain/workspace";
+import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
-import { ref } from "vue";
+import { ref, shallowRef } from "vue";
 import type { IChannel, IMeeting } from "../types";
-import { useChannels } from "./channels";
 import { useChannel } from "./channel";
 
-const useMeetingStore = defineStore("meeting", () => {
-  const ongoingMeeting = ref<IMeeting | null>();
-  return { ongoingMeeting };
-});
+export type MeetingStreamingAttendee = {
+  remoteId: string;
+  camera: MediaStream;
+  user: User;
+};
 
 export function useMeeting() {
   const store = useMeetingStore();
+  return {
+    ...store,
+    ...storeToRefs(store),
+  };
+}
+
+const useMeetingStore = defineStore("meeting", () => {
   const sockets = useWebSockets();
   const { workspace } = useWorkspace();
   const { user } = useAuth();
-  const { channels } = useChannels();
-  const { channel: openChannel } = useChannel();
+  const { openChannel } = useChannel();
+
+  const currentMeeting = ref<IMeeting | null>();
+  const streaming = shallowRef<MediaStreaming | null>();
+
+  const mycamera = ref<MediaStream | null>(null);
+  const attendees = ref<MeetingStreamingAttendee[]>([]);
+
+  const isCameraOn = ref(true);
+  const isMicrophoneOn = ref(true);
+
+  const meetingApi = useDependency(MeetingApi);
 
   async function subscribeMeetings() {
-    sockets.websocket.off("incoming-meeting");
-    sockets.websocket.off("meeting-ended");
-
     sockets.websocket.emit("subscribe-meetings", {
       workspaceId: workspace.value?.id,
       userId: user.value?.id,
     });
-
-    sockets.websocket.on("incoming-meeting", ({ meeting, channelId }: any) => {
-      const channel = channels.value.find((c) => c.id === channelId);
-      if (channel) channel.meeting = meeting;
-      if (openChannel.value && openChannel.value?.id === channelId) openChannel.value.meeting = meeting;
-    });
-
-    sockets.websocket.on("meeting-ended", ({ meetingId, channelId }: any) => {
-      if (store.ongoingMeeting?.id === meetingId) {
-        store.ongoingMeeting = null;
-      }
-      const channel = channels.value.find((c) => c.id === channelId);
-      if (channel) channel.meeting = null;
-      if (openChannel.value && openChannel.value?.id === channelId) openChannel.value.meeting = null;
-    });
-  }
-
-  async function requestMeeting(channel: IChannel) {
-    sockets.websocket.emit("request-meeting", { channelId: channel.id }, (data: any) => {
-      store.ongoingMeeting = data;
-      channel.meeting = data;
-    });
   }
 
   async function joinMeeting(channel: IChannel) {
-    openChannel.value = channel;
-    store.ongoingMeeting = channel.meeting;
+    const camera = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    mycamera.value = camera;
+
+    const rtc = await untilOpen(new Peer({ host: "localhost", port: 3001 }));
+
+    streaming.value = createMediaStreaming({
+      rtc,
+      media: camera,
+      async mediaAdded(remoteId, camera) {
+        const [attendee] = await meetingApi.findAttendees({ remoteId, meetingId: meeting.id });
+        attendees.value.push({ remoteId, camera, user: attendee?.user });
+      },
+    });
+
+    const data = { channelId: channel.id, remoteId: streaming.value.localId };
+
+    const meeting = await new Promise<IMeeting>((res) => {
+      sockets.websocket.emit("join-meeting", data, (meeting: IMeeting) => res(meeting));
+    });
+
+    subscribeMeetings();
+
+    sockets.websocket.off("attendee-left", attendeeLeft);
+    sockets.websocket.off("attendee-joined", attendeeJoined);
+
+    sockets.websocket.on("attendee-left", attendeeLeft);
+    sockets.websocket.on("attendee-joined", attendeeJoined);
+    sockets.websocket.once(`meeting:${meeting.id}:ended`, onMeetingEnded);
+
+    console.log(sockets.websocket.listeners("attendee-joined"));
+
+    openChannel(channel);
+    currentMeeting.value = meeting;
   }
 
-  async function leaveOngoingMeeting() {
-    store.ongoingMeeting = null;
+  console.log(attendeeJoined);
+
+  function attendeeJoined({ remoteId }: { remoteId: string }) {
+    console.log("attendee joined", streaming.value);
+    streaming.value?.connect(remoteId);
   }
 
-  async function endMeeting() {
-    console.log("endMeeting");
-    store.ongoingMeeting = null;
-    if (openChannel.value) openChannel.value.meeting = null;
+  function attendeeLeft({ remoteId }: { remoteId: string }) {
+    streaming.value?.disconnect(remoteId);
+    attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId);
+  }
+
+  function onMeetingEnded({ meetingId }: { meetingId: number }) {
+    console.log(`meeting:${meetingId}:ended`);
+    streaming.value?.close();
+    removeCameras();
+    currentMeeting.value = null;
+  }
+
+  function removeCameras() {
+    mycamera.value?.getTracks().forEach((track) => track.stop());
+    mycamera.value = null;
+    attendees.value = [];
+  }
+
+  async function leaveMeeting() {
+    sockets.websocket.emit("leave-meeting", {
+      meetingId: currentMeeting.value?.id,
+      remoteId: streaming.value?.localId,
+    });
+    streaming.value?.close();
+    removeCameras();
+    currentMeeting.value = null;
+  }
+
+  function endMeeting() {
+    sockets.websocket.emit("end-meeting", { meetingId: currentMeeting.value?.id });
+    streaming.value?.close();
+  }
+
+  function stopCamera() {
+    if (!mycamera.value) return;
+    if (isCameraOn.value) {
+      mycamera.value.getVideoTracks()[0].stop();
+      isCameraOn.value = false;
+    } else {
+      navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+    }
+  }
+
+  function stopMicrophone() {
+    if (!mycamera.value) return;
+    mycamera.value.getAudioTracks()[0].stop();
+    isMicrophoneOn.value = false;
   }
 
   return {
-    ...storeToRefs(store),
-    subscribeMeetings,
-    requestMeeting,
+    currentMeeting,
+    mycamera,
+    attendees,
+    isCameraOn,
+    isMicrophoneOn,
     joinMeeting,
-    leaveOngoingMeeting,
+    leaveMeeting,
     endMeeting,
+    stopCamera,
+    stopMicrophone,
   };
-}
+});

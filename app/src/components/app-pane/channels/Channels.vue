@@ -20,29 +20,15 @@ import {
   IconThreads,
 } from "@/design-system/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system/ui/tabs";
-import { useChannel, useChannels, useMeeting } from "@/domain/channels";
-import { onMounted, ref, watch } from "vue";
+import { useChannel, useMeeting, useSyncedChannels } from "@/domain/channels";
+import { ref } from "vue";
 import InboxMessage from "./InboxMessage.vue";
-import { useWorkspace } from "@/domain/workspace";
 
 const channelType = ref("group");
 
-const { workspace } = useWorkspace();
-const { fetchChannels, channels, createChannel, subscribeMessages } = useChannels();
 const { channel: currentChannel } = useChannel();
-const { subscribeMeetings, ongoingMeeting, joinMeeting } = useMeeting();
-
-onMounted(async () => {
-  await fetchChannels();
-  subscribeMeetings();
-  subscribeMessages();
-});
-
-watch(workspace, async () => {
-  await fetchChannels();
-  subscribeMeetings();
-  subscribeMessages();
-});
+const { channels, createChannel } = useSyncedChannels();
+const { currentMeeting, joinMeeting } = useMeeting();
 </script>
 
 <template>
@@ -81,9 +67,9 @@ watch(workspace, async () => {
         v-for="channel of channels"
         :key="channel.id"
         :channel="channel"
-        :can-join-meeting="!!channel.meeting && channel.meeting.id !== ongoingMeeting?.id"
+        :can-join-meeting="!!channel.meeting && channel.meeting.id !== currentMeeting?.id"
         @join-meeting="joinMeeting(channel)"
-        :open="!!currentChannel && currentChannel.id === channel.id"
+        :open="channel.id === currentChannel?.id"
       />
 
       <div class="w-fit mt-4 mx-auto text-xs text-zinc-500">You have no more messages</div>

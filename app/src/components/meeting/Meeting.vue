@@ -1,80 +1,17 @@
 <script lang="ts" setup>
-import { useWebSockets } from "@/core/websockets";
-import { onMounted, ref } from "vue";
+import { useMeeting } from "@/domain/channels";
 import MeetingControls from "./MeetingControls.vue";
-import { Meeting } from "@/domain/channels/utils/meeting";
-import { useDependency } from "@/core/dependency-injection";
-import { MeetingApi } from "@/domain/channels/services/meeting.api";
 
-const props = defineProps<{
-  meetingId: number;
-}>();
-
-const emit = defineEmits(["meeting-ended", "left-meeting"]);
-
-const sockets = useWebSockets();
-
-const mycamera = ref<MediaStream | null>(null);
-const attendees = ref<any[]>([]);
-const meeting = ref<Meeting | null>(null);
-
-const isCameraOn = ref(true);
-const isMicrophoneOn = ref(true);
-
-const meetingApi = useDependency(MeetingApi);
-
-onMounted(async () => {
-  if (meeting.value) return;
-  const camera = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  mycamera.value = camera;
-  meeting.value = await Meeting.join(sockets.websocket, props.meetingId, camera, {
-    meetingApi,
-    attendeeJoined: (remoteId, camera, user) => {
-      attendees.value.push({ remoteId, camera, user });
-    },
-    attendeeLeft: (remoteId) => {
-      attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId);
-    },
-    ended: () => {
-      removeCameras();
-      emit("meeting-ended");
-    },
-  });
-});
-
-async function leaveMeeting() {
-  removeCameras();
-  meeting.value?.leave();
-  emit("left-meeting");
-}
-
-function endMeeting() {
-  meeting.value?.end();
-}
-
-function removeCameras() {
-  mycamera.value?.getTracks().forEach((track) => track.stop());
-  mycamera.value = null;
-  attendees.value = [];
-}
-
-function stopCamera() {
-  if (!mycamera.value) return;
-  if (isCameraOn.value) {
-    mycamera.value.getVideoTracks()[0].stop();
-    isCameraOn.value = false;
-  } else {
-    navigator.mediaDevices.getUserMedia({
-      audio: true,
-    });
-  }
-}
-
-function stopMicrophone() {
-  if (!mycamera.value) return;
-  mycamera.value.getAudioTracks()[0].stop();
-  isMicrophoneOn.value = false;
-}
+const {
+  mycamera,
+  attendees,
+  isCameraOn,
+  isMicrophoneOn,
+  leaveMeeting,
+  endMeeting,
+  stopCamera,
+  stopMicrophone,
+} = useMeeting();
 </script>
 
 <template>

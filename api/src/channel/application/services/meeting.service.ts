@@ -30,6 +30,17 @@ export class MeetingService {
     return meeting;
   }
 
+  findOngoingMeeting(channelId: number) {
+    return this.meetingRepo.findOne({
+      where: { channelId, ongoing: true },
+      relations: { attendees: true },
+    });
+  }
+
+  save(meeting: Meeting) {
+    return this.meetingRepo.save(meeting);
+  }
+
   async startMeeting(channelId: number) {
     const meeting = await this.meetingRepo.findOneBy({ channelId });
     if (meeting) throw new MeetingOngoingException();

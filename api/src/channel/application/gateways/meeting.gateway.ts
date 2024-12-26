@@ -8,6 +8,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { MeetingService } from '../services/meeting.service';
+import { Meeting } from 'src/channel/domain';
 
 const channelMeetingRoom = (channelId) => `channel:${channelId}:meeting`;
 const meetingRoom = (meetingId) => `meeting:${meetingId}`;
@@ -24,9 +25,12 @@ export class MeetingGateway {
 
   @SubscribeMessage('subscribe-meetings')
   async subscribeMeetings(
-    @MessageBody() { userId, workspaceId }: any,
+    @MessageBody() { workspaceId }: any,
     @ConnectedSocket() socket: Socket,
   ) {
+    const user = (socket.request as any).user;
+    const userId = user?.id;
+
     const channels = await this.channelRepo
       .createQueryBuilder('channel')
       .innerJoin('channel.peers', 'peer')
@@ -40,48 +44,42 @@ export class MeetingGateway {
     }
   }
 
-  @SubscribeMessage('request-meeting')
-  async requestMeeting(
-    @MessageBody() { channelId }: any,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    const meeting = await this.meetingService.startMeeting(channelId);
-    socket
-      .to(channelMeetingRoom(channelId))
-      .emit('incoming-meeting', { meeting, channelId });
-    return meeting;
-  }
-
   @SubscribeMessage('join-meeting')
   async joinMeeting(
-    @MessageBody() { meetingId, remoteId }: any,
+    @MessageBody() { channelId, remoteId }: any,
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
     const userId = user?.id;
 
-    const meeting = await this.meetingService.joinMeeting(
-      meetingId,
-      remoteId,
-      userId,
-    );
+    let meeting = await this.meetingService.findOngoingMeeting(channelId);
+
+    if (meeting) {
+      meeting.addAttendee(remoteId, userId);
+      meeting = await this.meetingService.save(meeting);
+      const meetingId = meeting.id;
+      socket
+        .to(meetingRoom(meetingId))
+        .emit('attendee-joined', { meetingId, channelId, remoteId, user });
+      socket
+        .to(channelMeetingRoom(channelId))
+        .emit('incoming-attendee', { meetingId, channelId, remoteId, user });
+    } else {
+      meeting = Meeting.ongoing(channelId);
+      meeting.addAttendee(remoteId, userId);
+      meeting = await this.meetingService.save(meeting);
+      socket
+        .to(channelMeetingRoom(channelId))
+        .emit('incoming-meeting', { meeting, channelId });
+      socket.emit('incoming-meeting', { meeting, channelId });
+    }
 
     socket.leave(meetingRoom(meeting.id));
     socket.join(meetingRoom(meeting.id));
 
-    socket
-      .to(meetingRoom(meeting.id))
-      .emit('attendee-joined', { meeting, remoteId, user });
-    socket.to(channelMeetingRoom(meeting.channelId)).emit('incoming-attendee', {
-      meetingId,
-      channelId: meeting.channelId,
-      remoteId,
-      user,
-    });
-
     socket.on('disconnect', async () => {
       try {
-        await this.leaveMeeting({ meetingId, remoteId }, socket);
+        await this.leaveMeeting({ meetingId: meeting.id, remoteId }, socket);
       } catch (ex) {
         console.log('WARNING: Exception on socket disconnect', ex);
       }
@@ -109,12 +107,17 @@ export class MeetingGateway {
       socket
         .to(channelMeetingRoom(channelId))
         .emit('leaving-attendee', { meetingId, channelId, remoteId, user });
+      socket.leave(meetingRoom(meetingId));
     } else {
       this.meetingService.endMeeting(meetingId);
       socket
         .to(channelMeetingRoom(channelId))
         .emit('meeting-ended', { meetingId, channelId });
       socket.emit('meeting-ended', { meetingId, channelId });
+      socket
+        .to(meetingRoom(meetingId))
+        .emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
+      socket.emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
       this.server.socketsLeave(meetingRoom(meetingId));
     }
   }
@@ -124,12 +127,16 @@ export class MeetingGateway {
     @MessageBody() { meetingId }: any,
     @ConnectedSocket() socket: Socket,
   ) {
-    const meeting = await this.meetingService.findMeeting(meetingId);
+    const { channelId } = await this.meetingService.findMeeting(meetingId);
     this.meetingService.endMeeting(meetingId);
     socket
-      .to(channelMeetingRoom(meeting.channelId))
-      .emit('meeting-ended', { meetingId, channelId: meeting.channelId });
-    socket.emit('meeting-ended', { meetingId, channelId: meeting.channelId });
+      .to(channelMeetingRoom(channelId))
+      .emit('meeting-ended', { meetingId, channelId: channelId });
+    socket.emit('meeting-ended', { meetingId, channelId: channelId });
+    socket
+      .to(meetingRoom(meetingId))
+      .emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
+    socket.emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
     this.server.socketsLeave(meetingRoom(meetingId));
   }
 }

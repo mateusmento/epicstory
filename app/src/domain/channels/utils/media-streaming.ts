@@ -1,4 +1,3 @@
-import type { User } from "@/domain/auth";
 import Peer, { type MediaConnection } from "peerjs";
 
 export const untilOpen = (peer: Peer) =>
@@ -12,7 +11,7 @@ const getStream = (conn: MediaConnection) =>
 
 export interface MediaStreaming {
   localId: string;
-  connect: (remoteId: string, user: User) => void;
+  connect: (remoteId: string) => void;
   disconnect: (remoteId: string) => void;
   close: () => void;
 }
@@ -20,29 +19,27 @@ export interface MediaStreaming {
 export function createMediaStreaming({
   rtc,
   media,
-  findUser,
   mediaAdded,
 }: {
   rtc: Peer;
   media: MediaStream;
-  findUser: (remoteId: string) => Promise<User>;
-  mediaAdded?: (remoteId: string, peerMedia: MediaStream, user: User) => void;
+  mediaAdded?: (remoteId: string, peerMedia: MediaStream) => void;
 }): MediaStreaming {
   const peers = {} as Record<string, MediaConnection>;
 
   rtc.on("call", async (call) => {
     call.answer(media);
     addPeer(call.peer, call);
-    const [stream, user] = await Promise.all([getStream(call), findUser(call.peer)]);
-    mediaAdded?.(call.peer, stream, user);
+    const stream = await getStream(call);
+    mediaAdded?.(call.peer, stream);
   });
 
-  async function connect(remoteId: string, user: User) {
+  async function connect(remoteId: string) {
     const call = rtc.call(remoteId, media);
     addPeer(remoteId, call);
     call === undefined && console.log("call is undefined");
     const stream = await getStream(call);
-    mediaAdded?.(remoteId, stream, user);
+    mediaAdded?.(remoteId, stream);
   }
 
   function addPeer(remoteId: string, call: MediaConnection) {
