@@ -1,6 +1,7 @@
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -9,12 +10,13 @@ import { Server, Socket } from 'socket.io';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { MeetingService } from '../services/meeting.service';
 import { Meeting } from 'src/channel/domain';
+import { MeetingNotFoundException } from '../exceptions';
 
 const channelMeetingRoom = (channelId) => `channel:${channelId}:meeting`;
 const meetingRoom = (meetingId) => `meeting:${meetingId}`;
 
 @WebSocketGateway()
-export class MeetingGateway {
+export class MeetingGateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -22,6 +24,20 @@ export class MeetingGateway {
     private meetingService: MeetingService,
     private channelRepo: ChannelRepository,
   ) {}
+
+  async handleDisconnect(socket: Socket) {
+    try {
+      if (!socket.data.meetingAttendee) return;
+      const { meetingId, remoteId } = socket.data.meetingAttendee;
+      await this.leaveMeeting({ meetingId, remoteId }, socket);
+    } catch (ex) {
+      if (ex instanceof MeetingNotFoundException) {
+        console.log('WARNING: Leaving a not found meeting');
+      } else {
+        console.log('WARNING: Exception on socket disconnect', ex);
+      }
+    }
+  }
 
   @SubscribeMessage('subscribe-meetings')
   async subscribeMeetings(
@@ -77,13 +93,7 @@ export class MeetingGateway {
     socket.leave(meetingRoom(meeting.id));
     socket.join(meetingRoom(meeting.id));
 
-    socket.on('disconnect', async () => {
-      try {
-        await this.leaveMeeting({ meetingId: meeting.id, remoteId }, socket);
-      } catch (ex) {
-        console.log('WARNING: Exception on socket disconnect', ex);
-      }
-    });
+    socket.data.meetingAttendee = { meetingId: meeting.id, remoteId };
 
     return meeting;
   }
@@ -120,6 +130,8 @@ export class MeetingGateway {
       socket.emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
       this.server.socketsLeave(meetingRoom(meetingId));
     }
+
+    delete socket.data.meetingAttendee;
   }
 
   @SubscribeMessage('end-meeting')
@@ -138,5 +150,7 @@ export class MeetingGateway {
       .emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
     socket.emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
     this.server.socketsLeave(meetingRoom(meetingId));
+
+    delete socket.data.meetingAttendee;
   }
 }
