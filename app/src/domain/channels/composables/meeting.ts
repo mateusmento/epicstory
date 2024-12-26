@@ -78,7 +78,7 @@ const useMeetingStore = defineStore("meeting", () => {
 
     sockets.websocket.on("attendee-left", attendeeLeft);
     sockets.websocket.on("attendee-joined", attendeeJoined);
-    sockets.websocket.once(`meeting:${meeting.id}:ended`, onMeetingEnded);
+    sockets.websocket.once(`current-meeting-ended`, onMeetingEnded);
 
     console.log(sockets.websocket.listeners("attendee-joined"));
 

@@ -126,8 +126,8 @@ export class MeetingGateway implements OnGatewayDisconnect {
       socket.emit('meeting-ended', { meetingId, channelId });
       socket
         .to(meetingRoom(meetingId))
-        .emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
-      socket.emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
+        .emit(`current-meeting-ended`, { meetingId, channelId });
+      socket.emit(`current-meeting-ended`, { meetingId, channelId });
       this.server.socketsLeave(meetingRoom(meetingId));
     }
 
@@ -143,12 +143,12 @@ export class MeetingGateway implements OnGatewayDisconnect {
     this.meetingService.endMeeting(meetingId);
     socket
       .to(channelMeetingRoom(channelId))
-      .emit('meeting-ended', { meetingId, channelId: channelId });
-    socket.emit('meeting-ended', { meetingId, channelId: channelId });
+      .emit('meeting-ended', { meetingId, channelId });
+    socket.emit('meeting-ended', { meetingId, channelId });
     socket
       .to(meetingRoom(meetingId))
-      .emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
-    socket.emit(`meeting:${meetingId}:ended`, { meetingId, channelId });
+      .emit(`current-meeting-ended`, { meetingId, channelId });
+    socket.emit(`current-meeting-ended`, { meetingId, channelId });
     this.server.socketsLeave(meetingRoom(meetingId));
 
     delete socket.data.meetingAttendee;
