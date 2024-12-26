@@ -84,10 +84,9 @@ export class MeetingGateway implements OnGatewayDisconnect {
       meeting = Meeting.ongoing(channelId);
       meeting.addAttendee(remoteId, userId);
       meeting = await this.meetingService.save(meeting);
-      socket
+      this.server
         .to(channelMeetingRoom(channelId))
         .emit('incoming-meeting', { meeting, channelId });
-      socket.emit('incoming-meeting', { meeting, channelId });
     }
 
     socket.leave(meetingRoom(meeting.id));
@@ -120,14 +119,7 @@ export class MeetingGateway implements OnGatewayDisconnect {
       socket.leave(meetingRoom(meetingId));
     } else {
       this.meetingService.endMeeting(meetingId);
-      socket
-        .to(channelMeetingRoom(channelId))
-        .emit('meeting-ended', { meetingId, channelId });
-      socket.emit('meeting-ended', { meetingId, channelId });
-      socket
-        .to(meetingRoom(meetingId))
-        .emit(`current-meeting-ended`, { meetingId, channelId });
-      socket.emit(`current-meeting-ended`, { meetingId, channelId });
+      this.emitMeetingEnded(channelId, meetingId, this.server);
       this.server.socketsLeave(meetingRoom(meetingId));
     }
 
@@ -141,16 +133,18 @@ export class MeetingGateway implements OnGatewayDisconnect {
   ) {
     const { channelId } = await this.meetingService.findMeeting(meetingId);
     this.meetingService.endMeeting(meetingId);
-    socket
-      .to(channelMeetingRoom(channelId))
-      .emit('meeting-ended', { meetingId, channelId });
-    socket.emit('meeting-ended', { meetingId, channelId });
-    socket
-      .to(meetingRoom(meetingId))
-      .emit(`current-meeting-ended`, { meetingId, channelId });
-    socket.emit(`current-meeting-ended`, { meetingId, channelId });
+    this.emitMeetingEnded(channelId, meetingId, this.server);
     this.server.socketsLeave(meetingRoom(meetingId));
-
     delete socket.data.meetingAttendee;
+  }
+
+  emitMeetingEnded(
+    channelId: number,
+    meetingId: number,
+    socket: Socket | Server,
+  ) {
+    const data = { meetingId, channelId };
+    socket.to(channelMeetingRoom(channelId)).emit('meeting-ended', data);
+    socket.to(meetingRoom(meetingId)).emit(`current-meeting-ended`, data);
   }
 }
