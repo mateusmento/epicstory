@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import { RouterView } from "vue-router";
+import { UnauthorizedException } from "@/core/axios";
+import { onErrorCaptured } from "vue";
+import { RouterView, useRouter } from "vue-router";
+
+const router = useRouter();
+
+onErrorCaptured((err) => {
+  if (err instanceof UnauthorizedException) {
+    router.push({ name: "signin" });
+  }
+});
 </script>
 
 <template>

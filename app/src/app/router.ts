@@ -1,7 +1,7 @@
+import { UnauthorizedException } from "@/core/axios";
 import { useDependency } from "@/core/dependency-injection";
 import { useAuth } from "@/domain/auth";
 import { AuthService } from "@/domain/auth/auth.service";
-import { isAxiosError } from "axios";
 import {
   createRouter,
   createWebHistory,
@@ -84,7 +84,7 @@ const authenticatedRoutes = defineRoutes({
       token.value = access.token;
       next();
     } catch (ex) {
-      if (isAxiosError(ex) && ex.response?.status === 401) {
+      if (ex instanceof UnauthorizedException) {
         next({ name: "signin" });
       } else {
         next();
