@@ -3,14 +3,18 @@ ARG NGINX_IMAGE_VERSION
 
 FROM node:${NODE_IMAGE_VERSION} AS build
 
+ENV NPM_CONFIG_PREFIX=/home/node/.node-global
+ENV PATH=$PATH:$NPM_CONFIG_PREFIX/bin
+
 WORKDIR /home/node/app
 RUN chown node:node .
 USER node
-COPY --chown=node:node package*.json .
-RUN npm ci
+RUN npm install -g pnpm
+COPY --chown=node:node package*.json pnpm-lock.yaml ./
+RUN pnpm install
 COPY --chown=node:node . .
 ENV NODE_ENV=production
-RUN npm run build
+RUN pnpm build
 
 FROM nginx:${NGINX_IMAGE_VERSION} AS artifact
 
