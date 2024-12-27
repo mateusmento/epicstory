@@ -1,4 +1,4 @@
-name: Publish Epicstory
+name: Publish
 on:
   workflow_dispatch:
     inputs:
