@@ -14,7 +14,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Exclude({ toPlainOnly: true })
   password: string;
 
@@ -22,6 +22,10 @@ export class User {
   picture?: string;
 
   static create(data: { name: string; email: string; password: string }) {
+    return create(User, data);
+  }
+
+  static fromOAuth(data: { name: string; email: string; picture?: string }) {
     return create(User, data);
   }
 
