@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": ".github",
+      "path": ".github",
+    },
+    {
+      "name": ".husky",
+      "path": ".husky",
+    },
+    {
+      "name": "api",
+      "path": "api",
+    },
+    {
+      "name": "app",
+      "path": "app",
+    },
+    {
+      "name": "deploy",
+      "path": "deploy",
+    },
+    {
+      "path": ".",
+    },
+  ],
+}

@@ -1,0 +1,4 @@
+#!/bin/bash
+cd app
+# nvm use
+npm run test:unit
