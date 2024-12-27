@@ -36,7 +36,7 @@ class S3StorageEngine implements StorageEngine {
     const upload = new Upload({
       client: this.s3,
       params: {
-        Bucket: 'epicstory-nk2jb3kj2',
+        Bucket: process.env.AWS_BUCKET,
         Key: file.originalname,
         ContentType: file.mimetype,
         Body: finalImage,
@@ -59,7 +59,7 @@ class S3StorageEngine implements StorageEngine {
     try {
       await this.s3.send(
         new DeleteObjectCommand({
-          Bucket: 'mateusmentodemo',
+          Bucket: process.env.AWS_BUCKET,
           Key: file.originalname,
         }),
       );

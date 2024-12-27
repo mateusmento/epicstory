@@ -83,6 +83,7 @@ module "api" {
     AWS_SECRET_ACCESS_KEY   = var.AWS_SECRET_ACCESS_KEY,
     AWS_REGION              = var.AWS_REGION,
     AWS_REGISTRY            = var.AWS_REGISTRY,
+    AWS_BUCKET              = var.AWS_BUCKET,
     SERVICE_NAME            = var.SERVICE_NAME,
     SERVICE_VERSION         = var.SERVICE_VERSION,
     LB_NAME_TAG             = var.LB_NAME_TAG,

@@ -44,6 +44,7 @@ jobs:
             -var AWS_SECRET_ACCESS_KEY="${{secrets.AWS_SECRET_ACCESS_KEY}}" \
             -var AWS_REGISTRY="${{secrets.AWS_REGISTRY}}" \
             -var AWS_REGION="${{secrets.AWS_REGION}}" \
+            -var AWS_BUCKET="${{secrets.AWS_BUCKET}}" \
             -var GOOGLE_CLIENT_ID="${{secrets.GOOGLE_CLIENT_ID}}" \
             -var GOOGLE_CLIENT_SECRET="${{secrets.GOOGLE_CLIENT_SECRET}}" \
             -var GOOGLE_CALLBACK_URI="${{secrets.GOOGLE_CALLBACK_URI}}" \

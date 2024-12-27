@@ -69,6 +69,7 @@ echo "redirect url $APP_LB_URL/${GOOGLE_APP_REDIRECT_URL}"
 echo ""
 
 docker run -it -d --rm -p 80:80 \
+  -e AWS_BUCKET="${AWS_BUCKET}" \
   -e GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}" \
   -e GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET}" \
   -e GOOGLE_CALLBACK_URI="$APP_LB_URL/${GOOGLE_CALLBACK_URI}" \

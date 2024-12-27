@@ -14,6 +14,10 @@ variable "AWS_REGISTRY" {
   type = string
 }
 
+variable "AWS_BUCKET" {
+  type = string
+}
+
 variable "SERVICE_NAME" {
   type = string
 }
