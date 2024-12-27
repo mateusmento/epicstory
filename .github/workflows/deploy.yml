@@ -1,0 +1,65 @@
+name: Deploy Epicstory
+on:
+  workflow_dispatch:
+    inputs:
+      deployment:
+        type: choice
+        required: true
+        options:
+          - app
+          - api
+          - load-balancer
+          - network
+      version:
+        required: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chekout repository
+        uses: actions/checkout@v4
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Init terraform backend
+        run: |
+          cd deploy/${{ inputs.deployment }}
+          terraform init
+      - name: Deploy terraform plan (${{ inputs.deployment }})
+        if: inputs.deployment == 'network' || inputs.deployment == 'load-balancer'
+        run: |
+          cd deploy/${{ inputs.deployment }}
+          terraform apply --auto-approve
+      - name: Deploy terraform plan (${{ inputs.deployment }}:${{ inputs.version }})
+        if: inputs.deployment == 'api'
+        run: |
+          cd deploy/${{ inputs.deployment }}
+          terraform apply --auto-approve \
+            -var AWS_ACCESS_KEY_ID="${{secrets.AWS_ACCESS_KEY_ID}}" \
+            -var AWS_SECRET_ACCESS_KEY="${{secrets.AWS_SECRET_ACCESS_KEY}}" \
+            -var AWS_REGISTRY="${{secrets.AWS_REGISTRY}}" \
+            -var AWS_REGION="${{secrets.AWS_REGION}}" \
+            -var GOOGLE_CLIENT_ID="${{secrets.GOOGLE_CLIENT_ID}}" \
+            -var GOOGLE_CLIENT_SECRET="${{secrets.GOOGLE_CLIENT_SECRET}}" \
+            -var GOOGLE_CALLBACK_URI="${{secrets.GOOGLE_CALLBACK_URI}}" \
+            -var GOOGLE_APP_REDIRECT_URL="${{secrets.GOOGLE_APP_REDIRECT_URL}}" \
+            -var SERVICE_NAME="epicstory-${{ inputs.deployment }}" \
+            -var SERVICE_VERSION="${{ inputs.version }}" \
+            -var LB_NAME_TAG="epicstory-main-lb"
+      - name: Deploy terraform plan (${{ inputs.deployment }}:${{ inputs.version }})
+        if: inputs.deployment == 'app'
+        run: |
+          cd deploy/${{ inputs.deployment }}
+          terraform apply --auto-approve \
+            -var AWS_ACCESS_KEY_ID="${{secrets.AWS_ACCESS_KEY_ID}}" \
+            -var AWS_SECRET_ACCESS_KEY="${{secrets.AWS_SECRET_ACCESS_KEY}}" \
+            -var AWS_REGISTRY="${{secrets.AWS_REGISTRY}}" \
+            -var AWS_REGION="${{secrets.AWS_REGION}}" \
+            -var SERVICE_NAME="epicstory-${{ inputs.deployment }}" \
+            -var SERVICE_VERSION="${{ inputs.version }}" \
+            -var LB_NAME_TAG="epicstory-main-lb"

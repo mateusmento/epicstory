@@ -1,0 +1,33 @@
+name: Publish Epicstory
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        type: choice
+        required: true
+        options:
+          - app
+          - api
+      version:
+        required: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chekout repository
+        uses: actions/checkout@v4
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Login Docker to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registries: ${{ secrets.AWS_REGISTRY }}
+      - name: Build and publish docker image for ${{ inputs.service }}:${{ inputs.version }}
+        run: |
+          cd deploy
+          ./publish.sh ${{ inputs.service }} ${{ inputs.version }} ${{ secrets.AWS_REGION }}
