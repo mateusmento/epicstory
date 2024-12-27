@@ -10,7 +10,7 @@ import { initializeTransactionalContext } from 'typeorm-transactional';
 import { AppModule } from './app.module';
 import { AppConfig } from './core/app.config';
 import { createSchemas } from './core/typeorm';
-import { SocketIoAdapter } from './core/websockets';
+import { createRedisAdapter, SocketIoAdapter } from './core/websockets';
 
 async function bootstrap() {
   process.env.TZ = 'America/Sao_Paulo';
@@ -50,7 +50,7 @@ async function bootstrap() {
         origin: config.CORS_ORIGINS,
         credentials: true,
       },
-      // adapter: await createRedisAdapter({ url: config.REDIS_URL }),
+      adapter: await createRedisAdapter({ url: config.REDIS_URL }),
     }),
   );
 
@@ -69,7 +69,7 @@ function setupSwagger(app: INestApplication) {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('docs', app, document);
 }
 
 bootstrap();
