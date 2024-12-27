@@ -75,13 +75,10 @@ const authenticatedRoutes = defineRoutes({
     },
   ],
   beforeEnter: async (to, from, next) => {
-    const authService = useDependency(AuthService);
-    const { user, token } = useAuth();
+    const { authenticate } = useAuth();
 
     try {
-      const access = await authService.authenticate();
-      user.value = access.user;
-      token.value = access.token;
+      await authenticate();
       next();
     } catch (ex) {
       if (ex instanceof UnauthorizedException) {
