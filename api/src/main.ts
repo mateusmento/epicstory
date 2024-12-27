@@ -54,7 +54,7 @@ async function bootstrap() {
     }),
   );
 
-  setupSwagger(app);
+  if (process.env.NODE_ENV !== 'production') setupSwagger(app);
 
   app.enableShutdownHooks();
   await app.listen(config.API_PORT);
