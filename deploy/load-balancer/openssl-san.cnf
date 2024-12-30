@@ -1,0 +1,19 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+C = US
+ST = YourState
+L = YourCity
+O = YourOrganization
+CN = epicstory-main-lb-623293454.sa-east-1.elb.amazonaws.com
+
+[v3_req]
+keyUsage = keyEncipherment, dataEncipherment, digitalSignature
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = epicstory-main-lb-623293454.sa-east-1.elb.amazonaws.com

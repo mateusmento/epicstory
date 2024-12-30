@@ -15,7 +15,7 @@ const config = selectConfig(
   AppConfig,
 );
 
-export async function createSchemas() {
+export async function createPostgresSchemas() {
   const { host, port, database, username, password } =
     typeorm.postgres()(config);
 

@@ -55,7 +55,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.epicstory.rule=PathPrefix(`/`)
-      - traefik.http.services.epicstory.loadBalancer.server.port=${APP_PORT}
+      - traefik.http.services.epicstory.loadBalancer.server.port=${API_PORT}
       - traefik.http.services.epicstory.loadBalancer.sticky.cookie=true
       - traefik.http.services.epicstory.loadBalancer.sticky.cookie.name=server_id
       - traefik.http.services.epicstory.loadBalancer.sticky.cookie.httpOnly=true

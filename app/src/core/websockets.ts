@@ -1,14 +1,12 @@
-import { useAuth } from "@/domain/auth";
+import { config } from "@/config";
 import { defineStore } from "pinia";
 import { type Socket, io } from "socket.io-client";
 
 const useWebSocketsStore = defineStore<"websockets", { websocket: Socket }>("websockets", () => {
-  const auth = useAuth();
-  const websocket = io("http://localhost:3000", {
+  const websocket = io(config.WEBSOCKET_URI, {
+    path: "/api/socket.io",
+    transports: ["websocket"],
     withCredentials: true,
-    extraHeaders: {
-      Authorization: auth.token.value.replace("Bearer ", ""),
-    },
   }) as Socket;
   return { websocket };
 });

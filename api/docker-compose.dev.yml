@@ -1,0 +1,38 @@
+services:
+  epicstory-postgres:
+    image: postgres:14
+    container_name: epicstory-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - epicstory-postgres:/var/lib/postgresql/data
+    env_file:
+      - .env
+  epicstory-pgadmin:
+    image: dpage/pgadmin4
+    container_name: epicstory-pgadmin
+    restart: always
+    ports:
+      - 3300:3300
+    volumes:
+      - epicstory-pgadmin:/var/lib/pgadmin
+    env_file:
+      - .env
+  epicstory-peerjs:
+    image: peerjs/peerjs-server
+    command: peerjs -p 3001
+    restart: always
+    ports:
+      - 3001:3001
+  epicstory-redis:
+    image: redis:7
+    restart: always
+    ports:
+      - 6379:6379
+
+volumes:
+  epicstory-postgres:
+    name: epicstory-postgres
+  epicstory-pgadmin:
+    name: epicstory-pgadmin

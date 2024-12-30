@@ -13,6 +13,7 @@ import { defineStore, storeToRefs } from "pinia";
 import { ref, shallowRef } from "vue";
 import type { IChannel, IMeeting } from "../types";
 import { useChannel } from "./channel";
+import { config } from "@/config";
 
 export type MeetingStreamingAttendee = {
   remoteId: string;
@@ -54,7 +55,9 @@ const useMeetingStore = defineStore("meeting", () => {
     const camera = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     mycamera.value = camera;
 
-    const rtc = await untilOpen(new Peer({ host: "localhost", port: 3001 }));
+    const rtc = await untilOpen(
+      new Peer({ host: config.PEERJS_SERVER_HOST, port: config.PEERJS_SERVER_PORT }),
+    );
 
     streaming.value = createMediaStreaming({
       rtc,

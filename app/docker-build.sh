@@ -6,6 +6,9 @@ service_version=$2
 NODE_VERSION=$(cat .nvmrc | sed 's/^v//')
 NGINX_VERSION=1.27.0
 
+echo NODE_VERSION=$NODE_VERSION
+echo NGINX_VERSION=$NGINX_VERSION
+
 docker build \
     -t $service_name:$service_version \
     --build-arg NODE_IMAGE_VERSION=$NODE_VERSION-bullseye-slim \
