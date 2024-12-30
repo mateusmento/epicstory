@@ -45,17 +45,24 @@ data "aws_lb" "main" {
   name = "epicstory-main-lb"
 }
 
-data "aws_lb_listener" "main" {
+data "aws_lb_listener" "http" {
   load_balancer_arn = data.aws_lb.main.arn
   port              = 80
-  tags = {
-    Name = "epicstory-lb-listener"
-  }
+}
+
+data "aws_lb_listener" "https" {
+  load_balancer_arn = data.aws_lb.main.arn
+  port              = 443
 }
 
 resource "aws_lb_listener_rule" "app" {
-  listener_arn = data.aws_lb_listener.main.arn
-  priority     = 2
+  count = 2
+  listener_arn = [
+    data.aws_lb_listener.https.arn,
+    data.aws_lb_listener.http.arn
+  ][count.index]
+
+  priority = 2
   condition {
     path_pattern {
       values = ["/*"]
@@ -66,7 +73,30 @@ resource "aws_lb_listener_rule" "app" {
     target_group_arn = module.app.target_group.arn
   }
   tags = {
-    Name = "epicstory-app"
+    Name = "epicstory-app-${["https", "http"][count.index]}"
+  }
+}
+
+# generate keys with:
+#   ssh-keygen -t rsa -f epicstory
+
+# resource "aws_key_pair" "key_pair" {
+#   key_name = "epicstory"
+#   public_key = file("../epicstory.pub")
+# }
+
+data "aws_key_pair" "key_pair" {
+  key_name = "epicstory"
+}
+
+data "aws_instance" "dependencies" {
+  instance_tags = {
+    Name = "epicstory-dependencies"
+  }
+
+  filter {
+    name   = "instance-state-name"
+    values = ["running"]
   }
 }
 
@@ -86,7 +116,7 @@ module "app" {
     SERVICE_VERSION       = var.SERVICE_VERSION,
     LB_NAME_TAG           = var.LB_NAME_TAG,
   })
-  key_name = "ec2-key"
+  key_name = data.aws_key_pair.key_pair.key_name
   name_tag = "epicstory-app"
 }
 

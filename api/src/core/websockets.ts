@@ -4,6 +4,7 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { RedisClientOptions, createClient } from 'redis';
 import { ServerOptions } from 'socket.io';
+import * as cookie from 'cookie';
 
 export class SocketIoAdapter extends IoAdapter {
   constructor(
@@ -18,9 +19,8 @@ export class SocketIoAdapter extends IoAdapter {
 
     async function allowRequest(req, decide) {
       try {
-        const user = await jwtService.verifyAsync(
-          req.headers.authorization.replace('Bearer ', ''),
-        );
+        const { token = '' } = cookie.parse(req.headers.cookie);
+        const user = await jwtService.verifyAsync(token.replace('Bearer ', ''));
         (req as any).user = user;
         decide('', true);
       } catch (ex) {

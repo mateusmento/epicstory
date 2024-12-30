@@ -12,8 +12,11 @@ import { createDependenciesPlugin } from "@/core/dependency-injection";
 
 import { addIcons } from "oh-vue-icons";
 import * as icons from "./icons";
+import { loadConfig } from "@/config";
 
 async function main() {
+  await loadConfig();
+
   const app = createApp(App);
 
   const dependencies = await createDependencies();

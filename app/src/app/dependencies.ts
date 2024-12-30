@@ -7,9 +7,9 @@ import { ProjectService } from "@/domain/project";
 import { TeamApi } from "@/domain/team/team.api";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import { ChannelService } from "@/domain/channels";
+import { config } from "@/config";
 
 export async function createDependencies() {
-  const { default: config } = await import("./config");
   const axios = createAxios({ baseURL: config.API_URL });
   const container = tsyringe.createChildContainer();
   container.registerInstance(Axios, axios);

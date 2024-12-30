@@ -7,6 +7,8 @@ ENV NPM_CONFIG_PREFIX=/home/node/.node-global
 ENV PATH=$PATH:$NPM_CONFIG_PREFIX/bin
 
 WORKDIR /home/node/app
+RUN echo NODE_VERSION=$NODE_IMAGE_VERSION
+RUN echo NGINX_VERSION=$NGINX_IMAGE_VERSION
 RUN chown node:node .
 USER node
 RUN npm install -g pnpm
@@ -14,7 +16,7 @@ COPY --chown=node:node package*.json pnpm-lock.yaml ./
 RUN pnpm install
 COPY --chown=node:node . .
 ENV NODE_ENV=production
-RUN pnpm build
+RUN pnpm build-only
 
 FROM nginx:${NGINX_IMAGE_VERSION} AS artifact
 
