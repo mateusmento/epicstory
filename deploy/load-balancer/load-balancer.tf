@@ -71,6 +71,20 @@ resource "aws_security_group" "lb-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    protocol    = "tcp"
+    from_port   = 443
+    to_port     = 443
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = 3001
+    to_port     = 3001
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     protocol    = -1
     from_port   = 0
@@ -83,7 +97,7 @@ resource "aws_security_group" "lb-sg" {
   }
 }
 
-resource "aws_lb_listener" "main" {
+resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
@@ -100,4 +114,30 @@ resource "aws_lb_listener" "main" {
   tags = {
     Name = "epicstory-lb-listener"
   }
+}
+
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.self_signed.arn
+
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      status_code  = 200
+      content_type = "text/plain"
+      message_body = "Hello, world"
+    }
+  }
+
+  tags = {
+    Name = "epicstory-lb-listener"
+  }
+}
+
+resource "aws_acm_certificate" "self_signed" {
+  private_key      = file("./epicstory.key") # Path to private key
+  certificate_body = file("./epicstory.crt") # Path to certificate
 }

@@ -47,7 +47,7 @@ aws elbv2 wait load-balancer-available --load-balancer-arns "$LB_ARN"
 # Querying load balancer public dns
 echo "Querying load balancer public dns"
 
-API_HOSTNAME=$(
+LB_DOMAIN=$(
   aws elbv2 describe-load-balancers \
   --load-balancer-arns "$LB_ARN" \
   --query "LoadBalancers[0].DNSName" \
@@ -55,12 +55,28 @@ API_HOSTNAME=$(
   | tr -d '\n'
 )
 
-API_URL="http://$API_HOSTNAME"
+API_URL="https://$LB_DOMAIN"
 
+AWS_REGISTRY=$(aws sts get-caller-identity --query "Account" --output text | tr -d '\n')
 IMAGE_NAME=${AWS_REGISTRY}.dkr.ecr.${AWS_REGION}.amazonaws.com/${SERVICE_NAME}:${SERVICE_VERSION}
+
+# Login AWS ECR
+echo "Login AWS ECR"
+aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin $IMAGE_NAME
 
 # Run application
 echo "Run application"
-aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin $IMAGE_NAME
 
-docker run -it -d --rm -p 80:80 -e API_URL=$API_URL/api $IMAGE_NAME
+echo docker run -it -d --rm -p 80:80 \
+  -e "API_URL=$API_URL/api" \
+  -e "PEERJS_SERVER_HOST=$API_URL" \
+  -e "PEERJS_SERVER_PORT=3001" \
+  -e "WEBSOCKET_URI=/" \
+  $IMAGE_NAME
+
+docker run -it -d --rm -p 80:80 \
+  -e "API_URL=$API_URL/api" \
+  -e "PEERJS_SERVER_HOST=$LB_DOMAIN" \
+  -e "PEERJS_SERVER_PORT=3001" \
+  -e "WEBSOCKET_URI=/" \
+  $IMAGE_NAME

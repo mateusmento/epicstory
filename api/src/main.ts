@@ -9,14 +9,14 @@ import * as cookieParser from 'cookie-parser';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { AppModule } from './app.module';
 import { AppConfig } from './core/app.config';
-import { createSchemas } from './core/typeorm';
 import { createRedisAdapter, SocketIoAdapter } from './core/websockets';
+import { createPostgresSchemas } from './core/typeorm';
 
 async function bootstrap() {
   process.env.TZ = 'America/Sao_Paulo';
   initializeTransactionalContext();
 
-  createSchemas();
+  createPostgresSchemas();
 
   const app = await NestFactory.create(AppModule);
 
@@ -46,8 +46,10 @@ async function bootstrap() {
 
   app.useWebSocketAdapter(
     new SocketIoAdapter(app, {
+      path: '/api/socket.io',
+      transports: ['websocket'],
       cors: {
-        origin: config.CORS_ORIGINS,
+        origin: '*',
         credentials: true,
       },
       adapter: await createRedisAdapter({ url: config.REDIS_URL }),

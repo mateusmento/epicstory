@@ -7,6 +7,9 @@ export class AppConfig {
   API_PORT: number = process.env.NODE_ENV === 'production' ? 80 : 3000;
 
   @IsNotEmpty()
+  APP_URL: string;
+
+  @IsNotEmpty()
   @Transform(({ value }) => value.split(',').map((v) => v.trim()))
   CORS_ORIGINS: string[] =
     process.env.NODE_ENV === 'production'

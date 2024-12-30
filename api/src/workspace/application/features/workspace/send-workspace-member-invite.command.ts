@@ -82,7 +82,7 @@ export class SendWorkspaceMemberInviteCommand
         to: email,
         from: this.config.DEFAULT_SENDER_EMAIL_ADDRESS,
         subject: `${issuer.name} invites you to a workspace in Epicstory`,
-        html: `<a href="http://localhost:8080/workspace-member-invite/${invite.id}" target="_blank">Accept workspace invite</a>`,
+        html: `<a href="${this.config.APP_URL}/workspace-member-invite/${invite.id}" target="_blank">Accept workspace invite</a>`,
       });
 
       console.log(result);
