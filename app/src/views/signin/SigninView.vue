@@ -124,7 +124,7 @@ async function signin(data: SigninRequest) {
             data-testid="signup-with-google"
           >
             <IconGoogle class="h-8" />
-            Sign in with Google
+            Continue with Google
           </Button>
         </Form>
       </section>
