@@ -9,5 +9,5 @@ export function createIssue(name: string) {
 
 export function expectIssueCreated(name: string) {
   issueList().contains(name);
-  issueNameInput().should('have.value', '');
+  issueNameInput().should("have.value", "");
 }

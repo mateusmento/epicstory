@@ -1,9 +1,7 @@
-import { setupWorker } from 'msw/browser';
-import type { RequestHandler } from 'msw';
+import { setupWorker } from "msw/browser";
+import type { RequestHandler } from "msw";
 
-export function enableMocking(
-  mocks: (() => RequestHandler)[] | { [key: string]: () => RequestHandler },
-) {
+export function enableMocking(mocks: (() => RequestHandler)[] | { [key: string]: () => RequestHandler }) {
   if (!Array.isArray(mocks)) {
     mocks = Object.values(mocks);
   }

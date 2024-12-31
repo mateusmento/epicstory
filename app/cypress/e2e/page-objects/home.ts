@@ -9,5 +9,5 @@ export function createWorkspace(name: string) {
 
 export function expectWorkspaceCreated(name: string) {
   workspaceList().contains(name);
-  workspaceNameInput().should('have.value', '');
+  workspaceNameInput().should("have.value", "");
 }

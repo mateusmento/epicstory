@@ -9,5 +9,5 @@ export function createProject(name: string) {
 
 export function expectProjectCreated(name: string) {
   projectList().contains(name);
-  projectNameInput().should('have.value', '');
+  projectNameInput().should("have.value", "");
 }
