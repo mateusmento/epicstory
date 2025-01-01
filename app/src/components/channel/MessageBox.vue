@@ -20,14 +20,14 @@ const styles = {
     [
       "group",
       "flex:cols-auto flex:center-y",
-      "px-3 py-1 border border-[#E4E4E4]",
+      "w-fit min-w-40 max-w-[35rem] px-3 py-1 border border-[#E4E4E4]",
       "first:rounded-t-xl last:rounded-b-xl rounded-lg",
       "shadow-sm text-[15px] font-lato",
     ].join(" "),
     {
       variants: {
         sender: {
-          me: "first:rounded-tr-none bg-[#3A66FF] text-zinc-50 border-none shadow-none",
+          me: "self-end first:rounded-tr-none bg-[#3A66FF] text-zinc-50 border-none shadow-none",
           someoneElse: "first:rounded-tl-none",
         },
       },
