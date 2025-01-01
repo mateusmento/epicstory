@@ -37,4 +37,12 @@ export {
   MdSignalcellularaltRound,
   BiExclamationSquareFill,
   IoClose,
+  BiArrowDownShort,
+  BiArrowUpShort,
+  BiArrowDown,
+  BiArrowUp,
+  HiArrowDown,
+  HiArrowUp,
+  HiArrowSmDown,
+  HiArrowSmUp,
 } from "oh-vue-icons/icons";

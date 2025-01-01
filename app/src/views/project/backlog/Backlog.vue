@@ -15,6 +15,7 @@ import { debounce } from "lodash";
 import { onMounted, reactive, ref, watch } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
+import BacklogHeadCell from "./BacklogHeadCell.vue";
 
 const props = defineProps<{ projectId: string }>();
 
@@ -29,15 +30,16 @@ const {
 } = useBacklog();
 
 const orderBy = useStorage("backlog.orderBy", "manual");
-const order = useStorage("backlog.order", "asc");
+const order = useStorage<"asc" | "desc">("backlog.order", "asc");
 
 function toggleOrder(column: string) {
   orderBy.value = column;
   order.value = order.value === "asc" ? "desc" : "asc";
 }
 
-function resetOrderBy() {
+function resetOrder() {
   orderBy.value = "manual";
+  order.value = "asc";
 }
 
 const onMoveBacklogItem = debounce(moveBacklogItem, 500, { leading: false });
@@ -162,37 +164,37 @@ function issueStatusColor(status: string) {
       class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0"
     >
       <div class="grid grid-cols-subgrid col-span-7 gap-x-6">
-        <div
-          class="text-sm text-zinc-500 select-none cursor-pointer flex:cols-md flex:center-y"
+        <BacklogHeadCell
+          label="Status"
+          :show="orderBy === 'status'"
+          :order="order"
           @click="toggleOrder('status')"
-        >
-          Status
-          <Icon :class="{ 'opacity-0': orderBy !== 'status' }" name="io-close" @click.stop="resetOrderBy" />
-        </div>
-        <div
-          class="text-sm text-zinc-500 select-none cursor-pointer flex:cols-md flex:center-y"
+          @reset="resetOrder"
+        />
+        <BacklogHeadCell
+          label="Title"
+          :show="orderBy === 'title'"
+          :order="order"
           @click="toggleOrder('title')"
-        >
-          Title
-          <Icon :class="{ 'opacity-0': orderBy !== 'title' }" name="io-close" @click.stop="resetOrderBy" />
-        </div>
-        <div
-          class="text-sm text-zinc-500 select-none cursor-pointer flex:cols-md flex:center-y"
+          @reset="resetOrder"
+        />
+        <BacklogHeadCell
+          label="Priority"
+          :show="orderBy === 'priority'"
+          :order="order"
           @click="toggleOrder('priority')"
-        >
-          Priority
-          <Icon :class="{ 'opacity-0': orderBy !== 'priority' }" name="io-close" @click.stop="resetOrderBy" />
-        </div>
+          @reset="resetOrder"
+        />
         <div class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer flex:cols-md flex:center-y">
           Assignees
         </div>
-        <div
-          class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer flex:cols-md flex:center-y"
+        <BacklogHeadCell
+          label="Due Date"
+          :show="orderBy === 'dueDate'"
+          :order="order"
           @click="toggleOrder('dueDate')"
-        >
-          Due date
-          <Icon :class="{ 'opacity-0': orderBy !== 'dueDate' }" name="io-close" @click.stop="resetOrderBy" />
-        </div>
+          @reset="resetOrder"
+        />
       </div>
       <div
         class="grid grid-cols-subgrid col-span-7 pr-2 overflow-y-auto overflow-x-hidden"
