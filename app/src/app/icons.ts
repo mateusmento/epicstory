@@ -36,4 +36,5 @@ export {
   FaUserPlus,
   MdSignalcellularaltRound,
   BiExclamationSquareFill,
+  IoClose,
 } from "oh-vue-icons/icons";

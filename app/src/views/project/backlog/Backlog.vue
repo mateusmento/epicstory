@@ -37,6 +37,10 @@ function toggleOrder(column: string) {
   order.value = order.value === "asc" ? "desc" : "asc";
 }
 
+function resetOrderBy() {
+  orderBy.value = "manual";
+}
+
 const onMoveBacklogItem = debounce(moveBacklogItem, 500, { leading: false });
 
 const itemsContainer = ref<HTMLElement>();
@@ -152,21 +156,36 @@ function issueStatusColor(status: string) {
       class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0"
     >
       <div class="grid grid-cols-subgrid col-span-7 gap-x-6">
-        <div class="text-sm text-zinc-500 select-none cursor-pointer" @click="toggleOrder('status')">
-          Status
-        </div>
-        <div class="text-sm text-zinc-500 select-none cursor-pointer" @click="toggleOrder('title')">
-          Title
-        </div>
-        <div class="text-sm text-zinc-500 select-none cursor-pointer" @click="toggleOrder('priority')">
-          Priority
-        </div>
-        <div class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer">Assignees</div>
         <div
-          class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer"
+          class="text-sm text-zinc-500 select-none cursor-pointer flex:cols-md flex:center-y"
+          @click="toggleOrder('status')"
+        >
+          Status
+          <Icon :class="{ 'opacity-0': orderBy !== 'status' }" name="io-close" @click.stop="resetOrderBy" />
+        </div>
+        <div
+          class="text-sm text-zinc-500 select-none cursor-pointer flex:cols-md flex:center-y"
+          @click="toggleOrder('title')"
+        >
+          Title
+          <Icon :class="{ 'opacity-0': orderBy !== 'title' }" name="io-close" @click.stop="resetOrderBy" />
+        </div>
+        <div
+          class="text-sm text-zinc-500 select-none cursor-pointer flex:cols-md flex:center-y"
+          @click="toggleOrder('priority')"
+        >
+          Priority
+          <Icon :class="{ 'opacity-0': orderBy !== 'priority' }" name="io-close" @click.stop="resetOrderBy" />
+        </div>
+        <div class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer flex:cols-md flex:center-y">
+          Assignees
+        </div>
+        <div
+          class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer flex:cols-md flex:center-y"
           @click="toggleOrder('dueDate')"
         >
           Due date
+          <Icon :class="{ 'opacity-0': orderBy !== 'dueDate' }" name="io-close" @click.stop="resetOrderBy" />
         </div>
       </div>
       <div
