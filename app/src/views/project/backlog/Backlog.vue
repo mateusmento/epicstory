@@ -2,7 +2,6 @@
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Combobox, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/design-system/ui/select";
 import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
@@ -45,10 +44,11 @@ const onMoveBacklogItem = debounce(moveBacklogItem, 500, { leading: false });
 
 const itemsContainer = ref<HTMLElement>();
 
-onMounted(() => {
+function setupDragAndDrop() {
   dragAndDrop({
     parent: itemsContainer,
     values: backlogItems,
+    disabled: orderBy.value !== "manual",
     async onSort({ draggedNode, position, values }) {
       const { id } = draggedNode.data.value as any;
       const { id: insertedAfterOfId } = (values[position - 1] as any) ?? {};
@@ -70,7 +70,13 @@ onMounted(() => {
       );
     },
   });
+}
+
+onMounted(() => {
+  setupDragAndDrop();
 });
+
+watch(orderBy, setupDragAndDrop);
 
 const projectApi = useDependency(ProjectService);
 
