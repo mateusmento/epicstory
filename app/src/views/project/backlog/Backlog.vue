@@ -32,7 +32,8 @@ const {
 const orderBy = useStorage("backlog.orderBy", "manual");
 const order = useStorage("backlog.order", "asc");
 
-function toggleOrder() {
+function toggleOrder(column: string) {
+  orderBy.value = column;
   order.value = order.value === "asc" ? "desc" : "asc";
 }
 
@@ -147,36 +148,26 @@ function issueStatusColor(status: string) {
 
 <template>
   <div class="flex:rows-xl m-auto py-8 px-12 w-full h-full">
-    <div class="flex:cols-auto">
-      <h2 class="text-lg font-semibold">Issues</h2>
-      <Select v-model="orderBy">
-        <SelectTrigger class="w-36">
-          <SelectValue placeholder="Select a fruit" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="priority">Priority</SelectItem>
-          <SelectItem value="createdAt">Create date</SelectItem>
-          <SelectItem value="manual">Manual</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-
     <div
       class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0"
     >
       <div class="grid grid-cols-subgrid col-span-7 gap-x-6">
-        <div>Status</div>
-        <div>Title</div>
-        <div
-          @click="
-            // orderBy = 'priority';
-            toggleOrder()
-          "
-        >
+        <div class="text-sm text-zinc-500 select-none cursor-pointer" @click="toggleOrder('status')">
+          Status
+        </div>
+        <div class="text-sm text-zinc-500 select-none cursor-pointer" @click="toggleOrder('title')">
+          Title
+        </div>
+        <div class="text-sm text-zinc-500 select-none cursor-pointer" @click="toggleOrder('priority')">
           Priority
         </div>
-        <div class="col-span-2">Assignees</div>
-        <div class="col-span-2">Due date</div>
+        <div class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer">Assignees</div>
+        <div
+          class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer"
+          @click="toggleOrder('dueDate')"
+        >
+          Due date
+        </div>
       </div>
       <div
         class="grid grid-cols-subgrid col-span-7 pr-2 overflow-y-auto overflow-x-hidden"
@@ -184,7 +175,7 @@ function issueStatusColor(status: string) {
       >
         <div class="grid grid-cols-subgrid auto-rows-max col-span-7 gap-y-1" ref="itemsContainer">
           <div
-            v-for="{ id, issue, previousId, nextId, order } of backlogItems"
+            v-for="{ id, issue } of backlogItems"
             :key="issue.id"
             class="grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white"
           >
@@ -196,10 +187,10 @@ function issueStatusColor(status: string) {
               >{{ issue.status }}</Button
             >
             <div v-if="editingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
-              <RouterLink :to="`issue/${issue.id}`"
-                >{{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }})
-                {{ order }}</RouterLink
-              >
+              <RouterLink :to="`issue/${issue.id}`">
+                {{ issue.title }}
+                <!-- {{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }}) {{ order }} -->
+              </RouterLink>
             </div>
             <Form v-else @submit="saveEdit" class="flex:cols-md flex:center-y">
               <Field v-model="editingIssue.title" size="badge" name="title" />

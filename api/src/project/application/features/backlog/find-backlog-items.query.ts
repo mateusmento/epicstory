@@ -34,7 +34,10 @@ export class FindBacklogItemsQuery implements IQueryHandler<FindBacklogItems> {
       order: {
         issue: {
           createdAt: orderBy === 'createdAt' ? (order ?? 'asc') : undefined,
+          title: orderBy === 'title' ? (order ?? 'asc') : undefined,
+          status: orderBy === 'status' ? (order ?? 'asc') : undefined,
           priority: orderBy === 'priority' ? (order ?? 'asc') : undefined,
+          dueDate: orderBy === 'dueDate' ? (order ?? 'asc') : undefined,
         },
         order: orderBy === 'manual' ? (order ?? 'asc') : undefined,
       },
