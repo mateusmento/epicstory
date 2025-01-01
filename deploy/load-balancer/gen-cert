@@ -1,3 +1,4 @@
+#!/bin/bash
 export LB_NAME_TAG="epicstory-main-lb"
 
 TAG_KEY="Name"
