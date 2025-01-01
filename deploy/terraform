@@ -5,14 +5,6 @@ dir=$1
 service_name="epicstory-$dir"
 service_version=$2
 
-export TF_VAR_AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id | tr -d '\n')
-export TF_VAR_AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key | tr -d '\n')
-export TF_VAR_AWS_REGION=$(aws configure get region | tr -d '\n')
-export TF_VAR_AWS_REGISTRY=$(aws sts get-caller-identity --query "Account" --output text | tr -d '\n')
-
-export TF_VAR_SERVICE_NAME="$service_name"
-export TF_VAR_SERVICE_VERSION="$service_version"
-
 export LB_NAME_TAG="epicstory-main-lb"
 
 TAG_KEY="Name"
@@ -52,6 +44,16 @@ export LB_DOMAIN=$(
   --output text \
   | tr -d '\n'
 )
+
+export TF_VAR_AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id | tr -d '\n')
+export TF_VAR_AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key | tr -d '\n')
+export TF_VAR_AWS_REGION=$(aws configure get region | tr -d '\n')
+export TF_VAR_AWS_REGISTRY=$(aws sts get-caller-identity --query "Account" --output text | tr -d '\n')
+
+export TF_VAR_SERVICE_NAME="$service_name"
+export TF_VAR_SERVICE_VERSION="$service_version"
+
+export TF_VAR_LB_NAME_TAG=$LB_NAME_TAG
 
 if [ "$dir" == "api" ]; then
   shift
