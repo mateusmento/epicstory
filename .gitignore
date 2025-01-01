@@ -2,3 +2,16 @@ node_modules
 .terraform
 terraform.tfstate*
 .npmrc
+.env*
+
+# SQLite
+*.db
+
+# SSH keys
+*.pub
+*.pem
+
+# SSL keys
+*.crt
+*.csr
+*.key
