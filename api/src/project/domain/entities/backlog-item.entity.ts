@@ -25,7 +25,7 @@ export class BacklogItem {
   @Column({ nullable: true })
   previousId: number;
   @ManyToOne(() => BacklogItem, { nullable: true })
-  before: BacklogItem;
+  previous: BacklogItem;
   @Column({ nullable: true })
   nextId: number;
   @ManyToOne(() => BacklogItem, { nullable: true })
