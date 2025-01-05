@@ -1,0 +1,81 @@
+#!/bin/bash
+subcommand=$1
+shift
+dir=$1
+service_name="epicstory-$dir"
+service_version=$2
+
+export LB_NAME_TAG="epicstory-main-lb"
+
+TAG_KEY="Name"
+TAG_VALUE=${LB_NAME_TAG}
+
+get_lb_arn_by_tag() {
+  load_balancer_arns=$(aws elbv2 describe-load-balancers --query "LoadBalancers[*].LoadBalancerArn" --output text)
+
+  for lb_arn in $load_balancer_arns; do
+    tag_value=$(aws elbv2 describe-tags --resource-arns "$lb_arn" --query "TagDescriptions[*].Tags[?Key=='$TAG_KEY'].Value" --output text)
+    if [ "$tag_value" == "$TAG_VALUE" ]; then
+      echo "$lb_arn"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+LB_ARN=$(get_lb_arn_by_tag)
+
+if [ -z "$LB_ARN" ]; then
+  echo "Error: No Load Balancer found with tag $TAG_KEY=$TAG_VALUE"
+  exit 1
+fi
+
+# Wait until the Load Balancer is in the 'active' state
+aws elbv2 wait load-balancer-available --load-balancer-arns "$LB_ARN"
+
+# Querying load balancer public dns
+echo "Querying load balancer public dns"
+
+export LB_DOMAIN=$(
+  aws elbv2 describe-load-balancers \
+  --load-balancer-arns "$LB_ARN" \
+  --query "LoadBalancers[0].DNSName" \
+  --output text \
+  | tr -d '\n'
+)
+
+export TF_VAR_AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id | tr -d '\n')
+export TF_VAR_AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key | tr -d '\n')
+export TF_VAR_AWS_REGION=$(aws configure get region | tr -d '\n')
+export TF_VAR_AWS_REGISTRY=$(aws sts get-caller-identity --query "Account" --output text | tr -d '\n')
+
+export TF_VAR_SERVICE_NAME="$service_name"
+export TF_VAR_SERVICE_VERSION="$service_version"
+
+export TF_VAR_LB_NAME_TAG=$LB_NAME_TAG
+
+if [ "$dir" == "api" ]; then
+  shift
+  source api/.env.sh
+elif [ "$dir" == "app" ]; then
+  shift
+  source app/.env.sh
+elif [ "$dir" == "dependencies" ]; then
+  source dependencies/.env.sh
+elif [ "$dir" == "network" ]; then
+  echo ""
+elif [ "$dir" == "load-balancer" ]; then
+  echo ""
+else
+  echo "Error: Invalid directory at first argument (api, app, dependencies, load-balancer, network)"
+  exit 1
+fi
+
+shift
+
+if { [ "$subcommand" == "apply" ] || [ "$subcommand" == "destroy" ]; }; then
+  terraform -chdir="$dir" "$subcommand" --auto-approve "$@"
+else
+  terraform -chdir="$dir" "$subcommand" "$@"
+fi

@@ -1,0 +1,45 @@
+#!/bin/bash
+export LB_NAME_TAG="epicstory-main-lb"
+
+TAG_KEY="Name"
+TAG_VALUE=${LB_NAME_TAG}
+
+get_lb_arn_by_tag() {
+  load_balancer_arns=$(aws elbv2 describe-load-balancers --query "LoadBalancers[*].LoadBalancerArn" --output text)
+
+  for lb_arn in $load_balancer_arns; do
+    tag_value=$(aws elbv2 describe-tags --resource-arns "$lb_arn" --query "TagDescriptions[*].Tags[?Key=='$TAG_KEY'].Value" --output text)
+    if [ "$tag_value" == "$TAG_VALUE" ]; then
+      echo "$lb_arn"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+LB_ARN=$(get_lb_arn_by_tag)
+
+if [ -z "$LB_ARN" ]; then
+  echo "Error: No Load Balancer found with tag $TAG_KEY=$TAG_VALUE"
+  exit 1
+fi
+
+# Wait until the Load Balancer is in the 'active' state
+aws elbv2 wait load-balancer-available --load-balancer-arns "$LB_ARN"
+
+# Querying load balancer public dns
+echo "Querying load balancer public dns"
+
+export LB_DOMAIN=$(
+  aws elbv2 describe-load-balancers \
+  --load-balancer-arns "$LB_ARN" \
+  --query "LoadBalancers[0].DNSName" \
+  --output text \
+  | tr -d '\n'
+)
+
+openssl req -new -newkey rsa:2048 -nodes -keyout epicstory.key -out epicstory.csr -subj "/C=US/ST=YourState/L=YourCity/O=YourOrganization/CN=$LB_DOMAIN"
+openssl x509 -req -days 365 -in epicstory.csr -signkey epicstory.key -out epicstory.crt -extensions v3_req -extfile openssl-san.cnf
+
+aws acm import-certificate --certificate file://epicstory.crt --private-key file://epicstory.key --certificate-chain file://epicstory.crt

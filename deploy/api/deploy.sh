@@ -17,45 +17,7 @@ aws configure set region ${AWS_REGION}
 
 # Find load balancer arn by tag
 
-TAG_KEY="Name"
-TAG_VALUE=${LB_NAME_TAG}
-
-get_lb_arn_by_tag() {
-  load_balancer_arns=$(aws elbv2 describe-load-balancers --query "LoadBalancers[*].LoadBalancerArn" --output text)
-
-  for lb_arn in $load_balancer_arns; do
-    tag_value=$(aws elbv2 describe-tags --resource-arns "$lb_arn" --query "TagDescriptions[*].Tags[?Key=='$TAG_KEY'].Value" --output text)
-    if [ "$tag_value" == "$TAG_VALUE" ]; then
-      echo "$lb_arn"
-      return 0
-    fi
-  done
-
-  return 1
-}
-
-LB_ARN=$(get_lb_arn_by_tag)
-
-if [ -z "$LB_ARN" ]; then
-  echo "Error: No Load Balancer found with tag $TAG_KEY=$TAG_VALUE"
-  exit 1
-fi
-
-# Wait until the Load Balancer is in the 'active' state
-aws elbv2 wait load-balancer-available --load-balancer-arns "$LB_ARN"
-
-# Querying load balancer public dns
-echo "Querying load balancer public dns"
-
-API_HOSTNAME=$(
-  aws elbv2 describe-load-balancers \
-  --load-balancer-arns "$LB_ARN" \
-  --query "LoadBalancers[0].DNSName" \
-  --output text \
-  | tr -d '\n'
-)
-
-APP_LB_URL="http://$API_HOSTNAME"
+APP_LB_URL="http://$LB_DOMAIN"
 
 IMAGE_NAME=${AWS_REGISTRY}.dkr.ecr.${AWS_REGION}.amazonaws.com/${SERVICE_NAME}:${SERVICE_VERSION}
 
@@ -63,15 +25,79 @@ IMAGE_NAME=${AWS_REGISTRY}.dkr.ecr.${AWS_REGION}.amazonaws.com/${SERVICE_NAME}:$
 echo "Run application"
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin $IMAGE_NAME
 
-echo ""
-echo "callback uri $APP_LB_URL/${GOOGLE_CALLBACK_URI}"
-echo "redirect url $APP_LB_URL/${GOOGLE_APP_REDIRECT_URL}"
-echo ""
 
-docker run -it -d --rm -p 80:80 \
+echo LB_DOMAIN=${LB_DOMAIN}
+echo LB_NAME_TAG=${LB_NAME_TAG}
+echo DEPENDENCIES_IP=${DEPENDENCIES_IP}
+echo SERVICE_NAME=${SERVICE_NAME}
+echo SERVICE_VERSION=${SERVICE_VERSION}
+echo AWS_REGION=${AWS_REGION}
+echo AWS_REGISTRY=${AWS_REGISTRY}
+echo IMAGE_NAME=$IMAGE_NAME
+
+
+docker pull $IMAGE_NAME
+
+# docker run -it -d --rm -p 3001:9000 peerjs/peerjs-server
+
+REDIS_URL="redis://${DEPENDENCIES_IP}:6379"
+
+echo APP_LB_URL="$APP_LB_URL"
+echo API_PORT="${API_PORT}"
+echo CORS_ORIGINS="${CORS_ORIGINS}"
+echo AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+echo AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
+echo AWS_REGION="${AWS_REGION}"
+echo AWS_REGISTRY="${AWS_REGISTRY}"
+echo AWS_BUCKET="${AWS_BUCKET}"
+echo GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}"
+echo GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET}"
+echo GOOGLE_CALLBACK_URI="${GOOGLE_CALLBACK_URI}"
+echo GOOGLE_APP_REDIRECT_URL="${GOOGLE_APP_REDIRECT_URL}"
+echo DATABASE_NAME="${DATABASE_NAME}"
+echo DATABASE_USER="${DATABASE_USER}"
+echo DATABASE_PASSWORD="${DATABASE_PASSWORD}"
+echo DATABASE_HOST="${DATABASE_HOST}"
+echo DATABASE_MIGRATION_HOST="${DATABASE_MIGRATION_HOST}"
+echo DATABASE_PORT="${DATABASE_PORT}"
+echo COOKIE_SECRET="${COOKIE_SECRET}"
+echo TRUST_PROXY="${TRUST_PROXY}"
+echo REDIS_URL="${REDIS_URL}"
+echo JWT_SECRET="${JWT_SECRET}"
+echo JWT_EXPIRES_IN="${JWT_EXPIRES_IN}"
+echo PASSWORD_ROUNDS="${PASSWORD_ROUNDS}"
+echo DEFAULT_SENDER_EMAIL_ADDRESS="${DEFAULT_SENDER_EMAIL_ADDRESS}"
+echo EMAIL_SMTP_URL="${EMAIL_SMTP_URL}"
+echo EMAIL_SMTP_USER="${EMAIL_SMTP_USER}"
+echo EMAIL_SMTP_PASSWORD="${EMAIL_SMTP_PASSWORD}"
+
+docker run --rm -d -p 80:80 \
+  -e APP_URL="${APP_URL}" \
+  -e API_PORT="${API_PORT}" \
+  -e CORS_ORIGINS="${CORS_ORIGINS}" \
+  -e AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+  -e AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+  -e AWS_REGION="${AWS_REGION}" \
+  -e AWS_REGISTRY="${AWS_REGISTRY}" \
   -e AWS_BUCKET="${AWS_BUCKET}" \
   -e GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}" \
   -e GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET}" \
-  -e GOOGLE_CALLBACK_URI="$APP_LB_URL/${GOOGLE_CALLBACK_URI}" \
-  -e GOOGLE_APP_REDIRECT_URL="$APP_LB_URL/${GOOGLE_APP_REDIRECT_URL}" \
+  -e GOOGLE_CALLBACK_URI="${GOOGLE_CALLBACK_URI}" \
+  -e GOOGLE_APP_REDIRECT_URL="${GOOGLE_APP_REDIRECT_URL}" \
+  -e DATABASE_NAME="${DATABASE_NAME}" \
+  -e DATABASE_USER="${DATABASE_USER}" \
+  -e DATABASE_PASSWORD="${DATABASE_PASSWORD}" \
+  -e DATABASE_HOST="${DEPENDENCIES_IP}" \
+  -e DATABASE_MIGRATION_HOST="${DATABASE_MIGRATION_HOST}" \
+  -e DATABASE_PORT="${DATABASE_PORT}" \
+  -e COOKIE_SECRET="${COOKIE_SECRET}" \
+  -e TRUST_PROXY="${TRUST_PROXY}" \
+  -e REDIS_URL="$REDIS_URL" \
+  -e JWT_SECRET="${JWT_SECRET}" \
+  -e JWT_EXPIRES_IN="${JWT_EXPIRES_IN}" \
+  -e PASSWORD_ROUNDS="${PASSWORD_ROUNDS}" \
+  -e DEFAULT_SENDER_EMAIL_ADDRESS="${DEFAULT_SENDER_EMAIL_ADDRESS}" \
+  -e EMAIL_SMTP_URL="${EMAIL_SMTP_URL}" \
+  -e EMAIL_SMTP_USER="${EMAIL_SMTP_USER}" \
+  -e EMAIL_SMTP_PASSWORD="${EMAIL_SMTP_PASSWORD}" \
   $IMAGE_NAME

@@ -22,7 +22,16 @@ class S3StorageEngine implements StorageEngine {
   private s3: S3Client;
 
   constructor() {
-    this.s3 = new S3Client();
+    this.s3 =
+      process.env.NODE_ENV === 'production'
+        ? new S3Client({
+            region: process.env.AWS_REGION,
+            credentials: {
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            },
+          })
+        : new S3Client();
   }
 
   async _handleFile(

@@ -15,9 +15,24 @@ variable "ami" {
   type = string
 }
 
+variable "port" {
+  type    = number
+  default = 80
+}
+
 variable "security_group_id" {
   type    = string
   default = ""
+}
+
+variable "health_check_port" {
+  type    = number
+  default = 80
+}
+
+variable "health_check_path" {
+  type    = string
+  default = "/"
 }
 
 variable "key_name" {
@@ -54,12 +69,13 @@ resource "aws_instance" "service" {
 resource "aws_lb_target_group" "service" {
   vpc_id   = var.vpc_id
   protocol = "HTTP"
-  port     = 80
+  port     = var.port
+
   health_check {
     enabled             = true
     protocol            = "HTTP"
-    port                = 80
-    path                = "/"
+    port                = var.health_check_port
+    path                = var.health_check_path
     interval            = 30
     timeout             = 10
     healthy_threshold   = 3
