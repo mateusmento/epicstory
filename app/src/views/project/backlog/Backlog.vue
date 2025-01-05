@@ -198,7 +198,7 @@ function issueStatusColor(status: string) {
           <div
             v-for="{ id, issue } of backlogItems"
             :key="issue.id"
-            class="grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white"
+            class="group grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white"
           >
             <Button
               variant="outline"
@@ -207,11 +207,16 @@ function issueStatusColor(status: string) {
               :class="cn(issueStatusColor(issue.status))"
               >{{ issue.status }}</Button
             >
-            <div v-if="editingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
+            <div v-if="editingIssue.id !== issue.id" class="flex:cols-lg flex:center-y text-sm">
               <RouterLink :to="`issue/${issue.id}`">
                 {{ issue.title }}
                 <!-- {{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }}) {{ order }} -->
               </RouterLink>
+              <Icon
+                name="fa-regular-edit"
+                @click="openIssueEdit(issue)"
+                class="opacity-0 group-hover:opacity-100 transition-opacity"
+              />
             </div>
             <Form v-else @submit="saveEdit" class="flex:cols-md flex:center-y">
               <Field v-model="editingIssue.title" size="badge" name="title" />

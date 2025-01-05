@@ -29,7 +29,7 @@ export function useBacklog() {
   }
 
   async function moveBacklogItem(itemId: number, data: any) {
-    await backlogItemApi.move(itemId, data);
+    return backlogItemApi.move(itemId, data);
   }
 
   async function removeBacklogItem(itemId: number) {
