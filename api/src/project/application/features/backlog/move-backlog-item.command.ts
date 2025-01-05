@@ -43,7 +43,6 @@ export class MoveBacklogItemCommand
     const itemBefore = afterOf ? await this.findBacklogItem(afterOf) : null;
 
     if (itemBefore && itemBefore.nextId === item.id) {
-      console.error('Can not move backlog item to same position');
       throw new BadRequestException(
         'Can not move backlog item to same position',
       );
@@ -60,9 +59,9 @@ export class MoveBacklogItemCommand
       );
 
     if (itemBefore) {
-      this.moveNextToItem(item, itemBefore);
+      await this.moveNextToItem(item, itemBefore);
     } else {
-      this.moveToTopOfBacklog(item, backlogId);
+      await this.moveToTopOfBacklog(item, backlogId);
     }
 
     return {
@@ -154,6 +153,7 @@ export class MoveBacklogItemCommand
       relations: { next: true },
     });
   }
+
   async snapshotAndValidate(backlogId: number, callback: any) {
     const fetchBacklogItems = async () => {
       return await this.backlogItemRepo.find({
