@@ -22,7 +22,7 @@ export class CreateBacklogItem {
 
   @IsNumber()
   @IsOptional()
-  insertedAfterOfId?: number;
+  afterOf?: number;
 
   @IsNotEmpty()
   title: string;
@@ -50,7 +50,7 @@ export class CreateBacklogItemCommand
   @Transactional()
   async execute({
     backlogId,
-    insertedAfterOfId,
+    afterOf,
     projectId,
     issuer,
     title,
@@ -58,8 +58,8 @@ export class CreateBacklogItemCommand
   }: CreateBacklogItem) {
     const backlog = await this.findBacklog(backlogId);
 
-    const itemBefore = insertedAfterOfId
-      ? await this.findBacklogItem(insertedAfterOfId, backlogId)
+    const itemBefore = afterOf
+      ? await this.findBacklogItem(afterOf, backlogId)
       : null;
 
     if (itemBefore && backlog.id !== itemBefore.backlogId)

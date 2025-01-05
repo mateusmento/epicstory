@@ -8,25 +8,31 @@ import { Project } from './project.entity';
 export class BacklogItem {
   @PrimaryGeneratedColumn()
   id: number;
+
   @Column()
   backlogId: number;
   @ManyToOne(() => Backlog)
   backlog: Backlog;
+
   @Column()
   projectId: number;
   @ManyToOne(() => Project)
   project: Project;
+
   @Column()
   issueId: number;
   @ManyToOne(() => Issue)
   issue: Issue;
+
   @Column({ type: 'float', default: 0 })
   order: number;
-  @Column({ nullable: true })
+
+  @Column({ nullable: true, unique: true })
   previousId: number;
   @ManyToOne(() => BacklogItem, { nullable: true })
-  before: BacklogItem;
-  @Column({ nullable: true })
+  previous: BacklogItem;
+
+  @Column({ nullable: true, unique: true })
   nextId: number;
   @ManyToOne(() => BacklogItem, { nullable: true })
   next: BacklogItem;

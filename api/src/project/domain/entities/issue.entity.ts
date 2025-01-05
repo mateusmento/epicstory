@@ -38,8 +38,8 @@ export class Issue {
   @Column({ nullable: true })
   dueDate: Date;
 
-  @Column({ nullable: true })
-  priority: number | null;
+  @Column({ default: 0 })
+  priority: number;
 
   @ManyToMany(() => User)
   @JoinTable({

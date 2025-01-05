@@ -2,7 +2,6 @@
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Combobox, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/design-system/ui/select";
 import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
@@ -16,6 +15,7 @@ import { debounce } from "lodash";
 import { onMounted, reactive, ref, watch } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
+import BacklogHeadCell from "./BacklogHeadCell.vue";
 
 const props = defineProps<{ projectId: string }>();
 
@@ -30,42 +30,39 @@ const {
 } = useBacklog();
 
 const orderBy = useStorage("backlog.orderBy", "manual");
-const order = useStorage("backlog.order", "asc");
+const order = useStorage<"asc" | "desc">("backlog.order", "asc");
 
-function toggleOrder() {
+function toggleOrder(column: string) {
+  orderBy.value = column;
   order.value = order.value === "asc" ? "desc" : "asc";
+}
+
+function resetOrder() {
+  orderBy.value = "manual";
+  order.value = "asc";
 }
 
 const onMoveBacklogItem = debounce(moveBacklogItem, 500, { leading: false });
 
 const itemsContainer = ref<HTMLElement>();
 
-onMounted(() => {
+function setupDragAndDrop() {
   dragAndDrop({
     parent: itemsContainer,
     values: backlogItems,
+    disabled: orderBy.value !== "manual",
     async onSort({ draggedNode, position, values }) {
       const { id } = draggedNode.data.value as any;
-      const { id: insertedAfterOfId } = (values[position - 1] as any) ?? {};
-      onMoveBacklogItem(
-        id,
-        {
-          backlogId: backlogId.value,
-          insertedAfterOfId,
-        },
-        () => {
-          fetchBacklogItems({
-            backlogId: backlogId.value,
-            order: order.value,
-            orderBy: orderBy.value,
-            page: 0,
-            count: 50,
-          });
-        },
-      );
+      const { id: afterOf } = (values[position - 1] as any) ?? {};
+      await onMoveBacklogItem(id, {
+        backlogId: backlogId.value,
+        afterOf,
+      });
     },
   });
-});
+}
+
+watch(orderBy, setupDragAndDrop);
 
 const projectApi = useDependency(ProjectService);
 
@@ -74,13 +71,15 @@ const backlogId = ref<number>(0);
 onMounted(async () => {
   const project = await projectApi.findProject(+props.projectId);
   backlogId.value = project.backlogId;
-  fetchBacklogItems({
+  await fetchBacklogItems({
     backlogId: backlogId.value,
     order: order.value,
     orderBy: orderBy.value,
     page: 0,
     count: 50,
   });
+
+  setupDragAndDrop();
 });
 
 watch(
@@ -103,8 +102,7 @@ function onCreateBacklogItem(data: any) {
     ...data,
     backlogId: backlogId.value,
     projectId: +props.projectId,
-    insertedAfterOfId:
-      backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined,
+    afterOf: backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined,
   });
 }
 
@@ -147,36 +145,41 @@ function issueStatusColor(status: string) {
 
 <template>
   <div class="flex:rows-xl m-auto py-8 px-12 w-full h-full">
-    <div class="flex:cols-auto">
-      <h2 class="text-lg font-semibold">Issues</h2>
-      <Select v-model="orderBy">
-        <SelectTrigger class="w-36">
-          <SelectValue placeholder="Select a fruit" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="priority">Priority</SelectItem>
-          <SelectItem value="createdAt">Create date</SelectItem>
-          <SelectItem value="manual">Manual</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-
     <div
       class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0"
     >
       <div class="grid grid-cols-subgrid col-span-7 gap-x-6">
-        <div>Status</div>
-        <div>Title</div>
-        <div
-          @click="
-            // orderBy = 'priority';
-            toggleOrder()
-          "
-        >
-          Priority
+        <BacklogHeadCell
+          label="Status"
+          :show="orderBy === 'status'"
+          :order="order"
+          @click="toggleOrder('status')"
+          @reset="resetOrder"
+        />
+        <BacklogHeadCell
+          label="Title"
+          :show="orderBy === 'title'"
+          :order="order"
+          @click="toggleOrder('title')"
+          @reset="resetOrder"
+        />
+        <BacklogHeadCell
+          label="Priority"
+          :show="orderBy === 'priority'"
+          :order="order"
+          @click="toggleOrder('priority')"
+          @reset="resetOrder"
+        />
+        <div class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer flex:cols-md flex:center-y">
+          Assignees
         </div>
-        <div class="col-span-2">Assignees</div>
-        <div class="col-span-2">Due date</div>
+        <BacklogHeadCell
+          label="Due Date"
+          :show="orderBy === 'dueDate'"
+          :order="order"
+          @click="toggleOrder('dueDate')"
+          @reset="resetOrder"
+        />
       </div>
       <div
         class="grid grid-cols-subgrid col-span-7 pr-2 overflow-y-auto overflow-x-hidden"
@@ -184,9 +187,9 @@ function issueStatusColor(status: string) {
       >
         <div class="grid grid-cols-subgrid auto-rows-max col-span-7 gap-y-1" ref="itemsContainer">
           <div
-            v-for="{ id, issue, previousId, nextId, order } of backlogItems"
+            v-for="{ id, issue } of backlogItems"
             :key="issue.id"
-            class="grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white"
+            class="group grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white"
           >
             <Button
               variant="outline"
@@ -195,11 +198,16 @@ function issueStatusColor(status: string) {
               :class="cn(issueStatusColor(issue.status))"
               >{{ issue.status }}</Button
             >
-            <div v-if="editingIssue.id !== issue.id" @dblclick="openIssueEdit(issue)" class="text-sm">
-              <RouterLink :to="`issue/${issue.id}`"
-                >{{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }})
-                {{ order }}</RouterLink
-              >
+            <div v-if="editingIssue.id !== issue.id" class="flex:cols-lg flex:center-y text-sm">
+              <RouterLink :to="`issue/${issue.id}`">
+                {{ issue.title }}
+                <!-- {{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }}) {{ order }} -->
+              </RouterLink>
+              <Icon
+                name="fa-regular-edit"
+                @click="openIssueEdit(issue)"
+                class="opacity-0 group-hover:opacity-100 transition-opacity"
+              />
             </div>
             <Form v-else @submit="saveEdit" class="flex:cols-md flex:center-y">
               <Field v-model="editingIssue.title" size="badge" name="title" />

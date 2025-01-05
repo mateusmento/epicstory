@@ -15,7 +15,7 @@ export class MoveBacklogItem {
   backlogItemId: number;
   @IsNumber()
   @IsOptional()
-  insertedAfterOfId: number;
+  afterOf: number;
 
   constructor(data: Partial<MoveBacklogItem>) {
     patch(this, data);
@@ -32,46 +32,42 @@ export class MoveBacklogItemCommand
   ) {}
 
   @Transactional()
-  async execute({
-    backlogId,
-    backlogItemId,
-    insertedAfterOfId,
-  }: MoveBacklogItem) {
-    if (backlogItemId === insertedAfterOfId) {
+  async execute({ backlogId, backlogItemId, afterOf }: MoveBacklogItem) {
+    if (backlogItemId === afterOf) {
       throw new BadRequestException('Can not insert backlog item after itself');
     }
 
-    await this.snapshotAndValidate(backlogId, async () => {
-      const backlog = await this.findBacklog(backlogId);
-      const item = await this.findBacklogItem(backlogItemId);
+    const backlog = await this.findBacklog(backlogId);
+    const item = await this.findBacklogItem(backlogItemId);
 
-      const itemBefore = insertedAfterOfId
-        ? await this.findBacklogItem(insertedAfterOfId)
-        : null;
+    const itemBefore = afterOf ? await this.findBacklogItem(afterOf) : null;
 
-      if (itemBefore && itemBefore.nextId === item.id) {
-        console.error('Can not move backlog item to same position');
-        throw new BadRequestException(
-          'Can not move backlog item to same position',
-        );
-      }
+    if (itemBefore && itemBefore.nextId === item.id) {
+      throw new BadRequestException(
+        'Can not move backlog item to same position',
+      );
+    }
 
-      if (itemBefore && backlog.id !== itemBefore.backlogId)
-        throw new BadRequestException(
-          'Backlog item inserted after of does not belong to the target backlog',
-        );
+    if (itemBefore && backlog.id !== itemBefore.backlogId)
+      throw new BadRequestException(
+        'Backlog item inserted after of does not belong to the target backlog',
+      );
 
-      if (itemBefore && item.projectId !== itemBefore.projectId)
-        throw new BadRequestException(
-          'Can not move backlog item to a different project',
-        );
+    if (itemBefore && item.projectId !== itemBefore.projectId)
+      throw new BadRequestException(
+        'Can not move backlog item to a different project',
+      );
 
-      if (itemBefore) {
-        this.moveNextToItem(item, itemBefore);
-      } else {
-        this.moveToTopOfBacklog(item, backlogId);
-      }
-    });
+    if (itemBefore) {
+      await this.moveNextToItem(item, itemBefore);
+    } else {
+      await this.moveToTopOfBacklog(item, backlogId);
+    }
+
+    return {
+      itemBefore,
+      item,
+    };
   }
 
   private async moveToTopOfBacklog(item: BacklogItem, backlogId: number) {
@@ -144,7 +140,7 @@ export class MoveBacklogItemCommand
   private async findBacklogItem(id: number) {
     const item = this.backlogItemRepo.findOne({
       where: { id },
-      relations: { next: true },
+      relations: { next: true, issue: true },
     });
     if (!item) throw new NotFoundException('Backlog item not found');
     return item;
@@ -157,6 +153,7 @@ export class MoveBacklogItemCommand
       relations: { next: true },
     });
   }
+
   async snapshotAndValidate(backlogId: number, callback: any) {
     const fetchBacklogItems = async () => {
       return await this.backlogItemRepo.find({
