@@ -1,4 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { BacklogItem } from 'src/project/domain/entities';
 import {
   BacklogItemRepository,
   IssueRepository,
@@ -20,8 +21,24 @@ export class RemoveBacklogItemCommand
 
   @Transactional()
   async execute({ itemId }: RemoveBacklogItem) {
-    const item = await this.backlogItemRepo.findOneBy({ id: itemId });
+    const item = await this.backlogItemRepo.findOne({
+      where: { id: itemId },
+    });
+    await this.connectAdjacentNodes(item);
     await this.backlogItemRepo.delete({ id: itemId });
     await this.issueRepo.delete({ id: item.issueId });
+  }
+
+  private async connectAdjacentNodes(item: BacklogItem) {
+    if (item.previousId)
+      await this.backlogItemRepo.update(
+        { id: item.previousId },
+        { nextId: item.nextId },
+      );
+    if (item.nextId)
+      await this.backlogItemRepo.update(
+        { id: item.nextId },
+        { previousId: item.previousId },
+      );
   }
 }
