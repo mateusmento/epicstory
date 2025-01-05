@@ -53,23 +53,18 @@ function setupDragAndDrop() {
     disabled: orderBy.value !== "manual",
     async onSort({ draggedNode, position, values }) {
       const { id } = draggedNode.data.value as any;
-      const { id: insertedAfterOfId } = (values[position - 1] as any) ?? {};
-      onMoveBacklogItem(
-        id,
-        {
-          backlogId: backlogId.value,
-          insertedAfterOfId,
-        },
-        () => {
-          fetchBacklogItems({
-            backlogId: backlogId.value,
-            order: order.value,
-            orderBy: orderBy.value,
-            page: 0,
-            count: 50,
-          });
-        },
-      );
+      const { id: afterOf } = (values[position - 1] as any) ?? {};
+      await onMoveBacklogItem(id, {
+        backlogId: backlogId.value,
+        afterOf,
+      });
+      fetchBacklogItems({
+        backlogId: backlogId.value,
+        order: order.value,
+        orderBy: orderBy.value,
+        page: 0,
+        count: 50,
+      });
     },
   });
 }
@@ -116,8 +111,7 @@ function onCreateBacklogItem(data: any) {
     ...data,
     backlogId: backlogId.value,
     projectId: +props.projectId,
-    insertedAfterOfId:
-      backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined,
+    afterOf: backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined,
   });
 }
 

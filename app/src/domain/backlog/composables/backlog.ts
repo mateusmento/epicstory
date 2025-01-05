@@ -28,9 +28,8 @@ export function useBacklog() {
     else store.backlogItems.push(reactive(item));
   }
 
-  async function moveBacklogItem(itemId: number, data: any, then: any) {
+  async function moveBacklogItem(itemId: number, data: any) {
     await backlogItemApi.move(itemId, data);
-    then();
   }
 
   async function removeBacklogItem(itemId: number) {
