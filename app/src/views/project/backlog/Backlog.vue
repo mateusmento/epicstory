@@ -58,20 +58,9 @@ function setupDragAndDrop() {
         backlogId: backlogId.value,
         afterOf,
       });
-      fetchBacklogItems({
-        backlogId: backlogId.value,
-        order: order.value,
-        orderBy: orderBy.value,
-        page: 0,
-        count: 50,
-      });
     },
   });
 }
-
-onMounted(() => {
-  setupDragAndDrop();
-});
 
 watch(orderBy, setupDragAndDrop);
 
@@ -82,13 +71,15 @@ const backlogId = ref<number>(0);
 onMounted(async () => {
   const project = await projectApi.findProject(+props.projectId);
   backlogId.value = project.backlogId;
-  fetchBacklogItems({
+  await fetchBacklogItems({
     backlogId: backlogId.value,
     order: order.value,
     orderBy: orderBy.value,
     page: 0,
     count: 50,
   });
+
+  setupDragAndDrop();
 });
 
 watch(
