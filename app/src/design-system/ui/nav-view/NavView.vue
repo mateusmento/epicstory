@@ -2,14 +2,18 @@
 import { ref } from "vue";
 import { useNavView } from "./nav-view";
 
-const props = defineProps<{
+export type NavViewProps = {
   view: string;
-}>();
+  content: string;
+};
 
-const emit = defineEmits<{
+export type NavViewEmits = {
   (e: "trigger", content: string): void;
   (e: "change", content: string): void;
-}>();
+};
+
+const props = defineProps<Omit<NavViewProps, "content">>();
+const emit = defineEmits<NavViewEmits>();
 
 const content = defineModel<string>("content", { required: true });
 

@@ -39,10 +39,15 @@ export function useNavViewContent() {
 }
 
 export function useNavTrigger(view: string) {
-  const viewContent = computed({
+  const currentContent = computed({
     get: () => views[view]?.viewContent.value,
     set: (value: string) => {
-      views[view].viewContent.value = value;
+      try {
+        views[view].viewContent.value = value;
+      } catch (err) {
+        console.log(view);
+        throw err;
+      }
     },
   });
 
@@ -53,5 +58,10 @@ export function useNavTrigger(view: string) {
     },
   });
 
-  return { viewContent, contentProps };
+  function viewContent(content: string, props?: any) {
+    currentContent.value = content;
+    if (props) contentProps.value = props;
+  }
+
+  return { currentContent, contentProps, viewContent };
 }

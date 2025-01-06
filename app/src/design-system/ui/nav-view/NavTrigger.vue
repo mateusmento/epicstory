@@ -9,11 +9,10 @@ const props = defineProps<{
   props?: any;
 }>();
 
-const { viewContent, contentProps } = useNavTrigger(props.view);
+const { viewContent } = useNavTrigger(props.view);
 
 function trigger() {
-  viewContent.value = props.content;
-  contentProps.value = props.props;
+  viewContent(props.content, props.props);
 }
 </script>
 

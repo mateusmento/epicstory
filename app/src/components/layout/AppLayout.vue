@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { AppPane } from "./app-pane";
 import { Navbar } from "./navbar";
+import { DrawerPane } from "./drawer-pane";
 
 const isAppPaneOpen = ref(false);
+const appPaneContent = ref("");
 </script>
 
 <template>
@@ -16,9 +17,9 @@ const isAppPaneOpen = ref(false);
       <main
         class="flex:cols self:fill bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
       >
-        <AppPane v-model:open="isAppPaneOpen">
+        <DrawerPane view="app-pane" v-model:open="isAppPaneOpen" v-model:content="appPaneContent">
           <slot name="app-pane" />
-        </AppPane>
+        </DrawerPane>
 
         <!-- Main Content -->
         <section class="self:fill">

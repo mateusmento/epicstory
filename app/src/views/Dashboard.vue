@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Channels, Inbox, Issues, Projects, Team, Teams, WorkspaceMembers } from "@/components/app-pane";
-import { AppLayout, AppPaneContent, NavbarContent } from "@/components/layout";
+import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout";
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { useWorkspace } from "@/domain/workspace";
 import { RouterView } from "vue-router";
@@ -23,27 +22,27 @@ const { workspace } = useWorkspace();
     </template>
 
     <template #app-pane>
-      <AppPaneContent content="inbox">
+      <DrawerPaneContent content="inbox">
         <Inbox />
-      </AppPaneContent>
-      <AppPaneContent content="issues">
+      </DrawerPaneContent>
+      <DrawerPaneContent content="issues">
         <Issues />
-      </AppPaneContent>
-      <AppPaneContent content="projects">
+      </DrawerPaneContent>
+      <DrawerPaneContent content="projects">
         <Projects v-if="workspace" :workspace="workspace" />
-      </AppPaneContent>
-      <AppPaneContent content="channels">
+      </DrawerPaneContent>
+      <DrawerPaneContent content="channels">
         <Channels />
-      </AppPaneContent>
-      <AppPaneContent content="teams">
+      </DrawerPaneContent>
+      <DrawerPaneContent content="teams">
         <Teams v-model:current-workspace="workspace" />
-      </AppPaneContent>
-      <AppPaneContent content="team" #default="{ contentProps }">
+      </DrawerPaneContent>
+      <DrawerPaneContent content="team" #default="{ contentProps }">
         <Team v-bind="contentProps" />
-      </AppPaneContent>
-      <AppPaneContent content="workspace-members">
+      </DrawerPaneContent>
+      <DrawerPaneContent content="workspace-members">
         <WorkspaceMembers v-model:current-workspace="workspace" />
-      </AppPaneContent>
+      </DrawerPaneContent>
     </template>
 
     <template #main-content>
