@@ -74,6 +74,9 @@ importers:
       uniqid:
         specifier: ^5.4.0
         version: 5.4.0
+      vaul-vue:
+        specifier: ^0.2.0
+        version: 0.2.0(radix-vue@1.9.1(vue@3.4.31(typescript@5.4.5)))(vue@3.4.31(typescript@5.4.5))
       vee-validate:
         specifier: ^4.13.2
         version: 4.13.2(vue@3.4.31(typescript@5.4.5))
@@ -4794,6 +4797,12 @@ packages:
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
+
+  vaul-vue@0.2.0:
+    resolution: {integrity: sha512-YV0zqxc8NiVzr1z/Awwbaty0UDDchxj5BfhFbLiYu+Uz0rCfSaDK2zwmuXZvejBJKLGbWw9I5GLHJRse14lQew==}
+    peerDependencies:
+      radix-vue: ^1.4.0
+      vue: ^3.3.0
 
   vee-validate@4.13.2:
     resolution: {integrity: sha512-HlpR/6MJ92TW9f135umMZKUqdd/tFQTxLNSf2ImbU4Y/MlLVAUpF1l64VdjTOhbClAqPjCb5p/SqHDxLpUHXrw==}
@@ -10247,6 +10256,14 @@ snapshots:
   uuid@9.0.1: {}
 
   vary@1.1.2: {}
+
+  vaul-vue@0.2.0(radix-vue@1.9.1(vue@3.4.31(typescript@5.4.5)))(vue@3.4.31(typescript@5.4.5)):
+    dependencies:
+      '@vueuse/core': 10.11.0(vue@3.4.31(typescript@5.4.5))
+      radix-vue: 1.9.1(vue@3.4.31(typescript@5.4.5))
+      vue: 3.4.31(typescript@5.4.5)
+    transitivePeerDependencies:
+      - '@vue/composition-api'
 
   vee-validate@4.13.2(vue@3.4.31(typescript@5.4.5)):
     dependencies:

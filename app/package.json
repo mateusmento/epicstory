@@ -40,6 +40,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsyringe": "^4.8.0",
     "uniqid": "^5.4.0",
+    "vaul-vue": "^0.2.0",
     "vee-validate": "^4.13.2",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3",
