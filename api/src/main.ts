@@ -59,7 +59,7 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') setupSwagger(app);
 
   app.enableShutdownHooks();
-  await app.listen(config.API_PORT);
+  await app.listen(config.API_PORT, '0.0.0.0');
 }
 
 function setupSwagger(app: INestApplication) {
