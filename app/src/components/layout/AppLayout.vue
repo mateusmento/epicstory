@@ -14,7 +14,7 @@ const detailsPaneContent = ref("");
 
 <template>
   <div class="h-full">
-    <div class="flex:cols w-full h-full bg-zinc-100">
+    <div class="flex:cols w-full h-full bg-zinc-100 bg-secondary">
       <Navbar>
         <slot name="navbar" :isAppPaneOpen="isAppPaneOpen" />
       </Navbar>
