@@ -7,15 +7,15 @@ const meta = {
   component: Button,
   args: {
     title: "Hello, world!",
-    size: "default",
-    variant: "default",
+    size: "normal",
+    variant: "text",
   },
   argTypes: {
     title: { control: { type: "text" } },
-    size: { control: "select", options: ["xs", "sm", "default", "lg", "icon"] },
+    size: { control: "select", options: ["xs", "sm", "normal", "lg", "icon"] },
     variant: {
       control: { type: "select" },
-      options: ["default", "destructive", "outline", "secondary", "ghost", "link"],
+      options: ["primary", "destructive", "outline", "secondary", "text", "link"],
     },
   },
 } satisfies Meta<typeof Button>;

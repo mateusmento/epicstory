@@ -20,6 +20,6 @@ async function acceptInvite() {
 
 <template>
   <main class="h-full content-center">
-    <Button variant="default" @click="acceptInvite">Accept Invite</Button>
+    <Button variant="primary" @click="acceptInvite">Accept Invite</Button>
   </main>
 </template>

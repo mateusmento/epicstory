@@ -10,7 +10,7 @@ import { Icon } from "@/design-system/icons";
         view="navbar"
         content="workspace"
         :as="Button"
-        variant="ghost"
+        variant="text"
         size="xs"
         class="flex:cols-sm ml-auto text-xs text-zinc-500"
       >
