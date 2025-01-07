@@ -27,7 +27,7 @@ async function signin(data: SigninRequest) {
 </script>
 
 <template>
-  <main class="flex flex:center h-screen py-4xl">
+  <main class="flex flex:center h-full py-4xl">
     <div class="signup w-xl h-full rounded-3xl flex:cols-md p-xl">
       <aside class="signup-advertisement highlight-box flex:rows-auto w-md rounded-xl">
         <div class="m-4xl">

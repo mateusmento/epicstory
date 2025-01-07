@@ -12,7 +12,7 @@ function isActive(route: string) {
 </script>
 
 <template>
-  <div class="h-full flex:rows">
+  <div class="w-full h-full flex:rows">
     <nav class="flex:cols-lg flex:center-y p-2">
       <RouterLink :to="`/project/${projectId}/backlog`">
         <Button variant="text" size="xs" :class="{ 'bg-zinc-200/50 text-zinc-500': isActive('backlog') }"
@@ -26,7 +26,7 @@ function isActive(route: string) {
       </RouterLink>
     </nav>
     <Separator />
-    <section class="flex-1 min-h-0">
+    <section class="flex-1 min-h-0 overflow-auto">
       <RouterView />
     </section>
   </div>
