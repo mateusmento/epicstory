@@ -1,4 +1,14 @@
 <script setup lang="ts">
+import {
+  ChannelDetailsPane,
+  Channels,
+  Inbox,
+  Issues,
+  Projects,
+  Team,
+  Teams,
+  WorkspaceMembers,
+} from "@/components/app-pane";
 import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout";
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { useWorkspace } from "@/domain/workspace";
@@ -47,6 +57,12 @@ const { workspace } = useWorkspace();
 
     <template #main-content>
       <RouterView />
+    </template>
+
+    <template #details-pane>
+      <DrawerPaneContent content="channel">
+        <ChannelDetailsPane />
+      </DrawerPaneContent>
     </template>
   </AppLayout>
 </template>

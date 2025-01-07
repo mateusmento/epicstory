@@ -5,6 +5,9 @@ import { DrawerPane } from "./drawer-pane";
 
 const isAppPaneOpen = ref(false);
 const appPaneContent = ref("");
+
+const isDetailsPaneOpen = ref(false);
+const detailsPaneContent = ref("");
 </script>
 
 <template>
@@ -25,6 +28,10 @@ const appPaneContent = ref("");
         <section class="self:fill">
           <slot name="main-content" />
         </section>
+
+        <DrawerPane view="details-pane" v-model:open="isDetailsPaneOpen" v-model:content="detailsPaneContent">
+          <slot name="details-pane" />
+        </DrawerPane>
       </main>
     </div>
   </div>
