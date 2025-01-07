@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { NavTrigger } from "@/design-system";
+import { Button, NavTrigger } from "@/design-system";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
+import { cn } from "@/design-system/utils";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -15,9 +16,11 @@ const active = computed(() => props.content === currentContent.value);
 
 <template>
   <NavTrigger
+    :as="Button"
     v-bind="props"
-    class="px-2 py-1.5 rounded-md text-zinc-500 hover:bg-zinc-200/60 cursor-pointer"
-    :class="{ 'bg-zinc-200/60': active }"
+    size="sm"
+    variant="secondary"
+    :class="cn('shadow-none bg-transparent hover:bg-secondary cursor-pointer', { 'bg-secondary': active })"
   >
     <slot />
   </NavTrigger>

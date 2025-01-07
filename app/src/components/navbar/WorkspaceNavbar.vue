@@ -36,7 +36,7 @@ const { workspace } = useWorkspace();
       </div>
     </div>
 
-    <nav class="flex:rows-md font-semibold">
+    <nav class="flex:rows-md">
       <NavListItem view="app-pane" content="inbox" class="flex:cols-md flex:center-y">
         <Icon name="oi-inbox" />
         Inbox
