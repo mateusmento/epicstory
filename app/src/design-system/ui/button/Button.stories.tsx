@@ -8,14 +8,14 @@ const meta = {
   args: {
     title: "Hello, world!",
     size: "normal",
-    variant: "text",
+    variant: "ghost",
   },
   argTypes: {
     title: { control: { type: "text" } },
     size: { control: "select", options: ["xs", "sm", "normal", "lg", "icon"] },
     variant: {
       control: { type: "select" },
-      options: ["primary", "destructive", "outline", "secondary", "text", "link"],
+      options: ["default", "destructive", "outline", "secondary", "ghost", "link"],
     },
   },
 } satisfies Meta<typeof Button>;

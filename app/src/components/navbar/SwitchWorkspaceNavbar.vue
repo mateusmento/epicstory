@@ -39,7 +39,7 @@ function onSelectWorkspace(workspace: Workspace) {
         view="navbar"
         content="workspace"
         :as="Button"
-        variant="text"
+        variant="ghost"
         size="xs"
         class="flex:cols-sm ml-auto text-xs text-zinc-500"
       >

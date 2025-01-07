@@ -20,7 +20,7 @@ const { workspace } = useWorkspace();
           view="navbar"
           content="switch-workspace"
           :as="Button"
-          variant="text"
+          variant="ghost"
           size="badge"
           class="block rounded-md text-base text-neutral-800 font-normal whitespace-nowrap text-ellipsis overflow-hidden hover:bg-zinc-200/60"
         >
@@ -30,7 +30,7 @@ const { workspace } = useWorkspace();
 
         <div class="self:fill"></div>
 
-        <NavTrigger view="navbar" content="settings" :as="Button" variant="text" size="icon">
+        <NavTrigger view="navbar" content="settings" :as="Button" variant="ghost" size="icon">
           <Icon name="md-settings-round" />
         </NavTrigger>
       </div>
