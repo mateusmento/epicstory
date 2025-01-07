@@ -20,7 +20,7 @@ const currentWorkspace = defineModel<{
 
 const { workspaces, createWorkspace, fetchWorkspaces } = useWorkspaces();
 const { selectWorkspace } = useWorkspace();
-const { currentContent } = useNavTrigger("navbar");
+const { viewContent } = useNavTrigger("navbar");
 
 onMounted(async () => {
   fetchWorkspaces();
@@ -28,7 +28,7 @@ onMounted(async () => {
 
 function onSelectWorkspace(workspace: Workspace) {
   selectWorkspace(workspace);
-  currentContent.value = "workspace";
+  viewContent("workspace");
 }
 </script>
 
