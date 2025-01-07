@@ -1,22 +1,16 @@
 <script setup lang="ts">
-import { IconGoogle } from "@/design-system/icons";
+import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
+import { Button, Field, Form } from "@/design-system";
+import { IconGoogle } from "@/design-system/icons";
 import { AuthService } from "@/domain/auth/auth.service";
 import type { SignupRequest } from "@/domain/auth/dtos/signup.dto";
-import { Button, Form, Field } from "@/design-system";
-import { onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
 import type { SubmissionHandler } from "vee-validate";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 
 const authService = useDependency(AuthService);
-
-const apiUrl = ref<string>();
-
-onMounted(async () => {
-  apiUrl.value = (await import("@/app/config")).default.API_URL;
-});
 
 async function signup(data: SignupRequest) {
   const user = await authService.signup(data);
@@ -123,7 +117,7 @@ async function signup(data: SignupRequest) {
 
           <Button
             as="a"
-            :href="`${apiUrl}/auth/google`"
+            :href="`${config.API_URL}/auth/google`"
             class="flex:cols-lg w-full"
             data-testid="signup-with-google"
           >

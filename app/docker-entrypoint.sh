@@ -1,6 +1,6 @@
 #!/bin/bash
 
-filename=/usr/share/nginx/html/app/assets/config-*.js # match generated file from src/app/config.ts
+filename=/usr/share/nginx/html/app/assets/config.extension-*.js # match build output file from src/config.extension.ts
 
 cat <<EOF > $filename
 export default {

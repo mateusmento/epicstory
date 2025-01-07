@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Field, Form } from "@/design-system";
 import { IconGoogle } from "@/design-system/icons";
 import { AuthService } from "@/domain/auth/auth.service";
 import type { SigninRequest } from "@/domain/auth/dtos/singin.dto";
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
@@ -12,13 +13,7 @@ const route = useRoute();
 
 const authService = useDependency(AuthService);
 
-const apiUrl = ref<string>();
-
 const signinEmail = ref<string>(typeof route.query.email === "string" ? route.query.email : "");
-
-onMounted(async () => {
-  apiUrl.value = (await import("@/app/config")).default.API_URL;
-});
 
 async function signin(data: SigninRequest) {
   await authService.signin(data);
@@ -119,7 +114,7 @@ async function signin(data: SigninRequest) {
 
           <Button
             as="a"
-            :href="`${apiUrl}/auth/google`"
+            :href="`${config.API_URL}/auth/google`"
             class="flex:cols-lg w-full"
             data-testid="signup-with-google"
           >

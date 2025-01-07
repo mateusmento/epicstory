@@ -6,6 +6,6 @@ export const config = {
 };
 
 export async function loadConfig() {
-  const { default: appConfig } = await import("@/app/config");
+  const { default: appConfig } = await import("@/config.extension");
   Object.assign(config, appConfig);
 }
