@@ -9,7 +9,7 @@ const props = defineProps<{
   content: string;
 }>();
 
-const { currentContent } = useNavTrigger(props.view);
+const { content: currentContent } = useNavTrigger(props.view);
 
 const active = computed(() => props.content === currentContent.value);
 </script>

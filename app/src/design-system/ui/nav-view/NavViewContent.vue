@@ -6,11 +6,11 @@ defineProps<{
   content: string;
 }>();
 
-const { viewContent, contentProps } = useNavViewContent();
+const context = useNavViewContent();
 </script>
 
 <template>
-  <Slot v-if="viewContent === content" :key="viewContent">
-    <slot :contentProps="contentProps" />
+  <Slot v-if="context.content === content" :key="context.content">
+    <slot :contentProps="context.props" />
   </Slot>
 </template>

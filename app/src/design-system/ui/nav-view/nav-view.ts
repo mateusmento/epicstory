@@ -1,67 +1,58 @@
-import { computed, inject, provide, type Ref, type WritableComputedRef } from "vue";
+import { defineStore } from "pinia";
+import { computed, inject, provide, reactive, type Ref } from "vue";
 
 type NavViewContext = {
-  viewContent: WritableComputedRef<string>;
-  contentProps: Ref<any>;
-};
-
-const views: Record<string, NavViewContext> = {};
-
-type NavViewOptions = {
-  view: string;
-  content: Ref<string>;
-  props: Ref<any>;
+  content?: string;
+  props: any;
   onTrigger?: (content: string) => void;
   onChange?: (content: string) => void;
 };
 
-export function useNavView({ view, content, props, onChange, onTrigger }: NavViewOptions) {
-  const viewContent = computed({
-    get: () => content.value,
-    set: (value: string) => {
-      onTrigger?.(value);
-      if (value !== content.value) onChange?.(value);
-      content.value = value;
-    },
-  });
+const useNavViewStore = defineStore("nav-view", () => {
+  const views = reactive<Record<string, NavViewContext>>({});
+  return { views };
+});
 
-  views[view] = { viewContent, contentProps: props };
+type NavViewOptions = {
+  view: string;
+  initialContent?: string;
+  onTrigger?: (content: string) => void;
+  onChange?: (content: string) => void;
+};
 
-  provide("navView", views[view]);
+export function useNavView({ view, initialContent, onChange, onTrigger }: NavViewOptions) {
+  const store = useNavViewStore();
 
-  return views[view];
+  if (!(view in store.views))
+    store.views[view] = {
+      content: initialContent,
+      props: undefined,
+      onChange,
+      onTrigger,
+    };
+
+  provide("nav-view", store.views[view]);
 }
 
 export function useNavViewContent() {
-  const navView = inject<NavViewContext>("navView");
+  const navView = inject<NavViewContext>("nav-view");
   if (!navView) throw new Error("NavView is not provided.");
   return navView;
 }
 
 export function useNavTrigger(view: string) {
-  const currentContent = computed({
-    get: () => views[view]?.viewContent.value,
-    set: (value: string) => {
-      try {
-        views[view].viewContent.value = value;
-      } catch (err) {
-        console.log(view);
-        throw err;
-      }
-    },
-  });
+  const store = useNavViewStore();
 
-  const contentProps = computed({
-    get: () => views[view]?.contentProps.value,
-    set: (value: string) => {
-      views[view].contentProps.value = value;
-    },
-  });
-
-  function viewContent(content: string, props?: any) {
-    currentContent.value = content;
-    if (props) contentProps.value = props;
+  function viewContent(value: string, props?: any) {
+    const context = store.views[view];
+    context.onTrigger?.(value);
+    if (value !== context.content) context.onChange?.(value);
+    context.content = value;
+    if (props) context.props = props;
   }
 
-  return { currentContent, contentProps, viewContent };
+  const content = computed(() => store.views[view]?.content);
+  const props = computed(() => store.views[view]?.props);
+
+  return { content, props, viewContent };
 }

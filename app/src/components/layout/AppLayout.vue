@@ -6,10 +6,8 @@ import { DrawerPane } from "./drawer-pane";
 const openPane = ref<string>();
 
 const isAppPaneOpen = computed(() => openPane.value === "app-pane");
-const appPaneContent = ref("");
 
 const isDetailsPaneOpen = computed(() => openPane.value === "details-pane");
-const detailsPaneContent = ref("");
 </script>
 
 <template>
@@ -26,7 +24,6 @@ const detailsPaneContent = ref("");
           view="app-pane"
           :open="isAppPaneOpen"
           @update:open="openPane = $event ? 'app-pane' : undefined"
-          v-model:content="appPaneContent"
         >
           <slot name="app-pane" />
         </DrawerPane>
@@ -40,7 +37,6 @@ const detailsPaneContent = ref("");
           view="details-pane"
           :open="isDetailsPaneOpen"
           @update:open="openPane = $event ? 'details-pane' : undefined"
-          v-model:content="detailsPaneContent"
         >
           <slot name="details-pane" />
         </DrawerPane>

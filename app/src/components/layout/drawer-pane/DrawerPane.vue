@@ -6,22 +6,23 @@ import {
   type NavViewEmits,
   type NavViewProps,
 } from "@/design-system";
+import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 
-defineProps<NavViewProps>();
+const props = defineProps<NavViewProps>();
 const emit = defineEmits<NavViewEmits>();
 
 const open = defineModel<boolean>("open", { required: true });
-const content = defineModel<string>("content", { required: true });
+
+const { content } = useNavTrigger(props.view);
 
 function onNavViewTrigger(v: string) {
   open.value = content.value === v ? !open.value : true;
-  content.value = v;
   emit("trigger", v);
 }
 </script>
 
 <template>
-  <NavView :view :content @trigger="onNavViewTrigger">
+  <NavView :view @trigger="onNavViewTrigger">
     <Collapsible as-child :open="open">
       <CollapsibleContent
         as="aside"

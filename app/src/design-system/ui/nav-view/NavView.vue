@@ -1,10 +1,9 @@
 <script lang="ts" setup>
-import { ref } from "vue";
 import { useNavView } from "./nav-view";
 
 export type NavViewProps = {
   view: string;
-  content: string;
+  initialContent?: string;
 };
 
 export type NavViewEmits = {
@@ -12,15 +11,12 @@ export type NavViewEmits = {
   (e: "change", content: string): void;
 };
 
-const props = defineProps<Omit<NavViewProps, "content">>();
+const props = defineProps<NavViewProps>();
 const emit = defineEmits<NavViewEmits>();
-
-const content = defineModel<string>("content", { required: true });
 
 useNavView({
   view: props.view,
-  content,
-  props: ref<any>(),
+  initialContent: props.initialContent,
   onTrigger: (content) => emit("trigger", content),
   onChange: (content) => emit("change", content),
 });
