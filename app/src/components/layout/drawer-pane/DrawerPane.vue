@@ -10,7 +10,7 @@ import {
 defineProps<NavViewProps>();
 const emit = defineEmits<NavViewEmits>();
 
-const open = defineModel<boolean>("open");
+const open = defineModel<boolean>("open", { required: true });
 const content = defineModel<string>("content", { required: true });
 
 function onNavViewTrigger(v: string) {
