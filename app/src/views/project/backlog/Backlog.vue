@@ -16,6 +16,7 @@ import { onMounted, reactive, ref, watch } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
 import BacklogHeadCell from "./BacklogHeadCell.vue";
+import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
 
 const props = defineProps<{ projectId: string }>();
 
@@ -141,9 +142,44 @@ function issueStatusColor(status: string) {
   if (status === "doing") return "text-blue-600 border-blue-600 bg-blue-200";
   if (status === "done") return "text-green-600 border-green-600 bg-green-200";
 }
+
+const showIssueDrawer = ref(false);
+const issue = ref<Issue>();
+
+function openIssue(iss: Issue) {
+  issue.value = iss;
+  showIssueDrawer.value = true;
+}
 </script>
 
 <template>
+  <Drawer v-model:open="showIssueDrawer" direction="right">
+    <DrawerContent v-if="issue" class="flex:rows-2xl p-6 m-4 min-w-96">
+      <div class="text-zinc-800 font-semibold text-lg">{{ issue.title }}</div>
+      <div class="grid grid-cols-[1fr_1fr] gap-6">
+        <div class="flex:rows-md">
+          <div class="text-zinc-500 text-xs">Status</div>
+          <div class="capitalize font-semibold">{{ issue.status }}</div>
+        </div>
+        <div class="flex:rows-md items-end">
+          <div class="text-zinc-500 text-xs">Assignees</div>
+          <div class="flex:cols-md">
+            <img
+              v-for="assignee of issue.assignees"
+              :key="assignee.id"
+              :src="assignee.picture"
+              class="w-6 h-6 rounded-full [&:not(:first-child)]:-ml-4"
+            />
+          </div>
+        </div>
+        <div class="flex:rows-md">
+          <div class="text-zinc-500 text-xs">Priority</div>
+          <PriorityToggler class="w-fit" />
+        </div>
+      </div>
+    </DrawerContent>
+  </Drawer>
+
   <div class="flex:rows-xl m-auto py-8 px-12 w-full h-full">
     <div
       class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0"
@@ -189,7 +225,7 @@ function issueStatusColor(status: string) {
           <div
             v-for="{ id, issue } of backlogItems"
             :key="issue.id"
-            class="group grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white"
+            class="group grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white shadow-sm"
           >
             <Button
               variant="outline"
@@ -199,10 +235,10 @@ function issueStatusColor(status: string) {
               >{{ issue.status }}</Button
             >
             <div v-if="editingIssue.id !== issue.id" class="flex:cols-lg flex:center-y text-sm">
-              <RouterLink :to="`issue/${issue.id}`">
+              <div @click="openIssue(issue)" @dblclick="$router.push(`issue/${issue.id}`)">
                 {{ issue.title }}
                 <!-- {{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }}) {{ order }} -->
-              </RouterLink>
+              </div>
               <Icon
                 name="fa-regular-edit"
                 @click="openIssueEdit(issue)"
@@ -240,7 +276,7 @@ function issueStatusColor(status: string) {
               "
             >
               <template #trigger>
-                <div class="rounded-full border-2 border-dashed flex flex:center p-0.5 cursor-pointer">
+                <div class="rounded-full border-2 w-fit border-dashed flex flex:center p-0.5 cursor-pointer">
                   <Icon name="fa-user-plus" class="w-4 h-4 text-zinc-400" />
                 </div>
               </template>
