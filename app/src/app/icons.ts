@@ -46,4 +46,5 @@ export {
   HiArrowSmDown,
   HiArrowSmUp,
   FaRegularEdit,
+  HiPlus,
 } from "oh-vue-icons/icons";
