@@ -14,11 +14,11 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex:rows-4xl border-zinc-300/60 overflow-auto h-full @container">
+  <div class="flex:rows-xl border-zinc-300/60 overflow-auto h-full @container">
     <div class="flex:cols-auto flex:center-y">
       <h1 class="flex:cols flex:baseline">
         <Icon name="bi-people-fill" class="mr-md self-center" />
-        <div class="text-lg font-medium whitespace-nowrap">Members</div>
+        <div class="text-base font-medium whitespace-nowrap">Members</div>
         <div class="text-zinc-400 text-sm ml-xl">{{ members.length }}</div>
       </h1>
 
@@ -33,15 +33,15 @@ const emit = defineEmits<{
         :key="member.id"
         class="flex:cols-lg flex:center-y hover:bg-zinc-200/60 cursor-pointer p-1 [&>:last-child]:mr-1 rounded-md"
       >
-        <div class="relative w-8 h-8">
-          <img :src="member.picture" class="w-full h-full object-contain rounded-full" />
+        <div class="relative">
+          <img :src="member.picture" class="w-8 h-8 rounded-full" />
           <div v-if="member.online" class="p-0.5 bg-white rounded-full absolute -bottom-0.5 -right-0.5">
             <div class="w-2 h-2 bg-green-400 rounded-full"></div>
           </div>
         </div>
 
-        <div class="flex:cols-xl flex:baseline flex-1 min-w-0">
-          <div class="text-base font-medium font-dmSans whitespace-nowrap">
+        <div class="flex:rows flex:baseline flex-1 min-w-0">
+          <div class="text-sm font-medium font-dmSans whitespace-nowrap">
             {{ member.name }}
           </div>
           <div class="text-xs text-zinc-500 whitespace-nowrap text-ellipsis overflow-hidden hidden @xs:block">
@@ -52,11 +52,11 @@ const emit = defineEmits<{
         <div class="ml-auto">
           <div
             v-if="member.role === 'admin'"
-            class="bg-green-200 text-green-500 border border-green-500 h-fit px-1 py-0.5 rounded-sm text-xs"
+            class="h-fit px-1 py-0.5 rounded-sm bg-green-200 text-xs text-green-500 border border-green-500"
           >
             Admin
           </div>
-          <div v-else class="bg-white border border-secondary h-fit px-1 py-0.5 rounded-sm text-xs">
+          <div v-else class="h-fit px-1 py-0.5 rounded-sm bg-white text-xs border border-secondary">
             Member
           </div>
         </div>
