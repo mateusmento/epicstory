@@ -1,5 +1,5 @@
 <script lang="tsx" setup>
-import { Button, Combobox, Dialog, DialogContent, Form } from "@/design-system";
+import { Button, Combobox, Dialog, DialogContent, DialogHeader, Form } from "@/design-system";
 import type { User } from "@/domain/auth";
 import { ref, type FunctionalComponent as FC } from "vue";
 import ChannelMembers from "./ChannelMembers.vue";
@@ -52,16 +52,17 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 
     <Dialog v-model:open="showDialog">
       <DialogContent>
-        <Form @submit="selectedUser && addMember(selectedUser.id)" class="flex:rows-lg mt-xl">
-          {{ query }}
+        <DialogHeader>Add Channel Member</DialogHeader>
+        <Form @submit="selectedUser && addMember(selectedUser.id)" class="flex:cols-lg mt-xl">
           <Combobox
             v-model="selectedUser"
             v-model:searchTerm="query"
             :options="users"
             track-by="id"
             label-by="name"
+            class="flex-1"
           />
-          <Button type="submit" size="xs">Add</Button>
+          <Button type="submit" size="xs" class="h-auto">Add</Button>
         </Form>
       </DialogContent>
     </Dialog>

@@ -38,7 +38,7 @@ const open = ref(false);
 <template>
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
-      <Slot role="combobox" :aria-expanded="open">
+      <Slot role="combobox" :aria-expanded="open" v-bind="$attrs">
         <slot name="trigger" :label="value ? labelOf(value) : 'Select an option...'">
           <Button variant="outline" class="justify-between">
             {{ value ? labelOf(value) : "Select an option..." }}
