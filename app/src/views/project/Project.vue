@@ -15,14 +15,10 @@ function isActive(route: string) {
   <div class="w-full h-full flex:rows">
     <nav class="flex:cols-lg flex:center-y p-2">
       <RouterLink :to="`/project/${projectId}/backlog`">
-        <Button variant="ghost" size="xs" :class="{ 'bg-zinc-200/50 text-zinc-500': isActive('backlog') }"
-          >Backlog</Button
-        >
+        <Button :variant="isActive('backlog') ? 'secondary' : 'ghost'" size="xs">Backlog</Button>
       </RouterLink>
       <RouterLink :to="`/project/${projectId}/board`">
-        <Button variant="ghost" size="xs" :class="{ 'bg-zinc-200/50 text-zinc-500': isActive('board') }"
-          >Board</Button
-        >
+        <Button :variant="isActive('board') ? 'secondary' : 'ghost'" size="xs">Board</Button>
       </RouterLink>
     </nav>
     <Separator />
