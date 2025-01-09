@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
-import Scrollable from "@/components/meeting/Scrollable.vue";
+import { ScrollArea } from "@/design-system";
 import { useChannel } from "@/domain/channels";
 import { reactive } from "vue";
 import ChatboxTopbar from "./ChatboxTopbar.vue";
@@ -40,8 +40,8 @@ const { viewContent } = useNavTrigger("details-pane");
       </button>
     </ChatboxTopbar>
 
-    <Scrollable class="self:fill min-h-0">
-      <div class="flex:rows-xl p-4">
+    <ScrollArea class="self:fill min-h-0" bottom>
+      <div class="flex:rows-xl p-4 !flex">
         <MessageGroup
           v-for="group of messageGroups"
           :key="group.id"
@@ -51,7 +51,7 @@ const { viewContent } = useNavTrigger("details-pane");
           <MessageBox v-for="message of group.messages" :key="message.id" :content="message.content" />
         </MessageGroup>
       </div>
-    </Scrollable>
+    </ScrollArea>
 
     <div class="p-4">
       <MessageWriter v-model:message-content="message.content" @send-message="onSendMessage" />
