@@ -2,11 +2,8 @@
 import { Button, Field, Form } from "@/design-system";
 import UserPictureUpload from "./UserPictureUpload.vue";
 import { useUser } from "@/domain/user";
-import { useAuth } from "@/domain/auth";
 
 const { user, updateUser } = useUser();
-
-const { signOut } = useAuth();
 </script>
 
 <template>
@@ -16,6 +13,5 @@ const { signOut } = useAuth();
       <Field name="name" label="Name" />
       <Button size="xs" class="ml-auto">Save</Button>
     </Form>
-    <Button size="xs" class="ml-auto" @click="signOut">Sign out</Button>
   </div>
 </template>

@@ -1,13 +1,28 @@
 <script setup lang="ts">
 import { UserProfile } from "@/components/user";
-import { Button, NavTrigger } from "@/design-system";
+import {
+  Button,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+  NavTrigger,
+} from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
 import { NavListItem } from "../layout";
+import DropdownMenu from "@/design-system/ui/dropdown-menu/DropdownMenu.vue";
+import DropdownMenuItem from "@/design-system/ui/dropdown-menu/DropdownMenuItem.vue";
+import { LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
+import { RouterLink } from "vue-router";
+import { useAuth } from "@/domain/auth";
 
 defineProps<{ isAppPaneOpen: boolean }>();
 
 const { workspace } = useWorkspace();
+const { signOut } = useAuth();
 </script>
 
 <template>
@@ -66,8 +81,33 @@ const { workspace } = useWorkspace();
 
     <div class="self:fill"></div>
 
-    <RouterLink to="/settings/user-account">
-      <UserProfile />
-    </RouterLink>
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <UserProfile />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent class="w-52">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem :as="RouterLink" to="/settings/user-account">
+            <UserIcon class="mr-2 h-4 w-4" />
+            <span>Profile</span>
+            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem>
+            <SettingsIcon class="mr-2 h-4 w-4" />
+            <span>Settings</span>
+            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem @click="signOut">
+            <LogOutIcon class="mr-2 h-4 w-4" />
+            <span>Sign out</span>
+            <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   </div>
 </template>
