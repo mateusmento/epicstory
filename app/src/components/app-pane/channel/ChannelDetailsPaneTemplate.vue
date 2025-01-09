@@ -1,5 +1,5 @@
 <script lang="tsx" setup>
-import { Button, Combobox, Dialog, DialogContent, DialogHeader, Form } from "@/design-system";
+import { Button, Combobox, Dialog, DialogContent, DialogHeader, Form, Separator } from "@/design-system";
 import type { User } from "@/domain/auth";
 import { ref, type FunctionalComponent as FC } from "vue";
 import ChannelMembers from "./ChannelMembers.vue";
@@ -27,9 +27,9 @@ const selectedUser = defineModel<User>("selectedUser");
 <script lang="tsx">
 const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
   return (
-    <div class="flex:cols-auto flex:center-y py-2 [&:not(:last-child)]:border-b">
-      <div class="text-xs font-semibold text-zinc-500">{label}</div>
-      <div class="text-xs text-zinc-400">{value}</div>
+    <div class="flex:cols-auto flex:center-y py-2">
+      <div class="text-xs font-medium text-zinc-500">{label}</div>
+      <div class="text-xs font-medium text-zinc-800">{value}</div>
     </div>
   );
 };
@@ -42,11 +42,15 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
       <div class="text-lg font-semibold">Channel</div>
     </div>
 
+    <Separator />
+
     <div class="flex:rows">
       <Attribute label="Created by" value="Mateus Sarmento" />
       <Attribute label="Created at" value="Feb 2, 2024" />
       <Attribute label="Member since" value="Aug 16, 2019" />
     </div>
+
+    <Separator />
 
     <ChannelMembers :members :users @add="showDialog = true" />
 
