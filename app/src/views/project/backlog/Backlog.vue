@@ -154,7 +154,7 @@ function openIssue(iss: Issue) {
 
 <template>
   <Drawer v-model:open="showIssueDrawer" direction="right">
-    <DrawerContent v-if="issue" class="flex:col-2xl p-6 m-4 min-w-96">
+    <DrawerContent v-if="issue" class="flex:col-2xl p-6 m-2 min-w-96">
       <div class="text-zinc-800 font-semibold text-lg">{{ issue.title }}</div>
       <div class="grid grid-cols-[1fr_1fr] gap-6">
         <div class="flex:col-md">
