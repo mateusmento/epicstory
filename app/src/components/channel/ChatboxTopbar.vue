@@ -8,7 +8,7 @@ const emit = defineEmits(["more-details"]);
 </script>
 
 <template>
-  <div class="topbar flex:cols flex:center-y gap-2.5 border-b border-zinc-200">
+  <div class="topbar flex:center-y gap-2.5 border-b border-zinc-200">
     <img v-if="chatPicture" :src="chatPicture" class="channel-photo" />
 
     <div v-else class="channel-photos">
@@ -17,7 +17,7 @@ const emit = defineEmits(["more-details"]);
       <div class="channel-photo" style="background: #bcc2bc"></div>
     </div>
 
-    <div class="flex:rows g-0.5" @click="emit('more-details')">
+    <div class="flex:col g-0.5" @click="emit('more-details')">
       <div class="channel-name font-dmSans">{{ chatTitle }}</div>
       <div class="font-dmSans text-[13px] text-[#888]">{{ chatTitle }} is typing something...</div>
     </div>

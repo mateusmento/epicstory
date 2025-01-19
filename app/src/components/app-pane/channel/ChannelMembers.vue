@@ -14,9 +14,9 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex:rows-xl border-zinc-300/60 overflow-auto h-full @container">
-    <div class="flex:cols-auto flex:center-y">
-      <h1 class="flex:cols flex:baseline">
+  <div class="flex:col-xl border-zinc-300/60 overflow-auto h-full @container">
+    <div class="flex:row-auto flex:center-y">
+      <h1 class="flex:baseline">
         <Icon name="bi-people-fill" class="mr-md self-center" />
         <div class="text-base font-medium whitespace-nowrap">Members</div>
         <div class="text-zinc-400 text-sm ml-xl">{{ members.length }}</div>
@@ -27,11 +27,11 @@ const emit = defineEmits<{
       </Button>
     </div>
 
-    <div class="flex:rows-md">
+    <div class="flex:col-md">
       <div
         v-for="member in members"
         :key="member.id"
-        class="flex:cols-lg flex:center-y hover:bg-zinc-200/60 cursor-pointer p-1 [&>:last-child]:mr-1 rounded-md"
+        class="flex:row-lg flex:center-y hover:bg-zinc-200/60 cursor-pointer p-1 [&>:last-child]:mr-1 rounded-md"
       >
         <div class="relative">
           <img :src="member.picture" class="w-8 h-8 rounded-full" />
@@ -40,7 +40,7 @@ const emit = defineEmits<{
           </div>
         </div>
 
-        <div class="flex:rows flex:baseline flex-1 min-w-0">
+        <div class="flex:col flex:baseline flex-1 min-w-0">
           <div class="text-sm font-medium font-dmSans whitespace-nowrap">
             {{ member.name }}
           </div>

@@ -27,7 +27,7 @@ const selectedUser = defineModel<User>("selectedUser");
 <script lang="tsx">
 const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
   return (
-    <div class="flex:cols-auto flex:center-y py-2">
+    <div class="flex:row-auto flex:center-y py-2">
       <div class="text-xs font-medium text-zinc-500">{label}</div>
       <div class="text-xs font-medium text-zinc-800">{value}</div>
     </div>
@@ -36,15 +36,15 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 </script>
 
 <template>
-  <aside class="flex:rows-xl border-zinc-300/60">
-    <div class="flex:cols-lg flex:center-y whitespace-nowrap">
+  <aside class="flex:col-xl border-zinc-300/60">
+    <div class="flex:row-lg flex:center-y whitespace-nowrap">
       <IconChannel class="overflow-visible" />
       <div class="text-lg font-semibold">Channel</div>
     </div>
 
     <Separator />
 
-    <div class="flex:rows">
+    <div class="flex:col">
       <Attribute label="Created by" value="Mateus Sarmento" />
       <Attribute label="Created at" value="Feb 2, 2024" />
       <Attribute label="Member since" value="Aug 16, 2019" />
@@ -57,7 +57,7 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
     <Dialog v-model:open="showDialog">
       <DialogContent>
         <DialogHeader>Add Channel Member</DialogHeader>
-        <Form @submit="selectedUser && addMember(selectedUser.id)" class="flex:cols-lg mt-xl">
+        <Form @submit="selectedUser && addMember(selectedUser.id)" class="flex:row-lg mt-xl">
           <Combobox
             v-model="selectedUser"
             v-model:searchTerm="query"

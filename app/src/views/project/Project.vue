@@ -12,8 +12,8 @@ function isActive(route: string) {
 </script>
 
 <template>
-  <div class="w-full h-full flex:rows">
-    <nav class="flex:cols-lg flex:center-y p-2">
+  <div class="w-full h-full flex:col">
+    <nav class="flex:row-lg flex:center-y p-2">
       <RouterLink :to="`/project/${projectId}/backlog`">
         <Button :variant="isActive('backlog') ? 'secondary' : 'ghost'" size="xs">Backlog</Button>
       </RouterLink>

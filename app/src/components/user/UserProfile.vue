@@ -6,10 +6,10 @@ const { user } = useAuth();
 </script>
 
 <template>
-  <div class="flex:cols-sm flex:center-y p-xl rounded-md cursor-pointer hover:bg-zinc-200/60">
+  <div class="flex:row-sm flex:center-y p-xl rounded-md cursor-pointer hover:bg-zinc-200/60">
     <img :src="user?.picture" class="w-10 h-10 mr-lg rounded-full" />
 
-    <div class="flex:rows-sm flex-1 min-w-0">
+    <div class="flex:col-sm flex-1 min-w-0">
       <div class="text-base text-zinc-800 whitespace-nowrap text-ellipsis overflow-hidden">
         {{ user?.name }}
       </div>

@@ -23,12 +23,12 @@ async function signin(data: SigninRequest) {
 
 <template>
   <main class="flex flex:center h-full py-4xl">
-    <div class="signup w-xl h-full rounded-3xl flex:cols-md p-xl">
-      <aside class="signup-advertisement highlight-box flex:rows-auto w-md rounded-xl">
+    <div class="signup w-xl h-full rounded-3xl flex:row-md p-xl">
+      <aside class="signup-advertisement highlight-box flex:col-auto w-md rounded-xl">
         <div class="m-4xl">
           <b class="block logo-title font-semibold mb-4xl">Epicstory</b>
 
-          <div class="flex:rows-3xl">
+          <div class="flex:col-3xl">
             <h1 class="headline_title font-semibold">
               Create epic<br />
               stories with us.
@@ -40,8 +40,8 @@ async function signin(data: SigninRequest) {
           </div>
         </div>
 
-        <div class="flex:space"></div>
-        <div class="flex:space"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
 
         <article class="testimony m-2xl">
           <div class="testimony-backdrop"></div>
@@ -66,15 +66,15 @@ async function signin(data: SigninRequest) {
         </article>
       </aside>
 
-      <section class="signup-form flex:rows-7xl flex:center-y self:fill mx-6xl">
-        <div class="flex:rows-xl">
+      <section class="signup-form flex:col-7xl flex:center-y flex-1 mx-6xl">
+        <div class="flex:col-xl">
           <h2 class="title text-neutral-800">Sign in</h2>
           <div class="subtitle text-neutral-600">Continue your journey with Epicstory.</div>
         </div>
 
-        <Form class="flex:rows-3xl" @submit="signin as any" data-testid="signup-form">
+        <Form class="flex:col-3xl" @submit="signin as any" data-testid="signup-form">
           <Field
-            class="flex:rows-xl"
+            class="flex:col-xl"
             v-model="signinEmail"
             label="Email"
             name="email"
@@ -82,7 +82,7 @@ async function signin(data: SigninRequest) {
             data-testid="signin-email-input"
           />
           <Field
-            class="flex:rows-xl"
+            class="flex:col-xl"
             type="password"
             label="Password"
             name="password"
@@ -94,7 +94,7 @@ async function signin(data: SigninRequest) {
             <RouterLink to="/signup" class="text-blue-600">Sign up.</RouterLink>
           </div>
 
-          <div class="flex:rows-2xl mt-3xl">
+          <div class="flex:col-2xl mt-3xl">
             <Button
               type="submit"
               legacy
@@ -106,7 +106,7 @@ async function signin(data: SigninRequest) {
             </Button>
           </div>
 
-          <div class="flex:cols-2xl flex:center text-slate-800">
+          <div class="flex:row-2xl flex:center text-slate-800">
             <div class="border border-solid border-slate-200 flex-1"></div>
             or
             <div class="border border-solid border-slate-200 flex-1"></div>
@@ -115,7 +115,7 @@ async function signin(data: SigninRequest) {
           <Button
             as="a"
             :href="`${config.API_URL}/auth/google`"
-            class="flex:cols-lg w-full"
+            class="flex:row-lg w-full"
             data-testid="signup-with-google"
           >
             <IconGoogle class="h-8" />

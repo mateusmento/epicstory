@@ -15,7 +15,7 @@ const {
 </script>
 
 <template>
-  <section class="meeting flex:rows min-h-0">
+  <section class="meeting flex:col min-h-0">
     <template v-if="attendees.length === 0">
       <div class="meeting-conference">
         <video
@@ -69,8 +69,8 @@ const {
       </div>
     </template>
     <template v-else>
-      <div class="flex:rows flex-1 relative">
-        <div class="flex:rows-md flex-1">
+      <div class="flex:col flex-1 relative">
+        <div class="flex:col-md flex-1">
           <div class="flex-1 relative">
             <video
               v-if="mycamera"
@@ -89,7 +89,7 @@ const {
             />
           </div>
 
-          <div class="flex flex:cols-md flex:center-x">
+          <div class="flex flex:row-md flex:center-x">
             <div v-for="attendee in attendees" :key="attendee.remoteId" class="relative">
               <video
                 class="w-64 rounded-3xl object-cover"

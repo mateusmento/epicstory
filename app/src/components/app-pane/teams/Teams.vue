@@ -18,11 +18,11 @@ onMounted(() => fetchTeams());
 </script>
 
 <template>
-  <div class="flex:rows w-96">
-    <div class="flex:rows-xl p-4">
+  <div class="flex:col w-96">
+    <div class="flex:col-xl p-4">
       <Collapsible as-child>
-        <div class="flex:cols-auto flex:center-y">
-          <h1 class="flex:cols-md flex:center-y text-lg">
+        <div class="flex:row-auto flex:center-y">
+          <h1 class="flex:row-md flex:center-y text-lg">
             <Icon name="bi-person-workspace" />
             <div>Teams</div>
           </h1>
@@ -33,7 +33,7 @@ onMounted(() => fetchTeams());
         </div>
 
         <CollapsibleContent>
-          <Form @submit="createTeam($event.name)" class="flex:rows-lg">
+          <Form @submit="createTeam($event.name)" class="flex:col-lg">
             <Field label="Name" name="name" placeholder="Create new team..." />
             <Button type="submit" size="xs">Create</Button>
           </Form>
@@ -41,16 +41,16 @@ onMounted(() => fetchTeams());
       </Collapsible>
     </div>
 
-    <div class="flex:rows">
+    <div class="flex:col">
       <NavTrigger
         v-for="team in teams"
         :key="team.id"
         view="app-pane"
         content="team"
         :props="{ teamId: team.id }"
-        class="flex:cols flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
-        <div class="flex:rows-md">
+        <div class="flex:col-md">
           <div class="text-base text-zinc-800 font-dmSans font-medium">{{ team.name }}</div>
           <div class="text-xs text-zinc-500">4 members</div>
         </div>

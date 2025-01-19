@@ -33,7 +33,7 @@ function onSelectWorkspace(workspace: Workspace) {
 </script>
 
 <template>
-  <div class="flex:rows-2xl">
+  <div class="flex:col-2xl">
     <div class="p-2 pb-0">
       <NavTrigger
         view="navbar"
@@ -41,25 +41,25 @@ function onSelectWorkspace(workspace: Workspace) {
         :as="Button"
         variant="ghost"
         size="xs"
-        class="flex:cols-sm ml-auto text-xs text-zinc-500"
+        class="flex:row-sm ml-auto text-xs text-zinc-500"
       >
         <Icon name="hi-solid-arrow-sm-left" />
         Back to workspace
       </NavTrigger>
     </div>
-    <Collapsible class="flex:rows-md rounded-md bg-zinc-100 text-zinc-500 text-sm">
-      <div class="flex:cols-auto flex:center-y px-2 py-1 font-semibold select-none">
+    <Collapsible class="flex:col-md rounded-md bg-zinc-100 text-zinc-500 text-sm">
+      <div class="flex:row-auto flex:center-y px-2 py-1 font-semibold select-none">
         Workspaces
         <CollapsibleTrigger class="px-1.5 py-0.5 rounded-sm hover:bg-zinc-200 cursor-pointer">
           +
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent>
-        <Form @submit="createWorkspace as any" class="p-0.5 flex:cols-md">
+        <Form @submit="createWorkspace as any" class="p-0.5 flex:row-md">
           <Field
             name="name"
             placeholder="Create workspace..."
-            class="self:fill"
+            class="flex-1"
             :classes="{ input: 'p-1 h-fit text-xs bg-white' }"
           />
           <Button size="xs" class="px-2 py-0 h-auto text-xs">Add</Button>

@@ -26,11 +26,11 @@ const { signOut } = useAuth();
 </script>
 
 <template>
-  <div class="flex:rows-xl h-full text-zinc-500">
-    <div class="flex:rows-md p-2 w-full mr-auto">
+  <div class="flex:col-xl h-full text-zinc-500">
+    <div class="flex:col-md p-2 w-full mr-auto">
       <div class="pl-1 text-xs text-zinc-500">Workspace</div>
 
-      <div class="flex:cols-md flex:center-y w-full">
+      <div class="flex:row-md flex:center-y w-full">
         <NavTrigger
           view="navbar"
           content="switch-workspace"
@@ -43,7 +43,7 @@ const { signOut } = useAuth();
           <Icon name="oi-chevron-down" />
         </NavTrigger>
 
-        <div class="self:fill"></div>
+        <div class="flex-1"></div>
 
         <NavTrigger view="navbar" content="settings" :as="Button" variant="ghost" size="icon">
           <Icon name="md-settings-round" />
@@ -51,35 +51,35 @@ const { signOut } = useAuth();
       </div>
     </div>
 
-    <nav class="flex:rows-md">
-      <NavListItem view="app-pane" content="inbox" class="flex:cols-md flex:center-y">
+    <nav class="flex:col-md">
+      <NavListItem view="app-pane" content="inbox" class="flex:row-md flex:center-y">
         <Icon name="oi-inbox" />
         Inbox
       </NavListItem>
-      <NavListItem view="app-pane" content="issues" class="flex:cols-md flex:center-y">
+      <NavListItem view="app-pane" content="issues" class="flex:row-md flex:center-y">
         <Icon name="oi-apps" />
         Issues
       </NavListItem>
-      <NavListItem view="app-pane" content="channels" class="flex:cols-md flex:center-y">
+      <NavListItem view="app-pane" content="channels" class="flex:row-md flex:center-y">
         <Icon name="fa-slack-hash" />
         Channels
         <Icon name="bi-chevron-expand" class="ml-auto" />
       </NavListItem>
-      <NavListItem view="app-pane" content="projects" class="flex:cols-md flex:center-y">
+      <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y">
         <Icon name="hi-clipboard-list" />
         Projects
       </NavListItem>
-      <NavListItem view="app-pane" content="teams" class="flex:cols-md flex:center-y">
+      <NavListItem view="app-pane" content="teams" class="flex:row-md flex:center-y">
         <Icon name="bi-person-workspace" />
         Teams
       </NavListItem>
-      <NavListItem view="app-pane" content="workspace-members" class="flex:cols-md flex:center-y">
+      <NavListItem view="app-pane" content="workspace-members" class="flex:row-md flex:center-y">
         <Icon name="bi-people-fill" />
         Members
       </NavListItem>
     </nav>
 
-    <div class="self:fill"></div>
+    <div class="flex-1"></div>
 
     <DropdownMenu>
       <DropdownMenuTrigger as-child>

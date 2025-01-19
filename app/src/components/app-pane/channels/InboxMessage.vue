@@ -31,13 +31,13 @@ function formatMessageDate(date: string) {
 <template>
   <div
     @click="onOpenChannel()"
-    class="flex:cols-2xl flex:center-y p-3 border-t hover:bg-neutral-200/60 cursor-pointer"
+    class="flex:row-2xl flex:center-y p-3 border-t hover:bg-neutral-200/60 cursor-pointer"
     :class="{ 'bg-zinc-200/60': open }"
   >
     <img :src="image" class="w-10 h-10 rounded-full" />
 
-    <div class="self:fill flex:rows-sm flex-1 overflow-hidden">
-      <div class="flex:cols-auto flex:center-y">
+    <div class="flex-1 flex:col-sm flex-1 overflow-hidden">
+      <div class="flex:row-auto flex:center-y">
         <div class="text-base font-medium font-dmSans text-zinc-800">
           {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
         </div>
@@ -46,7 +46,7 @@ function formatMessageDate(date: string) {
         </div>
       </div>
 
-      <div class="flex:cols-auto flex:center-y">
+      <div class="flex:row-auto flex:center-y">
         <div
           class="text-sm font-lato text-ellipsis overflow-hidden whitespace-nowrap"
           :class="[channel.unreadMessagesCount > 0 ? 'text-zinc-800' : 'text-zinc-500']"

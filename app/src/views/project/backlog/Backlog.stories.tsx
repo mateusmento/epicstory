@@ -43,7 +43,7 @@ export const Default: Story = {
         },
       ];
       return () => (
-        <div class="flex:rows-md w-96">
+        <div class="flex:col-md w-96">
           <Select>
             <SelectTrigger>
               <SelectValue placeholder="Select a fruit" />

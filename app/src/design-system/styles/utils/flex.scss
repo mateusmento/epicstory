@@ -1,5 +1,7 @@
-.flex,
-[class^="flex:"],
+[class^="flex:"] {
+  display: flex;
+}
+
 [class*=" flex:"] {
   display: flex;
 }
@@ -8,111 +10,79 @@
   flex-wrap: wrap;
 }
 
+@each $size_name, $size in $sizes_no_auto {
+  .flex\:row-#{$size_name} {
+    flex-direction: row;
+    gap: #{$size};
+  }
+}
+
 .flex\:center {
   align-items: center;
   justify-content: center;
 }
 
-.flex {
-  &.flex\:center-x {
-    justify-content: center;
-  }
-
-  &.flex\:center-y {
-    align-items: center;
-  }
+.flex\:center-x {
+  justify-content: center;
 }
 
-.flex\:rows {
+.flex\:center-y {
+  align-items: center;
+}
+
+.flex\:baseline {
+  align-items: baseline;
+}
+
+.flex\:stretch {
+  align-items: stretch;
+}
+
+.flex\:col {
   flex-direction: column;
-
-  &.flex\:center-x {
-    align-items: center;
-  }
-
-  &.flex\:center-y {
-    justify-content: center;
-  }
-}
-
-.flex\:cols {
-  flex-direction: row;
-
-  &.flex\:center-x {
-    justify-content: center;
-  }
-
-  &.flex\:center-y {
-    align-items: center;
-  }
-
-  &.flex\:baseline {
-    align-items: baseline;
-  }
 }
 
 @each $size_name, $size in $sizes_no_auto {
-  .flex\:rows-#{$size_name} {
+  .flex\:col-#{$size_name} {
     flex-direction: column;
     gap: #{$size};
+  }
+}
 
-    &.flex\:center-x {
-      align-items: center;
-    }
-
-    &.flex\:center-y {
-      justify-content: center;
-    }
+.flex\:col {
+  &.flex\:center-x {
+    align-items: center;
   }
 
-  .flex\:cols-#{$size_name} {
-    flex-direction: row;
-    gap: #{$size};
+  &.flex\:center-y {
+    justify-content: center;
+  }
 
+  &.flex\:baseline {
+    justify-content: baseline;
+  }
+
+  &.flex\:stretch {
+    justify-content: stretch;
+  }
+}
+
+@each $size_name, $size in $sizes {
+  .flex\:col-#{$size_name} {
     &.flex\:center-x {
-      justify-content: center;
+      align-items: center;
     }
 
     &.flex\:center-y {
-      align-items: center;
+      justify-content: center;
     }
 
     &.flex\:baseline {
-      align-items: baseline;
+      justify-content: baseline;
+    }
+
+    &.flex\:stretch {
+      justify-content: stretch;
     }
   }
-}
-
-.flex\:rows-auto {
-  flex-direction: column;
-  justify-content: space-between;
-
-  &.flex\:center-x {
-    align-items: center;
-  }
-
-  &.flex\:center-y {
-    justify-content: center;
-  }
-}
-
-.flex\:cols-auto {
-  flex-direction: row;
-  justify-content: space-between;
-
-  &.flex\:center-x {
-    justify-content: center;
-  }
-
-  &.flex\:center-y {
-    align-items: center;
-  }
-}
-
-.self\:fill {
-  flex: 1;
-}
-
-.flex\:space {
-  flex: 1;
 }

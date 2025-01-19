@@ -12,13 +12,13 @@ const isDetailsPaneOpen = computed(() => openPane.value === "details-pane");
 
 <template>
   <div class="h-full">
-    <div class="flex:cols w-full h-full bg-zinc-100 bg-secondary">
+    <div class="flex w-full h-full bg-zinc-100 bg-secondary">
       <Navbar>
         <slot name="navbar" :isAppPaneOpen="isAppPaneOpen" />
       </Navbar>
 
       <main
-        class="flex:cols self:fill min-w-0 bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
+        class="flex flex-1 min-w-0 bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
       >
         <DrawerPane
           view="app-pane"
@@ -29,7 +29,7 @@ const isDetailsPaneOpen = computed(() => openPane.value === "details-pane");
         </DrawerPane>
 
         <!-- Main Content -->
-        <section class="self:fill min-w-0">
+        <section class="flex-1 min-w-0">
           <slot name="main-content" />
         </section>
 

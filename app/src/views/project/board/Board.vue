@@ -31,10 +31,10 @@ const [list2Ref, list2] = useDragAndDrop(["Welcome", "everyone"], {
 </script>
 
 <template>
-  <div class="flex:cols-2xl p-2">
-    <div class="flex:rows-lg">
+  <div class="flex:row-2xl p-2">
+    <div class="flex:col-lg">
       <div class="self-center">List 1</div>
-      <div id="list1" class="flex:rows-lg w-64 h-full p-2 border rounded-sm" ref="list1Ref">
+      <div id="list1" class="flex:col-lg w-64 h-full p-2 border rounded-sm" ref="list1Ref">
         <div
           v-for="item of list1"
           :key="item"
@@ -44,9 +44,9 @@ const [list2Ref, list2] = useDragAndDrop(["Welcome", "everyone"], {
         </div>
       </div>
     </div>
-    <div class="flex:rows-lg">
+    <div class="flex:col-lg">
       <div class="self-center">List 2</div>
-      <div id="list2" class="flex:rows-lg w-64 h-full p-2 border rounded-sm" ref="list2Ref">
+      <div id="list2" class="flex:col-lg w-64 h-full p-2 border rounded-sm" ref="list2Ref">
         <div
           v-for="item of list2"
           :key="item"

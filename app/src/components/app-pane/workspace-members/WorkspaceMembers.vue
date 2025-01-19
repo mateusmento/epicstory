@@ -26,11 +26,11 @@ watch(query, () => fetchUsers(query.value));
 </script>
 
 <template>
-  <div class="flex:rows w-96">
-    <div class="flex:rows-3xl p-4">
+  <div class="flex:col w-96">
+    <div class="flex:col-3xl p-4">
       <Collapsible as-child>
-        <div class="flex:cols-auto flex:center-y">
-          <h1 class="flex:cols-md flex:center-y text-lg font-medium whitespace-nowrap">
+        <div class="flex:row-auto flex:center-y">
+          <h1 class="flex:row-md flex:center-y text-lg font-medium whitespace-nowrap">
             <Icon name="bi-people-fill" />
             Workspace Members
           </h1>
@@ -41,7 +41,7 @@ watch(query, () => fetchUsers(query.value));
         <CollapsibleContent>
           <Form
             @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)"
-            class="flex:rows-lg"
+            class="flex:col-lg"
           >
             <Combobox
               v-model="selectedUser"
@@ -57,24 +57,24 @@ watch(query, () => fetchUsers(query.value));
       </Collapsible>
 
       <div
-        class="flex:cols-md flex:center-y flex:center-x p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm"
+        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm"
       >
         <IconSearch /> Search
       </div>
     </div>
 
-    <div class="flex:rows text-sm">
+    <div class="flex:col text-sm">
       <div
         v-for="member in members"
         :key="member.id"
-        class="flex:cols-lg p-3 border-t hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:row-lg p-3 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
-        <div class="flex:rows-md">
+        <div class="flex:col-md">
           <div class="text-base font-medium font-dmSans whitespace-nowrap">{{ member.user.name }}</div>
           <div class="text-xs text-zinc-500 whitespace-nowrap">{{ member.user.email }}</div>
         </div>
-        <div class="flex:rows-auto ml-auto">
+        <div class="flex:col-auto ml-auto">
           <Badge variant="outline" class="self-end">{{ member.role === 1 ? "Admin" : "Member" }}</Badge>
           <div class="text-xs text-zinc-500 whitespace-nowrap">Member since april 2019</div>
         </div>

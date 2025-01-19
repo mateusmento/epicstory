@@ -21,11 +21,11 @@ watch(query, () => fetchUsers(query.value));
 </script>
 
 <template>
-  <div class="flex:rows w-96">
-    <div class="flex:rows-xl p-4">
+  <div class="flex:col w-96">
+    <div class="flex:col-xl p-4">
       <Collapsible as-child>
-        <div class="flex:cols-auto flex:center-y">
-          <h1 class="flex:cols-md flex:center-y text-lg">
+        <div class="flex:row-auto flex:center-y">
+          <h1 class="flex:row-md flex:center-y text-lg">
             <Icon name="bi-person-workspace" />
             <div>{{ team?.name }}</div>
           </h1>
@@ -36,7 +36,7 @@ watch(query, () => fetchUsers(query.value));
         </div>
 
         <CollapsibleContent>
-          <div class="flex:rows-lg">
+          <div class="flex:col-lg">
             <Combobox
               v-model="selectedUser"
               v-model:searchTerm="query"
@@ -51,16 +51,16 @@ watch(query, () => fetchUsers(query.value));
       </Collapsible>
     </div>
 
-    <div class="flex:rows">
+    <div class="flex:col">
       <div
         v-for="member in members"
         :key="member.id"
         view="app-pane"
         content="team"
-        class="flex:cols-2xl flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:row-2xl flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
         <img :src="member.user.picture" class="w-12 h-12 rounded-full" />
-        <div class="flex:rows-md">
+        <div class="flex:col-md">
           <div class="text-base text-zinc-800 font-dmSans font-medium">{{ member.user.name }}</div>
           <div class="text-xs text-zinc-500">4 members</div>
         </div>

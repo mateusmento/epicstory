@@ -12,7 +12,7 @@ watch(query, () => fetchUsers(query.value));
 </script>
 
 <template>
-  <aside class="flex:rows-4xl h-full w-96 p-4 border-l border-zinc-300/60">
+  <aside class="flex:col-4xl h-full w-96 p-4 border-l border-zinc-300/60">
     <ChannelDetailsPaneTemplate v-model:query="query" :users :members @add-member="addMember" />
   </aside>
 </template>

@@ -34,7 +34,7 @@ function onSendMessage() {
       @keydown.ctrl.enter="onSendMessage"
     />
 
-    <div class="flex:cols-xl flex:center-y text-zinc-500">
+    <div class="flex:row-xl flex:center-y text-zinc-500">
       <Icon name="bi-camera-video" class="w-6 h-6" />
       <Icon name="bi-mic" class="w-6 h-6" />
       <Separator orientation="vertical" class="h-8 bg-zinc-300" />
@@ -43,13 +43,13 @@ function onSendMessage() {
       <Icon name="bi-image" class="w-6 h-6" />
       <Icon name="ri-attachment-2" class="w-6 h-6" />
 
-      <div class="self:fill"></div>
+      <div class="flex-1"></div>
 
       <Button
         legacy
         legacy-variant="primary"
         legacy-size="sm"
-        class="flex:cols-lg flex:center-y text-sm bg-[#3A66FF]"
+        class="flex:row-lg flex:center-y text-sm bg-[#3A66FF]"
         @click="onSendMessage"
       >
         <Icon name="io-paper-plane" />

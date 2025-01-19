@@ -154,16 +154,16 @@ function openIssue(iss: Issue) {
 
 <template>
   <Drawer v-model:open="showIssueDrawer" direction="right">
-    <DrawerContent v-if="issue" class="flex:rows-2xl p-6 m-4 min-w-96">
+    <DrawerContent v-if="issue" class="flex:col-2xl p-6 m-4 min-w-96">
       <div class="text-zinc-800 font-semibold text-lg">{{ issue.title }}</div>
       <div class="grid grid-cols-[1fr_1fr] gap-6">
-        <div class="flex:rows-md">
+        <div class="flex:col-md">
           <div class="text-zinc-500 text-xs">Status</div>
           <div class="capitalize font-semibold">{{ issue.status }}</div>
         </div>
-        <div class="flex:rows-md items-end">
+        <div class="flex:col-md items-end">
           <div class="text-zinc-500 text-xs">Assignees</div>
-          <div class="flex:cols-md">
+          <div class="flex:row-md">
             <img
               v-for="assignee of issue.assignees"
               :key="assignee.id"
@@ -172,7 +172,7 @@ function openIssue(iss: Issue) {
             />
           </div>
         </div>
-        <div class="flex:rows-md">
+        <div class="flex:col-md">
           <div class="text-zinc-500 text-xs">Priority</div>
           <PriorityToggler class="w-fit" />
         </div>
@@ -180,7 +180,7 @@ function openIssue(iss: Issue) {
     </DrawerContent>
   </Drawer>
 
-  <div class="flex:rows-xl m-auto py-8 px-12 w-full h-full">
+  <div class="flex:col-xl m-auto py-8 px-12 w-full h-full">
     <div
       class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0"
     >
@@ -206,7 +206,7 @@ function openIssue(iss: Issue) {
           @click="toggleOrder('priority')"
           @reset="resetOrder"
         />
-        <div class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer flex:cols-md flex:center-y">
+        <div class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer flex:row-md flex:center-y">
           Assignees
         </div>
         <BacklogHeadCell
@@ -234,7 +234,7 @@ function openIssue(iss: Issue) {
               :class="cn(issueStatusColor(issue.status))"
               >{{ issue.status }}</Button
             >
-            <div v-if="editingIssue.id !== issue.id" class="flex:cols-lg flex:center-y text-sm">
+            <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y text-sm">
               <div @click="openIssue(issue)" @dblclick="$router.push(`issue/${issue.id}`)">
                 {{ issue.title }}
                 <!-- {{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }}) {{ order }} -->
@@ -245,7 +245,7 @@ function openIssue(iss: Issue) {
                 class="opacity-0 group-hover:opacity-100 transition-opacity"
               />
             </div>
-            <Form v-else @submit="saveEdit" class="flex:cols-md flex:center-y">
+            <Form v-else @submit="saveEdit" class="flex:row-md flex:center-y">
               <Field v-model="editingIssue.title" size="badge" name="title" />
               <Button type="submit" size="badge">Save</Button>
               <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
@@ -256,7 +256,7 @@ function openIssue(iss: Issue) {
                 @update:value="updateIssue(issue.id, { priority: $event })"
               />
             </div>
-            <div class="flex:cols">
+            <div class="flex:center">
               <img
                 v-for="(assignee, i) of issue.assignees"
                 :key="assignee.id"
@@ -294,7 +294,7 @@ function openIssue(iss: Issue) {
       </div>
     </div>
 
-    <Form @submit="onCreateBacklogItem" class="flex:cols-md">
+    <Form @submit="onCreateBacklogItem" class="flex:row-md">
       <Field name="title" size="xs" placeholder="Describe an issue..." class="flex-1" />
       <Button type="submit" size="xs">Add</Button>
     </Form>

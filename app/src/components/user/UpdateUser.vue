@@ -49,7 +49,7 @@ function onSave() {
 </script>
 
 <template>
-  <div class="flex:rows-lg">
+  <div class="flex:col-lg">
     <label ref="fileDrop" class="self-center">
       <img v-if="!newPictureIsOver" :src="pictureUrl" class="rounded-full" />
       <div v-else class="dropzone w-96 h-96 flex items-center justify-center">Drop a new picture</div>

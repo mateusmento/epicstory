@@ -20,12 +20,12 @@ async function signup(data: SignupRequest) {
 
 <template>
   <main class="flex flex:center h-full py-4xl">
-    <div class="signup w-xl h-full rounded-3xl flex:cols-md p-xl">
-      <aside class="signup-advertisement highlight-box flex:rows-auto w-md rounded-xl">
+    <div class="signup w-xl h-full rounded-3xl flex:row-md p-xl">
+      <aside class="signup-advertisement highlight-box flex:col-auto w-md rounded-xl">
         <div class="m-4xl">
           <b class="block logo-title font-semibold mb-4xl">Epicstory</b>
 
-          <div class="flex:rows-3xl">
+          <div class="flex:col-3xl">
             <h1 class="headline_title font-semibold">
               Create epic<br />
               stories with us.
@@ -37,8 +37,8 @@ async function signup(data: SignupRequest) {
           </div>
         </div>
 
-        <div class="flex:space"></div>
-        <div class="flex:space"></div>
+        <div class="flex-1"></div>
+        <div class="flex-1"></div>
 
         <article class="testimony m-2xl">
           <div class="testimony-backdrop"></div>
@@ -63,29 +63,29 @@ async function signup(data: SignupRequest) {
         </article>
       </aside>
 
-      <section class="signup-form flex:rows-7xl flex:center-y self:fill mx-6xl">
-        <div class="flex:rows-xl">
+      <section class="signup-form flex:col-7xl flex:center-y flex-1 mx-6xl">
+        <div class="flex:col-xl">
           <h2 class="title text-neutral-800">Sign up</h2>
           <div class="subtitle text-neutral-600">Start your journey with Epicstory.</div>
         </div>
 
-        <Form class="flex:rows-3xl" @submit="signup as SubmissionHandler<any, any>" data-testid="signup-form">
+        <Form class="flex:col-3xl" @submit="signup as SubmissionHandler<any, any>" data-testid="signup-form">
           <Field
-            class="flex:rows-xl"
+            class="flex:col-xl"
             label="Name"
             name="name"
             placeholder="Name"
             data-testid="signup-name-input"
           />
           <Field
-            class="flex:rows-xl"
+            class="flex:col-xl"
             label="Email"
             name="email"
             placeholder="Enter your email"
             data-testid="signup-email-input"
           />
           <Field
-            class="flex:rows-xl"
+            class="flex:col-xl"
             type="password"
             label="Password"
             name="password"
@@ -97,7 +97,7 @@ async function signup(data: SignupRequest) {
             <RouterLink to="/signin" class="text-blue-600">Sign in.</RouterLink>
           </div>
 
-          <div class="flex:rows-2xl mt-3xl">
+          <div class="flex:col-2xl mt-3xl">
             <Button
               type="submit"
               legacy
@@ -109,7 +109,7 @@ async function signup(data: SignupRequest) {
             </Button>
           </div>
 
-          <div class="flex:cols-2xl flex:center text-slate-800">
+          <div class="flex:row-2xl flex:center text-slate-800">
             <div class="border border-solid border-slate-200 flex-1"></div>
             or
             <div class="border border-solid border-slate-200 flex-1"></div>
@@ -118,7 +118,7 @@ async function signup(data: SignupRequest) {
           <Button
             as="a"
             :href="`${config.API_URL}/auth/google`"
-            class="flex:cols-lg w-full"
+            class="flex:row-lg w-full"
             data-testid="signup-with-google"
           >
             <IconGoogle class="h-8" />

@@ -33,15 +33,15 @@ const { viewContent } = useNavTrigger("details-pane");
 </script>
 
 <template>
-  <div v-if="channel" class="flex:rows h-full">
+  <div v-if="channel" class="flex:col h-full">
     <ChatboxTopbar :chatTitle="chatTitle" :chatPicture="chatPicture" @more-details="viewContent('channel')">
       <button @click="emit('join-meeting')" class="p-2 ml-auto border-none rounded-full bg-green">
         <IconAcceptCall />
       </button>
     </ChatboxTopbar>
 
-    <ScrollArea class="self:fill min-h-0" bottom>
-      <div class="flex:rows-xl p-4 !flex">
+    <ScrollArea class="flex-1 min-h-0" bottom>
+      <div class="flex:col-xl p-4 !flex">
         <MessageGroup
           v-for="group of messageGroups"
           :key="group.id"

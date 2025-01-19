@@ -32,37 +32,37 @@ const { currentMeeting, joinMeeting } = useMeeting();
 </script>
 
 <template>
-  <Tabs class="flex:rows h-full w-96" default-value="messages">
-    <div class="p-4 flex:rows-xl mx-auto">
-      <div class="flex:cols-auto flex:center-y mb-3">
-        <div class="flex:cols-sm flex:center-y text-lg text-zinc-800 font-medium">
+  <Tabs class="flex:col h-full w-96" default-value="messages">
+    <div class="p-4 flex:col-xl mx-auto">
+      <div class="flex:row-auto flex:center-y mb-3">
+        <div class="flex:row-sm flex:center-y text-lg text-zinc-800 font-medium">
           <Icon name="fa-slack-hash" scale="1.2" />
           Channels
         </div>
-        <div class="flex:cols-md flex:center-y text-zinc-500 text-sm">
+        <div class="flex:row-md flex:center-y text-zinc-500 text-sm">
           Recent
           <IconArrowDown />
         </div>
       </div>
-      <div class="flex:cols-md flex:center p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm">
+      <div class="flex:row-md flex:center p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm">
         <IconSearch /> Search
       </div>
       <TabsList class="w-full mt-4">
-        <TabsTrigger value="messages" class="flex:cols-md">
+        <TabsTrigger value="messages" class="flex:row-md">
           <Icon name="bi-person-lines-fill" />
           Messages
         </TabsTrigger>
-        <TabsTrigger value="mentions" class="flex:cols-md">
+        <TabsTrigger value="mentions" class="flex:row-md">
           <IconMention />
           Mentions
         </TabsTrigger>
-        <TabsTrigger value="threads" class="flex:cols-md">
+        <TabsTrigger value="threads" class="flex:row-md">
           <IconThreads />
           Threads
         </TabsTrigger>
       </TabsList>
     </div>
-    <TabsContent value="messages" class="flex:rows self:fill">
+    <TabsContent value="messages" class="flex:col flex-1">
       <InboxMessage
         v-for="channel of channels"
         :key="channel.id"
@@ -79,7 +79,7 @@ const { currentMeeting, joinMeeting } = useMeeting();
             legacy
             legacy-variant="primary"
             legacy-size="sm"
-            class="flex:cols-md flex:center-y m-8 mt-auto ml-auto text-sm"
+            class="flex:row-md flex:center-y m-8 mt-auto ml-auto text-sm"
           >
             <IconChannel />
             Create Channel
@@ -87,7 +87,7 @@ const { currentMeeting, joinMeeting } = useMeeting();
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>Create channel</DialogHeader>
-          <Form @submit="createChannel($event as any)" class="flex:rows-lg">
+          <Form @submit="createChannel($event as any)" class="flex:col-lg">
             <RadioGroup
               v-model="channelType"
               type="single"

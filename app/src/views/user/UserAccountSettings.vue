@@ -7,9 +7,9 @@ const { user, updateUser } = useUser();
 </script>
 
 <template>
-  <div v-if="user" class="flex:rows-xl w-96 mx-auto px-4 mt-12">
+  <div v-if="user" class="flex:col-xl w-96 mx-auto px-4 mt-12">
     <UserPictureUpload />
-    <Form @submit="updateUser($event)" :initial-values="user" class="flex:rows-lg">
+    <Form @submit="updateUser($event)" :initial-values="user" class="flex:col-lg">
       <Field name="name" label="Name" />
       <Button size="xs" class="ml-auto">Save</Button>
     </Form>
