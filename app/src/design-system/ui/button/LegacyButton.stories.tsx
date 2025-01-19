@@ -34,7 +34,7 @@ export const DefaultVariant: Story = {
     components: { Button },
     setup: () => ({ args }),
     template: /*html*/ `
-      <div class="flex:cols-md flex:center-y">
+      <div class="flex:row-md flex:center-y">
         <Button v-bind="args" legacy-size="th"/>
         <Button v-bind="args" legacy-size="sm"/>
         <Button v-bind="args" legacy-size="md"/>
@@ -53,7 +53,7 @@ export const PrimaryVariant: Story = {
     components: { Button },
     setup: () => ({ args }),
     template: /*html*/ `
-      <div class="flex:cols-md flex:center-y">
+      <div class="flex:row-md flex:center-y">
         <Button v-bind="args" legacy-size="th"/>
         <Button v-bind="args" legacy-size="sm"/>
         <Button v-bind="args" legacy-size="md"/>
@@ -72,7 +72,7 @@ export const InvitationalVariant: Story = {
     components: { Button },
     setup: () => ({ args }),
     template: /*html*/ `
-      <div class="flex:cols-md flex:center-y">
+      <div class="flex:row-md flex:center-y">
         <Button v-bind="args" legacy-size="th"/>
         <Button v-bind="args" legacy-size="sm"/>
         <Button v-bind="args" legacy-size="md"/>

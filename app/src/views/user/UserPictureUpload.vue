@@ -47,7 +47,7 @@ function onSave() {
 </script>
 
 <template>
-  <div class="flex:cols-lg">
+  <div class="flex:row-lg">
     <label ref="fileDrop" class="self-center">
       <img v-if="!newPictureIsOver && pictureUrl" :src="pictureUrl" class="rounded-full" />
       <div

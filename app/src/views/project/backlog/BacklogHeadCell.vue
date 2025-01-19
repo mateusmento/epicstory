@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <div
-    class="text-sm text-zinc-500 select-none cursor-pointer flex:cols-md flex:center-y"
+    class="text-sm text-zinc-500 select-none cursor-pointer flex:row-md flex:center-y"
     :class="{ 'font-medium': show }"
   >
     <slot>{{ label }}</slot>

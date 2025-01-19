@@ -19,7 +19,7 @@ const styles = {
   messageBox: cva(
     [
       "group",
-      "flex:cols-auto flex:center-y",
+      "flex:row-auto flex:center-y",
       "w-fit min-w-40 max-w-[35rem] px-3 py-1 border border-[#E4E4E4]",
       "first:rounded-t-xl last:rounded-b-xl rounded-lg",
       "shadow-sm text-[15px] font-lato",

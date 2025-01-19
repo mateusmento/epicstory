@@ -16,7 +16,7 @@ const labels = ["No priority", "Low", "Medium", "High", "Urgent"];
 </script>
 
 <template>
-  <Button variant="outline" size="badge" @click="toggle" class="flex:cols-md flex:center-y">
+  <Button variant="outline" size="badge" @click="toggle" class="flex:row-md flex:center-y">
     <Urgent v-if="value === 4" />
     <Signal3Bars v-if="value === 3" />
     <Signal2Bars v-else-if="value === 2" />

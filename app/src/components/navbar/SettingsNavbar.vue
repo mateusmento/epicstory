@@ -12,7 +12,7 @@ import { Icon } from "@/design-system/icons";
         :as="Button"
         variant="ghost"
         size="xs"
-        class="flex:cols-sm ml-auto text-xs text-zinc-500"
+        class="flex:row-sm ml-auto text-xs text-zinc-500"
       >
         <Icon name="hi-solid-arrow-sm-left" />
         Back to workspace
