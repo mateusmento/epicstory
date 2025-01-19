@@ -16,7 +16,7 @@ const emit = defineEmits<{
 <template>
   <div class="flex:col-xl border-zinc-300/60 overflow-auto h-full @container">
     <div class="flex:row-auto flex:center-y">
-      <h1 class="flex:baseline">
+      <h1 class="flex:row flex:baseline">
         <Icon name="bi-people-fill" class="mr-md self-center" />
         <div class="text-base font-medium whitespace-nowrap">Members</div>
         <div class="text-zinc-400 text-sm ml-xl">{{ members.length }}</div>

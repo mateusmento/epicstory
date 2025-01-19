@@ -22,24 +22,71 @@
   justify-content: center;
 }
 
-.flex\:center-x {
-  justify-content: center;
+.flex\:row {
+  flex-direction: row;
 }
 
-.flex\:center-y {
-  align-items: center;
+.flex\:row-auto {
+  flex-direction: row;
+  justify-content: space-between;
 }
 
-.flex\:baseline {
-  align-items: baseline;
+@each $size_name, $size in $sizes_no_auto {
+  .flex\:row-#{$size_name} {
+    flex-direction: row;
+    gap: #{$size};
+  }
 }
 
-.flex\:stretch {
-  align-items: stretch;
+.flex\:row {
+  &.flex\:center-x {
+    justify-content: center;
+  }
+
+  &.flex\:center-y {
+    align-items: center;
+  }
+
+  &.flex\:baseline {
+    align-items: baseline;
+  }
+
+  &.flex\:stretch {
+    align-items: stretch;
+  }
+}
+
+@each $size_name, $size in $sizes {
+  .flex\:row-#{$size_name} {
+    &.flex\:center-x {
+      align-items: center;
+    }
+
+    &.flex\:center-y {
+      justify-content: center;
+    }
+
+    &.flex\:baseline {
+      justify-content: baseline;
+    }
+
+    &.flex\:stretch {
+      justify-content: stretch;
+    }
+
+    &.flex\:stretch {
+      align-items: stretch;
+    }
+  }
 }
 
 .flex\:col {
   flex-direction: column;
+}
+
+.flex\:col-auto {
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 @each $size_name, $size in $sizes_no_auto {
@@ -82,7 +129,7 @@
     }
 
     &.flex\:stretch {
-      justify-content: stretch;
+      align-items: stretch;
     }
   }
 }

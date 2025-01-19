@@ -48,7 +48,7 @@ onMounted(() => fetchTeams());
         view="app-pane"
         content="team"
         :props="{ teamId: team.id }"
-        class="flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:row flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
       >
         <div class="flex:col-md">
           <div class="text-base text-zinc-800 font-dmSans font-medium">{{ team.name }}</div>
