@@ -6,6 +6,10 @@
   display: flex;
 }
 
+.inline-flex {
+  display: inline-flex;
+}
+
 .flex\:wrap {
   flex-wrap: wrap;
 }
@@ -59,19 +63,15 @@
 @each $size_name, $size in $sizes {
   .flex\:row-#{$size_name} {
     &.flex\:center-x {
-      align-items: center;
+      justify-content: center;
     }
 
     &.flex\:center-y {
-      justify-content: center;
+      align-items: center;
     }
 
     &.flex\:baseline {
       justify-content: baseline;
-    }
-
-    &.flex\:stretch {
-      justify-content: stretch;
     }
 
     &.flex\:stretch {
