@@ -8,7 +8,7 @@ const emit = defineEmits(["more-details"]);
 </script>
 
 <template>
-  <div class="topbar flex:center-y gap-2.5 border-b border-zinc-200">
+  <div class="topbar flex:row flex:center-y gap-2.5 border-b border-zinc-200">
     <img v-if="chatPicture" :src="chatPicture" class="channel-photo" />
 
     <div v-else class="channel-photos">
