@@ -4,7 +4,7 @@ import { NavView } from "@/design-system";
 
 <template>
   <NavView view="navbar" initial-content="workspace">
-    <aside class="p-2 w-64 text-xs text-neutral-700">
+    <aside class="p-2 w-64">
       <slot />
     </aside>
   </NavView>

@@ -10,6 +10,7 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
+import { cn } from "@/design-system/utils";
 import { useWorkspace, useWorkspaces, type Workspace } from "@/domain/workspace";
 import { onMounted } from "vue";
 
@@ -40,17 +41,19 @@ function onSelectWorkspace(workspace: Workspace) {
         content="workspace"
         :as="Button"
         variant="ghost"
-        size="xs"
-        class="flex:row-sm ml-auto text-xs text-zinc-500"
+        size="sm"
+        class="flex:row-sm ml-auto"
       >
         <Icon name="hi-solid-arrow-sm-left" />
         Back to workspace
       </NavTrigger>
     </div>
-    <Collapsible class="flex:col-md rounded-md bg-zinc-100 text-zinc-500 text-sm">
-      <div class="flex:row-auto flex:center-y px-2 py-1 font-semibold select-none">
+    <Collapsible class="flex:col-md">
+      <div
+        class="flex:row-auto flex:center-y px-2 py-1 text-secondary-foreground text-sm font-semibold select-none"
+      >
         Workspaces
-        <CollapsibleTrigger class="px-1.5 py-0.5 rounded-sm hover:bg-zinc-200 cursor-pointer">
+        <CollapsibleTrigger class="px-1.5 py-0.5 rounded-sm hover:bg-secondary cursor-pointer">
           +
         </CollapsibleTrigger>
       </div>
@@ -66,15 +69,16 @@ function onSelectWorkspace(workspace: Workspace) {
         </Form>
       </CollapsibleContent>
 
-      <div
+      <Button
         v-for="workspace of workspaces"
         :key="workspace.id"
-        class="px-2 py-1 rounded-sm hover:bg-zinc-200/60 cursor-pointer"
-        :class="{ 'bg-zinc-200/60': currentWorkspace?.id === workspace.id }"
+        variant="ghost"
+        size="sm"
+        :class="cn('justify-start', { 'bg-secondary': currentWorkspace?.id === workspace.id })"
         @click="onSelectWorkspace(workspace)"
       >
         {{ workspace.name }}
-      </div>
+      </Button>
     </Collapsible>
   </div>
 </template>

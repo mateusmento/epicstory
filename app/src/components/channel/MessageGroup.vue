@@ -41,7 +41,9 @@ const styles = {
       <div class="font-dmSans font-medium" :class="{ 'order-0': sender === 'me' }">
         {{ sender === "me" ? "You" : messageGroup.sender?.name }}
       </div>
-      <div class="text-xs text-zinc-400 font-dmSans">{{ formatMessageDate(messageGroup.sentAt) }}</div>
+      <div class="text-xs text-secondary-foreground/70 font-dmSans">
+        {{ formatMessageDate(messageGroup.sentAt) }}
+      </div>
     </div>
     <div class="flex:col-sm col-start-2">
       <slot />

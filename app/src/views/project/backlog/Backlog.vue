@@ -155,14 +155,14 @@ function openIssue(iss: Issue) {
 <template>
   <Drawer v-model:open="showIssueDrawer" direction="right">
     <DrawerContent v-if="issue" class="flex:col-2xl p-6 m-2 min-w-96">
-      <div class="text-zinc-800 font-semibold text-lg">{{ issue.title }}</div>
+      <div class="text-foreground font-semibold text-lg">{{ issue.title }}</div>
       <div class="grid grid-cols-[1fr_1fr] gap-6">
         <div class="flex:col-md">
-          <div class="text-zinc-500 text-xs">Status</div>
+          <div class="text-secondary-foreground text-xs">Status</div>
           <div class="capitalize font-semibold">{{ issue.status }}</div>
         </div>
         <div class="flex:col-md items-end">
-          <div class="text-zinc-500 text-xs">Assignees</div>
+          <div class="text-secondary-foreground text-xs">Assignees</div>
           <div class="flex:row-md">
             <img
               v-for="assignee of issue.assignees"
@@ -173,7 +173,7 @@ function openIssue(iss: Issue) {
           </div>
         </div>
         <div class="flex:col-md">
-          <div class="text-zinc-500 text-xs">Priority</div>
+          <div class="text-secondary-foreground text-xs">Priority</div>
           <PriorityToggler class="w-fit" />
         </div>
       </div>
@@ -206,7 +206,9 @@ function openIssue(iss: Issue) {
           @click="toggleOrder('priority')"
           @reset="resetOrder"
         />
-        <div class="text-sm text-zinc-500 col-span-2 select-none cursor-pointer flex:row-md flex:center-y">
+        <div
+          class="text-sm text-secondary-foreground col-span-2 select-none cursor-pointer flex:row-md flex:center-y"
+        >
           Assignees
         </div>
         <BacklogHeadCell
@@ -276,8 +278,13 @@ function openIssue(iss: Issue) {
               "
             >
               <template #trigger>
-                <div class="rounded-full border-2 w-fit border-dashed flex flex:center p-0.5 cursor-pointer">
-                  <Icon name="fa-user-plus" class="w-4 h-4 text-zinc-400" />
+                <div
+                  class="flex flex:center w-fit p-0.5 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
+                >
+                  <Icon
+                    name="fa-user-plus"
+                    class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
+                  />
                 </div>
               </template>
             </Combobox>
@@ -288,7 +295,7 @@ function openIssue(iss: Issue) {
                 updateIssue(issue.id, { dueDate: $event.toDate('America/Sao_Paulo').toString() })
               "
             />
-            <Icon name="io-trash-bin" @click="removeBacklogItem(id)" class="cursor-pointer text-zinc-800" />
+            <Icon name="io-trash-bin" @click="removeBacklogItem(id)" class="cursor-pointer text-foreground" />
           </div>
         </div>
       </div>

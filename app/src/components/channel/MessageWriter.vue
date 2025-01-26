@@ -34,7 +34,7 @@ function onSendMessage() {
       @keydown.ctrl.enter="onSendMessage"
     />
 
-    <div class="flex:row-xl flex:center-y text-zinc-500">
+    <div class="flex:row-xl flex:center-y text-secondary-foreground">
       <Icon name="bi-camera-video" class="w-6 h-6" />
       <Icon name="bi-mic" class="w-6 h-6" />
       <Separator orientation="vertical" class="h-8 bg-zinc-300" />

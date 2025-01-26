@@ -26,9 +26,9 @@ const { signOut } = useAuth();
 </script>
 
 <template>
-  <div class="flex:col-xl h-full text-zinc-500">
+  <div class="flex:col-xl h-full">
     <div class="flex:col-md p-2 w-full mr-auto">
-      <div class="pl-1 text-xs text-zinc-500">Workspace</div>
+      <div class="pl-1 text-xs text-secondary-foreground">Workspace</div>
 
       <div class="flex:row-md flex:center-y w-full">
         <NavTrigger
@@ -36,8 +36,8 @@ const { signOut } = useAuth();
           content="switch-workspace"
           :as="Button"
           variant="ghost"
-          size="badge"
-          class="block rounded-md text-base text-neutral-800 font-normal whitespace-nowrap text-ellipsis overflow-hidden hover:bg-zinc-200/60"
+          size="sm"
+          class="block rounded-md text-base text-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden"
         >
           {{ workspace?.name }}
           <Icon name="oi-chevron-down" />

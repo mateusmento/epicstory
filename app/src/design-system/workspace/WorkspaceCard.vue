@@ -19,11 +19,13 @@ const members = computed(() => props.topMembers.slice(0, props.topMembersCount))
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-2 items-center w-fit p-3 rounded-md border border-zinc-200 text-zinc-800">
+  <div
+    class="grid grid-cols-2 gap-2 items-center w-fit p-3 rounded-md border border-zinc-200 text-foreground"
+  >
     <div>{{ name }}</div>
     <div class="flex:row-md flex:center-y">
       Owner
-      <div class="px-1 text-sm rounded-sm bg-neutral-400">{{ ownerName }}</div>
+      <div class="px-1 text-sm rounded-sm text-secondary-foreground bg-secondary">{{ ownerName }}</div>
     </div>
     <div>{{ projectsCount }} projects</div>
     <div class="flex:row-md flex:center-y">

@@ -38,6 +38,9 @@ const forwardedProps = useForwardProps(delegatedProps);
           focus-visible:ring-offset-2
           disabled:pointer-events-none
           disabled:opacity-50
+          border
+          border-transparent
+          data-[state=active]:border-input
           data-[state=active]:bg-white
           data-[state=active]:text-foreground
           data-[state=active]:shadow

@@ -19,8 +19,8 @@ const active = computed(() => props.content === currentContent.value);
     :as="Button"
     v-bind="props"
     size="sm"
-    variant="secondary"
-    :class="cn('shadow-none bg-transparent hover:bg-secondary cursor-pointer', { 'bg-secondary': active })"
+    variant="ghost"
+    :class="cn('justify-start', { 'bg-secondary': active })"
   >
     <slot />
   </NavTrigger>

@@ -7,10 +7,10 @@
 @layer base {
   :root {
     --background: 240 5% 96%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 240 4% 16%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 240 5% 93%;
+    --muted-foreground: 240 4% 46%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
@@ -68,6 +68,16 @@
 
     --ring: 240 4.9% 83.9%;
   }
+}
+
+.surface-secondary {
+  @apply bg-secondary;
+  @apply text-secondary-foreground;
+}
+
+.hover\:surface-secondary {
+  @apply hover:bg-secondary;
+  @apply hover:text-secondary-foreground;
 }
 
 @layer base {

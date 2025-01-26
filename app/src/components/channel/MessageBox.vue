@@ -37,7 +37,7 @@ const styles = {
     variants: {
       sender: {
         me: "text-zinc-50 ",
-        someoneElse: "text-[#686870] hover:bg-zinc-200/60",
+        someoneElse: "text-[#686870] hover:bg-secondary",
       },
     },
   }),

@@ -42,7 +42,7 @@ const fieldId = computed(() => uniqid(props.name ? props.name + "-" : ""));
 <template>
   <FormField v-slot="{ componentField }" v-bind="omit($attrs, 'class', 'id')" name="email" required>
     <FormItem v-bind="pick($attrs, 'class', 'id') as any">
-      <FormLabel v-if="label" class="text-neutral-800" :for="fieldId">{{ label }}</FormLabel>
+      <FormLabel v-if="label" class="text-foreground" :for="fieldId">{{ label }}</FormLabel>
       <FormControl>
         <Input v-bind="componentField" :id="fieldId" :class="classInput" />
       </FormControl>

@@ -27,7 +27,7 @@ export const Default: Story = {
           header: "Actions",
           cell: () => (
             <div>
-              <Icon name="io-trash-bin" class="cursor-pointer text-zinc-800" />
+              <Icon name="io-trash-bin" class="cursor-pointer text-foreground" />
             </div>
           ),
         },

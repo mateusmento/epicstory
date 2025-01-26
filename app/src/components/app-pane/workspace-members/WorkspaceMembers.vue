@@ -57,7 +57,7 @@ watch(query, () => fetchUsers(query.value));
       </Collapsible>
 
       <div
-        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm"
+        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-secondary text-secondary-foreground text-sm"
       >
         <IconSearch /> Search
       </div>
@@ -67,16 +67,16 @@ watch(query, () => fetchUsers(query.value));
       <div
         v-for="member in members"
         :key="member.id"
-        class="flex:row-lg p-3 border-t hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:row-lg p-3 border-t hover:bg-secondary cursor-pointer"
       >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
         <div class="flex:col-md">
           <div class="text-base font-medium font-dmSans whitespace-nowrap">{{ member.user.name }}</div>
-          <div class="text-xs text-zinc-500 whitespace-nowrap">{{ member.user.email }}</div>
+          <div class="text-xs text-secondary-foreground whitespace-nowrap">{{ member.user.email }}</div>
         </div>
         <div class="flex:col-auto ml-auto">
           <Badge variant="outline" class="self-end">{{ member.role === 1 ? "Admin" : "Member" }}</Badge>
-          <div class="text-xs text-zinc-500 whitespace-nowrap">Member since april 2019</div>
+          <div class="text-xs text-secondary-foreground whitespace-nowrap">Member since april 2019</div>
         </div>
       </div>
     </div>

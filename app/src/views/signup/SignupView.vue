@@ -65,8 +65,8 @@ async function signup(data: SignupRequest) {
 
       <section class="signup-form flex:col-7xl flex:center-y flex-1 mx-6xl">
         <div class="flex:col-xl">
-          <h2 class="title text-neutral-800">Sign up</h2>
-          <div class="subtitle text-neutral-600">Start your journey with Epicstory.</div>
+          <h2 class="title text-foreground">Sign up</h2>
+          <div class="subtitle text-secondary-foreground">Start your journey with Epicstory.</div>
         </div>
 
         <Form class="flex:col-3xl" @submit="signup as SubmissionHandler<any, any>" data-testid="signup-form">

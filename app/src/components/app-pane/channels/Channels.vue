@@ -35,16 +35,16 @@ const { currentMeeting, joinMeeting } = useMeeting();
   <Tabs class="flex:col h-full w-96" default-value="messages">
     <div class="p-4 flex:col-xl mx-auto">
       <div class="flex:row-auto flex:center-y mb-3">
-        <div class="flex:row-sm flex:center-y text-lg text-zinc-800 font-medium">
+        <div class="flex:row-sm flex:center-y text-lg text-foreground font-medium">
           <Icon name="fa-slack-hash" scale="1.2" />
           Channels
         </div>
-        <div class="flex:row-md flex:center-y text-zinc-500 text-sm">
+        <div class="flex:row-md flex:center-y text-secondary-foreground text-sm">
           Recent
           <IconArrowDown />
         </div>
       </div>
-      <div class="flex:row-md flex:center p-2 rounded-lg bg-neutral-200/60 text-zinc-500 text-sm">
+      <div class="flex:row-md flex:center p-2 rounded-lg bg-background text-secondary-foreground text-sm">
         <IconSearch /> Search
       </div>
       <TabsList class="w-full mt-4">
@@ -72,7 +72,7 @@ const { currentMeeting, joinMeeting } = useMeeting();
         :open="channel.id === currentChannel?.id"
       />
 
-      <div class="w-fit mt-4 mx-auto text-xs text-zinc-500">You have no more messages</div>
+      <div class="w-fit mt-4 mx-auto text-xs text-secondary-foreground">You have no more messages</div>
       <Dialog>
         <DialogTrigger as-child>
           <Button

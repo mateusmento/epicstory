@@ -12,7 +12,7 @@ const isDetailsPaneOpen = computed(() => openPane.value === "details-pane");
 
 <template>
   <div class="h-full">
-    <div class="flex w-full h-full bg-zinc-100 bg-secondary">
+    <div class="flex w-full h-full">
       <Navbar>
         <slot name="navbar" :isAppPaneOpen="isAppPaneOpen" />
       </Navbar>

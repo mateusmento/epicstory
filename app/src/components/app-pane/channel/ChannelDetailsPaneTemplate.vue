@@ -28,8 +28,8 @@ const selectedUser = defineModel<User>("selectedUser");
 const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
   return (
     <div class="flex:row-auto flex:center-y py-2">
-      <div class="text-xs font-medium text-zinc-500">{label}</div>
-      <div class="text-xs font-medium text-zinc-800">{value}</div>
+      <div class="text-xs font-medium text-secondary-foreground">{label}</div>
+      <div class="text-xs font-medium text-foreground">{value}</div>
     </div>
   );
 };

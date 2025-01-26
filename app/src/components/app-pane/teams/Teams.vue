@@ -48,16 +48,16 @@ onMounted(() => fetchTeams());
         view="app-pane"
         content="team"
         :props="{ teamId: team.id }"
-        class="flex:row flex:center-y p-4 border-t hover:bg-zinc-200/60 cursor-pointer"
+        class="flex:row flex:center-y p-4 border-t hover:bg-secondary cursor-pointer"
       >
         <div class="flex:col-md">
-          <div class="text-base text-zinc-800 font-dmSans font-medium">{{ team.name }}</div>
-          <div class="text-xs text-zinc-500">4 members</div>
+          <div class="text-base text-foreground font-dmSans font-medium">{{ team.name }}</div>
+          <div class="text-xs text-secondary-foreground">4 members</div>
         </div>
         <Icon
           name="io-trash-bin"
           @click.stop="removeTeam(team.id)"
-          class="ml-auto cursor-pointer text-zinc-800"
+          class="ml-auto cursor-pointer text-foreground"
         />
       </NavTrigger>
     </div>

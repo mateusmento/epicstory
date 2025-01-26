@@ -1,5 +1,6 @@
 import animate from "tailwindcss-animate";
 import container from "@tailwindcss/container-queries";
+import { componentColors } from "./component-colors";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -83,6 +84,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        ...componentColors,
       },
       keyframes: {
         "accordion-down": {

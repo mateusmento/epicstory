@@ -68,8 +68,8 @@ async function signin(data: SigninRequest) {
 
       <section class="signup-form flex:col-7xl flex:center-y flex-1 mx-6xl">
         <div class="flex:col-xl">
-          <h2 class="title text-neutral-800">Sign in</h2>
-          <div class="subtitle text-neutral-600">Continue your journey with Epicstory.</div>
+          <h2 class="title text-foreground">Sign in</h2>
+          <div class="subtitle text-secondary-foreground">Continue your journey with Epicstory.</div>
         </div>
 
         <Form class="flex:col-3xl" @submit="signin as any" data-testid="signup-form">
