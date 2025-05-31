@@ -3,7 +3,7 @@ import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
 import { defineStore, storeToRefs } from "pinia";
 import { onMounted, ref, watch } from "vue";
-import { ChannelService, type CreateDirectChannel, type CreateGroupChannel } from "../services";
+import { ChannelApi, type CreateDirectChannel, type CreateGroupChannel } from "../services";
 import type { IChannel } from "../types";
 
 const useChannelsStore = defineStore("channels", () => {
@@ -16,7 +16,7 @@ export function useChannels() {
   const sockets = useWebSockets();
   const { workspace } = useWorkspace();
 
-  const channelService = useDependency(ChannelService);
+  const channelApi = useDependency(ChannelApi);
 
   function onReceiveMessage({ message, channelId }: any) {
     const channel = store.channels.find((c) => c.id === channelId);
@@ -59,15 +59,15 @@ export function useChannels() {
 
   async function fetchChannels() {
     if (!workspace.value) return;
-    store.channels = await channelService.findChannels(workspace.value.id);
+    store.channels = await channelApi.findChannels(workspace.value.id);
   }
 
   async function createChannel(data: CreateDirectChannel | CreateGroupChannel) {
     if (!workspace.value) return;
     const channel =
       data.type === "direct"
-        ? await channelService.createDirectChannel(workspace.value.id, data)
-        : await channelService.createGroupChannel(workspace.value.id, data);
+        ? await channelApi.createDirectChannel(workspace.value.id, data)
+        : await channelApi.createGroupChannel(workspace.value.id, data);
 
     store.channels.unshift(channel);
     return channel;

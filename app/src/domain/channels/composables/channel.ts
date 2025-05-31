@@ -6,7 +6,7 @@ import { last } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ChannelService } from "../services";
+import { ChannelApi } from "../services";
 import type { IChannel, IMeeting, IMessage, IMessageGroup } from "../types";
 
 export const useChannelStore = defineStore("channel", () => {
@@ -19,7 +19,7 @@ export const useChannelStore = defineStore("channel", () => {
 export function useChannel() {
   const store = useChannelStore();
   const sockets = useWebSockets();
-  const channelApi = useDependency(ChannelService);
+  const channelApi = useDependency(ChannelApi);
   const { workspace } = useWorkspace();
 
   const messageGroups = computed(() => groupMessages(store.messages));

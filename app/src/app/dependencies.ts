@@ -6,7 +6,7 @@ import { container as tsyringe } from "tsyringe";
 import { ProjectApi } from "@/domain/project";
 import { TeamApi } from "@/domain/team/team.api";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
-import { ChannelService } from "@/domain/channels";
+import { ChannelApi } from "@/domain/channels";
 import { config } from "@/config";
 
 export async function createDependencies() {
@@ -17,7 +17,7 @@ export async function createDependencies() {
   container.registerSingleton(ProjectApi);
   container.registerSingleton(IssueApi);
   container.registerSingleton(TeamApi);
-  container.registerSingleton(ChannelService);
+  container.registerSingleton(ChannelApi);
   container.registerSingleton(MeetingApi);
   return container;
 }

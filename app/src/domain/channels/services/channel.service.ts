@@ -15,7 +15,7 @@ export type CreateGroupChannel = {
 };
 
 @injectable()
-export class ChannelService {
+export class ChannelApi {
   constructor(@InjectAxios() private axios: Axios) {}
 
   findChannels(workspaceId: number) {
