@@ -1,7 +1,5 @@
 import { UnauthorizedException } from "@/core/axios";
-import { useDependency } from "@/core/dependency-injection";
 import { useAuth } from "@/domain/auth";
-import { AuthService } from "@/domain/auth/auth.service";
 import {
   createRouter,
   createWebHistory,

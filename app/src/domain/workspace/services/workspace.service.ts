@@ -4,7 +4,7 @@ import { injectable } from "tsyringe";
 import type { Project, Workspace, Team, WorkspaceMember } from "../types";
 
 @injectable()
-export class WorkspaceService {
+export class WorkspaceApi {
   constructor(@InjectAxios() private axios: Axios) {}
 
   findWorkspaces() {

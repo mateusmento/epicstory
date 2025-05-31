@@ -1,19 +1,19 @@
 import { useDependency } from "@/core/dependency-injection";
 import { ref } from "vue";
-import { WorkspaceService } from "../services/workspace.service";
+import { WorkspaceApi } from "../services/workspace.service";
 import type { Workspace } from "../types/workspace.type";
 
 export function useWorkspaces() {
   const workspaces = ref<Workspace[]>([]);
-  const workspaceService = useDependency(WorkspaceService);
+  const workspaceApi = useDependency(WorkspaceApi);
 
   async function fetchWorkspaces() {
-    const { content } = await workspaceService.findWorkspaces();
+    const { content } = await workspaceApi.findWorkspaces();
     workspaces.value = content;
   }
 
   async function createWorkspace(data: { name: string }) {
-    const workspace = await workspaceService.createWorkspace(data.name);
+    const workspace = await workspaceApi.createWorkspace(data.name);
     workspaces.value.push(workspace);
     return workspace;
   }

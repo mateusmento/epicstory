@@ -1,23 +1,23 @@
 import { ref } from "vue";
 import type { Project } from "../types/project.type";
 import { useDependency } from "@/core/dependency-injection";
-import { WorkspaceService } from "@/domain/workspace";
+import { WorkspaceApi } from "@/domain/workspace";
 
 export function useProjects(workspaceId: number) {
   const projects = ref<Project[]>([]);
-  const workspaceService = useDependency(WorkspaceService);
+  const workspaceApi = useDependency(WorkspaceApi);
 
   async function fetchProjects() {
-    projects.value = await workspaceService.findProjects(workspaceId);
+    projects.value = await workspaceApi.findProjects(workspaceId);
   }
 
   async function createProject({ workspaceId, ...data }: { workspaceId: number; name: string }) {
-    const project = await workspaceService.createProject(workspaceId, data);
+    const project = await workspaceApi.createProject(workspaceId, data);
     projects.value.push(project);
   }
 
   async function removeProject(projectId: number) {
-    await workspaceService.removeProject(projectId);
+    await workspaceApi.removeProject(projectId);
     projects.value = projects.value.filter((p) => p.id !== projectId);
   }
 
