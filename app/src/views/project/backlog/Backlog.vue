@@ -292,7 +292,7 @@ function openIssue(iss: Issue) {
               size="badge"
               :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"
               @update:model-value="
-                updateIssue(issue.id, { dueDate: $event.toDate('America/Sao_Paulo').toString() })
+                updateIssue(issue.id, { dueDate: $event?.toDate('America/Sao_Paulo').toString() })
               "
             />
             <Icon name="io-trash-bin" @click="removeBacklogItem(id)" class="cursor-pointer text-foreground" />
