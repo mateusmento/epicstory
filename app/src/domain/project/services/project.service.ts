@@ -6,7 +6,7 @@ import type { Page } from "@/core/types";
 import type { BacklogItem } from "@/domain/backlog";
 
 @injectable()
-export class ProjectService {
+export class ProjectApi {
   constructor(@InjectAxios() private axios: Axios) {}
 
   findProject(id: number) {

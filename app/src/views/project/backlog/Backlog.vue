@@ -6,7 +6,7 @@ import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
-import { ProjectService } from "@/domain/project";
+import { ProjectApi } from "@/domain/project";
 import { useUsers } from "@/domain/user";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { parseAbsolute } from "@internationalized/date";
@@ -65,7 +65,7 @@ function setupDragAndDrop() {
 
 watch(orderBy, setupDragAndDrop);
 
-const projectApi = useDependency(ProjectService);
+const projectApi = useDependency(ProjectApi);
 
 const backlogId = ref<number>(0);
 
