@@ -70,6 +70,7 @@ echo "Run application"
 echo docker run -it -d --rm -p 80:80 \
   -e "API_URL=$API_URL/api" \
   -e "PEERJS_SERVER_HOST=$API_URL" \
+  -e "PEERJS_SERVER_PATH=/peerjs" \
   -e "PEERJS_SERVER_PORT=3001" \
   -e "WEBSOCKET_URI=/" \
   $IMAGE_NAME
@@ -77,6 +78,7 @@ echo docker run -it -d --rm -p 80:80 \
 docker run -it -d --rm -p 80:80 \
   -e "API_URL=$API_URL/api" \
   -e "PEERJS_SERVER_HOST=$LB_DOMAIN" \
+  -e "PEERJS_SERVER_PATH=/peerjs" \
   -e "PEERJS_SERVER_PORT=3001" \
   -e "WEBSOCKET_URI=/" \
   $IMAGE_NAME

@@ -1,11 +1,12 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: app
   labels:
     app: frontend
 spec:
-  replicas: 2
+  serviceName: app
+  replicas: 1
   selector:
     matchLabels:
       app: frontend

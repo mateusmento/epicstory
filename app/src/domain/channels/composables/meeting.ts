@@ -56,7 +56,7 @@ const useMeetingStore = defineStore("meeting", () => {
     mycamera.value = camera;
 
     const rtc = await untilOpen(
-      new Peer({ host: config.PEERJS_SERVER_HOST, port: config.PEERJS_SERVER_PORT }),
+      new Peer({ host: config.PEERJS_SERVER_HOST, port: config.PEERJS_SERVER_PORT, path: config.PEERJS_SERVER_PATH }),
     );
 
     streaming.value = createMediaStreaming({

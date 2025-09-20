@@ -1,10 +1,11 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: redis
   labels:
     app: redis
 spec:
+  serviceName: redis
   replicas: 1
   selector:
     matchLabels:
@@ -29,9 +30,14 @@ spec:
           volumeMounts:
             - name: redis-storage
               mountPath: /data
-      volumes:
-        - name: redis-storage
-          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
 ---
 apiVersion: v1
 kind: Service

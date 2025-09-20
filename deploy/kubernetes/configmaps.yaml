@@ -7,7 +7,7 @@ metadata:
     app: api
 data:
   NODE_ENV: "production"
-  APP_URL: "http://localhost:3000"
+  APP_URL: "http://epicstory.io/"
   API_PORT: "3000"
   DATABASE_USER: "postgres"
   DATABASE_HOST: "postgres"
@@ -16,10 +16,10 @@ data:
   REDIS_URL: "redis://redis:6379"
   PASSWORD_ROUNDS: "10"
   JWT_EXPIRES_IN: "3600"
-  GOOGLE_CALLBACK_URI: "http://localhost:3000/api/auth/google/callback"
-  GOOGLE_APP_REDIRECT_URL: "http://localhost:8080"
+  GOOGLE_CALLBACK_URI: "http://epicstory.io/api/auth/google/callback"
+  GOOGLE_APP_REDIRECT_URL: "http://epicstory.io/"
   DEFAULT_SENDER_EMAIL_ADDRESS: "noreply@example.com"
-  EMAIL_SMTP_URL: "smtp://localhost:587"
+  EMAIL_SMTP_URL: "smtp://epicstory.io:587"
   EMAIL_SMTP_USER: "user"
 ---
 # API Secrets ConfigMap (for sensitive data)
@@ -33,8 +33,8 @@ data:
   DATABASE_PASSWORD: "postgres"
   COOKIE_SECRET: "your-cookie-secret"
   JWT_SECRET: "your-jwt-secret"
-  GOOGLE_CLIENT_ID: "your-google-client-id"
-  GOOGLE_CLIENT_SECRET: "your-google-client-secret"
+  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_SECRET: ""
   EMAIL_SMTP_PASSWORD: "password"
 ---
 # App ConfigMap
@@ -45,8 +45,9 @@ metadata:
   labels:
     app: frontend
 data:
-  API_URL: "http://localhost:3000/api"
-  PEERJS_SERVER_HOST: "localhost"
+  API_URL: "http://epicstory.io/api"
+  PEERJS_SERVER_HOST: "epicstory.io"
+  PEERJS_SERVER_PATH: "/peerjs"
   PEERJS_SERVER_PORT: "3001"
   WEBSOCKET_URI: "/"
 ---
