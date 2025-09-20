@@ -1,0 +1,43 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openbao-init-sa
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: <OPENBAO_INIT_ROLE_ARN>
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openbao-init
+  namespace: default
+spec:
+  template:
+    spec:
+      serviceAccountName: openbao-init-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: openbao-init
+          image: amazonlinux:2023
+          command: ["/bin/sh", "-c"]
+          # You must install openbao and awscli in this container, or use a custom image
+          args:
+            - |
+              yum install -y unzip curl awscli && \
+              curl -Lo openbao.zip https://github.com/openbao/openbao/releases/latest/download/openbao-linux-amd64.zip && \
+              unzip openbao.zip && mv openbao /usr/local/bin/ && \
+              export OPENBAO_ADDR=http://openbao-service.default.svc.cluster.local:3002 && \
+              if openbao status | grep 'initialized'; then
+                echo "OpenBao already initialized"
+              else
+                openbao operator init -key-shares=5 -key-threshold=3 -format=json > /tmp/init.json
+                aws secretsmanager put-secret-value --secret-id <OPENBAO_SECRET_ARN> --secret-string file:///tmp/init.json --region <AWS_REGION>
+              fi
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"

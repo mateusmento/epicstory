@@ -30,9 +30,30 @@ services:
     restart: always
     ports:
       - 6379:6379
-
+  epicstory-openbao:
+    image: openbao/openbao:latest
+    container_name: epicstory-openbao
+    command: >
+      sh -c "
+        echo 'OpenBao container is ready for manual commands.' &&
+        echo 'You can now exec into this container to start the server or run other commands.' &&
+        echo 'To start a dev server: docker exec -it epicstory-openbao openbao server -dev -dev-listen-address=0.0.0.0:3002' &&
+        echo 'Example to use CLI: docker exec -it epicstory-openbao vault --help' &&
+        tail -f /dev/null
+      "
+    restart: always
+    ports:
+      - 3002:3002
+    env_file:
+      - .env
+    volumes:
+      - epicstory-openbao:/openbao
+    tty: true
+    stdin_open: true
 volumes:
   epicstory-postgres:
     name: epicstory-postgres
   epicstory-pgadmin:
     name: epicstory-pgadmin
+  epicstory-openbao:
+    name: epicstory-openbao

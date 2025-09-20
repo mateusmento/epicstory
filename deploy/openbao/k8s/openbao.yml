@@ -1,0 +1,117 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openbao-config
+  namespace: default
+data:
+  openbao.hcl: |
+    storage "file" {
+      path = "/openbao/data"
+    }
+    seal "awskms" {
+      region     = "<AWS_REGION>"
+      kms_key_id = "<KMS_KEY_ID>"
+    }
+    listener "tcp" {
+      address     = "0.0.0.0:3002"
+      tls_disable = 1
+    }
+    disable_mlock = true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openbao-sa
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: <OPENBAO_KMS_ROLE_ARN>
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openbao-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openbao
+  namespace: default
+  labels:
+    app: openbao
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openbao
+  template:
+    metadata:
+      labels:
+        app: openbao
+    spec:
+      serviceAccountName: openbao-sa
+      containers:
+        - name: openbao
+          image: openbao/openbao:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "server"
+            - "-config=/openbao/config/openbao.hcl"
+          ports:
+            - containerPort: 3002
+          volumeMounts:
+            - name: openbao-data
+              mountPath: /openbao/data
+            - name: openbao-config
+              mountPath: /openbao/config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health
+              port: 3002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: openbao-data
+          persistentVolumeClaim:
+            claimName: openbao-pvc
+        - name: openbao-config
+          configMap:
+            name: openbao-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openbao-service
+  namespace: default
+spec:
+  selector:
+    app: openbao
+  ports:
+    - protocol: TCP
+      port: 3002
+      targetPort: 3002
+  type: ClusterIP
