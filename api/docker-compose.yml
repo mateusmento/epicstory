@@ -42,8 +42,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
   epicstory-api:
     build:
-      args:
-        - NODE_IMAGE_VERSION=${NODE_IMAGE_VERSION}
       context: .
     image: epicstory-api
     volumes:

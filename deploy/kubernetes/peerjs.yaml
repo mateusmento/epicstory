@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: peerjs
+  labels:
+    app: peerjs
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: peerjs
+  template:
+    metadata:
+      labels:
+        app: peerjs
+    spec:
+      containers:
+        - name: peerjs
+          image: peerjs/peerjs-server:latest
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          args: ["--port", "3001"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: peerjs
+spec:
+  selector:
+    app: peerjs
+  ports:
+    - protocol: TCP
+      port: 3001
+      targetPort: 3001
+  type: ClusterIP
