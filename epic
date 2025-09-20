@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+
+const { spawn } = require("child_process");
+const path = require("path");
+
+// Helper function to run commands safely
+function runCommand(command, args = [], options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: "inherit",
+      ...options,
+    });
+
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Command failed with exit code ${code}`));
+      }
+    });
+
+    child.on("error", (error) => {
+      reject(error);
+    });
+  });
+}
+
+// Build command
+async function build(target) {
+  if (!target || !["app", "api"].includes(target)) {
+    console.error("❌ Error: Target must be 'app' or 'api'");
+    console.log("Usage: epic build [app|api]");
+    process.exit(1);
+  }
+
+  try {
+    console.log(`🚀 Building ${target}...`);
+    await runCommand("node", ["scripts/build.js", target]);
+    console.log(`✅ ${target} build completed successfully!`);
+  } catch (error) {
+    console.error(`❌ ${target} build failed:`, error.message);
+    process.exit(1);
+  }
+}
+
+// Deploy command
+async function deploy(action) {
+  if (!action || !["apply", "delete"].includes(action)) {
+    console.error("❌ Error: Action must be 'apply' or 'delete'");
+    console.log("Usage: epic deploy [apply|delete]");
+    process.exit(1);
+  }
+
+  try {
+    console.log(`🚀 Deploying ${action}...`);
+    await runCommand("node", ["scripts/deploy.js", action]);
+    console.log(`✅ Deploy ${action} completed successfully!`);
+  } catch (error) {
+    console.error(`❌ Deploy ${action} failed:`, error.message);
+    process.exit(1);
+  }
+}
+
+// Main CLI logic
+function main() {
+  const args = process.argv.slice(2);
+  const command = args[0];
+  const target = args[1];
+
+  switch (command) {
+    case "build":
+      build(target);
+      break;
+    case "deploy":
+      deploy(target);
+      break;
+    case "help":
+    case "--help":
+    case "-h":
+      showHelp();
+      break;
+    default:
+      console.error("❌ Error: Unknown command");
+      showHelp();
+      process.exit(1);
+  }
+}
+
+// Help function
+function showHelp() {
+  console.log(`
+📦 Epic Story CLI
+
+Usage:
+  epic build [app|api]     Build Docker images
+  epic deploy [apply|delete]  Deploy to Kubernetes
+  epic help               Show this help message
+
+Examples:
+  epic build api          Build API Docker image
+  epic build app          Build App Docker image
+  epic deploy apply       Apply Kubernetes configurations
+  epic deploy delete      Delete Kubernetes resources
+`);
+}
+
+// Run the CLI
+main();

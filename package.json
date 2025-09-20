@@ -8,7 +8,13 @@
   "license": "ISC",
   "scripts": {
     "format": "terraform fmt --recursive; prettier --write \"./**/*.ts\" \"./**/*.js\" \"./**/*.vue\" \"./**/*.yml\" \"./**/*.json\" \"./**/.prettierrc\" \"./**/*.code-workspace\"",
-    "npmrc": "npmrc-replace-env"
+    "npmrc": "npmrc-replace-env",
+    "build": "node scripts/build.js",
+    "kb": "node scripts/deploy.js",
+    "epic": "node epic"
+  },
+  "bin": {
+    "epic": "./epic.js"
   },
   "devDependencies": {
     "husky": "^9.0.11",
