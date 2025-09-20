@@ -11,10 +11,22 @@ import { AppModule } from './app.module';
 import { AppConfig } from './core/app.config';
 import { createRedisAdapter, SocketIoAdapter } from './core/websockets';
 import { createPostgresSchemas } from './core/typeorm';
+import { GlobalExceptionFilter } from './core/global-exception.filter';
 
 async function bootstrap() {
   process.env.TZ = 'America/Sao_Paulo';
   initializeTransactionalContext();
+
+  // Add global error handlers to prevent crashes
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // Don't exit the process, let the application handle it
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Don't exit the process, let the application handle it
+  });
 
   createPostgresSchemas();
 
@@ -43,6 +55,9 @@ async function bootstrap() {
   );
 
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
+  // Add global exception filter to handle unhandled errors
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useWebSocketAdapter(
     new SocketIoAdapter(app, {
