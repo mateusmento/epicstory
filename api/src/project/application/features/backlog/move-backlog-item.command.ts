@@ -124,6 +124,7 @@ export class MoveBacklogItemCommand
         { id: item.previousId },
         { nextId: item.nextId },
       );
+
     if (item.nextId)
       await this.backlogItemRepo.update(
         { id: item.nextId },
@@ -138,7 +139,7 @@ export class MoveBacklogItemCommand
   }
 
   private async findBacklogItem(id: number) {
-    const item = this.backlogItemRepo.findOne({
+    const item = await this.backlogItemRepo.findOne({
       where: { id },
       relations: { next: true, issue: true },
     });
