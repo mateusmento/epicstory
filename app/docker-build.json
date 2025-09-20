@@ -1,0 +1,6 @@
+{
+  "name": "epicstory-app",
+  "version": "1.0.0",
+  "nginx_version": "1.27.0",
+  "node_version": "20.18.0-bullseye-slim"
+}
