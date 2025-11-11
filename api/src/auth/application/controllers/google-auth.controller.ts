@@ -1,10 +1,10 @@
 import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
-import { AppConfig } from 'src/core/app.config';
-import { GoogleAuthGuard } from '../passport/google.strategy';
 import { CommandBus } from '@nestjs/cqrs';
-import { GoogleSignup, Signin } from '../features';
+import { Request, Response } from 'express';
 import { UserRepository } from 'src/auth/infrastructure';
+import { AppConfig } from 'src/core/app.config';
+import { GoogleSignup, Signin } from '../features';
+import { GoogleAuthGuard } from '../passport/google.strategy';
 
 @Controller('auth')
 export class GoogleAuthController {
@@ -41,6 +41,18 @@ export class GoogleAuthController {
       sameSite: 'lax',
     });
 
-    res.redirect(this.config.GOOGLE_APP_REDIRECT_URL);
+    // Get redirect path from cookie if available
+    const redirectPath = req.cookies?.oauth_redirect || '';
+    const baseUrl = this.config.GOOGLE_APP_REDIRECT_URL.replace(/\/$/, '');
+    const finalRedirect = redirectPath
+      ? `${baseUrl}${redirectPath}`
+      : this.config.GOOGLE_APP_REDIRECT_URL;
+
+    // Clear the redirect cookie
+    if (redirectPath) {
+      res.clearCookie('oauth_redirect');
+    }
+
+    res.redirect(finalRedirect);
   }
 }

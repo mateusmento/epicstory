@@ -11,6 +11,23 @@ export class GoogleAuthGuard extends AuthGuard('google') {
       accessType: 'offline',
     });
   }
+
+  canActivate(context: any) {
+    const request = context.switchToHttp().getRequest();
+    const response = context.switchToHttp().getResponse();
+
+    // Store redirect parameter in a cookie to use after OAuth callback
+    const redirect = request.query?.redirect as string | undefined;
+    if (redirect) {
+      response.cookie('oauth_redirect', redirect, {
+        httpOnly: true,
+        maxAge: 5 * 60 * 1000, // 5 minutes
+        sameSite: 'lax',
+      });
+    }
+
+    return super.canActivate(context);
+  }
 }
 
 @Injectable()
