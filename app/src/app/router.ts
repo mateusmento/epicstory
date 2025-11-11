@@ -1,5 +1,6 @@
 import { UnauthorizedException } from "@/core/axios";
 import { useAuth } from "@/domain/auth";
+import { useWorkspace } from "@/domain/workspace";
 import {
   createRouter,
   createWebHistory,
@@ -20,6 +21,11 @@ const openRoutes = defineRoutes({
       path: "/signin",
       name: "signin",
       component: () => import("@/views/signin/SigninView.vue"),
+    },
+    {
+      path: "/error",
+      name: "error",
+      component: () => import("@/views/error/ErrorView.vue"),
     },
   ],
 });
@@ -74,15 +80,20 @@ const authenticatedRoutes = defineRoutes({
   ],
   beforeEnter: async (to, from, next) => {
     const { authenticate } = useAuth();
-
+    const { workspace } = useWorkspace();
     try {
       await authenticate();
       next();
     } catch (ex) {
       if (ex instanceof UnauthorizedException) {
-        next({ name: "signin" });
+        // Store the intended destination in query params for redirect after login
+        workspace.value = null;
+        next({
+          name: "signin",
+          query: { redirect: to.fullPath },
+        });
       } else {
-        next();
+        next({ name: "error" });
       }
     }
   },
