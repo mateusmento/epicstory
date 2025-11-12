@@ -15,9 +15,19 @@ const authService = useDependency(AuthService);
 
 const signinEmail = ref<string>(typeof route.query.email === "string" ? route.query.email : "");
 
+function getGoogleAuthUrl() {
+  const redirectPath = typeof route.query.redirect === "string" ? route.query.redirect : "/";
+  const params = new URLSearchParams({ redirect: redirectPath });
+  return `${config.API_URL}/auth/google?${params.toString()}`;
+}
+
 async function signin(data: SigninRequest) {
   await authService.signin(data);
-  router.push("/");
+
+  // Redirect to the intended destination or default to home
+  const redirectPath = typeof route.query.redirect === "string" ? route.query.redirect : "/";
+
+  router.push(redirectPath);
 }
 </script>
 
@@ -114,7 +124,7 @@ async function signin(data: SigninRequest) {
 
           <Button
             as="a"
-            :href="`${config.API_URL}/auth/google`"
+            :href="getGoogleAuthUrl()"
             class="flex:row-lg w-full"
             data-testid="signup-with-google"
           >

@@ -43,6 +43,7 @@ services:
   epicstory-api:
     build:
       context: .
+      dockerfile: Dockerfile
     image: epicstory-api
     volumes:
       - .:/usr/app

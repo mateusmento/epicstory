@@ -1,7 +1,7 @@
 ARG NODE_IMAGE_VERSION=20.18.0-bullseye-slim
 ARG NGINX_IMAGE_VERSION=1.27.0
 
-FROM node:${NODE_IMAGE_VERSION} AS build
+FROM node:${NODE_IMAGE_VERSION} AS dev
 
 ENV NPM_CONFIG_PREFIX=/home/node/.node-global
 ENV PATH=$PATH:$NPM_CONFIG_PREFIX/bin
@@ -13,7 +13,9 @@ RUN npm install -g pnpm
 COPY --chown=node:node package*.json pnpm-lock.yaml ./
 RUN pnpm install
 COPY --chown=node:node . .
-ENV NODE_ENV=production
+
+FROM dev AS build
+
 RUN pnpm build-only
 
 FROM nginx:${NGINX_IMAGE_VERSION} AS artifact

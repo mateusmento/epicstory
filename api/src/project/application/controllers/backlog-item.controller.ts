@@ -12,12 +12,9 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { create } from 'src/core/objects';
-import {
-  CreateBacklogItem,
-  FindBacklogItems,
-  MoveBacklogItem,
-} from '../features';
+import { CreateBacklogItem, FindBacklogItems } from '../features';
 import { RemoveBacklogItem } from '../features/backlog/remove-backlog-item.command';
+import { ReorderBacklogItem } from '../features/backlog/reorder-backlog-item.command';
 
 @Controller()
 export class BacklogItemController {
@@ -49,12 +46,12 @@ export class BacklogItemController {
 
   @Put('backlog-items/:id/order')
   @UseGuards(JwtAuthGuard)
-  moveBacklogItem(
+  reorderBacklogItem(
     @Param('id') backlogItemId: number,
-    @Body() command: MoveBacklogItem,
+    @Body() command: ReorderBacklogItem,
   ) {
     return this.commandBus.execute(
-      new MoveBacklogItem({ backlogItemId, ...command }),
+      new ReorderBacklogItem({ backlogItemId, ...command }),
     );
   }
 

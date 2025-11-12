@@ -97,7 +97,7 @@ const {
                 :ref="(el) => el && ((el as HTMLVideoElement).srcObject = attendee.camera)"
               />
               <div
-                class="absolute bottom-4 left-1/2 -translate-x-1/2 backdrop-blur-sm bg-[#dddddd44] px-2 py-1 rounded-lg text-white"
+                class="absolute bottom-4 left-1/2 -translate-x-1/2 backdrop-blur-sm bg-[#dddddd44] px-2 py-1 rounded-lg text-white whitespace-nowrap"
               >
                 {{ attendee?.user.name }}
               </div>

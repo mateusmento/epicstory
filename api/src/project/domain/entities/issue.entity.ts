@@ -1,4 +1,5 @@
 import { User } from 'src/auth';
+import { patch } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
 import {
   Column,
@@ -48,4 +49,8 @@ export class Issue {
     inverseJoinColumn: { name: 'user_id' },
   })
   assignees: User[];
+
+  constructor(data: Partial<Issue> = {}) {
+    patch(this, data);
+  }
 }

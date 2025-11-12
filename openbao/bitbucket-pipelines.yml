@@ -1,0 +1,86 @@
+image: docker:28
+definitions:
+  services:
+    docker-build:
+       memory: 10240
+       type: docker
+pipelines:
+  branches:
+    '{main,stable}':
+      - parallel:
+          - step: &docker-build
+              name: Docker Build ARM64 (Native)
+              runs-on:
+              - self.hosted
+              - linux.arm64
+              - openbao
+              services:
+                - docker-build
+              size: 8x
+              script:
+                # Set up SSH for Bitbucket
+                - mkdir -p ~/.ssh
+                - echo "$SSH_BITBUCKET" > ~/.ssh/id_rsa
+                - chmod 400 ~/.ssh/id_rsa
+                - cp known_hosts.bitbucket ~/.ssh/known_hosts || echo "no known_hosts file found"
+                
+                # Update submodules
+                - git submodule update --init --recursive
+                # Basic commands to debug
+                - docker --version
+                - apk add --no-cache curl bash git python3 py3-pip python3-dev
+                - curl -sSL https://sdk.cloud.google.com | bash
+                - export PATH=$PATH:/root/google-cloud-sdk/bin
+                - echo $GCP_KEY > gcp-key.json
+                - gcloud auth activate-service-account bitbucket-pipeline@$PROJ.iam.gserviceaccount.com --key-file ./gcp-key.json
+                - gcloud auth configure-docker --quiet
+                - gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
+                - gcloud config set project $PROJ
+                - export DOCKER_BUILDKIT=0
+                - docker build -f Dockerfile . -t "$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_ARM"
+                - docker tag "$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_ARM" "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_ARM"
+                - docker push "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_ARM"
+
+          - step:
+              name: Docker Build AMD64
+              services:
+                - docker-build
+              size: 8x
+              script:
+                - git submodule update --init --recursive
+                # Basic commands to debug
+                - docker --version
+                - apk add --no-cache curl bash git python3 py3-pip python3-dev
+                - curl -sSL https://sdk.cloud.google.com | bash
+                - export PATH=$PATH:/root/google-cloud-sdk/bin
+                - echo $GCP_KEY > gcp-key.json
+                - gcloud auth activate-service-account bitbucket-pipeline@$PROJ.iam.gserviceaccount.com --key-file ./gcp-key.json
+                - gcloud auth configure-docker --quiet
+                - gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
+                - gcloud config set project $PROJ
+                - export DOCKER_BUILDKIT=0
+                - docker build --platform linux/amd64 -f Dockerfile . -t "$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_AMD"
+                - docker tag "$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_AMD" "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_AMD"
+                - docker push "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_AMD"
+
+      - step:
+          name: Create Multi-arch Manifest
+          script:
+            - docker --version
+            - apk add --no-cache curl bash git python3 py3-pip python3-dev
+            - curl -sSL https://sdk.cloud.google.com | bash
+            - export PATH=$PATH:/root/google-cloud-sdk/bin
+            - echo $GCP_KEY > gcp-key.json
+            - gcloud auth activate-service-account bitbucket-pipeline@$PROJ.iam.gserviceaccount.com --key-file ./gcp-key.json
+            - gcloud auth configure-docker --quiet
+            - gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
+            - gcloud config set project $PROJ
+            - export DOCKER_BUILDKIT=0
+            - docker manifest create --insecure "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_BUILD_NUMBER" --amend "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_ARM" --amend "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_AMD"
+            #- docker tag "$REPO/$MANIFEST_IMAGE_NAME_RUNNER:$BITBUCKET_BUILD_NUMBER" "$REPO/$MANIFEST_IMAGE_NAME_RUNNER:$BITBUCKET_BUILD_NUMBER"
+            - docker manifest push --insecure "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_BUILD_NUMBER"
+            # Create and push latest tag
+            - docker manifest create --insecure "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:latest" --amend "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_ARM" --amend "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:$BITBUCKET_COMMIT-$BITBUCKET_BUILD_AMD"
+            - docker manifest push --insecure "$REPO/$GCP_IMAGE_NAME_RUNNER-$BITBUCKET_BRANCH:latest"
+
+  

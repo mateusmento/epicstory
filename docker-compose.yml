@@ -1,0 +1,108 @@
+services:
+  app:
+    build:
+      context: ./app
+      target: dev
+      dockerfile: Dockerfile
+    image: epicstory-app:latest
+    container_name: epicstory-app
+    command: pnpm dev
+    ports:
+      - 8080:8080
+    volumes:
+      - ./app:/home/node/app
+      # - ./app/node_modules:/home/node/app/node_modules
+  api:
+    build:
+      context: ./api
+      target: dev
+      dockerfile: Dockerfile
+    image: epicstory-api:latest
+    container_name: epicstory-api
+    command: pnpm start:dev
+    ports:
+      - 3000:3000
+    volumes:
+      - ./api:/home/node/app
+    env_file:
+      - ./api/.env
+    environment:
+      DATABASE_HOST: epicstory-postgres
+      REDIS_URL: "redis://epicstory-redis:6379"
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.epicstory.rule=PathPrefix(`/`)
+    #   - traefik.http.services.epicstory.loadBalancer.server.port=${API_PORT}
+    #   - traefik.http.services.epicstory.loadBalancer.sticky.cookie=true
+    #   - traefik.http.services.epicstory.loadBalancer.sticky.cookie.name=server_id
+    #   - traefik.http.services.epicstory.loadBalancer.sticky.cookie.httpOnly=true
+  # traefik:
+  #   image: traefik:2.10
+  #   command:
+  #     - --api.insecure
+  #     - --providers.docker
+  #     - --providers.docker.exposedbydefault=false
+  #   ports:
+  #     - 3000:80
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  postgres:
+    image: postgres:14
+    container_name: epicstory-postgres
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    env_file:
+      - ./api/.env
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: epicstory-pgadmin
+    restart: always
+    ports:
+      - 3300:3300
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    env_file:
+      - ./api/.env
+  peerjs:
+    image: peerjs/peerjs-server
+    container_name: epicstory-peerjs
+    command: peerjs -p 3001 --path /peerjs
+    restart: always
+    ports:
+      - 3001:3001
+  redis:
+    image: redis:7
+    container_name: epicstory-redis
+    restart: always
+    ports:
+      - 6379:6379
+  # openbao:
+  #   image: openbao/openbao:latest
+  #   container_name: epicstory-openbao
+  #   command: >
+  #     sh -c "
+  #       echo 'OpenBao container is ready for manual commands.' &&
+  #       echo 'You can now exec into this container to start the server or run other commands.' &&
+  #       echo 'To start a dev server: docker exec -it epicstory-openbao openbao server -dev -dev-listen-address=0.0.0.0:3002' &&
+  #       echo 'Example to use CLI: docker exec -it epicstory-openbao vault --help' &&
+  #       tail -f /dev/null
+  #     "
+  #   restart: always
+  #   ports:
+  #     - 3002:3002
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - epicstory-openbao:/openbao
+  #   tty: true
+  #   stdin_open: true
+volumes:
+  epicstory-postgres:
+    name: epicstory-postgres
+  epicstory-pgadmin:
+    name: epicstory-pgadmin
+  # epicstory-openbao:
+  #   name: epicstory-openbao

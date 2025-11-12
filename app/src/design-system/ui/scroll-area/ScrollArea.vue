@@ -21,7 +21,6 @@ const observer = ref<ResizeObserver>();
 
 onMounted(() => {
   observer.value = new ResizeObserver((mutations) => {
-    console.log(mutations, container.value?.viewportElement.firstElementChild);
     if (mutations.some((m) => m.target === container.value?.viewportElement.firstElementChild)) {
       if (props.bottom) scrollContainerToBottom();
     }

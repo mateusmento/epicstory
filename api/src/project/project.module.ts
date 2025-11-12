@@ -32,6 +32,7 @@ import {
   ProjectRepository,
 } from './infrastructure/repositories';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
+import { ReorderBacklogItemCommand } from './application/features/backlog/reorder-backlog-item.command';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { WorkspaceModule } from 'src/workspace/workspace.module';
     FindBacklogItemsQuery,
     CreateBacklogItemCommand,
     RemoveBacklogItemCommand,
+    ReorderBacklogItemCommand,
     MoveBacklogItemCommand,
     FindProjectQuery,
     FindProjectBacklogItemsQuery,

@@ -5,23 +5,25 @@ import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
-export class FindChannelPeers {
+export class FindChannelMembers {
   channelId: number;
   issuerId: number;
 
-  constructor(data: Partial<FindChannelPeers>) {
+  constructor(data: Partial<FindChannelMembers>) {
     patch(this, data);
   }
 }
 
-@QueryHandler(FindChannelPeers)
-export class FindChannelPeersQuery implements IQueryHandler<FindChannelPeers> {
+@QueryHandler(FindChannelMembers)
+export class FindChannelMembersQuery
+  implements IQueryHandler<FindChannelMembers>
+{
   constructor(
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
   ) {}
 
-  async execute({ channelId, issuerId }: FindChannelPeers) {
+  async execute({ channelId, issuerId }: FindChannelMembers) {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },

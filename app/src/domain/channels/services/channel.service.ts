@@ -3,6 +3,7 @@ import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { IChannel } from "../types/channel.type";
 import type { IMessage } from "../types";
+import type { User } from "@/domain/auth";
 
 export type CreateDirectChannel = {
   type: "direct";
@@ -43,14 +44,14 @@ export class ChannelApi {
   }
 
   findMembers(channelId: number) {
-    return this.axios.get(`/channels/${channelId}/peers`).then((res) => res.data);
+    return this.axios.get<User[]>(`/channels/${channelId}/members`).then((res) => res.data);
   }
 
   addMember(channelId: number, userId: number) {
-    return this.axios.post(`/channels/${channelId}/peers`, { userId }).then((res) => res.data);
+    return this.axios.post(`/channels/${channelId}/members`, { userId }).then((res) => res.data);
   }
 
   removeMember(channelId: number, userId: number) {
-    return this.axios.post(`/channels/${channelId}/peers/${userId}`).then((res) => res.data);
+    return this.axios.post(`/channels/${channelId}/members/${userId}`).then((res) => res.data);
   }
 }
