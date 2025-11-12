@@ -52,11 +52,27 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   async function joinMeeting(channel: IChannel) {
-    const camera = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const camera = await (async () => {
+      try {
+        return await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "NotAllowedError") {
+          console.log("Joining meeting without camera permission", error);
+          return;
+        }
+      }
+    })();
+
+    if (!camera) return;
+
     mycamera.value = camera;
 
     const rtc = await untilOpen(
-      new Peer({ host: config.PEERJS_SERVER_HOST, port: config.PEERJS_SERVER_PORT, path: config.PEERJS_SERVER_PATH }),
+      new Peer({
+        host: config.PEERJS_SERVER_HOST,
+        port: config.PEERJS_SERVER_PORT,
+        path: config.PEERJS_SERVER_PATH,
+      }),
     );
 
     streaming.value = createMediaStreaming({
@@ -83,7 +99,7 @@ const useMeetingStore = defineStore("meeting", () => {
     sockets.websocket.on("attendee-joined", attendeeJoined);
     sockets.websocket.once(`current-meeting-ended`, onMeetingEnded);
 
-    console.log(sockets.websocket.listeners("attendee-joined"));
+    sockets.websocket.listeners("attendee-joined");
 
     openChannel(channel);
     currentMeeting.value = meeting;
