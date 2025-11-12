@@ -13,8 +13,8 @@ import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { CreateGroupChannel } from '../features/create-group-channel.command';
 import { FindChannels } from '../features/find-channels.query';
 import { CreateDirectChannel } from '../features/create-direct-channel.command';
-import { AddChannelMember } from '../features';
-import { FindChannelPeers } from '../features/find-channel-members.query';
+import { AddChannelMember, RemoveChannelMember } from '../features';
+import { FindChannelMembers } from '../features/find-channel-members.query';
 import { FindChannel } from '../features/find-channel.query';
 
 @Controller('workspaces/:workspaceId/channels')
@@ -76,17 +76,17 @@ export class ChannelController {
     );
   }
 
-  @Get(':id/peers')
+  @Get(':id/members')
   @UseGuards(JwtAuthGuard)
-  findPeers(@Param('id') channelId: number, @Auth() issuer: Issuer) {
+  findMembers(@Param('id') channelId: number, @Auth() issuer: Issuer) {
     return this.queryBus.execute(
-      new FindChannelPeers({ channelId, issuerId: issuer.id }),
+      new FindChannelMembers({ channelId, issuerId: issuer.id }),
     );
   }
 
-  @Post(':id/peers')
+  @Post(':id/members')
   @UseGuards(JwtAuthGuard)
-  addPeer(
+  addMember(
     @Param('id') channelId: number,
     @Body() command: AddChannelMember,
     @Auth() issuer: Issuer,
@@ -96,15 +96,15 @@ export class ChannelController {
     );
   }
 
-  @Delete(':id/peers/:userId')
+  @Delete(':id/members/:userId')
   @UseGuards(JwtAuthGuard)
-  removePeer(
+  removeMember(
     @Param('id') channelId: number,
     @Param('userId') userId: number,
     @Auth() issuer: Issuer,
   ) {
     return this.commandBus.execute(
-      new AddChannelMember({ channelId, userId, issuerId: issuer.id }),
+      new RemoveChannelMember({ channelId, userId, issuerId: issuer.id }),
     );
   }
 }
