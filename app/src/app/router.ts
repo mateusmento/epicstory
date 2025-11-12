@@ -1,6 +1,6 @@
 import { UnauthorizedException } from "@/core/axios";
 import { useAuth } from "@/domain/auth";
-import { useWorkspace } from "@/domain/workspace";
+import { useWorkspace, useWorkspaces } from "@/domain/workspace";
 import {
   createRouter,
   createWebHistory,
@@ -77,12 +77,34 @@ const authenticatedRoutes = defineRoutes({
       component: () => import("@/views/workspace/MemberInvite.vue"),
       props: true,
     },
+    {
+      path: "/create-workspace",
+      name: "create-workspace",
+      component: () => import("@/views/workspace/CreateWorkspaceView.vue"),
+    },
   ],
   beforeEnter: async (to, from, next) => {
     const { authenticate } = useAuth();
     const { workspace } = useWorkspace();
+    const { workspaces, fetchWorkspaces } = useWorkspaces();
+
     try {
       await authenticate();
+
+      // Skip workspace check for create-workspace route
+      if (to.name === "create-workspace") {
+        next();
+        return;
+      }
+
+      // Check if user has any workspaces
+      await fetchWorkspaces();
+
+      if (workspaces.value.length === 0) {
+        next({ name: "create-workspace" });
+        return;
+      }
+
       next();
     } catch (ex) {
       if (ex instanceof UnauthorizedException) {
