@@ -34,23 +34,37 @@ export class ReorderBacklogItemCommand
       );
     }
 
-    if (!afterOf) {
-      await this.backlogItemRepo.update(backlogItemId, { order: 1 });
-      return;
+    const item = await this.backlogItemRepo.findOne({
+      where: { id: backlogItemId },
+    });
+
+    if (!item) {
+      throw new BadRequestException('Backlog item not found');
     }
 
-    const itemBefore = await this.backlogItemRepo.findOne({
-      where: { id: afterOf },
-    });
+    const itemBefore = afterOf
+      ? await this.backlogItemRepo.findOne({
+          where: { id: afterOf },
+        })
+      : null;
 
-    const itemAfter = await this.backlogItemRepo.findOne({
-      where: {
-        order: MoreThan(itemBefore.order),
-        backlogId: itemBefore.backlogId,
-        id: Not(itemBefore.id),
-      },
-      order: { order: 'ASC' },
-    });
+    const itemAfter = itemBefore
+      ? await this.backlogItemRepo.findOne({
+          where: {
+            order: MoreThan(itemBefore.order),
+            backlogId: item.backlogId,
+            id: Not(itemBefore.id),
+          },
+          order: { order: 'ASC' },
+        })
+      : await this.backlogItemRepo.findOne({
+          where: {
+            order: MoreThan(0),
+            backlogId: item.backlogId,
+            id: Not(item.id),
+          },
+          order: { order: 'ASC' },
+        });
 
     const order = calculateOrder(itemBefore, itemAfter);
 
@@ -58,6 +72,8 @@ export class ReorderBacklogItemCommand
   }
 }
 
-function calculateOrder(before: BacklogItem, after: BacklogItem | null) {
-  return after ? (before.order + after.order) / 2 : before.order + 1;
+function calculateOrder(before: BacklogItem | null, after: BacklogItem | null) {
+  if (after && before) return (before.order + after.order) / 2;
+  if (before) return before.order + 1;
+  if (after) return after.order / 2;
 }
