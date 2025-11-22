@@ -39,7 +39,7 @@ const { signOut } = useAuth();
           size="sm"
           class="block rounded-md text-base text-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden"
         >
-          {{ workspace?.name }}
+          {{ workspace.name }}
           <Icon name="oi-chevron-down" />
         </NavTrigger>
 
@@ -89,7 +89,7 @@ const { signOut } = useAuth();
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem :as="RouterLink" to="/settings/user-account">
+          <DropdownMenuItem :as="RouterLink" :to="`/${workspace.id}/settings/user-account`">
             <UserIcon class="mr-2 h-4 w-4" />
             <span>Profile</span>
             <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>

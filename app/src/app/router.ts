@@ -1,6 +1,5 @@
 import { UnauthorizedException } from "@/core/axios";
 import { useAuth } from "@/domain/auth";
-import { useWorkspace, useWorkspaces } from "@/domain/workspace";
 import {
   createRouter,
   createWebHistory,
@@ -34,37 +33,51 @@ const authenticatedRoutes = defineRoutes({
   routes: [
     {
       path: "/",
+      name: "home",
+      redirect: { name: "select-workspace" },
+    },
+    {
+      path: "/:workspaceId",
+      name: "workspace-dashboard",
       component: () => import("@/views/Dashboard.vue"),
+      props: true,
       children: [
         {
-          path: "/settings/user-account",
+          path: "settings/user-account",
+          name: "user-account-settings",
           component: () => import("@/views/user/UserAccountSettings.vue"),
         },
         {
-          path: "/channel/:channelId",
+          path: "channel/:channelId",
+          name: "channel",
           component: () => import("@/views/channel/Channel.vue"),
         },
         {
-          path: "/channel/:channelId/meeting",
+          path: "channel/:channelId/meeting",
+          name: "channel-meeting",
           component: () => import("@/views/channel/Meeting.vue"),
         },
         {
-          path: "/project/:projectId",
+          path: "project/:projectId",
+          name: "project",
           component: () => import("@/views/project/Project.vue"),
           props: true,
           children: [
             {
               path: "backlog",
+              name: "project-backlog",
               props: true,
               component: () => import("@/views/project/backlog/Backlog.vue"),
             },
             {
               path: "board",
+              name: "project-board",
               props: true,
               component: () => import("@/views/project/board/Board.vue"),
             },
             {
               path: "issue/:issueId",
+              name: "project-issue",
               props: true,
               component: () => import("@/views/issue/IssueView.vue"),
             },
@@ -74,42 +87,26 @@ const authenticatedRoutes = defineRoutes({
     },
     {
       path: "/workspace-member-invite/:inviteId",
+      name: "workspace-member-invite",
       component: () => import("@/views/workspace/MemberInvite.vue"),
       props: true,
     },
     {
-      path: "/create-workspace",
-      name: "create-workspace",
-      component: () => import("@/views/workspace/CreateWorkspaceView.vue"),
+      path: "/select-workspace",
+      name: "select-workspace",
+      component: () => import("@/views/workspace/SelectWorkspace.vue"),
     },
   ],
   beforeEnter: async (to, from, next) => {
     const { authenticate } = useAuth();
-    const { workspace } = useWorkspace();
-    const { workspaces, fetchWorkspaces } = useWorkspaces();
 
     try {
       await authenticate();
-
-      // Skip workspace check for create-workspace route
-      if (to.name === "create-workspace") {
-        next();
-        return;
-      }
-
-      // Check if user has any workspaces
-      await fetchWorkspaces();
-
-      if (workspaces.value.length === 0) {
-        next({ name: "create-workspace" });
-        return;
-      }
-
       next();
     } catch (ex) {
       if (ex instanceof UnauthorizedException) {
         // Store the intended destination in query params for redirect after login
-        workspace.value = null;
+        // workspace.value = null;
         next({
           name: "signin",
           query: { redirect: to.fullPath },

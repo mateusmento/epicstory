@@ -13,6 +13,7 @@ import {
 import { Meeting } from './meeting.entity';
 import { Message } from './message.entity';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
+import { Team } from 'src/workspace/domain/entities';
 
 type ChannelType = 'direct' | 'group';
 
@@ -30,6 +31,9 @@ export class Channel {
 
   @Column({ nullable: true })
   teamId?: number;
+
+  @ManyToOne(() => Team)
+  team: Team;
 
   @Column({ default: 'direct' })
   type: ChannelType;

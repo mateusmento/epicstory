@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { Button } from "@/design-system";
+import { Button, buttonVariants } from "@/design-system";
 import { Icon } from "@/design-system/icons";
+import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
 
 defineProps<{
@@ -22,8 +23,8 @@ const emit = defineEmits<{
         <div class="text-secondary-foreground/70 text-sm ml-xl">{{ members.length }}</div>
       </h1>
 
-      <Button variant="ghost" size="icon" class="block" @click="emit('add')">
-        <Icon name="hi-plus" class="text-secondary-foreground" />
+      <Button variant="ghost" size="icon" @click="emit('add')">
+        <Icon name="hi-plus" class="text-secondary-foreground w-4 h-4" />
       </Button>
     </div>
 

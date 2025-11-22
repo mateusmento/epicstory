@@ -15,11 +15,11 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     sender: "me",
-    messageGroup: messageGroup,
+    messageGroup: messageGroup.value,
   },
   render: (props) => (
     <MessageGroup {...props}>
-      {messageGroup.messages.map((message) => (
+      {messageGroup.value.messages.map((message) => (
         <MessageBox content={message.content} />
       ))}
     </MessageGroup>

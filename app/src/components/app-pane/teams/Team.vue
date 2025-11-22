@@ -1,10 +1,12 @@
 <script lang="ts" setup>
 import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Combobox } from "@/design-system";
-import { Icon } from "@/design-system/icons";
+import { Icon, IconSearch } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { useTeam } from "@/domain/team";
 import { useUsers } from "@/domain/user";
+import { Trash2Icon } from "lucide-vue-next";
 import { onMounted, ref, watch } from "vue";
+import { format } from "date-fns";
 
 const props = defineProps<{
   teamId: number;
@@ -49,6 +51,12 @@ watch(query, () => fetchUsers(query.value));
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <div
+        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-secondary text-secondary-foreground text-sm"
+      >
+        <IconSearch /> Search
+      </div>
     </div>
 
     <div class="flex:col">
@@ -62,12 +70,13 @@ watch(query, () => fetchUsers(query.value));
         <img :src="member.user.picture" class="w-12 h-12 rounded-full" />
         <div class="flex:col-md">
           <div class="text-base text-foreground font-dmSans font-medium">{{ member.user.name }}</div>
-          <div class="text-xs text-secondary-foreground">4 members</div>
+          <div class="text-xs text-secondary-foreground">
+            Member since {{ format(member.joinedAt, "MMM do, yyyy") }}
+          </div>
         </div>
-        <Icon
-          name="io-trash-bin"
+        <Trash2Icon
           @click="removeMember(member.id)"
-          class="ml-auto cursor-pointer text-foreground"
+          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
         />
       </div>
     </div>

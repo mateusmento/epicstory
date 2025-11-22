@@ -24,15 +24,15 @@ export class TeamMember {
   @ManyToOne(() => Team)
   team: Team;
 
-  static create({
-    teamId,
-    userId,
-    workspaceMemberId,
-  }: {
-    teamId: number;
+  @Column({ default: 'now()' })
+  joinedAt: Date;
+
+  static create(data: {
     userId: number;
     workspaceMemberId: number;
+    teamId: number;
+    joinedAt?: Date;
   }) {
-    return create(TeamMember, { teamId, userId, workspaceMemberId });
+    return create(TeamMember, data);
   }
 }

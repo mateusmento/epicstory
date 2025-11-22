@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { WorkspaceMember } from 'src/workspace/domain/entities/workspace-member.entity';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { AddWorkspaceMemberPrerequisite } from 'src/workspace/domain/values/add-workspace-member-prerequisite.value';
-import { FindOptionsRelations, Like, Repository } from 'typeorm';
+import { FindOptionsRelations, In, Like, Repository } from 'typeorm';
 
 @Injectable()
 export class WorkspaceRepository extends Repository<Workspace> {
@@ -42,11 +42,19 @@ export class WorkspaceRepository extends Repository<Workspace> {
   }
 
   findMembers(
-    { workspaceId, name }: { workspaceId: number; name?: string },
+    {
+      workspaceId,
+      name,
+      userIds,
+    }: { workspaceId: number; name?: string; userIds?: number[] },
     relations?: FindOptionsRelations<WorkspaceMember>,
   ) {
     return this.workspaceMemberRepo.find({
-      where: { workspaceId, user: { name: name && Like(`%${name}%`) } },
+      where: {
+        workspaceId,
+        user: { name: name && Like(`%${name}%`) },
+        userId: userIds && In(userIds),
+      },
       relations,
     });
   }

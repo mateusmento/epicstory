@@ -1,56 +1,64 @@
 import { useDependency } from "@/core/dependency-injection";
-import { useStorage, StorageSerializers } from "@vueuse/core";
+import { StorageSerializers, useStorage } from "@vueuse/core";
 import { defineStore, storeToRefs } from "pinia";
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import { WorkspaceApi } from "../services";
 import type { Project, Team, Workspace, WorkspaceMember } from "../types";
 
-const useWorkspaceStore = defineStore("workspace", () => {
-  const workspace = useStorage<Workspace | null>("workspace", null, localStorage, {
+export const useWorkspaceStore = defineStore("workspace", () => {
+  const workspace = useStorage<Workspace>("workspace", null, localStorage, {
     serializer: StorageSerializers.object,
     mergeDefaults: true,
   });
 
   const members = ref<WorkspaceMember[]>([]);
-  const teams = ref<Team[]>([]);
   const projects = ref<Project[]>([]);
+  const teams = ref<Team[]>([]);
 
-  return { workspace, members, teams, projects };
+  return { workspace, members, projects, teams };
 });
 
 export function useWorkspace() {
   const store = useWorkspaceStore();
-
+  const router = useRouter();
   const workspaceApi = useDependency(WorkspaceApi);
 
-  function selectWorkspace(workspace: Workspace) {
-    store.workspace = workspace;
+  if (!store.workspace) {
+    throw new Error("Workspace was not provided");
+  }
+
+  const workspaceId = computed(() => {
+    return store.workspace.id;
+  });
+
+  const selectWorkspace = (workspace: Workspace) => {
+    router.push(`/${workspace.id}`);
+  };
+
+  async function fetchWorkspace(workspaceId: number) {
+    store.workspace = await workspaceApi.findWorkspace(workspaceId);
   }
 
   async function fetchWorkspaceMembers() {
-    if (!store.workspace) return;
-    store.members = await workspaceApi.findMembers(store.workspace.id);
+    store.members = await workspaceApi.findMembers(workspaceId.value);
   }
 
   async function addWorkspaceMember(userId: number) {
-    if (!store.workspace) return;
-    const member = await workspaceApi.addMember(store.workspace.id, { userId });
+    const member = await workspaceApi.addMember(workspaceId.value, { userId });
     store.members.push(member);
   }
 
   async function sendWorkspaceMemberInvite(email: string, userId: number) {
-    if (!store.workspace) return;
-    await workspaceApi.sendMemberInvite(store.workspace.id, { email, userId });
+    await workspaceApi.sendMemberInvite(workspaceId.value, { email, userId });
   }
 
   async function fetchProjects() {
-    if (!store.workspace) return;
-    store.projects = await workspaceApi.findProjects(store.workspace.id);
+    store.projects = await workspaceApi.findProjects(workspaceId.value);
   }
 
   async function createProject(data: { name: string }) {
-    if (!store.workspace) return;
-    const project = await workspaceApi.createProject(store.workspace.id, data);
+    const project = await workspaceApi.createProject(workspaceId.value, data);
     store.projects.push(project);
   }
 
@@ -60,14 +68,12 @@ export function useWorkspace() {
   }
 
   async function fetchTeams() {
-    if (!store.workspace) return;
-    store.teams = await workspaceApi.findTeams(store.workspace.id);
+    store.teams = await workspaceApi.findTeams(workspaceId.value);
   }
 
   async function createTeam(name: string, members: WorkspaceMember[] = []) {
-    if (!store.workspace) return;
     const ids = members.map((m) => m.id);
-    const team = await workspaceApi.createTeam(store.workspace.id, { name, members: ids });
+    const team = await workspaceApi.createTeam(workspaceId.value, { name, members: ids });
     store.teams.push(team);
   }
 
@@ -76,9 +82,15 @@ export function useWorkspace() {
     store.teams = store.teams.filter((t) => t.id !== teamId);
   }
 
+  async function removeMember(memberId: number) {
+    await workspaceApi.removeMember(workspaceId.value, memberId);
+    store.members = store.members.filter((m) => m.id !== memberId);
+  }
+
   return {
     ...storeToRefs(store),
     selectWorkspace,
+    fetchWorkspace,
     fetchWorkspaceMembers,
     addWorkspaceMember,
     sendWorkspaceMemberInvite,
@@ -88,5 +100,6 @@ export function useWorkspace() {
     fetchTeams,
     createTeam,
     removeTeam,
+    removeMember,
   };
 }

@@ -21,10 +21,14 @@ export class WorkspaceMember {
   @Column()
   role: WorkspaceRole;
 
+  @Column({ default: 'now()' })
+  joinedAt: Date;
+
   static create(data: {
     userId: number;
     workspaceId?: number;
     role: WorkspaceRole;
+    joinedAt?: Date;
   }) {
     return create(WorkspaceMember, data);
   }

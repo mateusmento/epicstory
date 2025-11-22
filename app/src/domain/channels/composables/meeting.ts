@@ -47,7 +47,7 @@ const useMeetingStore = defineStore("meeting", () => {
 
   async function subscribeMeetings() {
     sockets.websocket.emit("subscribe-meetings", {
-      workspaceId: workspace.value?.id,
+      workspaceId: workspace.value.id,
     });
   }
 

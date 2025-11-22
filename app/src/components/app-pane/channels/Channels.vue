@@ -1,16 +1,5 @@
 <script setup lang="ts">
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTrigger,
-  Field,
-  Form,
-  Label,
-  RadioGroup,
-  RadioGroupItem,
-} from "@/design-system";
+import { Button, Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/design-system";
 import {
   Icon,
   IconArrowDown,
@@ -21,13 +10,11 @@ import {
 } from "@/design-system/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system/ui/tabs";
 import { useChannel, useMeeting, useSyncedChannels } from "@/domain/channels";
-import { ref } from "vue";
+import CreateChannel from "./CreateChannel.vue";
 import InboxMessage from "./InboxMessage.vue";
 
-const channelType = ref("group");
-
 const { channel: currentChannel } = useChannel();
-const { channels, createChannel } = useSyncedChannels();
+const { channels } = useSyncedChannels();
 const { currentMeeting, joinMeeting } = useMeeting();
 </script>
 
@@ -35,7 +22,7 @@ const { currentMeeting, joinMeeting } = useMeeting();
   <Tabs class="flex:col h-full w-96" default-value="messages">
     <div class="p-4 flex:col-xl mx-auto">
       <div class="flex:row-auto flex:center-y mb-3">
-        <div class="flex:row-sm flex:center-y text-lg text-foreground font-medium">
+        <div class="flex:row-sm flex:center-y text-lg text-foreground">
           <Icon name="fa-slack-hash" scale="1.2" />
           Channels
         </div>
@@ -87,20 +74,7 @@ const { currentMeeting, joinMeeting } = useMeeting();
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>Create channel</DialogHeader>
-          <Form @submit="createChannel($event as any)" class="flex:col-lg">
-            <RadioGroup
-              v-model="channelType"
-              type="single"
-              class="grid-cols-[auto_auto] gap-4 place-content-center"
-            >
-              <Label><RadioGroupItem value="direct" /> Direct</Label>
-              <Label><RadioGroupItem value="group" /> Group</Label>
-            </RadioGroup>
-            <Field v-model="channelType" name="type" type="hidden" />
-            <Field v-if="channelType === 'group'" label="Name" name="name" placeholder="Create channel..." />
-            <Field v-if="channelType === 'direct'" label="Email" name="username" placeholder="Email..." />
-            <Button size="xs">Create</Button>
-          </Form>
+          <CreateChannel />
         </DialogContent>
       </Dialog>
     </TabsContent>

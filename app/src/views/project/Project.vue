@@ -1,32 +1,30 @@
 <script lang="ts" setup>
-import { Button, Separator, Tabs } from "@/design-system";
-import TabsList from "@/design-system/ui/tabs/TabsList.vue";
-import TabsTrigger from "@/design-system/ui/tabs/TabsTrigger.vue";
+import { Separator } from "@/design-system";
 import ToggleGroup from "@/design-system/ui/toggle-group/ToggleGroup.vue";
 import ToggleGroupItem from "@/design-system/ui/toggle-group/ToggleGroupItem.vue";
 import { RouterLink, useRoute } from "vue-router";
 
-defineProps<{ projectId: string }>();
+defineProps<{ workspaceId: string; projectId: string }>();
 
-const currentRoute = useRoute();
+const route = useRoute();
 
-function isActive(route: string) {
-  return currentRoute.path.endsWith("/" + route);
+function routeId(route: string) {
+  return route.split("/").pop();
 }
 </script>
 
 <template>
   <div class="w-full h-full flex:col">
-    <ToggleGroup type="single" :value="currentRoute" class="flex:row-lg bg-transparent p-2" as-child>
+    <ToggleGroup type="single" :value="routeId(route.path)" class="flex:row-lg bg-transparent p-2" as-child>
       <nav>
-        <ToggleGroupItem variant="outline" size="sm" :value="`/project/${projectId}/backlog`" as-child>
-          <RouterLink :to="`/project/${projectId}/backlog`">
+        <ToggleGroupItem value="backlog" variant="outline" size="sm" as-child>
+          <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`">
             <!-- <Button :variant="isActive('backlog') ? 'outline' : 'ghost'" size="xs"></Button> -->
             Backlog
           </RouterLink>
         </ToggleGroupItem>
-        <ToggleGroupItem variant="outline" size="sm" :value="`/project/${projectId}/board`" as-child>
-          <RouterLink :to="`/project/${projectId}/board`">
+        <ToggleGroupItem value="board" variant="outline" size="sm" as-child>
+          <RouterLink :to="`/${workspaceId}/project/${projectId}/board`">
             <!-- <Button :variant="isActive('board') ? 'outline' : 'ghost'" size="xs"></Button> -->
             Board
           </RouterLink>

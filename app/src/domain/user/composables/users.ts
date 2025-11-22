@@ -18,8 +18,13 @@ export function useUsers() {
     store.users = await userApi.findUsers(username);
   }
 
+  async function fetchUsersByName(name: string) {
+    store.users = await userApi.findUsersByName(name);
+  }
+
   return {
     ...storeToRefs(store),
     fetchUsers,
+    fetchUsersByName,
   };
 }

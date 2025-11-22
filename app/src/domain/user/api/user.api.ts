@@ -11,6 +11,10 @@ export class UserApi {
     return this.axios.get<User[]>(`/auth/users`, { params: { username } }).then((res) => res.data);
   }
 
+  findUsersByName(name: string) {
+    return this.axios.get<User[]>(`/auth/users`, { params: { name } }).then((res) => res.data);
+  }
+
   updatePicture(data: FormData) {
     return this.axios.put(`/users/picture`, data).then((res) => res.data);
   }

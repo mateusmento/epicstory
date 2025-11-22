@@ -13,3 +13,7 @@ export * from './workspace/find-workspace-members.query';
 export * from './workspace/find-workspaces.query';
 export * from './workspace/send-workspace-member-invite.command';
 export * from './workspace/update-workspace-member.command';
+export * from './workspace/find-workspace.query';
+export * from './workspace/add-workspace-owner.command';
+export * from './workspace/remove-workspace-owner.command';
+export * from './workspace/transfer-workspace-ownership.command';

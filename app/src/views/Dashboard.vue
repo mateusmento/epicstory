@@ -11,10 +11,33 @@ import {
 } from "@/components/app-pane";
 import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout";
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
+import { NotFoundException, UnauthorizedException } from "@/core/axios";
 import { useWorkspace } from "@/domain/workspace";
-import { RouterView } from "vue-router";
+import { computed, watch } from "vue";
+import { RouterView, useRoute, useRouter } from "vue-router";
 
-const { workspace } = useWorkspace();
+const route = useRoute();
+const router = useRouter();
+
+const workspaceId = computed(() => +route.params.workspaceId);
+
+const { fetchWorkspace } = useWorkspace();
+
+async function loadWorkspace() {
+  try {
+    await fetchWorkspace(workspaceId.value);
+  } catch (err) {
+    if (err instanceof UnauthorizedException || err instanceof NotFoundException) {
+      router.push({ name: "select-workspace" });
+      throw err;
+    } else {
+      throw err;
+    }
+  }
+}
+
+await loadWorkspace();
+watch(workspaceId, loadWorkspace);
 </script>
 
 <template>
@@ -23,36 +46,18 @@ const { workspace } = useWorkspace();
       <NavbarContent content="workspace">
         <WorkspaceNavbar :isAppPaneOpen="isAppPaneOpen" />
       </NavbarContent>
-      <NavbarContent content="switch-workspace">
-        <SwitchWorkspaceNavbar v-model:current-workspace="workspace" />
-      </NavbarContent>
-      <NavbarContent content="settings">
-        <SettingsNavbar />
-      </NavbarContent>
+      <NavbarContent content="switch-workspace" :as="SwitchWorkspaceNavbar" />
+      <NavbarContent content="settings" :as="SettingsNavbar" />
     </template>
 
     <template #app-pane>
-      <DrawerPaneContent content="inbox">
-        <Inbox />
-      </DrawerPaneContent>
-      <DrawerPaneContent content="issues">
-        <Issues />
-      </DrawerPaneContent>
-      <DrawerPaneContent content="projects">
-        <Projects v-if="workspace" :workspace="workspace" />
-      </DrawerPaneContent>
-      <DrawerPaneContent content="channels">
-        <Channels />
-      </DrawerPaneContent>
-      <DrawerPaneContent content="teams">
-        <Teams v-model:current-workspace="workspace" />
-      </DrawerPaneContent>
-      <DrawerPaneContent content="team" #default="{ contentProps }">
-        <Team v-bind="contentProps" />
-      </DrawerPaneContent>
-      <DrawerPaneContent content="workspace-members">
-        <WorkspaceMembers v-model:current-workspace="workspace" />
-      </DrawerPaneContent>
+      <DrawerPaneContent content="inbox" :as="Inbox" />
+      <DrawerPaneContent content="issues" :as="Issues" />
+      <DrawerPaneContent content="projects" :as="Projects" />
+      <DrawerPaneContent content="channels" :as="Channels" />
+      <DrawerPaneContent content="teams" :as="Teams" />
+      <DrawerPaneContent content="team" :as="Team" />
+      <DrawerPaneContent content="workspace-members" :as="WorkspaceMembers" />
     </template>
 
     <template #main-content>
@@ -60,9 +65,7 @@ const { workspace } = useWorkspace();
     </template>
 
     <template #details-pane>
-      <DrawerPaneContent content="channel">
-        <ChannelDetailsPane />
-      </DrawerPaneContent>
+      <DrawerPaneContent content="channel" :as="ChannelDetailsPane" />
     </template>
   </AppLayout>
 </template>

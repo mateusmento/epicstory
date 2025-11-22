@@ -1,40 +1,35 @@
 <script lang="ts" setup>
 import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
 import { ScrollArea } from "@/design-system";
-import { useChannel } from "@/domain/channels";
 import { reactive } from "vue";
 import ChatboxTopbar from "./ChatboxTopbar.vue";
 import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
 import type { IMessageGroup } from "./types";
-import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 
-defineProps<{
+const props = defineProps<{
   meId: number;
   chatTitle?: string;
   chatPicture?: string;
   messageGroups: IMessageGroup[];
+  sendMessage: (message: { content: string }) => Promise<void>;
 }>();
 
-const emit = defineEmits(["join-meeting"]);
-
-const { channel, sendMessage } = useChannel();
+const emit = defineEmits(["join-meeting", "more-details"]);
 
 const message = reactive({ content: "" });
 
 async function onSendMessage() {
   if (!message.content) return;
-  await sendMessage(message);
+  await props.sendMessage(message);
   message.content = "";
 }
-
-const { viewContent } = useNavTrigger("details-pane");
 </script>
 
 <template>
-  <div v-if="channel" class="flex:col h-full">
-    <ChatboxTopbar :chatTitle="chatTitle" :chatPicture="chatPicture" @more-details="viewContent('channel')">
+  <div class="flex:col h-full">
+    <ChatboxTopbar :chatTitle="chatTitle" :chatPicture="chatPicture" @more-details="emit('more-details')">
       <button @click="emit('join-meeting')" class="p-2 ml-auto border-none rounded-full bg-green">
         <IconAcceptCall />
       </button>

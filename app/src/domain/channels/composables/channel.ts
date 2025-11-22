@@ -27,7 +27,7 @@ export function useChannel() {
   const router = useRouter();
 
   function openChannel(channel: IChannel) {
-    router.push(`/channel/${channel.id}`);
+    router.push(`/${workspace.value.id}/channel/${channel.id}`);
   }
 
   async function fetchChannel(channelId: number) {
@@ -47,7 +47,7 @@ export function useChannel() {
 
   function joinChannel() {
     sockets.websocket?.emit("subscribe-messages", {
-      workspaceId: workspace.value?.id,
+      workspaceId: workspace.value.id,
     });
 
     sockets.websocket.off("incoming-message", onReceiveMessage);
@@ -65,7 +65,7 @@ export function useChannel() {
 
   function subscribeMeetings() {
     sockets.websocket?.emit("subscribe-meetings", {
-      workspaceId: workspace.value?.id,
+      workspaceId: workspace.value.id,
     });
 
     sockets.websocket.off("incoming-meeting", onIncomingMeeting);

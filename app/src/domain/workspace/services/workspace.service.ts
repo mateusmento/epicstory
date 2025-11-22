@@ -7,6 +7,10 @@ import type { Project, Workspace, Team, WorkspaceMember } from "../types";
 export class WorkspaceApi {
   constructor(@InjectAxios() private axios: Axios) {}
 
+  findWorkspace(workspaceId: number) {
+    return this.axios.get<Workspace>(`workspaces/${workspaceId}`).then((res) => res.data);
+  }
+
   findWorkspaces() {
     return this.axios.get<{ content: Workspace[] }>("workspaces").then((res) => res.data);
   }
@@ -32,7 +36,7 @@ export class WorkspaceApi {
   }
 
   removeMember(workspaceId: number, memberId: number) {
-    return this.axios.delete(`workspaces/${workspaceId}/members/${memberId}`);
+    return this.axios.delete(`workspaces/${workspaceId}/members/${memberId}`).then((res) => res.data);
   }
 
   findProjects(workspaceId: number) {

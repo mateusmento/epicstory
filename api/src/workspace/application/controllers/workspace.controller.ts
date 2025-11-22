@@ -5,6 +5,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -23,11 +24,13 @@ import {
   CreateTeam,
   CreateWorkspace,
   FindTeams,
+  FindWorkspace,
   FindWorkspaceMembers,
   FindWorkspaces,
   RemoveWorkspaceMember,
   SendWorkspaceMemberInvite,
   UpdateWorkspaceMember,
+  WorkspaceNotFound,
 } from '../features';
 
 @Controller('workspaces')
@@ -44,6 +47,18 @@ export class WorkspaceController {
       new FindWorkspaces({ issuerId: issuer.id }),
     );
     return { content };
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter(
+    [WorkspaceNotFound, NotFoundException],
+    [IssuerUserIsNotWorkspaceMember, ForbiddenException],
+  )
+  findWorkspace(@Param('id') workspaceId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(
+      new FindWorkspace({ workspaceId, issuerId: issuer.id }),
+    );
   }
 
   @Post()

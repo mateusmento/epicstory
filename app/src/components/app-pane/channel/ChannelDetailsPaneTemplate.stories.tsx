@@ -23,7 +23,7 @@ const meta = {
   },
   decorators: [
     (story) => ({
-      render: () => <StoryContainer>{h(story())}</StoryContainer>,
+      render: () => <StoryContainer class="w-96">{h(story())}</StoryContainer>,
     }),
   ],
 } satisfies Meta<typeof ChannelDetailsPaneTemplate>;

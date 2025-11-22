@@ -1,9 +1,9 @@
+import { toTypedSchema } from "@vee-validate/zod";
 import { mount } from "@vue/test-utils";
 import { useForm } from "vee-validate";
-import { defineComponent, ref } from "vue";
-import { Form, Field } from ".";
+import { ref } from "vue";
 import { z } from "zod";
-import { toTypedSchema } from "@vee-validate/zod";
+import { Field, Form } from ".";
 
 describe("Form", () => {
   it("should use defineField correctly", async () => {

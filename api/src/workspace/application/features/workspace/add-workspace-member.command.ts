@@ -6,6 +6,7 @@ import {
   IssuerUserCanNotAddWorkspaceMember,
   IssuerUserIsNotWorkspaceMember,
 } from 'src/workspace/domain/exceptions';
+import { IssuerCanNotAddWorkspaceOwner } from 'src/workspace/domain/exceptions/issuer-can-not-add-workspace-owner';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories/workspace-member.repository';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
@@ -49,6 +50,12 @@ export class AddWorkspaceMemberCommand
       throw new IssuerUserIsNotWorkspaceMember();
     if (!prerequisites.issuer?.hasRole(WorkspaceRole.ADMIN))
       throw new IssuerUserCanNotAddWorkspaceMember();
+    if (
+      role === WorkspaceRole.OWNER &&
+      !prerequisites.issuer?.hasRole(WorkspaceRole.OWNER)
+    ) {
+      throw new IssuerCanNotAddWorkspaceOwner();
+    }
     const member = workspace.addMember(prerequisites, userId, role);
     return this.workspaceMemberRepo.save(member);
   }

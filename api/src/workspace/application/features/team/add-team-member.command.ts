@@ -63,6 +63,7 @@ export class AddTeamMemberCommand implements ICommandHandler<AddTeamMember> {
         teamId,
         userId,
         workspaceMemberId: workspaceMember.id,
+        joinedAt: new Date(),
       }),
     );
 

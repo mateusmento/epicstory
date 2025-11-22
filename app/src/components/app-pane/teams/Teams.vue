@@ -8,13 +8,15 @@ import {
   Form,
   NavTrigger,
 } from "@/design-system";
-import { Icon } from "@/design-system/icons";
+import { Icon, IconSearch } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
-import { onMounted } from "vue";
+import { Trash2Icon } from "lucide-vue-next";
+import { onMounted, watch } from "vue";
 
-const { teams, fetchTeams, createTeam, removeTeam } = useWorkspace();
+const { workspace, teams, fetchTeams, createTeam, removeTeam } = useWorkspace();
 
 onMounted(() => fetchTeams());
+watch(workspace, fetchTeams);
 </script>
 
 <template>
@@ -39,6 +41,12 @@ onMounted(() => fetchTeams());
           </Form>
         </CollapsibleContent>
       </Collapsible>
+
+      <div
+        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-secondary text-secondary-foreground text-sm"
+      >
+        <IconSearch /> Search
+      </div>
     </div>
 
     <div class="flex:col">
@@ -54,10 +62,9 @@ onMounted(() => fetchTeams());
           <div class="text-base text-foreground font-dmSans font-medium">{{ team.name }}</div>
           <div class="text-xs text-secondary-foreground">4 members</div>
         </div>
-        <Icon
-          name="io-trash-bin"
+        <Trash2Icon
           @click.stop="removeTeam(team.id)"
-          class="ml-auto cursor-pointer text-foreground"
+          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
         />
       </NavTrigger>
     </div>

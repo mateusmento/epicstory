@@ -10,6 +10,7 @@ type TeamMember = {
   userId: number;
   user: User;
   workspaceMemberId: number;
+  joinedAt: string;
 };
 
 export const useTeamStore = defineStore("team", () => {

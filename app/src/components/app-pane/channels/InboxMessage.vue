@@ -36,7 +36,7 @@ function formatMessageDate(date: string) {
   >
     <img :src="image" class="w-10 h-10 rounded-full" />
 
-    <div class="flex-1 flex:col-sm flex-1 overflow-hidden">
+    <div class="flex:col-sm flex-1 overflow-hidden">
       <div class="flex:row-auto flex:center-y">
         <div class="text-base font-medium font-dmSans text-foreground">
           {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}

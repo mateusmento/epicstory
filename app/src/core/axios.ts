@@ -8,15 +8,25 @@ export class UnauthorizedException extends Error {
   }
 }
 
+export class NotFoundException extends Error {
+  constructor(public error: Error) {
+    super("404 Not Found");
+  }
+}
+
 export function createAxios(options?: CreateAxiosDefaults) {
   const instance = axios.create({ ...options, withCredentials: true });
 
   instance.interceptors.response.use(
     (res) => res,
     (err) => {
-      return err.response?.status === 401
-        ? Promise.reject(new UnauthorizedException(err))
-        : Promise.reject(err);
+      if (err.response?.status === 404) {
+        return Promise.reject(new NotFoundException(err));
+      }
+      if (err.response?.status === 403) {
+        return Promise.reject(new UnauthorizedException(err));
+      }
+      return Promise.reject(err);
     },
   );
 

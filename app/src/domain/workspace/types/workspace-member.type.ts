@@ -6,4 +6,5 @@ export type WorkspaceMember = {
   userId: number;
   role: number;
   user: User;
+  joinedAt: string;
 };

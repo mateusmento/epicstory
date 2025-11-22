@@ -1,6 +1,1 @@
-export type User = {
-  id: number;
-  name: string;
-  email: string;
-  picture: string;
-};
+export * from "@/domain/user/types/user.type";

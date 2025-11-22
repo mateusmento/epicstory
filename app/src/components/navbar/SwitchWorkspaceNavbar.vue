@@ -14,13 +14,8 @@ import { cn } from "@/design-system/utils";
 import { useWorkspace, useWorkspaces, type Workspace } from "@/domain/workspace";
 import { onMounted } from "vue";
 
-const currentWorkspace = defineModel<{
-  id?: number;
-  name: string;
-} | null>("currentWorkspace");
-
 const { workspaces, createWorkspace, fetchWorkspaces } = useWorkspaces();
-const { selectWorkspace } = useWorkspace();
+const { workspace: currentWorkspace, selectWorkspace } = useWorkspace();
 const { viewContent } = useNavTrigger("navbar");
 
 onMounted(async () => {
@@ -74,7 +69,7 @@ function onSelectWorkspace(workspace: Workspace) {
         :key="workspace.id"
         variant="ghost"
         size="sm"
-        :class="cn('justify-start', { 'bg-secondary': currentWorkspace?.id === workspace.id })"
+        :class="cn('justify-start', { 'bg-secondary': currentWorkspace.id === workspace.id })"
         @click="onSelectWorkspace(workspace)"
       >
         {{ workspace.name }}

@@ -1,6 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 import { UserRepository } from 'src/auth';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
@@ -22,6 +22,10 @@ export class CreateGroupChannel {
   @IsNotEmpty()
   name: string;
 
+  @IsArray()
+  @IsOptional()
+  members?: number[];
+
   constructor(partial: Partial<CreateGroupChannel>) {
     patch(this, partial);
   }
@@ -38,9 +42,18 @@ export class CreateGroupChannelCommand
     private teamRepo: TeamRepository,
   ) {}
 
-  async execute({ workspaceId, teamId, issuer, name }: CreateGroupChannel) {
-    const member = await this.workspaceRepo.findMember(workspaceId, issuer.id);
+  async execute({
+    workspaceId,
+    teamId,
+    issuer,
+    name,
+    members,
+  }: CreateGroupChannel) {
+    const member = await this.workspaceRepo.findMember(workspaceId, issuer.id, {
+      user: true,
+    });
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
+
     if (teamId) {
       const team = await this.teamRepo.findOneBy({ id: teamId });
       if (!team) throw new TeamNotFound();
@@ -48,9 +61,26 @@ export class CreateGroupChannelCommand
         throw new BadRequestException('Team does not belong to the workspace');
       }
     }
-    const peer = await this.userRepo.findOneBy({ id: issuer.id });
+
+    const peers = members
+      ? await this.workspaceRepo.findMembers(
+          { workspaceId, userIds: members },
+          { user: true },
+        )
+      : [];
+
+    if (peers.length + 1 !== members?.length) {
+      throw new NotFoundException('Members not found');
+    }
+
     return this.channelRepo.save(
-      Channel.create({ workspaceId, type: 'group', name, peers: [peer] }),
+      Channel.create({
+        workspaceId,
+        type: 'group',
+        name,
+        peers: [member.user, ...peers.map((p) => p.user)],
+        teamId,
+      }),
     );
   }
 }

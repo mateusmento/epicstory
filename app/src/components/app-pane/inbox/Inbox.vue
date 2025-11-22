@@ -6,7 +6,7 @@ import { Icon } from "@/design-system/icons";
   <div class="flex:col w-96">
     <div class="flex:row-md flex:center-y p-4">
       <Icon name="oi-inbox" />
-      <div class="text-lg font-medium">Inbox</div>
+      <div class="text-lg">Inbox</div>
     </div>
   </div>
 </template>

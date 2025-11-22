@@ -1,12 +1,13 @@
 <script lang="ts" setup>
 import { Chatbox } from "@/components/channel";
 import Meeting from "@/components/meeting/Meeting.vue";
+import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { useAuth } from "@/domain/auth";
 import { useMeeting, useSyncedChannel } from "@/domain/channels";
 import { computed } from "vue";
 
 const { user } = useAuth();
-const { channel, messageGroups } = useSyncedChannel();
+const { channel, messageGroups, sendMessage } = useSyncedChannel();
 const { currentMeeting, joinMeeting } = useMeeting();
 
 const title = computed(() => {
@@ -18,6 +19,8 @@ const picture = computed(() => {
   if (!channel.value) return "";
   return channel.value?.type === "direct" ? channel.value?.speakingTo.picture : "/images/hashtag.svg";
 });
+
+const { viewContent } = useNavTrigger("details-pane");
 </script>
 
 <template>
@@ -37,7 +40,9 @@ const picture = computed(() => {
       :chat-picture="picture"
       :message-groups="messageGroups"
       :me-id="user.id"
+      :send-message="async (message) => await sendMessage(message)"
       @join-meeting="joinMeeting(channel)"
+      @more-details="viewContent('channel')"
       :key="2"
     />
   </TransitionGroup>

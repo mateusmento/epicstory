@@ -8,12 +8,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/design-system";
 import { Slot, useForwardPropsEmits, type ComboboxRootEmits, type ComboboxRootProps } from "radix-vue";
 import { computed } from "vue";
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = defineProps<
   ComboboxRootProps & {
     options: any[];
     trackBy: string;
     labelBy: string;
     buttonClass?: string;
+    searchPlaceholder?: string;
+    triggerPlaceholder?: string;
   }
 >();
 
@@ -39,9 +45,9 @@ const open = ref(false);
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
       <Slot role="combobox" :aria-expanded="open" v-bind="$attrs">
-        <slot name="trigger" :label="value ? labelOf(value) : 'Select an option...'">
+        <slot name="trigger" :label="value ? labelOf(value) : (triggerPlaceholder ?? 'Select an option...')">
           <Button variant="outline" class="justify-between">
-            {{ value ? labelOf(value) : "Select an option..." }}
+            {{ value ? labelOf(value) : (triggerPlaceholder ?? "Select an option...") }}
             <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </slot>
@@ -49,7 +55,7 @@ const open = ref(false);
     </PopoverTrigger>
     <PopoverContent class="p-0">
       <Command v-bind="forwarded" v-model="value">
-        <CommandInput placeholder="Search for options..." />
+        <CommandInput :placeholder="searchPlaceholder ?? 'Search for options...'" />
         <CommandEmpty>No options found.</CommandEmpty>
         <CommandList>
           <CommandGroup>
@@ -67,7 +73,9 @@ const open = ref(false);
                   )
                 "
               />
-              {{ labelOf(option) }}
+              <slot name="option" :option="option">
+                {{ labelOf(option) }}
+              </slot>
             </CommandItem>
           </CommandGroup>
         </CommandList>

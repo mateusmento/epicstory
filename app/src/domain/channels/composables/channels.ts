@@ -25,7 +25,7 @@ export function useChannels() {
 
   function subscribeMessages() {
     sockets.websocket?.emit("subscribe-messages", {
-      workspaceId: workspace.value?.id,
+      workspaceId: workspace.value.id,
     });
 
     sockets.websocket.off("incoming-message", onReceiveMessage);
@@ -46,7 +46,7 @@ export function useChannels() {
 
   function subscribeMeetings() {
     sockets.websocket?.emit("subscribe-meetings", {
-      workspaceId: workspace.value?.id,
+      workspaceId: workspace.value.id,
     });
 
     console.log("channels subscribe meetings");
@@ -58,12 +58,10 @@ export function useChannels() {
   }
 
   async function fetchChannels() {
-    if (!workspace.value) return;
     store.channels = await channelApi.findChannels(workspace.value.id);
   }
 
   async function createChannel(data: CreateDirectChannel | CreateGroupChannel) {
-    if (!workspace.value) return;
     const channel =
       data.type === "direct"
         ? await channelApi.createDirectChannel(workspace.value.id, data)

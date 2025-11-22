@@ -18,7 +18,7 @@ import { PriorityToggler } from "./priority-toggler";
 import BacklogHeadCell from "./BacklogHeadCell.vue";
 import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
 
-const props = defineProps<{ projectId: string }>();
+const props = defineProps<{ workspaceId: string; projectId: string }>();
 
 const {
   backlogItems,
@@ -237,9 +237,11 @@ function openIssue(iss: Issue) {
               >{{ issue.status }}</Button
             >
             <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y text-sm">
-              <div @click="openIssue(issue)" @dblclick="$router.push(`issue/${issue.id}`)">
+              <div
+                @click="openIssue(issue)"
+                @dblclick.stop="$router.push(`/${workspaceId}/project/${projectId}/issue/${issue.id}`)"
+              >
                 {{ issue.title }}
-                <!-- {{ issue.title }} {{ id }} previousId({{ previousId }}) nextId({{ nextId }}) {{ order }} -->
               </div>
               <Icon
                 name="fa-regular-edit"
