@@ -4,6 +4,7 @@ import { useNavView } from "./nav-view";
 export type NavViewProps = {
   view: string;
   initialContent?: string;
+  class?: string;
 };
 
 export type NavViewEmits = {

@@ -13,11 +13,23 @@ import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { NotFoundException, UnauthorizedException } from "@/core/axios";
 import { useWorkspace } from "@/domain/workspace";
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { RouterView, useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
+
+const openPane = ref<string>();
+
+const isAppPaneOpen = computed({
+  get: () => openPane.value === "app-pane",
+  set: (value) => (openPane.value = value ? "app-pane" : undefined),
+});
+
+const isDetailsPaneOpen = computed({
+  get: () => openPane.value === "details-pane",
+  set: (value) => (openPane.value = value ? "details-pane" : undefined),
+});
 
 const workspaceId = computed(() => +route.params.workspaceId);
 
@@ -41,7 +53,7 @@ watch(workspaceId, loadWorkspace);
 </script>
 
 <template>
-  <AppLayout>
+  <AppLayout v-model:isAppPaneOpen="isAppPaneOpen" v-model:isDetailsPaneOpen="isDetailsPaneOpen">
     <template #navbar="{ isAppPaneOpen }">
       <NavbarContent content="workspace">
         <WorkspaceNavbar :isAppPaneOpen="isAppPaneOpen" />
@@ -65,7 +77,9 @@ watch(workspaceId, loadWorkspace);
     </template>
 
     <template #details-pane>
-      <DrawerPaneContent content="channel" :as="ChannelDetailsPane" />
+      <DrawerPaneContent content="channel">
+        <ChannelDetailsPane @close="isDetailsPaneOpen = false" />
+      </DrawerPaneContent>
     </template>
   </AppLayout>
 </template>

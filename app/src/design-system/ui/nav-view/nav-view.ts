@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, inject, provide, reactive, type Ref } from "vue";
+import { computed, inject, provide, reactive } from "vue";
 
 type NavViewContext = {
   content?: string;

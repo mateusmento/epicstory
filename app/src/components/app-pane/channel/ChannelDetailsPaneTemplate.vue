@@ -1,9 +1,10 @@
 <script lang="tsx" setup>
+import IconClose from "@/components/icons/IconClose.vue";
 import { Button, Combobox, Dialog, DialogContent, DialogHeader, Form, Separator } from "@/design-system";
+import { IconChannel } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { ref, type FunctionalComponent as FC } from "vue";
 import ChannelMembers from "./ChannelMembers.vue";
-import { IconChannel } from "@/design-system/icons";
 
 defineProps<{
   members: (User & { role?: string; online?: boolean })[];
@@ -12,6 +13,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: "add-member", userId: number): void;
+  (e: "close"): void;
 }>();
 
 function addMember(userId: number) {
@@ -40,6 +42,9 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
     <div class="flex:row-lg flex:center-y whitespace-nowrap">
       <IconChannel class="overflow-visible" />
       <div class="text-lg font-semibold">Channel</div>
+      <Button variant="ghost" size="icon" class="ml-auto" @click="emit('close')">
+        <IconClose class="w-4 h-4" />
+      </Button>
     </div>
 
     <Separator />

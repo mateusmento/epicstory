@@ -4,6 +4,10 @@ import { useUsers } from "@/domain/user";
 import { ref, watch } from "vue";
 import ChannelDetailsPaneTemplate from "./ChannelDetailsPaneTemplate.vue";
 
+const emit = defineEmits<{
+  (e: "close"): void;
+}>();
+
 const { members, addMember } = useChannel();
 
 const { users, fetchUsers } = useUsers();
@@ -13,6 +17,12 @@ watch(query, () => fetchUsers(query.value));
 
 <template>
   <aside class="flex:col-4xl h-full w-96 p-4 border-l border-zinc-300/60">
-    <ChannelDetailsPaneTemplate v-model:query="query" :users :members @add-member="addMember" />
+    <ChannelDetailsPaneTemplate
+      v-model:query="query"
+      :users
+      :members
+      @add-member="addMember"
+      @close="emit('close')"
+    />
   </aside>
 </template>

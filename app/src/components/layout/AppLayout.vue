@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { Navbar } from "./navbar";
 import { DrawerPane } from "./drawer-pane";
+import { Navbar } from "./navbar";
 
-const openPane = ref<string>();
-
-const isAppPaneOpen = computed(() => openPane.value === "app-pane");
-
-const isDetailsPaneOpen = computed(() => openPane.value === "details-pane");
+const isAppPaneOpen = defineModel<boolean>("isAppPaneOpen", { required: true });
+const isDetailsPaneOpen = defineModel<boolean>("isDetailsPaneOpen", { required: true });
 </script>
 
 <template>
@@ -20,11 +16,7 @@ const isDetailsPaneOpen = computed(() => openPane.value === "details-pane");
       <main
         class="flex flex-1 min-w-0 bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
       >
-        <DrawerPane
-          view="app-pane"
-          :open="isAppPaneOpen"
-          @update:open="openPane = $event ? 'app-pane' : undefined"
-        >
+        <DrawerPane view="app-pane" v-model:open="isAppPaneOpen">
           <slot name="app-pane" />
         </DrawerPane>
 
@@ -33,11 +25,7 @@ const isDetailsPaneOpen = computed(() => openPane.value === "details-pane");
           <slot name="main-content" />
         </section>
 
-        <DrawerPane
-          view="details-pane"
-          :open="isDetailsPaneOpen"
-          @update:open="openPane = $event ? 'details-pane' : undefined"
-        >
+        <DrawerPane view="details-pane" v-model:open="isDetailsPaneOpen">
           <slot name="details-pane" />
         </DrawerPane>
       </main>
