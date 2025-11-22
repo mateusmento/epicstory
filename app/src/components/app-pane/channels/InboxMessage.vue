@@ -41,7 +41,7 @@ function formatMessageDate(date: string) {
         <div class="text-base font-medium font-dmSans text-foreground">
           {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
         </div>
-        <div class="text-xs text-secondary-foreground font-dmSans">
+        <div v-if="!canJoinMeeting" class="text-xs text-secondary-foreground font-dmSans">
           {{ channel.lastMessage ? formatMessageDate(channel.lastMessage.sentAt) : "" }}
         </div>
       </div>
@@ -54,10 +54,10 @@ function formatMessageDate(date: string) {
           {{ channel.lastMessage?.content }}
         </div>
         <div
-          v-if="!channel.unreadMessagesCount"
+          v-if="!channel.unreadMessagesCount && canJoinMeeting"
           class="w-fit px-1 py-0 rounded-sm bg-secondary text-secondary-foreground text-xs"
         >
-          {{ channel.unreadMessagesCount ?? 2 }}
+          {{ channel.unreadMessagesCount }}
         </div>
       </div>
     </div>

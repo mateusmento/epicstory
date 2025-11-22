@@ -147,20 +147,29 @@ const useMeetingStore = defineStore("meeting", () => {
 
   function stopCamera() {
     if (!mycamera.value) return;
+    const videoTrack = mycamera.value.getVideoTracks()[0];
+    if (!videoTrack) return;
     if (isCameraOn.value) {
-      mycamera.value.getVideoTracks()[0].stop();
+      videoTrack.enabled = false;
       isCameraOn.value = false;
     } else {
-      navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
+      videoTrack.enabled = true;
+      isCameraOn.value = true;
     }
   }
 
   function stopMicrophone() {
     if (!mycamera.value) return;
-    mycamera.value.getAudioTracks()[0].stop();
-    isMicrophoneOn.value = false;
+    const audioTrack = mycamera.value.getAudioTracks()[0];
+    if (!audioTrack) return;
+
+    if (isMicrophoneOn.value) {
+      audioTrack.enabled = false;
+      isMicrophoneOn.value = false;
+    } else {
+      audioTrack.enabled = true;
+      isMicrophoneOn.value = true;
+    }
   }
 
   return {
