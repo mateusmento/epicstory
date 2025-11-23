@@ -2,6 +2,7 @@ import { User } from 'src/auth';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Meeting } from './meeting.entity';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
+import { patch } from 'src/core/objects';
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'meeting_attendees' })
 export class MeetingAttendee {
@@ -9,7 +10,7 @@ export class MeetingAttendee {
   // @PrimaryGeneratedColumn('identity', { generatedIdentity: 'ALWAYS' })
   id: number;
 
-  @Column()
+  @Column({ nullable: false, unique: true })
   remoteId: string;
 
   @Column()
@@ -24,10 +25,18 @@ export class MeetingAttendee {
   @ManyToOne(() => Meeting)
   meeting: Meeting;
 
-  static of(remoteId: string, userId: number) {
-    const attendee = new MeetingAttendee();
-    attendee.remoteId = remoteId;
-    attendee.userId = userId;
-    return attendee;
+  @Column({ default: true })
+  isCameraOn: boolean;
+
+  @Column({ default: true })
+  isMicrophoneOn: boolean;
+
+  static of(data: {
+    remoteId: string;
+    userId: number;
+    isCameraOn: boolean;
+    isMicrophoneOn: boolean;
+  }) {
+    return patch(new MeetingAttendee(), data);
   }
 }

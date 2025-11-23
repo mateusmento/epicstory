@@ -7,10 +7,13 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
+import {
+  MeetingHasntStartedException,
+  MeetingNotFoundException,
+} from '../exceptions';
 import { MeetingService } from '../services/meeting.service';
-import { Meeting } from 'src/channel/domain';
-import { MeetingNotFoundException } from '../exceptions';
 
 const channelMeetingRoom = (channelId) => `channel:${channelId}:meeting`;
 const meetingRoom = (meetingId) => `meeting:${meetingId}`;
@@ -62,28 +65,32 @@ export class MeetingGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('join-meeting')
   async joinMeeting(
-    @MessageBody() { channelId, remoteId }: any,
+    @MessageBody() { channelId, remoteId, isCameraOn, isMicrophoneOn }: any,
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
     const userId = user?.id;
 
-    let meeting = await this.meetingService.findOngoingMeeting(channelId);
+    const attendee = MeetingAttendee.of({
+      remoteId,
+      userId,
+      isCameraOn,
+      isMicrophoneOn,
+    });
 
-    if (meeting) {
-      meeting.addAttendee(remoteId, userId);
-      meeting = await this.meetingService.save(meeting);
-      const meetingId = meeting.id;
-      socket
-        .to(meetingRoom(meetingId))
-        .emit('attendee-joined', { meetingId, channelId, remoteId, user });
-      socket
-        .to(channelMeetingRoom(channelId))
-        .emit('incoming-attendee', { meetingId, channelId, remoteId, user });
-    } else {
-      meeting = Meeting.ongoing(channelId);
-      meeting.addAttendee(remoteId, userId);
-      meeting = await this.meetingService.save(meeting);
+    let meeting: Meeting;
+
+    try {
+      meeting = await this.meetingService.findOngoingMeeting(channelId);
+      meeting = await this.meetingService.joinMeeting(meeting, attendee);
+      const data = { attendee, meeting };
+      socket.to(meetingRoom(meeting.id)).emit('attendee-joined', data);
+      socket.to(channelMeetingRoom(channelId)).emit('incoming-attendee', data);
+    } catch (ex) {
+      if (!(ex instanceof MeetingHasntStartedException)) throw ex;
+
+      meeting = await this.meetingService.startMeeting(channelId, attendee);
+
       this.server
         .to(channelMeetingRoom(channelId))
         .emit('incoming-meeting', { meeting, channelId });
@@ -124,6 +131,36 @@ export class MeetingGateway implements OnGatewayDisconnect {
     }
 
     delete socket.data.meetingAttendee;
+  }
+
+  @SubscribeMessage('camera-toggled')
+  async cameraToggled(@MessageBody() { meetingId, remoteId, enabled }: any) {
+    const { channelId } = await this.meetingService.findMeeting(meetingId);
+    await this.meetingService.updateAttendee(meetingId, remoteId, {
+      isCameraOn: enabled,
+    });
+    this.server
+      .to(meetingRoom(meetingId))
+      .emit('camera-toggled', { remoteId, enabled });
+    this.server
+      .to(channelMeetingRoom(channelId))
+      .emit('camera-toggled', { meetingId, channelId, remoteId, enabled });
+  }
+
+  @SubscribeMessage('microphone-toggled')
+  async microphoneToggled(
+    @MessageBody() { meetingId, remoteId, enabled }: any,
+  ) {
+    const { channelId } = await this.meetingService.findMeeting(meetingId);
+    await this.meetingService.updateAttendee(meetingId, remoteId, {
+      isMicrophoneOn: enabled,
+    });
+    this.server
+      .to(meetingRoom(meetingId))
+      .emit('microphone-toggled', { remoteId, enabled });
+    this.server
+      .to(channelMeetingRoom(channelId))
+      .emit('microphone-toggled', { meetingId, channelId, remoteId, enabled });
   }
 
   @SubscribeMessage('end-meeting')

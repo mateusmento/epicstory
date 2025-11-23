@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Meeting } from 'src/channel/domain';
+import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import {
   MeetingAttendeeRepository,
   MeetingRepository,
@@ -7,7 +7,6 @@ import {
 import {
   MeetingHasntStartedException,
   MeetingNotFoundException,
-  MeetingOngoingException,
 } from '../exceptions';
 
 @Injectable()
@@ -24,31 +23,28 @@ export class MeetingService {
   }
 
   findOngoingMeeting(channelId: number) {
-    return this.meetingRepo.findOne({
+    const meeting = this.meetingRepo.findOne({
       where: { channelId, ongoing: true },
       relations: { attendees: true },
     });
+    if (!meeting) throw new MeetingHasntStartedException();
+    return meeting;
   }
 
   save(meeting: Meeting) {
     return this.meetingRepo.save(meeting);
   }
 
-  async startMeeting(channelId: number) {
-    const meeting = await this.meetingRepo.findOneBy({ channelId });
-    if (meeting) throw new MeetingOngoingException();
-    const ongoingMeeting = Meeting.ongoing(channelId);
-    return await this.meetingRepo.save(ongoingMeeting);
+  async startMeeting(channelId: number, attendee: MeetingAttendee) {
+    const meeting = Meeting.ongoing(channelId);
+    meeting.addAttendee(attendee);
+    return await this.meetingRepo.save(meeting);
   }
 
-  async joinMeeting(meetingId: number, remoteId: string, userId: number) {
-    const ongoingMeeting = await this.meetingRepo.findOne({
-      where: { id: meetingId, ongoing: true },
-      relations: { attendees: true },
-    });
-    if (!ongoingMeeting) throw new MeetingHasntStartedException();
-    ongoingMeeting.addAttendee(remoteId, userId);
-    return await this.meetingRepo.save(ongoingMeeting);
+  async joinMeeting(meeting: Meeting, attendee: MeetingAttendee) {
+    if (!meeting || !meeting.ongoing) throw new MeetingHasntStartedException();
+    meeting.addAttendee(attendee);
+    return await this.meetingRepo.save(meeting);
   }
 
   async leaveMeeting(meetingId: number, remoteId: string) {
@@ -59,5 +55,13 @@ export class MeetingService {
   async endMeeting(meetingId: number) {
     await this.meetingAttendeeRepo.delete({ meetingId });
     return this.meetingRepo.delete({ id: meetingId });
+  }
+
+  async updateAttendee(
+    meetingId: number,
+    remoteId: string,
+    data: Partial<MeetingAttendee>,
+  ) {
+    return this.meetingAttendeeRepo.update({ meetingId, remoteId }, data);
   }
 }

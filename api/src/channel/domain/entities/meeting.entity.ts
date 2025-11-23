@@ -39,7 +39,7 @@ export class Meeting {
     return meeting;
   }
 
-  addAttendee(remoteId: string, userId: number) {
-    this.attendees.push(MeetingAttendee.of(remoteId, userId));
+  addAttendee(data: MeetingAttendee) {
+    this.attendees.push(data);
   }
 }
