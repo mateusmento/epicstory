@@ -32,7 +32,7 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
 
     let query = this.channelRepo
       .createQueryBuilder('c')
-      // .innerJoin('c.peers', 'peer', 'peer.id = :userId', { userId: issuer.id })
+      .innerJoin('c.peers', 'peer', 'peer.id = :userId', { userId: issuer.id })
       .leftJoinAndSelect('c.peers', 'p')
       .leftJoinAndSelect('c.meeting', 'm')
       .leftJoinAndSelect('c.lastMessage', 'msg')
