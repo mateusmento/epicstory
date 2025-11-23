@@ -1,3 +1,4 @@
+import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import type { User } from "@/domain/auth";
@@ -10,15 +11,16 @@ import {
 import { useWorkspace } from "@/domain/workspace";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
-import { ref, shallowRef } from "vue";
-import type { IChannel, IMeeting } from "../types";
+import { computed, ref, shallowRef } from "vue";
+import type { IChannel, IMeeting, IMeetingAttendee } from "../types";
 import { useChannel } from "./channel";
-import { config } from "@/config";
 
 export type MeetingStreamingAttendee = {
   remoteId: string;
   camera: MediaStream;
   user: User;
+  isCameraOn: boolean;
+  isMicrophoneOn: boolean;
 };
 
 export function useMeeting() {
@@ -37,6 +39,7 @@ const useMeetingStore = defineStore("meeting", () => {
   const currentMeeting = ref<IMeeting | null>();
   const streaming = shallowRef<MediaStreaming | null>();
 
+  const localRemoteId = ref<string | null>(null);
   const mycamera = ref<MediaStream | null>(null);
   const attendees = ref<MeetingStreamingAttendee[]>([]);
 
@@ -75,16 +78,29 @@ const useMeetingStore = defineStore("meeting", () => {
       }),
     );
 
+    localRemoteId.value = rtc.id;
+
     streaming.value = createMediaStreaming({
       rtc,
       media: camera,
       async mediaAdded(remoteId, camera) {
         const [attendee] = await meetingApi.findAttendees({ remoteId, meetingId: meeting.id });
-        attendees.value.push({ remoteId, camera, user: attendee?.user });
+        attendees.value.push({
+          remoteId,
+          camera,
+          user: attendee?.user,
+          isCameraOn: attendee?.isCameraOn ?? false,
+          isMicrophoneOn: attendee?.isMicrophoneOn ?? false,
+        });
       },
     });
 
-    const data = { channelId: channel.id, remoteId: streaming.value.localId };
+    const data = {
+      channelId: channel.id,
+      remoteId: streaming.value.localId,
+      isCameraOn: isCameraOn.value,
+      isMicrophoneOn: isMicrophoneOn.value,
+    };
 
     const meeting = await new Promise<IMeeting>((res) => {
       sockets.websocket.emit("join-meeting", data, (meeting: IMeeting) => res(meeting));
@@ -94,9 +110,13 @@ const useMeetingStore = defineStore("meeting", () => {
 
     sockets.websocket.off("attendee-left", attendeeLeft);
     sockets.websocket.off("attendee-joined", attendeeJoined);
+    sockets.websocket.off("camera-toggled", onCameraToggled);
+    sockets.websocket.off("microphone-toggled", onMicrophoneToggled);
 
     sockets.websocket.on("attendee-left", attendeeLeft);
     sockets.websocket.on("attendee-joined", attendeeJoined);
+    sockets.websocket.on("camera-toggled", onCameraToggled);
+    sockets.websocket.on("microphone-toggled", onMicrophoneToggled);
     sockets.websocket.once(`current-meeting-ended`, onMeetingEnded);
 
     sockets.websocket.listeners("attendee-joined");
@@ -105,9 +125,8 @@ const useMeetingStore = defineStore("meeting", () => {
     currentMeeting.value = meeting;
   }
 
-  function attendeeJoined({ remoteId }: { remoteId: string }) {
-    console.log("attendee joined", streaming.value);
-    streaming.value?.connect(remoteId);
+  function attendeeJoined({ attendee }: { attendee: IMeetingAttendee }) {
+    streaming.value?.connect(attendee.remoteId);
   }
 
   function attendeeLeft({ remoteId }: { remoteId: string }) {
@@ -115,8 +134,37 @@ const useMeetingStore = defineStore("meeting", () => {
     attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId);
   }
 
+  function onCameraToggled({ remoteId, enabled }: { remoteId: string; enabled: boolean }) {
+    if (remoteId === localRemoteId.value) {
+      isCameraOn.value = enabled;
+      const track = mycamera.value?.getVideoTracks()[0];
+      if (!track) return;
+      track.enabled = enabled;
+    } else {
+      const attendee = attendees.value.find((a) => a.remoteId === remoteId);
+      const track = attendee?.camera.getVideoTracks()[0];
+      if (!track) return;
+      track.enabled = enabled;
+      attendee.isCameraOn = enabled;
+    }
+  }
+
+  function onMicrophoneToggled({ remoteId, enabled }: { remoteId: string; enabled: boolean }) {
+    if (remoteId === localRemoteId.value) {
+      isMicrophoneOn.value = enabled;
+      const track = mycamera.value?.getAudioTracks()[0];
+      if (!track) return;
+      track.enabled = enabled;
+    } else {
+      const attendee = attendees.value.find((a) => a.remoteId === remoteId);
+      const track = attendee?.camera.getAudioTracks()[0];
+      if (!track) return;
+      track.enabled = enabled;
+      attendee.isMicrophoneOn = enabled;
+    }
+  }
+
   function onMeetingEnded({ meetingId }: { meetingId: number }) {
-    console.log(`meeting:${meetingId}:ended`);
     closeMeeting();
   }
 
@@ -149,13 +197,13 @@ const useMeetingStore = defineStore("meeting", () => {
     if (!mycamera.value) return;
     const videoTrack = mycamera.value.getVideoTracks()[0];
     if (!videoTrack) return;
-    if (isCameraOn.value) {
-      videoTrack.enabled = false;
-      isCameraOn.value = false;
-    } else {
-      videoTrack.enabled = true;
-      isCameraOn.value = true;
-    }
+    isCameraOn.value = !isCameraOn.value;
+    videoTrack.enabled = isCameraOn.value;
+
+    sockets.websocket.emit("camera-toggled", {
+      remoteId: localRemoteId.value,
+      enabled: isCameraOn.value,
+    });
   }
 
   function stopMicrophone() {
@@ -163,13 +211,13 @@ const useMeetingStore = defineStore("meeting", () => {
     const audioTrack = mycamera.value.getAudioTracks()[0];
     if (!audioTrack) return;
 
-    if (isMicrophoneOn.value) {
-      audioTrack.enabled = false;
-      isMicrophoneOn.value = false;
-    } else {
-      audioTrack.enabled = true;
-      isMicrophoneOn.value = true;
-    }
+    isMicrophoneOn.value = !isMicrophoneOn.value;
+    audioTrack.enabled = isMicrophoneOn.value;
+
+    sockets.websocket.emit("microphone-toggled", {
+      remoteId: localRemoteId.value,
+      enabled: isMicrophoneOn.value,
+    });
   }
 
   return {

@@ -1,4 +1,4 @@
-<script lang="ts" setup>
+<script lang="tsx" setup>
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Combobox, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -12,11 +12,11 @@ import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { parseAbsolute } from "@internationalized/date";
 import { useStorage } from "@vueuse/core";
 import { debounce } from "lodash";
-import { onMounted, reactive, ref, watch } from "vue";
+import { onMounted, reactive, ref, watch, withModifiers, type FunctionalComponent as FC } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
-import BacklogHeadCell from "./BacklogHeadCell.vue";
 import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
+import { UserSelect } from "@/components/user";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
@@ -152,6 +152,42 @@ function openIssue(iss: Issue) {
 }
 </script>
 
+<script lang="tsx">
+type Props = {
+  show: boolean;
+  order: "asc" | "desc";
+  label: string;
+};
+
+type Emits = {
+  click(): void;
+  reset(): void;
+};
+
+const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots }) => {
+  return (
+    <div
+      class={cn("text-sm text-secondary-foreground select-none cursor-pointer flex:row-md flex:center-y", {
+        "font-medium": show,
+      })}
+    >
+      {slots.default?.() ?? label}
+      <div class="group">
+        <div class={cn("group-hover:hidden", { "opacity-0": !show })}>
+          <Icon name={`hi-arrow-sm-${order === "asc" ? "down" : "up"}`} />
+        </div>
+        <div
+          class={cn("hidden group-hover:block", { "opacity-0": !show })}
+          onClick={withModifiers(() => emit("reset"), ["stop"])}
+        >
+          <Icon name="io-close" />
+        </div>
+      </div>
+    </div>
+  );
+};
+</script>
+
 <template>
   <Drawer v-model:open="showIssueDrawer" direction="right">
     <DrawerContent v-if="issue" class="flex:col-2xl p-6 m-2 min-w-96">
@@ -260,36 +296,37 @@ function openIssue(iss: Issue) {
                 @update:value="updateIssue(issue.id, { priority: $event })"
               />
             </div>
-            <div class="flex:center">
+            <div class="flex:row flex:center-y">
               <img
                 v-for="(assignee, i) of issue.assignees"
                 :key="assignee.id"
                 :src="assignee.picture"
                 :class="cn('w-5 h-5 rounded-full', i > 0 && 'ml-[-0.5rem]')"
               />
+              <UserSelect
+                v-model="selectedUser"
+                @update:model-value="
+                  selectedUser && addAssignee(issue.id, selectedUser.id);
+                  selectedUser = undefined;
+                "
+              >
+                <template #trigger>
+                  <div
+                    :class="
+                      cn(
+                        'flex flex:center w-fit p-0.5 mr-2 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60',
+                        issue.assignees.length > 0 && '-m-2',
+                      )
+                    "
+                  >
+                    <Icon
+                      name="fa-user-plus"
+                      class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
+                    />
+                  </div>
+                </template>
+              </UserSelect>
             </div>
-            <Combobox
-              v-model="selectedUser"
-              v-model:searchTerm="query"
-              :options="users"
-              track-by="id"
-              label-by="name"
-              @update:model-value="
-                selectedUser && addAssignee(issue.id, selectedUser.id);
-                selectedUser = undefined;
-              "
-            >
-              <template #trigger>
-                <div
-                  class="flex flex:center w-fit p-0.5 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
-                >
-                  <Icon
-                    name="fa-user-plus"
-                    class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
-                  />
-                </div>
-              </template>
-            </Combobox>
             <DueDatePicker
               size="badge"
               :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"

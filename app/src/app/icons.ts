@@ -47,4 +47,7 @@ export {
   HiArrowSmUp,
   FaRegularEdit,
   HiPlus,
+  BiRecord,
+  BiRecordCircleFill,
+  RiRecordCircleFill,
 } from "oh-vue-icons/icons";

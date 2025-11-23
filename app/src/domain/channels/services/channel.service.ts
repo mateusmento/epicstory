@@ -52,6 +52,6 @@ export class ChannelApi {
   }
 
   removeMember(channelId: number, userId: number) {
-    return this.axios.post(`/channels/${channelId}/members/${userId}`).then((res) => res.data);
+    return this.axios.delete(`/channels/${channelId}/members/${userId}`).then((res) => res.data);
   }
 }

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { Form, Field, Label, RadioGroup, RadioGroupItem, Button, Combobox } from "@/design-system";
-import { UserApi, type User } from "@/domain/user";
+import { UserSelect } from "@/components/user";
+import { Button, Field, Form, Label, RadioGroup, RadioGroupItem } from "@/design-system";
 import { useChannels } from "@/domain/channels";
-import { ref, watch } from "vue";
-import { useDependency } from "@/core/dependency-injection";
-import { Trash2Icon } from "lucide-vue-next";
-import { useRouter } from "vue-router";
+import { type User } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
+import { Trash2Icon } from "lucide-vue-next";
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 const { workspace } = useWorkspace();
@@ -14,18 +14,8 @@ const { workspace } = useWorkspace();
 const channelType = ref("group");
 const { createChannel } = useChannels();
 
-const userApi = useDependency(UserApi);
-const users = ref<User[]>([]);
-const query = ref("");
-const selectedUser = ref<User>();
-
-async function fetchUsersByName(name: string) {
-  users.value = await userApi.findUsersByName(name);
-}
-
-watch(query, () => fetchUsersByName(query.value));
-
 const members = ref<User[]>([]);
+const selectedUser = ref<User>();
 
 function addMember(user: User) {
   members.value.push({
@@ -61,32 +51,24 @@ async function onCreateChannel(event: any) {
         <div v-for="member in members" :key="member.id" class="flex:row-lg flex:center-y w-full">
           <img :src="member.picture" class="w-4 h-4 rounded-full" />
           <div class="text-sm font-medium">{{ member.name }}</div>
-          <Button size="icon" variant="outline" @click="removeMember(member.id)" class="ml-auto">
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            @click="removeMember(member.id)"
+            class="ml-auto"
+          >
             <Trash2Icon class="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       <div class="flex:col-lg">
-        <Combobox
-          v-model="selectedUser"
-          v-model:searchTerm="query"
-          :options="users"
-          track-by="id"
-          label-by="name"
-          name="user"
-        >
-          <template #option="{ option }">
-            <div class="flex:row-auto flex:center-y">
-              <img :src="option.picture" class="w-4 h-4 rounded-full mr-2" />
-              <div class="text-sm font-medium">{{ option.name }}</div>
-            </div>
-          </template>
-        </Combobox>
-        <Button size="xs" @click="selectedUser && addMember(selectedUser)">Add</Button>
+        <UserSelect v-model="selectedUser" />
+        <Button type="button" size="xs" @click="selectedUser && addMember(selectedUser)">Add</Button>
       </div>
     </template>
     <Field v-if="channelType === 'direct'" label="Email" name="username" placeholder="Email..." />
-    <Button size="xs">Create</Button>
+    <Button type="submit" size="xs">Create</Button>
   </Form>
 </template>

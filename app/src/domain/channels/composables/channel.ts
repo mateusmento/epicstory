@@ -97,6 +97,12 @@ export function useChannel() {
     store.members = channel.peers;
   }
 
+  async function removeMember(memberId: number) {
+    if (!store.channel) return;
+    const channel = await channelApi.removeMember(store.channel.id, memberId);
+    store.members = channel.peers;
+  }
+
   return {
     ...storeToRefs(store),
     messageGroups,
@@ -108,6 +114,7 @@ export function useChannel() {
     sendMessage,
     fetchMembers,
     addMember,
+    removeMember,
   };
 }
 

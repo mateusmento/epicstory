@@ -24,11 +24,11 @@ export function useWorkspace() {
   const router = useRouter();
   const workspaceApi = useDependency(WorkspaceApi);
 
-  if (!store.workspace) {
-    throw new Error("Workspace was not provided");
-  }
-
   const workspaceId = computed(() => {
+    if (!store.workspace) {
+      throw new Error("Workspace was not provided");
+    }
+
     return store.workspace.id;
   });
 

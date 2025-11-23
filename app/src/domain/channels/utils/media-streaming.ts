@@ -14,6 +14,7 @@ export interface MediaStreaming {
   connect: (remoteId: string) => void;
   disconnect: (remoteId: string) => void;
   close: () => void;
+  getConnection: (remoteId: string) => MediaConnection | undefined;
 }
 
 export function createMediaStreaming({
@@ -57,10 +58,15 @@ export function createMediaStreaming({
     rtc.destroy();
   }
 
+  function getConnection(remoteId: string) {
+    return peers[remoteId];
+  }
+
   return {
     localId: rtc.id,
     connect,
     disconnect,
     close,
+    getConnection,
   };
 }

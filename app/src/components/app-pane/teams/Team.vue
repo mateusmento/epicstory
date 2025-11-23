@@ -1,25 +1,21 @@
 <script lang="ts" setup>
-import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Combobox } from "@/design-system";
+import { UserSelect } from "@/components/user";
+import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/design-system";
 import { Icon, IconSearch } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { useTeam } from "@/domain/team";
-import { useUsers } from "@/domain/user";
-import { Trash2Icon } from "lucide-vue-next";
-import { onMounted, ref, watch } from "vue";
 import { format } from "date-fns";
+import { Trash2Icon } from "lucide-vue-next";
+import { onMounted, ref } from "vue";
 
 const props = defineProps<{
   teamId: number;
 }>();
 
 const { team, members, fetchTeam, addMember, removeMember } = useTeam();
-
 onMounted(() => fetchTeam(props.teamId));
 
-const { users, fetchUsers } = useUsers();
-const query = ref("");
 const selectedUser = ref<User>();
-watch(query, () => fetchUsers(query.value));
 </script>
 
 <template>
@@ -39,14 +35,7 @@ watch(query, () => fetchUsers(query.value));
 
         <CollapsibleContent>
           <div class="flex:col-lg">
-            <Combobox
-              v-model="selectedUser"
-              v-model:searchTerm="query"
-              :options="users"
-              track-by="id"
-              label-by="name"
-              name="user"
-            />
+            <UserSelect v-model="selectedUser" />
             <Button size="xs" @click="selectedUser && addMember(selectedUser.id)">Add</Button>
           </div>
         </CollapsibleContent>

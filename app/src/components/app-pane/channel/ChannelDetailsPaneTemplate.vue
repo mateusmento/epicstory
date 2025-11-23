@@ -1,6 +1,7 @@
 <script lang="tsx" setup>
 import IconClose from "@/components/icons/IconClose.vue";
-import { Button, Combobox, Dialog, DialogContent, DialogHeader, Form, Separator } from "@/design-system";
+import { UserSelect } from "@/components/user";
+import { Button, Dialog, DialogContent, DialogHeader, Form, Separator } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { ref, type FunctionalComponent as FC } from "vue";
@@ -8,11 +9,11 @@ import ChannelMembers from "./ChannelMembers.vue";
 
 defineProps<{
   members: (User & { role?: string; online?: boolean })[];
-  users: User[];
 }>();
 
 const emit = defineEmits<{
   (e: "add-member", userId: number): void;
+  (e: "remove-member", memberId: number): void;
   (e: "close"): void;
 }>();
 
@@ -22,8 +23,11 @@ function addMember(userId: number) {
 
 const showDialog = ref(false);
 
-const query = defineModel<string>("query", { default: "" });
-const selectedUser = defineModel<User>("selectedUser");
+const selectedUser = ref<User>();
+
+function removeMember(memberId: number) {
+  emit("remove-member", memberId);
+}
 </script>
 
 <script lang="tsx">
@@ -57,21 +61,16 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 
     <Separator />
 
-    <ChannelMembers :members :users @add="showDialog = true" />
+    <ChannelMembers :members @add="showDialog = true" @remove="removeMember" />
 
     <Dialog v-model:open="showDialog">
       <DialogContent>
         <DialogHeader>Add Channel Member</DialogHeader>
-        <Form @submit="selectedUser && addMember(selectedUser.id)" class="flex:row-lg mt-xl">
-          <Combobox
-            v-model="selectedUser"
-            v-model:searchTerm="query"
-            :options="users"
-            track-by="id"
-            label-by="name"
-            class="flex-1"
-          />
-          <Button type="submit" size="xs" class="h-auto">Add</Button>
+        <Form @submit="selectedUser && addMember(selectedUser.id)" class="flex:col-lg mt-xl">
+          <UserSelect v-model="selectedUser" class="flex-1" />
+          <Button type="submit" class="h-auto">Add</Button>
+
+          <ChannelMembers :members />
         </Form>
       </DialogContent>
     </Dialog>

@@ -1,10 +1,10 @@
 <script lang="ts" setup>
+import { UserSelect } from "@/components/user";
 import {
   Button,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  Combobox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -15,7 +15,6 @@ import {
 } from "@/design-system";
 import { Icon, IconSearch } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
-import { useUsers } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { format } from "date-fns";
@@ -26,10 +25,7 @@ const { workspace, members, fetchWorkspaceMembers, sendWorkspaceMemberInvite, re
 onMounted(() => fetchWorkspaceMembers());
 watch(workspace, () => fetchWorkspaceMembers());
 
-const { users, fetchUsers } = useUsers();
-const query = ref("");
 const selectedUser = ref<User>();
-watch(query, () => fetchUsers(query.value));
 </script>
 
 <template>
@@ -50,13 +46,7 @@ watch(query, () => fetchUsers(query.value));
             @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)"
             class="flex:col-lg"
           >
-            <Combobox
-              v-model="selectedUser"
-              v-model:searchTerm="query"
-              :options="users"
-              track-by="id"
-              label-by="name"
-            />
+            <UserSelect v-model="selectedUser" />
             <Field :modelValue="selectedUser?.email" name="email" placeholder="Email..." />
             <Button type="submit" size="xs">Add</Button>
           </Form>

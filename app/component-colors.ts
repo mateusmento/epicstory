@@ -11,4 +11,8 @@ export const componentColors = {
     DEFAULT: "hsl(var(--card))",
     foreground: "hsl(var(--card-foreground))",
   },
+  unseenMessageCount: {
+    DEFAULT: "var(--dark-blue)",
+    foreground: "hsl(var(--primary-foreground))",
+  },
 };
