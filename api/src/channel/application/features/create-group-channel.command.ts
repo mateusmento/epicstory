@@ -69,7 +69,7 @@ export class CreateGroupChannelCommand
         )
       : [];
 
-    if (peers.length + 1 !== members?.length) {
+    if (peers.length !== members?.length) {
       throw new NotFoundException('Members not found');
     }
 
