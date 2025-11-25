@@ -22,13 +22,19 @@ services:
     command: pnpm start:dev
     ports:
       - 3000:3000
-    volumes:
-      - ./api:/home/node/app
     env_file:
       - ./api/.env
     environment:
+      DEBUG: true
       DATABASE_HOST: epicstory-postgres
       REDIS_URL: "redis://epicstory-redis:6379"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./api:/home/node/app
     # labels:
     #   - traefik.enable=true
     #   - traefik.http.routers.epicstory.rule=PathPrefix(`/`)
@@ -56,6 +62,11 @@ services:
       - ./data/postgres:/var/lib/postgresql/data
     env_file:
       - ./api/.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scheduler"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
   pgadmin:
     image: dpage/pgadmin4
     container_name: epicstory-pgadmin
@@ -79,6 +90,13 @@ services:
     restart: always
     ports:
       - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./data/redis:/data
   # openbao:
   #   image: openbao/openbao:latest
   #   container_name: epicstory-openbao

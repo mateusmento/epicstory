@@ -12,6 +12,7 @@ import { AppConfig } from './core/app.config';
 import { createRedisAdapter, SocketIoAdapter } from './core/websockets';
 import { createPostgresSchemas } from './core/typeorm';
 import { GlobalExceptionFilter } from './core/global-exception.filter';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
   process.env.TZ = 'America/Sao_Paulo';
@@ -27,8 +28,6 @@ async function bootstrap() {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
     // Don't exit the process, let the application handle it
   });
-
-  createPostgresSchemas();
 
   const app = await NestFactory.create(AppModule);
 
@@ -72,6 +71,14 @@ async function bootstrap() {
   );
 
   if (process.env.NODE_ENV !== 'production') setupSwagger(app);
+
+  (async () => {
+    await createPostgresSchemas();
+    const dataSource = app.get(DataSource);
+    console.log('Running migrations...');
+    await dataSource.runMigrations();
+    console.log('Migrations ran successfully');
+  })();
 
   app.enableShutdownHooks();
   await app.listen(config.API_PORT, '0.0.0.0');

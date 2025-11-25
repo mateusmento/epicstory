@@ -1,7 +1,12 @@
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class AppConfig {
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === 'true')
+  DEBUG: boolean = false;
+
   @IsNumber()
   @Transform(({ value }) => +value)
   API_PORT: number = process.env.NODE_ENV === 'production' ? 80 : 3000;

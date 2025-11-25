@@ -28,7 +28,6 @@ const postgres =
       username: config.DATABASE_USER,
       password: config.DATABASE_PASSWORD,
       database: config.DATABASE_NAME,
-      // logging: 'all',
       logger: 'advanced-console',
       autoLoadEntities: true,
       namingStrategy: new SnakeNamingStrategy(),

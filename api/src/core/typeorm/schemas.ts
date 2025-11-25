@@ -29,7 +29,7 @@ export async function createPostgresSchemas() {
 
   await client.connect();
 
-  client.query(`
+  await client.query(`
     CREATE SCHEMA IF NOT EXISTS auth;
     CREATE SCHEMA IF NOT EXISTS workspace;
     CREATE SCHEMA IF NOT EXISTS channel;
