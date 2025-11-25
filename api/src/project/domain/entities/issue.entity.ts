@@ -53,4 +53,11 @@ export class Issue {
   constructor(data: Partial<Issue> = {}) {
     patch(this, data);
   }
+
+  static create(data: Partial<Issue> = {}) {
+    return new Issue({
+      ...data,
+      assignees: data.assignees ?? [],
+    });
+  }
 }

@@ -9,6 +9,7 @@ import {
   IssueRepository,
   ProjectRepository,
 } from 'src/project/infrastructure/repositories';
+import { Issue } from 'src/project/domain/entities';
 
 export class CreateIssue {
   issuer: Issuer;
@@ -45,10 +46,12 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
     if (!(await this.workspaceRepo.memberExists(workspaceId, issuer.id)))
       throw new IssuerUserIsNotWorkspaceMember();
 
-    return this.issueRepo.save({
-      ...data,
-      workspaceId,
-      createdById: issuer.id,
-    });
+    return this.issueRepo.save(
+      Issue.create({
+        ...data,
+        workspaceId,
+        createdById: issuer.id,
+      }),
+    );
   }
 }

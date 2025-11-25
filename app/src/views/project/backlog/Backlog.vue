@@ -315,7 +315,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                     :class="
                       cn(
                         'flex flex:center w-fit p-0.5 mr-2 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60',
-                        issue.assignees.length > 0 && '-m-2',
+                        issue.assignees?.length > 0 && '-m-2',
                       )
                     "
                   >
