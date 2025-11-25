@@ -43,6 +43,11 @@ const authenticatedRoutes = defineRoutes({
       props: true,
       children: [
         {
+          path: "schedule",
+          name: "schedule",
+          component: () => import("@/views/schedule/Schedule.vue"),
+        },
+        {
           path: "settings/user-account",
           name: "user-account-settings",
           component: () => import("@/views/user/UserAccountSettings.vue"),

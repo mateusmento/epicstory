@@ -50,4 +50,5 @@ export {
   BiRecord,
   BiRecordCircleFill,
   RiRecordCircleFill,
+  OiCalendar,
 } from "oh-vue-icons/icons";

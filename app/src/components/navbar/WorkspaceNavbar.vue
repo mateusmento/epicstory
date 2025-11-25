@@ -77,6 +77,15 @@ const { signOut } = useAuth();
         <Icon name="bi-people-fill" />
         Members
       </NavListItem>
+      <NavListItem
+        view="app-pane"
+        content="schedule"
+        :to="{ name: 'schedule', params: { workspaceId: workspace.id } }"
+        class="flex:row-md flex:center-y"
+      >
+        <Icon name="oi-calendar" />
+        Schedule
+      </NavListItem>
     </nav>
 
     <div class="flex-1"></div>

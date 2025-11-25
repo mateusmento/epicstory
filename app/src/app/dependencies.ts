@@ -7,6 +7,8 @@ import { ProjectApi } from "@/domain/project";
 import { TeamApi } from "@/domain/team/team.api";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import { ChannelApi } from "@/domain/channels";
+import { ScheduledEventApi } from "@/domain/scheduled-events";
+import { NotificationApi } from "@/domain/notifications";
 import { config } from "@/config";
 
 export async function createDependencies() {
@@ -19,5 +21,7 @@ export async function createDependencies() {
   container.registerSingleton(TeamApi);
   container.registerSingleton(ChannelApi);
   container.registerSingleton(MeetingApi);
+  container.registerSingleton(ScheduledEventApi);
+  container.registerSingleton(NotificationApi);
   return container;
 }
