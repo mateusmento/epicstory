@@ -14,7 +14,7 @@ function formatTime(date: string) {
 
 <template>
   <div class="flex:col-md">
-    <div class="flex:row-md flex:center-y text-sm text-zinc-500 font-dmSans">
+    <div class="flex:row-md flex:center-y text-sm text-secondary-foreground font-dmSans">
       @ mentioned you in <span class="text-foreground font-semibold">#{{ payload.channelName }}</span>
     </div>
     <div v-if="payload.sender" class="flex:row-md flex:center-y flex-1">
@@ -33,9 +33,11 @@ function formatTime(date: string) {
       <div class="flex:col-md flex-1 min-w-0">
         <div class="flex:row-md flex:center-y">
           <div class="text-foreground font-lato">{{ payload.sender.name }}</div>
-          <div class="ml-auto text-xs text-zinc-500 font-dmSans">{{ formatTime(createdAt) }}</div>
+          <div class="ml-auto text-xs text-secondary-foreground font-dmSans">{{ formatTime(createdAt) }}</div>
         </div>
-        <div class="text-sm text-zinc-500 font-lato text-ellipsis overflow-hidden whitespace-nowrap">
+        <div
+          class="text-sm text-secondary-foreground font-lato text-ellipsis overflow-hidden whitespace-nowrap"
+        >
           {{ payload.message }}
         </div>
       </div>
