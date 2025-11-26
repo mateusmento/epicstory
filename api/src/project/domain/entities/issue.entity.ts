@@ -39,6 +39,9 @@ export class Issue {
   @Column({ nullable: true })
   dueDate: Date;
 
+  @Column({ type: 'uuid', nullable: true })
+  scheduledEventId?: string;
+
   @Column({ default: 0 })
   priority: number;
 

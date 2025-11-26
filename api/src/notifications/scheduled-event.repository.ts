@@ -101,4 +101,20 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
       [eventId],
     );
   }
+
+  /**
+   * Deletes a scheduled event if it hasn't been processed yet
+   */
+  async deleteEventIfNotProcessed(eventId: string): Promise<boolean> {
+    if (!eventId) {
+      throw new Error('Event ID is required');
+    }
+    const result = await this.manager.query(
+      `DELETE FROM scheduler.scheduled_events 
+       WHERE id = $1 AND processed = false
+       RETURNING id`,
+      [eventId],
+    );
+    return result.length > 0;
+  }
 }

@@ -33,12 +33,14 @@ import {
 } from './infrastructure/repositories';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import { ReorderBacklogItemCommand } from './application/features/backlog/reorder-backlog-item.command';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Project, Issue, Backlog, BacklogItem]),
     AuthModule,
     WorkspaceModule,
+    NotificationsModule,
   ],
   controllers: [
     ProjectController,

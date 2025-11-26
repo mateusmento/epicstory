@@ -5,6 +5,9 @@ import { patch } from 'src/core/objects';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { ScheduledEventRepository } from 'src/notifications/scheduled-event.repository';
+import { ScheduledEvent } from 'src/notifications/scheduled-event.entity';
+import { Transactional } from 'typeorm-transactional';
 
 export class UpdateIssue {
   issueId: number;
@@ -40,12 +43,66 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
   constructor(
     private issueRepo: IssueRepository,
     private workspaceRepo: WorkspaceRepository,
+    private scheduledEventRepo: ScheduledEventRepository,
   ) {}
 
+  @Transactional()
   async execute({ issueId, issuer, ...data }: UpdateIssue) {
-    const issue = await this.issueRepo.findOne({ where: { id: issueId } });
+    const issue = await this.issueRepo.findOne({
+      where: { id: issueId },
+      relations: ['assignees'],
+    });
     if (!(await this.workspaceRepo.memberExists(issue.workspaceId, issuer.id)))
       throw new IssuerUserIsNotWorkspaceMember();
+
+    const previousScheduledEventId = issue.scheduledEventId;
+
+    const { dueDate } = data;
+
+    // Handle scheduled event management
+    if (dueDate !== undefined) {
+      // Determine who to notify - prioritize assignees, fallback to issuer
+      const notifyUserId =
+        issue.assignees && issue.assignees.length > 0
+          ? issue.assignees[0].id // Notify first assignee (can be enhanced to notify all)
+          : issuer.id;
+
+      // Use updated title if provided, otherwise use current title
+      const issueTitle = data.title ?? issue.title;
+
+      if (dueDate === null) {
+        // Due date is being removed - cancel the scheduled event if not processed
+        if (previousScheduledEventId) {
+          await this.scheduledEventRepo.deleteEventIfNotProcessed(
+            previousScheduledEventId,
+          );
+          issue.scheduledEventId = null;
+        }
+      } else {
+        // Due date is being set or updated
+        // Delete existing scheduled event if it exists and hasn't been processed
+        if (previousScheduledEventId) {
+          await this.scheduledEventRepo.deleteEventIfNotProcessed(
+            previousScheduledEventId,
+          );
+        }
+
+        // Create a new scheduled event with the new due date
+        const scheduledEvent = ScheduledEvent.create({
+          userId: notifyUserId,
+          payload: {
+            type: 'issue_due_date',
+            title: issueTitle,
+            description: `Issue "${issueTitle}" is due`,
+            issueId: issue.id,
+          },
+          dueAt: dueDate,
+        });
+        const savedEvent = await this.scheduledEventRepo.save(scheduledEvent);
+        issue.scheduledEventId = savedEvent.id as string;
+      }
+    }
+
     patch(issue, data);
     return this.issueRepo.save(issue);
   }

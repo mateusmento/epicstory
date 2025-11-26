@@ -5,24 +5,29 @@ import { useAuth } from "@/domain/auth";
 import { NotificationApi } from "@/domain/notifications";
 import { useDependency } from "@/core/dependency-injection";
 import { onMounted, onUnmounted, ref } from "vue";
-import { format } from "date-fns";
-
-type Notification = {
-  id: string;
-  type: string;
-  userId: number;
-  payload: {
-    title: string;
-    description?: string;
-  };
-  createdAt: string;
-  seen: boolean;
-};
+import type {
+  Notification,
+  MentionNotificationPayload,
+  RepliedNotificationPayload,
+  IssueDueDateNotificationPayload,
+} from "@/domain/notifications/types/notification.types";
+import MentionNotification from "./notifications/MentionNotification.vue";
+import RepliedNotification from "./notifications/RepliedNotification.vue";
+import DueDateNotification from "./notifications/DueDateNotification.vue";
 
 const { user } = useAuth();
 const { websocket } = useWebSockets();
 const notificationApi = useDependency(NotificationApi);
 const notifications = ref<Notification[]>([]);
+
+// Type guard to check if notification has proper payload structure
+function isValidNotification(notification: any): notification is Notification {
+  if (!notification || !notification.id || !notification.type || !notification.payload) {
+    return false;
+  }
+  // Basic validation - the payload structure will be validated by the components
+  return typeof notification.payload === "object";
+}
 
 function onIncomingNotification(notification: Notification) {
   // Check if notification already exists (avoid duplicates)
@@ -37,7 +42,8 @@ async function fetchNotifications() {
 
   try {
     const fetched = await notificationApi.fetchNotifications(user.value.id, 100);
-    notifications.value = fetched;
+    // Filter and validate notifications
+    notifications.value = fetched.filter(isValidNotification) as Notification[];
   } catch (error) {
     console.error("Failed to fetch notifications:", error);
   }
@@ -95,17 +101,22 @@ onUnmounted(() => {
           :key="notification.id"
           class="flex:col-md p-4 border-b hover:bg-secondary transition-colors"
         >
-          <div class="flex:row-md flex:center-y">
-            <div class="flex-1 flex:col-md">
-              <div class="font-semibold text-foreground">{{ notification.payload.title }}</div>
-              <div v-if="notification.payload.description" class="text-sm text-secondary-foreground">
-                {{ notification.payload.description }}
-              </div>
-              <div class="text-xs text-secondary-foreground/70 mt-1">
-                {{ format(new Date(notification.createdAt), "MMM d, yyyy 'at' h:mm a") }}
-              </div>
-            </div>
-          </div>
+          <MentionNotification
+            v-if="notification.type === 'mention'"
+            :payload="notification.payload as MentionNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <RepliedNotification
+            v-else-if="notification.type === 'replied'"
+            :payload="notification.payload as RepliedNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <DueDateNotification
+            v-else-if="notification.type === 'issue_due_date'"
+            :payload="notification.payload as IssueDueDateNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <div v-else class="text-sm text-zinc-500">Unknown notification type: {{ notification.type }}</div>
         </div>
       </div>
     </div>

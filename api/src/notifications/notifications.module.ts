@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from 'src/auth';
 import { NotificationsCronjob } from './notifications.cronjob';
 import { ScheduledEvent } from './scheduled-event.entity';
 import { Notification } from './notification.entity';
@@ -15,6 +16,7 @@ import { NotificationRepository } from './notification.repository';
   imports: [
     ScheduleModule.forRoot(),
     TypeOrmModule.forFeature([ScheduledEvent, Notification]),
+    AuthModule,
   ],
   controllers: [ScheduledEventController, NotificationController],
   providers: [
@@ -24,5 +26,6 @@ import { NotificationRepository } from './notification.repository';
     ScheduledEventRepository,
     NotificationRepository,
   ],
+  exports: [ScheduledEventRepository],
 })
 export class NotificationsModule {}
