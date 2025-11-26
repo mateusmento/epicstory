@@ -23,7 +23,7 @@ const meta = {
   },
   decorators: [
     (story) => ({
-      render: () => <StoryContainer>{h(story())}</StoryContainer>,
+      render: () => <StoryContainer class="w-96">{h(story())}</StoryContainer>,
     }),
   ],
 } satisfies Meta<typeof ChannelMembers>;
@@ -34,7 +34,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    users: [{ id: 1, name: "Sean", picture: sean, email: "sean@gmail.com" }],
     members: [
       { id: 1, name: "Sean", picture: sean, email: "sean@gmail.com", role: "admin" },
       { id: 1, name: "Daiana", picture: daiana, email: "daiana@gmail.com", role: "member", online: true },

@@ -116,7 +116,9 @@ onUnmounted(() => {
             :payload="notification.payload as IssueDueDateNotificationPayload"
             :createdAt="notification.createdAt"
           />
-          <div v-else class="text-sm text-zinc-500">Unknown notification type: {{ notification.type }}</div>
+          <div v-else class="text-sm text-secondary-foreground">
+            Unknown notification type: {{ notification.type }}
+          </div>
         </div>
       </div>
     </div>
