@@ -34,6 +34,7 @@ import {
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import { ReorderBacklogItemCommand } from './application/features/backlog/reorder-backlog-item.command';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { ProjectGateway } from './application/gateways/project.gateway';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
     FindProjectQuery,
     FindProjectBacklogItemsQuery,
     RemoveProjectCommand,
+    ProjectGateway,
   ],
   exports: [],
 })

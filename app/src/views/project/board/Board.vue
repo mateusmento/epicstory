@@ -1,15 +1,17 @@
 <script lang="ts" setup>
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, onUnmounted, watch } from "vue";
 import { useDragAndDrop } from "@formkit/drag-and-drop/vue";
 import { useIssues } from "@/domain/issues";
 import type { Issue } from "@/domain/issues";
 import { Icon } from "@/design-system/icons";
 import { formatDistanceToNow } from "date-fns";
 import { debounce } from "lodash";
+import { useWebSockets } from "@/core/websockets";
 
 const props = defineProps<{ projectId: string }>();
 
 const { issues, fetchIssues, updateIssue } = useIssues();
+const { websocket } = useWebSockets();
 
 // Kanban columns configuration
 const columns = {
@@ -80,6 +82,43 @@ watch(
   { immediate: true, deep: true },
 );
 
+// Handle incoming issue updates from WebSocket
+function onIssueUpdated({ issue, projectId }: { issue: Issue; projectId: number }) {
+  if (projectId !== +props.projectId) return;
+
+  const index = issues.value.findIndex((i) => i.id === issue.id);
+  if (index >= 0) {
+    // Update existing issue
+    issues.value[index] = issue;
+  } else {
+    // Add new issue if it doesn't exist (in case it was created elsewhere)
+    issues.value.push(issue);
+  }
+}
+
+// Subscribe to project WebSocket room
+function subscribeProject() {
+  if (!websocket) return;
+
+  websocket.emit("subscribe-project", {
+    projectId: +props.projectId,
+  });
+
+  websocket.off("issue-updated", onIssueUpdated);
+  websocket.on("issue-updated", onIssueUpdated);
+}
+
+// Unsubscribe from project WebSocket room
+function unsubscribeProject() {
+  if (!websocket) return;
+
+  websocket.emit("unsubscribe-project", {
+    projectId: +props.projectId,
+  });
+
+  websocket.off("issue-updated", onIssueUpdated);
+}
+
 // Fetch issues on mount
 onMounted(async () => {
   await fetchIssues({
@@ -89,6 +128,12 @@ onMounted(async () => {
     orderBy: "createdAt",
     order: "asc",
   });
+
+  subscribeProject();
+});
+
+onUnmounted(() => {
+  unsubscribeProject();
 });
 
 // Debounced update to avoid too many API calls

@@ -8,6 +8,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ScheduledEventRepository } from 'src/notifications/scheduled-event.repository';
 import { ScheduledEvent } from 'src/notifications/scheduled-event.entity';
 import { Transactional } from 'typeorm-transactional';
+import { ProjectGateway } from '../../gateways/project.gateway';
 
 export class UpdateIssue {
   issueId: number;
@@ -44,6 +45,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
     private issueRepo: IssueRepository,
     private workspaceRepo: WorkspaceRepository,
     private scheduledEventRepo: ScheduledEventRepository,
+    private projectGateway: ProjectGateway,
   ) {}
 
   @Transactional()
@@ -104,6 +106,17 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
     }
 
     patch(issue, data);
-    return this.issueRepo.save(issue);
+    const savedIssue = await this.issueRepo.save(issue);
+
+    // Load the issue with all relations for WebSocket emission
+    const loadedIssue = await this.issueRepo.findOne({
+      where: { id: savedIssue.id },
+      relations: ['assignees'],
+    });
+
+    // Emit WebSocket event to notify all clients in the project room
+    this.projectGateway.emitIssueUpdated(issue.projectId, loadedIssue);
+
+    return loadedIssue;
   }
 }
