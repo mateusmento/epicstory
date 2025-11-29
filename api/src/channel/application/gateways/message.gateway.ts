@@ -102,4 +102,63 @@ export class MessageGateway {
       return loadedMessage;
     }
   }
+
+  @SubscribeMessage('toggle-reaction')
+  async toggleReaction(
+    @MessageBody() { messageId, messageReplyId, emoji, channelId }: any,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = (socket.request as any).user;
+    const userId = user?.id;
+
+    if (messageReplyId) {
+      // Toggle reaction on a message reply
+      await this.messageService.toggleMessageReplyReaction(
+        messageReplyId,
+        emoji,
+        userId,
+      );
+
+      const reactions =
+        await this.messageService.findMessageReplyReactions(messageReplyId);
+
+      socket.to(channelMessagingRoom(channelId)).emit('incoming-reaction', {
+        messageReplyId,
+        emoji,
+        userId,
+        reactions,
+      });
+
+      socket.emit('incoming-reaction', {
+        messageReplyId,
+        emoji,
+        userId,
+        reactions,
+      });
+
+      return { messageReplyId, emoji, userId, reactions };
+    } else if (messageId) {
+      // Toggle reaction on a message
+      await this.messageService.toggleMessageReaction(messageId, emoji, userId);
+
+      const reactions =
+        await this.messageService.findMessageReactions(messageId);
+
+      socket.to(channelMessagingRoom(channelId)).emit('incoming-reaction', {
+        messageId,
+        emoji,
+        userId,
+        reactions,
+      });
+
+      socket.emit('incoming-reaction', {
+        messageId,
+        emoji,
+        userId,
+        reactions,
+      });
+
+      return { messageId, emoji, userId, reactions };
+    }
+  }
 }

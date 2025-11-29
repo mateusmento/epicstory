@@ -1,13 +1,13 @@
 import { User } from 'src/auth';
-import { Message } from './message.entity';
+import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import {
   Column,
-  CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { CHANNEL_SCHEMA } from 'src/channel/constants';
+import { Message } from './message.entity';
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'message_replies' })
 export class MessageReply {
@@ -17,7 +17,7 @@ export class MessageReply {
   @Column()
   content: string;
 
-  @CreateDateColumn()
+  @Column({ default: () => 'now()' })
   sentAt: Date;
 
   @Column()
@@ -31,4 +31,28 @@ export class MessageReply {
 
   @ManyToOne(() => Message)
   message: Message;
+
+  @OneToMany(() => MessageReplyReaction, (reaction) => reaction.messageReply)
+  reactions: MessageReplyReaction[];
+}
+
+@Entity({ schema: CHANNEL_SCHEMA, name: 'message_reply_reactions' })
+export class MessageReplyReaction {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  emoji: string;
+
+  @Column()
+  messageReplyId: number;
+
+  @ManyToOne(() => MessageReply)
+  messageReply: MessageReply;
+
+  @Column()
+  userId: number;
+
+  @ManyToOne(() => User)
+  user: User;
 }

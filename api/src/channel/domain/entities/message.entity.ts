@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
@@ -32,4 +33,28 @@ export class Message {
 
   @ManyToOne(() => Channel)
   channel: Channel;
+
+  @OneToMany(() => MessageReaction, (reaction) => reaction.message)
+  reactions: MessageReaction[];
+}
+
+@Entity({ schema: CHANNEL_SCHEMA, name: 'message_reactions' })
+export class MessageReaction {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  emoji: string;
+
+  @Column()
+  messageId: number;
+
+  @ManyToOne(() => Message)
+  message: Message;
+
+  @Column()
+  userId: number;
+
+  @ManyToOne(() => User)
+  user: User;
 }

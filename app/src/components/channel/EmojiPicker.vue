@@ -1,0 +1,153 @@
+<script lang="ts" setup>
+import { ref } from "vue";
+import { Popover, PopoverContent, PopoverTrigger } from "@/design-system/ui/popover";
+import { Button, type ButtonVariants, ScrollArea } from "@/design-system";
+import IconEmoji from "@/design-system/icons/IconEmoji.vue";
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+  variant?: ButtonVariants["variant"];
+  size?: ButtonVariants["size"];
+  class?: HTMLAttributes["class"];
+}>();
+
+const emit = defineEmits<{
+  select: [emoji: string];
+}>();
+
+const isOpen = ref(false);
+
+// Destructure props to avoid reserved keyword issues
+const { variant, size, class: className } = props;
+
+// Common emoji reactions - organized by category
+const emojis = [
+  // Thumbs and gestures
+  "👍",
+  "👎",
+  "👏",
+  "🙏",
+  "🤝",
+  "💪",
+  "🙌",
+  // Hearts and love
+  "❤️",
+  "🧡",
+  "💛",
+  "💚",
+  "💙",
+  "💜",
+  "🖤",
+  "🤍",
+  "❤️‍🔥",
+  "💔",
+  // Happy faces
+  "😊",
+  "😍",
+  "🥳",
+  "😎",
+  "😇",
+  "🤠",
+  "😏",
+  // Laughing
+  "😂",
+  "🤣",
+  "😆",
+  "😄",
+  "😃",
+  // Surprised
+  "😮",
+  "😲",
+  "🤯",
+  "😱",
+  "👀",
+  // Thinking
+  "🤔",
+  "🧐",
+  "🤓",
+  // Sad
+  "😢",
+  "😭",
+  "😥",
+  "😓",
+  "😰",
+  "😨",
+  // Angry
+  "😠",
+  "😡",
+  "🤬",
+  "😤",
+  // Other expressions
+  "😴",
+  "🤤",
+  "😪",
+  "😵",
+  "😵‍💫",
+  "🤐",
+  "🤫",
+  "🤭",
+  "🤥",
+  "😬",
+  "🙄",
+  "😒",
+  "😶",
+  "😶‍🌫️",
+  "🤗",
+  "🥴",
+  // Sick
+  "😷",
+  "🤒",
+  "🤕",
+  "🤢",
+  "🤮",
+  "🤧",
+  // Temperature
+  "🥵",
+  "🥶",
+  // Fire and celebration
+  "🔥",
+  "🎉",
+  "✨",
+  "💯",
+  // Characters
+  "🤡",
+  "👻",
+  "👽",
+  "🤖",
+  "💀",
+  "☠️",
+  "👾",
+  "😈",
+  "👿",
+];
+
+function handleEmojiSelect(emoji: string) {
+  emit("select", emoji);
+  isOpen.value = false;
+}
+</script>
+
+<template>
+  <Popover v-model:open="isOpen">
+    <PopoverTrigger as-child>
+      <Button :variant="variant || 'ghost'" :size="size || 'icon'" :class="className">
+        <IconEmoji class="text-[#686870]" />
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent class="w-80 p-2" align="start">
+      <ScrollArea class="h-60 flex-1 min-h-0" bottom>
+        <div class="!grid grid-cols-8 gap-1">
+          <button
+            v-for="emoji in emojis"
+            :key="emoji"
+            @click="handleEmojiSelect(emoji)"
+            class="flex items-center justify-center p-2 rounded hover:bg-secondary transition-colors text-lg cursor-pointer"
+            :title="emoji"
+          >
+            {{ emoji }}
+          </button>
+        </div>
+      </ScrollArea>
+    </PopoverContent>
+  </Popover>
+</template>

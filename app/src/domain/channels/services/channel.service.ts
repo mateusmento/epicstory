@@ -66,4 +66,30 @@ export class ChannelApi {
       .post<IMessage>(`/channels/${channelId}/messages/${messageId}/replies`, { content })
       .then((res) => res.data);
   }
+
+  findReactions(channelId: number, messageId: number) {
+    return this.axios
+      .get<{ emoji: string; reactedBy: number[] }[]>(`/channels/${channelId}/messages/${messageId}/reactions`)
+      .then((res) => res.data);
+  }
+
+  findReplyReactions(channelId: number, messageId: number, replyId: number) {
+    return this.axios
+      .get<
+        { emoji: string; reactedBy: number[] }[]
+      >(`/channels/${channelId}/messages/${messageId}/replies/${replyId}/reactions`)
+      .then((res) => res.data);
+  }
+
+  toggleReaction(channelId: number, messageId: number, emoji: string) {
+    return this.axios
+      .post(`/channels/${channelId}/messages/${messageId}/reactions`, { emoji })
+      .then((res) => res.data);
+  }
+
+  toggleReplyReaction(channelId: number, messageId: number, replyId: number, emoji: string) {
+    return this.axios
+      .post(`/channels/${channelId}/messages/${messageId}/replies/${replyId}/reactions`, { emoji })
+      .then((res) => res.data);
+  }
 }

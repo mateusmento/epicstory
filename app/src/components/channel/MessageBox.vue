@@ -9,6 +9,7 @@ import { ChannelApi } from "@/domain/channels/services/channel.service";
 import { useWebSockets } from "@/core/websockets";
 import { formatDistanceToNow } from "date-fns";
 import type { IMessage } from "@/domain/channels/types";
+import EmojiPicker from "./EmojiPicker.vue";
 
 const props = defineProps<{
   content: string;
@@ -44,6 +45,10 @@ async function fetchReplies() {
   isLoadingReplies.value = true;
   try {
     replies.value = await channelApi.findReplies(props.channelId, props.messageId);
+    // Fetch reactions for each reply
+    for (const reply of replies.value) {
+      await fetchReplyReactions(reply.id);
+    }
   } catch (error) {
     console.error("Failed to fetch replies:", error);
   } finally {
@@ -51,9 +56,11 @@ async function fetchReplies() {
   }
 }
 
-function onIncomingReply({ message, parentMessageId }: { message: IMessage; parentMessageId: number }) {
+async function onIncomingReply({ message, parentMessageId }: { message: IMessage; parentMessageId: number }) {
   if (parentMessageId === props.messageId) {
     replies.value.push(message);
+    // Fetch reactions for the new reply
+    await fetchReplyReactions(message.id);
   }
 }
 
@@ -97,6 +104,84 @@ watch(
     }
   },
 );
+
+type Reaction = {
+  emoji: string;
+  reactedBy: number[];
+};
+
+const reactions = ref<Reaction[]>([]);
+const replyReactions = ref<Record<number, Reaction[]>>({});
+
+onMounted(() => {
+  fetchReactions();
+  websocket?.off("incoming-reaction", onIncomingReaction);
+  websocket?.on("incoming-reaction", onIncomingReaction);
+});
+
+onUnmounted(() => {
+  websocket?.off("incoming-reaction", onIncomingReaction);
+});
+
+function onIncomingReaction({
+  messageId,
+  messageReplyId,
+  reactions: updatedReactions,
+}: {
+  messageId?: number;
+  messageReplyId?: number;
+  reactions?: Reaction[];
+}) {
+  if (messageId === props.messageId && updatedReactions) {
+    reactions.value = updatedReactions;
+  } else if (messageReplyId && updatedReactions) {
+    replyReactions.value[messageReplyId] = updatedReactions;
+  }
+}
+
+async function fetchReactions() {
+  try {
+    reactions.value = await channelApi.findReactions(props.channelId, props.messageId);
+  } catch (error) {
+    console.error("Failed to fetch reactions:", error);
+  }
+}
+
+async function fetchReplyReactions(replyId: number) {
+  try {
+    replyReactions.value[replyId] = await channelApi.findReplyReactions(
+      props.channelId,
+      props.messageId,
+      replyId,
+    );
+  } catch (error) {
+    console.error("Failed to fetch reply reactions:", error);
+  }
+}
+
+function toggleReaction(emoji: string) {
+  websocket?.emit("toggle-reaction", {
+    messageId: props.messageId,
+    emoji: emoji,
+    channelId: props.channelId,
+  });
+}
+
+function toggleReplyReaction(replyId: number, emoji: string) {
+  websocket?.emit("toggle-reaction", {
+    messageReplyId: replyId,
+    emoji: emoji,
+    channelId: props.channelId,
+  });
+}
+
+function onEmojiSelect(emoji: string) {
+  toggleReaction(emoji);
+}
+
+function onReplyEmojiSelect(replyId: number, emoji: string) {
+  toggleReplyReaction(replyId, emoji);
+}
 </script>
 
 <template>
@@ -119,17 +204,20 @@ watch(
 
       <div class="flex:col-xl p-2 pt-0" v-if="isDiscussionOpen">
         <div class="flex:row-2xl flex:center-y">
-          <Button
-            variant="outline"
-            size="icon"
-            class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]"
-          >
-            👍 1
-          </Button>
+          <div class="flex:row-md flex:center-y">
+            <Button
+              v-for="reaction in reactions"
+              :key="reaction.emoji"
+              variant="outline"
+              size="icon"
+              @click="toggleReaction(reaction.emoji)"
+              class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]"
+            >
+              {{ reaction.emoji }} {{ reaction.reactedBy.length }}
+            </Button>
 
-          <Button variant="ghost" size="icon">
-            <IconEmoji class="text-[#686870]" />
-          </Button>
+            <EmojiPicker @select="onEmojiSelect" />
+          </div>
 
           <Button variant="ghost" size="icon" class="text-xs text-[#686870]" @click="toggleDiscussion">
             {{ isDiscussionOpen ? "Hide discussion" : "Show discussion" }}
@@ -157,6 +245,19 @@ watch(
                   <div class="ml-auto text-[#686870] font-dmSans text-xs">{{ formatTime(reply.sentAt) }}</div>
                 </div>
                 <div class="text-[15px] font-lato">{{ reply.content }}</div>
+                <div class="flex:row-md flex:center-y mt-1">
+                  <Button
+                    v-for="reaction in replyReactions[reply.id]"
+                    :key="reaction.emoji"
+                    variant="outline"
+                    size="icon"
+                    @click="toggleReplyReaction(reply.id, reaction.emoji)"
+                    class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]"
+                  >
+                    {{ reaction.emoji }} {{ reaction.reactedBy.length }}
+                  </Button>
+                  <EmojiPicker @select="(emoji) => onReplyEmojiSelect(reply.id, emoji)" size="icon" />
+                </div>
               </div>
             </div>
           </div>

@@ -25,4 +25,40 @@ export class MessageController {
   ) {
     return this.messageService.createReply(body.content, messageId, issuer.id);
   }
+
+  @Get('messages/:messageId/reactions')
+  findMessageReactions(@Param('messageId') messageId: number) {
+    return this.messageService.findMessageReactions(messageId);
+  }
+
+  @Get('messages/:messageId/replies/:replyId/reactions')
+  findMessageReplyReactions(@Param('replyId') replyId: number) {
+    return this.messageService.findMessageReplyReactions(replyId);
+  }
+
+  @Post('messages/:messageId/reactions')
+  toggleMessageReaction(
+    @Param('messageId') messageId: number,
+    @Body() body: { emoji: string },
+    @Auth() issuer: Issuer,
+  ) {
+    return this.messageService.toggleMessageReaction(
+      messageId,
+      body.emoji,
+      issuer.id,
+    );
+  }
+
+  @Post('messages/:messageId/replies/:replyId/reactions')
+  toggleMessageReplyReaction(
+    @Param('replyId') replyId: number,
+    @Body() body: { emoji: string },
+    @Auth() issuer: Issuer,
+  ) {
+    return this.messageService.toggleMessageReplyReaction(
+      replyId,
+      body.emoji,
+      issuer.id,
+    );
+  }
 }
