@@ -14,6 +14,7 @@ const props = defineProps<{
   chatPicture?: string;
   messageGroups: IMessageGroup[];
   sendMessage: (message: { content: string }) => Promise<void>;
+  channelId: number;
 }>();
 
 const emit = defineEmits(["join-meeting", "more-details"]);
@@ -43,7 +44,13 @@ async function onSendMessage() {
           :sender="group.senderId === meId ? 'me' : 'someoneElse'"
           :message-group="group"
         >
-          <MessageBox v-for="message of group.messages" :key="message.id" :content="message.content" />
+          <MessageBox
+            v-for="message of group.messages"
+            :key="message.id"
+            :content="message.content"
+            :messageId="message.id"
+            :channelId="channelId"
+          />
         </MessageGroup>
       </div>
     </ScrollArea>

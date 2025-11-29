@@ -9,6 +9,7 @@ export interface IMessage {
   sender: User;
   channelId: number;
   channel: IChannel;
+  parentMessageId?: number;
 }
 
 export type IMessageGroup = {

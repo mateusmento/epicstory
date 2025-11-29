@@ -1,16 +1,28 @@
 <script lang="ts" setup>
 import IconEmoji from "@/design-system/icons/IconEmoji.vue";
 import { cva } from "class-variance-authority";
-import { inject, ref } from "vue";
-import seanPhoto from "@/assets/images/sean.png";
-import { Button, Input } from "@/design-system";
+import { inject, ref, onMounted, onUnmounted, watch } from "vue";
+import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
+import { useDependency } from "@/core/dependency-injection";
+import { ChannelApi } from "@/domain/channels/services/channel.service";
+import { useWebSockets } from "@/core/websockets";
+import { formatDistanceToNow } from "date-fns";
+import type { IMessage } from "@/domain/channels/types";
 
 const props = defineProps<{
   content: string;
+  messageId: number;
+  channelId: number;
 }>();
 
-const isDiscussionOpen = ref(true);
+const isDiscussionOpen = ref(false);
+const replies = ref<IMessage[]>([]);
+const replyContent = ref("");
+const isLoadingReplies = ref(false);
+
+const channelApi = useDependency(ChannelApi);
+const { websocket } = useWebSockets();
 
 function useMessageGroup() {
   const context = inject<{ meId: number; sender: "me" | "someoneElse" }>("messageGroup");
@@ -18,11 +30,73 @@ function useMessageGroup() {
   return context;
 }
 
-const { sender } = useMessageGroup();
+const { sender, meId } = useMessageGroup();
 
-function toggleDiscussion() {
+async function toggleDiscussion() {
   isDiscussionOpen.value = !isDiscussionOpen.value;
+  if (isDiscussionOpen.value && replies.value.length === 0) {
+    await fetchReplies();
+  }
 }
+
+async function fetchReplies() {
+  if (isLoadingReplies.value) return;
+  isLoadingReplies.value = true;
+  try {
+    replies.value = await channelApi.findReplies(props.channelId, props.messageId);
+  } catch (error) {
+    console.error("Failed to fetch replies:", error);
+  } finally {
+    isLoadingReplies.value = false;
+  }
+}
+
+function onIncomingReply({ message, parentMessageId }: { message: IMessage; parentMessageId: number }) {
+  if (parentMessageId === props.messageId) {
+    replies.value.push(message);
+  }
+}
+
+async function sendReply() {
+  if (!replyContent.value.trim()) return;
+
+  try {
+    // Send via WebSocket for real-time updates
+    websocket?.emit("send-message", {
+      channelId: props.channelId,
+      message: { content: replyContent.value },
+      parentMessageId: props.messageId,
+      broadcastSelf: true,
+    });
+    replyContent.value = "";
+  } catch (error) {
+    console.error("Failed to send reply:", error);
+  }
+}
+
+function formatTime(date: string) {
+  return formatDistanceToNow(new Date(date), { addSuffix: true });
+}
+
+// Subscribe to incoming replies
+onMounted(() => {
+  websocket?.off("incoming-reply", onIncomingReply);
+  websocket?.on("incoming-reply", onIncomingReply);
+});
+
+onUnmounted(() => {
+  websocket?.off("incoming-reply", onIncomingReply);
+});
+
+watch(
+  () => props.messageId,
+  () => {
+    replies.value = [];
+    if (isDiscussionOpen.value) {
+      fetchReplies();
+    }
+  },
+);
 </script>
 
 <template>
@@ -63,28 +137,41 @@ function toggleDiscussion() {
         </div>
 
         <template v-if="isDiscussionOpen">
-          <div class="px-2">
-            <div class="flex:row-md">
-              <img :src="seanPhoto" class="w-10 h-10 rounded-full" />
-              <div class="flex:col-md">
+          <div v-if="replies.length > 0" class="px-2 space-y-3">
+            <div v-for="reply in replies" :key="reply.id" class="flex:row-md">
+              <img
+                v-if="reply.sender.picture"
+                :src="reply.sender.picture"
+                :alt="reply.sender.name"
+                class="w-10 h-10 rounded-full flex-shrink-0"
+              />
+              <div
+                v-else
+                class="w-10 h-10 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold"
+              >
+                {{ reply.sender.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="flex:col-md flex-1 min-w-0">
                 <div class="flex:row-md flex:center-y">
-                  <div class="text-foreground font-lato font-semibold">Sean</div>
-                  <div class="ml-auto text-[#686870] font-dmSans text-xs">3 min ago</div>
+                  <div class="text-foreground font-lato font-semibold">{{ reply.sender.name }}</div>
+                  <div class="ml-auto text-[#686870] font-dmSans text-xs">{{ formatTime(reply.sentAt) }}</div>
                 </div>
-                <div class="text-[15px] font-lato">
-                  It's getting some final refinements before we ship it.
-                </div>
+                <div class="text-[15px] font-lato">{{ reply.content }}</div>
               </div>
             </div>
           </div>
+          <div v-else-if="isLoadingReplies" class="px-2 text-sm text-[#686870]">Loading replies...</div>
+          <div v-else class="px-2 text-sm text-[#686870]">No replies yet</div>
 
           <div class="flex:row-lg">
             <div
               class="flex:row flex:center-y flex-1 h-10 py-4 px-4 bg-white text-[#686870] border border-[#E4E4E4] rounded-xl focus-within:ring-1 focus-within:ring-ring focus-within:ring-zinc-300"
             >
               <input
+                v-model="replyContent"
                 placeholder="Reply..."
-                class="mr-auto p-0 h-fit outline-none border-none font-lato placeholder:font-lato placeholder:text-[15px] text-[15px]"
+                class="mr-auto p-0 h-fit outline-none border-none font-lato placeholder:font-lato placeholder:text-[15px] text-[15px] flex-1"
+                @keydown.enter="sendReply"
               />
 
               <Button variant="ghost" size="icon">
@@ -103,6 +190,8 @@ function toggleDiscussion() {
             <Button
               variant="ghost"
               class="flex:row flex:center bg-[#3A66FF] w-10 h-10 gap-2 rounded-lg text-white"
+              @click="sendReply"
+              :disabled="!replyContent.trim()"
             >
               <Icon name="io-paper-plane" />
             </Button>
@@ -142,6 +231,7 @@ const styles = {
     {
       variants: {
         sender: {
+          // me: "first:rounded-tr-none text-zinc-50 border-none shadow-none",
           me: "first:rounded-tr-none bg-[#3A66FF] text-zinc-50 border-none shadow-none",
           someoneElse: "first:rounded-tl-none",
         },

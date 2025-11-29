@@ -54,4 +54,16 @@ export class ChannelApi {
   removeMember(channelId: number, userId: number) {
     return this.axios.delete(`/channels/${channelId}/members/${userId}`).then((res) => res.data);
   }
+
+  findReplies(channelId: number, messageId: number) {
+    return this.axios
+      .get<IMessage[]>(`/channels/${channelId}/messages/${messageId}/replies`)
+      .then((res) => res.data);
+  }
+
+  createReply(channelId: number, messageId: number, content: string) {
+    return this.axios
+      .post<IMessage>(`/channels/${channelId}/messages/${messageId}/replies`, { content })
+      .then((res) => res.data);
+  }
 }

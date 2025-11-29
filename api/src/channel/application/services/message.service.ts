@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import {
   ChannelRepository,
   MessageRepository,
+  MessageReplyRepository,
 } from 'src/channel/infrastructure';
 
 @Injectable()
 export class MessageService {
   constructor(
     private messageRepo: MessageRepository,
+    private messageReplyRepo: MessageReplyRepository,
     private channelRepo: ChannelRepository,
   ) {}
 
@@ -27,5 +29,21 @@ export class MessageService {
     });
     this.channelRepo.update({ id: channelId }, { lastMessageId: message.id });
     return message;
+  }
+
+  async createReply(content: string, messageId: number, senderId: number) {
+    return this.messageReplyRepo.save({
+      content,
+      messageId,
+      senderId,
+    });
+  }
+
+  async findReplies(messageId: number) {
+    return this.messageReplyRepo.find({
+      where: { messageId },
+      relations: { sender: true },
+      order: { sentAt: 'asc' },
+    });
   }
 }
