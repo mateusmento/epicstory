@@ -31,10 +31,10 @@ function formatMessageDate(date: string) {
 <template>
   <div
     @click="onOpenChannel()"
-    class="flex:row-2xl flex:center-y p-3 border-t hover:bg-secondary cursor-pointer"
+    class="flex:row-2xl p-3 border-t hover:bg-secondary cursor-pointer"
     :class="{ 'bg-secondary': open }"
   >
-    <img :src="image" class="w-10 h-10 rounded-full" />
+    <img :src="image" class="w-10 h-10 rounded-full self-center" />
 
     <div class="flex:col-sm flex-1 overflow-hidden">
       <div class="flex:row-auto flex:center-y">

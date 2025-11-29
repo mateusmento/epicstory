@@ -17,7 +17,7 @@ const props = defineProps<{
   channelId: number;
 }>();
 
-const emit = defineEmits(["join-meeting", "more-details"]);
+const emit = defineEmits(["join-meeting", "more-details", "message-deleted"]);
 
 const message = reactive({ content: "" });
 
@@ -25,6 +25,10 @@ async function onSendMessage() {
   if (!message.content) return;
   await props.sendMessage(message);
   message.content = "";
+}
+
+function onMessageDeleted(messageId: number) {
+  emit("message-deleted", messageId);
 }
 </script>
 
@@ -50,6 +54,7 @@ async function onSendMessage() {
             :content="message.content"
             :messageId="message.id"
             :channelId="channelId"
+            @message-deleted="onMessageDeleted"
           />
         </MessageGroup>
       </div>

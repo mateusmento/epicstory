@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { ref } from "vue";
-import { Popover, PopoverContent, PopoverTrigger } from "@/design-system/ui/popover";
 import { Button, type ButtonVariants, ScrollArea } from "@/design-system";
-import IconEmoji from "@/design-system/icons/IconEmoji.vue";
+import { Popover, PopoverContent, PopoverTrigger } from "@/design-system/ui/popover";
+import { SmilePlusIcon } from "lucide-vue-next";
 import type { HTMLAttributes } from "vue";
+import { ref } from "vue";
 
 const props = defineProps<{
   variant?: ButtonVariants["variant"];
@@ -131,7 +131,7 @@ function handleEmojiSelect(emoji: string) {
   <Popover v-model:open="isOpen">
     <PopoverTrigger as-child>
       <Button :variant="variant || 'ghost'" :size="size || 'icon'" :class="className">
-        <IconEmoji class="text-[#686870]" />
+        <SmilePlusIcon class="w-4 h-4 text-[#686870]" />
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-80 p-2" align="start">

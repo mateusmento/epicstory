@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Not } from 'typeorm';
 import {
   ChannelRepository,
   MessageReactionRepository,
@@ -142,5 +143,79 @@ export class MessageService {
       });
       return { action: 'added' };
     }
+  }
+
+  async deleteMessage(messageId: number, userId: number) {
+    const message = await this.messageRepo.findOne({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      throw new Error('Message not found');
+    }
+
+    if (message.senderId !== userId) {
+      throw new Error('Unauthorized: You can only delete your own messages');
+    }
+
+    const channelId = message.channelId;
+
+    // Delete all replies for this message (replies don't have CASCADE delete)
+    // Reply reactions will be deleted automatically via CASCADE when replies are deleted
+    const replies = await this.messageReplyRepo.find({
+      where: { messageId },
+    });
+    if (replies.length > 0) {
+      await this.messageReplyRepo.remove(replies);
+    }
+
+    // Message reactions will be deleted automatically via CASCADE when message is deleted
+
+    // Check if this message is the lastMessageId in the channel and update if needed
+    const channel = await this.channelRepo.findOne({
+      where: { id: channelId },
+    });
+
+    if (channel && channel.lastMessageId === messageId) {
+      // Find the most recent message that is not the one being deleted
+      const previousMessage = await this.messageRepo.findOne({
+        where: { channelId, id: Not(messageId) },
+        order: { sentAt: 'DESC' },
+      });
+
+      if (previousMessage) {
+        await this.channelRepo.update(
+          { id: channelId },
+          { lastMessageId: previousMessage.id },
+        );
+      } else {
+        // No other messages, set to null
+        await this.channelRepo.update(
+          { id: channelId },
+          { lastMessageId: null },
+        );
+      }
+    }
+
+    // Delete the message (this will cascade delete message reactions)
+    await this.messageRepo.remove(message);
+    return { success: true };
+  }
+
+  async deleteReply(replyId: number, userId: number) {
+    const reply = await this.messageReplyRepo.findOne({
+      where: { id: replyId },
+    });
+
+    if (!reply) {
+      throw new Error('Reply not found');
+    }
+
+    if (reply.senderId !== userId) {
+      throw new Error('Unauthorized: You can only delete your own replies');
+    }
+
+    await this.messageReplyRepo.remove(reply);
+    return { success: true };
   }
 }

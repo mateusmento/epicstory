@@ -7,7 +7,7 @@ import { useMeeting, useSyncedChannel } from "@/domain/channels";
 import { computed } from "vue";
 
 const { user } = useAuth();
-const { channel, messageGroups, sendMessage } = useSyncedChannel();
+const { channel, messages, messageGroups, sendMessage } = useSyncedChannel();
 const { currentMeeting, joinMeeting } = useMeeting();
 
 const title = computed(() => {
@@ -21,6 +21,10 @@ const picture = computed(() => {
 });
 
 const { viewContent } = useNavTrigger("details-pane");
+
+function onMessageDeleted(messageId: number) {
+  messages.value = messages.value.filter((message) => message.id !== messageId);
+}
 </script>
 
 <template>
@@ -43,6 +47,7 @@ const { viewContent } = useNavTrigger("details-pane");
       :send-message="async (message) => await sendMessage(message)"
       @join-meeting="joinMeeting(channel)"
       @more-details="viewContent('channel')"
+      @message-deleted="onMessageDeleted"
       :key="2"
     />
   </TransitionGroup>

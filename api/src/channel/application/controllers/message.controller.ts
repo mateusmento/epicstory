@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { MessageService } from '../services/message.service';
 
@@ -60,5 +68,15 @@ export class MessageController {
       body.emoji,
       issuer.id,
     );
+  }
+
+  @Delete('messages/:messageId')
+  deleteMessage(@Param('messageId') messageId: number, @Auth() issuer: Issuer) {
+    return this.messageService.deleteMessage(messageId, issuer.id);
+  }
+
+  @Delete('messages/:messageId/replies/:replyId')
+  deleteReply(@Param('replyId') replyId: number, @Auth() issuer: Issuer) {
+    return this.messageService.deleteReply(replyId, issuer.id);
   }
 }

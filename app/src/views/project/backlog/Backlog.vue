@@ -17,6 +17,7 @@ import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
 import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
 import { UserSelect } from "@/components/user";
+import { Trash2Icon } from "lucide-vue-next";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
@@ -217,10 +218,8 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
   </Drawer>
 
   <div class="flex:col-xl m-auto py-8 px-12 w-full h-full">
-    <div
-      class="grid grid-cols-[auto_1fr_auto_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0"
-    >
-      <div class="grid grid-cols-subgrid col-span-7 gap-x-6">
+    <div class="grid grid-cols-[auto_1fr_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0">
+      <div class="grid grid-cols-subgrid col-span-6 gap-x-6">
         <BacklogHeadCell
           label="Status"
           :show="orderBy === 'status'"
@@ -242,9 +241,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
           @click="toggleOrder('priority')"
           @reset="resetOrder"
         />
-        <div
-          class="text-sm text-secondary-foreground col-span-2 select-none cursor-pointer flex:row-md flex:center-y"
-        >
+        <div class="text-sm text-secondary-foreground select-none cursor-pointer flex:row-md flex:center-y">
           Assignees
         </div>
         <BacklogHeadCell
@@ -256,14 +253,14 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
         />
       </div>
       <div
-        class="grid grid-cols-subgrid col-span-7 pr-2 overflow-y-auto overflow-x-hidden"
+        class="grid grid-cols-subgrid col-span-6 pr-2 overflow-y-auto overflow-x-hidden"
         style="scrollbar-gutter: stable"
       >
-        <div class="grid grid-cols-subgrid auto-rows-max col-span-7 gap-y-1" ref="itemsContainer">
+        <div class="grid grid-cols-subgrid auto-rows-max col-span-6 gap-y-1" ref="itemsContainer">
           <div
             v-for="{ id, issue } of backlogItems"
             :key="issue.id"
-            class="group grid grid-cols-subgrid col-span-7 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white shadow-sm"
+            class="group grid grid-cols-subgrid col-span-6 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white shadow-sm"
           >
             <Button
               variant="outline"
@@ -334,7 +331,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                 updateIssue(issue.id, { dueDate: $event?.toDate('America/Sao_Paulo').toString() })
               "
             />
-            <Icon name="io-trash-bin" @click="removeBacklogItem(id)" class="cursor-pointer text-foreground" />
+            <Trash2Icon @click="removeBacklogItem(id)" class="mr-2 h-4 w-4 cursor-pointer text-foreground" />
           </div>
         </div>
       </div>

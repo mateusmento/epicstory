@@ -161,4 +161,52 @@ export class MessageGateway {
       return { messageId, emoji, userId, reactions };
     }
   }
+
+  @SubscribeMessage('delete-message')
+  async deleteMessage(
+    @MessageBody() { messageId, channelId }: any,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = (socket.request as any).user;
+    const userId = user?.id;
+
+    await this.messageService.deleteMessage(messageId, userId);
+
+    socket.to(channelMessagingRoom(channelId)).emit('message-deleted', {
+      messageId,
+      channelId,
+    });
+
+    socket.emit('message-deleted', {
+      messageId,
+      channelId,
+    });
+
+    return { success: true, messageId };
+  }
+
+  @SubscribeMessage('delete-reply')
+  async deleteReply(
+    @MessageBody() { replyId, messageId, channelId }: any,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = (socket.request as any).user;
+    const userId = user?.id;
+
+    await this.messageService.deleteReply(replyId, userId);
+
+    socket.to(channelMessagingRoom(channelId)).emit('reply-deleted', {
+      replyId,
+      messageId,
+      channelId,
+    });
+
+    socket.emit('reply-deleted', {
+      replyId,
+      messageId,
+      channelId,
+    });
+
+    return { success: true, replyId };
+  }
 }

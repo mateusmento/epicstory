@@ -92,4 +92,14 @@ export class ChannelApi {
       .post(`/channels/${channelId}/messages/${messageId}/replies/${replyId}/reactions`, { emoji })
       .then((res) => res.data);
   }
+
+  deleteMessage(channelId: number, messageId: number) {
+    return this.axios.delete(`/channels/${channelId}/messages/${messageId}`).then((res) => res.data);
+  }
+
+  deleteReply(channelId: number, messageId: number, replyId: number) {
+    return this.axios
+      .delete(`/channels/${channelId}/messages/${messageId}/replies/${replyId}`)
+      .then((res) => res.data);
+  }
 }

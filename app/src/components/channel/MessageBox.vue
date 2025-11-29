@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import IconEmoji from "@/design-system/icons/IconEmoji.vue";
 import { cva } from "class-variance-authority";
 import { inject, ref, onMounted, onUnmounted, watch } from "vue";
 import { Button } from "@/design-system";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useDependency } from "@/core/dependency-injection";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
@@ -10,12 +10,16 @@ import { useWebSockets } from "@/core/websockets";
 import { formatDistanceToNow } from "date-fns";
 import type { IMessage } from "@/domain/channels/types";
 import EmojiPicker from "./EmojiPicker.vue";
+import { DotsHorizontalIcon } from "@radix-icons/vue";
+import { useAuth } from "@/domain/auth";
 
 const props = defineProps<{
   content: string;
   messageId: number;
   channelId: number;
 }>();
+
+const emit = defineEmits(["message-deleted"]);
 
 const isDiscussionOpen = ref(false);
 const replies = ref<IMessage[]>([]);
@@ -32,6 +36,8 @@ function useMessageGroup() {
 }
 
 const { sender, meId } = useMessageGroup();
+
+const { user: me } = useAuth();
 
 async function toggleDiscussion() {
   isDiscussionOpen.value = !isDiscussionOpen.value;
@@ -117,10 +123,16 @@ onMounted(() => {
   fetchReactions();
   websocket?.off("incoming-reaction", onIncomingReaction);
   websocket?.on("incoming-reaction", onIncomingReaction);
+  websocket?.off("message-deleted", onMessageDeleted);
+  websocket?.on("message-deleted", onMessageDeleted);
+  websocket?.off("reply-deleted", onReplyDeleted);
+  websocket?.on("reply-deleted", onReplyDeleted);
 });
 
 onUnmounted(() => {
   websocket?.off("incoming-reaction", onIncomingReaction);
+  websocket?.off("message-deleted", onMessageDeleted);
+  websocket?.off("reply-deleted", onReplyDeleted);
 });
 
 function onIncomingReaction({
@@ -182,6 +194,42 @@ function onEmojiSelect(emoji: string) {
 function onReplyEmojiSelect(replyId: number, emoji: string) {
   toggleReplyReaction(replyId, emoji);
 }
+
+async function deleteMessage() {
+  try {
+    websocket?.emit("delete-message", {
+      messageId: props.messageId,
+      channelId: props.channelId,
+    });
+  } catch (error) {
+    console.error("Failed to delete message:", error);
+  }
+}
+
+async function deleteReply(replyId: number) {
+  try {
+    websocket?.emit("delete-reply", {
+      replyId: replyId,
+      messageId: props.messageId,
+      channelId: props.channelId,
+    });
+  } catch (error) {
+    console.error("Failed to delete reply:", error);
+  }
+}
+
+function onMessageDeleted({ messageId: deletedMessageId }: { messageId: number }) {
+  if (deletedMessageId === props.messageId) {
+    emit("message-deleted", props.messageId);
+    // Message was deleted - this component should be removed by parent
+    // We could emit an event or the parent should handle it
+  }
+}
+
+function onReplyDeleted({ replyId: deletedReplyId }: { replyId: number }) {
+  replies.value = replies.value.filter((reply) => reply.id !== deletedReplyId);
+  delete replyReactions.value[deletedReplyId];
+}
 </script>
 
 <template>
@@ -194,11 +242,26 @@ function onReplyEmojiSelect(replyId: number, emoji: string) {
         @click="toggleDiscussion"
       />
     </Button>
-    <div class="flex:col-lg bg-[#F9F9F9] border border-[#E4E4E4] rounded-2xl relative">
+    <div class="flex:col-lg bg-[#F9F9F9] border border-[#E4E4E4] rounded-2xl relative group/message">
       <div :class="styles.messageBox({ sender })">
         {{ content }}
         <div class="" :class="styles.emoji({ sender })">
-          <IconEmoji />
+          <DropdownMenu v-if="sender === 'me'">
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="opacity-0 group-hover/message:opacity-100 transition-opacity"
+              >
+                <DotsHorizontalIcon class="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem @click="deleteMessage" variant="destructive">
+                <span>Delete message</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -226,7 +289,7 @@ function onReplyEmojiSelect(replyId: number, emoji: string) {
 
         <template v-if="isDiscussionOpen">
           <div v-if="replies.length > 0" class="px-2 space-y-3">
-            <div v-for="reply in replies" :key="reply.id" class="flex:row-md">
+            <div v-for="reply in replies" :key="reply.id" class="flex:row-md group/reply">
               <img
                 v-if="reply.sender.picture"
                 :src="reply.sender.picture"
@@ -242,7 +305,29 @@ function onReplyEmojiSelect(replyId: number, emoji: string) {
               <div class="flex:col-md flex-1 min-w-0">
                 <div class="flex:row-md flex:center-y">
                   <div class="text-foreground font-lato font-semibold">{{ reply.sender.name }}</div>
-                  <div class="ml-auto text-[#686870] font-dmSans text-xs">{{ formatTime(reply.sentAt) }}</div>
+                  <div class="ml-auto flex items-center gap-2">
+                    <span
+                      class="text-[#686870] font-dmSans text-xs opacity-100 group-hover/reply:opacity-0 transition-opacity"
+                    >
+                      {{ formatTime(reply.sentAt) }}
+                    </span>
+                    <DropdownMenu v-if="reply.senderId === me?.id">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          class="opacity-0 group-hover/reply:opacity-100 transition-opacity h-auto p-1"
+                        >
+                          <DotsHorizontalIcon class="w-4 h-4 text-[#686870]" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem @click="deleteReply(reply.id)" variant="destructive">
+                          <span>Delete reply</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 <div class="text-[15px] font-lato">{{ reply.content }}</div>
                 <div class="flex:row-md flex:center-y mt-1">
