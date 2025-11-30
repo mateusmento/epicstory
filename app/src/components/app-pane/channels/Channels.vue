@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { Button, Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/design-system";
-import {
-  Icon,
-  IconArrowDown,
-  IconChannel,
-  IconMention,
-  IconSearch,
-  IconThreads,
-} from "@/design-system/icons";
+import { Icon, IconArrowDown, IconChannel, IconMention, IconSearch } from "@/design-system/icons";
+import IconReplies from "@/design-system/icons/IconReplies.vue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system/ui/tabs";
 import { useChannel, useMeeting, useSyncedChannels } from "@/domain/channels";
 import CreateChannel from "./CreateChannel.vue";
@@ -44,8 +38,8 @@ const { currentMeeting, joinMeeting } = useMeeting();
           Mentions
         </TabsTrigger>
         <TabsTrigger value="threads" class="flex:row-md">
-          <IconThreads />
-          Threads
+          <IconReplies class="w-4 h-4" />
+          Replies
         </TabsTrigger>
       </TabsList>
     </div>
