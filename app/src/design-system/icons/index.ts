@@ -19,3 +19,5 @@ export { default as IconThreads } from "./IconThreads.vue";
 export { default as IconVerticallyCollapse } from "./IconVerticallyCollapse.vue";
 export { default as IconVerticallyExpand } from "./IconVerticallyExpand.vue";
 export { default as IconSendMessage } from "./IconSendMessage.vue";
+export { default as IconChats } from "./IconChats.vue";
+export { default as IconReplies } from "./IconReplies.vue";

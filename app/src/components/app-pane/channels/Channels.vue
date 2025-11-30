@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Button, Dialog, DialogContent, DialogHeader, DialogTrigger } from "@/design-system";
 import { Icon, IconArrowDown, IconChannel, IconMention, IconSearch } from "@/design-system/icons";
-import IconReplies from "@/design-system/icons/IconReplies.vue";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system/ui/tabs";
 import { useChannel, useMeeting, useSyncedChannels } from "@/domain/channels";
 import CreateChannel from "./CreateChannel.vue";
 import InboxMessage from "./InboxMessage.vue";
+import { IconReplies, IconChats } from "@/design-system/icons";
 
 const { channel: currentChannel } = useChannel();
 const { channels } = useSyncedChannels();
@@ -30,7 +30,7 @@ const { currentMeeting, joinMeeting } = useMeeting();
       </div>
       <TabsList class="w-full mt-4">
         <TabsTrigger value="messages" class="flex:row-md">
-          <Icon name="bi-person-lines-fill" />
+          <IconChats class="w-4 h-4" />
           Messages
         </TabsTrigger>
         <TabsTrigger value="mentions" class="flex:row-md">
