@@ -71,7 +71,7 @@ async function onCreateChannel(event: any) {
       </div>
 
       <div class="flex:col-lg">
-        <UserSelect v-model="selectedUser" />
+        <UserSelect v-model="selectedUser" exclude="me" />
         <Button type="button" size="xs" @click="selectedUser && addMember(selectedUser)">Add</Button>
       </div>
     </template>
