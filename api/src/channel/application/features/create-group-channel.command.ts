@@ -73,14 +73,14 @@ export class CreateGroupChannelCommand
       throw new NotFoundException('Members not found');
     }
 
-    return this.channelRepo.save(
-      Channel.create({
-        workspaceId,
-        type: 'group',
-        name,
-        peers: [member.user, ...peers.map((p) => p.user)],
-        teamId,
-      }),
-    );
+    const channel = Channel.create({
+      workspaceId,
+      type: 'group',
+      name,
+      peers: [member.user, ...peers.map((p) => p.user)],
+      teamId,
+    });
+
+    return this.channelRepo.save(channel);
   }
 }
