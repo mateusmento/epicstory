@@ -1,7 +1,7 @@
 <script lang="tsx" setup>
 import { Icon } from "@/design-system/icons";
-import { formatDistanceToNow } from "date-fns";
 import type { IssueDueDateNotificationPayload } from "@/domain/notifications/types/notification.types";
+import { formatDistanceToNow } from "date-fns";
 
 const props = defineProps<{
   payload: IssueDueDateNotificationPayload;

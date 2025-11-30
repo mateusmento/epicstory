@@ -1,10 +1,10 @@
 <script lang="tsx" setup>
-import { IconThreads } from "@/design-system/icons";
+import { IconReplies } from "@/design-system/icons";
 import { formatDistanceToNow } from "date-fns";
-import type { RepliedNotificationPayload } from "@/domain/notifications/types/notification.types";
+import type { ReplyNotificationPayload } from "@/domain/notifications/types/notification.types";
 
 const props = defineProps<{
-  payload: RepliedNotificationPayload;
+  payload: ReplyNotificationPayload;
   createdAt: string;
 }>();
 
@@ -16,8 +16,8 @@ function formatTime(date: string) {
 <template>
   <div class="flex:col-md">
     <div class="flex:row-md flex:center-y text-sm text-secondary-foreground font-dmSans">
-      <IconThreads />
-      mentioned you in
+      <IconReplies class="w-4 h-4" />
+      replied to you in
       <span class="text-foreground font-semibold">#{{ payload.channelName }}</span>
     </div>
     <div v-if="payload.sender" class="flex:row-md flex:center-y flex-1">

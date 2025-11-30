@@ -8,11 +8,11 @@ import { onMounted, onUnmounted, ref } from "vue";
 import type {
   Notification,
   MentionNotificationPayload,
-  RepliedNotificationPayload,
+  ReplyNotificationPayload,
   IssueDueDateNotificationPayload,
 } from "@/domain/notifications/types/notification.types";
 import MentionNotification from "./notifications/MentionNotification.vue";
-import RepliedNotification from "./notifications/RepliedNotification.vue";
+import ReplyNotification from "./notifications/ReplyNotification.vue";
 import DueDateNotification from "./notifications/DueDateNotification.vue";
 
 const { user } = useAuth();
@@ -106,9 +106,9 @@ onUnmounted(() => {
             :payload="notification.payload as MentionNotificationPayload"
             :createdAt="notification.createdAt"
           />
-          <RepliedNotification
-            v-else-if="notification.type === 'replied'"
-            :payload="notification.payload as RepliedNotificationPayload"
+          <ReplyNotification
+            v-else-if="notification.type === 'reply'"
+            :payload="notification.payload as ReplyNotificationPayload"
             :createdAt="notification.createdAt"
           />
           <DueDateNotification

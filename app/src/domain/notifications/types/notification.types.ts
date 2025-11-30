@@ -12,8 +12,8 @@ export type MentionNotificationPayload = {
   sender: NotificationSender;
 };
 
-export type RepliedNotificationPayload = {
-  type: "replied";
+export type ReplyNotificationPayload = {
+  type: "reply";
   channelName: string;
   channelId?: number;
   message: string;
@@ -29,7 +29,7 @@ export type IssueDueDateNotificationPayload = {
 
 export type NotificationPayload =
   | MentionNotificationPayload
-  | RepliedNotificationPayload
+  | ReplyNotificationPayload
   | IssueDueDateNotificationPayload;
 
 export type Notification = {
