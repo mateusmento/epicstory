@@ -5,7 +5,7 @@ import { useChannels } from "@/domain/channels";
 import { type User } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
 import { Trash2Icon } from "lucide-vue-next";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -16,6 +16,13 @@ const { createChannel } = useChannels();
 
 const members = ref<User[]>([]);
 const selectedUser = ref<User>();
+
+watch(selectedUser, () => {
+  if (selectedUser.value) {
+    addMember(selectedUser.value);
+    selectedUser.value = undefined;
+  }
+});
 
 function addMember(user: User) {
   members.value.push({
