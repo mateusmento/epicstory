@@ -153,6 +153,18 @@ function getPriorityColor(priority: number) {
   return "bg-gray-100 text-gray-700 border-gray-300";
 }
 
+function getStatusColor(status: string) {
+  if (status === "doing") return "bg-blue-100 text-blue-700 border-blue-300";
+  if (status === "done") return "bg-green-100 text-green-700 border-green-300";
+  return "bg-gray-100 text-gray-700 border-gray-300";
+}
+
+function getStatusLabel(status: string) {
+  if (status === "doing") return "In Progress";
+  if (status === "done") return "Done";
+  return "To Do";
+}
+
 function formatDate(date: string | null | undefined) {
   if (!date) return null;
   return formatDistanceToNow(new Date(date), { addSuffix: true });
@@ -186,10 +198,22 @@ function formatDate(date: string | null | undefined) {
             {{ (issue as Issue).title || "Untitled Issue" }}
           </div>
 
+          <!-- Status Badge -->
+          <div class="mt-2">
+            <span
+              :class="[
+                'text-xs px-2 py-0.5 rounded border font-medium',
+                getStatusColor((issue as Issue).status),
+              ]"
+            >
+              {{ getStatusLabel((issue as Issue).status) }}
+            </span>
+          </div>
+
           <!-- Issue Description (if exists) -->
           <div
             v-if="(issue as Issue).description"
-            class="text-xs text-secondary-foreground line-clamp-2 mt-1"
+            class="text-xs text-secondary-foreground line-clamp-2 mt-2"
           >
             {{ (issue as Issue).description }}
           </div>
@@ -214,21 +238,33 @@ function formatDate(date: string | null | undefined) {
             </span>
 
             <!-- Assignees -->
-            <div v-if="(issue as Issue).assignees?.length" class="flex:row-md gap-1 ml-auto">
+            <div v-if="(issue as Issue).assignees?.length" class="flex:row-md ml-auto">
               <div
-                v-for="assignee in (issue as Issue).assignees.slice(0, 3)"
+                v-for="(assignee, index) in (issue as Issue).assignees.slice(0, 5)"
                 :key="assignee.id"
-                class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary border-2 border-white"
+                :class="[
+                  'w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary border-2 border-white overflow-hidden',
+                  index > 0 && '-ml-4',
+                ]"
                 :title="assignee.name"
               >
-                {{ assignee.name?.charAt(0).toUpperCase() || "?" }}
+                <img
+                  v-if="assignee.picture"
+                  :src="assignee.picture"
+                  :alt="assignee.name"
+                  class="w-full h-full object-cover"
+                />
+                <span v-else>{{ assignee.name?.charAt(0).toUpperCase() || "?" }}</span>
               </div>
               <div
-                v-if="(issue as Issue).assignees.length > 3"
-                class="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs text-secondary-foreground border-2 border-white"
-                :title="`+${(issue as Issue).assignees.length - 3} more`"
+                v-if="(issue as Issue).assignees.length > 5"
+                :class="[
+                  'w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs text-secondary-foreground border-2 border-white',
+                  (issue as Issue).assignees.length > 5 && '-ml-4',
+                ]"
+                :title="`+${(issue as Issue).assignees.length - 5} more`"
               >
-                +{{ (issue as Issue).assignees.length - 3 }}
+                +{{ (issue as Issue).assignees.length - 5 }}
               </div>
             </div>
           </div>
@@ -267,10 +303,22 @@ function formatDate(date: string | null | undefined) {
             {{ (issue as Issue).title || "Untitled Issue" }}
           </div>
 
+          <!-- Status Badge -->
+          <div class="mt-2">
+            <span
+              :class="[
+                'text-xs px-2 py-0.5 rounded border font-medium',
+                getStatusColor((issue as Issue).status),
+              ]"
+            >
+              {{ getStatusLabel((issue as Issue).status) }}
+            </span>
+          </div>
+
           <!-- Issue Description (if exists) -->
           <div
             v-if="(issue as Issue).description"
-            class="text-xs text-secondary-foreground line-clamp-2 mt-1"
+            class="text-xs text-secondary-foreground line-clamp-2 mt-2"
           >
             {{ (issue as Issue).description }}
           </div>
@@ -295,21 +343,33 @@ function formatDate(date: string | null | undefined) {
             </span>
 
             <!-- Assignees -->
-            <div v-if="(issue as Issue).assignees?.length" class="flex:row-md gap-1 ml-auto">
+            <div v-if="(issue as Issue).assignees?.length" class="flex:row-md ml-auto">
               <div
-                v-for="assignee in (issue as Issue).assignees.slice(0, 3)"
+                v-for="(assignee, index) in (issue as Issue).assignees.slice(0, 5)"
                 :key="assignee.id"
-                class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary border-2 border-white"
+                :class="[
+                  'w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary border-2 border-white overflow-hidden',
+                  index > 0 && '-ml-4',
+                ]"
                 :title="assignee.name"
               >
-                {{ assignee.name?.charAt(0).toUpperCase() || "?" }}
+                <img
+                  v-if="assignee.picture"
+                  :src="assignee.picture"
+                  :alt="assignee.name"
+                  class="w-full h-full object-cover"
+                />
+                <span v-else>{{ assignee.name?.charAt(0).toUpperCase() || "?" }}</span>
               </div>
               <div
-                v-if="(issue as Issue).assignees.length > 3"
-                class="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs text-secondary-foreground border-2 border-white"
-                :title="`+${(issue as Issue).assignees.length - 3} more`"
+                v-if="(issue as Issue).assignees.length > 5"
+                :class="[
+                  'w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs text-secondary-foreground border-2 border-white',
+                  (issue as Issue).assignees.length > 5 && '-ml-4',
+                ]"
+                :title="`+${(issue as Issue).assignees.length - 5} more`"
               >
-                +{{ (issue as Issue).assignees.length - 3 }}
+                +{{ (issue as Issue).assignees.length - 5 }}
               </div>
             </div>
           </div>
@@ -348,10 +408,22 @@ function formatDate(date: string | null | undefined) {
             {{ (issue as Issue).title || "Untitled Issue" }}
           </div>
 
+          <!-- Status Badge -->
+          <div class="mt-2">
+            <span
+              :class="[
+                'text-xs px-2 py-0.5 rounded border font-medium',
+                getStatusColor((issue as Issue).status),
+              ]"
+            >
+              {{ getStatusLabel((issue as Issue).status) }}
+            </span>
+          </div>
+
           <!-- Issue Description (if exists) -->
           <div
             v-if="(issue as Issue).description"
-            class="text-xs text-secondary-foreground line-clamp-2 mt-1"
+            class="text-xs text-secondary-foreground line-clamp-2 mt-2"
           >
             {{ (issue as Issue).description }}
           </div>
@@ -376,21 +448,33 @@ function formatDate(date: string | null | undefined) {
             </span>
 
             <!-- Assignees -->
-            <div v-if="(issue as Issue).assignees?.length" class="flex:row-md gap-1 ml-auto">
+            <div v-if="(issue as Issue).assignees?.length" class="flex:row-md ml-auto">
               <div
-                v-for="assignee in (issue as Issue).assignees.slice(0, 3)"
+                v-for="(assignee, index) in (issue as Issue).assignees.slice(0, 5)"
                 :key="assignee.id"
-                class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary border-2 border-white"
+                :class="[
+                  'w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary border-2 border-white overflow-hidden',
+                  index > 0 && '-ml-4',
+                ]"
                 :title="assignee.name"
               >
-                {{ assignee.name?.charAt(0).toUpperCase() || "?" }}
+                <img
+                  v-if="assignee.picture"
+                  :src="assignee.picture"
+                  :alt="assignee.name"
+                  class="w-full h-full object-cover"
+                />
+                <span v-else>{{ assignee.name?.charAt(0).toUpperCase() || "?" }}</span>
               </div>
               <div
-                v-if="(issue as Issue).assignees.length > 3"
-                class="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs text-secondary-foreground border-2 border-white"
-                :title="`+${(issue as Issue).assignees.length - 3} more`"
+                v-if="(issue as Issue).assignees.length > 5"
+                :class="[
+                  'w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs text-secondary-foreground border-2 border-white',
+                  (issue as Issue).assignees.length > 5 && '-ml-4',
+                ]"
+                :title="`+${(issue as Issue).assignees.length - 5} more`"
               >
-                +{{ (issue as Issue).assignees.length - 3 }}
+                +{{ (issue as Issue).assignees.length - 5 }}
               </div>
             </div>
           </div>
