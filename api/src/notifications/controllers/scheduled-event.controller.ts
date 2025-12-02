@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
-import { CreateScheduledEvent } from './create-scheduled-event.command';
+import { CreateScheduledEvent } from '../features';
 
 @Controller('scheduled-events')
 export class ScheduledEventController {

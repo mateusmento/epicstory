@@ -2,30 +2,26 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
-import { NotificationsCronjob } from './notifications.cronjob';
-import { ScheduledEvent } from './scheduled-event.entity';
-import { Notification } from './notification.entity';
-import { NotificationGateway } from './notifications.gateway';
-import { CreateScheduledEventCommand } from './create-scheduled-event.command';
-import { ScheduledEventController } from './scheduled-event.controller';
-import { NotificationController } from './notification.controller';
-import { ScheduledEventRepository } from './scheduled-event.repository';
-import { NotificationRepository } from './notification.repository';
+import * as jobs from './jobs';
+import * as entities from './entities';
+import * as gateways from './gateways';
+import * as features from './features';
+import * as controllers from './controllers';
+import * as repositories from './repositories';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    TypeOrmModule.forFeature([ScheduledEvent, Notification]),
+    TypeOrmModule.forFeature(Object.values(entities)),
     AuthModule,
   ],
-  controllers: [ScheduledEventController, NotificationController],
+  controllers: [...Object.values(controllers)],
   providers: [
-    NotificationsCronjob,
-    NotificationGateway,
-    CreateScheduledEventCommand,
-    ScheduledEventRepository,
-    NotificationRepository,
+    ...Object.values(repositories),
+    ...Object.values(features),
+    ...Object.values(gateways),
+    ...Object.values(jobs),
   ],
-  exports: [ScheduledEventRepository],
+  exports: [...Object.values(repositories)],
 })
 export class NotificationsModule {}

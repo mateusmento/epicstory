@@ -1,8 +1,8 @@
 import { IsDate, IsNumber, IsObject } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { ScheduledEventRepository } from './scheduled-event.repository';
-import { ScheduledEvent } from './scheduled-event.entity';
+import { ScheduledEventRepository } from '../repositories';
+import { ScheduledEvent } from '../entities';
 
 export class CreateScheduledEvent {
   @IsNumber()

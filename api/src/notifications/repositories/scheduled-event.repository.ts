@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { Repository } from 'typeorm';
-import { ScheduledEvent } from './scheduled-event.entity';
+import { ScheduledEvent } from '../entities/scheduled-event.entity';
 
 @Injectable()
 export class ScheduledEventRepository extends Repository<ScheduledEvent> {

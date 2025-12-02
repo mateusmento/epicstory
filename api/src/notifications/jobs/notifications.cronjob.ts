@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { UserRepository } from 'src/auth';
-import { Notification } from './notification.entity';
-import { NotificationGateway } from './notifications.gateway';
-import { NotificationRepository } from './notification.repository';
-import { ScheduledEventRepository } from './scheduled-event.repository';
+import { Notification } from '../entities';
+import { NotificationGateway } from '../gateways';
+import {
+  NotificationRepository,
+  ScheduledEventRepository,
+} from '../repositories';
 
 @Injectable()
 export class NotificationsCronjob {

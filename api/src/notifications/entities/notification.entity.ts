@@ -1,12 +1,7 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
 import { UUID } from 'crypto';
-import { ScheduledEvent } from './scheduled-event.entity';
 import { patch } from 'src/core/objects';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { ScheduledEvent } from './scheduled-event.entity';
 
 @Entity({ schema: 'scheduler', name: 'notifications' })
 export class Notification {
@@ -22,7 +17,7 @@ export class Notification {
   @Column({ type: 'jsonb' })
   payload: any;
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @Column({ type: 'timestamptz', default: () => 'now()' })
   createdAt: Date;
 
   @Column({ default: false })
@@ -37,6 +32,7 @@ export class Notification {
       type: 'scheduled_event',
       userId: event.userId,
       payload: event.payload,
+      createdAt: new Date(),
       seen: false,
     });
   }

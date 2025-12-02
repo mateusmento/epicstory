@@ -5,8 +5,8 @@ import { patch } from 'src/core/objects';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { ScheduledEventRepository } from 'src/notifications/scheduled-event.repository';
-import { ScheduledEvent } from 'src/notifications/scheduled-event.entity';
+import { ScheduledEventRepository } from 'src/notifications/repositories/scheduled-event.repository';
+import { ScheduledEvent } from 'src/notifications/entities/scheduled-event.entity';
 import { Transactional } from 'typeorm-transactional';
 import { ProjectGateway } from '../../gateways/project.gateway';
 
