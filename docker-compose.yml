@@ -19,13 +19,16 @@ services:
       dockerfile: Dockerfile
     image: epicstory-api:latest
     container_name: epicstory-api
-    command: pnpm start:dev
+    # Use start:debug to enable debugging (attach with VS Code)
+    # Use start:dev for normal development without debugging
+    command: pnpm start:debug
     ports:
       - 3000:3000
+      - 9229:9229 # Node.js debug port for VS Code attachment
     env_file:
       - ./api/.env
     environment:
-      DEBUG: true
+      DEBUG: false
       DATABASE_HOST: epicstory-postgres
       REDIS_URL: "redis://epicstory-redis:6379"
     depends_on:

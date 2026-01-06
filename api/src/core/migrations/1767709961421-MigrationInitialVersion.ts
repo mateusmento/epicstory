@@ -1,7 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class MigrationInitial1763984691156 implements MigrationInterface {
-  name = 'MigrationInitial1763984691156';
+export class MigrationInitialVersion1767709961421
+  implements MigrationInterface
+{
+  name = 'MigrationInitialVersion1767709961421';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -66,6 +68,7 @@ export class MigrationInitial1763984691156 implements MigrationInterface {
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "status" character varying NOT NULL DEFAULT 'todo',
                 "due_date" TIMESTAMP,
+                "scheduled_event_id" uuid,
                 "priority" integer NOT NULL DEFAULT '0',
                 CONSTRAINT "PK_f80e086c249b9f3f3ff2fd321b7" PRIMARY KEY ("id")
             )
@@ -151,6 +154,15 @@ export class MigrationInitial1763984691156 implements MigrationInterface {
             )
         `);
     await queryRunner.query(`
+            CREATE TABLE "channel"."message_reactions" (
+                "id" SERIAL NOT NULL,
+                "emoji" character varying NOT NULL,
+                "message_id" integer NOT NULL,
+                "user_id" integer NOT NULL,
+                CONSTRAINT "PK_654a9f0059ff93a8f156be66a5b" PRIMARY KEY ("id")
+            )
+        `);
+    await queryRunner.query(`
             CREATE TABLE "channel"."channel" (
                 "id" SERIAL NOT NULL,
                 "name" character varying NOT NULL DEFAULT '',
@@ -160,6 +172,51 @@ export class MigrationInitial1763984691156 implements MigrationInterface {
                 "last_message_id" integer,
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 CONSTRAINT "PK_590f33ee6ee7d76437acf362e39" PRIMARY KEY ("id")
+            )
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "channel"."message_replies" (
+                "id" SERIAL NOT NULL,
+                "content" character varying NOT NULL,
+                "sent_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "sender_id" integer NOT NULL,
+                "message_id" integer NOT NULL,
+                CONSTRAINT "PK_6b6a26b5b288b9d77a7bea062c4" PRIMARY KEY ("id")
+            )
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "channel"."message_reply_reactions" (
+                "id" SERIAL NOT NULL,
+                "emoji" character varying NOT NULL,
+                "message_reply_id" integer NOT NULL,
+                "user_id" integer NOT NULL,
+                CONSTRAINT "PK_ab31e3545f13cf8e9722f284438" PRIMARY KEY ("id")
+            )
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "scheduler"."scheduled_events" (
+                "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                "user_id" integer NOT NULL,
+                "payload" jsonb NOT NULL,
+                "due_at" TIMESTAMP WITH TIME ZONE NOT NULL,
+                "processed" boolean NOT NULL DEFAULT false,
+                "lock_id" uuid,
+                "locked_at" TIMESTAMP WITH TIME ZONE,
+                "retry_count" integer NOT NULL DEFAULT '0',
+                "last_error" text,
+                "last_retry_at" TIMESTAMP WITH TIME ZONE,
+                CONSTRAINT "PK_5ab29293642d5d17f11fda15c90" PRIMARY KEY ("id")
+            )
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "scheduler"."notifications" (
+                "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                "type" character varying NOT NULL,
+                "user_id" integer NOT NULL,
+                "payload" jsonb NOT NULL,
+                "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                "seen" boolean NOT NULL DEFAULT false,
+                CONSTRAINT "PK_6a72c3c0f683f6462415e653c3a" PRIMARY KEY ("id")
             )
         `);
     await queryRunner.query(`
@@ -257,12 +314,36 @@ export class MigrationInitial1763984691156 implements MigrationInterface {
             ADD CONSTRAINT "FK_86b9109b155eb70c0a2ca3b4b6d" FOREIGN KEY ("channel_id") REFERENCES "channel"."channel"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
     await queryRunner.query(`
+            ALTER TABLE "channel"."message_reactions"
+            ADD CONSTRAINT "FK_ce61e365d81a9dfc15cd36513b0" FOREIGN KEY ("message_id") REFERENCES "channel"."messages"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_reactions"
+            ADD CONSTRAINT "FK_b6d3eda2f99b64016d6a4cf112f" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+        `);
+    await queryRunner.query(`
             ALTER TABLE "channel"."channel"
             ADD CONSTRAINT "FK_2d96552a109b8a99c2de06dc191" FOREIGN KEY ("team_id") REFERENCES "workspace"."team"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
     await queryRunner.query(`
             ALTER TABLE "channel"."channel"
             ADD CONSTRAINT "FK_c348c021618627599ac87f4b2ef" FOREIGN KEY ("last_message_id") REFERENCES "channel"."messages"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_replies"
+            ADD CONSTRAINT "FK_0b4eef3917ea5eab7a2bc3e7a5e" FOREIGN KEY ("sender_id") REFERENCES "auth"."users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_replies"
+            ADD CONSTRAINT "FK_6be8c1ed3936f924e8abd422dd4" FOREIGN KEY ("message_id") REFERENCES "channel"."messages"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_reply_reactions"
+            ADD CONSTRAINT "FK_d6f4fb078fe88e3a5ca868aab53" FOREIGN KEY ("message_reply_id") REFERENCES "channel"."message_replies"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_reply_reactions"
+            ADD CONSTRAINT "FK_514983639fcc4f75d0080d211a3" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
     await queryRunner.query(`
             ALTER TABLE "workspace"."issue_assignee"
@@ -296,10 +377,28 @@ export class MigrationInitial1763984691156 implements MigrationInterface {
             ALTER TABLE "workspace"."issue_assignee" DROP CONSTRAINT "FK_8ef02425cdddea5337326583d96"
         `);
     await queryRunner.query(`
+            ALTER TABLE "channel"."message_reply_reactions" DROP CONSTRAINT "FK_514983639fcc4f75d0080d211a3"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_reply_reactions" DROP CONSTRAINT "FK_d6f4fb078fe88e3a5ca868aab53"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_replies" DROP CONSTRAINT "FK_6be8c1ed3936f924e8abd422dd4"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_replies" DROP CONSTRAINT "FK_0b4eef3917ea5eab7a2bc3e7a5e"
+        `);
+    await queryRunner.query(`
             ALTER TABLE "channel"."channel" DROP CONSTRAINT "FK_c348c021618627599ac87f4b2ef"
         `);
     await queryRunner.query(`
             ALTER TABLE "channel"."channel" DROP CONSTRAINT "FK_2d96552a109b8a99c2de06dc191"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_reactions" DROP CONSTRAINT "FK_b6d3eda2f99b64016d6a4cf112f"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "channel"."message_reactions" DROP CONSTRAINT "FK_ce61e365d81a9dfc15cd36513b0"
         `);
     await queryRunner.query(`
             ALTER TABLE "channel"."messages" DROP CONSTRAINT "FK_86b9109b155eb70c0a2ca3b4b6d"
@@ -371,7 +470,22 @@ export class MigrationInitial1763984691156 implements MigrationInterface {
             DROP TABLE "workspace"."issue_assignee"
         `);
     await queryRunner.query(`
+            DROP TABLE "scheduler"."notifications"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "scheduler"."scheduled_events"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "channel"."message_reply_reactions"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "channel"."message_replies"
+        `);
+    await queryRunner.query(`
             DROP TABLE "channel"."channel"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "channel"."message_reactions"
         `);
     await queryRunner.query(`
             DROP TABLE "channel"."messages"

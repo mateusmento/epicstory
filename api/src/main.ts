@@ -1,5 +1,8 @@
+import 'source-map-support/register';
 import {
   ClassSerializerInterceptor,
+  HttpException,
+  HttpStatus,
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
@@ -11,7 +14,7 @@ import { AppModule } from './app.module';
 import { AppConfig } from './core/app.config';
 import { createRedisAdapter, SocketIoAdapter } from './core/websockets';
 import { createPostgresSchemas } from './core/typeorm';
-import { GlobalExceptionFilter } from './core/global-exception.filter';
+// import { GlobalExceptionFilter } from './core/global-exception.filter';
 import { DataSource } from 'typeorm';
 
 async function bootstrap() {
@@ -46,9 +49,29 @@ async function bootstrap() {
     new ValidationPipe({
       transform: true,
       whitelist: true,
+      forbidNonWhitelisted: true,
       transformOptions: {
         enableCircularCheck: true,
         enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors) => {
+        const messages = errors.map((error) => {
+          const constraints = error.constraints || {};
+          return Object.values(constraints).join(', ');
+        });
+        return new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: messages.length > 0 ? messages : ['Validation failed'],
+            error: 'Bad Request',
+            details: errors.map((error) => ({
+              property: error.property,
+              constraints: error.constraints,
+              value: error.value,
+            })),
+          },
+          HttpStatus.BAD_REQUEST,
+        );
       },
     }),
   );
@@ -56,7 +79,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // Add global exception filter to handle unhandled errors
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  // app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.useWebSocketAdapter(
     new SocketIoAdapter(app, {

@@ -75,7 +75,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
       if (dueDate === null) {
         // Due date is being removed - cancel the scheduled event if not processed
         if (previousScheduledEventId) {
-          await this.scheduledEventRepo.deleteEventIfNotProcessed(
+          await this.scheduledEventRepo.deleteUnprocessedEvent(
             previousScheduledEventId,
           );
           issue.scheduledEventId = null;
@@ -84,7 +84,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
         // Due date is being set or updated
         // Delete existing scheduled event if it exists and hasn't been processed
         if (previousScheduledEventId) {
-          await this.scheduledEventRepo.deleteEventIfNotProcessed(
+          await this.scheduledEventRepo.deleteUnprocessedEvent(
             previousScheduledEventId,
           );
         }

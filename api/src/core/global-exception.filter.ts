@@ -26,7 +26,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       message = exception.message;
-      this.logger.log(`HTTP Exception: ${status} - ${message}`);
+      this.logger.error(`HTTP Exception: ${status} - ${message}`);
     } else if (exception instanceof QueryFailedError) {
       // Handle database constraint violations and other query errors
       status = HttpStatus.BAD_REQUEST;

@@ -33,5 +33,6 @@ export async function createPostgresSchemas() {
     CREATE SCHEMA IF NOT EXISTS auth;
     CREATE SCHEMA IF NOT EXISTS workspace;
     CREATE SCHEMA IF NOT EXISTS channel;
+    CREATE SCHEMA IF NOT EXISTS scheduler;
   `);
 }

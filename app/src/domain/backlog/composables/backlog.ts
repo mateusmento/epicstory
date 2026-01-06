@@ -18,7 +18,7 @@ export function useBacklog() {
 
   async function fetchBacklogItems(query: FindBacklogItemsQuery) {
     const { content } = await backlogItemApi.findAll(query);
-    store.backlogItems = content.map((x) => reactive(x));
+    store.backlogItems = content;
   }
 
   async function createBacklogItem(backlogId: number, data: any) {

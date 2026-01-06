@@ -25,6 +25,52 @@ function runCommand(command, args = [], options = {}) {
   });
 }
 
+// Run command
+async function run(container) {
+  try {
+    console.log(`🚀 Running Docker container: ${container ?? ""}`);
+    await runCommand("node", ["scripts/run.js", container ?? ""]);
+    console.log(`✅ Container ${container} running successfully!`);
+  } catch (error) {
+    console.error(`❌ Container ${container} failed to run:`, error.message);
+    process.exit(1);
+  }
+}
+
+// Logs command
+async function logs(container) {
+  try {
+    console.log(`🚀 Logging container: ${container}`);
+    await runCommand("node", ["scripts/logs.js", container]);
+    console.log(`✅ Logs ${container} completed successfully!`);
+  } catch (error) {
+    console.error(`❌ Logs ${container} failed:`, error.message);
+    process.exit(1);
+  }
+}
+
+// List command
+async function list() {
+  try {
+    console.log(`🚀 Listing running containers...`);
+    await runCommand("node", ["scripts/list.js"]);
+  } catch (error) {
+    console.error(`❌ List failed:`, error.message);
+    process.exit(1);
+  }
+}
+
+// Inject command
+async function inject(container) {
+  try {
+    console.log(`🚀 Injecting into container: ${container}`);
+    await runCommand("node", ["scripts/inject.js", container]);
+  } catch (error) {
+    console.error(`❌ Inject failed:`, error.message);
+    process.exit(1);
+  }
+}
+
 // Build command
 async function build(target) {
   if (!target || !["app", "api"].includes(target)) {
@@ -61,6 +107,21 @@ async function deploy(action) {
   }
 }
 
+// Remove command
+async function remove(target) {
+  try {
+    console.log(`🚀 Removing containers...`);
+    const args = ["scripts/remove.js"];
+    if (target) {
+      args.push(target);
+    }
+    await runCommand("node", args);
+  } catch (error) {
+    console.error(`❌ Remove failed:`, error.message);
+    process.exit(1);
+  }
+}
+
 // Main CLI logic
 function main() {
   const args = process.argv.slice(2);
@@ -73,6 +134,21 @@ function main() {
       break;
     case "deploy":
       deploy(target);
+      break;
+    case "run":
+      run(target);
+      break;
+    case "logs":
+      logs(target);
+      break;
+    case "list":
+      list();
+      break;
+    case "inject":
+      inject(target);
+      break;
+    case "remove":
+      remove(target);
       break;
     case "help":
     case "--help":
@@ -92,15 +168,25 @@ function showHelp() {
 📦 Epic Story CLI
 
 Usage:
-  epic build [app|api]     Build Docker images
-  epic deploy [apply|delete]  Deploy to Kubernetes
-  epic help               Show this help message
+  epic build [app|api]         Build Docker images
+  epic deploy [apply|delete]   Deploy to Kubernetes
+  epic inject [container-name] Inject into a running container
+  epic run                     Run Docker containers
+  epic logs [container-name]   Log container output
+  epic list                    List running containers
+  epic remove                 Stop and remove all containers
+  epic help                    Show this help message
 
 Examples:
-  epic build api          Build API Docker image
-  epic build app          Build App Docker image
-  epic deploy apply       Apply Kubernetes configurations
-  epic deploy delete      Delete Kubernetes resources
+  epic build api              Build API Docker image
+  epic build app              Build App Docker image
+  epic deploy apply           Apply Kubernetes configurations
+  epic deploy delete          Delete Kubernetes resources
+  epic inject epicstory-api   Inject into a running container
+  epic run                    Run Docker containers
+  epic logs epicstory-api      Log container output
+  epic list                   List running containers
+  epic remove                 Stop and remove all containers
 `);
 }
 

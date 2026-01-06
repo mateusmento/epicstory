@@ -11,6 +11,8 @@ import {
 @Injectable()
 export class NotificationsCronjob {
   private readonly logger = new Logger(NotificationsCronjob.name);
+  private readonly MAX_RETRIES = 5; // Maximum number of retry attempts
+  private readonly BASE_RETRY_DELAY_MS = 60000; // 1 minute base delay
 
   constructor(
     private scheduledEventRepo: ScheduledEventRepository,
@@ -19,10 +21,20 @@ export class NotificationsCronjob {
     private userRepo: UserRepository,
   ) {}
 
+  /**
+   * Calculates the exponential backoff delay for a given retry count
+   * Formula: baseDelay * (2 ^ retryCount) with a max of 1 hour
+   */
+  private calculateRetryDelay(retryCount: number): number {
+    const delay = this.BASE_RETRY_DELAY_MS * Math.pow(2, retryCount);
+    const maxDelay = 60 * 60 * 1000; // 1 hour max
+    return Math.min(delay, maxDelay);
+  }
+
   @Cron(CronExpression.EVERY_10_SECONDS)
   async handleCron() {
     // Look ahead 10 seconds (10000ms) for events that are due
-    const events = await this.scheduledEventRepo.findDueEvents(
+    const [lockId, events] = await this.scheduledEventRepo.findDueEvents(
       2 * 24 * 3600 * 1000,
     ); // 2 days
 
@@ -76,7 +88,7 @@ export class NotificationsCronjob {
         );
 
         // Only mark as processed if notification was successful
-        await this.scheduledEventRepo.markAsProcessed(event.id);
+        await this.scheduledEventRepo.markAsProcessed(event.id, lockId);
 
         this.logger.debug(
           `Processed scheduled event ${event.id} for user ${event.userId}`,
@@ -87,12 +99,33 @@ export class NotificationsCronjob {
           error.stack,
         );
 
-        // Clear the lock so the event can be retried in the next run
+        // Mark failure and check if we should retry
         try {
-          await this.scheduledEventRepo.clearLock(event.id);
+          const { retryCount, exceededMaxRetries } =
+            await this.scheduledEventRepo.markFailure(
+              event.id,
+              lockId,
+              error.message,
+            );
+
+          if (exceededMaxRetries) {
+            // Mark as permanently failed to prevent further retries
+            await this.scheduledEventRepo.markAsPermanentlyFailed(
+              event.id,
+              lockId,
+            );
+            this.logger.error(
+              `Event ${event.id} exceeded max retries (${retryCount}). Marked as permanently failed.`,
+            );
+          } else {
+            const delay = this.calculateRetryDelay(retryCount);
+            this.logger.warn(
+              `Event ${event.id} failed (attempt ${retryCount}/${this.MAX_RETRIES}). Will retry after ${Math.round(delay / 1000)}s. Error: ${error.message}`,
+            );
+          }
         } catch (clearLockError) {
           this.logger.error(
-            `Failed to clear lock for event ${event.id}: ${clearLockError.message}`,
+            `Failed to handle failure for event ${event.id}: ${clearLockError.message}`,
           );
         }
       }

@@ -22,6 +22,18 @@ export class ScheduledEvent {
   @Column({ type: 'uuid', nullable: true })
   lockId?: UUID;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  lockedAt?: Date;
+
+  @Column({ default: 0 })
+  retryCount: number;
+
+  @Column({ type: 'text', nullable: true })
+  lastError?: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  lastRetryAt?: Date;
+
   constructor(data: Partial<ScheduledEvent>) {
     patch(this, data);
   }
