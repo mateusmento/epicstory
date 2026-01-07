@@ -15,9 +15,14 @@ export function useUser() {
     user.value = await userApi.update(data);
   }
 
+  async function changePassword(data: { currentPassword: string; newPassword: string }) {
+    await userApi.changePassword(data);
+  }
+
   return {
     user,
     updateUser,
     updateUserPicture,
+    changePassword,
   };
 }

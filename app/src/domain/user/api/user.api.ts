@@ -22,4 +22,8 @@ export class UserApi {
   update(data: any) {
     return this.axios.patch(`/users`, data).then((res) => res.data);
   }
+
+  changePassword(data: { currentPassword: string; newPassword: string }) {
+    return this.axios.patch(`/users/password`, data).then((res) => res.data);
+  }
 }

@@ -1,4 +1,5 @@
 export * from './authenticate.command';
+export * from './change-password.command';
 export * from './find-users.query';
 export * from './google-signup.command';
 export * from './signin.command';

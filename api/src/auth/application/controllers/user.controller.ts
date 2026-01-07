@@ -15,6 +15,7 @@ import { Request } from 'express';
 import { StorageEngine } from 'multer';
 import * as sharp from 'sharp';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { ChangePassword } from '../features/change-password.command';
 import { UpdateUserPicture } from '../features/update-user-picture.command';
 import { UpdateUser } from '../features/update-user.command';
 
@@ -103,5 +104,11 @@ export class UserController {
     return this.commandBus.execute(
       new UpdateUserPicture({ userId: issuer.id, picture: file.path }),
     );
+  }
+
+  @Patch('/password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(@Body() command: ChangePassword, @Auth() issuer: Issuer) {
+    return this.commandBus.execute(new ChangePassword({ ...command, issuer }));
   }
 }
