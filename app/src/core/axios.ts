@@ -14,6 +14,12 @@ export class NotFoundException extends Error {
   }
 }
 
+export class ForbiddenException extends Error {
+  constructor(public error: Error) {
+    super("403 Forbidden");
+  }
+}
+
 export function createAxios(options?: CreateAxiosDefaults) {
   const instance = axios.create({ ...options, withCredentials: true });
 
@@ -24,6 +30,9 @@ export function createAxios(options?: CreateAxiosDefaults) {
         return Promise.reject(new NotFoundException(err));
       }
       if (err.response?.status === 403) {
+        return Promise.reject(new ForbiddenException(err));
+      }
+      if (err.response?.status === 401) {
         return Promise.reject(new UnauthorizedException(err));
       }
       return Promise.reject(err);
