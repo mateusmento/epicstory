@@ -1,33 +1,55 @@
 const { spawn } = require("child_process");
 
-function logsContainer(container) {
-  if (!container || typeof container !== "string") {
-    console.error(
-      "No container name provided. Usage: node scripts/logs.js [container-name]",
+// Service names from docker-compose.yml
+const allowedServices = [
+  "app",
+  "api",
+  "postgres",
+  "pgadmin",
+  "peerjs",
+  "redis",
+  // "openbao", // uncomment if openbao is enabled
+];
+
+// Convert service name to container name, or return container name if already prefixed
+function normalizeContainerName(input) {
+  if (!input || typeof input !== "string") {
+    throw new Error(
+      "No service/container name provided. Usage: node scripts/logs.js [service-name]",
     );
-    process.exit(1);
   }
 
-  // Only allow containers defined in docker-compose.yml
-  const allowedContainers = [
-    "epicstory-app",
-    "epicstory-api",
-    "epicstory-postgres",
-    "epicstory-pgadmin",
-    "epicstory-peerjs",
-    "epicstory-redis",
-    // "epicstory-openbao", // uncomment if openbao is enabled
-  ];
+  // If it already starts with "epicstory-", treat as container name
+  if (input.startsWith("epicstory-")) {
+    const serviceName = input.replace("epicstory-", "");
+    if (!allowedServices.includes(serviceName)) {
+      throw new Error(
+        `Service "${serviceName}" is not allowed or not defined in docker-compose.yml.\nAllowed: ${allowedServices.join(", ")}`,
+      );
+    }
+    return input;
+  }
 
-  if (!allowedContainers.includes(container)) {
-    console.error(
-      `Container "${container}" is not allowed or not defined in docker-compose.yml.\nAllowed: ${allowedContainers.join(", ")}`,
+  // Otherwise, treat as service name and prepend "epicstory-"
+  if (!allowedServices.includes(input)) {
+    throw new Error(
+      `Service "${input}" is not allowed or not defined in docker-compose.yml.\nAllowed: ${allowedServices.join(", ")}`,
     );
+  }
+  return `epicstory-${input}`;
+}
+
+function logsContainer(container) {
+  let containerName;
+  try {
+    containerName = normalizeContainerName(container);
+  } catch (e) {
+    console.error(`❌ ${e.message}`);
     process.exit(1);
   }
 
   // Show Docker logs (follow)
-  const logs = spawn("docker", ["logs", "-f", container], {
+  const logs = spawn("docker", ["logs", "-f", containerName], {
     stdio: "inherit",
   });
 

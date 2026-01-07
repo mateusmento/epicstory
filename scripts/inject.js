@@ -1,28 +1,42 @@
 const { spawn } = require("child_process");
 
-// Only allow containers defined in docker-compose.yml
-const allowedContainers = [
-  "epicstory-app",
-  "epicstory-api",
-  "epicstory-postgres",
-  "epicstory-pgadmin",
-  "epicstory-peerjs",
-  "epicstory-redis",
-  // "epicstory-openbao", // uncomment if openbao is enabled
+// Service names from docker-compose.yml
+const allowedServices = [
+  "app",
+  "api",
+  "postgres",
+  "pgadmin",
+  "peerjs",
+  "redis",
+  // "openbao", // uncomment if openbao is enabled
 ];
 
-function validateContainerName(container) {
-  if (!container || typeof container !== "string") {
+// Convert service name to container name, or return container name if already prefixed
+function normalizeContainerName(input) {
+  if (!input || typeof input !== "string") {
     throw new Error(
-      "No container name provided. Usage: node scripts/inject.js [container-name]",
+      "No service/container name provided. Usage: node scripts/inject.js [service-name]",
     );
   }
-  if (!allowedContainers.includes(container)) {
+
+  // If it already starts with "epicstory-", treat as container name
+  if (input.startsWith("epicstory-")) {
+    const serviceName = input.replace("epicstory-", "");
+    if (!allowedServices.includes(serviceName)) {
+      throw new Error(
+        `Service "${serviceName}" is not allowed or not defined in docker-compose.yml.\nAllowed: ${allowedServices.join(", ")}`,
+      );
+    }
+    return input;
+  }
+
+  // Otherwise, treat as service name and prepend "epicstory-"
+  if (!allowedServices.includes(input)) {
     throw new Error(
-      `Container "${container}" is not allowed or not defined in docker-compose.yml.\nAllowed: ${allowedContainers.join(", ")}`,
+      `Service "${input}" is not allowed or not defined in docker-compose.yml.\nAllowed: ${allowedServices.join(", ")}`,
     );
   }
-  return container;
+  return `epicstory-${input}`;
 }
 
 function inject(container) {
@@ -38,7 +52,7 @@ function inject(container) {
 function main() {
   const container = process.argv[2];
   try {
-    const validContainer = validateContainerName(container);
+    const validContainer = normalizeContainerName(container);
     inject(validContainer);
   } catch (e) {
     console.error(`❌ ${e.message}`);
