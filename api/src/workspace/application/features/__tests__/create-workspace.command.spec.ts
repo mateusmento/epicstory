@@ -1,15 +1,22 @@
 import { CommandBus } from '@nestjs/cqrs';
+import { TestingModule } from '@nestjs/testing';
+import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import {
+  createTestingModule,
+  startPostgresTestContainer,
+} from 'src/core/testing/database';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { CreateWorkspace } from '../workspace/create-workspace.command';
-import { createWorkspaceTestingModule } from './workspace.test-module';
 
 describe('Create workspace command', () => {
+  let postgres: StartedPostgreSqlContainer;
+  let module: TestingModule;
   let commandBus: CommandBus;
 
-  beforeEach(async () => {
-    const app = await createWorkspaceTestingModule().compile();
-    await app.init();
-    commandBus = app.get(CommandBus);
+  beforeAll(async () => {
+    postgres = await startPostgresTestContainer();
+    module = await createTestingModule(postgres);
+    commandBus = module.get(CommandBus);
   });
 
   it('should happly create workspace', async () => {

@@ -1,5 +1,20 @@
 import { Transform } from 'class-transformer';
 import { IsBoolean, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import {
+  dotenvLoader,
+  selectConfig,
+  TypedConfigModule,
+} from 'nest-typed-config';
+
+export function loadAppConfig() {
+  return selectConfig(
+    TypedConfigModule.forRoot({
+      schema: AppConfig,
+      load: dotenvLoader({ expandVariables: true }),
+    }),
+    AppConfig,
+  );
+}
 
 export class AppConfig {
   @IsBoolean()

@@ -15,9 +15,9 @@ import { Message } from './message.entity';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import { Team } from 'src/workspace/domain/entities';
 
-type ChannelType = 'direct' | 'group';
+export type ChannelType = 'direct' | 'multi-direct' | 'group';
 
-@Entity({ schema: CHANNEL_SCHEMA })
+@Entity({ schema: CHANNEL_SCHEMA, name: 'channel' })
 export class Channel {
   @PrimaryGeneratedColumn()
   // @PrimaryGeneratedColumn('identity', { generatedIdentity: 'ALWAYS' })
@@ -42,6 +42,12 @@ export class Channel {
   @JoinTable({ name: 'channel_peers' })
   peers: User[];
 
+  @Column({ nullable: true })
+  dmUserLowerId?: number;
+
+  @Column({ nullable: true })
+  dmUserGreaterId?: number;
+
   speakingTo: User;
 
   @OneToOne(() => Meeting, (m) => m.channel)
@@ -58,5 +64,27 @@ export class Channel {
 
   static create(data: Partial<Channel>) {
     return create(Channel, data);
+  }
+
+  static createMultiDirect(data: Partial<Channel>) {
+    return create(Channel, {
+      ...data,
+      type: 'multi-direct',
+      name: ``,
+    });
+  }
+
+  static createDirect({ peers, ...data }: Partial<Channel>) {
+    if (peers.length !== 2) {
+      throw new Error('Direct channel must have exactly 2 peers');
+    }
+    const [user1, user2] = peers;
+    return create(Channel, {
+      ...data,
+      type: 'direct',
+      name: '',
+      dmUserLowerId: Math.min(user1.id, user2.id),
+      dmUserGreaterId: Math.max(user1.id, user2.id),
+    });
   }
 }

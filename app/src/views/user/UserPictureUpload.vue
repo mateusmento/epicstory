@@ -77,8 +77,8 @@ async function onSave() {
   uploadSuccess.value = false;
   
   try {
-    const formData = new FormData();
-    formData.set("picture", pictureFile.value);
+  const formData = new FormData();
+  formData.set("picture", pictureFile.value);
     await updateUserPicture(formData);
     
     pictureFile.value = undefined;
@@ -127,14 +127,14 @@ function onCancel() {
           </div>
         </div>
         <div
-          v-else
+        v-else
           class="dropzone flex flex-col items-center justify-center w-32 h-32 text-sm text-center rounded-full border-2 border-dashed transition-colors"
           :class="
             newPictureIsOver
               ? 'border-primary bg-primary/5'
               : 'border-border bg-muted/50 hover:bg-muted'
           "
-        >
+      >
           <svg
             class="w-8 h-8 mb-2 text-muted-foreground"
             fill="none"

@@ -2,19 +2,18 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppConfig } from 'src/core/app.config';
-import { AuthController } from './application/controllers/auth.controller';
-import { GoogleAuthController } from './application/controllers/google-auth.controller';
-import { UserController } from './application/controllers/user.controller';
+import * as controllers from './application/controllers';
 import * as features from './application/features';
-import { GoogleStrategy } from './application/passport/google.strategy';
-import { LocalStrategy } from './application/passport/local.strategy';
+import * as passport from './application/passport';
 import { User } from './domain/entities/user.entity';
+import * as repositories from './infrastructure/repositories';
 import { UserRepository } from './infrastructure/repositories/user.repository';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     JwtModule.registerAsync({
+      global: true,
       inject: [AppConfig],
       useFactory: (config: AppConfig) => ({
         secret: config.JWT_SECRET,
@@ -24,12 +23,11 @@ import { UserRepository } from './infrastructure/repositories/user.repository';
       }),
     }),
   ],
-  controllers: [AuthController, GoogleAuthController, UserController],
+  controllers: Object.values(controllers),
   providers: [
-    GoogleStrategy,
-    LocalStrategy,
-    UserRepository,
+    ...Object.values(repositories),
     ...Object.values(features),
+    ...Object.values(passport),
   ],
   exports: [UserRepository, JwtModule],
 })

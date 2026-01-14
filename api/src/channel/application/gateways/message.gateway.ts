@@ -1,4 +1,3 @@
-import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,8 +7,8 @@ import {
 import { Socket } from 'socket.io';
 import {
   ChannelRepository,
-  MessageRepository,
   MessageReplyRepository,
+  MessageRepository,
 } from 'src/channel/infrastructure';
 import { MessageService } from '../services/message.service';
 
@@ -21,7 +20,6 @@ export class MessageGateway {
     private messageRepo: MessageRepository,
     private messageReplyRepo: MessageReplyRepository,
     private messageService: MessageService,
-    private jwtService: JwtService,
     private channelRepo: ChannelRepository,
   ) {}
 

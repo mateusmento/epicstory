@@ -1,5 +1,5 @@
 import { config } from "@/config";
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse, RequestHandler } from "msw";
 
 const API_URL = config.API_URL;
 

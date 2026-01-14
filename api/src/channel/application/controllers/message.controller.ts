@@ -9,17 +9,33 @@ import {
 } from '@nestjs/common';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { MessageService } from '../services/message.service';
+import { SendMessage } from '../features';
+import { CommandBus } from '@nestjs/cqrs';
 
 @UseGuards(JwtAuthGuard)
 @Controller('channels/:channelId')
 export class MessageController {
-  constructor(private messageService: MessageService) {}
+  constructor(
+    private messageService: MessageService,
+    private commandBus: CommandBus,
+  ) {}
 
   @Get('messages')
   findMessages(@Param('channelId') channelId: number) {
     return this.messageService.findMessages(channelId);
   }
 
+  @Post(':id/messages')
+  @UseGuards(JwtAuthGuard)
+  sendMessage(
+    @Param('id') channelId: number,
+    @Body() command: SendMessage,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new SendMessage({ ...command, channelId, senderId: issuer.id }),
+    );
+  }
   @Get('messages/:messageId/replies')
   findReplies(@Param('messageId') messageId: number) {
     return this.messageService.findReplies(messageId);

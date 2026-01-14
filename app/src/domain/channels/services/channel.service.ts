@@ -43,6 +43,16 @@ export class ChannelApi {
     return this.axios.get<IMessage[]>(`/channels/${channelId}/messages`).then((res) => res.data);
   }
 
+  sendMessage(channelId: number, content: string) {
+    return this.axios.post<IMessage>(`channels/${channelId}/messages`, { content }).then((res) => res.data);
+  }
+
+  sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: string) {
+    return this.axios
+      .post<IMessage>(`workspaces/${workspaceId}/channels/direct/message`, { senderId, peers, content })
+      .then((res) => res.data);
+  }
+
   findMembers(channelId: number) {
     return this.axios.get<User[]>(`/channels/${channelId}/members`).then((res) => res.data);
   }
@@ -61,7 +71,7 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  createReply(channelId: number, messageId: number, content: string) {
+  replyMessage(channelId: number, messageId: number, content: string) {
     return this.axios
       .post<IMessage>(`/channels/${channelId}/messages/${messageId}/replies`, { content })
       .then((res) => res.data);

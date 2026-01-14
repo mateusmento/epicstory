@@ -24,4 +24,18 @@
       "path": ".",
     },
   ],
+  "settings": {
+    "jest.jestCommandLine": "cd api && npm test --",
+    "jest.rootPath": "api",
+    "jest.runMode": "on-demand",
+    "jest.outputConfig": {
+      "autoRevealOutput": "on-run"
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "firsttris.vscode-jest-runner",
+      "orta.vscode-jest"
+    ]
+  }
 }

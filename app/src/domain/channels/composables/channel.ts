@@ -4,7 +4,7 @@ import { type User } from "@/domain/auth";
 import { useWorkspace } from "@/domain/workspace";
 import { last } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChannelApi } from "../services";
 import type { IChannel, IMeeting, IMessage, IMessageGroup } from "../types";
@@ -41,7 +41,7 @@ export function useChannel() {
 
   function onReceiveMessage({ message, channelId }: any) {
     if (store.channel && store.channel.id === channelId) {
-      addMessage(message);
+      addMessage({ ...message, replies: [] });
     }
   }
 
@@ -54,12 +54,15 @@ export function useChannel() {
     sockets.websocket?.on("incoming-message", onReceiveMessage);
   }
 
+  function leaveChannel() {
+    sockets.websocket.off("incoming-message", onReceiveMessage);
+  }
+
   function onIncomingMeeting({ meeting, channelId }: { meeting: IMeeting; channelId: number }) {
     if (store.channel?.id === channelId) store.channel.meeting = meeting;
   }
 
   function onMeetingEnded({ channelId }: { channelId: number }) {
-    console.log("channel meeting-ended", { channelId });
     if (store.channel?.id === channelId) store.channel.meeting = null;
   }
 
@@ -75,10 +78,19 @@ export function useChannel() {
     sockets.websocket.on("meeting-ended", onMeetingEnded);
   }
 
+  function unsubscribeMeetings() {
+    sockets.websocket.off("incoming-meeting", onIncomingMeeting);
+    sockets.websocket.off("meeting-ended", onMeetingEnded);
+  }
+
   function sendMessage(message: { content: string }) {
     if (!store.channel) return;
     if (!message.content) return;
-    sockets.websocket?.emit("send-message", { channelId: store.channel.id, message, broadcastSelf: true });
+    channelApi.sendMessage(store.channel.id, message.content);
+  }
+
+  function sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: string) {
+    return channelApi.sendDirectMessage(workspaceId, senderId, peers, content);
   }
 
   function addMessage(message: IMessage) {
@@ -110,8 +122,11 @@ export function useChannel() {
     fetchChannel,
     fetchMessages,
     joinChannel,
+    leaveChannel,
     subscribeMeetings,
+    unsubscribeMeetings,
     sendMessage,
+    sendDirectMessage,
     fetchMembers,
     addMember,
     removeMember,
@@ -138,23 +153,34 @@ function groupMessages(messages: IMessage[]) {
 
 export function useSyncedChannel() {
   const context = useChannel();
-  const { fetchChannel, fetchMessages, joinChannel, fetchMembers, subscribeMeetings } = context;
+  const {
+    fetchChannel,
+    fetchMessages,
+    fetchMembers,
+    joinChannel,
+    leaveChannel,
+    subscribeMeetings,
+    unsubscribeMeetings,
+  } = context;
 
   const route = useRoute();
   const channelId = computed(() => +route.params.channelId);
 
   onMounted(async () => {
     await fetchChannel(channelId.value);
-    console.log("channel", context.channel.value?.id);
     joinChannel();
     fetchMessages();
     fetchMembers();
     subscribeMeetings();
   });
 
+  onUnmounted(() => {
+    leaveChannel();
+    unsubscribeMeetings();
+  });
+
   watch(channelId, async () => {
     await fetchChannel(channelId.value);
-    console.log("channel", context.channel.value?.id);
     joinChannel();
     fetchMessages();
     fetchMembers();

@@ -74,13 +74,7 @@ async function sendReply() {
   if (!replyContent.value.trim()) return;
 
   try {
-    // Send via WebSocket for real-time updates
-    websocket?.emit("send-message", {
-      channelId: props.channelId,
-      message: { content: replyContent.value },
-      parentMessageId: props.messageId,
-      broadcastSelf: true,
-    });
+    await channelApi.replyMessage(props.channelId, props.messageId, replyContent.value);
     replyContent.value = "";
   } catch (error) {
     console.error("Failed to send reply:", error);

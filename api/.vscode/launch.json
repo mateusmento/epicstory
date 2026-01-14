@@ -36,7 +36,10 @@
       "cwd": "${workspaceFolder}/api",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "JEST_DEBUG": "true"
+      }
     }
   ]
 }

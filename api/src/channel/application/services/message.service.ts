@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Not } from 'typeorm';
 import {
   ChannelRepository,
   MessageReactionRepository,
@@ -7,6 +6,7 @@ import {
   MessageReplyRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
+import { Not } from 'typeorm';
 
 @Injectable()
 export class MessageService {

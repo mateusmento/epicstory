@@ -1,22 +1,11 @@
 import { readdirSync } from 'fs';
-import {
-  TypedConfigModule,
-  dotenvLoader,
-  selectConfig,
-} from 'nest-typed-config';
 import * as path from 'path';
 import { DataSource } from 'typeorm';
-import { AppConfig } from '../app.config';
-import { typeorm } from './typeorm';
+import { loadAppConfig } from '../app.config';
 import entities from './entities';
+import { typeorm } from './typeorm';
 
-const config = selectConfig(
-  TypedConfigModule.forRoot({
-    schema: AppConfig,
-    load: dotenvLoader({ expandVariables: true }),
-  }),
-  AppConfig,
-);
+const config = loadAppConfig();
 
 export default new DataSource(
   typeorm.postgres(() => ({
@@ -37,4 +26,20 @@ export function migrations(): any[] {
     .map((filename) => require(`${migrationsPath}/${filename}`))
     .flatMap((module) => Object.values(module));
   return migrations;
+}
+
+export async function runMigrations(dataSource: DataSource) {
+  await createPostgresSchemas(dataSource);
+  console.log('Running migrations...');
+  await dataSource.runMigrations();
+  console.log('Migrations ran successfully');
+}
+
+export async function createPostgresSchemas(dataSource: DataSource) {
+  await dataSource.query(`
+    CREATE SCHEMA IF NOT EXISTS auth;
+    CREATE SCHEMA IF NOT EXISTS workspace;
+    CREATE SCHEMA IF NOT EXISTS channel;
+    CREATE SCHEMA IF NOT EXISTS scheduler;
+  `);
 }

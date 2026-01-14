@@ -25,11 +25,14 @@ function runCommand(command, args = [], options = {}) {
   });
 }
 
+// Get the absolute path to the scripts directory
+const scriptsDir = path.join(__dirname, "scripts");
+
 // Run command
 async function run(container) {
   try {
     console.log(`🚀 Running Docker container: ${container ?? ""}`);
-    await runCommand("node", ["scripts/run.js", container ?? ""]);
+    await runCommand("node", [path.join(scriptsDir, "run.js"), container ?? ""]);
     console.log(`✅ Container ${container} running successfully!`);
   } catch (error) {
     console.error(`❌ Container ${container} failed to run:`, error.message);
@@ -41,7 +44,7 @@ async function run(container) {
 async function logs(container) {
   try {
     console.log(`🚀 Logging container: ${container}`);
-    await runCommand("node", ["scripts/logs.js", container]);
+    await runCommand("node", [path.join(scriptsDir, "logs.js"), container]);
     console.log(`✅ Logs ${container} completed successfully!`);
   } catch (error) {
     console.error(`❌ Logs ${container} failed:`, error.message);
@@ -53,7 +56,7 @@ async function logs(container) {
 async function list() {
   try {
     console.log(`🚀 Listing running containers...`);
-    await runCommand("node", ["scripts/list.js"]);
+    await runCommand("node", [path.join(scriptsDir, "list.js")]);
   } catch (error) {
     console.error(`❌ List failed:`, error.message);
     process.exit(1);
@@ -64,7 +67,7 @@ async function list() {
 async function inject(container) {
   try {
     console.log(`🚀 Injecting into container: ${container}`);
-    await runCommand("node", ["scripts/inject.js", container]);
+    await runCommand("node", [path.join(scriptsDir, "inject.js"), container]);
   } catch (error) {
     console.error(`❌ Inject failed:`, error.message);
     process.exit(1);
@@ -81,7 +84,7 @@ async function build(target) {
 
   try {
     console.log(`🚀 Building ${target}...`);
-    await runCommand("node", ["scripts/build.js", target]);
+    await runCommand("node", [path.join(scriptsDir, "build.js"), target]);
     console.log(`✅ ${target} build completed successfully!`);
   } catch (error) {
     console.error(`❌ ${target} build failed:`, error.message);
@@ -99,7 +102,7 @@ async function deploy(action) {
 
   try {
     console.log(`🚀 Deploying ${action}...`);
-    await runCommand("node", ["scripts/deploy.js", action]);
+    await runCommand("node", [path.join(scriptsDir, "deploy.js"), action]);
     console.log(`✅ Deploy ${action} completed successfully!`);
   } catch (error) {
     console.error(`❌ Deploy ${action} failed:`, error.message);
@@ -111,7 +114,7 @@ async function deploy(action) {
 async function remove(target) {
   try {
     console.log(`🚀 Removing containers...`);
-    const args = ["scripts/remove.js"];
+    const args = [path.join(scriptsDir, "remove.js")];
     if (target) {
       args.push(target);
     }

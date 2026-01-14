@@ -1,12 +1,7 @@
 <script lang="ts" setup>
 import { Icon } from "@/design-system/icons";
-import { useWebSockets } from "@/core/websockets";
-import { useAuth } from "@/domain/auth";
-import { NotificationApi } from "@/domain/notifications";
-import { useDependency } from "@/core/dependency-injection";
-import { onMounted, onUnmounted, ref } from "vue";
+import { useNotifications } from "@/domain/notifications";
 import type {
-  Notification,
   MentionNotificationPayload,
   ReplyNotificationPayload,
   IssueDueDateNotificationPayload,
@@ -15,71 +10,7 @@ import MentionNotification from "./notifications/MentionNotification.vue";
 import ReplyNotification from "./notifications/ReplyNotification.vue";
 import DueDateNotification from "./notifications/DueDateNotification.vue";
 
-const { user } = useAuth();
-const { websocket } = useWebSockets();
-const notificationApi = useDependency(NotificationApi);
-const notifications = ref<Notification[]>([]);
-
-// Type guard to check if notification has proper payload structure
-function isValidNotification(notification: any): notification is Notification {
-  if (!notification || !notification.id || !notification.type || !notification.payload) {
-    return false;
-  }
-  // Basic validation - the payload structure will be validated by the components
-  return typeof notification.payload === "object";
-}
-
-function onIncomingNotification(notification: Notification) {
-  // Check if notification already exists (avoid duplicates)
-  const exists = notifications.value.some((n) => n.id === notification.id);
-  if (!exists) {
-    notifications.value.unshift(notification);
-  }
-}
-
-async function fetchNotifications() {
-  if (!user.value) return;
-
-  try {
-    const fetched = await notificationApi.fetchNotifications(user.value.id, 100);
-    // Filter and validate notifications
-    notifications.value = fetched.filter(isValidNotification) as Notification[];
-  } catch (error) {
-    console.error("Failed to fetch notifications:", error);
-  }
-}
-
-function subscribeNotifications() {
-  if (!user.value) return;
-
-  // Subscribe to notifications
-  websocket.emit("subscribe-notifications", {
-    userId: user.value.id,
-  });
-
-  // Listen for incoming notifications
-  websocket.off("incoming-notification", onIncomingNotification);
-  websocket.on("incoming-notification", onIncomingNotification);
-}
-
-function unsubscribeNotifications() {
-  if (!user.value) return;
-
-  websocket.emit("unsubscribe-notifications", {
-    userId: user.value.id,
-  });
-
-  websocket.off("incoming-notification", onIncomingNotification);
-}
-
-onMounted(async () => {
-  await fetchNotifications();
-  subscribeNotifications();
-});
-
-onUnmounted(() => {
-  unsubscribeNotifications();
-});
+const { notifications } = useNotifications({ limit: 100 });
 </script>
 
 <template>

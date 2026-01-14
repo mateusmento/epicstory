@@ -1,19 +1,26 @@
 import { CommandBus } from '@nestjs/cqrs';
-import { CreateProject } from '../project/create-project.command';
-import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
-import { CreateWorkspace } from 'src/workspace/application/features/workspace/create-workspace.command';
+import { TestingModule } from '@nestjs/testing';
+import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import {
+  createTestingModule,
+  startPostgresTestContainer,
+} from 'src/core/testing/database';
 import { Project } from 'src/project/domain/entities/project.entity';
-import { createWorkspaceTestingModule } from './workspace.test-module';
 import { AddWorkspaceMember } from 'src/workspace/application/features/workspace/add-workspace-member.command';
+import { CreateWorkspace } from 'src/workspace/application/features/workspace/create-workspace.command';
+import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
+import { CreateProject } from '../project/create-project.command';
 
 describe('Create project command', () => {
+  let postgres: StartedPostgreSqlContainer;
+  let module: TestingModule;
   let commandBus: CommandBus;
 
-  beforeEach(async () => {
-    const app = await createWorkspaceTestingModule().compile();
-    await app.init();
-    commandBus = app.get(CommandBus);
+  beforeAll(async () => {
+    postgres = await startPostgresTestContainer();
+    module = await createTestingModule(postgres);
+    commandBus = module.get(CommandBus);
   });
 
   it('should happly create project', async () => {

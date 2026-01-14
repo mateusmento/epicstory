@@ -2,7 +2,7 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
 import { defineStore, storeToRefs } from "pinia";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import { ChannelApi, type CreateDirectChannel, type CreateGroupChannel } from "../services";
 import type { IChannel } from "../types";
 
@@ -32,6 +32,10 @@ export function useChannels() {
     sockets.websocket?.on("incoming-message", onReceiveMessage);
   }
 
+  function unsubscribeMessages() {
+    sockets.websocket.off("incoming-message", onReceiveMessage);
+  }
+
   function onIncomingMeeting({ meeting, channelId }: any) {
     const channel = store.channels.find((c) => c.id === channelId);
     if (channel) channel.meeting = meeting;
@@ -57,6 +61,11 @@ export function useChannels() {
     sockets.websocket.on("meeting-ended", onMeetingEnded);
   }
 
+  function unsubscribeMeetings() {
+    sockets.websocket.off("incoming-meeting", onIncomingMeeting);
+    sockets.websocket.off("meeting-ended", onMeetingEnded);
+  }
+
   async function fetchChannels() {
     store.channels = await channelApi.findChannels(workspace.value.id);
   }
@@ -71,18 +80,32 @@ export function useChannels() {
     return channel;
   }
 
-  return { ...storeToRefs(store), fetchChannels, subscribeMessages, subscribeMeetings, createChannel };
+  return {
+    ...storeToRefs(store),
+    fetchChannels,
+    subscribeMessages,
+    unsubscribeMessages,
+    subscribeMeetings,
+    unsubscribeMeetings,
+    createChannel,
+  };
 }
 
 export function useSyncedChannels() {
   const { workspace } = useWorkspace();
   const context = useChannels();
-  const { fetchChannels, subscribeMessages, subscribeMeetings } = context;
+  const { fetchChannels, subscribeMessages, unsubscribeMessages, subscribeMeetings, unsubscribeMeetings } =
+    context;
 
   onMounted(async () => {
     await fetchChannels();
     subscribeMeetings();
     subscribeMessages();
+  });
+
+  onUnmounted(() => {
+    unsubscribeMessages();
+    unsubscribeMeetings();
   });
 
   watch(workspace, async () => {

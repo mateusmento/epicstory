@@ -1,21 +1,26 @@
-import 'source-map-support/register';
 import {
   ClassSerializerInterceptor,
   HttpException,
   HttpStatus,
   INestApplication,
+  Module,
   ValidationPipe,
 } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import 'source-map-support/register';
 import { initializeTransactionalContext } from 'typeorm-transactional';
 import { AppModule } from './app.module';
 import { AppConfig } from './core/app.config';
 import { createRedisAdapter, SocketIoAdapter } from './core/websockets';
-import { createPostgresSchemas } from './core/typeorm';
 // import { GlobalExceptionFilter } from './core/global-exception.filter';
 import { DataSource } from 'typeorm';
+import { runMigrations } from './core/typeorm/migrations';
+
+import { typeorm } from './core/typeorm';
+import entities from './core/typeorm/entities';
+import { migrations } from './core/typeorm/migrations';
 
 async function bootstrap() {
   process.env.TZ = 'America/Sao_Paulo';
@@ -32,7 +37,22 @@ async function bootstrap() {
     // Don't exit the process, let the application handle it
   });
 
-  const app = await NestFactory.create(AppModule);
+  @Module({
+    imports: [
+      typeorm.createModule(
+        typeorm.postgres((config) => ({
+          logging: config.DEBUG ? 'all' : false,
+          autoLoadEntities: false,
+          entities,
+          migrations: migrations(),
+        })),
+      ),
+      AppModule,
+    ],
+  })
+  class DynamicModule {}
+
+  const app = await NestFactory.create(DynamicModule);
 
   app.setGlobalPrefix('/api');
 
@@ -95,13 +115,8 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') setupSwagger(app);
 
-  (async () => {
-    await createPostgresSchemas();
-    const dataSource = app.get(DataSource);
-    console.log('Running migrations...');
-    await dataSource.runMigrations();
-    console.log('Migrations ran successfully');
-  })();
+  const dataSource = app.get(DataSource);
+  runMigrations(dataSource);
 
   app.enableShutdownHooks();
   await app.listen(config.API_PORT, '0.0.0.0');

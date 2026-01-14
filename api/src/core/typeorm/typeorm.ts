@@ -29,7 +29,7 @@ const postgres =
       password: config.DATABASE_PASSWORD,
       database: config.DATABASE_NAME,
       logger: 'advanced-console',
-      autoLoadEntities: true,
+      autoLoadEntities: false,
       namingStrategy: new SnakeNamingStrategy(),
       ...options(config),
     }) satisfies TypeOrmModuleOptions;

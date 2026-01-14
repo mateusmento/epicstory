@@ -10,12 +10,16 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { CreateGroupChannel } from '../features/create-group-channel.command';
-import { FindChannels } from '../features/find-channels.query';
+import {
+  AddChannelMember,
+  RemoveChannelMember,
+  SendDirectMessage,
+} from '../features';
 import { CreateDirectChannel } from '../features/create-direct-channel.command';
-import { AddChannelMember, RemoveChannelMember } from '../features';
+import { CreateGroupChannel } from '../features/create-group-channel.command';
 import { FindChannelMembers } from '../features/find-channel-members.query';
 import { FindChannel } from '../features/find-channel.query';
+import { FindChannels } from '../features/find-channels.query';
 
 @Controller('workspaces/:workspaceId/channels')
 export class WorkspaceChannelController {
@@ -57,6 +61,18 @@ export class WorkspaceChannelController {
   ) {
     return this.commandBus.execute(
       new CreateDirectChannel({ ...command, workspaceId, issuer }),
+    );
+  }
+
+  @Post('direct/message')
+  @UseGuards(JwtAuthGuard)
+  sendDirectMessage(
+    @Param('workspaceId') workspaceId: number,
+    @Body() command: SendDirectMessage,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new SendDirectMessage({ ...command, workspaceId, senderId: issuer.id }),
     );
   }
 }

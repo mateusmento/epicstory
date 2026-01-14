@@ -1,16 +1,23 @@
 import { CommandBus } from '@nestjs/cqrs';
+import { TestingModule } from '@nestjs/testing';
+import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import {
+  createTestingModule,
+  startPostgresTestContainer,
+} from 'src/core/testing/database';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { WorkspaceMemberAlreadyExists } from 'src/workspace/domain/exceptions/workspace-member-already-exists';
 import { AddWorkspaceMember } from '../workspace/add-workspace-member.command';
 import { CreateWorkspace } from '../workspace/create-workspace.command';
-import { createWorkspaceTestingModule } from './workspace.test-module';
 
 describe('Create workspace member command', () => {
+  let postgres: StartedPostgreSqlContainer;
+  let module: TestingModule;
   let commandBus: CommandBus;
 
-  beforeEach(async () => {
-    const module = await createWorkspaceTestingModule().compile();
-    await module.init();
+  beforeAll(async () => {
+    postgres = await startPostgresTestContainer();
+    module = await createTestingModule(postgres);
     commandBus = module.get(CommandBus);
   });
 
