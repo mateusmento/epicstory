@@ -4,11 +4,17 @@ import { Button, Combobox, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
-import { useBacklog } from "@/domain/backlog";
+import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
 import { ProjectApi } from "@/domain/project";
 import { useUsers } from "@/domain/user";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
+import {
+  animations,
+  type DragstartEvent,
+  type NodeRecord,
+  type ParentDragEventData,
+} from "@formkit/drag-and-drop";
 import { parseAbsolute } from "@internationalized/date";
 import { useStorage } from "@vueuse/core";
 import { debounce } from "lodash";
@@ -48,11 +54,21 @@ const onMoveBacklogItem = debounce(moveBacklogItem, 500, { leading: false });
 
 const itemsContainer = ref<HTMLElement>();
 
+const draggingId = ref<number | null>(null);
+
 function setupDragAndDrop() {
-  dragAndDrop({
+  dragAndDrop<BacklogItem>({
     parent: itemsContainer,
     values: backlogItems,
+    plugins: [animations({ duration: 200 })],
     disabled: orderBy.value !== "manual",
+    onDragstart(e) {
+      const item = e.draggedNode.data.value as BacklogItem;
+      draggingId.value = item.id;
+    },
+    onDragend() {
+      draggingId.value = null;
+    },
     async onSort({ draggedNode, position, values }) {
       const { id } = draggedNode.data.value as any;
       const { id: afterOf } = (values[position - 1] as any) ?? {};
@@ -266,12 +282,16 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
               variant="outline"
               size="badge"
               @click="updateIssueStatus(issue)"
-              :class="cn(issueStatusColor(issue.status))"
+              :class="cn(issueStatusColor(issue.status), { 'opacity-0': draggingId === id })"
               >{{ issue.status }}</Button
             >
-            <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y text-sm">
+            <div
+              v-if="editingIssue.id !== issue.id"
+              class="flex:row-lg flex:center-y text-sm"
+              :class="cn({ 'opacity-0': draggingId === id })"
+            >
               <div
-                @click="openIssue(issue)"
+                @click.ctrl="openIssue(issue)"
                 @dblclick.stop="$router.push(`/${workspaceId}/project/${projectId}/issue/${issue.id}`)"
               >
                 {{ issue.title }}

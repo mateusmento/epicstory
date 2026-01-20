@@ -4,6 +4,7 @@ import "@/design-system/styles/main.scss";
 
 import { createApp } from "vue";
 import { createPinia } from "pinia";
+import VueDndKitPlugin from "@vue-dnd-kit/core";
 
 import App from "./App.vue";
 import router from "./router";
@@ -24,6 +25,10 @@ async function main() {
 
   app.use(createPinia());
   app.use(router);
+
+  // Register Vue DnD Kit plugin - this initializes the drag engine and sensors
+  // Without this, useDraggable() and useDroppable() hooks have no context to register with
+  app.use(VueDndKitPlugin);
 
   addIcons(...Object.values(icons));
 
