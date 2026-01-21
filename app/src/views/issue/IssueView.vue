@@ -2,7 +2,6 @@
 import { useIssue } from "@/domain/issues/composables/issue";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Combobox, Input } from "@/design-system";
-import { vTextareaAutosize } from "@/design-system/directives";
 import { ProjectApi, type Project } from "@/domain/project";
 import { parseAbsolute, getLocalTimeZone, type DateValue } from "@internationalized/date";
 import { computed, onMounted, reactive, ref, watch } from "vue";
@@ -11,6 +10,12 @@ import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
 import { UserSelect } from "@/components/user";
 import type { User } from "@/domain/user";
 import { Icon } from "@/design-system/icons";
+import { EditorContent, useEditor } from "@tiptap/vue-3";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Link2, Undo2, Redo2 } from "lucide-vue-next";
 
 const props = defineProps<{
   workspaceId: string;
@@ -26,7 +31,6 @@ const project = ref<Project | null>(null);
 const isSaving = ref(false);
 const saveError = ref<string | null>(null);
 
-const descriptionEl = ref<HTMLTextAreaElement | null>(null);
 const selectedUser = ref<User | undefined>();
 const titleEl = ref<HTMLInputElement | null>(null);
 
@@ -35,7 +39,6 @@ const isEditingDescription = ref(false);
 
 const form = reactive({
   title: "",
-  description: "",
 });
 
 watch(
@@ -43,7 +46,6 @@ watch(
   (iss) => {
     if (!iss) return;
     form.title = iss.title ?? "";
-    form.description = iss.description ?? "";
   },
   { immediate: true },
 );
@@ -75,6 +77,44 @@ const dueDateValue = computed<DateValue | undefined>(() => {
   }
 });
 
+const editor = useEditor({
+  extensions: [
+    StarterKit,
+    Underline,
+    Link.configure({
+      openOnClick: false,
+      autolink: true,
+      linkOnPaste: true,
+    }),
+    Placeholder.configure({
+      placeholder: "Write a description…",
+    }),
+  ],
+  content: "",
+  editorProps: {
+    attributes: {
+      class:
+        "min-h-28 outline-none text-sm leading-relaxed focus:outline-none [&_p]:my-2 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:text-secondary-foreground",
+    },
+    handleKeyDown: (_, event) => {
+      if (event.key === "Escape") {
+        cancelEditDescription();
+        return true;
+      }
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        finishEditDescription();
+        return true;
+      }
+      return false;
+    },
+  },
+});
+
+const descriptionIsHtml = computed(() => {
+  const d = issue.value?.description ?? "";
+  return /<\/?[a-z][\s\S]*>/i.test(d);
+});
+
 async function savePatch(data: Parameters<typeof updateIssue>[0]) {
   if (!issue.value) return;
   isSaving.value = true;
@@ -92,7 +132,6 @@ function saveMainFields() {
   if (!issue.value) return;
   const data: any = {};
   if (form.title !== issue.value.title) data.title = form.title;
-  if (form.description !== issue.value.description) data.description = form.description;
   if (Object.keys(data).length === 0) return;
   void savePatch(data);
 }
@@ -119,19 +158,40 @@ function finishEditTitle() {
 function startEditDescription() {
   if (!issue.value) return;
   isEditingDescription.value = true;
-  queueMicrotask(() => descriptionEl.value?.focus?.());
+  queueMicrotask(() => editor.value?.commands.focus("end"));
 }
 
 function cancelEditDescription() {
   if (!issue.value) return;
-  form.description = issue.value.description ?? "";
   isEditingDescription.value = false;
+  editor.value?.commands.setContent(issue.value.description ?? "", { emitUpdate: false });
 }
 
 function finishEditDescription() {
   if (!issue.value) return;
   isEditingDescription.value = false;
-  saveMainFields();
+  const instance = editor.value;
+  if (!instance) return;
+  const html = instance.getHTML();
+  if (html !== issue.value.description) void savePatch({ description: html });
+}
+
+watch(isEditingDescription, (editing) => {
+  if (!editing) return;
+  editor.value?.commands.setContent(issue.value?.description ?? "", { emitUpdate: false });
+});
+
+function toggleLink() {
+  const instance = editor.value;
+  if (!instance) return;
+  const previous = instance.getAttributes("link")?.href as string | undefined;
+  const url = window.prompt("Enter link URL", previous ?? "");
+  if (url === null) return;
+  if (url.trim() === "") {
+    instance.chain().focus().extendMarkRange("link").unsetLink().run();
+    return;
+  }
+  instance.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
 }
 
 function onDueDateChange(next?: DateValue) {
@@ -213,7 +273,7 @@ watch(
           <div class="flex:row-md flex:center-y">
             <div class="text-sm text-secondary-foreground">Description</div>
             <div class="flex-1" />
-            <div class="text-xs text-secondary-foreground">TipTap next</div>
+            <div class="text-xs text-secondary-foreground">Double-click to edit</div>
           </div>
 
           <div v-if="!isEditingDescription" class="min-h-0">
@@ -222,30 +282,112 @@ watch(
               @dblclick="startEditDescription"
               title="Double-click to edit"
             >
-              <div
-                v-if="issue?.description"
-                class="text-sm text-foreground whitespace-pre-wrap leading-relaxed"
-              >
-                {{ issue.description }}
+              <div v-if="issue?.description" class="text-sm text-foreground leading-relaxed">
+                <div
+                  v-if="descriptionIsHtml"
+                  class="[&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700"
+                  v-html="issue.description"
+                />
+                <div v-else class="whitespace-pre-wrap">{{ issue.description }}</div>
               </div>
               <div v-else class="text-sm text-secondary-foreground">Add a description…</div>
             </div>
           </div>
 
-          <div v-else class="p-3 border border-zinc-200 rounded-xl focus-within:outline outline-1 outline-zinc-300/60 bg-white">
-            <textarea
-              ref="descriptionEl"
-              v-model="form.description"
-              v-textarea-autosize
-              min-rows="6"
-              max-rows="24"
-              placeholder="Write a description…"
-              class="w-full h-full px-2 text-sm rounded-md resize-none outline-none"
-              :disabled="!issue"
-              @blur="finishEditDescription"
-              @keydown.esc.prevent="cancelEditDescription"
-              @keydown.ctrl.enter.prevent="finishEditDescription"
-            />
+          <div v-else class="p-3 border border-zinc-200 rounded-xl bg-white">
+            <div class="flex:row-md flex:center-y mb-2">
+              <div class="flex:row-md flex:center-y">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :class="editor?.isActive('bold') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleBold().run()"
+                >
+                  <Bold class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :class="editor?.isActive('italic') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleItalic().run()"
+                >
+                  <Italic class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :class="editor?.isActive('underline') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleUnderline().run()"
+                >
+                  <UnderlineIcon class="h-4 w-4" />
+                </Button>
+                <div class="w-px h-6 bg-zinc-200 mx-1" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :class="editor?.isActive('bulletList') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleBulletList().run()"
+                >
+                  <List class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :class="editor?.isActive('orderedList') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleOrderedList().run()"
+                >
+                  <ListOrdered class="h-4 w-4" />
+                </Button>
+                <div class="w-px h-6 bg-zinc-200 mx-1" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :class="editor?.isActive('link') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="toggleLink"
+                >
+                  <Link2 class="h-4 w-4" />
+                </Button>
+                <div class="w-px h-6 bg-zinc-200 mx-1" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :disabled="!editor || !editor.can().undo()"
+                  @click="editor?.chain().focus().undo().run()"
+                >
+                  <Undo2 class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :disabled="!editor || !editor.can().redo()"
+                  @click="editor?.chain().focus().redo().run()"
+                >
+                  <Redo2 class="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div class="flex-1" />
+
+              <div class="text-xs text-secondary-foreground mr-2">Ctrl+Enter to save • Esc to cancel</div>
+              <Button variant="outline" size="xs" :disabled="isSaving" @click="cancelEditDescription">Cancel</Button>
+              <Button size="xs" :disabled="isSaving" @click="finishEditDescription">Done</Button>
+            </div>
+
+            <EditorContent :editor="editor" />
           </div>
         </div>
       </div>
