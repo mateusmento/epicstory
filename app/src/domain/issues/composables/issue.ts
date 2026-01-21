@@ -22,9 +22,15 @@ export function useIssue() {
     store.issue = await issueApi.updateIssue(store.issue.id, data);
   }
 
+  async function addAssignee(userId: number) {
+    if (!store.issue) return;
+    store.issue = await issueApi.addAssignee(store.issue.id, userId);
+  }
+
   return {
     ...storeToRefs(store),
     fetchIssue,
     updateIssue,
+    addAssignee,
   };
 }

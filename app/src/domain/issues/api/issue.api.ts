@@ -8,7 +8,7 @@ export type UpdateIssueData = {
   title?: string;
   description?: string;
   status?: string;
-  dueDate?: string;
+  dueDate?: string | null;
   priority?: number | null;
 };
 
