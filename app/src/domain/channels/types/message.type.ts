@@ -9,7 +9,6 @@ export interface IMessage {
   sender: User;
   channelId: number;
   channel: IChannel;
-  parentMessageId?: number;
 }
 
 export type IMessageGroup = {
@@ -19,3 +18,15 @@ export type IMessageGroup = {
   sentAt: string;
   messages: IMessage[];
 };
+
+export interface IMessageReply {
+  id: number;
+  content: string;
+  sentAt: string;
+  senderId: number;
+  sender: User;
+  channelId: number;
+  channel: IChannel;
+  messageId: number;
+  message: IMessage;
+}

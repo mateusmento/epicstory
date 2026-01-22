@@ -1,46 +1,53 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { WebSocketServer } from '@nestjs/websockets';
-import { Server } from 'socket.io';
-import { MessageReplyRepository } from 'src/channel/infrastructure';
-import { MessageService } from '../services/message.service';
-
-const channelMessagingRoom = (channelId) => `channel:${channelId}:messaging`;
+import {
+  MessageReplyRepository,
+  MessageRepository,
+} from 'src/channel/infrastructure';
+import { patch } from 'src/core/objects';
+import { MessageNotFound } from '../exceptions';
+import { MessageGateway } from '../gateways/message.gateway';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class ReplyMessage {
-  channelId: number;
-  userId: number;
-  message: { content: string };
-  parentMessageId: number;
+  messageId: number;
+  senderId: number;
+
+  @IsNotEmpty()
+  @IsString()
+  content: string;
+
+  constructor(data: Partial<ReplyMessage> = {}) {
+    patch(this, data);
+  }
 }
 
 @CommandHandler(ReplyMessage)
 export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
-  @WebSocketServer()
-  server: Server;
-
   constructor(
     private messageReplyRepo: MessageReplyRepository,
-    private messageService: MessageService,
+    private messageRepo: MessageRepository,
+    private messageGateway: MessageGateway,
   ) {}
 
-  async execute({ channelId, userId, message, parentMessageId }: ReplyMessage) {
-    const reply = await this.messageService.createReply(
-      message.content,
-      parentMessageId,
-      userId,
-    );
+  async execute({ senderId, content, messageId }: ReplyMessage) {
+    const message = await this.messageRepo.findOne({
+      where: { id: messageId },
+    });
+    if (!message) throw new MessageNotFound();
 
-    const loadedReply = await this.messageReplyRepo.findOne({
-      where: { id: reply.id },
+    const { id: replyId } = await this.messageReplyRepo.save({
+      content,
+      channelId: message.channelId,
+      messageId,
+      senderId,
+      sentAt: new Date(),
+    });
+
+    const reply = await this.messageReplyRepo.findOne({
+      where: { id: replyId },
       relations: { sender: true },
     });
 
-    this.server.to(channelMessagingRoom(channelId)).emit('incoming-reply', {
-      message: loadedReply,
-      parentMessageId,
-      channelId,
-    });
-
-    return loadedReply;
+    return reply;
   }
 }

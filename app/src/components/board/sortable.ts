@@ -49,9 +49,18 @@ export function applySortableTransferById(store: IDnDStore) {
     const overId = overEntry?.id;
     const list = resolveList(overEntry?.data?.source);
 
-    if (!Array.isArray(list)) return;
-    if (overId === undefined || overId === null) return;
-    if (overId === activeId) return;
+    if (!Array.isArray(list)) {
+      console.log("skipping because list is not an array", { list });
+      return;
+    }
+    if (overId === undefined || overId === null) {
+      console.log("skipping because overId is undefined or null", { overId });
+      return;
+    }
+    if (overId === activeId) {
+      console.log("skipping because overId === activeId", { overId, activeId });
+      return;
+    }
 
     const fromIndex = draggingSource?.findIndex((x: any) => x?.id === activeId);
     const toIndex = list.findIndex((x: any) => x?.id === overId);
@@ -111,6 +120,11 @@ export function applySortableTransferById(store: IDnDStore) {
     }
     lastSideByActiveAndOver.set(key, side);
 
+    if (draggingSource !== list) {
+      console.log("draggingSource !== list, setting side to before", { draggingSource, list });
+      side = "before";
+    }
+
     // Convert "hovered item index" into "insertion index".
     let insertIndex = toIndex + (side === "after" ? 1 : 0);
     // If moving within the same list, removing the item shifts indices.
@@ -118,7 +132,10 @@ export function applySortableTransferById(store: IDnDStore) {
       insertIndex -= 1;
     }
 
-    const shouldSkip = fromIndex < 0 || toIndex < 0 || insertIndex === fromIndex;
+    const shouldSkip =
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      (draggingSource === list && insertIndex === fromIndex);
 
     if (DEBUG_SORTABLE) {
       console.groupCollapsed(
@@ -132,14 +149,21 @@ export function applySortableTransferById(store: IDnDStore) {
       console.log("overEl", { shouldSkip, fromIndex, toIndex, insertIndex, side });
     }
 
-    if (fromIndex < 0 || toIndex < 0) return;
+    if (fromIndex < 0 || toIndex < 0) {
+      console.log("skipping because fromIndex < 0 or toIndex < 0", { fromIndex, toIndex });
+      return;
+    }
     // Prevent the classic "ping-pong": if we'd be inserting the item where it already is, do nothing.
-    if (insertIndex === fromIndex) return;
+    if (draggingSource === list && insertIndex === fromIndex) {
+      console.log("skipping because insertIndex === fromIndex", { insertIndex, fromIndex });
+      return;
+    }
 
     // Clamp insertion index to valid range.
     if (insertIndex < 0) insertIndex = 0;
     if (insertIndex > list.length) insertIndex = list.length;
 
+    console.log("moving", { fromIndex, list, insertIndex });
     DnDOperations.move(draggingSource, fromIndex, list, insertIndex);
 
     if (typeof pointer?.x === "number" && typeof pointer?.y === "number") {
@@ -173,6 +197,7 @@ export function applySortableTransferById(store: IDnDStore) {
     const zoneEntry = store?.zonesMap?.value?.get?.(overZone);
     const list = resolveList(zoneEntry?.data?.source);
     if (!Array.isArray(list)) return;
+    if (draggingSource === list) return;
 
     const fromIndex = draggingSource?.findIndex((x: any) => x?.id === activeId);
     const toIndex = list.length; // end

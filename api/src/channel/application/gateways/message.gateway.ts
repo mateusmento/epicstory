@@ -3,25 +3,116 @@ import {
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { Socket } from 'socket.io';
-import {
-  ChannelRepository,
-  MessageReplyRepository,
-  MessageRepository,
-} from 'src/channel/infrastructure';
+import { Server, Socket } from 'socket.io';
+import { Message } from 'src/channel/domain';
+import { MessageReply } from 'src/channel/domain/entities';
+import { ChannelRepository } from 'src/channel/infrastructure';
 import { MessageService } from '../services/message.service';
 
 const channelMessagingRoom = (channelId) => `channel:${channelId}:messaging`;
+const userRoom = (userId) => `user:${userId}`;
 
 @WebSocketGateway()
 export class MessageGateway {
+  @WebSocketServer()
+  server: Server;
+
   constructor(
-    private messageRepo: MessageRepository,
-    private messageReplyRepo: MessageReplyRepository,
     private messageService: MessageService,
     private channelRepo: ChannelRepository,
   ) {}
+
+  emitIncomingMessage(message: Message) {
+    if (!this.server) return;
+    this.server
+      .to(channelMessagingRoom(message.channelId))
+      .except(userRoom(message.senderId))
+      .emit('incoming-message', { message, channelId: message.channelId });
+  }
+
+  emitIncomingReply(reply: MessageReply) {
+    if (!this.server) return;
+    this.server
+      .to(channelMessagingRoom(reply.channelId))
+      .except(userRoom(reply.senderId))
+      .emit('incoming-reply', {
+        reply,
+        messageId: reply.messageId,
+        channelId: reply.channelId,
+      });
+  }
+
+  emitIncomingMessageReaction(
+    channelId: number,
+    messageId: number,
+    emoji: string,
+    userId: number,
+    action: string,
+    reactions: { emoji: string; reactedBy: number[] }[],
+  ) {
+    if (!this.server) return;
+    this.server
+      .to(channelMessagingRoom(channelId))
+      .except(userRoom(userId))
+      .emit('incoming-message-reaction', {
+        messageId,
+        emoji,
+        userId,
+        action,
+        reactions,
+      });
+  }
+
+  emitIncomingReplyReaction(
+    channelId: number,
+    replyId: number,
+    emoji: string,
+    userId: number,
+    action: string,
+    reactions: { emoji: string; reactedBy: number[] }[],
+  ) {
+    if (!this.server) return;
+    this.server
+      .to(channelMessagingRoom(channelId))
+      .except(userRoom(userId))
+      .emit('incoming-reply-reaction', {
+        replyId,
+        emoji,
+        userId,
+        action,
+        reactions,
+      });
+  }
+
+  emitMessageDeleted(channelId: number, messageId: number, userId: number) {
+    if (!this.server) return;
+    this.server
+      .to(channelMessagingRoom(channelId))
+      .except(userRoom(userId))
+      .emit('message-deleted', {
+        messageId,
+        channelId,
+      });
+  }
+
+  emitReplyDeleted(
+    channelId: number,
+    messageId: number,
+    replyId: number,
+    issuerId: number,
+  ) {
+    if (!this.server) return;
+    this.server
+      .to(channelMessagingRoom(channelId))
+      .except(userRoom(issuerId))
+      .emit('reply-deleted', {
+        replyId,
+        messageId,
+        channelId,
+      });
+  }
 
   @SubscribeMessage('subscribe-messages')
   async subscribeMessages(
@@ -38,66 +129,12 @@ export class MessageGateway {
       .where('channel.workspaceId = :workspaceId', { workspaceId })
       .getMany();
 
+    socket.leave(userRoom(userId));
+    socket.join(userRoom(userId));
+
     for (const channel of channels) {
       socket.leave(channelMessagingRoom(channel.id));
       socket.join(channelMessagingRoom(channel.id));
-    }
-  }
-
-  @SubscribeMessage('send-message')
-  async sendMessage(
-    @MessageBody() { channelId, message, broadcastSelf, parentMessageId }: any,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    const user = (socket.request as any).user;
-    if (parentMessageId) {
-      // Create a reply in the separate replies table
-      const reply = await this.messageService.createReply(
-        message.content,
-        parentMessageId,
-        user.id,
-      );
-
-      const loadedReply = await this.messageReplyRepo.findOne({
-        where: { id: reply.id },
-        relations: { sender: true },
-      });
-
-      socket.to(channelMessagingRoom(channelId)).emit('incoming-reply', {
-        message: loadedReply,
-        parentMessageId,
-        channelId,
-      });
-
-      if (broadcastSelf) {
-        socket.emit('incoming-reply', {
-          message: loadedReply,
-          parentMessageId,
-          channelId,
-        });
-      }
-
-      return loadedReply;
-    } else {
-      // Regular channel message
-      const { id } = await this.messageService.createMessage(
-        message.content,
-        channelId,
-        user.id,
-      );
-      const loadedMessage = await this.messageRepo.findOne({
-        where: { id },
-        relations: { sender: true },
-      });
-
-      socket
-        .to(channelMessagingRoom(channelId))
-        .emit('incoming-message', { message: loadedMessage, channelId });
-      if (broadcastSelf) {
-        socket.emit('incoming-message', { message: loadedMessage, channelId });
-      }
-
-      return loadedMessage;
     }
   }
 
@@ -111,14 +148,14 @@ export class MessageGateway {
 
     if (messageReplyId) {
       // Toggle reaction on a message reply
-      await this.messageService.toggleMessageReplyReaction(
+      await this.messageService.toggleReplyReaction(
         messageReplyId,
         emoji,
         userId,
       );
 
       const reactions =
-        await this.messageService.findMessageReplyReactions(messageReplyId);
+        await this.messageService.findReplyReactions(messageReplyId);
 
       socket.to(channelMessagingRoom(channelId)).emit('incoming-reaction', {
         messageReplyId,
@@ -158,53 +195,5 @@ export class MessageGateway {
 
       return { messageId, emoji, userId, reactions };
     }
-  }
-
-  @SubscribeMessage('delete-message')
-  async deleteMessage(
-    @MessageBody() { messageId, channelId }: any,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    const user = (socket.request as any).user;
-    const userId = user?.id;
-
-    await this.messageService.deleteMessage(messageId, userId);
-
-    socket.to(channelMessagingRoom(channelId)).emit('message-deleted', {
-      messageId,
-      channelId,
-    });
-
-    socket.emit('message-deleted', {
-      messageId,
-      channelId,
-    });
-
-    return { success: true, messageId };
-  }
-
-  @SubscribeMessage('delete-reply')
-  async deleteReply(
-    @MessageBody() { replyId, messageId, channelId }: any,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    const user = (socket.request as any).user;
-    const userId = user?.id;
-
-    await this.messageService.deleteReply(replyId, userId);
-
-    socket.to(channelMessagingRoom(channelId)).emit('reply-deleted', {
-      replyId,
-      messageId,
-      channelId,
-    });
-
-    socket.emit('reply-deleted', {
-      replyId,
-      messageId,
-      channelId,
-    });
-
-    return { success: true, replyId };
   }
 }

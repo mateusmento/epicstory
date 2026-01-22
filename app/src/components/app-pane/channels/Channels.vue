@@ -34,11 +34,11 @@ const replyNotifications = ref<ReplyNotificationItem[]>([]);
 
 async function onIncomingReply({
   message,
-  parentMessageId,
+  messageId,
   channelId,
 }: {
   message: IMessage;
-  parentMessageId: number;
+  messageId: number;
   channelId: number;
 }) {
   if (!user.value) return;
@@ -49,7 +49,7 @@ async function onIncomingReply({
   try {
     // Fetch all messages from the channel to find the parent message
     const messages = await channelApi.findMessages(channelId);
-    const parentMessage = messages.find((m) => m.id === parentMessageId);
+    const parentMessage = messages.find((m) => m.id === messageId);
 
     // Only show notification if the parent message belongs to the current user
     if (parentMessage && parentMessage.senderId === user.value.id) {

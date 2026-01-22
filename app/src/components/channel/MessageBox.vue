@@ -35,7 +35,7 @@ function useMessageGroup() {
   return context;
 }
 
-const { sender, meId } = useMessageGroup();
+const { sender } = useMessageGroup();
 
 const { user: me } = useAuth();
 
@@ -50,7 +50,7 @@ async function fetchReplies() {
   if (isLoadingReplies.value) return;
   isLoadingReplies.value = true;
   try {
-    replies.value = await channelApi.findReplies(props.channelId, props.messageId);
+    replies.value = await channelApi.findReplies(props.messageId);
     // Fetch reactions for each reply
     for (const reply of replies.value) {
       await fetchReplyReactions(reply.id);
@@ -62,11 +62,11 @@ async function fetchReplies() {
   }
 }
 
-async function onIncomingReply({ message, parentMessageId }: { message: IMessage; parentMessageId: number }) {
-  if (parentMessageId === props.messageId) {
-    replies.value.push(message);
+async function onIncomingReply({ reply, messageId }: { reply: IMessage; messageId: number }) {
+  if (messageId === props.messageId) {
+    replies.value.push(reply);
     // Fetch reactions for the new reply
-    await fetchReplyReactions(message.id);
+    await fetchReplyReactions(reply.id);
   }
 }
 
@@ -74,7 +74,8 @@ async function sendReply() {
   if (!replyContent.value.trim()) return;
 
   try {
-    await channelApi.replyMessage(props.channelId, props.messageId, replyContent.value);
+    const reply = await channelApi.replyMessage(props.messageId, replyContent.value);
+    replies.value.push(reply);
     replyContent.value = "";
   } catch (error) {
     console.error("Failed to send reply:", error);
@@ -117,16 +118,10 @@ onMounted(() => {
   fetchReactions();
   websocket?.off("incoming-reaction", onIncomingReaction);
   websocket?.on("incoming-reaction", onIncomingReaction);
-  websocket?.off("message-deleted", onMessageDeleted);
-  websocket?.on("message-deleted", onMessageDeleted);
-  websocket?.off("reply-deleted", onReplyDeleted);
-  websocket?.on("reply-deleted", onReplyDeleted);
 });
 
 onUnmounted(() => {
   websocket?.off("incoming-reaction", onIncomingReaction);
-  websocket?.off("message-deleted", onMessageDeleted);
-  websocket?.off("reply-deleted", onReplyDeleted);
 });
 
 function onIncomingReaction({
@@ -147,7 +142,7 @@ function onIncomingReaction({
 
 async function fetchReactions() {
   try {
-    reactions.value = await channelApi.findReactions(props.channelId, props.messageId);
+    reactions.value = await channelApi.findReactions(props.messageId);
   } catch (error) {
     console.error("Failed to fetch reactions:", error);
   }
@@ -155,30 +150,43 @@ async function fetchReactions() {
 
 async function fetchReplyReactions(replyId: number) {
   try {
-    replyReactions.value[replyId] = await channelApi.findReplyReactions(
-      props.channelId,
-      props.messageId,
-      replyId,
-    );
+    replyReactions.value[replyId] = await channelApi.findReplyReactions(replyId);
   } catch (error) {
     console.error("Failed to fetch reply reactions:", error);
   }
 }
 
-function toggleReaction(emoji: string) {
-  websocket?.emit("toggle-reaction", {
-    messageId: props.messageId,
-    emoji: emoji,
-    channelId: props.channelId,
-  });
+async function toggleReaction(emoji: string) {
+  try {
+    const { action, reactions: updatedReactions } = await channelApi.toggleMessageReaction(props.messageId, emoji);
+
+    // if (action === "added") {
+    //   reactions.value.push({ emoji, reactedBy: me.value ? [me.value.id] : [] });
+    // } else if (action === "removed") {
+    //   reactions.value = reactions.value.filter((reaction) => reaction.emoji !== emoji);
+    // }
+
+    reactions.value = updatedReactions;
+
+  } catch (error) {
+    console.error("Failed to toggle reaction:", error);
+  }
 }
 
-function toggleReplyReaction(replyId: number, emoji: string) {
-  websocket?.emit("toggle-reaction", {
-    messageReplyId: replyId,
-    emoji: emoji,
-    channelId: props.channelId,
-  });
+  async function toggleReplyReaction(replyId: number, emoji: string) {
+  try {
+    const { action, reactions: updatedReactions } = await channelApi.toggleReplyReaction(replyId, emoji);
+
+    // if (action === "added") {
+    //   replyReactions.value[replyId].push({ emoji, reactedBy: me.value ? [me.value.id] : [] });
+    // } else if (action === "removed") {
+    //   replyReactions.value[replyId] = replyReactions.value[replyId].filter((reaction) => reaction.emoji !== emoji);
+    // }
+
+    replyReactions.value[replyId] = updatedReactions;
+  } catch (error) {
+    console.error("Failed to toggle reply reaction:", error);
+  }
 }
 
 function onEmojiSelect(emoji: string) {
@@ -191,10 +199,8 @@ function onReplyEmojiSelect(replyId: number, emoji: string) {
 
 async function deleteMessage() {
   try {
-    websocket?.emit("delete-message", {
-      messageId: props.messageId,
-      channelId: props.channelId,
-    });
+    await channelApi.deleteMessage(props.messageId);
+    emit("message-deleted", props.messageId);
   } catch (error) {
     console.error("Failed to delete message:", error);
   }
@@ -202,27 +208,12 @@ async function deleteMessage() {
 
 async function deleteReply(replyId: number) {
   try {
-    websocket?.emit("delete-reply", {
-      replyId: replyId,
-      messageId: props.messageId,
-      channelId: props.channelId,
-    });
+    await channelApi.deleteReply(replyId);
+    replies.value = replies.value.filter((reply) => reply.id !== replyId);
+    delete replyReactions.value[replyId];
   } catch (error) {
     console.error("Failed to delete reply:", error);
   }
-}
-
-function onMessageDeleted({ messageId: deletedMessageId }: { messageId: number }) {
-  if (deletedMessageId === props.messageId) {
-    emit("message-deleted", props.messageId);
-    // Message was deleted - this component should be removed by parent
-    // We could emit an event or the parent should handle it
-  }
-}
-
-function onReplyDeleted({ replyId: deletedReplyId }: { replyId: number }) {
-  replies.value = replies.value.filter((reply) => reply.id !== deletedReplyId);
-  delete replyReactions.value[deletedReplyId];
 }
 </script>
 

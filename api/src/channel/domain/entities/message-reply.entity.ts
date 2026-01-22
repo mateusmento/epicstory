@@ -27,6 +27,9 @@ export class MessageReply {
   sender: User;
 
   @Column()
+  channelId: number;
+
+  @Column()
   messageId: number;
 
   @ManyToOne(() => Message)

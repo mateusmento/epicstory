@@ -39,7 +39,19 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  async findMessages(channelId: number) {
+  findMembers(channelId: number) {
+    return this.axios.get<User[]>(`/channels/${channelId}/members`).then((res) => res.data);
+  }
+
+  addMember(channelId: number, userId: number) {
+    return this.axios.post(`/channels/${channelId}/members`, { userId }).then((res) => res.data);
+  }
+
+  removeMember(channelId: number, userId: number) {
+    return this.axios.delete(`/channels/${channelId}/members/${userId}`).then((res) => res.data);
+  }
+
+  findMessages(channelId: number) {
     return this.axios.get<IMessage[]>(`/channels/${channelId}/messages`).then((res) => res.data);
   }
 
@@ -53,63 +65,51 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  findMembers(channelId: number) {
-    return this.axios.get<User[]>(`/channels/${channelId}/members`).then((res) => res.data);
+  deleteMessage(messageId: number) {
+    return this.axios.delete(`/messages/${messageId}`).then((res) => res.data);
   }
 
-  addMember(channelId: number, userId: number) {
-    return this.axios.post(`/channels/${channelId}/members`, { userId }).then((res) => res.data);
-  }
-
-  removeMember(channelId: number, userId: number) {
-    return this.axios.delete(`/channels/${channelId}/members/${userId}`).then((res) => res.data);
-  }
-
-  findReplies(channelId: number, messageId: number) {
+  findReactions(messageId: number) {
     return this.axios
-      .get<IMessage[]>(`/channels/${channelId}/messages/${messageId}/replies`)
+      .get<{ emoji: string; reactedBy: number[] }[]>(`/messages/${messageId}/reactions`)
       .then((res) => res.data);
   }
 
-  replyMessage(channelId: number, messageId: number, content: string) {
+  toggleMessageReaction(messageId: number, emoji: string) {
     return this.axios
-      .post<IMessage>(`/channels/${channelId}/messages/${messageId}/replies`, { content })
+      .post(`/messages/${messageId}/reactions`, { emoji })
       .then((res) => res.data);
   }
 
-  findReactions(channelId: number, messageId: number) {
+  findReplies(messageId: number) {
     return this.axios
-      .get<{ emoji: string; reactedBy: number[] }[]>(`/channels/${channelId}/messages/${messageId}/reactions`)
+      .get<IMessage[]>(`/messages/${messageId}/replies`)
       .then((res) => res.data);
   }
 
-  findReplyReactions(channelId: number, messageId: number, replyId: number) {
+  replyMessage(messageId: number, content: string) {
+    return this.axios
+      .post<IMessage>(`/messages/${messageId}/replies`, { content })
+      .then((res) => res.data);
+  }
+
+  deleteReply(replyId: number) {
+    return this.axios
+      .delete(`/replies/${replyId}`)
+      .then((res) => res.data);
+  }
+
+  findReplyReactions(replyId: number) {
     return this.axios
       .get<
         { emoji: string; reactedBy: number[] }[]
-      >(`/channels/${channelId}/messages/${messageId}/replies/${replyId}/reactions`)
+      >(`/replies/${replyId}/reactions`)
       .then((res) => res.data);
   }
 
-  toggleReaction(channelId: number, messageId: number, emoji: string) {
+  toggleReplyReaction(replyId: number, emoji: string) {
     return this.axios
-      .post(`/channels/${channelId}/messages/${messageId}/reactions`, { emoji })
-      .then((res) => res.data);
-  }
-
-  toggleReplyReaction(channelId: number, messageId: number, replyId: number, emoji: string) {
-    return this.axios
-      .post(`/channels/${channelId}/messages/${messageId}/replies/${replyId}/reactions`, { emoji })
-      .then((res) => res.data);
-  }
-
-  deleteMessage(channelId: number, messageId: number) {
-    return this.axios.delete(`/channels/${channelId}/messages/${messageId}`).then((res) => res.data);
-  }
-
-  deleteReply(channelId: number, messageId: number, replyId: number) {
-    return this.axios
-      .delete(`/channels/${channelId}/messages/${messageId}/replies/${replyId}`)
+      .post(`/replies/${replyId}/reactions`, { emoji })
       .then((res) => res.data);
   }
 }
