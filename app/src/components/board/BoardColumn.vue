@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDroppable } from "@vue-dnd-kit/core";
 import { flyToPlaceTransition } from "./transition";
+import { applySortableTransferById } from "./sortable";
 
 const props = defineProps<{
   group: string;
@@ -19,6 +20,7 @@ const { elementRef } = useDroppable({
     source: items,
   },
   events: {
+    onHover: applySortableTransferById,
     onDrop: (store, payload) => {
       emit("drop", { store, payload });
       return flyToPlaceTransition(store, payload);
