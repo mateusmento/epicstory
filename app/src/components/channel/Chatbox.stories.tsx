@@ -35,6 +35,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     meId: 2,
+    channelId: 1,
     chatTitle: "Daiana",
     chatPicture: daianaPhoto,
     messageGroups: messageGroups.value,
