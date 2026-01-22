@@ -143,7 +143,7 @@ watch(
         </div>
 
         <div :class="cn('flex:col-md flex-1 min-h-0 m-3 p-3 rounded-lg overflow-y-auto', 'bg-secondary/30')">
-          <TransitionGroup name="board-column" class="flex:col-md gap-3">
+          <TransitionGroup name="board-column">
             <BoardItem
               v-for="item in todo"
               :key="item.id"
@@ -243,7 +243,7 @@ watch(
         </div>
 
         <div :class="cn('flex:col-md flex-1 min-h-0 m-3 p-3 rounded-lg overflow-y-auto', 'bg-blue-500/10')">
-          <TransitionGroup name="board-column" class="flex:col-md gap-3">
+          <TransitionGroup name="board-column">
             <BoardItem
               v-for="item in doing"
               :key="item.id"
@@ -340,7 +340,7 @@ watch(
         </div>
 
         <div :class="cn('flex:col-md flex-1 min-h-0 m-3 p-3 rounded-lg overflow-y-auto', 'bg-green-500/10')">
-          <TransitionGroup name="board-column" class="flex:col-md gap-3">
+          <TransitionGroup name="board-column">
             <BoardItem
               v-for="item in done"
               :key="item.id"
