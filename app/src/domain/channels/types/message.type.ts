@@ -19,7 +19,16 @@ export type IMessageGroup = {
   messages: IMessage[];
 };
 
-export interface IMessageReply {
+export interface IMessageReaction {
+  id: number;
+  emoji: string;
+  userId: number;
+  user: User;
+  messageId: number;
+  message: IMessage;
+}
+
+export interface IReply {
   id: number;
   content: string;
   sentAt: string;
@@ -30,3 +39,17 @@ export interface IMessageReply {
   messageId: number;
   message: IMessage;
 }
+
+export interface IReplyReaction {
+  id: number;
+  emoji: string;
+  userId: number;
+  user: User;
+  replyId: number;
+  reply: IReply;
+}
+
+export type IReaction = {
+  emoji: string;
+  reactedBy: number[];
+};

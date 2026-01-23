@@ -2,7 +2,7 @@ import { InjectAxios } from "@/core/axios";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { IChannel } from "../types/channel.type";
-import type { IMessage } from "../types";
+import type { IMessage, IReaction, IReply } from "../types";
 import type { User } from "@/domain/auth";
 
 export type CreateDirectChannel = {
@@ -17,7 +17,7 @@ export type CreateGroupChannel = {
 
 @injectable()
 export class ChannelApi {
-  constructor(@InjectAxios() private axios: Axios) {}
+  constructor(@InjectAxios() private axios: Axios) { }
 
   findChannels(workspaceId: number) {
     return this.axios.get<IChannel[]>(`/workspaces/${workspaceId}/channels`).then((res) => res.data);
@@ -71,8 +71,7 @@ export class ChannelApi {
 
   findReactions(messageId: number) {
     return this.axios
-      .get<{ emoji: string; reactedBy: number[] }[]>(`/messages/${messageId}/reactions`)
-      .then((res) => res.data);
+      .get<IReaction[]>(`/messages/${messageId}/reactions`).then((res) => res.data);
   }
 
   toggleMessageReaction(messageId: number, emoji: string) {
@@ -83,13 +82,13 @@ export class ChannelApi {
 
   findReplies(messageId: number) {
     return this.axios
-      .get<IMessage[]>(`/messages/${messageId}/replies`)
+      .get<IReply[]>(`/messages/${messageId}/replies`)
       .then((res) => res.data);
   }
 
   replyMessage(messageId: number, content: string) {
     return this.axios
-      .post<IMessage>(`/messages/${messageId}/replies`, { content })
+      .post<IReply>(`/messages/${messageId}/replies`, { content })
       .then((res) => res.data);
   }
 
@@ -101,9 +100,7 @@ export class ChannelApi {
 
   findReplyReactions(replyId: number) {
     return this.axios
-      .get<
-        { emoji: string; reactedBy: number[] }[]
-      >(`/replies/${replyId}/reactions`)
+      .get<IReaction[]>(`/replies/${replyId}/reactions`)
       .then((res) => res.data);
   }
 

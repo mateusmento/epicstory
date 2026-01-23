@@ -1,17 +1,14 @@
 <script lang="ts" setup>
-import { cva } from "class-variance-authority";
-import { inject, ref, onMounted, onUnmounted, watch } from "vue";
-import { Button } from "@/design-system";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/design-system";
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { useDependency } from "@/core/dependency-injection";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
-import { useWebSockets } from "@/core/websockets";
-import { formatDistanceToNow } from "date-fns";
-import type { IMessage } from "@/domain/channels/types";
-import EmojiPicker from "./EmojiPicker.vue";
-import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { useAuth } from "@/domain/auth";
+import { useMessageThread } from "@/domain/channels/composables/message-thread";
+import type { IMessage } from "@/domain/channels/types";
+import { DotsHorizontalIcon } from "@radix-icons/vue";
+import { cva } from "class-variance-authority";
+import { formatDistanceToNow } from "date-fns";
+import { inject, ref, watch, type Ref } from "vue";
+import EmojiPicker from "./EmojiPicker.vue";
 
 const props = defineProps<{
   content: string;
@@ -21,13 +18,27 @@ const props = defineProps<{
 
 const emit = defineEmits(["message-deleted"]);
 
-const isDiscussionOpen = ref(false);
-const replies = ref<IMessage[]>([]);
-const replyContent = ref("");
-const isLoadingReplies = ref(false);
+const message = ref<IMessage>({
+  id: props.messageId,
+  content: props.content,
+} as IMessage);
 
-const channelApi = useDependency(ChannelApi);
-const { websocket } = useWebSockets();
+const {
+  replies,
+  reactions,
+  replyReactions,
+  isLoadingReplies,
+  replyContent,
+  fetchReplies,
+  toggleReaction,
+  toggleReplyReaction,
+  sendReply,
+  deleteReply,
+  deleteMessage,
+} = useMessageThread(message as Ref<IMessage>);
+
+const { sender } = useMessageGroup();
+const { user: me } = useAuth();
 
 function useMessageGroup() {
   const context = inject<{ meId: number; sender: "me" | "someoneElse" }>("messageGroup");
@@ -35,69 +46,10 @@ function useMessageGroup() {
   return context;
 }
 
-const { sender } = useMessageGroup();
-
-const { user: me } = useAuth();
-
-async function toggleDiscussion() {
-  isDiscussionOpen.value = !isDiscussionOpen.value;
-  if (isDiscussionOpen.value && replies.value.length === 0) {
-    await fetchReplies();
-  }
-}
-
-async function fetchReplies() {
-  if (isLoadingReplies.value) return;
-  isLoadingReplies.value = true;
-  try {
-    replies.value = await channelApi.findReplies(props.messageId);
-    // Fetch reactions for each reply
-    for (const reply of replies.value) {
-      await fetchReplyReactions(reply.id);
-    }
-  } catch (error) {
-    console.error("Failed to fetch replies:", error);
-  } finally {
-    isLoadingReplies.value = false;
-  }
-}
-
-async function onIncomingReply({ reply, messageId }: { reply: IMessage; messageId: number }) {
-  if (messageId === props.messageId) {
-    replies.value.push(reply);
-    // Fetch reactions for the new reply
-    await fetchReplyReactions(reply.id);
-  }
-}
-
-async function sendReply() {
-  if (!replyContent.value.trim()) return;
-
-  try {
-    const reply = await channelApi.replyMessage(props.messageId, replyContent.value);
-    replies.value.push(reply);
-    replyContent.value = "";
-  } catch (error) {
-    console.error("Failed to send reply:", error);
-  }
-}
-
-function formatTime(date: string) {
-  return formatDistanceToNow(new Date(date), { addSuffix: true });
-}
-
-// Subscribe to incoming replies
-onMounted(() => {
-  websocket?.off("incoming-reply", onIncomingReply);
-  websocket?.on("incoming-reply", onIncomingReply);
-});
-
-onUnmounted(() => {
-  websocket?.off("incoming-reply", onIncomingReply);
-});
+const isDiscussionOpen = ref(false);
 
 watch(
-  () => props.messageId,
+  () => message.value?.id,
   () => {
     replies.value = [];
     if (isDiscussionOpen.value) {
@@ -106,91 +58,15 @@ watch(
   },
 );
 
-type Reaction = {
-  emoji: string;
-  reactedBy: number[];
-};
-
-const reactions = ref<Reaction[]>([]);
-const replyReactions = ref<Record<number, Reaction[]>>({});
-
-onMounted(() => {
-  fetchReactions();
-  websocket?.off("incoming-message-reaction", onIncomingReaction);
-  websocket?.on("incoming-message-reaction", onIncomingReaction);
-
-  websocket?.off("incoming-reply-reaction", onIncomingReaction);
-  websocket?.on("incoming-reply-reaction", onIncomingReaction);
-});
-
-onUnmounted(() => {
-  websocket?.off("incoming-message-reaction", onIncomingReaction);
-  websocket?.off("incoming-reply-reaction", onIncomingReaction);
-});
-
-function onIncomingReaction({
-  messageId,
-  replyId,
-  reactions: updatedReactions,
-}: {
-  messageId?: number;
-  replyId?: number;
-  reactions?: Reaction[];
-}) {
-  if (messageId === props.messageId && updatedReactions) {
-    reactions.value = updatedReactions;
-  } else if (replyId && updatedReactions) {
-    replyReactions.value[replyId] = updatedReactions;
+async function toggleDiscussion() {
+  isDiscussionOpen.value = !isDiscussionOpen.value;
+  if (isDiscussionOpen.value && replies.value.length === 0) {
+    await fetchReplies();
   }
 }
 
-async function fetchReactions() {
-  try {
-    reactions.value = await channelApi.findReactions(props.messageId);
-  } catch (error) {
-    console.error("Failed to fetch reactions:", error);
-  }
-}
-
-async function fetchReplyReactions(replyId: number) {
-  try {
-    replyReactions.value[replyId] = await channelApi.findReplyReactions(replyId);
-  } catch (error) {
-    console.error("Failed to fetch reply reactions:", error);
-  }
-}
-
-async function toggleReaction(emoji: string) {
-  try {
-    const { action, reactions: updatedReactions } = await channelApi.toggleMessageReaction(props.messageId, emoji);
-
-    // if (action === "added") {
-    //   reactions.value.push({ emoji, reactedBy: me.value ? [me.value.id] : [] });
-    // } else if (action === "removed") {
-    //   reactions.value = reactions.value.filter((reaction) => reaction.emoji !== emoji);
-    // }
-
-    reactions.value = updatedReactions;
-
-  } catch (error) {
-    console.error("Failed to toggle reaction:", error);
-  }
-}
-
-  async function toggleReplyReaction(replyId: number, emoji: string) {
-  try {
-    const { action, reactions: updatedReactions } = await channelApi.toggleReplyReaction(replyId, emoji);
-
-    // if (action === "added") {
-    //   replyReactions.value[replyId].push({ emoji, reactedBy: me.value ? [me.value.id] : [] });
-    // } else if (action === "removed") {
-    //   replyReactions.value[replyId] = replyReactions.value[replyId].filter((reaction) => reaction.emoji !== emoji);
-    // }
-
-    replyReactions.value[replyId] = updatedReactions;
-  } catch (error) {
-    console.error("Failed to toggle reply reaction:", error);
-  }
+function formatTime(date: string) {
+  return formatDistanceToNow(new Date(date), { addSuffix: true });
 }
 
 function onEmojiSelect(emoji: string) {
@@ -201,35 +77,18 @@ function onReplyEmojiSelect(replyId: number, emoji: string) {
   toggleReplyReaction(replyId, emoji);
 }
 
-async function deleteMessage() {
-  try {
-    await channelApi.deleteMessage(props.messageId);
-    emit("message-deleted", props.messageId);
-  } catch (error) {
-    console.error("Failed to delete message:", error);
-  }
+function onDeleteMessage() {
+  deleteMessage();
+  emit("message-deleted", message.value?.id);
 }
 
-async function deleteReply(replyId: number) {
-  try {
-    await channelApi.deleteReply(replyId);
-    replies.value = replies.value.filter((reply) => reply.id !== replyId);
-    delete replyReactions.value[replyId];
-  } catch (error) {
-    console.error("Failed to delete reply:", error);
-  }
-}
 </script>
 
 <template>
   <div class="group flex:row-lg flex:center-y">
     <Button variant="ghost" size="icon">
-      <Icon
-        v-if="!isDiscussionOpen"
-        name="hi-reply"
-        class="w-4 h-4 group-hover:visible invisible text-secondary-foreground"
-        @click="toggleDiscussion"
-      />
+      <Icon v-if="!isDiscussionOpen" name="hi-reply"
+        class="w-4 h-4 group-hover:visible invisible text-secondary-foreground" @click="toggleDiscussion" />
     </Button>
     <div class="flex:col-lg bg-[#F9F9F9] border border-[#E4E4E4] rounded-2xl relative group/message">
       <div :class="styles.messageBox({ sender })">
@@ -237,16 +96,12 @@ async function deleteReply(replyId: number) {
         <div class="" :class="styles.emoji({ sender })">
           <DropdownMenu v-if="sender === 'me'">
             <DropdownMenuTrigger as-child>
-              <Button
-                variant="ghost"
-                size="icon"
-                class="opacity-0 group-hover/message:opacity-100 transition-opacity"
-              >
+              <Button variant="ghost" size="icon" class="opacity-0 group-hover/message:opacity-100 transition-opacity">
                 <DotsHorizontalIcon class="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem @click="deleteMessage" variant="destructive">
+              <DropdownMenuItem @click="onDeleteMessage" variant="destructive">
                 <span>Delete message</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -257,14 +112,9 @@ async function deleteReply(replyId: number) {
       <div class="flex:col-xl p-2 pt-0" v-if="isDiscussionOpen">
         <div class="flex:row-2xl flex:center-y">
           <div class="flex:row-md flex:center-y">
-            <Button
-              v-for="reaction in reactions"
-              :key="reaction.emoji"
-              variant="outline"
-              size="icon"
+            <Button v-for="reaction in reactions" :key="reaction.emoji" variant="outline" size="icon"
               @click="toggleReaction(reaction.emoji)"
-              class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]"
-            >
+              class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]">
               {{ reaction.emoji }} {{ reaction.reactedBy.length }}
             </Button>
 
@@ -279,16 +129,10 @@ async function deleteReply(replyId: number) {
         <template v-if="isDiscussionOpen">
           <div v-if="replies.length > 0" class="px-2 space-y-3">
             <div v-for="reply in replies" :key="reply.id" class="flex:row-md group/reply">
-              <img
-                v-if="reply.sender.picture"
-                :src="reply.sender.picture"
-                :alt="reply.sender.name"
-                class="w-10 h-10 rounded-full flex-shrink-0"
-              />
-              <div
-                v-else
-                class="w-10 h-10 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold"
-              >
+              <img v-if="reply.sender.picture" :src="reply.sender.picture" :alt="reply.sender.name"
+                class="w-10 h-10 rounded-full flex-shrink-0" />
+              <div v-else
+                class="w-10 h-10 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold">
                 {{ reply.sender.name.charAt(0).toUpperCase() }}
               </div>
               <div class="flex:col-md flex-1 min-w-0">
@@ -296,17 +140,13 @@ async function deleteReply(replyId: number) {
                   <div class="text-foreground font-lato font-semibold">{{ reply.sender.name }}</div>
                   <div class="ml-auto flex items-center gap-2">
                     <span
-                      class="text-[#686870] font-dmSans text-xs opacity-100 group-hover/reply:opacity-0 transition-opacity"
-                    >
+                      class="text-[#686870] font-dmSans text-xs opacity-100 group-hover/reply:opacity-0 transition-opacity">
                       {{ formatTime(reply.sentAt) }}
                     </span>
                     <DropdownMenu v-if="reply.senderId === me?.id">
                       <DropdownMenuTrigger as-child>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          class="opacity-0 group-hover/reply:opacity-100 transition-opacity h-auto p-1"
-                        >
+                        <Button variant="ghost" size="icon"
+                          class="opacity-0 group-hover/reply:opacity-100 transition-opacity h-auto p-1">
                           <DotsHorizontalIcon class="w-4 h-4 text-[#686870]" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -320,14 +160,9 @@ async function deleteReply(replyId: number) {
                 </div>
                 <div class="text-[15px] font-lato">{{ reply.content }}</div>
                 <div class="flex:row-md flex:center-y mt-1">
-                  <Button
-                    v-for="reaction in replyReactions[reply.id]"
-                    :key="reaction.emoji"
-                    variant="outline"
-                    size="icon"
-                    @click="toggleReplyReaction(reply.id, reaction.emoji)"
-                    class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]"
-                  >
+                  <Button v-for="reaction in replyReactions[reply.id]" :key="reaction.emoji" variant="outline"
+                    size="icon" @click="toggleReplyReaction(reply.id, reaction.emoji)"
+                    class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]">
                     {{ reaction.emoji }} {{ reaction.reactedBy.length }}
                   </Button>
                   <EmojiPicker @select="(emoji) => onReplyEmojiSelect(reply.id, emoji)" size="icon" />
@@ -340,14 +175,10 @@ async function deleteReply(replyId: number) {
 
           <div class="flex:row-lg">
             <div
-              class="flex:row flex:center-y flex-1 h-10 py-4 px-4 bg-white text-[#686870] border border-[#E4E4E4] rounded-xl focus-within:ring-1 focus-within:ring-ring focus-within:ring-zinc-300"
-            >
-              <input
-                v-model="replyContent"
-                placeholder="Reply..."
+              class="flex:row flex:center-y flex-1 h-10 py-4 px-4 bg-white text-[#686870] border border-[#E4E4E4] rounded-xl focus-within:ring-1 focus-within:ring-ring focus-within:ring-zinc-300">
+              <input v-model="replyContent" placeholder="Reply..."
                 class="mr-auto p-0 h-fit outline-none border-none font-lato placeholder:font-lato placeholder:text-[15px] text-[15px] flex-1"
-                @keydown.enter="sendReply"
-              />
+                @keydown.enter="sendReply" />
 
               <Button variant="ghost" size="icon">
                 <Icon name="bi-camera-video" class="w-6 h-6" />
@@ -362,12 +193,8 @@ async function deleteReply(replyId: number) {
                 <Icon name="ri-attachment-2" class="w-6 h-6" />
               </Button>
             </div>
-            <Button
-              variant="ghost"
-              class="flex:row flex:center bg-[#3A66FF] w-10 h-10 gap-2 rounded-lg text-white"
-              @click="sendReply"
-              :disabled="!replyContent.trim()"
-            >
+            <Button variant="ghost" class="flex:row flex:center bg-[#3A66FF] w-10 h-10 gap-2 rounded-lg text-white"
+              @click="sendReply" :disabled="!replyContent.trim()">
               <Icon name="io-paper-plane" />
             </Button>
           </div>
