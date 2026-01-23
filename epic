@@ -27,6 +27,32 @@ function runCommand(command, args = [], options = {}) {
 
 // Get the absolute path to the scripts directory
 const scriptsDir = path.join(__dirname, "scripts");
+const apiDir = path.join(__dirname, "api");
+
+function takeFlagValue(args, flagLong, flagShort) {
+  const idxLong = flagLong ? args.indexOf(flagLong) : -1;
+  const idxShort = flagShort ? args.indexOf(flagShort) : -1;
+  const idx =
+    idxLong !== -1 ? idxLong : idxShort !== -1 ? idxShort : -1;
+  if (idx === -1) return { value: undefined, rest: args };
+
+  const next = args[idx + 1];
+  if (next == null || next.startsWith("-")) {
+    return { value: undefined, rest: args.filter((_, i) => i !== idx) };
+  }
+  const rest = args.filter((_, i) => i !== idx && i !== idx + 1);
+  return { value: next, rest };
+}
+
+function takeEqualsFlagValue(args, flagLong) {
+  if (!flagLong) return { value: undefined, rest: args };
+  const prefix = `${flagLong}=`;
+  const match = args.find((a) => a.startsWith(prefix));
+  if (!match) return { value: undefined, rest: args };
+  const value = match.slice(prefix.length);
+  const rest = args.filter((a) => a !== match);
+  return { value, rest };
+}
 
 // Run command
 async function run(container) {
@@ -125,11 +151,75 @@ async function remove(target) {
   }
 }
 
+async function migrations(action, args = []) {
+  try {
+    if (!action || !["generate", "run", "revert"].includes(action)) {
+      console.error("❌ Error: Action must be 'generate', 'run', or 'revert'");
+      console.log(
+        'Usage: epic migrations generate --name="..." | epic migrations run | epic migrations revert',
+      );
+      process.exit(1);
+    }
+
+    if (action === "generate") {
+      // Support:
+      // - epic migrations generate --name Foo
+      // - epic migrations generate --name=Foo
+      // - epic migrations generate Foo
+      const eq = takeEqualsFlagValue(args, "--name");
+      const spaced = takeFlagValue(eq.rest, "--name", "-n");
+      let name = eq.value ?? spaced.value;
+      let rest = spaced.rest;
+      if (!name && rest[0] && !rest[0].startsWith("-")) {
+        name = rest[0];
+        rest = rest.slice(1);
+      }
+      if (!name) {
+        console.error('❌ Error: Missing migration name (use --name="...")');
+        console.log('Usage: epic migrations generate --name="AddFooBar"');
+        process.exit(1);
+      }
+
+      console.log(`🚀 Generating migration: ${name}`);
+      const npmArgs = ["run", "migrations:generate"];
+      if (rest.length > 0) npmArgs.push("--", ...rest);
+
+      await runCommand("npm", npmArgs, {
+        cwd: apiDir,
+        env: { ...process.env, npm_config_name: name },
+      });
+      console.log("✅ Migration generated successfully!");
+      return;
+    }
+
+    if (action === "run") {
+      console.log("🚀 Running migrations...");
+      const npmArgs = ["run", "migrations:run"];
+      if (args.length > 0) npmArgs.push("--", ...args);
+      await runCommand("npm", npmArgs, { cwd: apiDir });
+      console.log("✅ Migrations ran successfully!");
+      return;
+    }
+
+    if (action === "revert") {
+      console.log("🚀 Reverting last migration...");
+      const npmArgs = ["run", "migrations:revert"];
+      if (args.length > 0) npmArgs.push("--", ...args);
+      await runCommand("npm", npmArgs, { cwd: apiDir });
+      console.log("✅ Migration reverted successfully!");
+      return;
+    }
+  } catch (error) {
+    console.error(`❌ Migrations ${action} failed:`, error.message);
+    process.exit(1);
+  }
+}
+
 // Main CLI logic
 function main() {
   const args = process.argv.slice(2);
-  const command = args[0];
-  const target = args[1];
+  const [command, ...rest] = args;
+  const target = rest[0];
 
   switch (command) {
     case "build":
@@ -152,6 +242,9 @@ function main() {
       break;
     case "remove":
       remove(target);
+      break;
+    case "migrations":
+      migrations(rest[0], rest.slice(1));
       break;
     case "help":
     case "--help":
@@ -178,6 +271,7 @@ Usage:
   epic logs [container-name]   Log container output
   epic list                    List running containers
   epic remove                 Stop and remove all containers
+  epic migrations <command>    Manage API database migrations
   epic help                    Show this help message
 
 Examples:
@@ -190,6 +284,9 @@ Examples:
   epic logs epicstory-api      Log container output
   epic list                   List running containers
   epic remove                 Stop and remove all containers
+  epic migrations generate --name="AddFooBar"
+  epic migrations run
+  epic migrations revert
 `);
 }
 
