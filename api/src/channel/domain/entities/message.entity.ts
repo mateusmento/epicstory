@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
 
@@ -38,7 +39,11 @@ export class Message {
   reactions: MessageReaction[];
 }
 
-@Entity({ schema: CHANNEL_SCHEMA, name: 'message_reactions' })
+@Unique('unique_message_reaction', ['messageId', 'emoji', 'userId'])
+@Entity({
+  schema: CHANNEL_SCHEMA,
+  name: 'message_reactions',
+})
 export class MessageReaction {
   @PrimaryGeneratedColumn()
   id: number;

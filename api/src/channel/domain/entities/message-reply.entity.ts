@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { Message } from './message.entity';
 
@@ -40,6 +41,7 @@ export class MessageReply {
 }
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'message_reply_reactions' })
+@Unique('unique_message_reply_reaction', ['messageReplyId', 'emoji', 'userId'])
 export class MessageReplyReaction {
   @PrimaryGeneratedColumn()
   id: number;
