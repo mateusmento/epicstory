@@ -116,27 +116,31 @@ const replyReactions = ref<Record<number, Reaction[]>>({});
 
 onMounted(() => {
   fetchReactions();
-  websocket?.off("incoming-reaction", onIncomingReaction);
-  websocket?.on("incoming-reaction", onIncomingReaction);
+  websocket?.off("incoming-message-reaction", onIncomingReaction);
+  websocket?.on("incoming-message-reaction", onIncomingReaction);
+
+  websocket?.off("incoming-reply-reaction", onIncomingReaction);
+  websocket?.on("incoming-reply-reaction", onIncomingReaction);
 });
 
 onUnmounted(() => {
-  websocket?.off("incoming-reaction", onIncomingReaction);
+  websocket?.off("incoming-message-reaction", onIncomingReaction);
+  websocket?.off("incoming-reply-reaction", onIncomingReaction);
 });
 
 function onIncomingReaction({
   messageId,
-  messageReplyId,
+  replyId,
   reactions: updatedReactions,
 }: {
   messageId?: number;
-  messageReplyId?: number;
+  replyId?: number;
   reactions?: Reaction[];
 }) {
   if (messageId === props.messageId && updatedReactions) {
     reactions.value = updatedReactions;
-  } else if (messageReplyId && updatedReactions) {
-    replyReactions.value[messageReplyId] = updatedReactions;
+  } else if (replyId && updatedReactions) {
+    replyReactions.value[replyId] = updatedReactions;
   }
 }
 
