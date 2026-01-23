@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { MessageReaction } from 'src/channel/domain';
+import { MessageReplyReaction } from 'src/channel/domain/entities';
 import {
   ChannelRepository,
   MessageReactionRepository,
@@ -6,6 +8,7 @@ import {
   MessageReplyRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
+import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class MessageService {
@@ -91,47 +94,53 @@ export class MessageService {
     }));
   }
 
+  @Transactional()
   async toggleMessageReaction(
     messageId: number,
     emoji: string,
     userId: number,
   ) {
-    const existing = await this.messageReactionRepo.findOne({
-      where: { messageId, emoji, userId },
+    const removed = await this.messageReactionRepo.delete({
+      messageId,
+      emoji,
+      userId,
     });
+    if ((removed.affected ?? 0) > 0) return { action: 'removed' as const };
 
-    if (existing) {
-      await this.messageReactionRepo.remove(existing);
-      return { action: 'removed' };
-    } else {
-      await this.messageReactionRepo.save({
-        messageId,
-        emoji,
-        userId,
-      });
-      return { action: 'added' };
-    }
+    // Add if it doesn't exist. Requires a unique constraint on (messageId, emoji, userId)
+    // to be race-safe under concurrency.
+    await this.messageReactionRepo
+      .createQueryBuilder()
+      .insert()
+      .into(MessageReaction)
+      .values({ messageId, emoji, userId })
+      .orIgnore()
+      .execute();
+
+    return { action: 'added' as const };
   }
 
+  @Transactional()
   async toggleReplyReaction(
     messageReplyId: number,
     emoji: string,
     userId: number,
   ) {
-    const existing = await this.messageReplyReactionRepo.findOne({
-      where: { messageReplyId, emoji, userId },
+    const removed = await this.messageReplyReactionRepo.delete({
+      messageReplyId,
+      emoji,
+      userId,
     });
+    if ((removed.affected ?? 0) > 0) return { action: 'removed' as const };
 
-    if (existing) {
-      await this.messageReplyReactionRepo.remove(existing);
-      return { action: 'removed' };
-    } else {
-      await this.messageReplyReactionRepo.save({
-        messageReplyId,
-        emoji,
-        userId,
-      });
-      return { action: 'added' };
-    }
+    await this.messageReplyReactionRepo
+      .createQueryBuilder()
+      .insert()
+      .into(MessageReplyReaction)
+      .values({ messageReplyId, emoji, userId })
+      .orIgnore()
+      .execute();
+
+    return { action: 'added' as const };
   }
 }
