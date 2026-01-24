@@ -23,7 +23,7 @@ export const StoryContainer = defineComponent({
       >
         <div
           class={cn(
-            "p-4 resize box-border overflow-hidden bg-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+            "resize box-border overflow-hidden bg-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
             props.class,
           )}
         >
