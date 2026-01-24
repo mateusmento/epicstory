@@ -16,10 +16,7 @@
     "autoRevealOutput": "on-run"
   },
   "jest.showCoverageOnLoad": false,
-  "[typescript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features"
-  },
-  "[vue]": {
+  "[vue,typescript]": {
     "editor.defaultFormatter": "Vue.volar"
   }
 }
