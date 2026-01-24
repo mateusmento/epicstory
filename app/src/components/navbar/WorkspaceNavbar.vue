@@ -31,14 +31,8 @@ const { signOut } = useAuth();
       <div class="pl-1 text-xs text-secondary-foreground">Workspace</div>
 
       <div class="flex:row-md flex:center-y w-full">
-        <NavTrigger
-          view="navbar"
-          content="switch-workspace"
-          :as="Button"
-          variant="ghost"
-          size="sm"
-          class="block rounded-md text-base text-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden"
-        >
+        <NavTrigger view="navbar" content="switch-workspace" :as="Button" variant="ghost" size="sm"
+          class="block rounded-md text-base text-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden">
           {{ workspace.name }}
           <Icon name="oi-chevron-down" />
         </NavTrigger>
@@ -77,12 +71,8 @@ const { signOut } = useAuth();
         <Icon name="bi-people-fill" />
         Members
       </NavListItem>
-      <NavListItem
-        view="app-pane"
-        content="schedule"
-        :to="{ name: 'schedule', params: { workspaceId: workspace.id } }"
-        class="flex:row-md flex:center-y"
-      >
+      <NavListItem view="app-pane" content="schedule" :to="{ name: 'schedule', params: { workspaceId: workspace.id } }"
+        class="flex:row-md flex:center-y">
         <Icon name="oi-calendar" />
         Schedule
       </NavListItem>
@@ -110,7 +100,7 @@ const { signOut } = useAuth();
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
 
-          <DropdownMenuItem @click="signOut">
+          <DropdownMenuItem @click="signOut" variant="destructive">
             <LogOutIcon class="mr-2 h-4 w-4" />
             <span>Sign out</span>
             <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
