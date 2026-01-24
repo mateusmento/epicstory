@@ -21,3 +21,15 @@ export function patch<T>(instance: T, partial: Partial<T>) {
     enableCircularCheck: true,
   });
 }
+
+export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
+  const map = new Map<T[keyof T], T[]>();
+  for (const item of array) {
+    const keyValue = item[key];
+    if (!map.has(keyValue)) {
+      map.set(keyValue, []);
+    }
+    map.get(keyValue)?.push(item);
+  }
+  return Object.fromEntries(map.entries());
+}

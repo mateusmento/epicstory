@@ -8,6 +8,7 @@ import {
   MessageReplyRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
+import { groupBy } from 'src/core/objects';
 import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
@@ -21,11 +22,24 @@ export class MessageService {
   ) {}
 
   async findMessages(channelId: number) {
-    return this.messageRepo.find({
+    const messages = await this.messageRepo.find({
       where: { channelId: channelId },
-      relations: { sender: true },
+      relations: { sender: true, reactions: { user: true } },
       order: { sentAt: 'asc' },
     });
+
+    for (const message of messages) {
+      const grouped = groupBy(message.reactions, 'emoji');
+
+      message.reactionsGroups = Object.entries(grouped).map(
+        ([emoji, reactions]) => ({
+          emoji,
+          reactedBy: reactions.map((reaction) => reaction.user),
+        }),
+      );
+    }
+
+    return messages;
   }
 
   async createMessage(content: string, channelId: number, senderId: number) {
@@ -39,11 +53,24 @@ export class MessageService {
   }
 
   async findReplies(messageId: number) {
-    return this.messageReplyRepo.find({
+    const replies = await this.messageReplyRepo.find({
       where: { messageId },
-      relations: { sender: true },
+      relations: { sender: true, reactions: { user: true } },
       order: { sentAt: 'asc' },
     });
+
+    for (const reply of replies) {
+      const grouped = groupBy(reply.reactions, 'emoji');
+
+      reply.reactionsGroups = Object.entries(grouped).map(
+        ([emoji, reactions]) => ({
+          emoji,
+          reactedBy: reactions.map((reaction) => reaction.user),
+        }),
+      );
+    }
+
+    return replies;
   }
 
   async findMessageReactions(messageId: number) {
@@ -53,20 +80,11 @@ export class MessageService {
     });
 
     // Group reactions by emoji
-    const grouped = reactions.reduce(
-      (acc, reaction) => {
-        if (!acc[reaction.emoji]) {
-          acc[reaction.emoji] = [];
-        }
-        acc[reaction.emoji].push(reaction.userId);
-        return acc;
-      },
-      {} as Record<string, number[]>,
-    );
+    const grouped = groupBy(reactions, 'emoji');
 
-    return Object.entries(grouped).map(([emoji, reactedBy]) => ({
+    return Object.entries(grouped).map(([emoji, reactions]) => ({
       emoji,
-      reactedBy,
+      reactedBy: reactions.map((reaction) => reaction.user),
     }));
   }
 
@@ -77,20 +95,11 @@ export class MessageService {
     });
 
     // Group reactions by emoji
-    const grouped = reactions.reduce(
-      (acc, reaction) => {
-        if (!acc[reaction.emoji]) {
-          acc[reaction.emoji] = [];
-        }
-        acc[reaction.emoji].push(reaction.userId);
-        return acc;
-      },
-      {} as Record<string, number[]>,
-    );
+    const grouped = groupBy(reactions, 'emoji');
 
-    return Object.entries(grouped).map(([emoji, reactedBy]) => ({
+    return Object.entries(grouped).map(([emoji, reactions]) => ({
       emoji,
-      reactedBy,
+      reactedBy: reactions.map((reaction) => reaction.user),
     }));
   }
 
@@ -117,7 +126,10 @@ export class MessageService {
       .orIgnore()
       .execute();
 
-    return { action: 'added' as const };
+    return {
+      action: 'added' as const,
+      reactions: await this.findMessageReactions(messageId),
+    };
   }
 
   @Transactional()
@@ -141,6 +153,9 @@ export class MessageService {
       .orIgnore()
       .execute();
 
-    return { action: 'added' as const };
+    return {
+      action: 'added' as const,
+      reactions: await this.findReplyReactions(messageReplyId),
+    };
   }
 }

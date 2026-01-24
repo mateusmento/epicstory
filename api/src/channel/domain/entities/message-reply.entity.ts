@@ -10,6 +10,11 @@ import {
 } from 'typeorm';
 import { Message } from './message.entity';
 
+export type ReplyReactionsGroup = {
+  emoji: string;
+  reactedBy: User[];
+};
+
 @Entity({ schema: CHANNEL_SCHEMA, name: 'message_replies' })
 export class MessageReply {
   @PrimaryGeneratedColumn()
@@ -38,6 +43,8 @@ export class MessageReply {
 
   @OneToMany(() => MessageReplyReaction, (reaction) => reaction.messageReply)
   reactions: MessageReplyReaction[];
+
+  reactionsGroups: ReplyReactionsGroup[];
 }
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'message_reply_reactions' })

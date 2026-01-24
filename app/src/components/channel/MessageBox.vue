@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { useAuth } from "@/domain/auth";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
 import type { IMessage } from "@/domain/channels/types";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
@@ -14,6 +13,8 @@ const props = defineProps<{
   content: string;
   messageId: number;
   channelId: number;
+  sender: "me" | "someoneElse";
+  meId: number;
 }>();
 
 const emit = defineEmits(["message-deleted"]);
@@ -36,9 +37,6 @@ const {
   deleteReply,
   deleteMessage,
 } = useMessageThread(message as Ref<IMessage>);
-
-const { sender } = useMessageGroup();
-const { user: me } = useAuth();
 
 function useMessageGroup() {
   const context = inject<{ meId: number; sender: "me" | "someoneElse" }>("messageGroup");
@@ -81,7 +79,6 @@ function onDeleteMessage() {
   deleteMessage();
   emit("message-deleted", message.value?.id);
 }
-
 </script>
 
 <template>
@@ -143,7 +140,7 @@ function onDeleteMessage() {
                       class="text-[#686870] font-dmSans text-xs opacity-100 group-hover/reply:opacity-0 transition-opacity">
                       {{ formatTime(reply.sentAt) }}
                     </span>
-                    <DropdownMenu v-if="reply.senderId === me?.id">
+                    <DropdownMenu v-if="reply.senderId === meId">
                       <DropdownMenuTrigger as-child>
                         <Button variant="ghost" size="icon"
                           class="opacity-0 group-hover/reply:opacity-100 transition-opacity h-auto p-1">

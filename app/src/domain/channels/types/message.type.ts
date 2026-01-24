@@ -9,6 +9,7 @@ export interface IMessage {
   sender: User;
   channelId: number;
   channel: IChannel;
+  reactionsGroups: IReaction[];
 }
 
 export type IMessageGroup = {
@@ -51,5 +52,5 @@ export interface IReplyReaction {
 
 export type IReaction = {
   emoji: string;
-  reactedBy: number[];
+  reactedBy: User[];
 };

@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
 import { ScrollArea } from "@/design-system";
+import type { IMessageGroup } from "@/domain/channels";
 import { reactive } from "vue";
 import ChatboxTopbar from "./ChatboxTopbar.vue";
-import MessageBox from "./MessageBox.vue";
+import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
-import type { IMessageGroup } from "./types";
 
 const props = defineProps<{
   meId: number;
@@ -42,20 +42,10 @@ function onMessageDeleted(messageId: number) {
 
     <ScrollArea class="flex-1 min-h-0" bottom>
       <div class="flex:col-xl p-4 !flex">
-        <MessageGroup
-          v-for="group of messageGroups"
-          :key="group.id"
-          :sender="group.senderId === meId ? 'me' : 'someoneElse'"
-          :message-group="group"
-        >
-          <MessageBox
-            v-for="message of group.messages"
-            :key="message.id"
-            :content="message.content"
-            :messageId="message.id"
-            :channelId="channelId"
-            @message-deleted="onMessageDeleted"
-          />
+        <MessageGroup v-for="group of messageGroups" :key="group.id"
+          :sender="group.senderId === meId ? 'me' : 'someoneElse'" :message-group="group">
+          <Message v-for="(message, i) of group.messages" :key="message.id" :message
+            @update:message="group.messages[i] = $event" :meId @message-deleted="onMessageDeleted" />
         </MessageGroup>
       </div>
     </ScrollArea>

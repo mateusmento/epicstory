@@ -1,10 +1,9 @@
-import type { IMessage } from "@/components/channel/types";
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import { defineStore, storeToRefs } from "pinia";
 import { onMounted, onUnmounted, ref, type Ref } from "vue";
-import type { IReaction, IReply } from "../types";
+import type { IMessage, IReaction, IReply } from "../types";
 
 export const useMessageThreadStore = defineStore("messageThread", () => {
   const message = ref<IMessage>();
@@ -125,7 +124,7 @@ export function useMessageThread(message: Ref<IMessage>) {
       //   reactions.value = reactions.value.filter((reaction) => reaction.emoji !== emoji);
       // }
 
-      store.reactions = updatedReactions;
+      message.value.reactionsGroups = updatedReactions;
 
     } catch (error) {
       console.error("Failed to toggle reaction:", error);

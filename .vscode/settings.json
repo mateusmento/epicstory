@@ -16,7 +16,11 @@
     "autoRevealOutput": "on-run"
   },
   "jest.showCoverageOnLoad": false,
-  "[vue,typescript]": {
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar"
+  },
+  "[typescript]": {
     "editor.defaultFormatter": "Vue.volar"
   }
+
 }
