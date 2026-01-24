@@ -83,10 +83,12 @@ export function useChannel() {
     sockets.websocket.off("meeting-ended", onMeetingEnded);
   }
 
-  function sendMessage(message: { content: string }) {
+  async function sendMessage({ content }: { content: string }) {
     if (!store.channel) return;
-    if (!message.content) return;
-    channelApi.sendMessage(store.channel.id, message.content);
+    if (!content) return;
+    const message = await channelApi.sendMessage(store.channel.id, content);
+    addMessage(message);
+    return message;
   }
 
   function sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: string) {
