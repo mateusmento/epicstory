@@ -21,3 +21,4 @@ export * from "./ui/scroll-area";
 export * from "./ui/select";
 export * from "./ui/dropdown-menu";
 export * from "./ui/table";
+export * from "./ui/drawer"

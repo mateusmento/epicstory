@@ -60,8 +60,15 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
 
     const message = await this.messageRepo.findOne({
       where: { id },
-      relations: { sender: true },
+      relations: {
+        sender: true,
+        allReactions: { user: true },
+        allReplies: { sender: true },
+      },
     });
+
+    message.setReactions();
+    message.setReplies();
 
     return message;
   }

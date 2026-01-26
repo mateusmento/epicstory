@@ -9,6 +9,7 @@ import {
   Unique,
 } from 'typeorm';
 import { Message } from './message.entity';
+import { Exclude } from 'class-transformer';
 
 export type ReplyReactionsGroup = {
   emoji: string;
@@ -41,10 +42,11 @@ export class MessageReply {
   @ManyToOne(() => Message)
   message: Message;
 
+  @Exclude()
   @OneToMany(() => MessageReplyReaction, (reaction) => reaction.messageReply)
-  reactions: MessageReplyReaction[];
+  allReactions: MessageReplyReaction[];
 
-  reactionsGroups: ReplyReactionsGroup[];
+  reactions: ReplyReactionsGroup[];
 }
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'message_reply_reactions' })
@@ -67,4 +69,7 @@ export class MessageReplyReaction {
 
   @ManyToOne(() => User)
   user: User;
+
+  @Column()
+  reactedAt: Date;
 }

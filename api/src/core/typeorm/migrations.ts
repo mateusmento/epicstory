@@ -31,7 +31,7 @@ export function migrations(): any[] {
 export async function runMigrations(dataSource: DataSource) {
   await createPostgresSchemas(dataSource);
   console.log('Running migrations...');
-  await dataSource.runMigrations();
+  // await dataSource.runMigrations();
   console.log('Migrations ran successfully');
 }
 

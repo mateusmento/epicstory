@@ -10,6 +10,9 @@ import {
   Unique,
 } from 'typeorm';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
+import { MessageReply } from './message-reply.entity';
+import { Exclude } from 'class-transformer';
+import { groupBy } from 'src/core/objects';
 
 export type MessageReactionsGroup = {
   emoji: string;
@@ -40,10 +43,42 @@ export class Message {
   @ManyToOne(() => Channel)
   channel: Channel;
 
+  @Exclude()
   @OneToMany(() => MessageReaction, (reaction) => reaction.message)
-  reactions: MessageReaction[];
+  allReactions: MessageReaction[];
 
-  reactionsGroups: MessageReactionsGroup[];
+  @Exclude()
+  @OneToMany(() => MessageReply, (reply) => reply.message)
+  allReplies: MessageReply[];
+
+  reactions: MessageReactionsGroup[];
+
+  replies: {
+    count: number;
+    repliedBy: User[];
+  };
+
+  setReactions() {
+    const grouped = groupBy(this.allReactions, 'emoji');
+
+    this.reactions = Object.entries(grouped).map(([emoji, reactions]) => ({
+      emoji,
+      reactedBy: reactions.map((reaction) => reaction.user),
+    }));
+  }
+
+  setReplies() {
+    const repliedBy = [];
+    for (const reply of this.allReplies) {
+      if (!repliedBy.some(({ id }) => id === reply.senderId))
+        repliedBy.push(reply.sender);
+    }
+
+    this.replies = {
+      count: this.allReplies.length,
+      repliedBy,
+    };
+  }
 }
 
 @Unique('unique_message_reaction', ['messageId', 'emoji', 'userId'])
@@ -69,4 +104,7 @@ export class MessageReaction {
 
   @ManyToOne(() => User)
   user: User;
+
+  @Column()
+  reactedAt: Date;
 }

@@ -9,7 +9,11 @@ export interface IMessage {
   sender: User;
   channelId: number;
   channel: IChannel;
-  reactionsGroups: IReaction[];
+  reactions: IReaction[];
+  replies: {
+    count: number;
+    repliedBy: User[];
+  }
 }
 
 export type IMessageGroup = {
@@ -39,6 +43,7 @@ export interface IReply {
   channel: IChannel;
   messageId: number;
   message: IMessage;
+  reactions: IReaction[];
 }
 
 export interface IReplyReaction {

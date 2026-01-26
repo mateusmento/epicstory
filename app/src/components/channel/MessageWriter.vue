@@ -57,19 +57,11 @@ function formatTime(seconds: number) {
 
 <template>
   <div
-    class="p-3 border border-zinc-200 rounded-xl focus-within:outline outline-1 outline-zinc-300/60"
-    @click="messageTextEl?.focus()"
-  >
-    <textarea
-      v-model="messageContent"
-      v-textarea-autosize
-      min-rows="2"
-      max-rows="10"
-      placeholder="Send a message to channel..."
-      class="w-full h-full px-2 text-sm rounded-md resize-none outline-none"
-      ref="messageTextEl"
-      @keydown.ctrl.enter="onSendMessage"
-    />
+    class="flex:col-md p-3 border border-zinc-200 rounded-xl bg-white focus-within:outline outline-1 outline-zinc-300/60"
+    @click="messageTextEl?.focus()">
+    <textarea v-model="messageContent" v-textarea-autosize min-rows="2" max-rows="10"
+      placeholder="Send a message to channel..." class="w-full flex-1 px-2 text-sm rounded-md resize-none outline-none"
+      ref="messageTextEl" @keydown.ctrl.enter="onSendMessage" />
 
     <div class="flex:row-xl flex:center-y text-secondary-foreground">
       <Button variant="ghost" size="icon" @click="onToggleRecording">
@@ -98,15 +90,9 @@ function formatTime(seconds: number) {
 
       <div class="flex-1"></div>
 
-      <Button
-        legacy
-        legacy-variant="primary"
-        legacy-size="sm"
-        class="flex:row-lg flex:center-y text-sm bg-[#3A66FF]"
-        @click="onSendMessage"
-      >
+      <Button legacy legacy-variant="primary" legacy-size="sm" class="flex:row-lg flex:center-y text-sm bg-[#3A66FF]"
+        @click="onSendMessage">
         <Icon name="io-paper-plane" />
-        <!-- <Icon name="bi-send-fill" /> -->
         Send
       </Button>
     </div>

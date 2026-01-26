@@ -26,6 +26,8 @@ export default {
     fontFamily: {
       lato: ["Lato"],
       dmSans: ["DM Sans"],
+      jakartaSans: ["Plus Jakarta Sans"],
+      inter: ["Inter"],
     },
     extend: {
       spacing: {

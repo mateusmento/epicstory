@@ -30,6 +30,7 @@ export class User {
   }
 
   comparePassword(password: string) {
+    if (!this.password) return false;
     return compare(password, this.password);
   }
 }

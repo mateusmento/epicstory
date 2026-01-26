@@ -93,6 +93,7 @@ export function useMessageThread(message: Ref<IMessage>) {
   }) {
     if (messageId === message.value?.id && updatedReactions) {
       store.reactions = updatedReactions;
+      message.value.reactions = updatedReactions;
     } else if (replyId && updatedReactions) {
       store.replyReactions[replyId] = updatedReactions;
     }
@@ -124,7 +125,7 @@ export function useMessageThread(message: Ref<IMessage>) {
       //   reactions.value = reactions.value.filter((reaction) => reaction.emoji !== emoji);
       // }
 
-      message.value.reactionsGroups = updatedReactions;
+      message.value.reactions = updatedReactions;
 
     } catch (error) {
       console.error("Failed to toggle reaction:", error);
@@ -141,7 +142,8 @@ export function useMessageThread(message: Ref<IMessage>) {
       //   replyReactions.value[replyId] = replyReactions.value[replyId].filter((reaction) => reaction.emoji !== emoji);
       // }
 
-      store.replyReactions[replyId] = updatedReactions;
+      store.replies = store.replies.map((reply) => reply.id === replyId ? { ...reply, reactions: updatedReactions } : reply);
+      // store.replyReactions[replyId] = updatedReactions;
     } catch (error) {
       console.error("Failed to toggle reply reaction:", error);
     }

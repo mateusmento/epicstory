@@ -11,4 +11,5 @@ export type IChannel = {
   lastMessage?: IMessage;
   unreadMessagesCount: number;
   meeting: IMeeting | null;
+  peers: User[];
 };

@@ -33,3 +33,18 @@ export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
   }
   return Object.fromEntries(map.entries());
 }
+
+export function mapBy<T, K extends keyof T>(
+  array: T[],
+  key: K,
+): Map<T[K], T[]> {
+  const map = new Map<T[K], T[]>();
+  for (const item of array) {
+    const keyValue = item[key];
+    if (!map.has(keyValue)) {
+      map.set(keyValue, []);
+    }
+    map.get(keyValue)?.push(item);
+  }
+  return map;
+}

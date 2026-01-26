@@ -29,26 +29,12 @@ function onMessageDeleted(messageId: number) {
 
 <template>
   <TransitionGroup v-if="channel">
-    <Meeting
-      v-if="currentMeeting"
-      v-show="currentMeeting && currentMeeting.channelId === channel.id"
-      :meetingId="currentMeeting.id"
-      :key="1"
-    />
-    <Chatbox
-      v-if="user"
-      v-show="!currentMeeting || currentMeeting.channelId !== channel.id"
-      class="flex-1"
-      :chat-title="title"
-      :chat-picture="picture"
-      :message-groups="messageGroups"
-      :me-id="user.id"
-      :channel-id="channel.id"
-      :send-message="async (message) => await sendMessage(message)"
-      @join-meeting="joinMeeting(channel)"
-      @more-details="viewContent('channel')"
-      @message-deleted="onMessageDeleted"
-      :key="2"
-    />
+    <Meeting v-if="currentMeeting" v-show="currentMeeting && currentMeeting.channelId === channel.id"
+      :meetingId="currentMeeting.id" :key="1" />
+    <Chatbox v-if="user" v-show="!currentMeeting || currentMeeting.channelId !== channel.id" class="flex-1"
+      :chat-title="title" :chat-picture="picture" :message-groups="messageGroups" :me-id="user.id"
+      :channel-id="channel.id" :send-message="async (message) => { await sendMessage(message) }" :channel="channel"
+      @join-meeting="joinMeeting(channel)" @more-details="viewContent('channel')" @message-deleted="onMessageDeleted"
+      :key="2" />
   </TransitionGroup>
 </template>

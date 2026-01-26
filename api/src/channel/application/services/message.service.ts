@@ -24,19 +24,17 @@ export class MessageService {
   async findMessages(channelId: number) {
     const messages = await this.messageRepo.find({
       where: { channelId: channelId },
-      relations: { sender: true, reactions: { user: true } },
+      relations: {
+        sender: true,
+        allReactions: { user: true },
+        allReplies: { sender: true },
+      },
       order: { sentAt: 'asc' },
     });
 
     for (const message of messages) {
-      const grouped = groupBy(message.reactions, 'emoji');
-
-      message.reactionsGroups = Object.entries(grouped).map(
-        ([emoji, reactions]) => ({
-          emoji,
-          reactedBy: reactions.map((reaction) => reaction.user),
-        }),
-      );
+      message.setReactions();
+      message.setReplies();
     }
 
     return messages;
@@ -55,19 +53,17 @@ export class MessageService {
   async findReplies(messageId: number) {
     const replies = await this.messageReplyRepo.find({
       where: { messageId },
-      relations: { sender: true, reactions: { user: true } },
+      relations: { sender: true, allReactions: { user: true } },
       order: { sentAt: 'asc' },
     });
 
     for (const reply of replies) {
-      const grouped = groupBy(reply.reactions, 'emoji');
+      const grouped = groupBy(reply.allReactions, 'emoji');
 
-      reply.reactionsGroups = Object.entries(grouped).map(
-        ([emoji, reactions]) => ({
-          emoji,
-          reactedBy: reactions.map((reaction) => reaction.user),
-        }),
-      );
+      reply.reactions = Object.entries(grouped).map(([emoji, reactions]) => ({
+        emoji,
+        reactedBy: reactions.map((reaction) => reaction.user),
+      }));
     }
 
     return replies;
@@ -122,7 +118,7 @@ export class MessageService {
       .createQueryBuilder()
       .insert()
       .into(MessageReaction)
-      .values({ messageId, emoji, userId })
+      .values({ messageId, emoji, userId, reactedAt: new Date() })
       .orIgnore()
       .execute();
 
@@ -149,7 +145,7 @@ export class MessageService {
       .createQueryBuilder()
       .insert()
       .into(MessageReplyReaction)
-      .values({ messageReplyId, emoji, userId })
+      .values({ messageReplyId, emoji, userId, reactedAt: new Date() })
       .orIgnore()
       .execute();
 
