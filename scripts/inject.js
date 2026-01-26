@@ -39,21 +39,46 @@ function normalizeContainerName(input) {
   return `epicstory-${input}`;
 }
 
-function inject(container) {
-  // Attach an interactive shell session into the running container
-  console.log(`🔗 Injecting into container: ${container}`);
-  const shell = spawn("docker", ["exec", "-it", container, "bash"], {
-    stdio: "inherit",
-  });
+function inject(container, preferredShell) {
+  // Attach an interactive shell session into the running container.
+  // Not all images ship with bash (e.g. peerjs/peerjs-server), so we fall back to sh.
+  const shellsToTry = preferredShell ? [preferredShell] : ["bash", "sh"];
+  const ttyFlags = process.stdin.isTTY ? ["-it"] : ["-i"];
 
-  shell.on("exit", (code) => process.exit(code));
+  const tryNext = (idx) => {
+    const shellName = shellsToTry[idx];
+    if (!shellName) {
+      console.error(
+        `❌ Inject failed: no compatible shell found. Tried: ${shellsToTry.join(
+          ", ",
+        )}`,
+      );
+      process.exit(127);
+    }
+
+    console.log(`🔗 Injecting into container: ${container} (${shellName})`);
+    const child = spawn("docker", ["exec", ...ttyFlags, container, shellName], {
+      stdio: "inherit",
+    });
+
+    child.on("exit", (code) => {
+      // 127 is commonly "command not found" (e.g., bash missing). Try fallback.
+      if (!preferredShell && code === 127 && idx + 1 < shellsToTry.length) {
+        return tryNext(idx + 1);
+      }
+      process.exit(code ?? 1);
+    });
+  };
+
+  tryNext(0);
 }
 
 function main() {
   const container = process.argv[2];
+  const preferredShell = process.argv[3]; // optional: node scripts/inject.js peerjs sh
   try {
     const validContainer = normalizeContainerName(container);
-    inject(validContainer);
+    inject(validContainer, preferredShell);
   } catch (e) {
     console.error(`❌ ${e.message}`);
     process.exit(1);
