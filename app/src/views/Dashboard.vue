@@ -9,6 +9,7 @@ import {
   Teams,
   WorkspaceMembers,
 } from "@/components/app-pane";
+import ThreadDrawer from "@/components/channel/ThreadDrawer.vue";
 import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout";
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { NotFoundException, UnauthorizedException } from "@/core/axios";
@@ -79,6 +80,10 @@ watch(workspaceId, loadWorkspace);
     <template #details-pane>
       <DrawerPaneContent content="channel">
         <ChannelDetailsPane @close="isDetailsPaneOpen = false" />
+      </DrawerPaneContent>
+      <DrawerPaneContent content="replies" #default="{ contentProps }">
+        <ThreadDrawer v-model:message="contentProps.message" :meId="contentProps.meId"
+          @close="isDetailsPaneOpen = false" />
       </DrawerPaneContent>
     </template>
   </AppLayout>

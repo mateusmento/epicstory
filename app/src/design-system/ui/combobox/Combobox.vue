@@ -53,26 +53,18 @@ const open = ref(false);
         </slot>
       </Slot>
     </PopoverTrigger>
-    <PopoverContent class="p-0">
+    <PopoverContent class="p-0 z-[70]">
       <Command v-bind="forwarded" v-model="value">
         <CommandInput :placeholder="searchPlaceholder ?? 'Search for options...'" />
         <CommandEmpty>No options found.</CommandEmpty>
         <CommandList>
           <CommandGroup>
-            <CommandItem
-              v-for="option in options"
-              :key="trackOf(option)"
-              :value="option"
-              @select="open = false"
-            >
-              <Check
-                :class="
-                  cn(
-                    'mr-2 h-4 w-4',
-                    value && trackOf(value) === trackOf(option) ? 'opacity-100' : 'opacity-0',
-                  )
-                "
-              />
+            <CommandItem v-for="option in options" :key="trackOf(option)" :value="option" @select="open = false">
+              <Check :class="cn(
+                'mr-2 h-4 w-4',
+                value && trackOf(value) === trackOf(option) ? 'opacity-100' : 'opacity-0',
+              )
+                " />
               <slot name="option" :option="option">
                 {{ labelOf(option) }}
               </slot>

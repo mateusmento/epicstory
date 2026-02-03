@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
-import { ScrollArea } from "@/design-system";
+import { ScrollArea, Separator } from "@/design-system";
 import type { IChannel, IMessageGroup } from "@/domain/channels";
 import { reactive } from "vue";
 import ChatboxTopbar from "./ChatboxTopbar.vue";
@@ -35,14 +35,17 @@ function onMessageDeleted(messageId: number) {
 
 <template>
   <div class="flex:col h-full">
+
     <ChatboxTopbar :chatTitle="chatTitle" :chatPicture="chatPicture" @more-details="emit('more-details')">
       <button @click="emit('join-meeting')" class="p-2 ml-auto border-none rounded-full bg-green">
         <IconAcceptCall />
       </button>
     </ChatboxTopbar>
 
+    <Separator />
+
     <ScrollArea class="flex-1 min-h-0" bottom>
-      <div class="flex:col-xl !flex justify-end h-full p-4">
+      <div class="flex:col-xl !flex justify-end p-4 min-h-full">
 
         <div class="flex:col-3xl p-xl mb-2xl">
           <div class="flex:row-xl flex:center-y gap-2">
@@ -63,8 +66,8 @@ function onMessageDeleted(messageId: number) {
 
         <MessageGroup v-for="group of messageGroups" :key="group.id" :sender="group.sender" :meId="meId"
           :sentAt="group.sentAt">
-          <Message v-for="(message, i) of group.messages" :key="message.id" :message
-            @update:message="group.messages[i] = $event" :meId @message-deleted="onMessageDeleted" />
+          <Message v-for="message of group.messages" :key="message.id" :message :meId
+            @message-deleted="onMessageDeleted" />
         </MessageGroup>
       </div>
     </ScrollArea>

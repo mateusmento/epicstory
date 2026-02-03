@@ -4,11 +4,13 @@ export type Page<T> = {
   count: number;
   hasNext: boolean;
   hasPrevious: boolean;
+  total: number;
 };
 
 export type PageQuery = {
-  orderBy: string;
-  order: string;
+  orderBy?: string;
+  order?: string;
   page: number;
   count: number;
 };
+

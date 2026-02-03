@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/design-system";
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/design-system";
 import { IconReplies } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import EmojiPicker from "./EmojiPicker.vue";
 
 const props = defineProps<{
@@ -18,16 +18,27 @@ const emit = defineEmits<{
 }>();
 
 const sender = computed(() => props.senderId === props.meId ? 'me' : 'someoneElse');
+
+const mostUsedEmojis = [
+  '👍',
+  '🙌',
+  '❤️',
+  // '🔥',
+  // '🎉',
+];
+
+const messageActionsRef = ref<HTMLElement | null>(null);
+
+defineExpose({
+  getWidth: () => messageActionsRef.value?.clientWidth,
+});
 </script>
 
 <template>
-  <div :class="styles.messageActions">
-    <Button variant="ghost" size="icon" class="w-8 h-8 text-lg" @click="emit('emoji-selected', '👍')">
-      👍
-    </Button>
-
-    <Button variant="ghost" size="icon" class="w-8 h-8 text-lg" @click="emit('emoji-selected', '🙌')">
-      🙌
+  <div :class="styles.messageActions" ref="messageActionsRef">
+    <Button v-for="emoji in mostUsedEmojis" :key="emoji" variant="ghost" size="icon" class="w-8 h-8 text-lg"
+      @click="emit('emoji-selected', emoji)">
+      {{ emoji }}
     </Button>
 
     <EmojiPicker @select="emit('emoji-selected', $event)" class="w-8 h-8 text-lg" />
@@ -42,7 +53,17 @@ const sender = computed(() => props.senderId === props.meId ? 'me' : 'someoneEls
           <DotsHorizontalIcon class="w-5 h-5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" disabled-portal>
+        <DropdownMenuItem>
+          <span>Copy message</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <span>Edit message</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <span>Quote message</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem v-if="sender === 'me'" @click="emit('message-deleted')" variant="destructive">
           <span>Delete message</span>
         </DropdownMenuItem>
@@ -54,8 +75,9 @@ const sender = computed(() => props.senderId === props.meId ? 'me' : 'someoneEls
 <script lang="ts">
 const styles = {
   messageActions: cn([
-    "flex:row-md flex:center-y w-fit bg-white z-10 opacity-0 group-hover/message:opacity-100 transition-opacity",
-    "absolute top-0 right-0 translate-y-[-75%] mr-3",
+    "flex:row-md flex:center-y w-fit bg-white z-10",
+    // "opacity-0 group-hover/message:opacity-100 transition-opacity",
+    // "absolute top-0 right-0 translate-y-[-75%] mr-3",
     "border border-secondary rounded-xl shadow-sm p-md",
   ].join(" "))
 };

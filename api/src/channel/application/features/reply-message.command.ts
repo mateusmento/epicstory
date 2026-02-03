@@ -1,12 +1,11 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { IsNotEmpty, IsString } from 'class-validator';
 import {
   MessageReplyRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { MessageNotFound } from '../exceptions';
-import { MessageGateway } from '../gateways/message.gateway';
-import { IsNotEmpty, IsString } from 'class-validator';
 
 export class ReplyMessage {
   messageId: number;
@@ -26,7 +25,6 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
   constructor(
     private messageReplyRepo: MessageReplyRepository,
     private messageRepo: MessageRepository,
-    private messageGateway: MessageGateway,
   ) {}
 
   async execute({ senderId, content, messageId }: ReplyMessage) {
@@ -45,8 +43,10 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
 
     const reply = await this.messageReplyRepo.findOne({
       where: { id: replyId },
-      relations: { sender: true },
+      relations: { sender: true, allReactions: { user: true } },
     });
+
+    reply.setReactions(senderId);
 
     return reply;
   }

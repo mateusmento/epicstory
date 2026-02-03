@@ -36,37 +36,43 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
     // Includes retry logic: only selects events that haven't exceeded max retries
     // and have waited long enough based on exponential backoff
     const sql = `
+      -- Atomically claim ("lock") due events in a concurrency-safe way.
+      -- Pattern:
+      --  1) SELECT candidate rows + lock them (FOR UPDATE SKIP LOCKED)
+      --  2) UPDATE exactly those rows to set lock_id/locked_at, then RETURN them
       WITH locked_rows AS (
         SELECT id, retry_count, last_retry_at
         FROM scheduler.scheduled_events
-        WHERE processed = false
-          AND retry_count < $4
+        WHERE
+          processed = false                               -- Only process events that haven't been completed yet.
           AND (
-            lock_id IS NULL
-            OR locked_at < now() - interval '5 minutes'
+            lock_id IS NULL                               -- Take events that are currently unlocked...
+            OR locked_at < now() - interval '5 minutes'   -- ...or whose lock is stale with TTL of 5 minutes (to recover from previous worker that likely died).
           )
-          AND due_at <= $2
-          AND (
-            retry_count = 0
-            OR last_retry_at IS NULL
-            OR last_retry_at + (
+          AND due_at <= $2                                -- Take both events due in the future (now + windowMs) and overdue events (for retry).
+          AND retry_count < $4                            -- Do not retry forever: skip events that already hit the retry limit.
+          AND (                                           -- Retry with exponential backoff gate:
+            retry_count = 0 OR last_retry_at IS NULL      -- Skip events that were never retried or without last retry timestamp
+            OR last_retry_at + (                          -- ...otherwise retry after an exponential backoff delay has elapsed:
               (interval '1 minute') * power(2, GREATEST(0, retry_count - 1))::int
             ) <= now()
           )
-        ORDER BY due_at ASC, id ASC
-        LIMIT $3
-        FOR UPDATE SKIP LOCKED
+        ORDER BY due_at ASC, id ASC                       -- Prefer earliest due events first (stable order by id prevents tie flapping).
+        LIMIT $3                                          -- Bound work per cron tick.
+        FOR UPDATE SKIP LOCKED                            -- Concurrency: lock selected rows, skip rows locked by other workers (don't block).
       )
       UPDATE scheduler.scheduled_events se
-      SET lock_id = $1,
-          locked_at = now()
+      SET
+        lock_id = $1,                                     -- Claim the selected rows for this worker.   
+        locked_at = now()                                 -- Set the lock timestamp.
       FROM locked_rows
-      WHERE se.id = locked_rows.id
+      WHERE
+        se.id = locked_rows.id                            -- Update only the rows we just selected+locked.
         AND (
-          se.lock_id IS NULL
-          OR se.locked_at < now() - interval '5 minutes'
+          se.lock_id IS NULL                              -- Defensive re-check: only overwrite lock if it is absent or stale.
+          OR se.locked_at < now() - interval '5 minutes'  -- ...or if the lock is stale (previous worker likely died).
         )
-      RETURNING
+      RETURNING                                           -- Return the claimed events to the application for processing.
         se.id,
         se.user_id,
         se.payload,

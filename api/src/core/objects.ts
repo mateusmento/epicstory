@@ -22,7 +22,10 @@ export function patch<T>(instance: T, partial: Partial<T>) {
   });
 }
 
-export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
+export function groupBy<T>(
+  array: T[],
+  key: keyof T,
+): Record<string | number, T[]> {
   const map = new Map<T[keyof T], T[]>();
   for (const item of array) {
     const keyValue = item[key];

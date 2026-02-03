@@ -24,8 +24,8 @@ export class ChannelMessageController {
   ) {}
 
   @Get()
-  findMessages(@Param('channelId') channelId: number) {
-    return this.messageService.findMessages(channelId);
+  findMessages(@Param('channelId') channelId: number, @Auth() issuer: Issuer) {
+    return this.messageService.findMessages(channelId, issuer.id);
   }
 
   @Post()
@@ -55,8 +55,11 @@ export class MessageController {
   ) {}
 
   @Get('reactions')
-  findMessageReactions(@Param('messageId') messageId: number) {
-    return this.messageService.findMessageReactions(messageId);
+  findMessageReactions(
+    @Param('messageId') messageId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.messageService.findMessageReactions(messageId, issuer.id);
   }
 
   @Post('reactions')

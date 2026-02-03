@@ -32,8 +32,6 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     private channelRepo: ChannelRepository,
     private messageRepo: MessageRepository,
     private messageService: MessageService,
-    private userRepo: UserRepository,
-    private messageGateway: MessageGateway,
   ) {}
 
   async execute({ channelId, senderId, content }: SendMessage) {
@@ -62,13 +60,8 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       where: { id },
       relations: {
         sender: true,
-        allReactions: { user: true },
-        allReplies: { sender: true },
       },
     });
-
-    message.setReactions();
-    message.setReplies();
 
     return message;
   }

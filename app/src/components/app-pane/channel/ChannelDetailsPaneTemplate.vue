@@ -42,10 +42,12 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 </script>
 
 <template>
-  <aside class="flex:col-xl border-zinc-300/60">
-    <div class="flex:row-lg flex:center-y whitespace-nowrap">
+  <!--   -->
+  <aside class="flex:col h-full w-96 border-l border-zinc-300/60">
+
+    <div class="flex:row-lg flex:center-y p-4 min-h-14 whitespace-nowrap">
       <IconChannel class="overflow-visible" />
-      <div class="text-lg font-semibold">Channel</div>
+      <div class="text-base font-semibold">Channel</div>
       <Button variant="ghost" size="icon" class="ml-auto" @click="emit('close')">
         <IconClose class="w-4 h-4" />
       </Button>
@@ -53,7 +55,7 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 
     <Separator />
 
-    <div class="flex:col">
+    <div class="flex:col p-xl">
       <Attribute label="Created by" value="Mateus Sarmento" />
       <Attribute label="Created at" value="Feb 2, 2024" />
       <Attribute label="Member since" value="Aug 16, 2019" />
@@ -61,7 +63,7 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 
     <Separator />
 
-    <ChannelMembers :members @add="showDialog = true" @remove="removeMember" />
+    <ChannelMembers class="p-xl" :members @add="showDialog = true" @remove="removeMember" />
 
     <Dialog v-model:open="showDialog">
       <DialogContent>

@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import { Collapsible, CollapsibleContent, NavView } from "@/design-system";
-import { ref } from "vue";
+import { ref, type HTMLAttributes } from "vue";
+
+defineProps<{
+  class?: HTMLAttributes["class"];
+}>();
 
 const open = defineModel<boolean>("open");
 const content = ref("");
@@ -14,12 +18,8 @@ function onNavViewTrigger(v: string) {
 <template>
   <NavView view="app-pane" v-model:content="content" @trigger="onNavViewTrigger">
     <Collapsible as-child :open="open">
-      <CollapsibleContent
-        as="aside"
-        transition="horizontal"
-        class="h-full w-fit border-r border-r-zinc-300/60"
-        :class="$props.class"
-      >
+      <CollapsibleContent as="aside" transition="horizontal" :class="$props.class"
+        class="h-full w-fit border-r border-r-zinc-300/60">
         <slot />
       </CollapsibleContent>
     </Collapsible>

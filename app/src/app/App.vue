@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { UnauthorizedException } from "@/core/axios";
+import { TooltipProvider } from "@/design-system";
 import { Suspense, onErrorCaptured } from "vue";
 import { RouterView, useRouter } from "vue-router";
 
@@ -16,7 +17,9 @@ onErrorCaptured((err) => {
   <RouterView #default="{ Component }">
     <Suspense timeout="0">
       <template #default>
-        <component :is="Component"></component>
+        <TooltipProvider>
+          <component :is="Component"></component>
+        </TooltipProvider>
       </template>
 
       <template #fallback>

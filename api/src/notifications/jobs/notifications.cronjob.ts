@@ -35,7 +35,8 @@ export class NotificationsCronjob {
   async handleCron() {
     // Look ahead 10 seconds (10000ms) for events that are due
     const [lockId, events] = await this.scheduledEventRepo.findDueEvents(
-      2 * 24 * 3600 * 1000,
+      0,
+      // 2 * 24 * 3600 * 1000,
     ); // 2 days
 
     if (events.length === 0) {

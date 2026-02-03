@@ -45,6 +45,12 @@ export function useChannel() {
     }
   }
 
+  function onMessageDeleted({ messageId, channelId }: any) {
+    if (store.channel && store.channel.id === channelId) {
+      store.messages = store.messages.filter((message) => message.id !== messageId);
+    }
+  }
+
   function joinChannel() {
     sockets.websocket?.emit("subscribe-messages", {
       workspaceId: workspace.value.id,
@@ -52,10 +58,14 @@ export function useChannel() {
 
     sockets.websocket.off("incoming-message", onReceiveMessage);
     sockets.websocket?.on("incoming-message", onReceiveMessage);
+
+    sockets.websocket.off("message-deleted", onMessageDeleted);
+    sockets.websocket?.on("message-deleted", onMessageDeleted);
   }
 
   function leaveChannel() {
     sockets.websocket.off("incoming-message", onReceiveMessage);
+    sockets.websocket.off("message-deleted", onMessageDeleted);
   }
 
   function onIncomingMeeting({ meeting, channelId }: { meeting: IMeeting; channelId: number }) {
@@ -117,6 +127,12 @@ export function useChannel() {
     store.members = channel.peers;
   }
 
+  async function deleteMessage(messageId: number) {
+    if (!store.channel) return;
+    await channelApi.deleteMessage(messageId);
+    store.messages = store.messages.filter((message) => message.id !== messageId);
+  }
+
   return {
     ...storeToRefs(store),
     messageGroups,
@@ -132,10 +148,11 @@ export function useChannel() {
     fetchMembers,
     addMember,
     removeMember,
+    deleteMessage,
   };
 }
 
-function groupMessages(messages: IMessage[]) {
+export function groupMessages(messages: IMessage[]) {
   return messages.reduce((groups, message) => {
     const lastGroup = last(groups);
     if (lastGroup && message.senderId === lastGroup.senderId) {
@@ -181,8 +198,9 @@ export function useSyncedChannel() {
     unsubscribeMeetings();
   });
 
-  watch(channelId, async () => {
-    await fetchChannel(channelId.value);
+  watch(channelId, async (channelId) => {
+    console.log(channelId)
+    await fetchChannel(channelId);
     joinChannel();
     fetchMessages();
     fetchMembers();

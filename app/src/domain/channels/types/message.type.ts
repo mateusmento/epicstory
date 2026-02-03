@@ -9,19 +9,23 @@ export interface IMessage {
   sender: User;
   channelId: number;
   channel: IChannel;
-  reactions: IReaction[];
-  replies: {
-    count: number;
-    repliedBy: User[];
-  }
+
+  repliesCount: number;
+  repliers: { user: User; repliesCount: number }[];
+  reactions: IAggregatedReaction[];
 }
 
-export type IMessageGroup = {
+export type IMessageGroup<M extends IMessage | IReply = IMessage> = {
   id: number;
   senderId: number;
   sender: User;
   sentAt: string;
-  messages: IMessage[];
+  messages: M[];
+};
+
+export type IMessageAggregation = {
+  reactions: IAggregatedReaction[];
+  replies: IAggregatedReply;
 };
 
 export interface IMessageReaction {
@@ -43,7 +47,10 @@ export interface IReply {
   channel: IChannel;
   messageId: number;
   message: IMessage;
-  reactions: IReaction[];
+
+  repliesCount: number;
+  repliers: { user: User; repliesCount: number }[];
+  reactions: IAggregatedReaction[];
 }
 
 export interface IReplyReaction {
@@ -57,5 +64,17 @@ export interface IReplyReaction {
 
 export type IReaction = {
   emoji: string;
+  reactedBy: User;
+};
+
+export type IAggregatedReaction = {
+  emoji: string;
   reactedBy: User[];
+  firstReactedAt: string;
+  reactedByMe: boolean;
+};
+
+export type IAggregatedReply = {
+  count: number;
+  repliedBy: User[];
 };

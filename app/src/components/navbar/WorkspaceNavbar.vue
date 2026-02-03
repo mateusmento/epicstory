@@ -22,7 +22,7 @@ import { useAuth } from "@/domain/auth";
 defineProps<{ isAppPaneOpen: boolean }>();
 
 const { workspace } = useWorkspace();
-const { signOut } = useAuth();
+const { user, signOut } = useAuth();
 </script>
 
 <template>
@@ -84,23 +84,34 @@ const { signOut } = useAuth();
       <DropdownMenuTrigger as-child>
         <UserProfile />
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="w-52">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+      <DropdownMenuContent>
+        <DropdownMenuLabel class="flex:col-sm flex-1 min-w-0 max-w-44">
+          <div class="font-medium whitespace-nowrap text-ellipsis overflow-hidden">
+            {{ user?.name }}
+          </div>
+          <div class="text-xs text-secondary-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden">
+            {{ user?.email }}
+          </div>
+        </DropdownMenuLabel>
+
         <DropdownMenuSeparator />
+
         <DropdownMenuGroup>
-          <DropdownMenuItem :as="RouterLink" :to="`/${workspace.id}/settings/user-account`">
+          <DropdownMenuItem :as="RouterLink" :to="`/${workspace.id}/settings/user-account`" class="text-[13px] w-44">
             <UserIcon class="mr-2 h-4 w-4" />
             <span>Profile</span>
             <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
           </DropdownMenuItem>
 
-          <DropdownMenuItem>
+          <DropdownMenuItem class="text-[13px] w-44">
             <SettingsIcon class="mr-2 h-4 w-4" />
             <span>Settings</span>
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
 
-          <DropdownMenuItem @click="signOut" variant="destructive">
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem @click="signOut" variant="destructive" class="text-[13px] w-44">
             <LogOutIcon class="mr-2 h-4 w-4" />
             <span>Sign out</span>
             <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

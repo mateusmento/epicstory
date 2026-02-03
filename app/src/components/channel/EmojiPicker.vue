@@ -2,6 +2,7 @@
 import { Button, type ButtonVariants, ScrollArea } from "@/design-system";
 import { Popover, PopoverContent, PopoverTrigger } from "@/design-system/ui/popover";
 import { SmilePlusIcon } from "lucide-vue-next";
+import { PopoverPortal } from "radix-vue";
 import type { HTMLAttributes } from "vue";
 import { ref } from "vue";
 
@@ -117,7 +118,6 @@ const emojis = [
   "💀",
   "☠️",
   "👾",
-  "😈",
   "👿",
 ];
 
@@ -134,8 +134,9 @@ function handleEmojiSelect(emoji: string) {
         <SmilePlusIcon class="w-5 h-5 text-primary/40" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="w-80 p-2" align="start">
-      <ScrollArea class="h-60 flex-1 min-h-0" bottom>
+    <PopoverContent class="w-80 p-2 bg-white z-[80] shadow-sm border border-secondary rounded-lg" align="start"
+      disabled-portal>
+      <ScrollArea class="h-60 flex-1 min-h-0">
         <div class="!grid grid-cols-8 gap-1">
           <button v-for="emoji in emojis" :key="emoji" @click="handleEmojiSelect(emoji)"
             class="flex items-center justify-center p-2 rounded hover:bg-secondary transition-colors text-lg cursor-pointer"

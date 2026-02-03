@@ -27,26 +27,14 @@ const { notifications } = useNotifications({ limit: 100 });
       </div>
 
       <div v-else class="flex:col">
-        <div
-          v-for="notification in notifications"
-          :key="notification.id"
-          class="flex:col-md p-4 border-b hover:bg-secondary transition-colors"
-        >
-          <MentionNotification
-            v-if="notification.type === 'mention'"
-            :payload="notification.payload as MentionNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <ReplyNotification
-            v-else-if="notification.type === 'reply'"
-            :payload="notification.payload as ReplyNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <DueDateNotification
-            v-else-if="notification.type === 'issue_due_date'"
-            :payload="notification.payload as IssueDueDateNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
+        <div v-for="notification in notifications" :key="notification.id"
+          class="flex:col-md p-4 border-b hover:bg-secondary transition-colors">
+          <MentionNotification v-if="notification.type === 'mention'"
+            :payload="notification.payload as MentionNotificationPayload" :createdAt="notification.createdAt" />
+          <ReplyNotification v-else-if="notification.type === 'reply'"
+            :payload="notification.payload as ReplyNotificationPayload" :createdAt="notification.createdAt" />
+          <DueDateNotification v-else-if="notification.type === 'issue_due_date'"
+            :payload="notification.payload as IssueDueDateNotificationPayload" :createdAt="notification.createdAt" />
           <div v-else class="text-sm text-secondary-foreground">
             Unknown notification type: {{ notification.type }}
           </div>

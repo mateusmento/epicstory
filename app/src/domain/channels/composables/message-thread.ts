@@ -1,36 +1,97 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
+import { useAuth } from "@/domain/auth";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
-import { defineStore, storeToRefs } from "pinia";
 import { onMounted, onUnmounted, ref, type Ref } from "vue";
-import type { IMessage, IReaction, IReply } from "../types";
+import type { IAggregatedReaction, IMessage, IReply } from "../types";
 
-export const useMessageThreadStore = defineStore("messageThread", () => {
-  const message = ref<IMessage>();
+
+type UseMessageThreadOptions = {
+  onMessageDeleted?: () => void;
+  name?: string;
+  ignoreIncomingReplies?: boolean;
+};
+
+export function useMessageThread(message: Ref<IMessage>, options: UseMessageThreadOptions = {}) {
   const replies = ref<IReply[]>([]);
-  const reactions = ref<IReaction[]>([]);
-  const replyReactions = ref<Record<number, IReaction[]>>({});
-
-  return { message, replies, reactions, replyReactions };
-});
-
-export function useMessageThread(message: Ref<IMessage>) {
-  const store = useMessageThreadStore();
   const isLoadingReplies = ref(false);
   const replyContent = ref("");
 
+  const { user: me } = useAuth();
+
   const channelApi = useDependency(ChannelApi);
   const { websocket } = useWebSockets();
+
+  // Subscribe to incoming replies
+  onMounted(() => {
+    websocket?.off("incoming-reply", onIncomingReply);
+    websocket?.on("incoming-reply", onIncomingReply);
+    websocket?.off("reply-deleted", onReplyDeleted);
+    websocket?.on("reply-deleted", onReplyDeleted);
+
+    websocket?.off("message-deleted", onMessageDeleted);
+    websocket?.on("message-deleted", onMessageDeleted);
+  });
+
+  onUnmounted(() => {
+    websocket?.off("incoming-reply", onIncomingReply);
+    websocket?.off("reply-deleted", onReplyDeleted);
+    websocket?.off("message-deleted", onMessageDeleted);
+  });
+
+  onMounted(() => {
+    websocket?.off("incoming-message-reaction", onIncomingMessageReaction);
+    websocket?.on("incoming-message-reaction", onIncomingMessageReaction);
+
+    websocket?.off("incoming-reply-reaction", onIncomingReplyReaction);
+    websocket?.on("incoming-reply-reaction", onIncomingReplyReaction);
+  });
+
+  onUnmounted(() => {
+    websocket?.off("incoming-message-reaction", onIncomingMessageReaction);
+    websocket?.off("incoming-reply-reaction", onIncomingReplyReaction);
+  });
+
+  async function onIncomingReply({ reply, messageId }: { reply: IReply; messageId: number }) {
+    if (messageId === message.value?.id) {
+      console.log("adding reply after receiving it", options.name, reply);
+      addReply(reply);
+
+      // Fetch reactions for the new reply to prevent race conditions
+      // where incoming-reply-reaction event were received before the reply was added to the list
+      // await fetchReplyReactions(reply.id);
+    }
+  }
+
+  function onIncomingMessageReaction({ messageId, reactions }: { messageId?: number; reactions?: IAggregatedReaction[]; }) {
+    if (messageId === message.value?.id && reactions) {
+      message.value.reactions = reactions;
+    }
+  }
+
+  function onIncomingReplyReaction({ replyId, reactions }: { replyId?: number; reactions?: IAggregatedReaction[]; }) {
+    if (replyId && reactions) {
+      updateReplyReactions(replyId, reactions);
+    }
+  }
+
+  function onReplyDeleted({ replyId, messageId }: { replyId?: number; messageId?: number; }) {
+    if (replyId && messageId === message.value?.id) {
+      removeReply(replyId);
+    }
+  }
+
+  function onMessageDeleted({ messageId }: { messageId?: number; }) {
+    if (messageId === message.value?.id) {
+      options.onMessageDeleted?.();
+    }
+  }
 
   async function fetchReplies() {
     if (isLoadingReplies.value) return;
     isLoadingReplies.value = true;
     try {
-      store.replies = await channelApi.findReplies(message.value?.id);
-      // Fetch reactions for each reply
-      for (const reply of store.replies) {
-        await fetchReplyReactions(reply.id);
-      }
+      replies.value = await channelApi.findReplies(message.value?.id);
     } catch (error) {
       console.error("Failed to fetch replies:", error);
     } finally {
@@ -38,95 +99,24 @@ export function useMessageThread(message: Ref<IMessage>) {
     }
   }
 
-  async function onIncomingReply({ reply, messageId }: { reply: IReply; messageId: number }) {
-    if (messageId === message.value?.id) {
-      store.replies.push(reply);
-      // Fetch reactions for the new reply
-      await fetchReplyReactions(reply.id);
-    }
-  }
-
   async function sendReply() {
     if (!replyContent.value.trim()) return;
+    if (!me.value) return;
 
     try {
       const reply = await channelApi.replyMessage(message.value?.id, replyContent.value);
-      store.replies.push(reply);
+      console.log("adding reply after sending it", options.name, reply);
+      addReply(reply);
       replyContent.value = "";
     } catch (error) {
       console.error("Failed to send reply:", error);
     }
   }
 
-  // Subscribe to incoming replies
-  onMounted(() => {
-    websocket?.off("incoming-reply", onIncomingReply);
-    websocket?.on("incoming-reply", onIncomingReply);
-  });
-
-  onUnmounted(() => {
-    websocket?.off("incoming-reply", onIncomingReply);
-  });
-
-  onMounted(() => {
-    fetchReactions();
-    websocket?.off("incoming-message-reaction", onIncomingReaction);
-    websocket?.on("incoming-message-reaction", onIncomingReaction);
-
-    websocket?.off("incoming-reply-reaction", onIncomingReaction);
-    websocket?.on("incoming-reply-reaction", onIncomingReaction);
-  });
-
-  onUnmounted(() => {
-    websocket?.off("incoming-message-reaction", onIncomingReaction);
-    websocket?.off("incoming-reply-reaction", onIncomingReaction);
-  });
-
-  function onIncomingReaction({
-    messageId,
-    replyId,
-    reactions: updatedReactions,
-  }: {
-    messageId?: number;
-    replyId?: number;
-    reactions?: IReaction[];
-  }) {
-    if (messageId === message.value?.id && updatedReactions) {
-      store.reactions = updatedReactions;
-      message.value.reactions = updatedReactions;
-    } else if (replyId && updatedReactions) {
-      store.replyReactions[replyId] = updatedReactions;
-    }
-  }
-
-  async function fetchReactions() {
-    try {
-      store.reactions = await channelApi.findReactions(message.value?.id);
-    } catch (error) {
-      console.error("Failed to fetch reactions:", error);
-    }
-  }
-
-  async function fetchReplyReactions(replyId: number) {
-    try {
-      store.replyReactions[replyId] = await channelApi.findReplyReactions(replyId);
-    } catch (error) {
-      console.error("Failed to fetch reply reactions:", error);
-    }
-  }
-
   async function toggleReaction(emoji: string) {
     try {
-      const { action, reactions: updatedReactions } = await channelApi.toggleMessageReaction(message.value?.id, emoji);
-
-      // if (action === "added") {
-      //   reactions.value.push({ emoji, reactedBy: me.value ? [me.value.id] : [] });
-      // } else if (action === "removed") {
-      //   reactions.value = reactions.value.filter((reaction) => reaction.emoji !== emoji);
-      // }
-
-      message.value.reactions = updatedReactions;
-
+      const { reactions } = await channelApi.toggleMessageReaction(message.value?.id, emoji);
+      message.value.reactions = reactions;
     } catch (error) {
       console.error("Failed to toggle reaction:", error);
     }
@@ -134,46 +124,50 @@ export function useMessageThread(message: Ref<IMessage>) {
 
   async function toggleReplyReaction(replyId: number, emoji: string) {
     try {
-      const { action, reactions: updatedReactions } = await channelApi.toggleReplyReaction(replyId, emoji);
-
-      // if (action === "added") {
-      //   replyReactions.value[replyId].push({ emoji, reactedBy: me.value ? [me.value.id] : [] });
-      // } else if (action === "removed") {
-      //   replyReactions.value[replyId] = replyReactions.value[replyId].filter((reaction) => reaction.emoji !== emoji);
-      // }
-
-      store.replies = store.replies.map((reply) => reply.id === replyId ? { ...reply, reactions: updatedReactions } : reply);
-      // store.replyReactions[replyId] = updatedReactions;
+      const { reactions } = await channelApi.toggleReplyReaction(replyId, emoji);
+      updateReplyReactions(replyId, reactions);
     } catch (error) {
       console.error("Failed to toggle reply reaction:", error);
-    }
-  }
-
-  async function deleteMessage() {
-    try {
-      await channelApi.deleteMessage(message.value?.id);
-    } catch (error) {
-      console.error("Failed to delete message:", error);
     }
   }
 
   async function deleteReply(replyId: number) {
     try {
       await channelApi.deleteReply(replyId);
-      store.replies = store.replies.filter((reply) => reply.id !== replyId);
-      delete store.replyReactions[replyId];
+      removeReply(replyId);
     } catch (error) {
       console.error("Failed to delete reply:", error);
     }
   }
 
+  function addReply(reply: IReply) {
+    replies.value.push(reply);
+    message.value.repliesCount++;
+    if (!message.value.repliers.some((replier) => replier.user.id === reply.senderId))
+      message.value.repliers.push({ user: reply.sender, repliesCount: 1 });
+  }
+
+  function removeReply(replyId: number) {
+    replies.value = replies.value.filter((reply) => reply.id !== replyId);
+    message.value.repliesCount--;
+    if (replies.value.filter((reply) => reply.senderId === me.value?.id).length === 0)
+      message.value.repliers = message.value.repliers.filter((replier) => replier.user.id !== me.value?.id);
+  }
+
+  function updateReplyReactions(replyId: number, reactions: IAggregatedReaction[]) {
+    const reply = replies.value.find((reply) => reply.id === replyId);
+    if (reply) {
+      reply.reactions = reactions;
+    }
+  }
+
+
   return {
-    ...storeToRefs(store),
+    replies,
     isLoadingReplies,
     replyContent,
     fetchReplies,
     sendReply,
-    deleteMessage,
     deleteReply,
     toggleReaction,
     toggleReplyReaction,

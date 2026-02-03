@@ -1,16 +1,16 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { patch } from 'src/core/objects';
-import { MessageService } from '../services/message.service';
+import { IsNotEmpty, IsString } from 'class-validator';
 import {
   ChannelRepository,
   MessageReplyRepository,
 } from 'src/channel/infrastructure';
+import { patch } from 'src/core/objects';
 import {
   ChannelNotFound,
   IssuerIsNotChannelMember,
   MessageReplyNotFound,
 } from '../exceptions';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { MessageService } from '../services/message.service';
 
 export class ToggleReplyReaction {
   replyId: number;
@@ -56,7 +56,10 @@ export class ToggleReplyReactionCommand
       issuerId,
     );
 
-    const reactions = await this.messageService.findReplyReactions(replyId);
+    const reactions = await this.messageService.findReplyReactions(
+      replyId,
+      issuerId,
+    );
 
     return {
       success: true,

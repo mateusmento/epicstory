@@ -36,6 +36,7 @@ export function useNotifications(options?: { limit?: number; autoSubscribe?: boo
    */
   function handleIncomingNotification(notification: Notification) {
     // Check if notification already exists (avoid duplicates)
+    console.log("incoming-notification", notification);
     const exists = notifications.value.some((n) => n.id === notification.id);
     if (!exists && isValidNotification(notification)) {
       notifications.value.unshift(notification);
@@ -55,9 +56,9 @@ export function useNotifications(options?: { limit?: number; autoSubscribe?: boo
     error.value = null;
 
     try {
-      const fetched = await notificationApi.fetchNotifications(user.value.id, limit);
+      const { content } = await notificationApi.fetchNotifications(user.value.id, limit);
       // Filter and validate notifications
-      notifications.value = fetched.filter(isValidNotification) as Notification[];
+      notifications.value = content.filter(isValidNotification);
     } catch (err) {
       const errorMessage = err instanceof Error ? err : new Error("Failed to fetch notifications");
       error.value = errorMessage;

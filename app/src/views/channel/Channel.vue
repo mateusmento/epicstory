@@ -7,8 +7,12 @@ import { useMeeting, useSyncedChannel } from "@/domain/channels";
 import { computed } from "vue";
 
 const { user } = useAuth();
-const { channel, messages, messageGroups, sendMessage } = useSyncedChannel();
+const { channel, messageGroups, sendMessage, deleteMessage } = useSyncedChannel();
 const { currentMeeting, joinMeeting } = useMeeting();
+
+const emit = defineEmits<{
+  (e: "message-deleted", messageId: number): void;
+}>();
 
 const title = computed(() => {
   if (!channel.value) return "";
@@ -23,7 +27,8 @@ const picture = computed(() => {
 const { viewContent } = useNavTrigger("details-pane");
 
 function onMessageDeleted(messageId: number) {
-  messages.value = messages.value.filter((message) => message.id !== messageId);
+  deleteMessage(messageId);
+  emit("message-deleted", messageId);
 }
 </script>
 

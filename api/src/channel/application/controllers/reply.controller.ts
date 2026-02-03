@@ -25,8 +25,8 @@ export class MessageRepliesController {
   ) {}
 
   @Get()
-  findReplies(@Param('messageId') messageId: number) {
-    return this.messageService.findReplies(messageId);
+  findReplies(@Param('messageId') messageId: number, @Auth() issuer: Issuer) {
+    return this.messageService.findReplies(messageId, issuer.id);
   }
 
   @Post()
@@ -59,8 +59,11 @@ export class ReplyController {
   ) {}
 
   @Get('reactions')
-  findReplyReactions(@Param('replyId') replyId: number) {
-    return this.messageService.findReplyReactions(replyId);
+  findReplyReactions(
+    @Param('replyId') replyId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.messageService.findReplyReactions(replyId, issuer.id);
   }
 
   @Post('reactions')

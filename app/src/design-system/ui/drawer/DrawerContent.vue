@@ -16,7 +16,8 @@ const forwarded = useForwardPropsEmits(props, emits);
   <DrawerPortal>
     <DrawerOverlay />
     <DrawerContent v-bind="forwarded" :class="cn(
-      'fixed inset-y-0 right-0 z-50 flex h-auto flex-col [&::after]:hidden rounded-xl border bg-background',
+      // Panel above overlay (z-[55]) and above general popovers (z-50)
+      'fixed inset-y-0 right-0 z-[60] flex h-auto flex-col [&::after]:hidden rounded-xl border bg-background',
       props.class,
     )
       ">

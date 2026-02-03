@@ -154,8 +154,10 @@ export class MessageGateway {
         userId,
       );
 
-      const reactions =
-        await this.messageService.findReplyReactions(messageReplyId);
+      const reactions = await this.messageService.findReplyReactions(
+        messageReplyId,
+        userId,
+      );
 
       socket.to(channelMessagingRoom(channelId)).emit('incoming-reaction', {
         messageReplyId,
@@ -176,8 +178,10 @@ export class MessageGateway {
       // Toggle reaction on a message
       await this.messageService.toggleMessageReaction(messageId, emoji, userId);
 
-      const reactions =
-        await this.messageService.findMessageReactions(messageId);
+      const reactions = await this.messageService.findMessageReactions(
+        messageId,
+        userId,
+      );
 
       socket.to(channelMessagingRoom(channelId)).emit('incoming-reaction', {
         messageId,

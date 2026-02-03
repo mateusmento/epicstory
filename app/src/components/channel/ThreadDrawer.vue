@@ -1,21 +1,21 @@
 <script setup lang="tsx">
-import { Button, Drawer, DrawerContent, DrawerDescription, DrawerTitle, Separator } from "@/design-system";
-import { cn } from "@/design-system/utils";
+import { Button, ScrollArea, Separator } from "@/design-system";
+import { Icon } from "@/design-system/icons";
+import { useChannel, type IMessage, type IMessageGroup, type IReply } from "@/domain/channels";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
-import type { IMessage } from "@/domain/channels/types";
+import { last } from "lodash";
+import { computed, onMounted } from "vue";
+import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
-import { watch } from "vue";
-import MessageActions from "./MessageActions.vue";
 
 defineProps<{
   meId: number;
 }>();
 
-const isOpen = defineModel<boolean>("open", { required: true });
 const message = defineModel<IMessage>("message", { required: true });
 
-const emit = defineEmits(["message-deleted"]);
+const emit = defineEmits(["message-deleted", "close"]);
 
 const {
   replies,
@@ -24,99 +24,82 @@ const {
   toggleReplyReaction,
   fetchReplies,
   sendReply,
-  deleteMessage,
   deleteReply,
-} = useMessageThread(message);
+} = useMessageThread(message, { onMessageDeleted: () => emit("close"), name: "thread" });
 
-watch(isOpen, (open) => {
-  if (open && replies.value.length === 0) {
-    replies.value = [];
-    fetchReplies();
-  }
+const { deleteMessage } = useChannel();
+
+function groupMessages(messages: IReply[]) {
+  return messages.reduce((groups, message) => {
+    const lastGroup = last(groups);
+    if (lastGroup && message.senderId === lastGroup.senderId) {
+      lastGroup.messages.push(message);
+    } else {
+      groups.push({
+        id: message.id,
+        senderId: message.senderId,
+        sender: message.sender,
+        sentAt: message.sentAt,
+        messages: [message],
+      });
+    }
+    return groups;
+  }, [] as IMessageGroup<IReply>[]);
+}
+
+const replyGroups = computed(() => {
+  return groupMessages(replies.value);
 });
 
-function onDeleteMessage() {
-  deleteMessage();
-  emit("message-deleted", message.value?.id);
+onMounted(() => {
+  fetchReplies();
+});
+
+async function onMessageDeleted() {
+  deleteMessage(message.value.id);
+  emit("close");
 }
 </script>
 
 <template>
-  <Drawer v-model:open="isOpen" direction="right">
-    <DrawerContent class="flex:col-2xl bg-white p-6 m-2 min-w-96">
-      <DrawerTitle>
-        Thread
-      </DrawerTitle>
+  <div class="flex:col max-w-[32rem] border-l border-l-zinc-300/60">
 
-      <MessageGroup :sender="message.sender" :meId="meId" :sentAt="message.sentAt">
-        <div class="flex:col relative group/message">
-          <DrawerDescription class="text-foreground" :class="styles.messageBox">
-            {{ message.content }}
-          </DrawerDescription>
+    <div class="flex:row-xl flex:center-y justify-between h-14 p-4">
+      <div class="text-base font-semibold">Thread</div>
 
-          <MessageActions :meId="meId" :senderId="message.senderId" @message-deleted="onDeleteMessage"
-            @emoji-selected="toggleReaction($event)" />
+      <Button variant="ghost" size="icon" @click="emit('close')">
+        <Icon name="io-close" />
+      </Button>
+    </div>
 
-          <div class="flex:row-md z-10 flex:center-y ml-lg mt-1 mb-1">
-            <Button v-for="reaction in message.reactions" :key="reaction.emoji" variant="outline" size="icon"
-              @click="toggleReaction(reaction.emoji)"
-              class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]">
-              {{ reaction.emoji }} {{ reaction.reactedBy?.length }}
-            </Button>
-          </div>
+    <Separator />
+
+    <ScrollArea class="flex-1 min-h-0" bottom>
+      <div class="flex:col-2xl !flex p-4 min-w-96 min-h-full bg-white">
+        <MessageGroup :sender="message.sender" :meId="meId" :sentAt="message.sentAt">
+          <MessageBox :message="message" :meId="meId" @reaction-toggled="toggleReaction($event)"
+            @message-deleted="onMessageDeleted" hide-replies-count />
+        </MessageGroup>
+
+        <div class="flex:row-lg flex:center-y">
+          <Separator class="flex-1" />
+          <span v-if="replies.length === 0" class="text-sm text-secondary-foreground">No replies yet</span>
+          <span v-else class="text-sm text-secondary-foreground">
+            {{ replies.length }} {{ replies.length === 1 ? 'reply' : 'replies' }}
+          </span>
+          <Separator class="flex-1" />
         </div>
-      </MessageGroup>
 
-      <div class="flex:row-lg flex:center-y">
-        <Separator class="flex-1" />
-        <span v-if="replies.length === 0" class="text-sm text-secondary-foreground">No replies yet</span>
-        <span v-else class="text-sm text-secondary-foreground">
-          {{ replies.length }} {{ replies.length === 1 ? 'reply' : 'replies' }}
-        </span>
-        <Separator class="flex-1" />
-      </div>
-
-      <div class="flex:col-xl">
-        <div v-for="reply in replies" :key="reply.id" class="flex:row-lg flex:center-y">
-
-          <MessageGroup :sender="reply.sender" :meId="meId" :sentAt="reply.sentAt">
-            <div class="flex:col relative group/message">
-              <div :class="styles.messageBox">{{ reply.content }}</div>
-
-              <MessageActions :meId="meId" :senderId="reply.senderId" @message-deleted="deleteReply(reply.id)"
-                @emoji-selected="toggleReplyReaction(reply.id, $event)" />
-
-              <div class="flex:row-md z-10 flex:center-y ml-lg mt-1 mb-1">
-                <Button v-for="reaction in reply.reactions" :key="reaction.emoji" variant="outline" size="icon"
-                  @click="toggleReplyReaction(reply.id, reaction.emoji)"
-                  class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]">
-                  {{ reaction.emoji }} {{ reaction.reactedBy?.length }}
-                </Button>
-              </div>
-            </div>
+        <div class="flex:col-xl">
+          <MessageGroup v-for="group in replyGroups" :key="group.id" :sender="group.sender" :meId="meId"
+            :sentAt="group.sentAt">
+            <MessageBox v-for="reply in group.messages" :key="reply.id" :message="reply" :meId="meId"
+              @reaction-toggled="toggleReplyReaction(reply.id, $event)" @message-deleted="deleteReply(reply.id)" />
           </MessageGroup>
-
         </div>
       </div>
+    </ScrollArea>
 
-      <MessageWriter v-model:message-content="replyContent" @send-message="sendReply()" class="mt-auto" />
-    </DrawerContent>
-  </Drawer>
+    <MessageWriter v-model:message-content="replyContent" @send-message="sendReply()" class="m-4 mt-auto" />
+  </div>
 </template>
-
-<script lang="tsx">
-const styles = {
-  messageBox: cn(
-    [
-      "group",
-      "min-w-40 w-fit px-3 py-1.5",
-      "text-[calc(1rem-1px)] font-lato",
-      "rounded-xl",
-      "group-hover/message:bg-secondary/20",
-      "border border-transparent group-hover/message:border-[#E4E4E4]",
-      "group-hover/message:shadow-sm",
-      "rounded-tl-none",
-    ].join(" "),
-  ),
-};
-</script>

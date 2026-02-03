@@ -14,5 +14,6 @@ const delegatedProps = computed(() => {
 </script>
 
 <template>
-  <DrawerOverlay v-bind="delegatedProps" :class="cn('fixed inset-0 z-50 bg-zinc-800/40', props.class)" />
+  <!-- Overlay should sit above page content (including portaled popovers), but below the drawer panel. -->
+  <DrawerOverlay v-bind="delegatedProps" :class="cn('fixed inset-0 z-[55] bg-zinc-800/40', props.class)" />
 </template>

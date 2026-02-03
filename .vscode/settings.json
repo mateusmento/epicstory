@@ -6,8 +6,14 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "color-highlight.matchHslWithNoFunction": true,
   "tailwindCSS.experimental.classRegex": [
-    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
-    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    [
+      "cva\\(([^)]*)\\)",
+      "[\"'`]([^\"'`]*).*?[\"'`]"
+    ],
+    [
+      "cx\\(([^)]*)\\)",
+      "(?:'|\"|`)([^']*)(?:'|\"|`)"
+    ]
   ],
   "jest.jestCommandLine": "cd api && npm test --",
   "jest.rootPath": "api",
@@ -19,8 +25,4 @@
   "[vue]": {
     "editor.defaultFormatter": "Vue.volar"
   },
-  "[typescript]": {
-    "editor.defaultFormatter": "Vue.volar"
-  }
-
 }

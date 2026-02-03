@@ -60,7 +60,10 @@ export class ToggleMessageReactionCommand
       issuerId,
     );
 
-    const reactions = await this.messageService.findMessageReactions(messageId);
+    const reactions = await this.messageService.findMessageReactions(
+      messageId,
+      issuerId,
+    );
 
     return {
       success: true,

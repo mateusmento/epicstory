@@ -22,3 +22,5 @@ export * from "./ui/select";
 export * from "./ui/dropdown-menu";
 export * from "./ui/table";
 export * from "./ui/drawer"
+export * from "./ui/hover-card";
+export * from "./ui/tooltip";

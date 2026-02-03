@@ -11,7 +11,7 @@ import {
 import { useWorkspace } from "@/domain/workspace";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
-import { computed, ref, shallowRef } from "vue";
+import { ref, shallowRef } from "vue";
 import type { IChannel, IMeeting, IMeetingAttendee } from "../types";
 import { useChannel } from "./channel";
 

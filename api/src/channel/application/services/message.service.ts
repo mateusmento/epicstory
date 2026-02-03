@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { minBy, sortBy, uniq } from 'lodash';
+import { User, UserRepository } from 'src/auth';
 import { MessageReaction } from 'src/channel/domain';
 import { MessageReplyReaction } from 'src/channel/domain/entities';
 import {
@@ -9,32 +11,58 @@ import {
   MessageRepository,
 } from 'src/channel/infrastructure';
 import { groupBy } from 'src/core/objects';
+import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 
 @Injectable()
 export class MessageService {
   constructor(
     private messageRepo: MessageRepository,
-    private messageReplyRepo: MessageReplyRepository,
+    private replyRepo: MessageReplyRepository,
     private messageReactionRepo: MessageReactionRepository,
     private messageReplyReactionRepo: MessageReplyReactionRepository,
     private channelRepo: ChannelRepository,
+    private userRepo: UserRepository,
   ) {}
 
-  async findMessages(channelId: number) {
+  async findMessages(channelId: number, senderId: number) {
     const messages = await this.messageRepo.find({
-      where: { channelId: channelId },
-      relations: {
-        sender: true,
-        allReactions: { user: true },
-        allReplies: { sender: true },
-      },
+      where: { channelId },
+      relations: { sender: true, allReactions: true },
       order: { sentAt: 'asc' },
     });
 
+    if (messages.length === 0) return [];
+
+    const messageIds = messages.map((m) => m.id);
+
+    const repliesCount = await this.messageRepo.findRepliesCount(messageIds);
+    const repliers = await this.replyRepo.findRepliers(messageIds);
+
+    const usersIdsFromMessages = messages.flatMap((m) =>
+      m.allReactions.map((r) => r.userId),
+    );
+    const usersIds = uniq(
+      repliers.map((r) => r.senderId).concat(usersIdsFromMessages),
+    );
+    const users = await this.userRepo.find({
+      where: { id: In(usersIds) },
+    });
+
+    const usersMap = new Map(users.map((u) => [u.id, u]));
+    const repliesCountMap = groupBy(repliesCount, 'messageId');
+    const repliersMap = groupBy(repliers, 'messageId');
+
     for (const message of messages) {
-      message.setReactions();
-      message.setReplies();
+      message.repliesCount =
+        repliesCountMap[message.id]?.[0]?.repliesCount ?? 0;
+
+      message.repliers = mapRepliers(repliersMap[message.id] ?? [], usersMap);
+      message.reactions = mapReactions(
+        message.allReactions,
+        senderId,
+        usersMap,
+      );
     }
 
     return messages;
@@ -50,53 +78,36 @@ export class MessageService {
     return message;
   }
 
-  async findReplies(messageId: number) {
-    const replies = await this.messageReplyRepo.find({
+  async findReplies(messageId: number, senderId: number) {
+    const replies = await this.replyRepo.find({
       where: { messageId },
       relations: { sender: true, allReactions: { user: true } },
       order: { sentAt: 'asc' },
     });
 
     for (const reply of replies) {
-      const grouped = groupBy(reply.allReactions, 'emoji');
-
-      reply.reactions = Object.entries(grouped).map(([emoji, reactions]) => ({
-        emoji,
-        reactedBy: reactions.map((reaction) => reaction.user),
-      }));
+      reply.setReactions(senderId);
     }
 
     return replies;
   }
 
-  async findMessageReactions(messageId: number) {
+  async findMessageReactions(messageId: number, senderId: number) {
     const reactions = await this.messageReactionRepo.find({
       where: { messageId },
       relations: { user: true },
     });
 
-    // Group reactions by emoji
-    const grouped = groupBy(reactions, 'emoji');
-
-    return Object.entries(grouped).map(([emoji, reactions]) => ({
-      emoji,
-      reactedBy: reactions.map((reaction) => reaction.user),
-    }));
+    return mapReactions(reactions, senderId);
   }
 
-  async findReplyReactions(messageReplyId: number) {
+  async findReplyReactions(messageReplyId: number, senderId: number) {
     const reactions = await this.messageReplyReactionRepo.find({
       where: { messageReplyId },
       relations: { user: true },
     });
 
-    // Group reactions by emoji
-    const grouped = groupBy(reactions, 'emoji');
-
-    return Object.entries(grouped).map(([emoji, reactions]) => ({
-      emoji,
-      reactedBy: reactions.map((reaction) => reaction.user),
-    }));
+    return mapReactions(reactions, senderId);
   }
 
   @Transactional()
@@ -110,7 +121,13 @@ export class MessageService {
       emoji,
       userId,
     });
-    if ((removed.affected ?? 0) > 0) return { action: 'removed' as const };
+
+    if (removed.affected > 0) {
+      return {
+        action: 'removed' as const,
+        reactions: await this.findMessageReactions(messageId, userId),
+      };
+    }
 
     // Add if it doesn't exist. Requires a unique constraint on (messageId, emoji, userId)
     // to be race-safe under concurrency.
@@ -124,7 +141,7 @@ export class MessageService {
 
     return {
       action: 'added' as const,
-      reactions: await this.findMessageReactions(messageId),
+      reactions: await this.findMessageReactions(messageId, userId),
     };
   }
 
@@ -139,7 +156,13 @@ export class MessageService {
       emoji,
       userId,
     });
-    if ((removed.affected ?? 0) > 0) return { action: 'removed' as const };
+
+    if (removed.affected > 0) {
+      return {
+        action: 'removed' as const,
+        reactions: await this.findReplyReactions(messageReplyId, userId),
+      };
+    }
 
     await this.messageReplyReactionRepo
       .createQueryBuilder()
@@ -151,7 +174,49 @@ export class MessageService {
 
     return {
       action: 'added' as const,
-      reactions: await this.findReplyReactions(messageReplyId),
+      reactions: await this.findReplyReactions(messageReplyId, userId),
     };
   }
+}
+
+function mapRepliers(
+  repliers: { senderId: number; repliesCount: number }[],
+  usersMap: Map<number, User>,
+) {
+  return sortBy(repliers, ['repliesCount', 'senderId'])
+    .reverse()
+    .map((r) => ({
+      user: usersMap.get(r.senderId),
+      repliesCount: r.repliesCount,
+    }));
+}
+
+type Reaction = {
+  emoji: string;
+  reactedAt: Date;
+  userId: number;
+  user: User;
+};
+
+function mapReactions(
+  reactions: Reaction[],
+  senderId: number,
+  usersMap?: Map<number, User>,
+) {
+  const grouped = groupBy(reactions, 'emoji');
+  const aggregatedReactions = Object.entries(grouped).map(
+    ([emoji, reactions]) => ({
+      emoji,
+      reactedBy: reactions.map((r) =>
+        usersMap ? usersMap.get(r.userId) : r.user,
+      ),
+      firstReactedAt: minBy(
+        reactions.map((r) => r.reactedAt),
+        (d) => d.getTime(),
+      ),
+      reactedByMe: reactions.some((r) => r.userId === senderId),
+    }),
+  );
+
+  return sortBy(aggregatedReactions, ['firstReactedAt']);
 }

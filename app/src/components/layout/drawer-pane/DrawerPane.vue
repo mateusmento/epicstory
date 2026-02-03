@@ -24,12 +24,8 @@ function onNavViewTrigger(v: string) {
 <template>
   <NavView :view @trigger="onNavViewTrigger">
     <Collapsible as-child :open="open">
-      <CollapsibleContent
-        as="aside"
-        transition="horizontal"
-        class="h-full w-fit border-r border-r-zinc-300/60"
-        :class="$props.class"
-      >
+      <CollapsibleContent as="aside" transition="horizontal" class="h-full w-fit border-r border-r-zinc-300/60"
+        :class="$props.class">
         <slot />
       </CollapsibleContent>
     </Collapsible>

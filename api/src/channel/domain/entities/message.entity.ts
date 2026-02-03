@@ -13,10 +13,13 @@ import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import { MessageReply } from './message-reply.entity';
 import { Exclude } from 'class-transformer';
 import { groupBy } from 'src/core/objects';
+import { minBy, sortBy } from 'lodash';
 
 export type MessageReactionsGroup = {
   emoji: string;
   reactedBy: User[];
+  firstReactedAt?: Date;
+  reactedByMe: boolean;
 };
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'messages' })
@@ -51,33 +54,14 @@ export class Message {
   @OneToMany(() => MessageReply, (reply) => reply.message)
   allReplies: MessageReply[];
 
+  repliesCount: number;
+  repliers: { user: User; repliesCount: number }[];
   reactions: MessageReactionsGroup[];
 
-  replies: {
-    count: number;
-    repliedBy: User[];
-  };
-
-  setReactions() {
-    const grouped = groupBy(this.allReactions, 'emoji');
-
-    this.reactions = Object.entries(grouped).map(([emoji, reactions]) => ({
-      emoji,
-      reactedBy: reactions.map((reaction) => reaction.user),
-    }));
-  }
-
-  setReplies() {
-    const repliedBy = [];
-    for (const reply of this.allReplies) {
-      if (!repliedBy.some(({ id }) => id === reply.senderId))
-        repliedBy.push(reply.sender);
-    }
-
-    this.replies = {
-      count: this.allReplies.length,
-      repliedBy,
-    };
+  constructor() {
+    this.reactions = [];
+    this.repliesCount = 0;
+    this.repliers = [];
   }
 }
 
