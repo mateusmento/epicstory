@@ -9,6 +9,9 @@ const props = defineProps<{
 }>();
 
 const channelName = computed(() => {
+  if (props.payload.message && props.payload.reply) {
+    return 'thread'
+  }
   if (props.payload.channel.type === 'multi-direct') {
     return props.payload.channel.peers.map((peer) => peer.name).join(', ');
   }

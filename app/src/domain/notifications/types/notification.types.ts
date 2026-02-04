@@ -7,6 +7,7 @@ export type MentionNotificationPayload = {
   channel: IChannel;
   message: string;
   sender: User;
+  reply?: IReply;
 };
 
 export type ReplyNotificationPayload = {

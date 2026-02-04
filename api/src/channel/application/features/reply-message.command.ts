@@ -79,6 +79,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
             channel: message.channel,
             sender: reply.sender,
             message: displayContent,
+            reply,
             mentionedUsers,
           },
         }),
