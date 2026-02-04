@@ -5,6 +5,7 @@ import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { extractMentionIds, renderMentions } from '../utils/mentions';
 
 export class FindChannels {
   workspaceId: number;
@@ -47,9 +48,23 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
 
     const channels = await query.getMany();
 
-    for (const channel of channels)
+    for (const channel of channels) {
       if (channel.type === 'direct')
         channel.speakingTo = channel.peers.find((p) => p.id !== issuer.id);
+
+      if (channel.lastMessage?.content) {
+        const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
+        const mentionIds = extractMentionIds(channel.lastMessage.content);
+
+        (channel.lastMessage as any).mentionedUsers = mentionIds
+          .map((id) => peerUsersMap.get(id))
+          .filter(Boolean);
+        (channel.lastMessage as any).displayContent = renderMentions(
+          channel.lastMessage.content,
+          peerUsersMap,
+        );
+      }
+    }
 
     return channels;
   }

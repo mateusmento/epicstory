@@ -63,10 +63,12 @@ defineExpose({
         <DropdownMenuItem>
           <span>Quote message</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem v-if="sender === 'me'" @click="emit('message-deleted')" variant="destructive">
-          <span>Delete message</span>
-        </DropdownMenuItem>
+        <template v-if="sender === 'me'">
+          <DropdownMenuSeparator />
+          <DropdownMenuItem @click="emit('message-deleted')" variant="destructive">
+            <span>Delete message</span>
+          </DropdownMenuItem>
+        </template>
       </DropdownMenuContent>
     </DropdownMenu>
   </div>

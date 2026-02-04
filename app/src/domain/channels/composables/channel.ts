@@ -199,7 +199,7 @@ export function useSyncedChannel() {
   });
 
   watch(channelId, async (channelId) => {
-    console.log(channelId)
+    console.log(channelId);
     await fetchChannel(channelId);
     joinChannel();
     fetchMessages();

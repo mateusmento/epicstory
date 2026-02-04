@@ -5,6 +5,7 @@ import { ref, watch } from "vue";
 import type { IMessage, IReply } from "@/domain/channels";
 import MessageActions from "./MessageActions.vue";
 import { IconReplies } from "@/design-system/icons";
+import MentionedText from "./MentionedText.vue";
 
 defineProps<{
   message: IMessage | IReply;
@@ -49,7 +50,7 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
     <HoverCard :open-delay="100" :close-delay="0">
       <HoverCardTrigger as-child>
         <div :class="styles.messageBox" ref="messageBoxRef">
-          {{ message.content }}
+          <MentionedText :content="message.content" :mentioned-users="message.mentionedUsers" />
         </div>
       </HoverCardTrigger>
       <HoverCardContent as-child side="top" align="start" :align-offset="alignOffset" :side-offset="-10">

@@ -5,6 +5,7 @@ import { AuthModule } from 'src/auth';
 import * as jobs from './jobs';
 import * as entities from './entities';
 import * as gateways from './gateways';
+import * as services from './services';
 import * as features from './features';
 import * as controllers from './controllers';
 import * as repositories from './repositories';
@@ -21,6 +22,7 @@ import * as repositories from './repositories';
     ...Object.values(features),
     ...Object.values(gateways),
     ...Object.values(jobs),
+    ...Object.values(services),
   ],
   exports: [...Object.values(repositories)],
 })

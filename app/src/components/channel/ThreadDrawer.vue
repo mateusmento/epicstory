@@ -27,7 +27,7 @@ const {
   deleteReply,
 } = useMessageThread(message, { onMessageDeleted: () => emit("close"), name: "thread" });
 
-const { deleteMessage } = useChannel();
+const { channel, deleteMessage } = useChannel();
 
 function groupMessages(messages: IReply[]) {
   return messages.reduce((groups, message) => {
@@ -100,6 +100,12 @@ async function onMessageDeleted() {
       </div>
     </ScrollArea>
 
-    <MessageWriter v-model:message-content="replyContent" @send-message="sendReply()" class="m-4 mt-auto" />
+    <MessageWriter
+      v-model:message-content="replyContent"
+      :mentionables="channel?.peers ?? []"
+      :me-id="meId"
+      @send-message="sendReply()"
+      class="m-4 mt-auto"
+    />
   </div>
 </template>

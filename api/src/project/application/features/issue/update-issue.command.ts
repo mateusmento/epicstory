@@ -97,6 +97,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
             title: issueTitle,
             description: `Issue "${issueTitle}" is due`,
             issueId: issue.id,
+            projectId: issue.projectId,
           },
           dueAt: dueDate,
         });

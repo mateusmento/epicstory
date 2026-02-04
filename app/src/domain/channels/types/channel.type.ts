@@ -4,7 +4,7 @@ import type { IMessage } from "./message.type";
 
 export type IChannel = {
   id: number;
-  type: "direct" | "group";
+  type: "direct" | "group" | "multi-direct";
   name?: string;
   image?: string;
   speakingTo: User;

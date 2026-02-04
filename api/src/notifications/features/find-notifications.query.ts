@@ -50,17 +50,19 @@ export class FindNotificationsHandler
     const total = await this.notificationRepository.count({
       where: { userId: query.userId, type: query.type, seen: query.seen },
     });
+
+    const orderBy = query.orderBy ?? 'createdAt';
+    const orderDirection = (query.order ?? 'desc') as 'asc' | 'desc';
+
     const content = await this.notificationRepository.find({
       where: { userId: query.userId, type: query.type, seen: query.seen },
       order: {
-        createdAt:
-          query.orderBy === 'createdAt'
-            ? (query.order as 'asc' | 'desc')
-            : undefined,
+        createdAt: orderBy === 'createdAt' ? orderDirection : undefined,
       },
       skip: query.page * query.count,
       take: query.count,
     });
+
     return Page.fromResult(content, total, query);
   }
 }

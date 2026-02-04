@@ -4,6 +4,8 @@ import type { IChannel } from "./channel.type";
 export interface IMessage {
   id: number;
   content: string;
+  displayContent?: string;
+  mentionedUsers?: User[];
   sentAt: string;
   senderId: number;
   sender: User;
@@ -40,6 +42,8 @@ export interface IMessageReaction {
 export interface IReply {
   id: number;
   content: string;
+  displayContent?: string;
+  mentionedUsers?: User[];
   sentAt: string;
   senderId: number;
   sender: User;

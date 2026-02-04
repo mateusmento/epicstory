@@ -69,6 +69,18 @@ export function useNotifications(options?: { limit?: number; autoSubscribe?: boo
   }
 
   /**
+   * Marks a notification as seen (server + local state)
+   */
+  async function markAsSeen(notificationId: string) {
+    try {
+      await notificationApi.markAsSeen(notificationId);
+    } finally {
+      const n = notifications.value.find((x) => x.id === notificationId);
+      if (n) n.seen = true;
+    }
+  }
+
+  /**
    * Subscribes to websocket notifications
    */
   function subscribeNotifications() {
@@ -128,6 +140,7 @@ export function useNotifications(options?: { limit?: number; autoSubscribe?: boo
 
     // Methods
     fetchNotifications,
+    markAsSeen,
     subscribeNotifications,
     unsubscribeNotifications,
     initialize,

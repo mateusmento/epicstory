@@ -17,6 +17,6 @@ export class NotificationApi {
   }
 
   markAsSeen(notificationId: string) {
-    return this.axios.post(`/notifications/${notificationId}/seen`).then((res) => res.data);
+    return this.axios.put(`/notifications/${notificationId}/seen`).then((res) => res.data);
   }
 }

@@ -6,16 +6,17 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Notification } from '../entities';
 
 @WebSocketGateway()
 export class NotificationGateway {
   @WebSocketServer()
   server: Server;
 
-  sendNotification(userId: number, payload: any) {
+  sendNotification(userId: number, notification: Notification) {
     this.server
       .to(`user:${userId}:notifications`)
-      .emit('incoming-notification', payload);
+      .emit('incoming-notification', notification);
   }
 
   @SubscribeMessage('subscribe-notifications')
