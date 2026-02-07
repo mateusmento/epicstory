@@ -1,13 +1,26 @@
 <script lang="tsx" setup>
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
-import { IconReplies } from "@/design-system/icons";
-import type { ReplyNotificationPayload } from "@/domain/notifications/types/notification.types";
+import { IconChats } from "@/design-system/icons";
+import { useAuth } from "@/domain/auth";
+import type { DirectMessageNotificationPayload } from "@/domain/notifications/types/notification.types";
 import { formatDistanceToNow } from "date-fns";
+import { computed } from "vue";
 
-defineProps<{
-  payload: ReplyNotificationPayload;
+const props = defineProps<{
+  payload: DirectMessageNotificationPayload;
   createdAt: string;
 }>();
+
+const { user: me } = useAuth();
+
+const channelName = computed(() => {
+  if (props.payload.channel.type === 'multi-direct') {
+    return props.payload.channel.peers
+      .filter((peer) => peer.id !== me?.value?.id)
+      .map((peer) => peer.name).join(', ');
+  }
+  return props.payload.sender?.name;
+});
 
 function formatTime(date: string) {
   return formatDistanceToNow(new Date(date), { addSuffix: true });
@@ -23,31 +36,29 @@ function formatTime(date: string) {
       {{ payload.sender.name.charAt(0).toUpperCase() }}
     </div>
 
-
-
     <div v-if="payload.sender" class="flex:col-md flex:center-y flex-1">
       <div class="flex:row-md items-baseline">
 
         <div class="text-sm text-secondary-foreground font-dmSans">
-          <IconReplies class="w-4 h-4 inline-block" />
-          replied to you in
-          <span class="text-foreground font-semibold">#{{ payload.channel.name }}</span>
+          <IconChats class="w-4 h-4 inline-block" />
+          sent you a message
+          <div v-if="channelName" class="text-foreground font-lato">and to {{ channelName }}</div>
           <!-- <div class="text-foreground font-lato">{{ payload.sender.name }}</div> -->
         </div>
 
-        <div class="ml-auto text-xs text-secondary-foreground font-dmSans">
+        <div class="ml-auto text-xs text-secondary-foreground font-dmSans whitespace-nowrap">
           {{ formatTime(createdAt) }}
         </div>
       </div>
 
       <Tooltip>
         <TooltipTrigger as-child>
-          <div class="text-sm text-foreground font-lato text-ellipsis overflow-hidden whitespace-nowrap">
-            {{ payload.reply.displayContent ?? payload.reply.content }}
+          <div class="w-full min-w-0 text-foreground font-lato whitespace-nowrap text-ellipsis overflow-hidden">
+            {{ payload.message.displayContent ?? payload.message.content }}
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          {{ payload.reply.displayContent ?? payload.reply.content }}
+          {{ payload.message.displayContent ?? payload.message.content }}
         </TooltipContent>
       </Tooltip>
     </div>

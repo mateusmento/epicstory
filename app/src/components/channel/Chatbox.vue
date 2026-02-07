@@ -73,7 +73,12 @@ function onMessageDeleted(messageId: number) {
     </ScrollArea>
 
     <div class="p-4">
-      <MessageWriter v-model:message-content="message.content" @send-message="onSendMessage" />
+      <MessageWriter
+        v-model:message-content="message.content"
+        :mentionables="channel.peers"
+        :me-id="meId"
+        @send-message="onSendMessage"
+      />
     </div>
   </div>
 </template>

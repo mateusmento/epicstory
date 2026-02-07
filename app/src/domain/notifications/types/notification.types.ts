@@ -1,23 +1,28 @@
-export type NotificationSender = {
-  id: number;
-  name: string;
-  picture?: string;
-};
+import type { IChannel, IMessage, IReply } from "@/domain/channels";
+import type { User } from "@/domain/auth";
+import type { Issue } from "@/domain/issues/types/issue.type";
 
 export type MentionNotificationPayload = {
   type: "mention";
-  channelName: string;
-  channelId?: number;
+  channel: IChannel;
   message: string;
-  sender: NotificationSender;
+  sender: User;
+  reply?: IReply;
 };
 
 export type ReplyNotificationPayload = {
   type: "reply";
-  channelName: string;
-  channelId?: number;
-  message: string;
-  sender: NotificationSender;
+  reply: IReply;
+  message: IMessage;
+  channel: IChannel;
+  sender: User;
+};
+
+export type DirectMessageNotificationPayload = {
+  type: "direct_message";
+  message: IMessage;
+  channel: IChannel;
+  sender: User;
 };
 
 export type IssueDueDateNotificationPayload = {
@@ -25,12 +30,21 @@ export type IssueDueDateNotificationPayload = {
   title: string;
   description: string;
   issueId: number;
+  projectId: number;
+};
+
+export type IssueAssignedNotificationPayload = {
+  type: "issue_assigned";
+  issue: Issue;
+  issuer: User;
 };
 
 export type NotificationPayload =
   | MentionNotificationPayload
   | ReplyNotificationPayload
-  | IssueDueDateNotificationPayload;
+  | DirectMessageNotificationPayload
+  | IssueDueDateNotificationPayload
+  | IssueAssignedNotificationPayload;
 
 export type Notification = {
   id: string;

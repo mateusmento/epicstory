@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { User } from 'src/auth';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import {
@@ -8,9 +9,8 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import { mapReactions } from '../utils';
 import { Message } from './message.entity';
-import { Exclude } from 'class-transformer';
-import { groupBy, minBy, sortBy } from 'lodash';
 
 export type ReplyReactionsGroup = {
   emoji: string;
@@ -50,20 +50,7 @@ export class MessageReply {
   reactions: ReplyReactionsGroup[];
 
   setReactions(senderId: number, usersMap?: Map<number, User>) {
-    const grouped = groupBy(this.allReactions, 'emoji');
-    const reactions = Object.entries(grouped).map(([emoji, reactions]) => ({
-      emoji,
-      reactedBy: reactions.map((r) =>
-        usersMap ? usersMap.get(r.userId) : r.user,
-      ),
-      firstReactedAt: minBy(
-        reactions.map((r) => r.reactedAt),
-        (d) => d.getTime(),
-      ),
-      reactedByMe: reactions.some((r) => r.userId === senderId),
-    }));
-
-    this.reactions = sortBy(reactions, ['firstReactedAt']);
+    this.reactions = mapReactions(this.allReactions, senderId, usersMap);
   }
 }
 

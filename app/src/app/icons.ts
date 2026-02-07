@@ -53,4 +53,5 @@ export {
   OiCalendar,
   HiReply,
   BiCalendar,
+  OiPerson,
 } from "oh-vue-icons/icons";

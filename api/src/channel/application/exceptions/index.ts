@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 
 export class MeetingHasntStartedException extends Error {
   constructor() {
@@ -51,5 +55,11 @@ export class IssuerCanOnlyDeleteOwnReplies extends ForbiddenException {
 export class MessageReplyNotFound extends NotFoundException {
   constructor() {
     super('Message reply not found');
+  }
+}
+
+export class SenderIsNotChannelMember extends BadRequestException {
+  constructor() {
+    super('Sender is not a channel member');
   }
 }

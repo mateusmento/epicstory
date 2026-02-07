@@ -1,7 +1,9 @@
 <script lang="tsx" setup>
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { IssueDueDateNotificationPayload } from "@/domain/notifications/types/notification.types";
 import { formatDistanceToNow } from "date-fns";
+import { Calendar } from "lucide-vue-next";
 
 const props = defineProps<{
   payload: IssueDueDateNotificationPayload;
@@ -16,17 +18,23 @@ function formatTime(date: string) {
 <template>
   <div class="flex:col-md">
     <div class="flex:row-md flex:center-y text-sm text-secondary-foreground font-dmSans">
-      <Icon name="oi-calendar" class="mr-1" />
+      <Calendar class="w-4 h-4" />
       Issue due date reminder
-    </div>
-    <div class="flex:col-md flex-1">
-      <div class="flex:row-md flex:center-y">
-        <div class="text-foreground font-lato font-semibold">{{ payload.title }}</div>
-        <div class="ml-auto text-xs text-secondary-foreground font-dmSans">{{ formatTime(createdAt) }}</div>
-      </div>
-      <div v-if="payload.description" class="text-sm text-secondary-foreground font-lato">
-        {{ payload.description }}
+
+      <div class="ml-auto text-xs text-secondary-foreground font-dmSans whitespace-nowrap">
+        {{ formatTime(createdAt) }}
       </div>
     </div>
+
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <div class="text-foreground font-lato whitespace-nowrap text-ellipsis overflow-hidden">
+          {{ payload.title }}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        {{ payload.title }}
+      </TooltipContent>
+    </Tooltip>
   </div>
 </template>

@@ -1,9 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNumber } from 'class-validator';
 import { UserRepository } from 'src/auth';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
+import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { PROJECT_SCHEMA } from 'src/project/constants';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -28,6 +29,7 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
     private issueRepo: IssueRepository,
     private workspaceRepo: WorkspaceRepository,
     private userRepo: UserRepository,
+    private commandBus: CommandBus,
   ) {}
 
   async execute({ issuer, issueId, userId }: AddAssignee) {
@@ -37,6 +39,9 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
     if (!(await this.workspaceRepo.memberExists(issue.workspaceId, issuer.id)))
       throw new IssuerUserIsNotWorkspaceMember();
 
+    const issuerUser = await this.userRepo.findOne({
+      where: { id: issuer.id },
+    });
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
@@ -54,6 +59,20 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
     });
     // Should exist since we just found it, but keep a defensive check
     if (!updated) throw new NotFoundException('Issue not found');
+
+    if (userId !== issuer.id) {
+      await this.commandBus.execute(
+        new SendNotification({
+          userIds: [userId],
+          type: 'issue_assigned',
+          payload: {
+            issue: updated,
+            issuer: issuerUser ?? issuer,
+          },
+        }),
+      );
+    }
+
     return updated;
   }
 }

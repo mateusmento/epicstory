@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { minBy, sortBy, uniq } from 'lodash';
-import { User, UserRepository } from 'src/auth';
+import { uniq } from 'lodash';
+import { UserRepository } from 'src/auth';
 import { MessageReaction } from 'src/channel/domain';
 import { MessageReplyReaction } from 'src/channel/domain/entities';
+import { mapReactions, mapRepliers } from 'src/channel/domain/utils';
 import {
   ChannelRepository,
   MessageReactionRepository,
@@ -13,6 +14,7 @@ import {
 import { groupBy } from 'src/core/objects';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
+import { extractMentionIds, renderMentions } from '../utils/mentions';
 
 @Injectable()
 export class MessageService {
@@ -26,6 +28,10 @@ export class MessageService {
   ) {}
 
   async findMessages(channelId: number, senderId: number) {
+    const channel = await this.channelRepo.findOne({
+      where: { id: channelId },
+      relations: { peers: true },
+    });
     const messages = await this.messageRepo.find({
       where: { channelId },
       relations: { sender: true, allReactions: true },
@@ -53,6 +59,8 @@ export class MessageService {
     const repliesCountMap = groupBy(repliesCount, 'messageId');
     const repliersMap = groupBy(repliers, 'messageId');
 
+    const peerUsersMap = new Map((channel?.peers ?? []).map((u) => [u.id, u]));
+
     for (const message of messages) {
       message.repliesCount =
         repliesCountMap[message.id]?.[0]?.repliesCount ?? 0;
@@ -62,6 +70,15 @@ export class MessageService {
         message.allReactions,
         senderId,
         usersMap,
+      );
+
+      const mentionIds = extractMentionIds(message.content);
+      (message as any).mentionedUsers = mentionIds
+        .map((id) => peerUsersMap.get(id))
+        .filter(Boolean);
+      (message as any).displayContent = renderMentions(
+        message.content,
+        peerUsersMap,
       );
     }
 
@@ -79,6 +96,14 @@ export class MessageService {
   }
 
   async findReplies(messageId: number, senderId: number) {
+    const message = await this.messageRepo.findOne({
+      where: { id: messageId },
+      relations: { channel: { peers: true } },
+    });
+    const peerUsersMap = new Map(
+      (message?.channel?.peers ?? []).map((u) => [u.id, u]),
+    );
+
     const replies = await this.replyRepo.find({
       where: { messageId },
       relations: { sender: true, allReactions: { user: true } },
@@ -87,6 +112,14 @@ export class MessageService {
 
     for (const reply of replies) {
       reply.setReactions(senderId);
+      const mentionIds = extractMentionIds(reply.content);
+      (reply as any).mentionedUsers = mentionIds
+        .map((id) => peerUsersMap.get(id))
+        .filter(Boolean);
+      (reply as any).displayContent = renderMentions(
+        reply.content,
+        peerUsersMap,
+      );
     }
 
     return replies;
@@ -177,46 +210,4 @@ export class MessageService {
       reactions: await this.findReplyReactions(messageReplyId, userId),
     };
   }
-}
-
-function mapRepliers(
-  repliers: { senderId: number; repliesCount: number }[],
-  usersMap: Map<number, User>,
-) {
-  return sortBy(repliers, ['repliesCount', 'senderId'])
-    .reverse()
-    .map((r) => ({
-      user: usersMap.get(r.senderId),
-      repliesCount: r.repliesCount,
-    }));
-}
-
-type Reaction = {
-  emoji: string;
-  reactedAt: Date;
-  userId: number;
-  user: User;
-};
-
-function mapReactions(
-  reactions: Reaction[],
-  senderId: number,
-  usersMap?: Map<number, User>,
-) {
-  const grouped = groupBy(reactions, 'emoji');
-  const aggregatedReactions = Object.entries(grouped).map(
-    ([emoji, reactions]) => ({
-      emoji,
-      reactedBy: reactions.map((r) =>
-        usersMap ? usersMap.get(r.userId) : r.user,
-      ),
-      firstReactedAt: minBy(
-        reactions.map((r) => r.reactedAt),
-        (d) => d.getTime(),
-      ),
-      reactedByMe: reactions.some((r) => r.userId === senderId),
-    }),
-  );
-
-  return sortBy(aggregatedReactions, ['firstReactedAt']);
 }

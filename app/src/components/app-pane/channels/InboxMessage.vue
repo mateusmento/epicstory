@@ -50,7 +50,7 @@ function formatMessageDate(date: string) {
       <div class="flex:row-auto flex:center-y">
         <div class="text-sm font-lato text-ellipsis overflow-hidden whitespace-nowrap"
           :class="[channel.unreadMessagesCount > 0 ? 'text-foreground' : 'text-secondary-foreground']">
-          {{ channel.lastMessage?.content }}
+          {{ channel.lastMessage?.displayContent ?? channel.lastMessage?.content }}
         </div>
         <div v-if="!channel.unreadMessagesCount && canJoinMeeting"
           class="w-fit px-1 py-0 rounded-sm bg-secondary text-secondary-foreground text-xs">

@@ -1,12 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { UserRepository } from 'src/auth';
-import { Notification } from '../entities';
-import { NotificationGateway } from '../gateways';
-import {
-  NotificationRepository,
-  ScheduledEventRepository,
-} from '../repositories';
+import { ScheduledEventRepository } from '../repositories';
+import { NotificationService } from '../services';
 
 @Injectable()
 export class NotificationsCronjob {
@@ -16,8 +12,7 @@ export class NotificationsCronjob {
 
   constructor(
     private scheduledEventRepo: ScheduledEventRepository,
-    private notificationRepo: NotificationRepository,
-    private notificationGateway: NotificationGateway,
+    private notificationService: NotificationService,
     private userRepo: UserRepository,
   ) {}
 
@@ -72,21 +67,11 @@ export class NotificationsCronjob {
           ...(userInfo && { sender: userInfo }),
         };
 
-        // Create and persist notification
-        const notification = new Notification({
+        await this.notificationService.sendNotification({
           type: notificationType,
           userId: event.userId,
           payload: enhancedPayload,
-          seen: false,
         });
-        const savedNotification =
-          await this.notificationRepo.save(notification);
-
-        // Send notification via WebSocket
-        await this.notificationGateway.sendNotification(
-          event.userId,
-          savedNotification,
-        );
 
         // Only mark as processed if notification was successful
         await this.scheduledEventRepo.markAsProcessed(event.id, lockId);
