@@ -2,7 +2,6 @@
 import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
 import { ScrollArea, Separator } from "@/design-system";
 import type { IChannel, IMessageGroup } from "@/domain/channels";
-import { reactive } from "vue";
 import ChatboxTopbar from "./ChatboxTopbar.vue";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
@@ -13,19 +12,16 @@ const props = defineProps<{
   chatTitle?: string;
   chatPicture?: string;
   messageGroups: IMessageGroup[];
-  sendMessage: (message: { content: string }) => Promise<void>;
+  sendMessage: (message: { content: string; contentRich: any }) => Promise<void>;
   channelId: number;
   channel: IChannel;
 }>();
 
 const emit = defineEmits(["join-meeting", "more-details", "message-deleted"]);
 
-const message = reactive({ content: "" });
-
-async function onSendMessage() {
-  if (!message.content) return;
-  await props.sendMessage(message);
-  message.content = "";
+async function onSendMessage(payload: { content: string; contentRich: any }) {
+  if (!payload.content) return;
+  await props.sendMessage(payload);
 }
 
 function onMessageDeleted(messageId: number) {
@@ -74,7 +70,6 @@ function onMessageDeleted(messageId: number) {
 
     <div class="p-4">
       <MessageWriter
-        v-model:message-content="message.content"
         :mentionables="channel.peers"
         :me-id="meId"
         @send-message="onSendMessage"

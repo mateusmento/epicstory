@@ -1,5 +1,5 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 import {
   MessageReplyRepository,
   MessageRepository,
@@ -8,6 +8,7 @@ import { patch } from 'src/core/objects';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
+import { normalizeTiptapDoc, tiptapToPlainText } from '../utils/tiptap';
 
 export class ReplyMessage {
   messageId: number;
@@ -16,6 +17,10 @@ export class ReplyMessage {
   @IsNotEmpty()
   @IsString()
   content: string;
+
+  @IsOptional()
+  @IsObject()
+  contentRich?: any;
 
   constructor(data: Partial<ReplyMessage> = {}) {
     patch(this, data);
@@ -30,7 +35,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     private commandBus: CommandBus,
   ) {}
 
-  async execute({ senderId, content, messageId }: ReplyMessage) {
+  async execute({ senderId, content, contentRich, messageId }: ReplyMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
       relations: { channel: { peers: true } },
@@ -42,8 +47,16 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       throw new SenderIsNotChannelMember();
     }
 
+    const normalizedRich = contentRich
+      ? normalizeTiptapDoc(contentRich)
+      : undefined;
+    const plainContent = normalizedRich
+      ? tiptapToPlainText(normalizedRich)
+      : content;
+
     const { id: replyId } = await this.messageReplyRepo.save({
-      content,
+      content: plainContent,
+      contentRich: normalizedRich,
       channelId: message.channelId,
       messageId,
       senderId,
@@ -58,14 +71,14 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     reply.setReactions(senderId);
 
     const peerUsersMap = new Map(message.channel.peers.map((u) => [u.id, u]));
-    const mentionIds = extractMentionIds(content);
+    const mentionIds = extractMentionIds(plainContent);
     const finalMentionIds = mentionIds.filter(
       (id) => id !== senderId && peerUsersMap.has(id),
     );
     const mentionedUsers = finalMentionIds
       .map((id) => peerUsersMap.get(id))
       .filter(Boolean);
-    const displayContent = renderMentions(content, peerUsersMap);
+    const displayContent = renderMentions(plainContent, peerUsersMap);
 
     (reply as any).mentionedUsers = mentionedUsers;
     (reply as any).displayContent = displayContent;

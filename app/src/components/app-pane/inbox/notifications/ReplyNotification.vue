@@ -16,12 +16,12 @@ function formatTime(date: string) {
 
 <template>
   <div class="flex:row-md">
-    <img v-if="payload.sender.picture" :src="payload.sender.picture" :alt="payload.sender.name"
-      class="w-11 h-11 rounded-full flex-shrink-0" />
-    <div v-else
-      class="w-11 h-11 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold">
-      {{ payload.sender.name.charAt(0).toUpperCase() }}
-    </div>
+      <img v-if="payload.sender.picture" :src="payload.sender.picture" :alt="payload.sender.name"
+        class="w-11 h-11 rounded-full flex-shrink-0" />
+      <div v-else
+        class="w-11 h-11 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold">
+        {{ payload.sender.name.charAt(0).toUpperCase() }}
+      </div>
 
 
 

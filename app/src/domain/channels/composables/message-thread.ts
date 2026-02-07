@@ -5,7 +5,6 @@ import { ChannelApi } from "@/domain/channels/services/channel.service";
 import { onMounted, onUnmounted, ref, type Ref } from "vue";
 import type { IAggregatedReaction, IMessage, IReply } from "../types";
 
-
 type UseMessageThreadOptions = {
   onMessageDeleted?: () => void;
   name?: string;
@@ -15,7 +14,6 @@ type UseMessageThreadOptions = {
 export function useMessageThread(message: Ref<IMessage>, options: UseMessageThreadOptions = {}) {
   const replies = ref<IReply[]>([]);
   const isLoadingReplies = ref(false);
-  const replyContent = ref("");
 
   const { user: me } = useAuth();
 
@@ -63,25 +61,37 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     }
   }
 
-  function onIncomingMessageReaction({ messageId, reactions }: { messageId?: number; reactions?: IAggregatedReaction[]; }) {
+  function onIncomingMessageReaction({
+    messageId,
+    reactions,
+  }: {
+    messageId?: number;
+    reactions?: IAggregatedReaction[];
+  }) {
     if (messageId === message.value?.id && reactions) {
       message.value.reactions = reactions;
     }
   }
 
-  function onIncomingReplyReaction({ replyId, reactions }: { replyId?: number; reactions?: IAggregatedReaction[]; }) {
+  function onIncomingReplyReaction({
+    replyId,
+    reactions,
+  }: {
+    replyId?: number;
+    reactions?: IAggregatedReaction[];
+  }) {
     if (replyId && reactions) {
       updateReplyReactions(replyId, reactions);
     }
   }
 
-  function onReplyDeleted({ replyId, messageId }: { replyId?: number; messageId?: number; }) {
+  function onReplyDeleted({ replyId, messageId }: { replyId?: number; messageId?: number }) {
     if (replyId && messageId === message.value?.id) {
       removeReply(replyId);
     }
   }
 
-  function onMessageDeleted({ messageId }: { messageId?: number; }) {
+  function onMessageDeleted({ messageId }: { messageId?: number }) {
     if (messageId === message.value?.id) {
       options.onMessageDeleted?.();
     }
@@ -99,15 +109,14 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     }
   }
 
-  async function sendReply() {
-    if (!replyContent.value.trim()) return;
+  async function sendReply(payload: { content: string; contentRich: any }) {
+    if (!payload.content.trim()) return;
     if (!me.value) return;
 
     try {
-      const reply = await channelApi.replyMessage(message.value?.id, replyContent.value);
+      const reply = await channelApi.replyMessage(message.value?.id, payload.content, payload.contentRich);
       console.log("adding reply after sending it", options.name, reply);
       addReply(reply);
-      replyContent.value = "";
     } catch (error) {
       console.error("Failed to send reply:", error);
     }
@@ -161,11 +170,9 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     }
   }
 
-
   return {
     replies,
     isLoadingReplies,
-    replyContent,
     fetchReplies,
     sendReply,
     deleteReply,

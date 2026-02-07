@@ -25,6 +25,9 @@ export class MessageReply {
   @Column()
   content: string;
 
+  @Column({ type: 'jsonb', nullable: true })
+  contentRich?: any;
+
   @Column({ default: () => 'now()' })
   sentAt: Date;
 

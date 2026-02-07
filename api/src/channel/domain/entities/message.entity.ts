@@ -29,6 +29,9 @@ export class Message {
   @Column()
   content: string;
 
+  @Column({ type: 'jsonb', nullable: true })
+  contentRich?: any;
+
   @CreateDateColumn()
   sentAt: Date;
 

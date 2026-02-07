@@ -93,10 +93,10 @@ export function useChannel() {
     sockets.websocket.off("meeting-ended", onMeetingEnded);
   }
 
-  async function sendMessage({ content }: { content: string }) {
+  async function sendMessage({ content, contentRich }: { content: string; contentRich: any }) {
     if (!store.channel) return;
     if (!content) return;
-    const message = await channelApi.sendMessage(store.channel.id, content);
+    const message = await channelApi.sendMessage(store.channel.id, content, contentRich);
     addMessage(message);
     return message;
   }

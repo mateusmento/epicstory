@@ -25,6 +25,7 @@
     "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/vue-table": "^8.20.5",
     "@tiptap/extension-link": "^3.16.0",
+    "@tiptap/extension-mention": "^3.19.0",
     "@tiptap/extension-placeholder": "^3.16.0",
     "@tiptap/extension-underline": "^3.16.0",
     "@tiptap/pm": "^3.16.0",

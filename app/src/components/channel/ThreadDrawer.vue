@@ -19,7 +19,6 @@ const emit = defineEmits(["message-deleted", "close"]);
 
 const {
   replies,
-  replyContent,
   toggleReaction,
   toggleReplyReaction,
   fetchReplies,
@@ -100,12 +99,6 @@ async function onMessageDeleted() {
       </div>
     </ScrollArea>
 
-    <MessageWriter
-      v-model:message-content="replyContent"
-      :mentionables="channel?.peers ?? []"
-      :me-id="meId"
-      @send-message="sendReply()"
-      class="m-4 mt-auto"
-    />
+    <MessageWriter :mentionables="channel?.peers ?? []" :me-id="meId" @send-message="sendReply" class="m-4 mt-auto" />
   </div>
 </template>

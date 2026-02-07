@@ -36,7 +36,7 @@ function formatTime(date: string) {
       {{ payload.sender.name.charAt(0).toUpperCase() }}
     </div>
 
-    <div v-if="payload.sender" class="flex:col-md flex:center-y flex-1">
+    <div v-if="payload.sender" class="flex:col-md flex:center-y min-w-0 flex-1">
       <div class="flex:row-md items-baseline">
 
         <div class="text-sm text-secondary-foreground font-dmSans">

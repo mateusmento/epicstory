@@ -85,11 +85,17 @@ export class MessageService {
     return messages;
   }
 
-  async createMessage(content: string, channelId: number, senderId: number) {
+  async createMessage(
+    content: string,
+    channelId: number,
+    senderId: number,
+    contentRich?: any,
+  ) {
     const message = await this.messageRepo.save({
       content,
       channelId,
       senderId,
+      contentRich,
     });
     this.channelRepo.update({ id: channelId }, { lastMessageId: message.id });
     return message;

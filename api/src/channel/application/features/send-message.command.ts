@@ -1,5 +1,5 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 import {
   ChannelRepository,
   MessageRepository,
@@ -11,6 +11,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
+import { normalizeTiptapDoc, tiptapToPlainText } from '../utils/tiptap';
 
 export class SendMessage {
   channelId: number;
@@ -19,6 +20,10 @@ export class SendMessage {
   @IsNotEmpty()
   @IsString()
   content: string;
+
+  @IsOptional()
+  @IsObject()
+  contentRich?: any;
 
   constructor(data: Partial<SendMessage>) {
     patch(this, data);
@@ -35,7 +40,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     private commandBus: CommandBus,
   ) {}
 
-  async execute({ channelId, senderId, content }: SendMessage) {
+  async execute({ channelId, senderId, content, contentRich }: SendMessage) {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },
@@ -57,10 +62,18 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       throw new SenderIsNotChannelMember();
     }
 
+    const normalizedRich = contentRich
+      ? normalizeTiptapDoc(contentRich)
+      : undefined;
+    const plainContent = normalizedRich
+      ? tiptapToPlainText(normalizedRich)
+      : content;
+
     const { id } = await this.messageService.createMessage(
-      content,
+      plainContent,
       channelId,
       senderId,
+      normalizedRich,
     );
 
     const message = await this.messageRepo.findOne({
@@ -71,14 +84,14 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     });
 
     const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
-    const mentionIds = extractMentionIds(content);
+    const mentionIds = extractMentionIds(plainContent);
     const finalMentionIds = mentionIds.filter(
       (id) => id !== senderId && peerUsersMap.has(id),
     );
     const mentionedUsers = finalMentionIds
       .map((id) => peerUsersMap.get(id))
       .filter(Boolean);
-    const displayContent = renderMentions(content, peerUsersMap);
+    const displayContent = renderMentions(plainContent, peerUsersMap);
 
     (message as any).mentionedUsers = mentionedUsers;
     (message as any).displayContent = displayContent;
