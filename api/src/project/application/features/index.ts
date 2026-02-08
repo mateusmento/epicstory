@@ -1,7 +1,6 @@
 export * from './backlog/create-backlog-item.command';
 export * from './backlog/find-backlog-items.query';
 export * from './backlog/find-project-backlog-items.query';
-export * from './backlog/move-backlog-item.command';
 export * from './backlog/remove-backlog-item.command';
 export * from './backlog/reorder-backlog-item.command';
 export * from './issue/add-assignee.command';
