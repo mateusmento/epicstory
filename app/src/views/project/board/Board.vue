@@ -2,11 +2,11 @@
 import BoardColumn from "@/components/board/BoardColumn.vue";
 import BoardItem from "@/components/board/BoardItem.vue";
 import { useDraggingById } from "@/components/board/useDraggingById";
-import { cn } from "@/design-system/utils";
 import { useDependency } from "@/core/dependency-injection";
-import { ProjectApi } from "@/domain/project";
+import { cn } from "@/design-system/utils";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import type { Issue } from "@/domain/issues";
+import { ProjectApi } from "@/domain/project";
 import { formatDistanceToNow } from "date-fns";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";

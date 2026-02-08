@@ -1,29 +1,26 @@
 <script lang="tsx" setup>
+import { UserSelect } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
-import { Button, Combobox, Field, Form } from "@/design-system";
+import { Button, Field, Form } from "@/design-system";
 import { Icon } from "@/design-system/icons";
+import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
 import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
 import { ProjectApi } from "@/domain/project";
 import { useUsers } from "@/domain/user";
-import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import {
-  animations,
-  type DragstartEvent,
-  type NodeRecord,
-  type ParentDragEventData,
+  animations
 } from "@formkit/drag-and-drop";
+import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { parseAbsolute } from "@internationalized/date";
 import { useStorage } from "@vueuse/core";
 import { debounce } from "lodash";
+import { Trash2Icon } from "lucide-vue-next";
 import { onMounted, reactive, ref, watch, withModifiers, type FunctionalComponent as FC } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
-import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
-import { UserSelect } from "@/components/user";
-import { Trash2Icon } from "lucide-vue-next";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
