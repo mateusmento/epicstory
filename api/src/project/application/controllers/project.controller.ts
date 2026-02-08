@@ -16,11 +16,11 @@ import { create } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import {
   CreateIssue,
+  FindBacklogItems,
   FindIssues,
   FindProject,
-  FindProjectBacklogItems,
+  RemoveProject,
 } from '../features';
-import { RemoveProject } from '../features/project/remove-project.command';
 
 @Controller('projects')
 export class ProjectController {
@@ -37,8 +37,11 @@ export class ProjectController {
 
   @Get(':id/backlog-items')
   @UseGuards(JwtAuthGuard)
-  findProjectBacklogItems(@Param('id') projectId: number) {
-    return this.queryBus.execute(new FindProjectBacklogItems({ projectId }));
+  findProjectBacklogItems(
+    @Param('id') projectId: number,
+    @Query() query: FindBacklogItems,
+  ) {
+    return this.queryBus.execute(new FindBacklogItems({ ...query, projectId }));
   }
 
   @Get(':id/issues')

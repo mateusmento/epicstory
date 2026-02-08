@@ -4,7 +4,9 @@ import { patch } from 'src/core/objects';
 import { BacklogItemRepository } from 'src/project/infrastructure/repositories';
 
 export class FindBacklogItems {
-  backlogId: number;
+  backlogId?: number;
+
+  projectId?: number;
 
   @IsString()
   orderBy: string;
@@ -27,9 +29,16 @@ export class FindBacklogItems {
 export class FindBacklogItemsQuery implements IQueryHandler<FindBacklogItems> {
   constructor(private backlogItemRepo: BacklogItemRepository) {}
 
-  async execute({ backlogId, orderBy, order, page, count }: FindBacklogItems) {
+  async execute({
+    backlogId,
+    projectId,
+    orderBy,
+    order,
+    page,
+    count,
+  }: FindBacklogItems) {
     const content = await this.backlogItemRepo.find({
-      where: { backlogId },
+      where: { backlogId, projectId },
       relations: { issue: { assignees: true } },
       order: {
         issue: {
