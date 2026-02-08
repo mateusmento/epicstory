@@ -26,14 +26,4 @@ export class BacklogItem {
 
   @Column({ type: 'float', default: 0 })
   order: number;
-
-  @Column({ nullable: true, unique: true })
-  previousId: number;
-  @ManyToOne(() => BacklogItem, { nullable: true })
-  previous: BacklogItem;
-
-  @Column({ nullable: true, unique: true })
-  nextId: number;
-  @ManyToOne(() => BacklogItem, { nullable: true })
-  next: BacklogItem;
 }

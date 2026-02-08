@@ -29,7 +29,7 @@ export class BacklogItemController {
     @Param('id') backlogId: number,
     @Query() query: FindBacklogItems,
   ) {
-    return this.queryBus.execute(new FindBacklogItems({ backlogId, ...query }));
+    return this.queryBus.execute(new FindBacklogItems({ ...query, backlogId }));
   }
 
   @Post('backlogs/:id/items')
@@ -40,7 +40,7 @@ export class BacklogItemController {
     @Auth() issuer: Issuer,
   ) {
     return this.commandBus.execute(
-      new CreateBacklogItem({ issuer, backlogId, ...command }),
+      new CreateBacklogItem({ ...command, backlogId, issuer }),
     );
   }
 
@@ -49,9 +49,10 @@ export class BacklogItemController {
   reorderBacklogItem(
     @Param('id') backlogItemId: number,
     @Body() command: ReorderBacklogItem,
+    @Auth() issuer: Issuer,
   ) {
     return this.commandBus.execute(
-      new ReorderBacklogItem({ backlogItemId, ...command }),
+      new ReorderBacklogItem({ ...command, backlogItemId, issuer }),
     );
   }
 

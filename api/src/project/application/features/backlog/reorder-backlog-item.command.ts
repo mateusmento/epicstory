@@ -1,13 +1,17 @@
 import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNumber, IsOptional } from 'class-validator';
+import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
-import { BacklogItem } from 'src/project/domain/entities';
+import { BacklogItemService } from 'src/project/domain/services/backlog-item.service';
 import { BacklogItemRepository } from 'src/project/infrastructure/repositories';
-import { MoreThan, Not } from 'typeorm';
+import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
 
 export class ReorderBacklogItem {
+  issuer: Issuer;
+
   @IsNumber()
   backlogId: number;
   backlogItemId: number;
@@ -24,10 +28,14 @@ export class ReorderBacklogItem {
 export class ReorderBacklogItemCommand
   implements ICommandHandler<ReorderBacklogItem>
 {
-  constructor(private backlogItemRepo: BacklogItemRepository) {}
+  constructor(
+    private backlogItemRepo: BacklogItemRepository,
+    private backlogItemService: BacklogItemService,
+    private workspaceRepo: WorkspaceRepository,
+  ) {}
 
   @Transactional()
-  async execute({ backlogItemId, afterOf }: ReorderBacklogItem) {
+  async execute({ backlogItemId, afterOf, issuer }: ReorderBacklogItem) {
     if (backlogItemId === afterOf) {
       throw new BadRequestException(
         'Can not reorder backlog item after itself',
@@ -36,44 +44,25 @@ export class ReorderBacklogItemCommand
 
     const item = await this.backlogItemRepo.findOne({
       where: { id: backlogItemId },
+      relations: { issue: true },
     });
 
     if (!item) {
       throw new BadRequestException('Backlog item not found');
     }
 
-    const itemBefore = afterOf
-      ? await this.backlogItemRepo.findOne({
-          where: { id: afterOf },
-        })
-      : null;
+    const isWorkspaceMember = await this.workspaceRepo.memberExists(
+      item.issue.workspaceId,
+      issuer.id,
+    );
+    if (!isWorkspaceMember) {
+      throw new IssuerUserIsNotWorkspaceMember();
+    }
 
-    const itemAfter = itemBefore
-      ? await this.backlogItemRepo.findOne({
-          where: {
-            order: MoreThan(itemBefore.order),
-            backlogId: item.backlogId,
-            id: Not(itemBefore.id),
-          },
-          order: { order: 'ASC' },
-        })
-      : await this.backlogItemRepo.findOne({
-          where: {
-            order: MoreThan(0),
-            backlogId: item.backlogId,
-            id: Not(item.id),
-          },
-          order: { order: 'ASC' },
-        });
+    if (item.id === afterOf) return;
 
-    const order = calculateOrder(itemBefore, itemAfter);
+    const order = await this.backlogItemService.reorder(item, afterOf);
 
     await this.backlogItemRepo.update(backlogItemId, { order });
   }
-}
-
-function calculateOrder(before: BacklogItem | null, after: BacklogItem | null) {
-  if (after && before) return (before.order + after.order) / 2;
-  if (before) return before.order + 1;
-  if (after) return after.order / 2;
 }
