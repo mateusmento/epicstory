@@ -1,9 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class MigrationDirectMessageNotifications1770162935
+export class MigrationDirectMessageNotifications1770162935000
   implements MigrationInterface
 {
-  name = 'MigrationDirectMessageNotifications1770162935';
+  name = 'MigrationDirectMessageNotifications1770162935000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Convert message notifications for DMs into direct_message notifications
