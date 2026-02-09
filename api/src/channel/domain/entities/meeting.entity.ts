@@ -27,7 +27,7 @@ export class Meeting {
   @Column()
   channelId: number;
 
-  @OneToOne(() => Channel)
+  @OneToOne(() => Channel, { onDelete: 'CASCADE' })
   @JoinColumn()
   channel: Channel;
 

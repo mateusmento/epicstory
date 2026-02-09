@@ -16,7 +16,7 @@ export class Backlog {
   id: number;
   @Column()
   projectId: number;
-  @ManyToOne(() => Project)
+  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
   project: Project;
   @OneToMany(() => BacklogItem, (bi) => bi.backlog)
   items: BacklogItem[];

@@ -11,17 +11,17 @@ export class BacklogItem {
 
   @Column()
   backlogId: number;
-  @ManyToOne(() => Backlog)
+  @ManyToOne(() => Backlog, { onDelete: 'CASCADE' })
   backlog: Backlog;
 
   @Column()
   projectId: number;
-  @ManyToOne(() => Project)
+  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
   project: Project;
 
   @Column()
   issueId: number;
-  @ManyToOne(() => Issue)
+  @ManyToOne(() => Issue, { onDelete: 'CASCADE' })
   issue: Issue;
 
   @Column({ type: 'float', default: 0 })

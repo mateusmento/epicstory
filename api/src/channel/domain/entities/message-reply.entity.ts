@@ -40,7 +40,7 @@ export class MessageReply {
   @Column()
   messageId: number;
 
-  @ManyToOne(() => Message)
+  @ManyToOne(() => Message, { onDelete: 'CASCADE' })
   message: Message;
 
   @Exclude()
@@ -66,7 +66,7 @@ export class MessageReplyReaction {
   @Column()
   messageReplyId: number;
 
-  @ManyToOne(() => MessageReply)
+  @ManyToOne(() => MessageReply, { onDelete: 'CASCADE' })
   messageReply: MessageReply;
 
   @Column()

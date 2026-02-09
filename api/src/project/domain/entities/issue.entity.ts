@@ -1,6 +1,7 @@
 import { User } from 'src/auth';
 import { patch } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
+import { Workspace } from 'src/workspace/domain/entities';
 import {
   Column,
   CreateDateColumn,
@@ -11,6 +12,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Project } from './project.entity';
 
 @Entity({ schema: PROJECT_SCHEMA })
 export class Issue {
@@ -25,12 +27,19 @@ export class Issue {
 
   @Column()
   workspaceId: number;
+  @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
+  workspace: Workspace;
 
   @Column()
   projectId: number;
+  @ManyToOne(() => Project, { onDelete: 'CASCADE' })
+  project: Project;
 
   @Column()
   createdById: number;
+
+  @ManyToOne(() => User)
+  createdBy: User;
 
   @CreateDateColumn()
   createdAt: Date;

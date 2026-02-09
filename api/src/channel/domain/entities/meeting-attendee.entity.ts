@@ -22,7 +22,7 @@ export class MeetingAttendee {
   @Column()
   meetingId: number;
 
-  @ManyToOne(() => Meeting)
+  @ManyToOne(() => Meeting, { onDelete: 'CASCADE' })
   meeting: Meeting;
 
   @Column({ default: true })

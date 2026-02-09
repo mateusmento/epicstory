@@ -21,7 +21,7 @@ export class TeamMember {
   @Column()
   teamId: number;
 
-  @ManyToOne(() => Team)
+  @ManyToOne(() => Team, { onDelete: 'CASCADE' })
   team: Team;
 
   @Column({ default: 'now()' })

@@ -3,6 +3,7 @@ import { create } from 'src/core/objects';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { WorkspaceRole } from '../values';
 import { isBefore } from 'date-fns';
+import { Workspace } from '.';
 
 @Entity()
 export class WorkspaceMemberInvite {
@@ -11,6 +12,9 @@ export class WorkspaceMemberInvite {
 
   @Column()
   workspaceId: number;
+
+  @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
+  workspace: Workspace;
 
   @Column()
   email: string;

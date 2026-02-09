@@ -1,7 +1,8 @@
 import { UUID } from 'crypto';
 import { patch } from 'src/core/objects';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { ScheduledEvent } from './scheduled-event.entity';
+import { Workspace } from 'src/workspace/domain/entities';
 
 @Entity({ schema: 'scheduler', name: 'notifications' })
 export class Notification {
@@ -22,6 +23,11 @@ export class Notification {
 
   @Column({ default: false })
   seen: boolean;
+
+  @Column()
+  workspaceId: number;
+  @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
+  workspace: Workspace;
 
   constructor(data: Partial<Notification>) {
     patch(this, data);

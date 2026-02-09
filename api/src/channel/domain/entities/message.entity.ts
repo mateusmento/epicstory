@@ -1,5 +1,6 @@
+import { Exclude } from 'class-transformer';
 import { User } from 'src/auth';
-import { Channel } from './channel.entity';
+import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import {
   Column,
   CreateDateColumn,
@@ -9,11 +10,8 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { CHANNEL_SCHEMA } from 'src/channel/constants';
+import { Channel } from './channel.entity';
 import { MessageReply } from './message-reply.entity';
-import { Exclude } from 'class-transformer';
-import { groupBy } from 'src/core/objects';
-import { minBy, sortBy } from 'lodash';
 
 export type MessageReactionsGroup = {
   emoji: string;
@@ -43,7 +41,7 @@ export class Message {
   @Column()
   channelId: number;
 
-  @ManyToOne(() => Channel)
+  @ManyToOne(() => Channel, { onDelete: 'CASCADE' })
   channel: Channel;
 
   @Exclude()
@@ -80,7 +78,7 @@ export class MessageReaction {
   @Column()
   messageId: number;
 
-  @ManyToOne(() => Message)
+  @ManyToOne(() => Message, { onDelete: 'CASCADE' })
   message: Message;
 
   @Column()

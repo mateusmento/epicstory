@@ -1,6 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { UUID } from 'crypto';
 import { patch } from 'src/core/objects';
+import { Workspace } from 'src/workspace/domain/entities';
 
 @Entity({ schema: 'scheduler', name: 'scheduled_events' })
 export class ScheduledEvent {
@@ -33,6 +34,11 @@ export class ScheduledEvent {
 
   @Column({ type: 'timestamptz', nullable: true })
   lastRetryAt?: Date;
+
+  @Column()
+  workspaceId: number;
+  @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
+  workspace: Workspace;
 
   constructor(data: Partial<ScheduledEvent>) {
     patch(this, data);

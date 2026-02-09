@@ -13,7 +13,7 @@ import {
 import { Meeting } from './meeting.entity';
 import { Message } from './message.entity';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
-import { Team } from 'src/workspace/domain/entities';
+import { Team, Workspace } from 'src/workspace/domain/entities';
 
 export type ChannelType = 'direct' | 'multi-direct' | 'group';
 
@@ -28,6 +28,9 @@ export class Channel {
 
   @Column()
   workspaceId: number;
+
+  @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
+  workspace: Workspace;
 
   @Column({ nullable: true })
   teamId?: number;
