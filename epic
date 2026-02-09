@@ -32,8 +32,7 @@ const apiDir = path.join(__dirname, "api");
 function takeFlagValue(args, flagLong, flagShort) {
   const idxLong = flagLong ? args.indexOf(flagLong) : -1;
   const idxShort = flagShort ? args.indexOf(flagShort) : -1;
-  const idx =
-    idxLong !== -1 ? idxLong : idxShort !== -1 ? idxShort : -1;
+  const idx = idxLong !== -1 ? idxLong : idxShort !== -1 ? idxShort : -1;
   if (idx === -1) return { value: undefined, rest: args };
 
   const next = args[idx + 1];
@@ -58,7 +57,10 @@ function takeEqualsFlagValue(args, flagLong) {
 async function run(container) {
   try {
     console.log(`🚀 Running Docker container: ${container ?? ""}`);
-    await runCommand("node", [path.join(scriptsDir, "run.js"), container ?? ""]);
+    await runCommand("node", [
+      path.join(scriptsDir, "run.js"),
+      container ?? "",
+    ]);
     console.log(`✅ Container ${container} running successfully!`);
   } catch (error) {
     console.error(`❌ Container ${container} failed to run:`, error.message);
@@ -215,6 +217,73 @@ async function migrations(action, args = []) {
   }
 }
 
+async function postgres(action, args = []) {
+  try {
+    if (!action || ["help", "--help", "-h"].includes(action)) {
+      await runCommand("node", [path.join(scriptsDir, "postgres.js"), "help"]);
+      return;
+    }
+
+    if (!["rotate", "list", "restore", "restore-latest"].includes(action)) {
+      console.error(
+        "❌ Error: Postgres action must be 'rotate', 'list', 'restore', or 'restore-latest'",
+      );
+      console.log(
+        "Usage: epic postgres rotate | list | restore <datetime|name|prefix> | restore-latest",
+      );
+      process.exit(1);
+    }
+
+    // Postgres data dir is often owned by root/docker; default to sudo unless explicitly disabled.
+    const noSudo = args.includes("--no-sudo");
+    const forceSudo = args.includes("--sudo");
+    const cleanedArgs = args.filter((a) => a !== "--no-sudo" && a !== "--sudo");
+
+    const canUid = typeof process.getuid === "function";
+    const isRoot = canUid ? process.getuid() === 0 : false;
+    const shouldSudo = !isRoot && (forceSudo || !noSudo);
+
+    if (shouldSudo) {
+      const hasTty =
+        Boolean(process.stdin && process.stdin.isTTY) ||
+        Boolean(process.stderr && process.stderr.isTTY) ||
+        Boolean(process.stdout && process.stdout.isTTY);
+      if (!hasTty) {
+        console.warn(
+          "⚠️  Postgres command would use sudo, but no TTY is available for password prompt.\n" +
+            "   Run this in an interactive terminal, or pass --no-sudo (may fail if permissions are required).",
+        );
+        await runCommand("node", [
+          path.join(scriptsDir, "postgres.js"),
+          action,
+          ...cleanedArgs,
+        ]);
+        return;
+      }
+
+      // Use the absolute node executable path; sudo often has a restricted PATH
+      // which can cause "sudo: node: command not found".
+      const nodeExec = process.execPath;
+      await runCommand("sudo", [
+        nodeExec,
+        path.join(scriptsDir, "postgres.js"),
+        action,
+        ...cleanedArgs,
+      ]);
+      return;
+    }
+
+    await runCommand("node", [
+      path.join(scriptsDir, "postgres.js"),
+      action,
+      ...cleanedArgs,
+    ]);
+  } catch (error) {
+    console.error(`❌ Postgres ${action} failed:`, error.message);
+    process.exit(1);
+  }
+}
+
 // Main CLI logic
 function main() {
   const args = process.argv.slice(2);
@@ -246,6 +315,9 @@ function main() {
     case "migrations":
       migrations(rest[0], rest.slice(1));
       break;
+    case "postgres":
+      postgres(rest[0], rest.slice(1));
+      break;
     case "help":
     case "--help":
     case "-h":
@@ -272,6 +344,7 @@ Usage:
   epic list                    List running containers
   epic remove                 Stop and remove all containers
   epic migrations <command>    Manage API database migrations
+  epic postgres <command>      Rotate/list/restore postgres data folder
   epic help                    Show this help message
 
 Examples:
@@ -287,6 +360,14 @@ Examples:
   epic migrations generate --name="AddFooBar"
   epic migrations run
   epic migrations revert
+  epic postgres rotate
+  epic postgres list
+  epic postgres restore 20260208T120000Z
+  epic postgres restore-latest
+
+Postgres tips:
+  - Postgres commands default to running via sudo (data dir is often root/docker-owned)
+  - Use --no-sudo to disable, or --sudo to force it
 `);
 }
 
