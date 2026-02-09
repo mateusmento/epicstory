@@ -17,7 +17,11 @@ export class FindIssueQuery implements IQueryHandler<FindIssue> {
   async execute({ issueId }: FindIssue) {
     return this.issueRepo.findOne({
       where: { id: issueId },
-      relations: { assignees: true },
+      relations: {
+        assignees: true,
+        parentIssue: true,
+        subIssues: { assignees: true },
+      },
     });
   }
 }

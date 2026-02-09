@@ -26,6 +26,6 @@ export class RemoveIssueCommand implements ICommandHandler<RemoveIssue> {
     if (!issue) throw new NotFoundException('Issue not found');
     if (!(await this.workspaceRepo.memberExists(issue.workspaceId, issuer.id)))
       throw new IssuerUserIsNotWorkspaceMember();
-    this.issueRepo.remove(issue);
+    await this.issueRepo.delete({ id: issueId });
   }
 }

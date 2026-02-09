@@ -7,6 +7,8 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -52,6 +54,15 @@ export class Issue {
     inverseJoinColumn: { name: 'user_id' },
   })
   assignees: User[];
+
+  @Column({ nullable: true })
+  parentIssueId?: number;
+
+  @ManyToOne(() => Issue, { nullable: true, onDelete: 'CASCADE' })
+  parentIssue: Issue;
+
+  @OneToMany(() => Issue, (issue) => issue.parentIssue)
+  subIssues: Issue[];
 
   constructor(data: Partial<Issue> = {}) {
     patch(this, data);

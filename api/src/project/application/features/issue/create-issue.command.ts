@@ -21,6 +21,10 @@ export class CreateIssue {
   @IsNumber()
   projectId: number;
 
+  @IsNumber()
+  @IsOptional()
+  parentIssueId?: number;
+
   constructor(data: Partial<CreateIssue> = {}) {
     patch(this, data);
   }
@@ -34,7 +38,7 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
     private workspaceRepo: WorkspaceRepository,
   ) {}
 
-  async execute({ issuer, ...data }: CreateIssue) {
+  async execute({ issuer, parentIssueId, ...data }: CreateIssue) {
     const project = await this.projectRepo.findOne({
       where: { id: data.projectId },
     });
@@ -46,10 +50,18 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
     if (!(await this.workspaceRepo.memberExists(workspaceId, issuer.id)))
       throw new IssuerUserIsNotWorkspaceMember();
 
+    if (parentIssueId) {
+      const parentIssue = await this.issueRepo.findOne({
+        where: { id: parentIssueId },
+      });
+      if (!parentIssue) throw new NotFoundException('Parent issue not found');
+    }
+
     return this.issueRepo.save(
       Issue.create({
         ...data,
         workspaceId,
+        parentIssueId,
         createdById: issuer.id,
       }),
     );
