@@ -33,7 +33,7 @@ const selectedUser = ref<User>();
     <div class="flex:col-3xl p-4">
       <Collapsible as-child>
         <div class="flex:row-auto flex:center-y">
-          <h1 class="flex:row-md flex:center-y text-lg whitespace-nowrap">
+          <h1 class="flex:row-md flex:center-y whitespace-nowrap font-semibold">
             <Icon name="bi-people-fill" />
             Workspace Members
           </h1>
@@ -42,10 +42,7 @@ const selectedUser = ref<User>();
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <Form
-            @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)"
-            class="flex:col-lg"
-          >
+          <Form @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)" class="flex:col-lg">
             <UserSelect v-model="selectedUser" />
             <Field :modelValue="selectedUser?.email" name="email" placeholder="Email..." />
             <Button type="submit" size="xs">Add</Button>
@@ -54,18 +51,14 @@ const selectedUser = ref<User>();
       </Collapsible>
 
       <div
-        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-secondary text-secondary-foreground text-sm"
-      >
+        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-secondary text-secondary-foreground text-sm">
         <IconSearch /> Search
       </div>
     </div>
 
     <div class="flex:col text-sm">
-      <div
-        v-for="member in members"
-        :key="member.id"
-        class="group flex:row-lg p-3 border-t cursor-pointer hover:bg-secondary/40"
-      >
+      <div v-for="member in members" :key="member.id"
+        class="group flex:row-lg p-3 border-t cursor-pointer hover:bg-secondary/40">
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
         <div class="flex:col-md"></div>
         <div class="flex:col-md">

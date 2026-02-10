@@ -67,7 +67,7 @@ async function openNotification(notification: Notification) {
   <div class="flex:col w-96 h-full">
     <div class="flex:row-md flex:center-y p-4 border-b">
       <Icon name="oi-inbox" />
-      <div class="text-lg font-semibold">Inbox</div>
+      <div class="font-semibold">Inbox</div>
     </div>
 
     <div class="flex-1 overflow-y-auto">

@@ -23,7 +23,7 @@ const selectedUser = ref<User>();
     <div class="flex:col-xl p-4">
       <Collapsible as-child>
         <div class="flex:row-auto flex:center-y">
-          <h1 class="flex:row-md flex:center-y text-lg">
+          <h1 class="flex:row-md flex:center-y font-semibold">
             <Icon name="bi-person-workspace" />
             <div>{{ team?.name }}</div>
           </h1>
@@ -42,20 +42,14 @@ const selectedUser = ref<User>();
       </Collapsible>
 
       <div
-        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-secondary text-secondary-foreground text-sm"
-      >
+        class="flex:row-md flex:center-y flex:center-x p-2 rounded-lg bg-secondary text-secondary-foreground text-sm">
         <IconSearch /> Search
       </div>
     </div>
 
     <div class="flex:col">
-      <div
-        v-for="member in members"
-        :key="member.id"
-        view="app-pane"
-        content="team"
-        class="flex:row-2xl flex:center-y p-4 border-t hover:bg-secondary cursor-pointer"
-      >
+      <div v-for="member in members" :key="member.id" view="app-pane" content="team"
+        class="flex:row-2xl flex:center-y p-4 border-t hover:bg-secondary cursor-pointer">
         <img :src="member.user.picture" class="w-12 h-12 rounded-full" />
         <div class="flex:col-md">
           <div class="text-base text-foreground font-dmSans font-medium">{{ member.user.name }}</div>
@@ -63,10 +57,7 @@ const selectedUser = ref<User>();
             Member since {{ format(member.joinedAt, "MMM do, yyyy") }}
           </div>
         </div>
-        <Trash2Icon
-          @click="removeMember(member.id)"
-          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
-        />
+        <Trash2Icon @click="removeMember(member.id)" class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground" />
       </div>
     </div>
   </div>

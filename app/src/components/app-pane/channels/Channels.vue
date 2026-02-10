@@ -15,7 +15,7 @@ const { currentMeeting, joinMeeting } = useMeeting();
   <div class="flex:col h-full w-96">
 
     <div class="flex:row-auto flex:center-y h-14 p-4">
-      <div class="flex:row-sm flex:center-y text-base text-foreground">
+      <div class="flex:row-sm flex:center-y font-semibold text-foreground">
         <Icon name="fa-slack-hash" scale="1.2" />
         Channels
       </div>
