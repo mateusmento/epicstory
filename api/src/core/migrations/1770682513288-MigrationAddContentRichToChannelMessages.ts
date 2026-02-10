@@ -1,9 +1,9 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class MigrationAddContentRichToChannelMessages1770249413621
+export class MigrationAddContentRichToChannelMessages1770682513288
   implements MigrationInterface
 {
-  name = 'MigrationAddContentRichToChannelMessages1770249413621';
+  name = 'MigrationAddContentRichToChannelMessages1770682513288';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
