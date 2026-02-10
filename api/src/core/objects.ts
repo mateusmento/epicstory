@@ -37,17 +37,6 @@ export function groupBy<T>(
   return Object.fromEntries(map.entries());
 }
 
-export function mapBy<T, K extends keyof T>(
-  array: T[],
-  key: K,
-): Map<T[K], T[]> {
-  const map = new Map<T[K], T[]>();
-  for (const item of array) {
-    const keyValue = item[key];
-    if (!map.has(keyValue)) {
-      map.set(keyValue, []);
-    }
-    map.get(keyValue)?.push(item);
-  }
-  return map;
+export function mapBy<T, K extends keyof T>(array: T[], key: K): Map<T[K], T> {
+  return new Map(array.map((item) => [item[key], item]));
 }

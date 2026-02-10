@@ -17,7 +17,7 @@ export class MessageRepository extends Repository<Message> {
   ): Promise<{ messageId: number; repliesCount: number }[]> {
     if (messageIds.length === 0) return [];
 
-    let repliesCount = await this.createQueryBuilder('m')
+    const repliesCount = await this.createQueryBuilder('m')
       .leftJoin('m.allReplies', 'r')
       .where('r.messageId IN (:...messageIds)', { messageIds })
       .groupBy('m.id')

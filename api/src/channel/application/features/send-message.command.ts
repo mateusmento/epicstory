@@ -10,8 +10,6 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
-import { extractMentionIds, renderMentions } from '../utils/mentions';
-import { normalizeTiptapDoc, tiptapToPlainText } from '../utils/tiptap';
 
 export class SendMessage {
   channelId: number;
@@ -62,41 +60,17 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       throw new SenderIsNotChannelMember();
     }
 
-    const normalizedRich = contentRich
-      ? normalizeTiptapDoc(contentRich)
-      : undefined;
-    const plainContent = normalizedRich
-      ? tiptapToPlainText(normalizedRich)
-      : content;
-
-    const { id } = await this.messageService.createMessage(
-      plainContent,
-      channelId,
+    const message = await this.messageService.createMessage(
+      channel,
       senderId,
-      normalizedRich,
+      content,
+      contentRich,
     );
 
-    const message = await this.messageRepo.findOne({
-      where: { id },
-      relations: {
-        sender: true,
-      },
-    });
+    const mentionIds = message.mentionedUsers
+      .filter((user) => user.id !== senderId)
+      .map((user) => user.id);
 
-    const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
-    const mentionIds = extractMentionIds(plainContent);
-    const finalMentionIds = mentionIds.filter(
-      (id) => id !== senderId && peerUsersMap.has(id),
-    );
-    const mentionedUsers = finalMentionIds
-      .map((id) => peerUsersMap.get(id))
-      .filter(Boolean);
-    const displayContent = renderMentions(plainContent, peerUsersMap);
-
-    (message as any).mentionedUsers = mentionedUsers;
-    (message as any).displayContent = displayContent;
-
-    // DM notification (Inbox) only for direct / multi-direct channels
     if (channel.type === 'direct' || channel.type === 'multi-direct') {
       await this.commandBus.execute(
         new SendNotification({
@@ -111,16 +85,16 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       );
     }
 
-    if (finalMentionIds.length > 0) {
+    if (mentionIds.length > 0) {
       await this.commandBus.execute(
         new SendNotification({
           type: 'mention',
-          userIds: finalMentionIds,
+          userIds: mentionIds,
           payload: {
             channel,
             sender: message.sender,
-            message: displayContent,
-            mentionedUsers,
+            message: message.displayContent,
+            mentionedUsers: message.mentionedUsers,
           },
         }),
       );

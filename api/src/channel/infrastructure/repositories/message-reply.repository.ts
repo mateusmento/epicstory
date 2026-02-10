@@ -13,7 +13,7 @@ export class MessageReplyRepository extends Repository<MessageReply> {
   async findRepliers(
     messageIds: number[],
   ): Promise<{ messageId: number; senderId: number; repliesCount: number }[]> {
-    let repliers = await this.createQueryBuilder('r')
+    const repliers = await this.createQueryBuilder('r')
       .where('r.messageId IN (:...messageIds)', { messageIds })
       .groupBy('r.messageId')
       .addGroupBy('r.senderId')

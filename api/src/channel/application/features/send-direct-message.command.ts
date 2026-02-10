@@ -1,19 +1,20 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import {
   IsArray,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
 } from 'class-validator';
 import { UserRepository } from 'src/auth';
 import { Channel } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
-import { MessageService } from '../services/message.service';
 import { In } from 'typeorm';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { WorkspaceNotFound } from 'src/workspace/application/features';
+import { SendMessage } from './send-message.command';
 
 export class SendDirectMessage {
   senderId: number;
@@ -26,6 +27,10 @@ export class SendDirectMessage {
   @IsNotEmpty()
   @IsString()
   content: string;
+
+  @IsOptional()
+  @IsObject()
+  contentRich?: any;
 
   @IsNumber()
   workspaceId: number;
@@ -40,13 +45,19 @@ export class SendDirectMessageCommand
   implements ICommandHandler<SendDirectMessage>
 {
   constructor(
-    private messageService: MessageService,
     private userRepo: UserRepository,
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
+    private commandBus: CommandBus,
   ) {}
 
-  async execute({ senderId, peers, workspaceId, content }: SendDirectMessage) {
+  async execute({
+    senderId,
+    peers,
+    workspaceId,
+    content,
+    contentRich,
+  }: SendDirectMessage) {
     const workspace = await this.workspaceRepo.findOneBy({ id: workspaceId });
     if (!workspace) {
       throw new WorkspaceNotFound();
@@ -79,6 +90,13 @@ export class SendDirectMessageCommand
       );
     }
 
-    return this.messageService.createMessage(content, channel.id, senderId);
+    return this.commandBus.execute(
+      new SendMessage({
+        channelId: channel.id,
+        senderId,
+        content,
+        contentRich,
+      }),
+    );
   }
 }

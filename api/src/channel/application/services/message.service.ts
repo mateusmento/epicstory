@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { uniq } from 'lodash';
-import { UserRepository } from 'src/auth';
-import { MessageReaction } from 'src/channel/domain';
+import { User, UserRepository } from 'src/auth';
+import { Channel, Message, MessageReaction } from 'src/channel/domain';
 import { MessageReplyReaction } from 'src/channel/domain/entities';
 import { mapReactions, mapRepliers } from 'src/channel/domain/utils';
 import {
@@ -11,10 +11,21 @@ import {
   MessageReplyRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
-import { groupBy } from 'src/core/objects';
+import { create, groupBy, mapBy, patch } from 'src/core/objects';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
+import { normalizeTiptapDoc, tiptapToPlainText } from '../utils/tiptap';
+
+export class MessageDto extends Message {
+  mentionedUsers?: User[];
+  displayContent?: string;
+
+  constructor(data: Partial<MessageDto>) {
+    super();
+    patch(this, data);
+  }
+}
 
 @Injectable()
 export class MessageService {
@@ -45,60 +56,86 @@ export class MessageService {
     const repliesCount = await this.messageRepo.findRepliesCount(messageIds);
     const repliers = await this.replyRepo.findRepliers(messageIds);
 
-    const usersIdsFromMessages = messages.flatMap((m) =>
-      m.allReactions.map((r) => r.userId),
-    );
-    const usersIds = uniq(
-      repliers.map((r) => r.senderId).concat(usersIdsFromMessages),
-    );
+    const usersIds = uniq([
+      ...repliers.map((r) => r.senderId),
+      ...messages.flatMap((m) => m.allReactions.map((r) => r.userId)),
+    ]);
+
     const users = await this.userRepo.find({
       where: { id: In(usersIds) },
     });
 
-    const usersMap = new Map(users.map((u) => [u.id, u]));
-    const repliesCountMap = groupBy(repliesCount, 'messageId');
+    const usersMap = mapBy(users, 'id');
+    const repliesCountMap = mapBy(repliesCount, 'messageId');
     const repliersMap = groupBy(repliers, 'messageId');
 
-    const peerUsersMap = new Map((channel?.peers ?? []).map((u) => [u.id, u]));
+    const peerUsersMap = mapBy(channel?.peers ?? [], 'id');
 
-    for (const message of messages) {
-      message.repliesCount =
-        repliesCountMap[message.id]?.[0]?.repliesCount ?? 0;
-
-      message.repliers = mapRepliers(repliersMap[message.id] ?? [], usersMap);
-      message.reactions = mapReactions(
-        message.allReactions,
-        senderId,
-        usersMap,
-      );
-
-      const mentionIds = extractMentionIds(message.content);
-      (message as any).mentionedUsers = mentionIds
+    return messages.map((message) => {
+      const repliesCount = repliesCountMap.get(message.id)?.repliesCount ?? 0;
+      const repliers = mapRepliers(repliersMap[message.id] ?? [], usersMap);
+      const reactions = mapReactions(message.allReactions, senderId, usersMap);
+      const displayContent = renderMentions(message.content, peerUsersMap);
+      const mentionedUsers = extractMentionIds(message.content)
         .map((id) => peerUsersMap.get(id))
-        .filter(Boolean);
-      (message as any).displayContent = renderMentions(
-        message.content,
-        peerUsersMap,
-      );
-    }
+        .filter((user) => user);
 
-    return messages;
+      return new MessageDto({
+        ...message,
+        repliesCount,
+        repliers,
+        reactions,
+        displayContent,
+        mentionedUsers,
+      });
+    });
   }
 
   async createMessage(
-    content: string,
-    channelId: number,
+    channel: Channel,
     senderId: number,
+    content: string,
     contentRich?: any,
   ) {
-    const message = await this.messageRepo.save({
-      content,
-      channelId,
-      senderId,
-      contentRich,
-    });
+    const channelId = channel.id;
+
+    const normalizedRich = contentRich
+      ? normalizeTiptapDoc(contentRich)
+      : undefined;
+    const plainContent = normalizedRich
+      ? tiptapToPlainText(normalizedRich)
+      : content;
+
+    let message = await this.messageRepo.save(
+      create(Message, {
+        channelId,
+        senderId,
+        content: plainContent,
+        contentRich: normalizedRich,
+        sentAt: new Date(),
+      }),
+    );
+
     this.channelRepo.update({ id: channelId }, { lastMessageId: message.id });
-    return message;
+
+    message = await this.messageRepo.findOne({
+      where: { id: message.id },
+      relations: {
+        sender: true,
+      },
+    });
+
+    const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
+    const displayContent = renderMentions(plainContent, peerUsersMap);
+    const mentionedUsers = extractMentionIds(plainContent)
+      .map((id) => peerUsersMap.get(id))
+      .filter((user) => user);
+
+    return new MessageDto({
+      ...message,
+      mentionedUsers,
+      displayContent,
+    });
   }
 
   async findReplies(messageId: number, senderId: number) {
