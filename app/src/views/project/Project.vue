@@ -1,5 +1,19 @@
 <script lang="ts" setup>
-import { Button, Separator } from "@/design-system";
+import {
+  Button,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  Separator,
+} from "@/design-system";
 import { IconSearch } from "@/design-system/icons";
 import {
   Breadcrumb,
@@ -9,37 +23,25 @@ import {
 } from "@/design-system/ui/breadcrumb";
 import ToggleGroup from "@/design-system/ui/toggle-group/ToggleGroup.vue";
 import ToggleGroupItem from "@/design-system/ui/toggle-group/ToggleGroupItem.vue";
-import { ArrowLeft, ArrowRight } from "lucide-vue-next";
-import { RouterLink, useRoute } from "vue-router";
-import { useMagicKeys, whenever } from '@vueuse/core'
+import { useMagicKeys, whenever } from "@vueuse/core";
 import {
+  ArrowLeft,
+  ArrowRight,
   Calculator,
   Calendar,
   CreditCard,
   Settings,
   Smile,
   User,
-} from 'lucide-vue-next'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from '@/design-system'
+} from "lucide-vue-next";
 import { ref } from "vue";
+import { RouterLink, useRoute } from "vue-router";
 
-const open = ref(false)
-const { meta_j } = useMagicKeys()
+const open = ref(false);
+const { meta_j } = useMagicKeys();
 whenever(meta_j, () => {
-  open.value = true
-})
+  open.value = true;
+});
 
 defineProps<{ workspaceId: string; projectId: string; issueId: string }>();
 
@@ -84,15 +86,16 @@ function routeId(route: string) {
         </Breadcrumb>
       </div>
 
-      <Popover>
-        <PopoverTrigger as-child>
+      <Dialog>
+        <DialogTrigger as-child>
           <div
-            class="flex:row-md flex:center w-96 h-7 mx-auto rounded-lg bg-secondary text-xs text-secondary-foreground">
+            class="flex:row-md flex:center w-96 h-7 mx-auto rounded-lg bg-secondary text-xs text-secondary-foreground"
+          >
             <IconSearch /> Search
           </div>
-        </PopoverTrigger>
-        <PopoverContent>
-          <Command class="rounded-lg border shadow-md md:min-w-[450px]">
+        </DialogTrigger>
+        <DialogContent as-child>
+          <Command class="rounded-lg border shadow-md p-0 top-80 h-fit md:min-w-[450px]">
             <CommandInput placeholder="Type a command or search..." />
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
@@ -130,10 +133,8 @@ function routeId(route: string) {
               </CommandGroup>
             </CommandList>
           </Command>
-        </PopoverContent>
-      </Popover>
-
-
+        </DialogContent>
+      </Dialog>
 
       <div class="flex-1"></div>
     </div>
