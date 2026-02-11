@@ -43,9 +43,13 @@ const selectedUser = ref<User>();
     <Separator />
 
     <div class="flex:col-md p-2">
-      <div v-for="member in members" :key="member.id" view="app-pane" content="team"
-        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer">
-
+      <div
+        v-for="member in members"
+        :key="member.id"
+        view="app-pane"
+        content="team"
+        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+      >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
 
         <div class="flex:col flex:center-y">
@@ -54,7 +58,10 @@ const selectedUser = ref<User>();
             Member since {{ format(member.joinedAt, "MMM do, yyyy") }}
           </div>
         </div>
-        <Trash2Icon @click="removeMember(member.id)" class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground" />
+        <Trash2Icon
+          @click="removeMember(member.id)"
+          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
+        />
       </div>
     </div>
   </div>

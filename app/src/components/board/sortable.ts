@@ -132,18 +132,21 @@ export function applySortableTransferById(store: IDnDStore) {
       insertIndex -= 1;
     }
 
-    const shouldSkip =
-      fromIndex < 0 ||
-      toIndex < 0 ||
-      (draggingSource === list && insertIndex === fromIndex);
+    const shouldSkip = fromIndex < 0 || toIndex < 0 || (draggingSource === list && insertIndex === fromIndex);
 
     if (DEBUG_SORTABLE) {
       console.groupCollapsed(
         `[board-sortable] hover overEl active=${String(activeId)} over=${String(overId)} from=${fromIndex} to=${toIndex} insert=${insertIndex} side=${side}`,
       );
       console.log({ shouldSkip, fromIndex, toIndex, insertIndex, side, pointer, overRect, overEl });
-      console.log("draggingSource ids:", draggingSource?.map?.((x: any) => x?.id));
-      console.log("target list ids:", list?.map?.((x: any) => x?.id));
+      console.log(
+        "draggingSource ids:",
+        draggingSource?.map?.((x: any) => x?.id),
+      );
+      console.log(
+        "target list ids:",
+        list?.map?.((x: any) => x?.id),
+      );
       console.groupEnd();
     } else {
       console.log("overEl", { shouldSkip, fromIndex, toIndex, insertIndex, side });
@@ -175,15 +178,17 @@ export function applySortableTransferById(store: IDnDStore) {
       const x = pointer?.x;
       const y = pointer?.y;
       requestAnimationFrame(() => {
-        console.groupCollapsed(
-          `[board-sortable] after move active=${String(activeId)} (pointer=${x},${y})`,
+        console.groupCollapsed(`[board-sortable] after move active=${String(activeId)} (pointer=${x},${y})`);
+        console.log(
+          "draggingSource ids:",
+          draggingSource?.map?.((v: any) => v?.id),
         );
-        console.log("draggingSource ids:", draggingSource?.map?.((v: any) => v?.id));
-        console.log("target list ids:", list?.map?.((v: any) => v?.id));
+        console.log(
+          "target list ids:",
+          list?.map?.((v: any) => v?.id),
+        );
         if (typeof x === "number" && typeof y === "number") {
-          const els = document
-            .elementsFromPoint(x, y)
-            .filter((el) => !el.closest?.("#vue-dnd-kit-overlay"));
+          const els = document.elementsFromPoint(x, y).filter((el) => !el.closest?.("#vue-dnd-kit-overlay"));
           console.log("elementsFromPoint (filtered):", els.slice(0, 6));
         }
         console.groupEnd();

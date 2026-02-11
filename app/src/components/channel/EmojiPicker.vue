@@ -134,13 +134,20 @@ function handleEmojiSelect(emoji: string) {
         <SmilePlusIcon class="w-5 h-5 text-primary/40" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="w-80 p-2 bg-white z-[80] shadow-sm border border-secondary rounded-lg" align="start"
-      disabled-portal>
+    <PopoverContent
+      class="w-80 p-2 bg-white z-[80] shadow-sm border border-secondary rounded-lg"
+      align="start"
+      disabled-portal
+    >
       <ScrollArea class="h-60 flex-1 min-h-0">
         <div class="!grid grid-cols-8 gap-1">
-          <button v-for="emoji in emojis" :key="emoji" @click="handleEmojiSelect(emoji)"
+          <button
+            v-for="emoji in emojis"
+            :key="emoji"
+            @click="handleEmojiSelect(emoji)"
             class="flex items-center justify-center p-2 rounded hover:bg-secondary transition-colors text-lg cursor-pointer"
-            :title="emoji">
+            :title="emoji"
+          >
             {{ emoji }}
           </button>
         </div>

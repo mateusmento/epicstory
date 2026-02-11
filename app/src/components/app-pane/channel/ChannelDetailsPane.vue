@@ -10,5 +10,10 @@ const { members, addMember, removeMember } = useChannel();
 </script>
 
 <template>
-  <ChannelDetailsPaneTemplate :members @add-member="addMember" @remove-member="removeMember" @close="emit('close')" />
+  <ChannelDetailsPaneTemplate
+    :members
+    @add-member="addMember"
+    @remove-member="removeMember"
+    @close="emit('close')"
+  />
 </template>

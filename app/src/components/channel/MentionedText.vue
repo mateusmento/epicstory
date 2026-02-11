@@ -3,9 +3,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/design-system";
 import type { User } from "@/domain/auth";
 import { computed } from "vue";
 
-type Segment =
-  | { type: "text"; value: string }
-  | { type: "mention"; id: number; raw: string; user?: User };
+type Segment = { type: "text"; value: string } | { type: "mention"; id: number; raw: string; user?: User };
 
 const props = defineProps<{
   content: string;
@@ -48,16 +46,24 @@ const segments = computed<Segment[]>(() => {
       <span v-if="seg.type === 'text'">{{ seg.value }}</span>
       <HoverCard v-else :open-delay="100" :close-delay="0">
         <HoverCardTrigger as-child>
-          <span class="inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold cursor-pointer">
+          <span
+            class="inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold cursor-pointer"
+          >
             @{{ seg.user?.name ?? seg.id }}
           </span>
         </HoverCardTrigger>
         <HoverCardContent class="w-64">
           <div v-if="seg.user" class="flex:row-md items-center">
-            <img v-if="seg.user.picture" :src="seg.user.picture" :alt="seg.user.name"
-              class="w-10 h-10 rounded-full flex-shrink-0" />
-            <div v-else
-              class="w-10 h-10 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold">
+            <img
+              v-if="seg.user.picture"
+              :src="seg.user.picture"
+              :alt="seg.user.name"
+              class="w-10 h-10 rounded-full flex-shrink-0"
+            />
+            <div
+              v-else
+              class="w-10 h-10 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold"
+            >
               {{ seg.user.name.charAt(0).toUpperCase() }}
             </div>
             <div class="flex:col min-w-0">
@@ -65,9 +71,7 @@ const segments = computed<Segment[]>(() => {
               <div class="text-xs text-secondary-foreground font-dmSans truncate">{{ seg.user.email }}</div>
             </div>
           </div>
-          <div v-else class="text-sm text-secondary-foreground font-dmSans">
-            Unknown user {{ seg.raw }}
-          </div>
+          <div v-else class="text-sm text-secondary-foreground font-dmSans">Unknown user {{ seg.raw }}</div>
         </HoverCardContent>
       </HoverCard>
     </template>

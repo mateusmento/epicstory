@@ -1,7 +1,12 @@
 <script lang="ts" setup>
 import { Button, Separator } from "@/design-system";
 import { IconSearch } from "@/design-system/icons";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/design-system/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/design-system/ui/breadcrumb";
 import ToggleGroup from "@/design-system/ui/toggle-group/ToggleGroup.vue";
 import ToggleGroupItem from "@/design-system/ui/toggle-group/ToggleGroupItem.vue";
 import { ArrowLeft, ArrowRight } from "lucide-vue-next";
@@ -18,10 +23,8 @@ function routeId(route: string) {
 
 <template>
   <div class="w-full h-full flex:col">
-
     <div class="flex:row flex:center-y px-6 py-2 h-14">
       <div class="flex:row flex:center-y flex-1">
-
         <div class="flex:row-xl flex:center-y">
           <Button variant="outline" size="icon">
             <ArrowLeft class="w-4 h-4 text-secondary-foreground" />
@@ -33,34 +36,28 @@ function routeId(route: string) {
 
         <Breadcrumb class="px-4">
           <BreadcrumbList>
-
             <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}`">
-                Project
-              </RouterLink>
+              <RouterLink :to="`/${workspaceId}/project/${projectId}`"> Project </RouterLink>
             </BreadcrumbItem>
 
             <BreadcrumbSeparator />
 
             <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}/board`">
-                Board
-              </RouterLink>
+              <RouterLink :to="`/${workspaceId}/project/${projectId}/board`"> Board </RouterLink>
             </BreadcrumbItem>
 
             <BreadcrumbSeparator />
 
             <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}/issue/${issueId}`">
-                Issue
-              </RouterLink>
+              <RouterLink :to="`/${workspaceId}/project/${projectId}/issue/${issueId}`"> Issue </RouterLink>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
       </div>
 
-
-      <div class="flex:row-md flex:center w-96 p-2 mx-auto rounded-lg bg-secondary text-sm text-secondary-foreground">
+      <div
+        class="flex:row-md flex:center w-96 p-2 mx-auto rounded-lg bg-secondary text-sm text-secondary-foreground"
+      >
         <IconSearch /> Search
       </div>
 

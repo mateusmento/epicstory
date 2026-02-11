@@ -1,5 +1,12 @@
 <script lang="ts" setup>
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/design-system";
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/design-system";
 import { IconReplies } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
@@ -17,12 +24,12 @@ const emit = defineEmits<{
   (e: "toggle-discussion"): void;
 }>();
 
-const sender = computed(() => props.senderId === props.meId ? 'me' : 'someoneElse');
+const sender = computed(() => (props.senderId === props.meId ? "me" : "someoneElse"));
 
 const mostUsedEmojis = [
-  '👍',
-  '🙌',
-  '❤️',
+  "👍",
+  "🙌",
+  "❤️",
   // '🔥',
   // '🎉',
 ];
@@ -36,8 +43,14 @@ defineExpose({
 
 <template>
   <div :class="styles.messageActions" ref="messageActionsRef">
-    <Button v-for="emoji in mostUsedEmojis" :key="emoji" variant="ghost" size="icon" class="w-8 h-8 text-lg"
-      @click="emit('emoji-selected', emoji)">
+    <Button
+      v-for="emoji in mostUsedEmojis"
+      :key="emoji"
+      variant="ghost"
+      size="icon"
+      class="w-8 h-8 text-lg"
+      @click="emit('emoji-selected', emoji)"
+    >
       {{ emoji }}
     </Button>
 
@@ -76,11 +89,13 @@ defineExpose({
 
 <script lang="ts">
 const styles = {
-  messageActions: cn([
-    "flex:row-md flex:center-y w-fit bg-white z-10",
-    // "opacity-0 group-hover/message:opacity-100 transition-opacity",
-    // "absolute top-0 right-0 translate-y-[-75%] mr-3",
-    "border border-secondary rounded-xl shadow-sm p-md",
-  ].join(" "))
+  messageActions: cn(
+    [
+      "flex:row-md flex:center-y w-fit bg-white z-10",
+      // "opacity-0 group-hover/message:opacity-100 transition-opacity",
+      // "absolute top-0 right-0 translate-y-[-75%] mr-3",
+      "border border-secondary rounded-xl shadow-sm p-md",
+    ].join(" "),
+  ),
 };
 </script>

@@ -6,7 +6,7 @@ import type { Page } from "@/core/types";
 
 @injectable()
 export class NotificationApi {
-  constructor(@InjectAxios() private axios: Axios) { }
+  constructor(@InjectAxios() private axios: Axios) {}
 
   fetchNotifications(userId: number, limit?: number): Promise<Page<Notification>> {
     return this.axios

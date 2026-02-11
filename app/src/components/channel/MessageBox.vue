@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { Button, HoverCard, HoverCardContent, HoverCardTrigger, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
+import {
+  Button,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/design-system";
 import { cn } from "@/design-system/utils";
 import { ref, watch } from "vue";
 import type { IMessage, IReply } from "@/domain/channels";
@@ -39,10 +47,8 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
     return;
   }
 
-  if (messageBoxEl.clientWidth < messageActionsWidth)
-    alignOffset.value = defaultMargin;
-  else
-    alignOffset.value = messageBoxEl.clientWidth - messageActionsWidth - defaultMargin;
+  if (messageBoxEl.clientWidth < messageActionsWidth) alignOffset.value = defaultMargin;
+  else alignOffset.value = messageBoxEl.clientWidth - messageActionsWidth - defaultMargin;
 });
 </script>
 
@@ -56,20 +62,33 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
         </div>
       </HoverCardTrigger>
       <HoverCardContent as-child side="top" align="start" :align-offset="alignOffset" :side-offset="-10">
-        <MessageActions :meId="meId" :senderId="message.senderId" @message-deleted="emit('message-deleted')"
-          @toggle-discussion="emit('discussion-opened')" @emoji-selected="emit('reaction-toggled', $event)"
-          ref="messageActionsRef" />
+        <MessageActions
+          :meId="meId"
+          :senderId="message.senderId"
+          @message-deleted="emit('message-deleted')"
+          @toggle-discussion="emit('discussion-opened')"
+          @emoji-selected="emit('reaction-toggled', $event)"
+          ref="messageActionsRef"
+        />
       </HoverCardContent>
     </HoverCard>
 
-    <div v-if="(!hideRepliesCount && message.repliesCount > 0) || message.reactions.length > 0"
-      class="flex:row-2xl flex:center-y ml-lg mt-1 mb-1 z-10">
-
-      <Button v-if="!hideRepliesCount && message.repliesCount > 0" variant="ghost" size="icon"
-        @click="emit('discussion-opened')">
-
-        <img v-for="replier in message.repliers" :key="replier.user.id" :src="replier.user.picture"
-          class="w-6 h-6 -ml-2 first:ml-0 rounded-full" />
+    <div
+      v-if="(!hideRepliesCount && message.repliesCount > 0) || message.reactions.length > 0"
+      class="flex:row-2xl flex:center-y ml-lg mt-1 mb-1 z-10"
+    >
+      <Button
+        v-if="!hideRepliesCount && message.repliesCount > 0"
+        variant="ghost"
+        size="icon"
+        @click="emit('discussion-opened')"
+      >
+        <img
+          v-for="replier in message.repliers"
+          :key="replier.user.id"
+          :src="replier.user.picture"
+          class="w-6 h-6 -ml-2 first:ml-0 rounded-full"
+        />
 
         <span class="flex:row-md flex:center-y ml-xl text-xs text-primary/40">
           <IconReplies class="w-5 h-5 text-primary/40" />
@@ -78,11 +97,19 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
       </Button>
 
       <div v-if="message.reactions.length > 0" class="flex:row-md flex:center-y">
-        <Tooltip v-for="reaction in message.reactions" :key="reaction.emoji" :default-open="false"
-          :ignore-non-keyboard-focus="true">
+        <Tooltip
+          v-for="reaction in message.reactions"
+          :key="reaction.emoji"
+          :default-open="false"
+          :ignore-non-keyboard-focus="true"
+        >
           <TooltipTrigger as-child>
-            <Button variant="outline" size="icon" @click="emit('reaction-toggled', reaction.emoji)"
-              class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]">
+            <Button
+              variant="outline"
+              size="icon"
+              @click="emit('reaction-toggled', reaction.emoji)"
+              class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]"
+            >
               {{ reaction.emoji }} {{ reaction.reactedBy.length }}
             </Button>
           </TooltipTrigger>

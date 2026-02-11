@@ -45,13 +45,22 @@ watch(workspace, fetchTeams);
     <Separator />
 
     <div class="flex:col p-2">
-      <NavTrigger v-for="team in teams" :key="team.id" view="app-pane" content="team" :props="{ teamId: team.id }"
-        class="flex:row-2xl flex:center-y py-2 px-4 rounded-lg hover:bg-secondary cursor-pointer">
+      <NavTrigger
+        v-for="team in teams"
+        :key="team.id"
+        view="app-pane"
+        content="team"
+        :props="{ teamId: team.id }"
+        class="flex:row-2xl flex:center-y py-2 px-4 rounded-lg hover:bg-secondary cursor-pointer"
+      >
         <div class="flex:row-auto flex:center-y flex-1">
           <div class="text-base text-foreground font-dmSans font-medium">{{ team.name }}</div>
           <div class="text-xs text-secondary-foreground">4 members</div>
         </div>
-        <Trash2Icon @click.stop="removeTeam(team.id)" class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground" />
+        <Trash2Icon
+          @click.stop="removeTeam(team.id)"
+          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
+        />
       </NavTrigger>
     </div>
   </div>

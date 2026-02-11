@@ -15,7 +15,16 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, Link2, Undo2, Redo2 } from "lucide-vue-next";
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  List,
+  ListOrdered,
+  Link2,
+  Undo2,
+  Redo2,
+} from "lucide-vue-next";
 
 const props = defineProps<{
   workspaceId: string;
@@ -235,7 +244,9 @@ watch(
 
       <div class="flex:row-md flex:center-y">
         <div v-if="isSaving" class="text-xs text-secondary-foreground">Saving…</div>
-        <Button variant="outline" size="sm" :disabled="!issue || isSaving" @click="saveMainFields">Save</Button>
+        <Button variant="outline" size="sm" :disabled="!issue || isSaving" @click="saveMainFields"
+          >Save</Button
+        >
       </div>
     </div>
 
@@ -383,7 +394,9 @@ watch(
               <div class="flex-1" />
 
               <div class="text-xs text-secondary-foreground mr-2">Ctrl+Enter to save • Esc to cancel</div>
-              <Button variant="outline" size="xs" :disabled="isSaving" @click="cancelEditDescription">Cancel</Button>
+              <Button variant="outline" size="xs" :disabled="isSaving" @click="cancelEditDescription"
+                >Cancel</Button
+              >
               <Button size="xs" :disabled="isSaving" @click="finishEditDescription">Done</Button>
             </div>
 
@@ -435,7 +448,8 @@ watch(
                 <UserSelect
                   v-model="selectedUser"
                   @update:model-value="
-                    if ($event && !(issue?.assignees ?? []).some((a) => a.id === $event.id)) addAssignee($event.id);
+                    if ($event && !(issue?.assignees ?? []).some((a) => a.id === $event.id))
+                      addAssignee($event.id);
                     selectedUser = undefined;
                   "
                 >
@@ -449,13 +463,15 @@ watch(
             </div>
           </div>
 
-
           <!-- Row: Priority + Due date -->
           <div class="grid grid-cols-2 gap-4">
             <div class="flex:col-sm min-w-0">
               <div class="text-xs text-secondary-foreground">Priority</div>
               <div class="min-w-0">
-                <PriorityToggler :value="issue?.priority ?? 0" @update:value="savePatch({ priority: $event })" />
+                <PriorityToggler
+                  :value="issue?.priority ?? 0"
+                  @update:value="savePatch({ priority: $event })"
+                />
               </div>
             </div>
 
@@ -484,7 +500,6 @@ watch(
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>

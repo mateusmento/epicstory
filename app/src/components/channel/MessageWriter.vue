@@ -76,7 +76,9 @@ function tiptapDocToPlainText(doc: any): string {
     return children;
   }
 
-  return walk(doc).replace(/\n{3,}/g, "\n\n").trimEnd();
+  return walk(doc)
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd();
 }
 
 const mentionablesForSuggestion = computed(() => {
@@ -163,8 +165,7 @@ function createMentionSuggestion() {
         onStart: (props: any) => {
           selectedIndex = 0;
           root = document.createElement("div");
-          root.className =
-            "z-50 rounded-lg border bg-white shadow-lg overflow-hidden w-80";
+          root.className = "z-50 rounded-lg border bg-white shadow-lg overflow-hidden w-80";
           root.style.position = "fixed";
           document.body.appendChild(root);
           positionAt(props.clientRect?.());
@@ -217,8 +218,7 @@ const editor = useEditor({
     }),
     Mention.configure({
       HTMLAttributes: {
-        class:
-          "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
+        class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
       },
       renderText({ node }) {
         return `@${node.attrs.label ?? node.attrs.id}`;
@@ -313,34 +313,59 @@ function formatTime(seconds: number) {
 <template>
   <div
     class="flex:col-md p-3 border border-zinc-200 rounded-xl bg-white focus-within:outline outline-1 outline-zinc-300/60"
-    @click="editor?.commands.focus()">
-
+    @click="editor?.commands.focus()"
+  >
     <EditorContent v-if="editor" :editor="editor" />
 
     <div class="flex:row-md flex:center-y mt-2 text-secondary-foreground">
-      <Button variant="ghost" size="icon" :class="editor?.isActive('bold') ? 'bg-secondary' : ''"
-        @click="editor?.chain().focus().toggleBold().run()">
+      <Button
+        variant="ghost"
+        size="icon"
+        :class="editor?.isActive('bold') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleBold().run()"
+      >
         <Bold class="w-5 h-5" />
       </Button>
-      <Button variant="ghost" size="icon" :class="editor?.isActive('italic') ? 'bg-secondary' : ''"
-        @click="editor?.chain().focus().toggleItalic().run()">
+      <Button
+        variant="ghost"
+        size="icon"
+        :class="editor?.isActive('italic') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleItalic().run()"
+      >
         <Italic class="w-5 h-5" />
       </Button>
-      <Button variant="ghost" size="icon" :class="editor?.isActive('strike') ? 'bg-secondary' : ''"
-        @click="editor?.chain().focus().toggleStrike().run()">
+      <Button
+        variant="ghost"
+        size="icon"
+        :class="editor?.isActive('strike') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleStrike().run()"
+      >
         <Strikethrough class="w-5 h-5" />
       </Button>
       <Separator orientation="vertical" class="h-8 bg-zinc-300" />
-      <Button variant="ghost" size="icon" :class="editor?.isActive('bulletList') ? 'bg-secondary' : ''"
-        @click="editor?.chain().focus().toggleBulletList().run()">
+      <Button
+        variant="ghost"
+        size="icon"
+        :class="editor?.isActive('bulletList') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleBulletList().run()"
+      >
         <List class="w-5 h-5" />
       </Button>
-      <Button variant="ghost" size="icon" :class="editor?.isActive('orderedList') ? 'bg-secondary' : ''"
-        @click="editor?.chain().focus().toggleOrderedList().run()">
+      <Button
+        variant="ghost"
+        size="icon"
+        :class="editor?.isActive('orderedList') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleOrderedList().run()"
+      >
         <ListOrdered class="w-5 h-5" />
       </Button>
       <Separator orientation="vertical" class="h-8 bg-zinc-300" />
-      <Button variant="ghost" size="icon" :class="editor?.isActive('link') ? 'bg-secondary' : ''" @click="toggleLink">
+      <Button
+        variant="ghost"
+        size="icon"
+        :class="editor?.isActive('link') ? 'bg-secondary' : ''"
+        @click="toggleLink"
+      >
         <Link2 class="w-5 h-5" />
       </Button>
       <Button variant="ghost" size="icon" @click="insertAtMention">
@@ -357,12 +382,16 @@ function formatTime(seconds: number) {
         </template>
       </Button>
 
-      <Button legacy legacy-variant="primary" legacy-size="sm" class="flex:row-lg flex:center-y text-sm bg-[#3A66FF]"
-        @click="onSendMessage">
+      <Button
+        legacy
+        legacy-variant="primary"
+        legacy-size="sm"
+        class="flex:row-lg flex:center-y text-sm bg-[#3A66FF]"
+        @click="onSendMessage"
+      >
         <Icon name="io-paper-plane" />
         Send
       </Button>
     </div>
-
   </div>
 </template>

@@ -39,8 +39,7 @@ const editor = useEditor({
     }),
     Mention.configure({
       HTMLAttributes: {
-        class:
-          "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
+        class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
       },
       renderText({ node }) {
         return `@${node.attrs.label ?? node.attrs.id}`;

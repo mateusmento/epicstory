@@ -31,8 +31,14 @@ const { user, signOut } = useAuth();
       <div class="pl-1 text-xs text-secondary-foreground">Workspace</div>
 
       <div class="flex:row-md flex:center-y w-full">
-        <NavTrigger view="navbar" content="switch-workspace" :as="Button" variant="ghost" size="sm"
-          class="block rounded-md text-base text-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden">
+        <NavTrigger
+          view="navbar"
+          content="switch-workspace"
+          :as="Button"
+          variant="ghost"
+          size="sm"
+          class="block rounded-md text-base text-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden"
+        >
           {{ workspace.name }}
           <Icon name="oi-chevron-down" />
         </NavTrigger>
@@ -71,8 +77,12 @@ const { user, signOut } = useAuth();
         <Icon name="bi-people-fill" />
         Members
       </NavListItem>
-      <NavListItem view="app-pane" content="schedule" :to="{ name: 'schedule', params: { workspaceId: workspace.id } }"
-        class="flex:row-md flex:center-y">
+      <NavListItem
+        view="app-pane"
+        content="schedule"
+        :to="{ name: 'schedule', params: { workspaceId: workspace.id } }"
+        class="flex:row-md flex:center-y"
+      >
         <Icon name="oi-calendar" />
         Schedule
       </NavListItem>
@@ -89,7 +99,9 @@ const { user, signOut } = useAuth();
           <div class="font-medium whitespace-nowrap text-ellipsis overflow-hidden">
             {{ user?.name }}
           </div>
-          <div class="text-xs text-secondary-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden">
+          <div
+            class="text-xs text-secondary-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden"
+          >
             {{ user?.email }}
           </div>
         </DropdownMenuLabel>
@@ -97,7 +109,11 @@ const { user, signOut } = useAuth();
         <DropdownMenuSeparator />
 
         <DropdownMenuGroup>
-          <DropdownMenuItem :as="RouterLink" :to="`/${workspace.id}/settings/user-account`" class="text-[13px] w-44">
+          <DropdownMenuItem
+            :as="RouterLink"
+            :to="`/${workspace.id}/settings/user-account`"
+            class="text-[13px] w-44"
+          >
             <UserIcon class="mr-2 h-4 w-4" />
             <span>Profile</span>
             <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>

@@ -29,12 +29,17 @@ function formatMessageDate(date: string) {
 </script>
 
 <template>
-  <div @click="onOpenChannel()" class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
-    :class="{ 'bg-secondary': open }">
-
+  <div
+    @click="onOpenChannel()"
+    class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+    :class="{ 'bg-secondary': open }"
+  >
     <div class="flex flex:center w-10 h-10">
-      <img :src="image" class="rounded-full self-center"
-        :class="{ 'w-10 h-10': channel.type === 'direct', 'w-8 h-8': channel.type === 'group' }" />
+      <img
+        :src="image"
+        class="rounded-full self-center"
+        :class="{ 'w-10 h-10': channel.type === 'direct', 'w-8 h-8': channel.type === 'group' }"
+      />
     </div>
 
     <div class="flex:col flex-1 h-full overflow-hidden">
@@ -48,12 +53,16 @@ function formatMessageDate(date: string) {
       </div>
 
       <div class="flex:row-auto flex:center-y">
-        <div class="text-sm font-lato text-ellipsis overflow-hidden whitespace-nowrap"
-          :class="[channel.unreadMessagesCount > 0 ? 'text-foreground' : 'text-secondary-foreground']">
+        <div
+          class="text-sm font-lato text-ellipsis overflow-hidden whitespace-nowrap"
+          :class="[channel.unreadMessagesCount > 0 ? 'text-foreground' : 'text-secondary-foreground']"
+        >
           {{ channel.lastMessage?.displayContent ?? channel.lastMessage?.content }}
         </div>
-        <div v-if="!channel.unreadMessagesCount && canJoinMeeting"
-          class="w-fit px-1 py-0 rounded-sm bg-secondary text-secondary-foreground text-xs">
+        <div
+          v-if="!channel.unreadMessagesCount && canJoinMeeting"
+          class="w-fit px-1 py-0 rounded-sm bg-secondary text-secondary-foreground text-xs"
+        >
           {{ channel.unreadMessagesCount }}
         </div>
       </div>

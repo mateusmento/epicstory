@@ -50,7 +50,7 @@ export const messageGroup = ref<IMessageGroup>({
             speakingTo: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
             unreadMessagesCount: 0,
             meeting: null,
-            peers: []
+            peers: [],
           },
           repliesCount: 0,
           repliers: [],
@@ -101,7 +101,7 @@ export const messageGroups = ref<IMessageGroup[]>([
           speakingTo: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
           unreadMessagesCount: 0,
           meeting: null,
-          peers: []
+          peers: [],
         },
         repliesCount: 0,
         repliers: [],
@@ -126,7 +126,7 @@ export const messageGroups = ref<IMessageGroup[]>([
           speakingTo: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
           unreadMessagesCount: 0,
           meeting: null,
-          peers: []
+          peers: [],
         },
         repliesCount: 0,
         repliers: [],

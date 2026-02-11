@@ -82,8 +82,11 @@ watch(workspaceId, loadWorkspace);
         <ChannelDetailsPane @close="isDetailsPaneOpen = false" />
       </DrawerPaneContent>
       <DrawerPaneContent content="replies" #default="{ contentProps }">
-        <ThreadDrawer v-model:message="contentProps.message" :meId="contentProps.meId"
-          @close="isDetailsPaneOpen = false" />
+        <ThreadDrawer
+          v-model:message="contentProps.message"
+          :meId="contentProps.meId"
+          @close="isDetailsPaneOpen = false"
+        />
       </DrawerPaneContent>
     </template>
   </AppLayout>

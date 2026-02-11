@@ -10,9 +10,7 @@ import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
 import { ProjectApi } from "@/domain/project";
 import { useUsers } from "@/domain/user";
-import {
-  animations
-} from "@formkit/drag-and-drop";
+import { animations } from "@formkit/drag-and-drop";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { parseAbsolute } from "@internationalized/date";
 import { useStorage } from "@vueuse/core";
@@ -214,8 +212,12 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
         <div class="flex:col-md items-end">
           <div class="text-secondary-foreground text-xs">Assignees</div>
           <div class="flex:row-md">
-            <img v-for="assignee of issue.assignees" :key="assignee.id" :src="assignee.picture"
-              class="w-6 h-6 rounded-full [&:not(:first-child)]:-ml-4" />
+            <img
+              v-for="assignee of issue.assignees"
+              :key="assignee.id"
+              :src="assignee.picture"
+              class="w-6 h-6 rounded-full [&:not(:first-child)]:-ml-4"
+            />
           </div>
         </div>
         <div class="flex:col-md">
@@ -229,34 +231,71 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
   <div class="flex:col-xl m-auto py-8 px-12 w-full h-full">
     <div class="grid grid-cols-[auto_1fr_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0">
       <div class="grid grid-cols-subgrid col-span-6 gap-x-6">
-        <BacklogHeadCell label="Status" :show="orderBy === 'status'" :order="order" @click="toggleOrder('status')"
-          @reset="resetOrder" />
-        <BacklogHeadCell label="Title" :show="orderBy === 'title'" :order="order" @click="toggleOrder('title')"
-          @reset="resetOrder" />
-        <BacklogHeadCell label="Priority" :show="orderBy === 'priority'" :order="order" @click="toggleOrder('priority')"
-          @reset="resetOrder" />
+        <BacklogHeadCell
+          label="Status"
+          :show="orderBy === 'status'"
+          :order="order"
+          @click="toggleOrder('status')"
+          @reset="resetOrder"
+        />
+        <BacklogHeadCell
+          label="Title"
+          :show="orderBy === 'title'"
+          :order="order"
+          @click="toggleOrder('title')"
+          @reset="resetOrder"
+        />
+        <BacklogHeadCell
+          label="Priority"
+          :show="orderBy === 'priority'"
+          :order="order"
+          @click="toggleOrder('priority')"
+          @reset="resetOrder"
+        />
         <div class="text-sm text-secondary-foreground select-none cursor-pointer flex:row-md flex:center-y">
           Assignees
         </div>
-        <BacklogHeadCell label="Due Date" :show="orderBy === 'dueDate'" :order="order" @click="toggleOrder('dueDate')"
-          @reset="resetOrder" />
+        <BacklogHeadCell
+          label="Due Date"
+          :show="orderBy === 'dueDate'"
+          :order="order"
+          @click="toggleOrder('dueDate')"
+          @reset="resetOrder"
+        />
       </div>
-      <div class="grid grid-cols-subgrid col-span-6 pr-2 overflow-y-auto overflow-x-hidden"
-        style="scrollbar-gutter: stable">
+      <div
+        class="grid grid-cols-subgrid col-span-6 pr-2 overflow-y-auto overflow-x-hidden"
+        style="scrollbar-gutter: stable"
+      >
         <div class="grid grid-cols-subgrid auto-rows-max col-span-6 gap-y-1" ref="itemsContainer">
-          <div v-for="{ id, issue } of backlogItems" :key="issue.id"
-            class="group grid grid-cols-subgrid col-span-6 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white shadow-sm">
-            <Button variant="outline" size="badge" @click="updateIssueStatus(issue)"
-              :class="cn(issueStatusColor(issue.status), { 'opacity-0': draggingId === id })">{{ issue.status
-              }}</Button>
-            <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y text-sm"
-              :class="cn({ 'opacity-0': draggingId === id })">
-              <div @click.ctrl="openIssue(issue)"
-                @dblclick.stop="$router.push(`/${workspaceId}/project/${projectId}/issue/${issue.id}`)">
+          <div
+            v-for="{ id, issue } of backlogItems"
+            :key="issue.id"
+            class="group grid grid-cols-subgrid col-span-6 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white shadow-sm"
+          >
+            <Button
+              variant="outline"
+              size="badge"
+              @click="updateIssueStatus(issue)"
+              :class="cn(issueStatusColor(issue.status), { 'opacity-0': draggingId === id })"
+              >{{ issue.status }}</Button
+            >
+            <div
+              v-if="editingIssue.id !== issue.id"
+              class="flex:row-lg flex:center-y text-sm"
+              :class="cn({ 'opacity-0': draggingId === id })"
+            >
+              <div
+                @click.ctrl="openIssue(issue)"
+                @dblclick.stop="$router.push(`/${workspaceId}/project/${projectId}/issue/${issue.id}`)"
+              >
                 {{ issue.title }}
               </div>
-              <Icon name="fa-regular-edit" @click="openIssueEdit(issue)"
-                class="opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Icon
+                name="fa-regular-edit"
+                @click="openIssueEdit(issue)"
+                class="opacity-0 group-hover:opacity-100 transition-opacity"
+              />
             </div>
             <Form v-else @submit="saveEdit" class="flex:row-md flex:center-y">
               <Field v-model="editingIssue.title" size="badge" name="title" />
@@ -264,32 +303,49 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
               <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
             </Form>
             <div>
-              <PriorityToggler :value="issue.priority" @update:value="updateIssue(issue.id, { priority: $event })" />
+              <PriorityToggler
+                :value="issue.priority"
+                @update:value="updateIssue(issue.id, { priority: $event })"
+              />
             </div>
             <div class="flex:row flex:center-y">
-              <img v-for="(assignee, i) of issue.assignees" :key="assignee.id" :src="assignee.picture"
-                :class="cn('w-5 h-5 rounded-full', i > 0 && 'ml-[-0.5rem]')" />
-              <UserSelect v-model="selectedUser" @update:model-value="
-                selectedUser && addAssignee(issue.id, selectedUser.id);
-              selectedUser = undefined;
-              ">
+              <img
+                v-for="(assignee, i) of issue.assignees"
+                :key="assignee.id"
+                :src="assignee.picture"
+                :class="cn('w-5 h-5 rounded-full', i > 0 && 'ml-[-0.5rem]')"
+              />
+              <UserSelect
+                v-model="selectedUser"
+                @update:model-value="
+                  selectedUser && addAssignee(issue.id, selectedUser.id);
+                  selectedUser = undefined;
+                "
+              >
                 <template #trigger>
-                  <div :class="cn(
-                    'flex flex:center w-fit p-0.5 mr-2 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60',
-                    issue.assignees?.length > 0 && '-m-2',
-                  )
-                    ">
-                    <Icon name="fa-user-plus"
-                      class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground" />
+                  <div
+                    :class="
+                      cn(
+                        'flex flex:center w-fit p-0.5 mr-2 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60',
+                        issue.assignees?.length > 0 && '-m-2',
+                      )
+                    "
+                  >
+                    <Icon
+                      name="fa-user-plus"
+                      class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
+                    />
                   </div>
                 </template>
               </UserSelect>
             </div>
-            <DueDatePicker size="badge"
+            <DueDatePicker
+              size="badge"
               :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"
               @update:model-value="
                 updateIssue(issue.id, { dueDate: $event?.toDate('America/Sao_Paulo').toString() })
-                " />
+              "
+            />
             <Trash2Icon @click="removeBacklogItem(id)" class="mr-2 h-4 w-4 cursor-pointer text-foreground" />
           </div>
         </div>

@@ -42,8 +42,10 @@ const selectedUser = ref<User>();
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent>
-        <Form @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)"
-          class="flex:col-lg m-2 p-2 border rounded-lg">
+        <Form
+          @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)"
+          class="flex:col-lg m-2 p-2 border rounded-lg"
+        >
           <UserSelect v-model="selectedUser" />
           <Field :modelValue="selectedUser?.email" name="email" placeholder="Email..." />
           <Button type="submit" size="xs">Add</Button>
@@ -54,8 +56,11 @@ const selectedUser = ref<User>();
     <Separator />
 
     <div class="flex:col-md p-2">
-      <div v-for="member in members" :key="member.id"
-        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer">
+      <div
+        v-for="member in members"
+        :key="member.id"
+        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+      >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
         <div class="flex:col">
           <div class="text-base font-medium font-dmSans whitespace-nowrap">
