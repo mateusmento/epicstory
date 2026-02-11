@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { UserSelect } from "@/components/user";
-import { Button, DialogClose, DialogFooter, Field, Form, Label, RadioGroup, RadioGroupItem } from "@/design-system";
+import {
+  Button,
+  DialogClose,
+  DialogFooter,
+  Field,
+  Form,
+  Label,
+  RadioGroup,
+  RadioGroupItem,
+} from "@/design-system";
 import { useChannels } from "@/domain/channels";
 import { type User } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
@@ -50,24 +59,34 @@ async function onCreateChannel(event: any) {
   <Form @submit="onCreateChannel" class="flex:col-lg mt-4">
     <div class="flex:col-md">
       <div class="text-sm font-medium text-foreground">Channel type</div>
-      <RadioGroup v-model="channelType" type="single" class="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
+      <RadioGroup
+        v-model="channelType"
+        type="single"
+        class="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1"
+      >
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-          :class="channelType === 'direct' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'"
+          :class="
+            channelType === 'direct' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'
+          "
         >
           <RadioGroupItem value="direct" class="sr-only" />
           Direct
         </Label>
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-          :class="channelType === 'group' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'"
+          :class="
+            channelType === 'group' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'
+          "
         >
           <RadioGroupItem value="group" class="sr-only" />
           Group
         </Label>
       </RadioGroup>
       <div class="text-xs text-secondary-foreground">
-        <template v-if="channelType === 'direct'">Start a 1:1 conversation by inviting someone via email.</template>
+        <template v-if="channelType === 'direct'"
+          >Start a 1:1 conversation by inviting someone via email.</template
+        >
         <template v-else>Create a channel with a name and invite members.</template>
       </div>
     </div>

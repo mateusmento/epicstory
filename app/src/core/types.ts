@@ -13,4 +13,3 @@ export type PageQuery = {
   page: number;
   count: number;
 };
-

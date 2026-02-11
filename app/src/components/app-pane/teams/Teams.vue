@@ -8,10 +8,13 @@ import {
   Form,
   NavTrigger,
   Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
-import { Trash2Icon } from "lucide-vue-next";
+import { SquarePen, Trash2Icon } from "lucide-vue-next";
 import { onMounted, watch } from "vue";
 
 const { workspace, teams, fetchTeams, createTeam, removeTeam } = useWorkspace();
@@ -29,9 +32,16 @@ watch(workspace, fetchTeams);
           <div>Teams</div>
         </h1>
 
-        <CollapsibleTrigger as-child>
-          <Button variant="outline" size="badge" class="ml-auto">Create</Button>
-        </CollapsibleTrigger>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <CollapsibleTrigger as-child>
+              <Button variant="ghost" size="icon">
+                <SquarePen class="w-4 h-4" />
+              </Button>
+            </CollapsibleTrigger>
+          </TooltipTrigger>
+          <TooltipContent> Create a new team </TooltipContent>
+        </Tooltip>
       </div>
 
       <CollapsibleContent>
@@ -45,13 +55,22 @@ watch(workspace, fetchTeams);
     <Separator />
 
     <div class="flex:col p-2">
-      <NavTrigger v-for="team in teams" :key="team.id" view="app-pane" content="team" :props="{ teamId: team.id }"
-        class="flex:row-2xl flex:center-y py-2 px-4 rounded-lg hover:bg-secondary cursor-pointer">
+      <NavTrigger
+        v-for="team in teams"
+        :key="team.id"
+        view="app-pane"
+        content="team"
+        :props="{ teamId: team.id }"
+        class="flex:row-2xl flex:center-y py-2 px-4 rounded-lg hover:bg-secondary cursor-pointer"
+      >
         <div class="flex:row-auto flex:center-y flex-1">
           <div class="text-base text-foreground font-dmSans font-medium">{{ team.name }}</div>
           <div class="text-xs text-secondary-foreground">4 members</div>
         </div>
-        <Trash2Icon @click.stop="removeTeam(team.id)" class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground" />
+        <Trash2Icon
+          @click.stop="removeTeam(team.id)"
+          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
+        />
       </NavTrigger>
     </div>
   </div>

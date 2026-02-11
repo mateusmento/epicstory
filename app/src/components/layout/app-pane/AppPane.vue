@@ -18,8 +18,12 @@ function onNavViewTrigger(v: string) {
 <template>
   <NavView view="app-pane" v-model:content="content" @trigger="onNavViewTrigger">
     <Collapsible as-child :open="open">
-      <CollapsibleContent as="aside" transition="horizontal" :class="$props.class"
-        class="h-full w-fit border-r border-r-zinc-300/60">
+      <CollapsibleContent
+        as="aside"
+        transition="horizontal"
+        :class="$props.class"
+        class="h-full w-fit border-r border-r-zinc-300/60"
+      >
         <slot />
       </CollapsibleContent>
     </Collapsible>

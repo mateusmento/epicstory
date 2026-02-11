@@ -44,7 +44,6 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 <template>
   <!--   -->
   <aside class="flex:col h-full w-96 border-l border-zinc-300/60">
-
     <div class="flex:row-lg flex:center-y p-4 min-h-14 whitespace-nowrap">
       <IconChannel class="overflow-visible" />
       <div class="text-base font-semibold">Channel</div>

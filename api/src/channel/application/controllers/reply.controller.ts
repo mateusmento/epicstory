@@ -32,12 +32,12 @@ export class MessageRepliesController {
   @Post()
   async createReply(
     @Param('messageId') messageId: number,
-    @Body() { content }: ReplyMessage,
+    @Body() command: ReplyMessage,
     @Auth() issuer: Issuer,
   ) {
     const reply = await this.commandBus.execute(
       new ReplyMessage({
-        content,
+        ...command,
         messageId,
         senderId: issuer.id,
       }),

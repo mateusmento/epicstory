@@ -44,7 +44,7 @@ export const Default: Story = {
       speakingTo: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
       unreadMessagesCount: 0,
       meeting: null,
-      peers: []
+      peers: [],
     },
     chatTitle: "Daiana",
     chatPicture: daianaPhoto,
@@ -72,7 +72,7 @@ export const Default: Story = {
           peers: [
             { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
             { id: 2, name: "Jean", picture: seanPhoto, email: "jean@example.com" },
-          ]
+          ],
         },
         repliesCount: 0,
         repliers: [],

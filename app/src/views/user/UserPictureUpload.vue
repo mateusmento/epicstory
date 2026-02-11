@@ -20,12 +20,12 @@ watch(
     if (newPicture && !pictureFile.value) {
       pictureUrl.value = newPicture;
     }
-  }
+  },
 );
 
 function setPicture(file: File | null) {
   if (!file) return;
-  
+
   // Validate file type
   if (!file.type.startsWith("image/")) {
     alert("Please select an image file");
@@ -72,19 +72,19 @@ useDropZone(fileDrop, {
 
 async function onSave() {
   if (!pictureFile.value) return;
-  
+
   isUploading.value = true;
   uploadSuccess.value = false;
-  
+
   try {
-  const formData = new FormData();
-  formData.set("picture", pictureFile.value);
+    const formData = new FormData();
+    formData.set("picture", pictureFile.value);
     await updateUserPicture(formData);
-    
+
     pictureFile.value = undefined;
     hasChanges.value = false;
     uploadSuccess.value = true;
-    
+
     setTimeout(() => {
       uploadSuccess.value = false;
     }, 3000);
@@ -127,14 +127,12 @@ function onCancel() {
           </div>
         </div>
         <div
-        v-else
+          v-else
           class="dropzone flex flex-col items-center justify-center w-32 h-32 text-sm text-center rounded-full border-2 border-dashed transition-colors"
           :class="
-            newPictureIsOver
-              ? 'border-primary bg-primary/5'
-              : 'border-border bg-muted/50 hover:bg-muted'
+            newPictureIsOver ? 'border-primary bg-primary/5' : 'border-border bg-muted/50 hover:bg-muted'
           "
-      >
+        >
           <svg
             class="w-8 h-8 mb-2 text-muted-foreground"
             fill="none"
@@ -157,7 +155,7 @@ function onCancel() {
           @change="setPicture((($event.target as any).files ?? [])[0] || null)"
         />
       </label>
-      
+
       <!-- Upload indicator -->
       <div
         v-if="isUploading"
@@ -170,45 +168,19 @@ function onCancel() {
     <!-- Actions -->
     <div class="flex flex-col gap-3">
       <div class="flex flex-col sm:flex-row gap-2">
-        <Button
-          v-if="hasChanges"
-          size="sm"
-          @click="onSave"
-          :disabled="isUploading"
-        >
+        <Button v-if="hasChanges" size="sm" @click="onSave" :disabled="isUploading">
           {{ isUploading ? "Uploading..." : "Save Picture" }}
         </Button>
-        <Button
-          v-if="hasChanges"
-          size="sm"
-          variant="outline"
-          @click="onCancel"
-          :disabled="isUploading"
-        >
+        <Button v-if="hasChanges" size="sm" variant="outline" @click="onCancel" :disabled="isUploading">
           Cancel
         </Button>
       </div>
-      
-      <p class="text-xs text-muted-foreground">
-        JPG, PNG or GIF. Max size 5MB.
-      </p>
-      
-      <span
-        v-if="uploadSuccess"
-        class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1"
-      >
-        <svg
-          class="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M5 13l4 4L19 7"
-          />
+
+      <p class="text-xs text-muted-foreground">JPG, PNG or GIF. Max size 5MB.</p>
+
+      <span v-if="uploadSuccess" class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
         Picture updated successfully
       </span>

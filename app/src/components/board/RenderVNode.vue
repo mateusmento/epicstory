@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps({
   render: {
@@ -10,7 +10,7 @@ const props = defineProps({
 
 // Wrap the render fn into a component so Vue can render returned VNodes.
 const Comp = computed(() => ({
-  name: 'RenderVNodeInner',
+  name: "RenderVNodeInner",
   render: () => props.render?.(),
 }));
 </script>
@@ -18,4 +18,3 @@ const Comp = computed(() => ({
 <template>
   <component :is="Comp" />
 </template>
-

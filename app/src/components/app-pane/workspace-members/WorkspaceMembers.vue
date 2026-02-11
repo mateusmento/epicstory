@@ -13,13 +13,16 @@ import {
   Field,
   Form,
   Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { useWorkspace } from "@/domain/workspace";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { format } from "date-fns";
-import { Trash2Icon } from "lucide-vue-next";
+import { Trash2Icon, UserPlus } from "lucide-vue-next";
 import { onMounted, ref, watch } from "vue";
 
 const { workspace, members, fetchWorkspaceMembers, sendWorkspaceMemberInvite, removeMember } = useWorkspace();
@@ -37,13 +40,22 @@ const selectedUser = ref<User>();
           <Icon name="bi-people-fill" />
           Workspace Members
         </h1>
-        <CollapsibleTrigger as-child>
-          <Button variant="outline" size="badge" class="block ml-auto">Invite people</Button>
-        </CollapsibleTrigger>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <CollapsibleTrigger as-child>
+              <Button variant="ghost" size="icon">
+                <UserPlus class="w-4 h-4" />
+              </Button>
+            </CollapsibleTrigger>
+          </TooltipTrigger>
+          <TooltipContent> Invite a new member </TooltipContent>
+        </Tooltip>
       </div>
       <CollapsibleContent>
-        <Form @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)"
-          class="flex:col-lg m-2 p-2 border rounded-lg">
+        <Form
+          @submit="selectedUser && sendWorkspaceMemberInvite($event.email, selectedUser.id)"
+          class="flex:col-lg m-2 p-2 border rounded-lg"
+        >
           <UserSelect v-model="selectedUser" />
           <Field :modelValue="selectedUser?.email" name="email" placeholder="Email..." />
           <Button type="submit" size="xs">Add</Button>
@@ -54,8 +66,11 @@ const selectedUser = ref<User>();
     <Separator />
 
     <div class="flex:col-md p-2">
-      <div v-for="member in members" :key="member.id"
-        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer">
+      <div
+        v-for="member in members"
+        :key="member.id"
+        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+      >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
         <div class="flex:col">
           <div class="text-base font-medium font-dmSans whitespace-nowrap">

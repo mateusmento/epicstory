@@ -1,5 +1,5 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 import {
   ChannelRepository,
   MessageRepository,
@@ -10,7 +10,6 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
-import { extractMentionIds, renderMentions } from '../utils/mentions';
 
 export class SendMessage {
   channelId: number;
@@ -19,6 +18,10 @@ export class SendMessage {
   @IsNotEmpty()
   @IsString()
   content: string;
+
+  @IsOptional()
+  @IsObject()
+  contentRich?: any;
 
   constructor(data: Partial<SendMessage>) {
     patch(this, data);
@@ -35,7 +38,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     private commandBus: CommandBus,
   ) {}
 
-  async execute({ channelId, senderId, content }: SendMessage) {
+  async execute({ channelId, senderId, content, contentRich }: SendMessage) {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },
@@ -57,33 +60,17 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       throw new SenderIsNotChannelMember();
     }
 
-    const { id } = await this.messageService.createMessage(
-      content,
-      channelId,
+    const message = await this.messageService.createMessage(
+      channel,
       senderId,
+      content,
+      contentRich,
     );
 
-    const message = await this.messageRepo.findOne({
-      where: { id },
-      relations: {
-        sender: true,
-      },
-    });
+    const mentionIds = message.mentionedUsers
+      .filter((user) => user.id !== senderId)
+      .map((user) => user.id);
 
-    const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
-    const mentionIds = extractMentionIds(content);
-    const finalMentionIds = mentionIds.filter(
-      (id) => id !== senderId && peerUsersMap.has(id),
-    );
-    const mentionedUsers = finalMentionIds
-      .map((id) => peerUsersMap.get(id))
-      .filter(Boolean);
-    const displayContent = renderMentions(content, peerUsersMap);
-
-    (message as any).mentionedUsers = mentionedUsers;
-    (message as any).displayContent = displayContent;
-
-    // DM notification (Inbox) only for direct / multi-direct channels
     if (channel.type === 'direct' || channel.type === 'multi-direct') {
       await this.commandBus.execute(
         new SendNotification({
@@ -98,16 +85,16 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       );
     }
 
-    if (finalMentionIds.length > 0) {
+    if (mentionIds.length > 0) {
       await this.commandBus.execute(
         new SendNotification({
           type: 'mention',
-          userIds: finalMentionIds,
+          userIds: mentionIds,
           payload: {
             channel,
             sender: message.sender,
-            message: displayContent,
-            mentionedUsers,
+            message: message.displayContent,
+            mentionedUsers: message.mentionedUsers,
           },
         }),
       );

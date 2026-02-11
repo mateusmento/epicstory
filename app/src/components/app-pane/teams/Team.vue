@@ -1,11 +1,20 @@
 <script lang="ts" setup>
 import { UserSelect } from "@/components/user";
-import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Separator } from "@/design-system";
+import {
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { useTeam } from "@/domain/team";
 import { format } from "date-fns";
-import { Trash2Icon } from "lucide-vue-next";
+import { Trash2Icon, UserPlus } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 
 const props = defineProps<{
@@ -27,9 +36,16 @@ const selectedUser = ref<User>();
           <div>{{ team?.name }}</div>
         </h1>
 
-        <CollapsibleTrigger as-child>
-          <Button variant="outline" size="badge" class="ml-auto">Add Member</Button>
-        </CollapsibleTrigger>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <CollapsibleTrigger as-child>
+              <Button variant="ghost" size="icon">
+                <UserPlus class="w-4 h-4" />
+              </Button>
+            </CollapsibleTrigger>
+          </TooltipTrigger>
+          <TooltipContent> Add a new member </TooltipContent>
+        </Tooltip>
       </div>
 
       <CollapsibleContent>
@@ -43,9 +59,13 @@ const selectedUser = ref<User>();
     <Separator />
 
     <div class="flex:col-md p-2">
-      <div v-for="member in members" :key="member.id" view="app-pane" content="team"
-        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer">
-
+      <div
+        v-for="member in members"
+        :key="member.id"
+        view="app-pane"
+        content="team"
+        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+      >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
 
         <div class="flex:col flex:center-y">
@@ -54,7 +74,10 @@ const selectedUser = ref<User>();
             Member since {{ format(member.joinedAt, "MMM do, yyyy") }}
           </div>
         </div>
-        <Trash2Icon @click="removeMember(member.id)" class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground" />
+        <Trash2Icon
+          @click="removeMember(member.id)"
+          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
+        />
       </div>
     </div>
   </div>

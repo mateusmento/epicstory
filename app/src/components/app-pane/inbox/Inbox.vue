@@ -24,8 +24,15 @@ async function openNotification(notification: Notification) {
   await markAsSeen(notification.id);
   const workspaceId = route.params.workspaceId as string | undefined;
 
-  if (notification.type === "mention" || notification.type === "direct_message" || notification.type === "reply") {
-    const payload = notification.payload as MentionNotificationPayload | DirectMessageNotificationPayload | ReplyNotificationPayload;
+  if (
+    notification.type === "mention" ||
+    notification.type === "direct_message" ||
+    notification.type === "reply"
+  ) {
+    const payload = notification.payload as
+      | MentionNotificationPayload
+      | DirectMessageNotificationPayload
+      | ReplyNotificationPayload;
     if (payload?.channel?.id && workspaceId) {
       router.push({ name: "channel", params: { workspaceId, channelId: String(payload.channel.id) } });
     }
@@ -77,20 +84,41 @@ async function openNotification(notification: Notification) {
       </div>
 
       <div v-else class="flex:col">
-        <div v-for="notification in notifications" :key="notification.id" role="button" tabindex="0"
-          @click="openNotification(notification)" @keydown.enter.prevent="openNotification(notification)"
+        <div
+          v-for="notification in notifications"
+          :key="notification.id"
+          role="button"
+          tabindex="0"
+          @click="openNotification(notification)"
+          @keydown.enter.prevent="openNotification(notification)"
           class="flex:col-md p-4 border-b hover:bg-secondary transition-colors cursor-pointer"
-          :class="notification.seen ? 'opacity-70' : 'bg-secondary/10'">
-          <MentionNotification v-if="notification.type === 'mention'"
-            :payload="notification.payload as MentionNotificationPayload" :createdAt="notification.createdAt" />
-          <ReplyNotification v-else-if="notification.type === 'reply'"
-            :payload="notification.payload as ReplyNotificationPayload" :createdAt="notification.createdAt" />
-          <MessageNotification v-else-if="notification.type === 'direct_message'"
-            :payload="notification.payload as DirectMessageNotificationPayload" :createdAt="notification.createdAt" />
-          <DueDateNotification v-else-if="notification.type === 'issue_due_date'"
-            :payload="notification.payload as IssueDueDateNotificationPayload" :createdAt="notification.createdAt" />
-          <IssueAssignedNotification v-else-if="notification.type === 'issue_assigned'"
-            :payload="notification.payload as IssueAssignedNotificationPayload" :createdAt="notification.createdAt" />
+          :class="notification.seen ? 'opacity-70' : 'bg-secondary/10'"
+        >
+          <MentionNotification
+            v-if="notification.type === 'mention'"
+            :payload="notification.payload as MentionNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <ReplyNotification
+            v-else-if="notification.type === 'reply'"
+            :payload="notification.payload as ReplyNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <MessageNotification
+            v-else-if="notification.type === 'direct_message'"
+            :payload="notification.payload as DirectMessageNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <DueDateNotification
+            v-else-if="notification.type === 'issue_due_date'"
+            :payload="notification.payload as IssueDueDateNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <IssueAssignedNotification
+            v-else-if="notification.type === 'issue_assigned'"
+            :payload="notification.payload as IssueAssignedNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
           <div v-else class="text-sm text-secondary-foreground">
             Unknown notification type: {{ notification.type }}
           </div>

@@ -17,15 +17,8 @@ const message = defineModel<IMessage>("message", { required: true });
 
 const emit = defineEmits(["message-deleted", "close"]);
 
-const {
-  replies,
-  replyContent,
-  toggleReaction,
-  toggleReplyReaction,
-  fetchReplies,
-  sendReply,
-  deleteReply,
-} = useMessageThread(message, { onMessageDeleted: () => emit("close"), name: "thread" });
+const { replies, toggleReaction, toggleReplyReaction, fetchReplies, sendReply, deleteReply } =
+  useMessageThread(message, { onMessageDeleted: () => emit("close"), name: "thread" });
 
 const { channel, deleteMessage } = useChannel();
 
@@ -63,7 +56,6 @@ async function onMessageDeleted() {
 
 <template>
   <div class="flex:col max-w-[32rem] border-l border-l-zinc-300/60">
-
     <div class="flex:row-xl flex:center-y justify-between h-14 p-4">
       <div class="text-base font-semibold">Thread</div>
 
@@ -77,34 +69,49 @@ async function onMessageDeleted() {
     <ScrollArea class="flex-1 min-h-0" bottom>
       <div class="flex:col-2xl !flex p-4 min-w-96 min-h-full bg-white">
         <MessageGroup :sender="message.sender" :meId="meId" :sentAt="message.sentAt">
-          <MessageBox :message="message" :meId="meId" @reaction-toggled="toggleReaction($event)"
-            @message-deleted="onMessageDeleted" hide-replies-count />
+          <MessageBox
+            :message="message"
+            :meId="meId"
+            @reaction-toggled="toggleReaction($event)"
+            @message-deleted="onMessageDeleted"
+            hide-replies-count
+          />
         </MessageGroup>
 
         <div class="flex:row-lg flex:center-y">
           <Separator class="flex-1" />
           <span v-if="replies.length === 0" class="text-sm text-secondary-foreground">No replies yet</span>
           <span v-else class="text-sm text-secondary-foreground">
-            {{ replies.length }} {{ replies.length === 1 ? 'reply' : 'replies' }}
+            {{ replies.length }} {{ replies.length === 1 ? "reply" : "replies" }}
           </span>
           <Separator class="flex-1" />
         </div>
 
         <div class="flex:col-xl">
-          <MessageGroup v-for="group in replyGroups" :key="group.id" :sender="group.sender" :meId="meId"
-            :sentAt="group.sentAt">
-            <MessageBox v-for="reply in group.messages" :key="reply.id" :message="reply" :meId="meId"
-              @reaction-toggled="toggleReplyReaction(reply.id, $event)" @message-deleted="deleteReply(reply.id)" />
+          <MessageGroup
+            v-for="group in replyGroups"
+            :key="group.id"
+            :sender="group.sender"
+            :meId="meId"
+            :sentAt="group.sentAt"
+          >
+            <MessageBox
+              v-for="reply in group.messages"
+              :key="reply.id"
+              :message="reply"
+              :meId="meId"
+              @reaction-toggled="toggleReplyReaction(reply.id, $event)"
+              @message-deleted="deleteReply(reply.id)"
+            />
           </MessageGroup>
         </div>
       </div>
     </ScrollArea>
 
     <MessageWriter
-      v-model:message-content="replyContent"
       :mentionables="channel?.peers ?? []"
       :me-id="meId"
-      @send-message="sendReply()"
+      @send-message="sendReply"
       class="m-4 mt-auto"
     />
   </div>

@@ -5,4 +5,3 @@ declare module "@vitejs/plugin-vue-jsx" {
 
   export default function vueJsx(options?: VueJsxOptions): Plugin;
 }
-

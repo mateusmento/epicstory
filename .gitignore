@@ -16,4 +16,4 @@ terraform.tfstate*
 *.csr
 *.key
 
-data
+data/

@@ -21,8 +21,14 @@ const filteredUsers = computed(() => {
 </script>
 
 <template>
-  <Combobox v-model="user" v-model:searchTerm="query" :options="filteredUsers" track-by="id" label-by="name"
-    name="user">
+  <Combobox
+    v-model="user"
+    v-model:searchTerm="query"
+    :options="filteredUsers"
+    track-by="id"
+    label-by="name"
+    name="user"
+  >
     <template v-if="$slots.trigger" #trigger>
       <slot name="trigger" />
     </template>

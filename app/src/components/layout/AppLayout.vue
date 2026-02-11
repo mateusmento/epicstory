@@ -14,7 +14,8 @@ const isDetailsPaneOpen = defineModel<boolean>("isDetailsPaneOpen", { required: 
       </Navbar>
 
       <main
-        class="flex flex-1 min-w-0 bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60">
+        class="flex flex-1 min-w-0 bg-white mt-2 rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
+      >
         <DrawerPane view="app-pane" v-model:open="isAppPaneOpen">
           <slot name="app-pane" />
         </DrawerPane>

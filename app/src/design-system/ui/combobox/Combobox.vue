@@ -59,12 +59,20 @@ const open = ref(false);
         <CommandEmpty>No options found.</CommandEmpty>
         <CommandList>
           <CommandGroup>
-            <CommandItem v-for="option in options" :key="trackOf(option)" :value="option" @select="open = false">
-              <Check :class="cn(
-                'mr-2 h-4 w-4',
-                value && trackOf(value) === trackOf(option) ? 'opacity-100' : 'opacity-0',
-              )
-                " />
+            <CommandItem
+              v-for="option in options"
+              :key="trackOf(option)"
+              :value="option"
+              @select="open = false"
+            >
+              <Check
+                :class="
+                  cn(
+                    'mr-2 h-4 w-4',
+                    value && trackOf(value) === trackOf(option) ? 'opacity-100' : 'opacity-0',
+                  )
+                "
+              />
               <slot name="option" :option="option">
                 {{ labelOf(option) }}
               </slot>

@@ -13,11 +13,14 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<PopoverContentProps & { class?: HTMLAttributes["class"], disabledPortal?: boolean }>(), {
-  align: "center",
-  sideOffset: 4,
-  disabledPortal: false,
-});
+const props = withDefaults(
+  defineProps<PopoverContentProps & { class?: HTMLAttributes["class"]; disabledPortal?: boolean }>(),
+  {
+    align: "center",
+    sideOffset: 4,
+    disabledPortal: false,
+  },
+);
 const emits = defineEmits<PopoverContentEmits>();
 
 const delegatedProps = computed(() => {
@@ -33,10 +36,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
 
 <template>
   <PopoverPortal :disabled="disabledPortal">
-    <PopoverContent v-bind="{ ...forwarded, ...$attrs }" :class="cn(
-      props.class,
-    )
-      ">
+    <PopoverContent v-bind="{ ...forwarded, ...$attrs }" :class="cn(props.class)">
       <slot />
     </PopoverContent>
   </PopoverPortal>

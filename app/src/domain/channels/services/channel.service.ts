@@ -17,7 +17,7 @@ export type CreateGroupChannel = {
 
 @injectable()
 export class ChannelApi {
-  constructor(@InjectAxios() private axios: Axios) { }
+  constructor(@InjectAxios() private axios: Axios) {}
 
   findChannels(workspaceId: number) {
     return this.axios.get<IChannel[]>(`/workspaces/${workspaceId}/channels`).then((res) => res.data);
@@ -55,8 +55,10 @@ export class ChannelApi {
     return this.axios.get<IMessage[]>(`/channels/${channelId}/messages`).then((res) => res.data);
   }
 
-  sendMessage(channelId: number, content: string) {
-    return this.axios.post<IMessage>(`channels/${channelId}/messages`, { content }).then((res) => res.data);
+  sendMessage(channelId: number, content: string, contentRich?: any) {
+    return this.axios
+      .post<IMessage>(`channels/${channelId}/messages`, { content, contentRich })
+      .then((res) => res.data);
   }
 
   sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: string) {
@@ -70,43 +72,32 @@ export class ChannelApi {
   }
 
   findReactions(messageId: number) {
-    return this.axios
-      .get<IReaction[]>(`/messages/${messageId}/reactions`).then((res) => res.data);
+    return this.axios.get<IReaction[]>(`/messages/${messageId}/reactions`).then((res) => res.data);
   }
 
   toggleMessageReaction(messageId: number, emoji: string) {
-    return this.axios
-      .post(`/messages/${messageId}/reactions`, { emoji })
-      .then((res) => res.data);
+    return this.axios.post(`/messages/${messageId}/reactions`, { emoji }).then((res) => res.data);
   }
 
   findReplies(messageId: number) {
-    return this.axios
-      .get<IReply[]>(`/messages/${messageId}/replies`)
-      .then((res) => res.data);
+    return this.axios.get<IReply[]>(`/messages/${messageId}/replies`).then((res) => res.data);
   }
 
-  replyMessage(messageId: number, content: string) {
+  replyMessage(messageId: number, content: string, contentRich?: any) {
     return this.axios
-      .post<IReply>(`/messages/${messageId}/replies`, { content })
+      .post<IReply>(`/messages/${messageId}/replies`, { content, contentRich })
       .then((res) => res.data);
   }
 
   deleteReply(replyId: number) {
-    return this.axios
-      .delete(`/replies/${replyId}`)
-      .then((res) => res.data);
+    return this.axios.delete(`/replies/${replyId}`).then((res) => res.data);
   }
 
   findReplyReactions(replyId: number) {
-    return this.axios
-      .get<IReaction[]>(`/replies/${replyId}/reactions`)
-      .then((res) => res.data);
+    return this.axios.get<IReaction[]>(`/replies/${replyId}/reactions`).then((res) => res.data);
   }
 
   toggleReplyReaction(replyId: number, emoji: string) {
-    return this.axios
-      .post(`/replies/${replyId}/reactions`, { emoji })
-      .then((res) => res.data);
+    return this.axios.post(`/replies/${replyId}/reactions`, { emoji }).then((res) => res.data);
   }
 }

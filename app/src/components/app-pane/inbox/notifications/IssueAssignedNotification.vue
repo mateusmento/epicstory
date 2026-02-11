@@ -17,15 +17,20 @@ function formatTime(date: string) {
 
 <template>
   <div class="flex:row-md">
-    <img v-if="payload.issuer.picture" :src="payload.issuer.picture" :alt="payload.issuer.name"
-      class="w-11 h-11 rounded-full flex-shrink-0" />
-    <div v-else
-      class="w-11 h-11 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold">
+    <img
+      v-if="payload.issuer.picture"
+      :src="payload.issuer.picture"
+      :alt="payload.issuer.name"
+      class="w-11 h-11 rounded-full flex-shrink-0"
+    />
+    <div
+      v-else
+      class="w-11 h-11 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold"
+    >
       {{ payload.issuer.name.charAt(0).toUpperCase() }}
     </div>
 
     <div class="flex:col-md flex-1 min-w-0">
-
       <div class="flex:row-md items-baseline">
         <div class="text-sm text-secondary-foreground font-dmSans flex-1">
           <SquareUser class="w-4 h-4 inline-block" />
@@ -42,7 +47,9 @@ function formatTime(date: string) {
 
       <Tooltip>
         <TooltipTrigger as-child>
-          <div class="w-full min-w-0 text-foreground font-lato whitespace-nowrap text-ellipsis overflow-hidden">
+          <div
+            class="w-full min-w-0 text-foreground font-lato whitespace-nowrap text-ellipsis overflow-hidden"
+          >
             {{ payload.issue.title }}
           </div>
         </TooltipTrigger>

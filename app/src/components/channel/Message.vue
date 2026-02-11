@@ -12,14 +12,12 @@ const message = defineModel<IMessage>("message", { required: true });
 
 const emit = defineEmits(["message-deleted"]);
 
-const {
-  toggleReaction,
-} = useMessageThread(message, { name: "message" });
+const { toggleReaction } = useMessageThread(message, { name: "message" });
 
 const { viewContent } = useNavTrigger("details-pane");
 
 async function toggleDiscussion() {
-  viewContent('replies', { message: message.value, meId: props.meId });
+  viewContent("replies", { message: message.value, meId: props.meId });
 }
 
 function onEmojiSelect(emoji: string) {
@@ -32,6 +30,11 @@ function onMessageDeleted() {
 </script>
 
 <template>
-  <MessageBox :message="message" :meId="meId" @discussion-opened="toggleDiscussion" @reaction-toggled="onEmojiSelect"
-    @message-deleted="onMessageDeleted" />
+  <MessageBox
+    :message="message"
+    :meId="meId"
+    @discussion-opened="toggleDiscussion"
+    @reaction-toggled="onEmojiSelect"
+    @message-deleted="onMessageDeleted"
+  />
 </template>
