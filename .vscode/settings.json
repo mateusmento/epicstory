@@ -15,8 +15,5 @@
   "jest.outputConfig": {
     "autoRevealOutput": "on-run"
   },
-  "jest.showCoverageOnLoad": false,
-  "[vue]": {
-    "editor.defaultFormatter": "Vue.volar"
-  }
+  "jest.showCoverageOnLoad": false
 }
