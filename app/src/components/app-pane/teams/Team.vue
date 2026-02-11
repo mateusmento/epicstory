@@ -1,11 +1,20 @@
 <script lang="ts" setup>
 import { UserSelect } from "@/components/user";
-import { Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Separator } from "@/design-system";
+import {
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { useTeam } from "@/domain/team";
 import { format } from "date-fns";
-import { Trash2Icon } from "lucide-vue-next";
+import { Trash2Icon, UserPlus } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
 
 const props = defineProps<{
@@ -27,9 +36,16 @@ const selectedUser = ref<User>();
           <div>{{ team?.name }}</div>
         </h1>
 
-        <CollapsibleTrigger as-child>
-          <Button variant="outline" size="badge" class="ml-auto">Add Member</Button>
-        </CollapsibleTrigger>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <CollapsibleTrigger as-child>
+              <Button variant="ghost" size="icon">
+                <UserPlus class="w-4 h-4" />
+              </Button>
+            </CollapsibleTrigger>
+          </TooltipTrigger>
+          <TooltipContent> Add a new member </TooltipContent>
+        </Tooltip>
       </div>
 
       <CollapsibleContent>

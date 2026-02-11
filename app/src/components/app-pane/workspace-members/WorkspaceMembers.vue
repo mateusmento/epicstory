@@ -13,13 +13,16 @@ import {
   Field,
   Form,
   Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { useWorkspace } from "@/domain/workspace";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { format } from "date-fns";
-import { Trash2Icon } from "lucide-vue-next";
+import { Trash2Icon, UserPlus } from "lucide-vue-next";
 import { onMounted, ref, watch } from "vue";
 
 const { workspace, members, fetchWorkspaceMembers, sendWorkspaceMemberInvite, removeMember } = useWorkspace();
@@ -37,9 +40,16 @@ const selectedUser = ref<User>();
           <Icon name="bi-people-fill" />
           Workspace Members
         </h1>
-        <CollapsibleTrigger as-child>
-          <Button variant="outline" size="badge" class="block ml-auto">Invite people</Button>
-        </CollapsibleTrigger>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <CollapsibleTrigger as-child>
+              <Button variant="ghost" size="icon">
+                <UserPlus class="w-4 h-4" />
+              </Button>
+            </CollapsibleTrigger>
+          </TooltipTrigger>
+          <TooltipContent> Invite a new member </TooltipContent>
+        </Tooltip>
       </div>
       <CollapsibleContent>
         <Form

@@ -8,10 +8,13 @@ import {
   Form,
   NavTrigger,
   Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
-import { Trash2Icon } from "lucide-vue-next";
+import { SquarePen, Trash2Icon } from "lucide-vue-next";
 import { onMounted, watch } from "vue";
 
 const { workspace, teams, fetchTeams, createTeam, removeTeam } = useWorkspace();
@@ -29,9 +32,16 @@ watch(workspace, fetchTeams);
           <div>Teams</div>
         </h1>
 
-        <CollapsibleTrigger as-child>
-          <Button variant="outline" size="badge" class="ml-auto">Create</Button>
-        </CollapsibleTrigger>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <CollapsibleTrigger as-child>
+              <Button variant="ghost" size="icon">
+                <SquarePen class="w-4 h-4" />
+              </Button>
+            </CollapsibleTrigger>
+          </TooltipTrigger>
+          <TooltipContent> Create a new team </TooltipContent>
+        </Tooltip>
       </div>
 
       <CollapsibleContent>
