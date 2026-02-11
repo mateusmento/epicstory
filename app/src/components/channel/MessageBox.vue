@@ -57,7 +57,11 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
     <HoverCard :open-delay="100" :close-delay="0">
       <HoverCardTrigger as-child>
         <div :class="styles.messageBox" ref="messageBoxRef">
-          <RichMessageContent v-if="message.contentRich" :contentRich="message.contentRich" />
+          <RichMessageContent
+            v-if="message.contentRich"
+            :contentRich="message.contentRich"
+            :mentioned-users="message.mentionedUsers"
+          />
           <MentionedText v-else :content="message.content" :mentioned-users="message.mentionedUsers" />
         </div>
       </HoverCardTrigger>

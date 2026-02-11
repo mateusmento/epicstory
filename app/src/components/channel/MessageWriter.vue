@@ -4,22 +4,22 @@ import { Button } from "@/design-system/ui/button";
 import { Separator } from "@/design-system/ui/separator";
 import { Icon } from "@/design-system/icons";
 import { computed, onBeforeUnmount, ref } from "vue";
-import { EditorContent, useEditor } from "@tiptap/vue-3";
+import { EditorContent, useEditor, VueNodeViewRenderer } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
 import { Bold, Italic, Strikethrough, List, ListOrdered, Link2 } from "lucide-vue-next";
-
-type Mentionable = {
-  id: number;
-  name: string;
-  picture?: string | null;
-};
+import { VueRenderer } from "@tiptap/vue-3";
+import { normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
+import MentionList from "./MentionList.vue";
+import type { MentionSuggestionItem } from "./MentionList.vue";
+import type { User } from "@/domain/auth";
+import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
 
 const props = defineProps<{
-  mentionables?: Mentionable[];
+  mentionables?: User[];
   meId?: number;
   placeholder?: string;
 }>();
@@ -28,132 +28,32 @@ const emit = defineEmits<{
   (e: "send-message", value: { content: string; contentRich: any }): void;
 }>();
 
-function normalizeTiptapDoc(doc: any): any {
-  if (!doc || typeof doc !== "object") return doc;
-  if (doc.type !== "doc" || !Array.isArray(doc.content)) return doc;
-
-  function isEmptyTrailingParagraph(node: any) {
-    if (!node || node.type !== "paragraph") return false;
-    if (!node.content || node.content.length === 0) return true;
-    // Treat a paragraph containing only hardBreak as empty (common trailingBreak representation).
-    return node.content.every((c: any) => c?.type === "hardBreak");
-  }
-
-  const next = { ...doc, content: [...doc.content] };
-  while (next.content.length > 0 && isEmptyTrailingParagraph(next.content[next.content.length - 1])) {
-    next.content.pop();
-  }
-  return next;
-}
-
-function tiptapToPlainText(doc: any): string {
-  if (!doc) return "";
-
-  function walk(node: any, ctx?: { inListItem?: boolean }): string {
-    const type = node?.type ?? "";
-    if (type === "text") return node.text ?? "";
-    if (type === "hardBreak") return "\n";
-    if (type === "doc") return (node?.content ?? []).map((c: any) => walk(c, ctx)).join("");
-    if (type === "mention") {
-      const id = node?.attrs?.id ?? node?.attrs?.userId;
-      return id === undefined || id === null ? "@" : `@${id}`;
-    }
-
-    if (type === "listItem") {
-      const children = (node?.content ?? []).map((c: any) => walk(c, { ...ctx, inListItem: true })).join("");
-      return children + "\n";
-    }
-
-    const children = (node?.content ?? []).map((c: any) => walk(c, ctx)).join("");
-
-    // Inside list items, paragraphs/headings should not add extra newlines; listItem already handles it.
-    if ((type === "paragraph" || type === "heading" || type === "blockquote") && ctx?.inListItem) {
-      return children;
-    }
-
-    if (type === "paragraph" || type === "heading" || type === "blockquote") return children + "\n";
-    if (type === "bulletList" || type === "orderedList") return children;
-    return children;
-  }
-
-  return walk(doc)
-    .replace(/\n{3,}/g, "\n\n")
-    .trimEnd();
-}
-
 const mentionablesForSuggestion = computed(() => {
   const list = props.mentionables ?? [];
   const meId = props.meId;
   return list.filter((u) => (meId ? u.id !== meId : true));
 });
 
-type SuggestionItem = { id: number; label: string; picture?: string | null };
+const mentionablesById = computed(() => new Map((props.mentionables ?? []).map((u) => [u.id, u])));
+
+const MentionWithHover = Mention.extend({
+  addNodeView() {
+    return VueNodeViewRenderer(TiptapMentionNodeView);
+  },
+});
 
 function createMentionSuggestion() {
-  let root: HTMLDivElement | null = null;
-  let selectedIndex = 0;
-
-  function renderItems(items: SuggestionItem[], command: (item: SuggestionItem) => void) {
-    if (!root) return;
-    root.innerHTML = "";
-
-    const header = document.createElement("div");
-    header.className = "px-3 py-2 text-xs text-secondary-foreground border-b font-dmSans";
-    header.textContent = "Mention a person";
-    root.appendChild(header);
-
-    items.forEach((item, i) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className =
-        "w-full flex gap-2 items-center px-3 py-2 text-left hover:bg-secondary transition-colors";
-      if (i === selectedIndex) btn.className += " bg-secondary";
-
-      const avatar = document.createElement("div");
-      avatar.className =
-        "w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold text-xs overflow-hidden";
-      if (item.picture) {
-        const img = document.createElement("img");
-        img.src = item.picture;
-        img.alt = item.label;
-        img.className = "w-7 h-7 object-cover";
-        avatar.innerHTML = "";
-        avatar.appendChild(img);
-      } else {
-        avatar.textContent = item.label.charAt(0).toUpperCase();
-      }
-
-      const text = document.createElement("div");
-      text.className = "flex-1 min-w-0";
-      const name = document.createElement("div");
-      name.className = "text-sm text-foreground font-lato truncate";
-      name.textContent = item.label;
-      const meta = document.createElement("div");
-      meta.className = "text-xs text-secondary-foreground font-dmSans";
-      meta.textContent = `ID: ${item.id}`;
-      text.appendChild(name);
-      text.appendChild(meta);
-
-      btn.appendChild(avatar);
-      btn.appendChild(text);
-
-      btn.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        command(item);
-      });
-
-      root?.appendChild(btn);
-    });
-  }
+  let renderer: VueRenderer | null = null;
+  let popup: HTMLDivElement | null = null;
 
   function positionAt(clientRect?: DOMRect | null) {
-    if (!root || !clientRect) return;
-    root.style.left = `${clientRect.left}px`;
-    root.style.top = `${clientRect.bottom + 8}px`;
+    if (!popup || !clientRect) return;
+    popup.style.left = `${clientRect.left}px`;
+    popup.style.top = `${clientRect.bottom + 8}px`;
   }
 
   return {
-    items: ({ query }: { query: string }): SuggestionItem[] => {
+    items: ({ query }: { query: string }): MentionSuggestionItem[] => {
       const q = (query ?? "").trim().toLowerCase();
       return mentionablesForSuggestion.value
         .filter((u) => (q ? u.name.toLowerCase().includes(q) || String(u.id).startsWith(q) : true))
@@ -163,44 +63,33 @@ function createMentionSuggestion() {
     render: () => {
       return {
         onStart: (props: any) => {
-          selectedIndex = 0;
-          root = document.createElement("div");
-          root.className = "z-50 rounded-lg border bg-white shadow-lg overflow-hidden w-80";
-          root.style.position = "fixed";
-          document.body.appendChild(root);
+          renderer = new VueRenderer(MentionList, {
+            props: { items: props.items, command: props.command },
+            editor: props.editor,
+          });
+
+          popup = document.createElement("div");
+          popup.style.position = "fixed";
+          if (renderer.element) popup.appendChild(renderer.element);
+          document.body.appendChild(popup);
           positionAt(props.clientRect?.());
-          renderItems(props.items, props.command);
         },
         onUpdate: (props: any) => {
-          selectedIndex = 0;
+          renderer?.updateProps({ items: props.items, command: props.command });
           positionAt(props.clientRect?.());
-          renderItems(props.items, props.command);
         },
         onKeyDown: (props: any) => {
           if (props.event.key === "Escape") {
             props.command(null);
             return true;
           }
-          if (props.event.key === "ArrowDown") {
-            selectedIndex = Math.min(selectedIndex + 1, props.items.length - 1);
-            renderItems(props.items, props.command);
-            return true;
-          }
-          if (props.event.key === "ArrowUp") {
-            selectedIndex = Math.max(selectedIndex - 1, 0);
-            renderItems(props.items, props.command);
-            return true;
-          }
-          if (props.event.key === "Enter") {
-            const item = props.items[selectedIndex];
-            if (item) props.command(item);
-            return true;
-          }
-          return false;
+          return renderer?.ref?.onKeyDown?.(props) ?? false;
         },
         onExit: () => {
-          root?.remove();
-          root = null;
+          renderer?.destroy();
+          renderer = null;
+          popup?.remove();
+          popup = null;
         },
       };
     },
@@ -216,15 +105,17 @@ const editor = useEditor({
       autolink: true,
       linkOnPaste: true,
     }),
-    Mention.configure({
+    MentionWithHover.configure({
       HTMLAttributes: {
         class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
       },
-      renderText({ node }) {
+      renderText({ node }: any) {
         return `@${node.attrs.label ?? node.attrs.id}`;
       },
+      // Used by `TiptapMentionNodeView.vue` via `props.extension.options.userById`
+      userById: (id: number) => mentionablesById.value.get(id),
       suggestion: createMentionSuggestion(),
-    }),
+    } as any),
     Placeholder.configure({
       placeholder: props.placeholder ?? "Send a message…",
     }),

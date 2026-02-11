@@ -1,31 +1,26 @@
 <script lang="ts" setup>
-import { EditorContent, useEditor } from "@tiptap/vue-3";
+import { EditorContent, useEditor, VueNodeViewRenderer } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Mention from "@tiptap/extension-mention";
-import { onBeforeUnmount, watch } from "vue";
+import { computed, onBeforeUnmount, watch } from "vue";
+import { normalizeTiptapDoc } from "@/core/tiptap";
+import type { User } from "@/domain/auth";
+import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
 
 const props = defineProps<{
   contentRich: any;
+  mentionedUsers?: User[];
 }>();
 
-function normalizeTiptapDoc(doc: any): any {
-  if (!doc || typeof doc !== "object") return doc;
-  if (doc.type !== "doc" || !Array.isArray(doc.content)) return doc;
+const usersById = computed(() => new Map((props.mentionedUsers ?? []).map((u) => [u.id, u])));
 
-  function isEmptyTrailingParagraph(node: any) {
-    if (!node || node.type !== "paragraph") return false;
-    if (!node.content || node.content.length === 0) return true;
-    return node.content.every((c: any) => c?.type === "hardBreak");
-  }
-
-  const next = { ...doc, content: [...doc.content] };
-  while (next.content.length > 0 && isEmptyTrailingParagraph(next.content[next.content.length - 1])) {
-    next.content.pop();
-  }
-  return next;
-}
+const MentionWithHover = Mention.extend({
+  addNodeView() {
+    return VueNodeViewRenderer(TiptapMentionNodeView);
+  },
+});
 
 const editor = useEditor({
   editable: false,
@@ -37,14 +32,16 @@ const editor = useEditor({
       autolink: true,
       linkOnPaste: true,
     }),
-    Mention.configure({
+    MentionWithHover.configure({
       HTMLAttributes: {
         class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
       },
-      renderText({ node }) {
+      renderText({ node }: any) {
         return `@${node.attrs.label ?? node.attrs.id}`;
       },
-    }),
+      // Used by `TiptapMentionNodeView.vue` via `props.extension.options.userById`
+      userById: (id: number) => usersById.value.get(id),
+    } as any),
   ],
   content: normalizeTiptapDoc(props.contentRich),
   editorProps: {
