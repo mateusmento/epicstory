@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends Record<string, any>">
+<script setup lang="ts" generic="T extends string | number | boolean | Record<string, any> = string">
 import { type HTMLAttributes, computed } from "vue";
 import type { ComboboxRootEmits, ComboboxRootProps } from "radix-vue";
 import { ComboboxRoot, useForwardPropsEmits } from "radix-vue";
@@ -8,11 +8,11 @@ const props = withDefaults(defineProps<ComboboxRootProps<T> & { class?: HTMLAttr
   open: true,
 });
 
-const emits = defineEmits<ComboboxRootEmits>();
+const emits = defineEmits<ComboboxRootEmits<T>>();
 
 const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
+  const delegated = { ...props } as typeof props & { class?: unknown };
+  delete delegated.class;
   return delegated;
 });
 

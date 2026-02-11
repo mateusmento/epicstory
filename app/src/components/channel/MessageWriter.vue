@@ -46,7 +46,7 @@ function normalizeTiptapDoc(doc: any): any {
   return next;
 }
 
-function tiptapDocToPlainText(doc: any): string {
+function tiptapToPlainText(doc: any): string {
   if (!doc) return "";
 
   function walk(node: any, ctx?: { inListItem?: boolean }): string {
@@ -268,7 +268,7 @@ function onSendMessage() {
   if (!editor.value) return;
   if (editor.value.isEmpty) return;
   const doc = normalizeTiptapDoc(editor.value.getJSON());
-  const plain = tiptapDocToPlainText(doc);
+  const plain = tiptapToPlainText(doc);
   if (!plain.trim()) return;
   emit("send-message", { content: plain, contentRich: doc });
   editor.value.commands.clearContent();
