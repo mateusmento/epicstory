@@ -84,7 +84,7 @@ resource "aws_lb_listener" "peerjs" {
 
 resource "aws_lb_listener_rule" "peerjs" {
   listener_arn = aws_lb_listener.peerjs.arn
-  priority = 1
+  priority     = 1
 
   condition {
     path_pattern {
@@ -111,7 +111,7 @@ module "dependencies" {
   vpc_id            = data.aws_vpc.main.id
   subnet_ids        = data.aws_subnets.main.ids
   security_group_id = aws_security_group.dependencies.id
-  port = 3001
+  port              = 3001
   health_check_port = 3001
   user_data = templatefile("./deploy.sh", {
     POSTGRES_DB              = var.POSTGRES_DB,

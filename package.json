@@ -7,7 +7,7 @@
   "author": "Mateus Sarmento",
   "license": "ISC",
   "scripts": {
-    "format": "terraform fmt --recursive; prettier --write \"./**/*.ts\" \"./**/*.js\" \"./**/*.vue\" \"./**/*.yml\" \"./**/*.json\" \"./**/.prettierrc\" \"./**/*.code-workspace\"",
+    "format": "terraform fmt --recursive ./deploy/ && git ls-files -z -- \"*.ts\" \"*.js\" \"*.vue\" \"*.yml\" \"*.yaml\" \"*.json\" \".prettierrc\" \"*.code-workspace\" | xargs -0 prettier --ignore-path .gitignore --write",
     "npmrc": "npmrc-replace-env",
     "build": "node scripts/build.js",
     "kb": "node scripts/deploy.js",

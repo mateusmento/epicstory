@@ -43,8 +43,8 @@ resource "aws_iam_policy" "openbao_kms" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "kms:Decrypt",
           "kms:Encrypt",
           "kms:DescribeKey",
@@ -90,8 +90,8 @@ resource "aws_iam_policy" "openbao_init_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "kms:Decrypt",
           "kms:Encrypt",
           "kms:DescribeKey",
@@ -100,8 +100,8 @@ resource "aws_iam_policy" "openbao_init_policy" {
         Resource = aws_kms_key.openbao.arn
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "secretsmanager:CreateSecret",
           "secretsmanager:PutSecretValue",
           "secretsmanager:GetSecretValue",
@@ -120,7 +120,7 @@ resource "aws_iam_role_policy_attachment" "openbao_init" {
 
 # 4. AWS Secrets Manager secret for root token and unseal keys
 resource "aws_secretsmanager_secret" "openbao" {
-  name = "openbao-init"
+  name        = "openbao-init"
   description = "OpenBao root token and unseal keys"
 }
 
