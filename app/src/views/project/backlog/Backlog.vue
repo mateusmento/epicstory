@@ -1,7 +1,7 @@
 <script lang="tsx" setup>
 import { UserSelect } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
-import { Button, Field, Form } from "@/design-system";
+import { Button, Field, Form, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
 import { cn } from "@/design-system/utils";
@@ -282,14 +282,24 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
             >
             <div
               v-if="editingIssue.id !== issue.id"
-              class="flex:row-lg flex:center-y text-sm"
+              class="flex:row-lg flex:center-y text-sm min-w-0"
               :class="cn({ 'opacity-0': draggingId === id })"
             >
-              <div
-                @click.ctrl="openIssue(issue)"
-                @dblclick.stop="$router.push(`/${workspaceId}/project/${projectId}/issue/${issue.id}`)"
-              >
-                {{ issue.title }}
+              <div class="min-w-0 flex-1">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <div
+                      @click.ctrl="openIssue(issue)"
+                      @dblclick.stop="$router.push(`/${workspaceId}/project/${projectId}/issue/${issue.id}`)"
+                      class="truncate min-w-0 w-full"
+                    >
+                      {{ issue.title }}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {{ issue.title }}
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <Icon
                 name="fa-regular-edit"
