@@ -92,4 +92,22 @@ export class AppConfig {
   EMAIL_SMTP_USER: string;
   @IsNotEmpty()
   EMAIL_SMTP_PASSWORD: string;
+
+  // ---- Integrations (Linear) ----
+
+  @IsOptional()
+  LINEAR_CLIENT_ID?: string;
+
+  @IsOptional()
+  LINEAR_CLIENT_SECRET?: string;
+
+  @IsOptional()
+  LINEAR_CALLBACK_URI?: string;
+
+  /**
+   * Used to encrypt stored integration tokens at rest (recommended).
+   * Provide a 32-byte (256-bit) secret, base64 encoded.
+   */
+  @IsOptional()
+  INTEGRATIONS_ENCRYPTION_KEY?: string;
 }

@@ -46,6 +46,22 @@ variable "GOOGLE_APP_REDIRECT_URL" {
   type = string
 }
 
+variable "LINEAR_CLIENT_ID" {
+  type = string
+}
+
+variable "LINEAR_CLIENT_SECRET" {
+  type = string
+}
+
+variable "LINEAR_CALLBACK_URI" {
+  type = string
+}
+
+variable "INTEGRATIONS_ENCRYPTION_KEY" {
+  type = string
+}
+
 variable "APP_URL" {
   type = string
 }

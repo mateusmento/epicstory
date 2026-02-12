@@ -7,6 +7,7 @@ import { WorkspaceModule } from './workspace/workspace.module';
 import { ChannelModule } from './channel/channel.module';
 import { ProjectModule } from './project/project.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { LinearIntegrationModule } from './integrations/linear/linear.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ProjectModule,
     ChannelModule,
     NotificationsModule,
+    LinearIntegrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

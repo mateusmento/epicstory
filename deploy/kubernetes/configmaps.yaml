@@ -18,6 +18,7 @@ data:
   JWT_EXPIRES_IN: "3600"
   GOOGLE_CALLBACK_URI: "http://epicstory.io/api/auth/google/callback"
   GOOGLE_APP_REDIRECT_URL: "http://epicstory.io/"
+  LINEAR_CALLBACK_URI: "http://epicstory.io/api/integrations/linear/oauth/callback"
   DEFAULT_SENDER_EMAIL_ADDRESS: "noreply@example.com"
   EMAIL_SMTP_URL: "smtp://epicstory.io:587"
   EMAIL_SMTP_USER: "user"
@@ -35,6 +36,9 @@ data:
   JWT_SECRET: "your-jwt-secret"
   GOOGLE_CLIENT_ID: ""
   GOOGLE_CLIENT_SECRET: ""
+  LINEAR_CLIENT_ID: ""
+  LINEAR_CLIENT_SECRET: ""
+  INTEGRATIONS_ENCRYPTION_KEY: ""
   EMAIL_SMTP_PASSWORD: "password"
 ---
 # App ConfigMap
