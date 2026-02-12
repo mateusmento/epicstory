@@ -285,13 +285,13 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
               class="flex:row-lg flex:center-y text-sm min-w-0"
               :class="cn({ 'opacity-0': draggingId === id })"
             >
-              <div class="min-w-0 flex-1">
+              <div class="flex:row-lg flex:center-y min-w-0">
                 <Tooltip>
                   <TooltipTrigger as-child>
                     <div
                       @click.ctrl="openIssue(issue)"
                       @dblclick.stop="$router.push(`/${workspaceId}/project/${projectId}/issue/${issue.id}`)"
-                      class="truncate min-w-0 w-full"
+                      class="truncate min-w-0 flex-1"
                     >
                       {{ issue.title }}
                     </div>
@@ -300,12 +300,12 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                     {{ issue.title }}
                   </TooltipContent>
                 </Tooltip>
+                <Icon
+                  name="fa-regular-edit"
+                  @click="openIssueEdit(issue)"
+                  class="opacity-0 group-hover:opacity-100 transition-opacity"
+                />
               </div>
-              <Icon
-                name="fa-regular-edit"
-                @click="openIssueEdit(issue)"
-                class="opacity-0 group-hover:opacity-100 transition-opacity"
-              />
             </div>
             <Form v-else @submit="saveEdit" class="flex:row-md flex:center-y">
               <Field v-model="editingIssue.title" size="badge" name="title" />
