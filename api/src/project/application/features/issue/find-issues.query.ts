@@ -1,7 +1,9 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { patch } from 'src/core/objects';
+import { Page } from 'src/core/page';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
+import { Brackets } from 'typeorm';
 
 export class FindIssues {
   workspaceId: number;
@@ -15,16 +17,24 @@ export class FindIssues {
   assigneeId?: number;
 
   @IsString()
-  orderBy: string;
+  @IsOptional()
+  query?: string;
 
   @IsString()
-  order: 'asc' | 'desc';
+  @IsOptional()
+  orderBy?: string;
+
+  @IsString()
+  @IsOptional()
+  order?: 'ASC' | 'DESC';
 
   @IsNumber()
-  page: number;
+  @IsOptional()
+  page?: number;
 
   @IsNumber()
-  count: number;
+  @IsOptional()
+  count?: number;
 
   constructor(data: Partial<FindIssues> = {}) {
     patch(this, data);
@@ -38,24 +48,51 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
   async execute({
     workspaceId,
     projectId,
+    query,
     orderBy,
     order,
     page,
     count,
   }: FindIssues) {
-    const content = await this.issueRepo.find({
-      where: { workspaceId, projectId },
-      relations: { assignees: true },
-      order: {
-        createdAt: orderBy === 'createdAt' ? (order ?? 'asc') : undefined,
-        priority: orderBy === 'priority' ? (order ?? 'asc') : undefined,
-      },
-      skip: page * count,
-      take: count + 1,
+    const baseQb = this.issueRepo
+      .createQueryBuilder('issue')
+      .where('issue.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('issue.projectId = :projectId', { projectId });
+
+    if (query) {
+      baseQb.andWhere(
+        new Brackets((qb) =>
+          qb
+            .where('issue.title ILIKE :query', { query: `%${query}%` })
+            .orWhere('issue.description ILIKE :query', { query: `%${query}%` }),
+        ),
+      );
+    }
+
+    const dataQb = baseQb.clone();
+
+    if (orderBy === 'createdAt') {
+      dataQb.orderBy('issue.createdAt', order ?? 'DESC', 'NULLS LAST');
+    } else if (orderBy === 'priority') {
+      dataQb.orderBy('issue.priority', order ?? 'DESC', 'NULLS LAST');
+    }
+
+    dataQb.addOrderBy('issue.id', 'DESC', 'NULLS LAST');
+
+    const pageNumber = page ?? 0;
+    const pageSize = count ?? 20;
+
+    const [total, issues] = await Promise.all([
+      baseQb.getCount(),
+      dataQb
+        .skip(pageNumber * pageSize)
+        .take(pageSize)
+        .getMany(),
+    ]);
+
+    return Page.fromResult(issues, total, {
+      page: pageNumber,
+      count: pageSize,
     });
-    const hasPrevious = page > 0;
-    const hasNext = content.length === count + 1;
-    if (hasNext) content.pop();
-    return { content, page, count, hasNext, hasPrevious };
   }
 }

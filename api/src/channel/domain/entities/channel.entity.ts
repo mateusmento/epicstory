@@ -51,8 +51,6 @@ export class Channel {
   @Column({ nullable: true })
   dmUserGreaterId?: number;
 
-  speakingTo: User;
-
   @OneToOne(() => Meeting, (m) => m.channel)
   meeting: Meeting;
 

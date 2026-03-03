@@ -126,7 +126,7 @@ export class MessageGateway {
       .createQueryBuilder('channel')
       .innerJoin('channel.peers', 'peer')
       .where('peer.id = :userId', { userId })
-      .where('channel.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('channel.workspaceId = :workspaceId', { workspaceId })
       .getMany();
 
     socket.leave(userRoom(userId));

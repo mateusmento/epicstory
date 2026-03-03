@@ -54,7 +54,7 @@ export class MeetingGateway implements OnGatewayDisconnect {
       .createQueryBuilder('channel')
       .innerJoin('channel.peers', 'peer')
       .where('peer.id = :userId', { userId })
-      .where('channel.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('channel.workspaceId = :workspaceId', { workspaceId })
       .getMany();
 
     for (const channel of channels) {

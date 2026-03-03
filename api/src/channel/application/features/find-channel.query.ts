@@ -1,10 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { mapChannelToDto } from 'src/channel/domain/dtos/channel.dto';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { extractMentionIds, renderMentions } from '../utils/mentions';
 
 export class FindChannel {
   channelId: number;
@@ -41,22 +41,6 @@ export class FindChannelQuery implements IQueryHandler<FindChannel> {
 
     if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
 
-    if (channel.type === 'direct')
-      channel.speakingTo = channel.peers.find((p) => p.id !== issuerId);
-
-    if (channel.lastMessage?.content) {
-      const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
-      const mentionIds = extractMentionIds(channel.lastMessage.content);
-
-      (channel.lastMessage as any).mentionedUsers = mentionIds
-        .map((id) => peerUsersMap.get(id))
-        .filter(Boolean);
-      (channel.lastMessage as any).displayContent = renderMentions(
-        channel.lastMessage.content,
-        peerUsersMap,
-      );
-    }
-
-    return channel;
+    return mapChannelToDto(channel, issuerId);
   }
 }

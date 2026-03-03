@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 import { UserRepository } from 'src/auth';
+import { mapChannelToDto } from 'src/channel/domain/dtos/channel.dto';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { Issuer } from 'src/core/auth';
@@ -77,7 +78,6 @@ export class CreateDirectChannelCommand
       }),
     );
 
-    channel.speakingTo = channel.peers.find((p) => p.id !== me);
-    return channel;
+    return mapChannelToDto(channel, me);
   }
 }

@@ -13,3 +13,11 @@ export type IChannel = {
   meeting: IMeeting | null;
   peers: User[];
 };
+
+export type FindChannels = {
+  query?: string;
+  page?: number;
+  size?: number;
+  orderBy?: "name" | "createdAt" | "lastMessageSentAt";
+  order?: "ASC" | "DESC";
+};

@@ -1,9 +1,10 @@
 import { InjectAxios } from "@/core/axios";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
-import type { IChannel } from "../types/channel.type";
+import type { FindChannels, IChannel } from "../types/channel.type";
 import type { IMessage, IReaction, IReply } from "../types";
 import type { User } from "@/domain/auth";
+import type { Page } from "@/core/types";
 
 export type CreateDirectChannel = {
   type: "direct";
@@ -19,8 +20,10 @@ export type CreateGroupChannel = {
 export class ChannelApi {
   constructor(@InjectAxios() private axios: Axios) {}
 
-  findChannels(workspaceId: number) {
-    return this.axios.get<IChannel[]>(`/workspaces/${workspaceId}/channels`).then((res) => res.data);
+  findChannels(workspaceId: number, opts?: FindChannels) {
+    return this.axios
+      .get<Page<IChannel>>(`/workspaces/${workspaceId}/channels`, { params: opts ?? {} })
+      .then((res) => res.data);
   }
 
   findChannel(channelId: number) {

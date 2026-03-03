@@ -1,41 +1,19 @@
 <script lang="ts" setup>
 import {
-  Button,
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  Separator,
-} from "@/design-system";
-import { IconSearch } from "@/design-system/icons";
-import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from "@/design-system/ui/breadcrumb";
-import ToggleGroup from "@/design-system/ui/toggle-group/ToggleGroup.vue";
-import ToggleGroupItem from "@/design-system/ui/toggle-group/ToggleGroupItem.vue";
+  Button,
+  Separator,
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/design-system";
 import { useMagicKeys, whenever } from "@vueuse/core";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Calculator,
-  Calendar,
-  CreditCard,
-  Settings,
-  Smile,
-  User,
-} from "lucide-vue-next";
+import { ArrowLeft, ArrowRight } from "lucide-vue-next";
 import { ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
+import SearchBar from "./SearchBar.vue";
 
 const open = ref(false);
 const { meta_j } = useMagicKeys();
@@ -86,55 +64,7 @@ function routeId(route: string) {
         </Breadcrumb>
       </div>
 
-      <Dialog>
-        <DialogTrigger as-child>
-          <div
-            class="flex:row-md flex:center w-96 h-7 mx-auto rounded-lg bg-secondary text-xs text-secondary-foreground"
-          >
-            <IconSearch /> Search
-          </div>
-        </DialogTrigger>
-        <DialogContent as-child>
-          <Command class="rounded-lg border shadow-md p-0 top-80 h-fit md:min-w-[450px]">
-            <CommandInput placeholder="Type a command or search..." />
-            <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup heading="Suggestions">
-                <CommandItem value="calendar">
-                  <Calendar />
-                  <span>Calendar</span>
-                </CommandItem>
-                <CommandItem value="emoji">
-                  <Smile />
-                  <span>Search Emoji</span>
-                </CommandItem>
-                <CommandItem disabled value="calculator">
-                  <Calculator />
-                  <span>Calculator</span>
-                </CommandItem>
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup heading="Settings">
-                <CommandItem value="profile">
-                  <User />
-                  <span>Profile</span>
-                  <CommandShortcut>⌘P</CommandShortcut>
-                </CommandItem>
-                <CommandItem value="billing">
-                  <CreditCard />
-                  <span>Billing</span>
-                  <CommandShortcut>⌘B</CommandShortcut>
-                </CommandItem>
-                <CommandItem value="settings">
-                  <Settings />
-                  <span>Settings</span>
-                  <CommandShortcut>⌘S</CommandShortcut>
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </DialogContent>
-      </Dialog>
+      <SearchBar />
 
       <div class="flex-1"></div>
     </div>

@@ -36,7 +36,7 @@ export class WorkspaceChannelController {
     @Auth() issuer: Issuer,
   ) {
     return this.queryBus.execute(
-      new FindChannels({ ...query, workspaceId, issuer }),
+      new FindChannels({ ...query, workspaceId, issuerId: issuer.id }),
     );
   }
 

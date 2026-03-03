@@ -8,6 +8,7 @@ import { TeamApi } from "@/domain/team/team.api";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import { ChannelApi } from "@/domain/channels";
 import { ScheduledEventApi } from "@/domain/scheduled-events";
+import { SearchApi } from "@/domain/search/search.api";
 import { NotificationApi } from "@/domain/notifications";
 import { config } from "@/config";
 
@@ -22,6 +23,7 @@ export async function createDependencies() {
   container.registerSingleton(ChannelApi);
   container.registerSingleton(MeetingApi);
   container.registerSingleton(ScheduledEventApi);
+  container.registerSingleton(SearchApi);
   container.registerSingleton(NotificationApi);
   return container;
 }

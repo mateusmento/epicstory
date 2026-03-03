@@ -22,5 +22,9 @@
     "npmrc-replace-env": "^1.1.4",
     "prettier": "^3.3.0"
   },
-  "packageManager": "pnpm@9.0.1+sha1.0e0a9c2d140ddf9aab730067eb7bcfb9e18bdee7"
+  "packageManager": "pnpm@9.0.1+sha1.0e0a9c2d140ddf9aab730067eb7bcfb9e18bdee7",
+  "dependencies": {
+    "@knaadh/nestjs-drizzle-pg": "^1.2.0",
+    "drizzle-orm": "^0.45.1"
+  }
 }

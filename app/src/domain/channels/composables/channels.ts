@@ -2,9 +2,9 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
 import { defineStore, storeToRefs } from "pinia";
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { onMounted, onUnmounted, ref, toRefs, watch } from "vue";
 import { ChannelApi, type CreateDirectChannel, type CreateGroupChannel } from "../services";
-import type { IChannel } from "../types";
+import type { FindChannels, IChannel } from "../types";
 
 const useChannelsStore = defineStore("channels", () => {
   const channels = ref<IChannel[]>([]);
@@ -66,8 +66,9 @@ export function useChannels() {
     sockets.websocket.off("meeting-ended", onMeetingEnded);
   }
 
-  async function fetchChannels() {
-    store.channels = await channelApi.findChannels(workspace.value.id);
+  async function fetchChannels(opts?: FindChannels) {
+    const page = await channelApi.findChannels(workspace.value.id, opts);
+    store.channels = page.content;
   }
 
   async function createChannel(data: CreateDirectChannel | CreateGroupChannel) {
@@ -94,11 +95,19 @@ export function useChannels() {
 export function useSyncedChannels() {
   const { workspace } = useWorkspace();
   const context = useChannels();
+
+  const opts = ref<FindChannels>({
+    page: 0,
+    size: 20,
+    orderBy: "lastMessageSentAt",
+    order: "DESC",
+  });
+
   const { fetchChannels, subscribeMessages, unsubscribeMessages, subscribeMeetings, unsubscribeMeetings } =
     context;
 
   onMounted(async () => {
-    await fetchChannels();
+    await fetchChannels(opts.value);
     subscribeMeetings();
     subscribeMessages();
   });
@@ -109,10 +118,13 @@ export function useSyncedChannels() {
   });
 
   watch(workspace, async () => {
-    await fetchChannels();
+    await fetchChannels(opts.value);
     subscribeMeetings();
     subscribeMessages();
   });
 
-  return context;
+  return {
+    ...toRefs(opts.value),
+    ...context,
+  };
 }
