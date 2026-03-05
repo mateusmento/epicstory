@@ -153,6 +153,20 @@ async function remove(target) {
   }
 }
 
+// Restart command
+async function restart(target, args = []) {
+  try {
+    console.log(`🔁 Restarting ${target ?? "containers"}...`);
+    const nodeArgs = [path.join(scriptsDir, "restart.js")];
+    if (target) nodeArgs.push(target);
+    if (args.length > 0) nodeArgs.push(...args);
+    await runCommand("node", nodeArgs);
+  } catch (error) {
+    console.error(`❌ Restart failed:`, error.message);
+    process.exit(1);
+  }
+}
+
 async function migrations(action, args = []) {
   try {
     if (!action || !["generate", "run", "revert"].includes(action)) {
@@ -312,6 +326,14 @@ function main() {
     case "remove":
       remove(target);
       break;
+    case "restart":
+      // restart has an optional <service> arg; if the first token is a flag, treat it as no service.
+      if (rest[0] && rest[0].startsWith("-")) {
+        restart(undefined, rest);
+      } else {
+        restart(rest[0], rest.slice(1));
+      }
+      break;
     case "migrations":
       migrations(rest[0], rest.slice(1));
       break;
@@ -343,6 +365,7 @@ Usage:
   epic logs [container-name]   Log container output
   epic list                    List running containers
   epic remove                 Stop and remove all containers
+  epic restart                 Restart containers (optionally rebuild)
   epic migrations <command>    Manage API database migrations
   epic postgres <command>      Rotate/list/restore postgres data folder
   epic help                    Show this help message
@@ -357,6 +380,11 @@ Examples:
   epic logs epicstory-api      Log container output
   epic list                   List running containers
   epic remove                 Stop and remove all containers
+  epic restart                Restart all containers
+  epic restart api            Restart the api service container
+  epic restart --build        Recreate all containers (build + force-recreate)
+  epic restart api --build    Recreate api (build + force-recreate)
+  epic restart api --logs     Restart api and follow logs
   epic migrations generate --name="AddFooBar"
   epic migrations run
   epic migrations revert
