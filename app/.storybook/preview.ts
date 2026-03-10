@@ -11,6 +11,7 @@ import { enableMocking } from "@/app/enable-mocks";
 import { createPinia } from "pinia";
 import { addIcons } from "oh-vue-icons";
 import * as icons from "@/app/icons";
+import router from "@/app/router";
 
 const preview: Preview = {
   parameters: {
@@ -27,6 +28,7 @@ setup(async (app) => {
   const dependencies = await createDependencies();
   app.use(createDependenciesPlugin(dependencies));
   app.use(createPinia());
+  app.use(router);
 
   addIcons(...Object.values(icons));
 

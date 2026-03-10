@@ -13,7 +13,7 @@ export const StoryContainer = defineComponent({
   setup(props, { slots }) {
     return () => (
       <div
-        class="relative m-0 p-0 w-full h-screen bg-[#333]"
+        class="relative m-0 p-0 max-w-full max-h-screen w-full h-screen bg-[#333]"
         style="
           background-image:
               linear-gradient(rgba(0, 255, 0, .7) .1em, transparent .1em),
@@ -23,7 +23,7 @@ export const StoryContainer = defineComponent({
       >
         <div
           class={cn(
-            "resize box-border overflow-hidden bg-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+            "resize box-border overflow-hidden bg-white max-w-full max-h-screen absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
             props.class,
           )}
         >

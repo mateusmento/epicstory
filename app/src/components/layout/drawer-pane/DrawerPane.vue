@@ -7,11 +7,17 @@ import {
   type NavViewProps,
 } from "@/design-system";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
+import { computed } from "vue";
 
-const props = defineProps<NavViewProps>();
-const emit = defineEmits<NavViewEmits>();
+const props = defineProps<NavViewProps & { open: boolean }>();
+const emit = defineEmits<NavViewEmits & { (e: "update:open", value: boolean): void }>();
 
-const open = defineModel<boolean>("open", { required: true });
+// Avoid `defineModel()` here: Storybook's vue-docgen pipeline parses the compiled output
+// and can choke on the generated helper imports (`useModel`, `mergeModels`).
+const open = computed({
+  get: () => props.open,
+  set: (v: boolean) => emit("update:open", v),
+});
 
 const { content } = useNavTrigger(props.view);
 
@@ -22,7 +28,7 @@ function onNavViewTrigger(v: string) {
 </script>
 
 <template>
-  <NavView :view @trigger="onNavViewTrigger">
+  <NavView :view="props.view" @trigger="onNavViewTrigger">
     <Collapsible as-child :open="open">
       <CollapsibleContent
         as="aside"
