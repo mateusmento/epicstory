@@ -32,10 +32,12 @@ import {
   CreditCard,
   Settings,
   Smile,
+  SquarePen,
   User,
 } from "lucide-vue-next";
 import { ref } from "vue";
 import { RouterLink, useRoute } from "vue-router";
+import NewIssueModal from "./NewIssueModal.vue";
 
 const open = ref(false);
 const { meta_j } = useMagicKeys();
@@ -84,6 +86,18 @@ function routeId(route: string) {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+
+        <Dialog>
+          <DialogTrigger as-child>
+            <Button variant="outline" size="icon">
+              <SquarePen class="w-4 h-4" />
+              <span class="ml-1 text-xs">New issue</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent as-child>
+            <NewIssueModal :project-id="+projectId" />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Dialog>

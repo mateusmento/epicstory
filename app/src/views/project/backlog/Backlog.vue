@@ -2,12 +2,9 @@
 import { UserSelect } from "@/components/user";
 import { Button, Field, Form, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
 import { cn } from "@/design-system/utils";
-import type { User } from "@/domain/auth";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
-import { useUsers } from "@/domain/user";
 import { animations } from "@formkit/drag-and-drop";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { parseAbsolute } from "@internationalized/date";
@@ -15,20 +12,14 @@ import { useStorage } from "@vueuse/core";
 import { debounce } from "lodash";
 import { Trash2Icon } from "lucide-vue-next";
 import { onMounted, reactive, ref, watch, withModifiers, type FunctionalComponent as FC } from "vue";
+import { useRouter } from "vue-router";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
-const {
-  backlogItems,
-  fetchBacklogItems,
-  createBacklogItem,
-  removeBacklogItem,
-  moveBacklogItem,
-  updateIssue,
-  addAssignee,
-} = useBacklog();
+const { backlogItems, fetchBacklogItems, removeBacklogItem, moveBacklogItem, updateIssue, addAssignee } =
+  useBacklog();
 
 const orderBy = useStorage("backlog.orderBy", "manual");
 const order = useStorage<"asc" | "desc">("backlog.order", "asc");
@@ -100,18 +91,6 @@ watch(
   },
 );
 
-function onCreateBacklogItem(data: any) {
-  createBacklogItem(+props.projectId, {
-    ...data,
-    afterOf: backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined,
-  });
-}
-
-const { users, fetchUsers } = useUsers();
-const query = ref("");
-const selectedUser = ref<User>();
-watch(query, () => fetchUsers(query.value));
-
 const editingIssue = reactive<{
   id: number | null;
   title: string;
@@ -143,12 +122,10 @@ function issueStatusColor(status: string) {
   if (status === "done") return "text-green-600 border-green-600 bg-green-200";
 }
 
-const showIssueDrawer = ref(false);
-const issue = ref<Issue>();
+const router = useRouter();
 
-function openIssue(iss: Issue) {
-  issue.value = iss;
-  showIssueDrawer.value = true;
+function openIssue(issue: Issue) {
+  router.push(`/${props.workspaceId}/project/${props.projectId}/issue/${issue.id}`);
 }
 </script>
 
@@ -189,33 +166,6 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
 </script>
 
 <template>
-  <Drawer v-model:open="showIssueDrawer" direction="right">
-    <DrawerContent v-if="issue" class="flex:col-2xl p-6 m-2 min-w-96">
-      <div class="text-foreground font-semibold text-lg">{{ issue.title }}</div>
-      <div class="grid grid-cols-[1fr_1fr] gap-6">
-        <div class="flex:col-md">
-          <div class="text-secondary-foreground text-xs">Status</div>
-          <div class="capitalize font-semibold">{{ issue.status }}</div>
-        </div>
-        <div class="flex:col-md items-end">
-          <div class="text-secondary-foreground text-xs">Assignees</div>
-          <div class="flex:row-md">
-            <img
-              v-for="assignee of issue.assignees"
-              :key="assignee.id"
-              :src="assignee.picture"
-              class="w-6 h-6 rounded-full [&:not(:first-child)]:-ml-4"
-            />
-          </div>
-        </div>
-        <div class="flex:col-md">
-          <div class="text-secondary-foreground text-xs">Priority</div>
-          <PriorityToggler class="w-fit" />
-        </div>
-      </div>
-    </DrawerContent>
-  </Drawer>
-
   <div class="flex:col-xl m-auto py-8 px-12 w-full h-full">
     <div class="grid grid-cols-[auto_1fr_auto_auto_auto_auto] grid-rows-[auto_1fr] gap-y-4 flex-1 min-h-0">
       <div class="grid grid-cols-subgrid col-span-6 gap-x-6">
@@ -259,7 +209,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
           <div
             v-for="{ id, issue } of backlogItems"
             :key="issue.id"
-            class="group grid grid-cols-subgrid col-span-6 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white shadow-sm"
+            class="grid grid-cols-subgrid col-span-6 gap-x-6 items-center py-1 px-2 border rounded-sm bg-white shadow-sm"
           >
             <Button
               variant="outline"
@@ -270,17 +220,13 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
             >
             <div
               v-if="editingIssue.id !== issue.id"
-              class="flex:row-lg flex:center-y text-sm min-w-0"
+              class="group flex:row-lg flex:center-y text-sm min-w-0"
               :class="cn({ 'opacity-0': draggingId === id })"
             >
               <div class="flex:row-lg flex:center-y min-w-0">
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <div
-                      @click.ctrl="openIssue(issue)"
-                      @dblclick.stop="$router.push(`/${workspaceId}/project/${projectId}/issue/${issue.id}`)"
-                      class="truncate min-w-0 flex-1"
-                    >
+                    <div @click.stop="openIssue(issue)" class="truncate min-w-0 flex-1">
                       {{ issue.title }}
                     </div>
                   </TooltipTrigger>
@@ -306,22 +252,18 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                 @update:value="updateIssue(issue.id, { priority: $event })"
               />
             </div>
-            <div class="flex:row flex:center-y">
-              <img
-                v-for="(assignee, i) of issue.assignees"
-                :key="assignee.id"
-                :src="assignee.picture"
-                :class="cn('w-5 h-5 rounded-full', i > 0 && 'ml-[-0.5rem]')"
-              />
-              <UserSelect
-                v-model="selectedUser"
-                @update:model-value="
-                  selectedUser && addAssignee(issue.id, selectedUser.id);
-                  selectedUser = undefined;
-                "
-              >
-                <template #trigger>
+            <UserSelect @update:model-value="$event && addAssignee(issue.id, $event.id)">
+              <template #trigger>
+                <div class="flex:row flex:center-y w-fit">
+                  <img
+                    v-for="(assignee, i) of issue.assignees"
+                    :key="assignee.id"
+                    :src="assignee.picture"
+                    class="cursor-pointer"
+                    :class="cn('w-5 h-5 rounded-full', i > 0 && 'ml-[-0.5rem]')"
+                  />
                   <div
+                    v-if="issue.assignees.length === 0"
                     :class="
                       cn(
                         'flex flex:center w-fit p-0.5 mr-2 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60',
@@ -334,9 +276,9 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                       class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
                     />
                   </div>
-                </template>
-              </UserSelect>
-            </div>
+                </div>
+              </template>
+            </UserSelect>
             <DueDatePicker
               size="badge"
               :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"
@@ -349,10 +291,5 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
         </div>
       </div>
     </div>
-
-    <Form @submit="onCreateBacklogItem" class="flex:row-md">
-      <Field name="title" size="xs" placeholder="Describe an issue..." class="flex-1" />
-      <Button type="submit" size="xs">Add</Button>
-    </Form>
   </div>
 </template>
