@@ -1,21 +1,16 @@
 <script setup lang="ts">
 import BoardColumn from "@/components/board/BoardColumn.vue";
 import BoardItem from "@/components/board/BoardItem.vue";
-import { useDependency } from "@/core/dependency-injection";
 import { cn } from "@/design-system/utils";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
-import { ProjectApi } from "@/domain/project";
-import { computed, onMounted, ref, watch } from "vue";
-import IssueCard from "./IssueCard.vue";
 import type { Issue } from "@/domain/issues";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import IssueCard from "./IssueCard.vue";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
-const projectApi = useDependency(ProjectApi);
-
 const { backlogItems, fetchBacklogItems, updateIssue, moveBacklogItem } = useBacklog();
-const backlogId = ref<number>(0);
 
 type ColumnStatus = "todo" | "doing" | "done";
 
@@ -76,20 +71,15 @@ async function onColumnDrop(targetStatus: ColumnStatus, args: { payload: any }) 
 
   // Persist ordering within the backlog, based on the final dropped position.
   // Backend expects backlog-item ids (not issue ids) for `afterOf`.
-  if (backlogId.value) {
-    await moveBacklogItem(item.id, {
-      backlogId: backlogId.value,
-      afterOf,
-    });
-  }
+  await moveBacklogItem(item.id, {
+    projectId: +props.projectId,
+    afterOf,
+  });
 }
 
 onMounted(async () => {
-  const project = await projectApi.findProject(+props.projectId);
-  backlogId.value = project.backlogId;
-
   await fetchBacklogItems({
-    backlogId: backlogId.value,
+    projectId: +props.projectId,
     page: 0,
     count: 200,
     orderBy: "manual",

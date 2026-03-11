@@ -43,7 +43,7 @@ whenever(meta_j, () => {
   open.value = true;
 });
 
-defineProps<{ workspaceId: string; projectId: string; issueId: string }>();
+defineProps<{ workspaceId: string; projectId: string }>();
 
 const route = useRoute();
 
@@ -80,7 +80,7 @@ function routeId(route: string) {
             <BreadcrumbSeparator />
 
             <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}/issue/${issueId}`"> Issue </RouterLink>
+              <RouterLink :to="`/${workspaceId}/project/${projectId}`"> Issue </RouterLink>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>

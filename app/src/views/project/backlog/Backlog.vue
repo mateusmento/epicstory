@@ -1,6 +1,5 @@
 <script lang="tsx" setup>
 import { UserSelect } from "@/components/user";
-import { useDependency } from "@/core/dependency-injection";
 import { Button, Field, Form, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { Drawer, DrawerContent } from "@/design-system/ui/drawer";
@@ -8,7 +7,6 @@ import { cn } from "@/design-system/utils";
 import type { User } from "@/domain/auth";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
-import { ProjectApi } from "@/domain/project";
 import { useUsers } from "@/domain/user";
 import { animations } from "@formkit/drag-and-drop";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
@@ -68,7 +66,7 @@ function setupDragAndDrop() {
       const { id } = draggedNode.data.value as any;
       const { id: afterOf } = (values[position - 1] as any) ?? {};
       await onMoveBacklogItem(id, {
-        backlogId: backlogId.value,
+        projectId: +props.projectId,
         afterOf,
       });
     },
@@ -77,19 +75,13 @@ function setupDragAndDrop() {
 
 watch(orderBy, setupDragAndDrop);
 
-const projectApi = useDependency(ProjectApi);
-
-const backlogId = ref<number>(0);
-
 onMounted(async () => {
-  const project = await projectApi.findProject(+props.projectId);
-  backlogId.value = project.backlogId;
   await fetchBacklogItems({
-    backlogId: backlogId.value,
+    projectId: +props.projectId,
     order: order.value,
     orderBy: orderBy.value,
     page: 0,
-    count: 50,
+    count: 150,
   });
 
   setupDragAndDrop();
@@ -98,10 +90,8 @@ onMounted(async () => {
 watch(
   () => [props.projectId, orderBy.value, order.value],
   async () => {
-    const project = await projectApi.findProject(+props.projectId);
-    backlogId.value = project.backlogId;
     fetchBacklogItems({
-      backlogId: backlogId.value,
+      projectId: +props.projectId,
       order: order.value,
       orderBy: orderBy.value,
       page: 0,
@@ -111,10 +101,8 @@ watch(
 );
 
 function onCreateBacklogItem(data: any) {
-  createBacklogItem(backlogId.value, {
+  createBacklogItem(+props.projectId, {
     ...data,
-    backlogId: backlogId.value,
-    projectId: +props.projectId,
     afterOf: backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined,
   });
 }

@@ -23,24 +23,24 @@ export class BacklogItemController {
     private commandBus: CommandBus,
   ) {}
 
-  @Get('backlogs/:id/items')
+  @Get('projects/:id/backlog-items')
   @UseGuards(JwtAuthGuard)
   findBacklogItems(
-    @Param('id') backlogId: number,
+    @Param('id') projectId: number,
     @Query() query: FindBacklogItems,
   ) {
-    return this.queryBus.execute(new FindBacklogItems({ ...query, backlogId }));
+    return this.queryBus.execute(new FindBacklogItems({ ...query, projectId }));
   }
 
-  @Post('backlogs/:id/items')
+  @Post('projects/:id/backlog-items')
   @UseGuards(JwtAuthGuard)
   createBacklogItem(
-    @Param('id') backlogId: number,
+    @Param('id') projectId: number,
     @Body() command: CreateBacklogItem,
     @Auth() issuer: Issuer,
   ) {
     return this.commandBus.execute(
-      new CreateBacklogItem({ ...command, backlogId, issuer }),
+      new CreateBacklogItem({ ...command, projectId, issuer }),
     );
   }
 

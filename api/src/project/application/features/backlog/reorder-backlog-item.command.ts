@@ -12,9 +12,8 @@ import { Transactional } from 'typeorm-transactional';
 export class ReorderBacklogItem {
   issuer: Issuer;
 
-  @IsNumber()
-  backlogId: number;
   backlogItemId: number;
+
   @IsNumber()
   @IsOptional()
   afterOf: number;

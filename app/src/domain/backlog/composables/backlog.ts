@@ -21,8 +21,8 @@ export function useBacklog() {
     store.backlogItems = content;
   }
 
-  async function createBacklogItem(backlogId: number, data: any) {
-    const item = await backlogItemApi.create(backlogId, data);
+  async function createBacklogItem(projectId: number, data: any) {
+    const item = await backlogItemApi.create(projectId, data);
     const index = store.backlogItems.findIndex((i) => i.order > item.order);
     if (index >= 0) store.backlogItems.splice(index, 0, reactive(item));
     else store.backlogItems.push(reactive(item));

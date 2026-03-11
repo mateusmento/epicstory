@@ -8,21 +8,21 @@ export class BacklogItemService {
   constructor(private backlogItemRepo: BacklogItemRepository) {}
 
   async reorder(item: BacklogItem, afterOf: number | null) {
-    return this.findNewOrder(item.backlogId, afterOf, [item.id]);
+    return this.findNewOrder(item.projectId, afterOf, [item.id]);
   }
 
   async findNewOrder(
-    backlogId: number,
+    projectId: number,
     afterOf: number | null,
     excludeIds: number[] = [],
   ) {
     const itemBefore = afterOf
-      ? await this.findBacklogItem(afterOf, backlogId)
+      ? await this.findBacklogItem(afterOf, projectId)
       : null;
 
     const itemAfter = itemBefore
       ? await this.findBacklogItemAfterOf(itemBefore, excludeIds)
-      : await this.findFirstBacklogItem(backlogId, excludeIds);
+      : await this.findFirstBacklogItem(projectId, excludeIds);
 
     return calculateOrder(itemBefore, itemAfter);
   }
@@ -34,27 +34,27 @@ export class BacklogItemService {
     return this.backlogItemRepo.findOne({
       where: {
         order: MoreThan(itemBefore.order),
-        backlogId: itemBefore.backlogId,
+        projectId: itemBefore.projectId,
         id: And(Not(In([...excludeIds, itemBefore.id]))),
       },
       order: { order: 'ASC' },
     });
   }
 
-  async findFirstBacklogItem(backlogId: number, excludeIds: number[]) {
+  async findFirstBacklogItem(projectId: number, excludeIds: number[]) {
     return this.backlogItemRepo.findOne({
       where: {
         order: MoreThan(0),
-        backlogId: backlogId,
+        projectId: projectId,
         id: And(Not(In(excludeIds))),
       },
       order: { order: 'ASC' },
     });
   }
 
-  async findBacklogItem(id: number, backlogId: number) {
+  async findBacklogItem(id: number, projectId: number) {
     const item = await this.backlogItemRepo.findOne({
-      where: { id, backlogId },
+      where: { id, projectId },
     });
     if (!item) throw new NotFoundException('Backlog item not found');
     return item;
