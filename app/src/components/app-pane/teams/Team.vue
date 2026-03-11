@@ -69,7 +69,7 @@ const selectedUser = ref<User>();
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
 
         <div class="flex:col flex:center-y">
-          <div class="text-base text-foreground font-dmSans font-medium">{{ member.user.name }}</div>
+          <div class="text-sm text-foreground">{{ member.user.name }}</div>
           <div class="text-xs text-secondary-foreground">
             Member since {{ format(member.joinedAt, "MMM do, yyyy") }}
           </div>

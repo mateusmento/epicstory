@@ -54,7 +54,7 @@ function removeMember(memberId: number) {
         </div>
 
         <div class="flex:col flex:baseline flex-1 min-w-0">
-          <div class="text-sm font-medium font-dmSans whitespace-nowrap">
+          <div class="text-sm whitespace-nowrap">
             {{ member.name }}
           </div>
           <div

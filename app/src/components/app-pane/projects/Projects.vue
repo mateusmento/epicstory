@@ -37,7 +37,6 @@ watch(workspace, fetchProjects);
           <div class="font-medium text-sm">Projects</div>
         </h1>
 
-
         <Tooltip>
           <TooltipTrigger as-child>
             <CollapsibleTrigger as-child>
@@ -62,14 +61,21 @@ watch(workspace, fetchProjects);
     <Separator />
 
     <div class="flex:col-md p-2">
-      <RouterLink v-for="project of projects" :key="project.id" :to="`/${workspace.id}/project/${project.id}/backlog`"
+      <RouterLink
+        v-for="project of projects"
+        :key="project.id"
+        :to="`/${workspace.id}/project/${project.id}/backlog`"
         class="flex:row-2xl flex:center-y py-2 px-3 rounded-lg hover:bg-secondary cursor-pointer"
-        :class="{ 'bg-secondary': +route.params.projectId === project.id }">
+        :class="{ 'bg-secondary': +route.params.projectId === project.id }"
+      >
         <div class="flex:row-auto flex:center-y flex-1">
-          <div class="text-sm text-foreground font-medium">{{ project.name }}</div>
+          <div class="text-sm text-foreground">{{ project.name }}</div>
           <div class="text-xs text-secondary-foreground">4 members</div>
         </div>
-        <Trash2Icon @click="removeProject(project.id)" class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground" />
+        <Trash2Icon
+          @click="removeProject(project.id)"
+          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
+        />
       </RouterLink>
     </div>
   </div>

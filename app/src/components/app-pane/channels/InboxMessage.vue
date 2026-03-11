@@ -44,10 +44,10 @@ function formatMessageDate(date: string) {
 
     <div class="flex:col flex-1 h-full overflow-hidden">
       <div class="flex:row-auto flex:center-y">
-        <div class="text-base font-medium font-dmSans text-foreground">
+        <div class="text-sm text-foreground">
           {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
         </div>
-        <div v-if="!canJoinMeeting" class="text-xs text-secondary-foreground font-dmSans">
+        <div v-if="!canJoinMeeting" class="text-xs text-secondary-foreground">
           {{ channel.lastMessage ? formatMessageDate(channel.lastMessage.sentAt) : "" }}
         </div>
       </div>

@@ -64,7 +64,7 @@ watch(workspace, fetchTeams);
         class="flex:row-2xl flex:center-y py-2 px-4 rounded-lg hover:bg-secondary cursor-pointer"
       >
         <div class="flex:row-auto flex:center-y flex-1">
-          <div class="text-base text-foreground font-dmSans font-medium">{{ team.name }}</div>
+          <div class="text-sm text-foreground">{{ team.name }}</div>
           <div class="text-xs text-secondary-foreground">4 members</div>
         </div>
         <Trash2Icon

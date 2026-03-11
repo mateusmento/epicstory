@@ -73,7 +73,7 @@ const selectedUser = ref<User>();
       >
         <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
         <div class="flex:col">
-          <div class="text-base font-medium font-dmSans whitespace-nowrap">
+          <div class="text-sm whitespace-nowrap">
             {{ member.user.name }}
           </div>
           <div class="text-xs text-secondary-foreground whitespace-nowrap">
