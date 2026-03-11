@@ -2,7 +2,7 @@
 import { Combobox } from "@/design-system";
 import { useAuth } from "@/domain/auth";
 import { useUsers, type User } from "@/domain/user";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
   exclude?: string;
@@ -13,6 +13,8 @@ const user = defineModel<User>();
 const { user: authUser } = useAuth();
 const { users, fetchUsersByName } = useUsers();
 const query = ref("");
+
+onMounted(() => fetchUsersByName(""));
 watch(query, () => fetchUsersByName(query.value));
 
 const filteredUsers = computed(() => {

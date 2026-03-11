@@ -83,16 +83,7 @@ watch(
   <div class="w-full h-full flex:col">
     <div class="flex:row flex:center-y px-4 py-1.5 h-10">
       <div class="flex:row flex:center-y flex-1">
-        <div class="flex:row-md flex:center-y">
-          <Button variant="outline" size="icon">
-            <ArrowLeft class="w-4 h-4 text-secondary-foreground" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <ArrowRight class="w-4 h-4 text-secondary-foreground" />
-          </Button>
-        </div>
-
-        <Breadcrumb class="px-4">
+        <Breadcrumb class="mr-4">
           <BreadcrumbList>
             <BreadcrumbItem>Project</BreadcrumbItem>
 

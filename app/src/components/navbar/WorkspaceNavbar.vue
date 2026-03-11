@@ -11,13 +11,13 @@ import {
   NavTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { useWorkspace } from "@/domain/workspace";
-import { NavListItem } from "../layout";
 import DropdownMenu from "@/design-system/ui/dropdown-menu/DropdownMenu.vue";
 import DropdownMenuItem from "@/design-system/ui/dropdown-menu/DropdownMenuItem.vue";
-import { LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
-import { RouterLink } from "vue-router";
 import { useAuth } from "@/domain/auth";
+import { useWorkspace } from "@/domain/workspace";
+import { ArrowLeft, ArrowRight, LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
+import { RouterLink } from "vue-router";
+import { NavListItem } from "../layout";
 
 defineProps<{ isAppPaneOpen: boolean }>();
 
@@ -27,24 +27,31 @@ const { user, signOut } = useAuth();
 
 <template>
   <div class="flex:col-xl h-full">
-    <div class="flex:col-md p-2 w-full mr-auto">
-      <div class="pl-1 text-xs text-secondary-foreground">Workspace</div>
+    <div class="flex:col-xl w-full p-2 mr-auto">
+      <div class="flex:row-auto flex:center-y">
+        <div class="text-xs text-secondary-foreground">Workspace</div>
+        <div class="flex:row-md flex:center-y h-fit">
+          <Button variant="outline" size="icon" class="bg-white">
+            <ArrowLeft class="w-4 h-4 text-secondary-foreground" />
+          </Button>
+          <Button variant="outline" size="icon" class="bg-white">
+            <ArrowRight class="w-4 h-4 text-secondary-foreground" />
+          </Button>
+        </div>
+      </div>
 
-      <div class="flex:row-md flex:center-y w-full">
+      <div class="flex:row-auto flex:center-y">
         <NavTrigger
           view="navbar"
           content="switch-workspace"
           :as="Button"
           variant="ghost"
           size="sm"
-          class="block rounded-md text-base text-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden"
+          class="block w-fit -ml-2 rounded-md text-base text-foreground font-normal whitespace-nowrap text-ellipsis overflow-hidden"
         >
           {{ workspace.name }}
           <Icon name="oi-chevron-down" />
         </NavTrigger>
-
-        <div class="flex-1"></div>
-
         <NavTrigger view="navbar" content="settings" :as="Button" variant="ghost" size="icon">
           <Icon name="md-settings-round" />
         </NavTrigger>
