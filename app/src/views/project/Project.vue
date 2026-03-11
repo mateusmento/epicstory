@@ -35,9 +35,14 @@ import {
   SquarePen,
   User,
 } from "lucide-vue-next";
-import { ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import NewIssueModal from "./NewIssueModal.vue";
+import { useDependency } from "@/core/dependency-injection";
+import { ProjectApi, type Project } from "@/domain/project";
+import { IssueApi, type Issue } from "@/domain/issues";
+
+const props = defineProps<{ workspaceId: string; projectId: string; issueId?: string }>();
 
 const open = ref(false);
 const { meta_j } = useMagicKeys();
@@ -45,13 +50,33 @@ whenever(meta_j, () => {
   open.value = true;
 });
 
-defineProps<{ workspaceId: string; projectId: string }>();
-
 const route = useRoute();
 
 function routeId(route: string) {
   return route.split("/").pop();
 }
+
+const projectApi = useDependency(ProjectApi);
+const project = ref<Project | null>(null);
+onMounted(async () => {
+  project.value = await projectApi.findProject(+props.projectId);
+});
+
+const issueApi = useDependency(IssueApi);
+const issue = ref<Issue | null>(null);
+onMounted(async () => {
+  if (props.issueId) {
+    issue.value = await issueApi.fetchIssue(+props.issueId);
+  }
+});
+watch(
+  () => props.issueId,
+  async (issueId) => {
+    if (issueId) {
+      issue.value = await issueApi.fetchIssue(+issueId);
+    }
+  },
+);
 </script>
 
 <template>
@@ -69,21 +94,42 @@ function routeId(route: string) {
 
         <Breadcrumb class="px-4">
           <BreadcrumbList>
-            <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}`"> Project </RouterLink>
-            </BreadcrumbItem>
+            <BreadcrumbItem>Project</BreadcrumbItem>
 
             <BreadcrumbSeparator />
 
             <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}/board`"> Board </RouterLink>
+              <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`">
+                {{ project?.name }}
+              </RouterLink>
             </BreadcrumbItem>
 
-            <BreadcrumbSeparator />
+            <template v-if="route.name === 'project-board'">
+              <BreadcrumbSeparator />
 
-            <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}`"> Issue </RouterLink>
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                <RouterLink :to="`/${workspaceId}/project/${projectId}/board`"> Board </RouterLink>
+              </BreadcrumbItem>
+            </template>
+
+            <template v-else-if="route.name === 'project-backlog'">
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`"> Backlog </RouterLink>
+              </BreadcrumbItem>
+            </template>
+
+            <template v-if="route.name === 'project-issue'">
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <RouterLink
+                  :to="`/${workspaceId}/project/${projectId}/issue/${issueId}`"
+                  class="truncate max-w-60"
+                >
+                  {{ issue?.title }}
+                </RouterLink>
+              </BreadcrumbItem>
+            </template>
           </BreadcrumbList>
         </Breadcrumb>
 
