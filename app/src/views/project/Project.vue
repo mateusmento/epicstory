@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useDependency } from "@/core/dependency-injection";
 import {
   Button,
   Command,
@@ -23,24 +24,13 @@ import {
 } from "@/design-system/ui/breadcrumb";
 import ToggleGroup from "@/design-system/ui/toggle-group/ToggleGroup.vue";
 import ToggleGroupItem from "@/design-system/ui/toggle-group/ToggleGroupItem.vue";
+import { IssueApi, type Issue } from "@/domain/issues";
+import { ProjectApi, type Project } from "@/domain/project";
 import { useMagicKeys, whenever } from "@vueuse/core";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Calculator,
-  Calendar,
-  CreditCard,
-  Settings,
-  Smile,
-  SquarePen,
-  User,
-} from "lucide-vue-next";
-import { onMounted, ref, watch } from "vue";
+import { Calculator, Calendar, CreditCard, Settings, Smile, SquarePen, User } from "lucide-vue-next";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import NewIssueModal from "./NewIssueModal.vue";
-import { useDependency } from "@/core/dependency-injection";
-import { ProjectApi, type Project } from "@/domain/project";
-import { IssueApi, type Issue } from "@/domain/issues";
 
 const props = defineProps<{ workspaceId: string; projectId: string; issueId?: string }>();
 
@@ -52,9 +42,16 @@ whenever(meta_j, () => {
 
 const route = useRoute();
 
-function routeId(route: string) {
-  return route.split("/").pop();
-}
+const routeName = computed(() => {
+  switch (route.name) {
+    case "project-backlog":
+      return "backlog";
+    case "project-board":
+      return "board";
+    default:
+      return undefined;
+  }
+});
 
 const projectApi = useDependency(ProjectApi);
 const project = ref<Project | null>(null);
@@ -193,18 +190,12 @@ watch(
     <Separator />
 
     <div class="flex:row-md flex:center-y px-4 py-1.5 h-10">
-      <ToggleGroup as="nav" type="single" :value="routeId(route.path)" class="flex:row-lg bg-transparent">
+      <ToggleGroup as="nav" type="single" :model-value="routeName" class="flex:row-lg bg-transparent">
         <ToggleGroupItem value="backlog" variant="outline" size="sm" as-child>
-          <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`">
-            <!-- <Button :variant="isActive('backlog') ? 'outline' : 'ghost'" size="xs"></Button> -->
-            Backlog
-          </RouterLink>
+          <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`">Backlog</RouterLink>
         </ToggleGroupItem>
         <ToggleGroupItem value="board" variant="outline" size="sm" as-child>
-          <RouterLink :to="`/${workspaceId}/project/${projectId}/board`">
-            <!-- <Button :variant="isActive('board') ? 'outline' : 'ghost'" size="xs"></Button> -->
-            Board
-          </RouterLink>
+          <RouterLink :to="`/${workspaceId}/project/${projectId}/board`">Board</RouterLink>
         </ToggleGroupItem>
       </ToggleGroup>
     </div>

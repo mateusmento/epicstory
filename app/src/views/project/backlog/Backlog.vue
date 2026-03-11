@@ -237,16 +237,16 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
 
             <!-- Title (Linear-like) -->
             <div class="min-w-0">
-              <div v-if="editingIssue.id !== issue.id" class="flex items-center gap-2 min-w-0">
+              <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y min-w-0">
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <div class="min-w-0 flex-1" @dblclick.stop="openIssue(issue)">
+                    <div class="min-w-0" @dblclick.stop="openIssue(issue)">
                       <div class="truncate text-sm text-foreground">
                         {{ issue.title }}
                       </div>
-                      <div v-if="issue.description" class="truncate text-xs text-muted-foreground">
+                      <!-- <div v-if="issue.description" class="truncate text-xs text-muted-foreground">
                         {{ issue.description }}
-                      </div>
+                      </div> -->
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
