@@ -92,7 +92,7 @@ async function openNotification(notification: Notification) {
           @click="openNotification(notification)"
           @keydown.enter.prevent="openNotification(notification)"
           class="flex:col-md p-4 border-b hover:bg-secondary transition-colors cursor-pointer"
-          :class="notification.seen ? 'opacity-70' : 'bg-secondary/10'"
+          :class="notification.seen ? 'opacity-80' : 'bg-secondary/10'"
         >
           <MentionNotification
             v-if="notification.type === 'mention'"
