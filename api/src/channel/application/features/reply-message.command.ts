@@ -88,6 +88,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
         new SendNotification({
           type: 'mention',
           userIds: finalMentionIds,
+          workspaceId: message.channel.workspaceId,
           payload: {
             channel: message.channel,
             sender: reply.sender,
@@ -109,6 +110,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
         new SendNotification({
           userIds: [message.senderId],
           type: 'reply',
+          workspaceId: message.channel.workspaceId,
           payload: {
             reply,
             message,

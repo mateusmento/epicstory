@@ -76,6 +76,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
         new SendNotification({
           userIds: peerIds.filter((id) => id !== senderId),
           type: 'direct_message',
+          workspaceId: channel.workspaceId,
           payload: {
             message,
             channel,
@@ -90,6 +91,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
         new SendNotification({
           type: 'mention',
           userIds: mentionIds,
+          workspaceId: channel.workspaceId,
           payload: {
             channel,
             sender: message.sender,

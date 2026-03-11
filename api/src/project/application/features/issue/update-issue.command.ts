@@ -92,6 +92,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
         // Create a new scheduled event with the new due date
         const scheduledEvent = ScheduledEvent.create({
           userId: notifyUserId,
+          workspaceId: issue.workspaceId,
           payload: {
             type: 'issue_due_date',
             title: issueTitle,

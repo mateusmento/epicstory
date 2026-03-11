@@ -8,6 +8,9 @@ export class SendNotification {
   @IsNumber({}, { each: true })
   userIds: number[] | number;
 
+  @IsNumber()
+  workspaceId: number;
+
   @IsString()
   type: string;
 
@@ -31,6 +34,7 @@ export class SendNotificationHandler
         this.notificationService.sendNotification({
           type: command.type,
           userId,
+          workspaceId: command.workspaceId,
           payload: command.payload,
         });
       }
@@ -38,6 +42,7 @@ export class SendNotificationHandler
       await this.notificationService.sendNotification({
         type: command.type,
         userId: command.userIds,
+        workspaceId: command.workspaceId,
         payload: command.payload,
       });
     }

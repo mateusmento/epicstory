@@ -44,7 +44,9 @@ export class ScheduledEvent {
     patch(this, data);
   }
 
-  static create(data: Pick<ScheduledEvent, 'userId' | 'payload' | 'dueAt'>) {
+  static create(
+    data: Pick<ScheduledEvent, 'userId' | 'payload' | 'dueAt' | 'workspaceId'>,
+  ) {
     return new ScheduledEvent({
       ...data,
       processed: false,

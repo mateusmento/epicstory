@@ -65,6 +65,7 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
         new SendNotification({
           userIds: [userId],
           type: 'issue_assigned',
+          workspaceId: issue.workspaceId,
           payload: {
             issue: updated,
             issuer: issuerUser ?? issuer,

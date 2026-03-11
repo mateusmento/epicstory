@@ -70,6 +70,7 @@ export class NotificationsCronjob {
         await this.notificationService.sendNotification({
           type: notificationType,
           userId: event.userId,
+          workspaceId: event.workspaceId,
           payload: enhancedPayload,
         });
 

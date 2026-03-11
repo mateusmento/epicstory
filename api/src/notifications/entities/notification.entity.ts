@@ -37,6 +37,7 @@ export class Notification {
     return new Notification({
       type: 'scheduled_event',
       userId: event.userId,
+      workspaceId: event.workspaceId,
       payload: event.payload,
       createdAt: new Date(),
       seen: false,

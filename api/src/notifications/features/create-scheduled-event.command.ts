@@ -8,6 +8,9 @@ export class CreateScheduledEvent {
   @IsNumber()
   userId: number;
 
+  @IsNumber()
+  workspaceId: number;
+
   @IsObject()
   payload: any;
 
@@ -28,6 +31,7 @@ export class CreateScheduledEventCommand
   async execute(command: CreateScheduledEvent): Promise<ScheduledEvent> {
     const scheduledEvent = ScheduledEvent.create({
       userId: command.userId,
+      workspaceId: command.workspaceId,
       payload: command.payload,
       dueAt: command.dueAt,
     });

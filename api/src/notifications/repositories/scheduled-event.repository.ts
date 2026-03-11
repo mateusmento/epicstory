@@ -63,7 +63,7 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
       )
       UPDATE scheduler.scheduled_events se
       SET
-        lock_id = $1,                                     -- Claim the selected rows for this worker.   
+        lock_id = $1,                                     -- Claim the selected rows for this worker.
         locked_at = now()                                 -- Set the lock timestamp.
       FROM locked_rows
       WHERE
@@ -75,6 +75,7 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
       RETURNING                                           -- Return the claimed events to the application for processing.
         se.id,
         se.user_id,
+        se.workspace_id,
         se.payload,
         se.due_at,
         se.processed,
@@ -103,6 +104,7 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
           const event = new ScheduledEvent({
             id: row.id as any, // UUID type from crypto is a branded string
             userId: row.user_id,
+            workspaceId: row.workspace_id,
             payload: row.payload,
             dueAt: new Date(row.due_at),
             processed: row.processed,
@@ -129,9 +131,9 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
     }
     // Use raw SQL to avoid UUID type issues with TypeORM
     await this.manager.query(
-      `UPDATE scheduler.scheduled_events 
-       SET processed = true, 
-           lock_id = NULL, 
+      `UPDATE scheduler.scheduled_events
+       SET processed = true,
+           lock_id = NULL,
            locked_at = NULL,
            retry_count = 0,
            last_error = NULL,
@@ -156,7 +158,7 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
     }
     // Use raw SQL to avoid UUID type issues with TypeORM
     const result = await this.manager.query(
-      `UPDATE scheduler.scheduled_events 
+      `UPDATE scheduler.scheduled_events
         SET
           lock_id = NULL,
           locked_at = NULL,
@@ -186,7 +188,7 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
       throw new Error('Event ID and lock ID are required');
     }
     await this.manager.query(
-      `UPDATE scheduler.scheduled_events 
+      `UPDATE scheduler.scheduled_events
        SET processed = true, lock_id = NULL, locked_at = NULL
        WHERE id = $1 AND lock_id = $2`,
       [eventId, lockId],
@@ -205,7 +207,7 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
       throw new Error('Event ID and lock ID are required');
     }
     const result = await this.manager.query(
-      `DELETE FROM scheduler.scheduled_events 
+      `DELETE FROM scheduler.scheduled_events
        WHERE id = $1 AND processed = false AND locked_at > now() - interval '5 minutes'
          AND lock_id = $2
        RETURNING id`,
@@ -223,7 +225,7 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
       throw new Error('Event ID is required');
     }
     const result = await this.manager.query(
-      `DELETE FROM scheduler.scheduled_events 
+      `DELETE FROM scheduler.scheduled_events
        WHERE id = $1 AND processed = false
        RETURNING id`,
       [eventId],
