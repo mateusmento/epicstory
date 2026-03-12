@@ -3,10 +3,18 @@ import type { User } from "@/domain/auth";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
 import { UserApi } from "../api";
+import { debounce } from "lodash";
 
 export const useUsersStore = defineStore("users", () => {
   const users = ref<User[]>([]);
-  return { users };
+
+  const userApi = useDependency(UserApi);
+
+  async function fetchUsersByName(name: string) {
+    users.value = await userApi.findUsersByName(name);
+  }
+
+  return { users, fetchUsersByName: debounce(fetchUsersByName, 200) };
 });
 
 export function useUsers() {
@@ -18,13 +26,9 @@ export function useUsers() {
     store.users = await userApi.findUsers(username);
   }
 
-  async function fetchUsersByName(name: string) {
-    store.users = await userApi.findUsersByName(name);
-  }
-
   return {
     ...storeToRefs(store),
     fetchUsers,
-    fetchUsersByName,
+    fetchUsersByName: store.fetchUsersByName,
   };
 }
