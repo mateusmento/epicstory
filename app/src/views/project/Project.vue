@@ -13,9 +13,14 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   Separator,
 } from "@/design-system";
-import { IconSearch } from "@/design-system/icons";
+import { Icon, IconSearch } from "@/design-system/icons";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,7 +31,7 @@ import ToggleGroup from "@/design-system/ui/toggle-group/ToggleGroup.vue";
 import ToggleGroupItem from "@/design-system/ui/toggle-group/ToggleGroupItem.vue";
 import { IssueApi, type Issue } from "@/domain/issues";
 import { ProjectApi, type Project } from "@/domain/project";
-import { useMagicKeys, whenever } from "@vueuse/core";
+import { useMagicKeys, useStorage, whenever } from "@vueuse/core";
 import { Calculator, Calendar, CreditCard, Settings, Smile, SquarePen, User } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
@@ -74,6 +79,18 @@ watch(
     }
   },
 );
+
+const groupBy = useStorage<GroupBy>("backlog.groupBy", "status", localStorage, {
+  listenToStorageChanges: true,
+});
+
+const GROUP_BY_OPTIONS = {
+  none: "No grouping",
+  status: "Status",
+  priority: "Priority",
+} as const;
+
+type GroupBy = keyof typeof GROUP_BY_OPTIONS;
 </script>
 
 <template>
@@ -198,6 +215,29 @@ watch(
           <RouterLink :to="`/${workspaceId}/project/${projectId}/board`">Board</RouterLink>
         </ToggleGroupItem>
       </ToggleGroup>
+
+      <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y ml-auto">
+        <div class="text-xs">Group by:</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" size="badge" class="flex:row-md flex:center-y">
+              {{ GROUP_BY_OPTIONS[groupBy ?? "none"] }}
+              <Icon name="oi-chevron-down" class="text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-56">
+            <DropdownMenuRadioGroup v-model="groupBy">
+              <DropdownMenuRadioItem
+                v-for="(label, option) in GROUP_BY_OPTIONS"
+                :key="option"
+                :value="option"
+              >
+                {{ label }}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
 
     <Separator />

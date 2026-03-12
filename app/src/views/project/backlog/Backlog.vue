@@ -1,20 +1,6 @@
 <script lang="tsx" setup>
 import { UserSelect } from "@/components/user";
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Field,
-  Form,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/design-system";
+import { Button, Field, Form, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
@@ -50,7 +36,9 @@ const { backlogItems, fetchBacklogItems, removeBacklogItem, moveBacklogItem, upd
 const orderBy = useStorage("backlog.orderBy", "manual");
 const order = useStorage<"asc" | "desc">("backlog.order", "asc");
 type GroupBy = "none" | "status" | "priority";
-const groupBy = useStorage<GroupBy>("backlog.groupBy", "status");
+const groupBy = useStorage<GroupBy>("backlog.groupBy", "status", localStorage, {
+  listenToStorageChanges: true,
+});
 const collapsedGroups = useStorage<Record<string, boolean>>("backlog.groupCollapsed", {});
 
 const GRID_COLS = "grid-cols-[16px_88px_1fr_100px_100px_110px_32px]";
@@ -317,24 +305,6 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
             />
             <div />
           </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="badge" class="flex:row-md flex:center-y">
-                Display
-                <Icon name="oi-chevron-down" class="text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" class="w-56">
-              <DropdownMenuLabel>Group</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup v-model="groupBy">
-                <DropdownMenuRadioItem value="status">Status</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="priority">Priority</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="none">None</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 
