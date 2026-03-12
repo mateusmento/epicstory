@@ -26,6 +26,7 @@ export function useBacklog() {
     const index = store.backlogItems.findIndex((i) => i.order > item.order);
     if (index >= 0) store.backlogItems.splice(index, 0, reactive(item));
     else store.backlogItems.push(reactive(item));
+    return item as BacklogItem;
   }
 
   async function moveBacklogItem(itemId: number, data: any) {

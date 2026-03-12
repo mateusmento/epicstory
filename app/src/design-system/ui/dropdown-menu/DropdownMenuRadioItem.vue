@@ -5,6 +5,7 @@ import {
   DropdownMenuRadioItem,
   type DropdownMenuRadioItemEmits,
   type DropdownMenuRadioItemProps,
+  Slot,
   useForwardPropsEmits,
 } from "radix-vue";
 import { DotFilledIcon } from "@radix-icons/vue";
@@ -35,7 +36,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
   >
     <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuItemIndicator>
-        <DotFilledIcon class="h-4 w-4 fill-current" />
+        <slot name="indicator">
+          <DotFilledIcon class="h-4 w-4 fill-current" />
+        </slot>
       </DropdownMenuItemIndicator>
     </span>
     <slot />
