@@ -39,13 +39,11 @@ function formatTime(date: string) {
       </div>
 
       <div class="flex:col flex:center-y">
-        <span class="text-sm">{{ payload.sender.name }}</span>
+        <span class="text-foreground font-lato">{{ payload.sender.name }}</span>
 
         <Tooltip>
           <TooltipTrigger as-child>
-            <div
-              class="text-sm text-secondary-foreground font-lato text-ellipsis overflow-hidden whitespace-nowrap"
-            >
+            <div class="w-full min-w-0 text-sm text-secondary-foreground font-lato truncate">
               {{ payload.reply.displayContent ?? payload.reply.content }}
             </div>
           </TooltipTrigger>

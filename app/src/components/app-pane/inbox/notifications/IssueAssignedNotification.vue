@@ -1,6 +1,5 @@
 <script lang="tsx" setup>
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
-import { Icon } from "@/design-system/icons";
 import type { IssueAssignedNotificationPayload } from "@/domain/notifications/types/notification.types";
 import { formatDistanceToNow } from "date-fns";
 import { SquareUser } from "lucide-vue-next";
@@ -47,15 +46,11 @@ function formatTime(date: string) {
 
       <Tooltip>
         <TooltipTrigger as-child>
-          <div
-            class="w-full min-w-0 text-foreground font-lato whitespace-nowrap text-ellipsis overflow-hidden"
-          >
-            {{ payload.issue.title }}
+          <div class="w-full min-w-0 text-sm text-foreground font-lato truncate">
+            EP-{{ payload.issue.id }} {{ payload.issue.title }}
           </div>
         </TooltipTrigger>
-        <TooltipContent>
-          {{ payload.issue.title }}
-        </TooltipContent>
+        <TooltipContent> EP-{{ payload.issue.id }} {{ payload.issue.title }} </TooltipContent>
       </Tooltip>
     </div>
   </div>

@@ -1,6 +1,4 @@
 <script lang="tsx" setup>
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
-import { Icon } from "@/design-system/icons";
 import type { IssueDueDateNotificationPayload } from "@/domain/notifications/types/notification.types";
 import { formatDistanceToNow } from "date-fns";
 import { Calendar } from "lucide-vue-next";
@@ -26,15 +24,6 @@ function formatTime(date: string) {
       </div>
     </div>
 
-    <Tooltip>
-      <TooltipTrigger as-child>
-        <div class="text-foreground font-lato whitespace-nowrap text-ellipsis overflow-hidden">
-          {{ payload.title }}
-        </div>
-      </TooltipTrigger>
-      <TooltipContent>
-        {{ payload.title }}
-      </TooltipContent>
-    </Tooltip>
+    <div class="text-sm text-foreground font-lato truncate">EP-{{ payload.issueId }} {{ payload.title }}</div>
   </div>
 </template>
