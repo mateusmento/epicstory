@@ -102,14 +102,7 @@ watch(
 
 <template>
   <div class="flex:col-xl w-full h-full px-6 py-6 overflow-hidden">
-    <div class="flex:row-md flex:center-y justify-between">
-      <div class="flex:col-sm">
-        <div class="text-foreground font-semibold">Board</div>
-        <div class="text-xs text-secondary-foreground">Drag issues between columns to update status</div>
-      </div>
-    </div>
-
-    <div class="flex:row-xl flex-1 min-h-0 overflow-x-auto pt-4">
+    <div class="flex:row-xl flex-1 min-h-0 overflow-x-auto">
       <!-- TODO column -->
       <BoardColumn
         group="project-board"
