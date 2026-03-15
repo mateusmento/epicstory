@@ -41,5 +41,6 @@ export async function createPostgresSchemas(dataSource: DataSource) {
     CREATE SCHEMA IF NOT EXISTS workspace;
     CREATE SCHEMA IF NOT EXISTS channel;
     CREATE SCHEMA IF NOT EXISTS scheduler;
+    CREATE SCHEMA IF NOT EXISTS integration;
   `);
 }

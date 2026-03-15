@@ -53,6 +53,11 @@ const authenticatedRoutes = defineRoutes({
           component: () => import("@/views/user/UserAccountSettings.vue"),
         },
         {
+          path: "settings/integrations/linear",
+          name: "linear-integration-settings",
+          component: () => import("@/views/workspace/LinearIntegration.vue"),
+        },
+        {
           path: "channel/:channelId",
           name: "channel",
           component: () => import("@/views/channel/Channel.vue"),

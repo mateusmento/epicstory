@@ -10,6 +10,7 @@ import { ChannelApi } from "@/domain/channels";
 import { ScheduledEventApi } from "@/domain/scheduled-events";
 import { NotificationApi } from "@/domain/notifications";
 import { config } from "@/config";
+import { LinearIntegrationApi } from "@/domain/integrations/linear";
 
 export async function createDependencies() {
   const axios = createAxios({ baseURL: config.API_URL });
@@ -23,5 +24,6 @@ export async function createDependencies() {
   container.registerSingleton(MeetingApi);
   container.registerSingleton(ScheduledEventApi);
   container.registerSingleton(NotificationApi);
+  container.registerSingleton(LinearIntegrationApi);
   return container;
 }
