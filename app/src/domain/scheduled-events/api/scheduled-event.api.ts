@@ -13,6 +13,7 @@ export type ScheduledEvent = {
 
 export type CreateScheduledEventData = {
   userId: number;
+  workspaceId: number;
   payload: any;
   dueAt: Date;
 };
@@ -25,6 +26,7 @@ export class ScheduledEventApi {
     return this.axios
       .post<ScheduledEvent>("/scheduled-events", {
         userId: data.userId,
+        workspaceId: data.workspaceId,
         payload: data.payload,
         dueAt: data.dueAt.toISOString(),
       })

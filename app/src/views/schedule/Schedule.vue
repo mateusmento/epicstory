@@ -29,10 +29,13 @@ import {
   getHours,
 } from "date-fns";
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useWorkspace } from "@/domain/workspace";
 
 type ViewType = "month" | "week" | "day";
 
 const { user } = useAuth();
+const { workspace } = useWorkspace();
+
 const scheduledEventApi = useDependency(ScheduledEventApi);
 
 const today = () => todayFn(getLocalTimeZone());
@@ -304,6 +307,7 @@ async function saveEvent() {
     } else {
       await scheduledEventApi.createScheduledEvent({
         userId: user.value.id,
+        workspaceId: workspace.value.id,
         payload: {
           title: eventTitle.value,
           description: eventDescription.value,
