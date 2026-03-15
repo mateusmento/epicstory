@@ -35,10 +35,10 @@ const selectedUser = ref<User>();
 <template>
   <div class="flex:col w-96">
     <Collapsible as-child>
-      <div class="flex:row-auto flex:center-y px-4 py-2 h-14">
-        <h1 class="flex:row-md flex:center-y whitespace-nowrap font-semibold">
+      <div class="flex:row-auto flex:center-y px-4 py-2 h-10">
+        <h1 class="flex:row-md flex:center-y whitespace-nowrap">
           <Icon name="bi-people-fill" />
-          Workspace Members
+          <div class="font-medium text-sm">Workspace Members</div>
         </h1>
         <Tooltip>
           <TooltipTrigger as-child>

@@ -15,6 +15,7 @@ import ReplyNotification from "./notifications/ReplyNotification.vue";
 import MessageNotification from "./notifications/MessageNotification.vue";
 import DueDateNotification from "./notifications/DueDateNotification.vue";
 import IssueAssignedNotification from "./notifications/IssueAssignedNotification.vue";
+import { Separator } from "@/design-system";
 
 const { notifications, markAsSeen } = useNotifications({ limit: 100 });
 const router = useRouter();
@@ -72,10 +73,12 @@ async function openNotification(notification: Notification) {
 
 <template>
   <div class="flex:col w-96 h-full">
-    <div class="flex:row-md flex:center-y p-4 border-b">
+    <div class="flex:row-md flex:center-y p-4 h-10">
       <Icon name="oi-inbox" />
-      <div class="font-semibold">Inbox</div>
+      <div class="font-medium text-sm">Inbox</div>
     </div>
+
+    <Separator />
 
     <div class="flex-1 overflow-y-auto">
       <div v-if="notifications.length === 0" class="flex:col-md flex:center p-8 text-center">

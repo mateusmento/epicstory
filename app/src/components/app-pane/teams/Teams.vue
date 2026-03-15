@@ -26,10 +26,10 @@ watch(workspace, fetchTeams);
 <template>
   <div class="flex:col w-96">
     <Collapsible as-child>
-      <div class="flex:row-auto flex:center-y px-4 py-2 h-14">
-        <h1 class="flex:row-md flex:center-y font-semibold">
+      <div class="flex:row-auto flex:center-y px-4 py-2 h-10">
+        <h1 class="flex:row-md flex:center-y">
           <Icon name="bi-person-workspace" />
-          <div>Teams</div>
+          <div class="font-medium text-sm">Teams</div>
         </h1>
 
         <Tooltip>

@@ -22,16 +22,16 @@ const { currentMeeting, joinMeeting } = useMeeting();
 
 <template>
   <div class="flex:col h-full w-96">
-    <div class="flex:row-auto flex:center-y h-14 p-4">
-      <div class="flex:row-sm flex:center-y font-semibold text-foreground">
+    <div class="flex:row-auto flex:center-y h-10 p-4">
+      <div class="flex:row-sm flex:center-y">
         <Icon name="fa-slack-hash" scale="1.2" />
-        Channels
+        <div class="font-medium text-sm">Channels</div>
       </div>
 
       <Tooltip>
         <TooltipTrigger as-child>
           <Button variant="ghost" size="icon">
-            <SquarePen class="w-5 h-5" />
+            <SquarePen class="w-4 h-4" />
           </Button>
         </TooltipTrigger>
         <TooltipContent> Write a new message </TooltipContent>

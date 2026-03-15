@@ -5,6 +5,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  NavTrigger,
   Separator,
   Tooltip,
   TooltipContent,
@@ -30,10 +31,10 @@ const selectedUser = ref<User>();
 <template>
   <div class="flex:col w-96">
     <Collapsible as-child>
-      <div class="flex:row-auto flex:center-y px-4 py-2 h-14">
-        <h1 class="flex:row-md flex:center-y font-semibold">
+      <div class="flex:row-auto flex:center-y px-4 py-2 h-10">
+        <h1 class="flex:row-md flex:center-y">
           <Icon name="bi-person-workspace" />
-          <div>{{ team?.name }}</div>
+          <div class="font-medium text-sm">{{ team?.name }}</div>
         </h1>
 
         <Tooltip>
@@ -57,6 +58,18 @@ const selectedUser = ref<User>();
     </Collapsible>
 
     <Separator />
+
+    <NavTrigger
+      view="app-pane"
+      content="teams"
+      :as="Button"
+      variant="ghost"
+      size="badge"
+      class="flex:row-sm w-fit m-2"
+    >
+      <Icon name="hi-solid-arrow-sm-left" />
+      Back to teams
+    </NavTrigger>
 
     <div class="flex:col-md p-2">
       <div
