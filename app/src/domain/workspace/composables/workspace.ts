@@ -5,6 +5,7 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { WorkspaceApi } from "../services";
 import type { Project, Team, Workspace, WorkspaceMember } from "../types";
+import type { PageQuery } from "@/core/types";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
   const workspace = useStorage<Workspace>("workspace", null, localStorage, {
@@ -13,10 +14,19 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   });
 
   const members = ref<WorkspaceMember[]>([]);
-  const projects = ref<Project[]>([]);
   const teams = ref<Team[]>([]);
 
-  return { workspace, members, projects, teams };
+  const projects = ref<Project[]>([]);
+
+  const projectsPage = ref({
+    page: 0,
+    count: 50,
+    hasNext: false,
+    hasPrevious: false,
+    total: 0,
+  });
+
+  return { workspace, members, projects, projectsPage, teams };
 });
 
 export function useWorkspace() {
@@ -53,8 +63,36 @@ export function useWorkspace() {
     await workspaceApi.sendMemberInvite(workspaceId.value, { email, userId });
   }
 
-  async function fetchProjects() {
-    store.projects = await workspaceApi.findProjects(workspaceId.value);
+  async function fetchProjects(pageQuery?: PageQuery) {
+    const page = await workspaceApi.findProjects(workspaceId.value, pageQuery);
+    store.projects = page.content;
+    store.projectsPage = page;
+  }
+
+  const isFetchingMoreProjects = ref(false);
+  async function fetchMoreProjects() {
+    if (isFetchingMoreProjects.value) return;
+    if (!store.projectsPage?.hasNext) return;
+
+    isFetchingMoreProjects.value = true;
+    try {
+      const nextPage = (store.projectsPage?.page ?? 0) + 1;
+      const page = await workspaceApi.findProjects(workspaceId.value, {
+        page: nextPage,
+        count: store.projectsPage?.count ?? 50,
+        orderBy: "id",
+        order: "asc",
+      });
+
+      // append, de-dupe by id (defensive)
+      const byId = new Map<number, Project>();
+      for (const p of store.projects) byId.set(p.id, p);
+      for (const p of page.content) byId.set(p.id, p);
+      store.projects = Array.from(byId.values());
+      store.projectsPage = page;
+    } finally {
+      isFetchingMoreProjects.value = false;
+    }
   }
 
   async function createProject(data: { name: string }) {
@@ -89,12 +127,14 @@ export function useWorkspace() {
 
   return {
     ...storeToRefs(store),
+    isFetchingMoreProjects,
     selectWorkspace,
     fetchWorkspace,
     fetchWorkspaceMembers,
     addWorkspaceMember,
     sendWorkspaceMemberInvite,
     fetchProjects,
+    fetchMoreProjects,
     createProject,
     removeProject,
     fetchTeams,

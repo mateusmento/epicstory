@@ -214,6 +214,9 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
         <ToggleGroupItem value="board" variant="outline" size="sm" as-child>
           <RouterLink :to="`/${workspaceId}/project/${projectId}/board`">Board</RouterLink>
         </ToggleGroupItem>
+        <ToggleGroupItem value="timeline" variant="outline" size="sm" as-child>
+          <RouterLink :to="`/${workspaceId}/project/${projectId}/timeline`">Timeline</RouterLink>
+        </ToggleGroupItem>
       </ToggleGroup>
 
       <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y ml-auto">

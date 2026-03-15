@@ -4,20 +4,40 @@
 // Override this with "display: <value> !important" at the immediate child of this component
 
 import { cn } from "@/design-system/utils";
+import { useInfiniteScroll } from "@vueuse/core";
 import { ScrollAreaCorner, ScrollAreaRoot, type ScrollAreaRootProps, ScrollAreaViewport } from "radix-vue";
 import { type HTMLAttributes, computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import ScrollBar from "./ScrollBar.vue";
 
-const props = defineProps<ScrollAreaRootProps & { class?: HTMLAttributes["class"]; bottom?: boolean }>();
+const props = defineProps<
+  ScrollAreaRootProps & {
+    class?: HTMLAttributes["class"];
+    bottom?: boolean;
+  }
+>();
+
+const emit = defineEmits<{
+  (e: "reached-bottom"): void;
+}>();
 
 const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
+  const delegated = { ...(props as any) };
+  delete delegated.class;
   return delegated;
 });
 
 const container = ref<{ viewportElement: HTMLElement }>();
 const observer = ref<ResizeObserver>();
+
+const listElement = computed(() => container.value?.viewportElement);
+
+useInfiniteScroll(
+  listElement,
+  async () => {
+    emit("reached-bottom");
+  },
+  { distance: 120, interval: 200 },
+);
 
 onMounted(() => {
   observer.value = new ResizeObserver((mutations) => {

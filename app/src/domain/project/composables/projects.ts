@@ -8,7 +8,13 @@ export function useProjects(workspaceId: number) {
   const workspaceApi = useDependency(WorkspaceApi);
 
   async function fetchProjects() {
-    projects.value = await workspaceApi.findProjects(workspaceId);
+    const page = await workspaceApi.findProjects(workspaceId, {
+      page: 0,
+      count: 200,
+      orderBy: "name",
+      order: "asc",
+    });
+    projects.value = page.content;
   }
 
   async function createProject({ workspaceId, ...data }: { workspaceId: number; name: string }) {

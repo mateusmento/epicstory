@@ -1,6 +1,13 @@
 import { create } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Backlog } from './backlog.entity';
 import { Workspace } from 'src/workspace/domain/entities';
 
@@ -26,6 +33,12 @@ export class Project {
 
   @ManyToOne(() => Backlog, { cascade: ['insert'] })
   backlog: Backlog;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   static create(data: { name: string; workspaceId: number; teamId?: number }) {
     return create(Project, data);

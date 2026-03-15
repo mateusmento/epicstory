@@ -2,6 +2,7 @@ import { InjectAxios } from "@/core/axios";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { Project, Workspace, Team, WorkspaceMember } from "../types";
+import type { Page, PageQuery } from "@/core/types";
 
 @injectable()
 export class WorkspaceApi {
@@ -39,8 +40,10 @@ export class WorkspaceApi {
     return this.axios.delete(`workspaces/${workspaceId}/members/${memberId}`).then((res) => res.data);
   }
 
-  findProjects(workspaceId: number) {
-    return this.axios.get<Project[]>(`workspaces/${workspaceId}/projects`).then((res) => res.data);
+  findProjects(workspaceId: number, query?: Partial<PageQuery> & { teamId?: number }) {
+    return this.axios
+      .get<Page<Project>>(`workspaces/${workspaceId}/projects`, { params: query })
+      .then((res) => res.data);
   }
 
   createProject(workspaceId: number, data: { name: string }) {
