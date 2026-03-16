@@ -1,35 +1,34 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
-import { Button, Field, Form } from "@/design-system";
-import { Calendar } from "@/design-system/ui/calendar";
+import { Button } from "@/design-system";
+import { Icon } from "@/design-system/icons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
-import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 import { ScheduledEventApi, type ScheduledEvent } from "@/domain/scheduled-events";
+import { useWorkspace } from "@/domain/workspace";
 import {
   getLocalTimeZone,
+  parseDate,
+  toCalendarDate,
   today as todayFn,
   type DateValue,
-  toCalendarDate,
-  parseDate,
 } from "@internationalized/date";
 import {
+  addDays,
+  endOfWeek as dateFnsEndOfWeek,
+  startOfWeek as dateFnsStartOfWeek,
+  eachDayOfInterval,
+  endOfDay,
   format,
+  getHours,
+  isSameMonth,
+  isSameDay,
   parse,
   startOfDay,
-  endOfDay,
-  addDays,
-  isSameDay,
-  eachDayOfInterval,
-  startOfWeek as dateFnsStartOfWeek,
-  endOfWeek as dateFnsEndOfWeek,
   startOfMonth,
-  endOfMonth,
-  getHours,
 } from "date-fns";
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import { useWorkspace } from "@/domain/workspace";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 type ViewType = "month" | "week" | "day";
 
@@ -59,6 +58,10 @@ const resizeType = ref<"start" | "end" | null>(null);
 const resizeStartY = ref(0);
 const resizeStartTime = ref(0);
 
+const WEEK_STARTS_ON = 1 as const; // Monday (Google Calendar style)
+const MONTH_GRID_DAYS = 42; // Always render 6 weeks for a stable month grid
+const MAX_EVENTS_PER_DAY_CELL = 4;
+
 // Compute date range for fetching events
 const dateRange = computed(() => {
   const dateValue = currentDate.value;
@@ -67,11 +70,12 @@ const dateRange = computed(() => {
   let end: Date;
 
   if (currentView.value === "month") {
-    start = startOfMonth(date);
-    end = endOfMonth(date);
+    const monthStart = dateFnsStartOfWeek(startOfMonth(date), { weekStartsOn: WEEK_STARTS_ON });
+    start = monthStart;
+    end = addDays(monthStart, MONTH_GRID_DAYS - 1);
   } else if (currentView.value === "week") {
-    start = dateFnsStartOfWeek(date, { weekStartsOn: 1 });
-    end = dateFnsEndOfWeek(date, { weekStartsOn: 1 });
+    start = dateFnsStartOfWeek(date, { weekStartsOn: WEEK_STARTS_ON });
+    end = dateFnsEndOfWeek(date, { weekStartsOn: WEEK_STARTS_ON });
   } else {
     start = startOfDay(date);
     end = endOfDay(date);
@@ -79,6 +83,52 @@ const dateRange = computed(() => {
 
   return { start, end };
 });
+
+const activeMonthAnchor = computed(() => {
+  return new Date(currentDate.value.year, currentDate.value.month - 1, 1);
+});
+
+const monthGridDays = computed(() => {
+  return eachDayOfInterval({
+    start: dateRange.value.start,
+    end: dateRange.value.end,
+  });
+});
+
+const monthWeekdayLabels = computed(() => {
+  const base = dateFnsStartOfWeek(new Date(), { weekStartsOn: WEEK_STARTS_ON });
+  return Array.from({ length: 7 }, (_, i) => format(addDays(base, i), "EEE"));
+});
+
+const eventsByDayKey = computed(() => {
+  const map = new Map<string, ScheduledEvent[]>();
+  for (const ev of events.value) {
+    const key = format(new Date(ev.dueAt), "yyyy-MM-dd");
+    const list = map.get(key) ?? [];
+    list.push(ev);
+    map.set(key, list);
+  }
+
+  for (const [key, list] of map.entries()) {
+    list.sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+    map.set(key, list);
+  }
+
+  return map;
+});
+
+function getEventsForDayCell(date: Date) {
+  const key = format(date, "yyyy-MM-dd");
+  return eventsByDayKey.value.get(key) ?? [];
+}
+
+function getPreviewEventsForDayCell(date: Date) {
+  return getEventsForDayCell(date).slice(0, MAX_EVENTS_PER_DAY_CELL);
+}
+
+function getOverflowCountForDayCell(date: Date) {
+  return Math.max(0, getEventsForDayCell(date).length - MAX_EVENTS_PER_DAY_CELL);
+}
 
 // Fetch events when date range changes
 watch(
@@ -119,14 +169,6 @@ async function fetchEvents() {
   } finally {
     isLoading.value = false;
   }
-}
-
-// Get events for a specific date
-function getEventsForDate(date: Date): ScheduledEvent[] {
-  return events.value.filter((event) => {
-    const eventDate = new Date(event.dueAt);
-    return isSameDay(eventDate, date);
-  });
 }
 
 // Get events that start at a specific hour (for rendering)
@@ -206,15 +248,6 @@ function goToNext() {
   } else {
     const nextDay = addDays(date, 1);
     currentDate.value = toCalendarDate(parseDate(format(nextDay, "yyyy-MM-dd")));
-  }
-}
-
-function handleDateSelect(date: DateValue | undefined) {
-  if (!date) return;
-  currentDate.value = date;
-  if (currentView.value === "day") {
-    eventDateTime.value = date;
-    openCreateDialog(date);
   }
 }
 
@@ -414,7 +447,7 @@ async function handleResizeEnd() {
 // Week view helpers
 const weekDays = computed(() => {
   const date = currentDate.value.toDate(getLocalTimeZone());
-  const weekStart = dateFnsStartOfWeek(date, { weekStartsOn: 1 });
+  const weekStart = dateFnsStartOfWeek(date, { weekStartsOn: WEEK_STARTS_ON });
   return eachDayOfInterval({
     start: weekStart,
     end: addDays(weekStart, 6),
@@ -479,43 +512,62 @@ const dayHours = computed(() => {
     <!-- Calendar Content -->
     <div class="flex-1 overflow-auto">
       <!-- Month View -->
-      <div v-if="currentView === 'month'" class="h-full p-6">
-        <div class="bg-white rounded-lg border shadow-sm p-6">
-          <Calendar
-            :model-value="currentDate as DateValue"
-            @update:model-value="handleDateSelect"
-            class="w-full"
-          />
-        </div>
-        <!-- Events list for month view -->
-        <div class="mt-6 space-y-4">
-          <div
-            v-for="day in eachDayOfInterval({
-              start: dateRange.start,
-              end: dateRange.end,
-            })"
-            :key="day.toISOString()"
-            class="bg-white rounded-lg border p-4"
-          >
-            <div class="font-semibold text-foreground mb-2">
-              {{ format(day, "EEEE, MMMM d") }}
+      <div v-if="currentView === 'month'" class="h-full">
+        <div class="bg-white h-full min-h-[560px] flex flex-col overflow-hidden">
+          <!-- Weekday header -->
+          <div class="grid grid-cols-7 border-b bg-white sticky top-0 z-10">
+            <div
+              v-for="label in monthWeekdayLabels"
+              :key="label"
+              class="px-3 py-2 text-xs font-medium text-secondary-foreground border-r last:border-r-0"
+            >
+              {{ label }}
             </div>
-            <div class="space-y-2">
-              <div
-                v-for="event in getEventsForDate(day)"
-                :key="event.id"
-                @click="handleEventClick(event)"
-                class="p-2 rounded bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
-              >
-                <div class="text-sm font-medium text-blue-900">
-                  {{ format(new Date(event.dueAt), "HH:mm") }} - {{ event.payload.title }}
+          </div>
+
+          <!-- Days grid -->
+          <div class="grid grid-cols-7 grid-rows-6 flex-1 min-h-0">
+            <div
+              v-for="day in monthGridDays"
+              :key="day.toISOString()"
+              class="border-r border-b last:border-r-0 min-h-0"
+              :class="{
+                'bg-gray-50 text-muted-foreground': !isSameMonth(day, activeMonthAnchor),
+              }"
+              @click="() => openCreateDialog(toCalendarDate(parseDate(format(day, 'yyyy-MM-dd'))))"
+            >
+              <div class="h-full w-full p-2 flex flex-col min-h-0 hover:bg-gray-50/60 transition-colors">
+                <div class="flex items-start justify-between gap-2">
+                  <div
+                    class="text-xs font-medium w-7 h-7 grid place-items-center rounded-full select-none"
+                    :class="{
+                      'bg-blue-600 text-white': isSameDay(day, new Date()),
+                    }"
+                  >
+                    {{ format(day, "d") }}
+                  </div>
                 </div>
-                <div v-if="event.payload.description" class="text-xs text-blue-700 mt-1">
-                  {{ event.payload.description }}
+
+                <div class="mt-1 flex-1 min-h-0 overflow-hidden space-y-1">
+                  <div
+                    v-for="event in getPreviewEventsForDayCell(day)"
+                    :key="event.id"
+                    @click.stop="handleEventClick(event)"
+                    class="px-2 py-1 rounded bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+                    title="Open event"
+                  >
+                    <div class="text-[11px] font-medium text-blue-900 truncate">
+                      {{ format(new Date(event.dueAt), "HH:mm") }} {{ event.payload.title }}
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="getOverflowCountForDayCell(day) > 0"
+                    class="text-[11px] text-secondary-foreground select-none"
+                  >
+                    +{{ getOverflowCountForDayCell(day) }} more
+                  </div>
                 </div>
-              </div>
-              <div v-if="getEventsForDate(day).length === 0" class="text-sm text-secondary-foreground italic">
-                No events
               </div>
             </div>
           </div>
@@ -684,65 +736,73 @@ const dayHours = computed(() => {
 
     <!-- Event Dialog -->
     <Dialog v-model:open="showEventDialog">
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{{ editingEvent ? "Edit Event" : "Create Event" }}</DialogTitle>
-        </DialogHeader>
-        <Form @submit="saveEvent" class="flex:col-lg mt-4">
-          <div class="flex:col-md">
-            <label class="text-sm font-medium text-foreground">Date</label>
-            <div class="text-sm text-secondary-foreground">
-              {{ formattedDate }}
-            </div>
-          </div>
+      <DialogContent class="!p-0 sm:max-w-[560px]">
+        <div class="rounded-lg bg-white !p-0">
+          <DialogHeader class="px-3 pt-3 pb-1">
+            <DialogTitle class="text-sm font-medium text-muted-foreground">
+              {{ editingEvent ? "Edit event" : "New event" }}
+            </DialogTitle>
+          </DialogHeader>
 
-          <div class="flex:row-md gap-4">
-            <div class="flex:col-md flex-1">
-              <label for="time" class="text-sm font-medium text-foreground">Start Time</label>
-              <input
-                id="time"
-                v-model="eventTime"
-                type="time"
-                class="px-3 py-2 border rounded-md text-sm"
-                required
-              />
-            </div>
-            <div class="flex:col-md flex-1">
-              <label for="endTime" class="text-sm font-medium text-foreground">End Time</label>
-              <input
-                id="endTime"
-                v-model="eventEndTime"
-                type="time"
-                class="px-3 py-2 border rounded-md text-sm"
-                required
-              />
-            </div>
-          </div>
-
-          <div class="flex:col-md">
-            <label for="title" class="text-sm font-medium text-foreground">Title *</label>
-            <Field id="title" v-model="eventTitle" name="title" placeholder="Event title" required />
-          </div>
-
-          <div class="flex:col-md">
-            <label for="description" class="text-sm font-medium text-foreground">Description</label>
-            <textarea
-              id="description"
-              v-model="eventDescription"
-              placeholder="Event description (optional)"
-              class="px-3 py-2 border rounded-md text-sm min-h-[80px] resize-y"
+          <form class="px-3 pb-3" @submit.prevent="saveEvent">
+            <!-- Title / Description (blended, no borders) -->
+            <label for="event-title" class="sr-only">Title</label>
+            <input
+              id="event-title"
+              v-model="eventTitle"
+              class="w-full text-[15px] font-medium text-foreground placeholder:text-muted-foreground outline-none"
+              placeholder="Event title"
+              autofocus
+              required
             />
-          </div>
 
-          <div class="flex:row-md justify-end mt-4">
-            <Button type="button" variant="outline" @click="closeDialog" :disabled="isCreating">
-              Cancel
-            </Button>
-            <Button type="submit" :disabled="isCreating || !eventTitle.trim()">
-              {{ isCreating ? "Saving..." : editingEvent ? "Update" : "Create" }}
-            </Button>
-          </div>
-        </Form>
+            <label for="event-description" class="sr-only">Description</label>
+            <textarea
+              id="event-description"
+              v-model="eventDescription"
+              rows="3"
+              class="mt-1.5 w-full resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              placeholder="Add description…"
+            />
+
+            <!-- Date + Start + End (same line) -->
+            <div class="mt-2.5 flex items-center gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="text-[11px] text-muted-foreground truncate">{{ formattedDate }}</div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <label for="time" class="sr-only">Start time</label>
+                <input
+                  id="time"
+                  v-model="eventTime"
+                  type="time"
+                  class="h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                  required
+                />
+
+                <label for="endTime" class="sr-only">End time</label>
+                <input
+                  id="endTime"
+                  v-model="eventEndTime"
+                  type="time"
+                  class="h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-3 flex items-center justify-end gap-2 border-t pt-2.5">
+              <Button type="button" variant="outline" size="sm" @click="closeDialog" :disabled="isCreating">
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" :disabled="isCreating || !eventTitle.trim()">
+                {{ isCreating ? "Saving…" : editingEvent ? "Update" : "Create" }}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   </div>
