@@ -480,9 +480,9 @@ const dayHours = computed(() => {
 </script>
 
 <template>
-  <div class="flex:col h-full w-full bg-background">
+  <div class="flex:col h-full w-full">
     <!-- Header -->
-    <div class="flex:row-md flex:center-y p-4 border-b bg-white">
+    <div class="flex:row-md flex:center-y p-4 border-b">
       <div class="flex:row-lg flex:center-y flex-1">
         <h1 class="text-2xl font-semibold text-foreground">Schedule</h1>
         <Button variant="outline" size="sm" @click="goToToday" class="ml-4"> Today </Button>
