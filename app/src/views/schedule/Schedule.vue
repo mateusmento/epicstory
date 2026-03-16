@@ -58,6 +58,9 @@ const resizeType = ref<"start" | "end" | null>(null);
 const resizeStartY = ref(0);
 const resizeStartTime = ref(0);
 
+const HOUR_SLOT_PX = 64; // Must match h-16 in template
+const PX_PER_MINUTE = HOUR_SLOT_PX / 60;
+
 const WEEK_STARTS_ON = 1 as const; // Monday (Google Calendar style)
 const MONTH_GRID_DAYS = 42; // Always render 6 weeks for a stable month grid
 const MAX_EVENTS_PER_DAY_CELL = 4;
@@ -193,20 +196,32 @@ function getEventEndTime(event: ScheduledEvent): Date {
   return new Date(startTime.getTime() + 60 * 60 * 1000);
 }
 
-// Calculate event height in hours
-function getEventDurationHours(event: ScheduledEvent): number {
-  const startTime = new Date(event.dueAt);
-  const endTime = getEventEndTime(event);
-  const durationMs = endTime.getTime() - startTime.getTime();
-  return Math.max(1, Math.ceil(durationMs / (60 * 60 * 1000)));
-}
-
 // Calculate event top offset in pixels (for sub-hour positioning)
 function getEventTopOffset(event: ScheduledEvent): number {
   const startTime = new Date(event.dueAt);
   const minutes = startTime.getMinutes();
-  // Each hour is 64px (h-16 = 4rem = 64px), so each minute is 64/60 = 1.067px
-  return (minutes / 60) * 64;
+  return minutes * PX_PER_MINUTE;
+}
+
+function getEventDurationMinutes(event: ScheduledEvent): number {
+  const startTime = new Date(event.dueAt);
+  const endTime = getEventEndTime(event);
+  const durationMs = endTime.getTime() - startTime.getTime();
+  const minutes = durationMs / (60 * 1000);
+  if (!Number.isFinite(minutes)) return 60;
+  return Math.max(1, minutes);
+}
+
+function getEventHeightPx(event: ScheduledEvent, minPx: number) {
+  return Math.max(minPx, getEventDurationMinutes(event) * PX_PER_MINUTE);
+}
+
+function getEventLayoutMode(event: ScheduledEvent) {
+  // Use natural (non-clamped) height so we can render short events compactly.
+  const h = getEventDurationMinutes(event) * PX_PER_MINUTE;
+  if (h < 22) return "tiny" as const;
+  if (h < 40) return "small" as const;
+  return "normal" as const;
 }
 
 const formattedDate = computed(() => {
@@ -615,11 +630,10 @@ const dayHours = computed(() => {
                 v-for="event in getEventsStartingAtHour(day, hour)"
                 :key="event.id"
                 @click.stop="handleEventClick(event)"
-                class="absolute left-0 right-0 p-1 m-1 rounded bg-blue-500 text-white text-xs cursor-pointer hover:bg-blue-600 z-20"
+                class="absolute left-0 right-0 p-1 m-1 rounded bg-blue-500 text-white text-xs cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
                 :style="{
                   top: `${getEventTopOffset(event)}px`,
-                  height: `${getEventDurationHours(event) * 64 - getEventTopOffset(event) - 8}px`,
-                  minHeight: '20px',
+                  height: `${getEventHeightPx(event, 18)}px`,
                 }"
               >
                 <!-- Top resize handle -->
@@ -630,12 +644,28 @@ const dayHours = computed(() => {
                     'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'start',
                   }"
                 ></div>
-                <div class="font-medium truncate mt-1">{{ event.payload.title }}</div>
-                <div v-if="event.payload.description" class="text-xs opacity-90 truncate">
-                  {{ event.payload.description }}
-                </div>
-                <div class="text-xs opacity-75 mt-0.5">
-                  {{ format(new Date(event.dueAt), "HH:mm") }} - {{ format(getEventEndTime(event), "HH:mm") }}
+                <div class="min-h-0 flex flex-col gap-0.5">
+                  <div class="flex items-center gap-1 min-w-0">
+                    <span
+                      v-if="getEventLayoutMode(event) !== 'normal'"
+                      class="shrink-0 text-[10px] opacity-90"
+                    >
+                      {{ format(new Date(event.dueAt), "HH:mm") }}
+                    </span>
+                    <div class="font-medium truncate min-w-0">
+                      {{ event.payload.title }}
+                    </div>
+                  </div>
+                  <div
+                    v-if="getEventLayoutMode(event) === 'normal' && event.payload.description"
+                    class="text-[10px] opacity-90 truncate"
+                  >
+                    {{ event.payload.description }}
+                  </div>
+                  <div v-if="getEventLayoutMode(event) === 'normal'" class="text-[10px] opacity-75">
+                    {{ format(new Date(event.dueAt), "HH:mm") }} -
+                    {{ format(getEventEndTime(event), "HH:mm") }}
+                  </div>
                 </div>
                 <!-- Bottom resize handle -->
                 <div
@@ -697,11 +727,10 @@ const dayHours = computed(() => {
                 )"
                 :key="event.id"
                 @click.stop="handleEventClick(event)"
-                class="absolute left-0 right-0 p-2 m-1 rounded bg-blue-500 text-white cursor-pointer hover:bg-blue-600 z-20"
+                class="absolute left-0 right-0 p-2 m-1 rounded bg-blue-500 text-white cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
                 :style="{
                   top: `${getEventTopOffset(event)}px`,
-                  height: `${getEventDurationHours(event) * 64 - getEventTopOffset(event) - 8}px`,
-                  minHeight: '40px',
+                  height: `${getEventHeightPx(event, 24)}px`,
                 }"
               >
                 <!-- Top resize handle -->
@@ -712,12 +741,28 @@ const dayHours = computed(() => {
                     'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'start',
                   }"
                 ></div>
-                <div class="font-medium truncate mt-2">{{ event.payload.title }}</div>
-                <div v-if="event.payload.description" class="text-sm opacity-90 mt-1 line-clamp-2">
-                  {{ event.payload.description }}
-                </div>
-                <div class="text-xs opacity-75 mt-1">
-                  {{ format(new Date(event.dueAt), "HH:mm") }} - {{ format(getEventEndTime(event), "HH:mm") }}
+                <div class="min-h-0 flex flex-col gap-1">
+                  <div class="flex items-center gap-1 min-w-0">
+                    <span
+                      v-if="getEventLayoutMode(event) !== 'normal'"
+                      class="shrink-0 text-[10px] opacity-90"
+                    >
+                      {{ format(new Date(event.dueAt), "HH:mm") }}
+                    </span>
+                    <div class="font-medium truncate min-w-0">
+                      {{ event.payload.title }}
+                    </div>
+                  </div>
+                  <div
+                    v-if="getEventLayoutMode(event) === 'normal' && event.payload.description"
+                    class="text-[11px] opacity-90 line-clamp-2"
+                  >
+                    {{ event.payload.description }}
+                  </div>
+                  <div v-if="getEventLayoutMode(event) === 'normal'" class="text-[10px] opacity-75">
+                    {{ format(new Date(event.dueAt), "HH:mm") }} -
+                    {{ format(getEventEndTime(event), "HH:mm") }}
+                  </div>
                 </div>
                 <!-- Bottom resize handle -->
                 <div
