@@ -1,4 +1,5 @@
 export * from './issue.entity';
+export * from './label.entity';
 export * from './project.entity';
 export * from './sprint.entity';
 export * from './backlog.entity';

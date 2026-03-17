@@ -10,7 +10,7 @@ import IssueCard from "./IssueCard.vue";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
-const { backlogItems, fetchBacklogItems, updateIssue, moveBacklogItem } = useBacklog();
+const { backlogItems, fetchBacklogItems, updateIssue, moveBacklogItem, addLabel, removeLabel } = useBacklog();
 
 type ColumnStatus = "todo" | "doing" | "done";
 
@@ -98,6 +98,23 @@ watch(
   },
   { immediate: true },
 );
+
+function onLabelsChange(issue: Issue, labels: number[]) {
+  const prev = new Set((issue.labels ?? []).map((l) => l.id));
+  const next = new Set(labels);
+
+  for (const id of next) {
+    if (!prev.has(id)) {
+      addLabel(issue.id, id);
+    }
+  }
+
+  for (const id of prev) {
+    if (!next.has(id)) {
+      removeLabel(issue.id, id);
+    }
+  }
+}
 </script>
 
 <template>
@@ -126,7 +143,7 @@ watch(
               :source="todo"
               :itemId="item.id"
             >
-              <IssueCard :item="item" @open-issue="openIssue" />
+              <IssueCard :item="item" @open-issue="openIssue" @labels-change="onLabelsChange" />
             </BoardItem>
           </TransitionGroup>
 
@@ -162,7 +179,7 @@ watch(
               :source="doing"
               :itemId="item.id"
             >
-              <IssueCard :item="item" @open-issue="openIssue" />
+              <IssueCard :item="item" @open-issue="openIssue" @labels-change="onLabelsChange" />
             </BoardItem>
           </TransitionGroup>
 
@@ -198,7 +215,7 @@ watch(
               :source="done"
               :itemId="item.id"
             >
-              <IssueCard :item="item" @open-issue="openIssue" />
+              <IssueCard :item="item" @open-issue="openIssue" @labels-change="onLabelsChange" />
             </BoardItem>
           </TransitionGroup>
 

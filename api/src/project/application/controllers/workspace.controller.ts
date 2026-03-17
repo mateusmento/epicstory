@@ -11,7 +11,13 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { CreateProject, FindIssues, FindProjects } from '../features';
+import {
+  CreateLabel,
+  CreateProject,
+  FindIssues,
+  FindLabels,
+  FindProjects,
+} from '../features';
 import { ExceptionFilter } from 'src/core';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { IssuerUserCanNotCreateProject } from 'src/project/domain/exceptions';
@@ -54,5 +60,25 @@ export class WorkspaceController {
   @UseGuards(JwtAuthGuard)
   findIssues(@Param('id') workspaceId: number, @Query() query: FindIssues) {
     return this.queryBus.execute(new FindIssues({ workspaceId, ...query }));
+  }
+
+  @Get(':id/labels')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  findLabels(@Param('id') workspaceId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(new FindLabels({ workspaceId, issuer }));
+  }
+
+  @Post(':id/labels')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  createLabel(
+    @Param('id') workspaceId: number,
+    @Body() data: CreateLabel,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new CreateLabel({ ...data, workspaceId, issuer }),
+    );
   }
 }

@@ -13,6 +13,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Project } from './project.entity';
+import { Label } from './label.entity';
 
 @Entity({ schema: PROJECT_SCHEMA })
 export class Issue {
@@ -64,6 +65,14 @@ export class Issue {
   })
   assignees: User[];
 
+  @ManyToMany(() => Label)
+  @JoinTable({
+    name: 'issue_label',
+    joinColumn: { name: 'issue_id' },
+    inverseJoinColumn: { name: 'label_id' },
+  })
+  labels: Label[];
+
   @Column({ nullable: true })
   parentIssueId?: number;
 
@@ -81,6 +90,7 @@ export class Issue {
     return new Issue({
       ...data,
       assignees: data.assignees ?? [],
+      labels: data.labels ?? [],
     });
   }
 }

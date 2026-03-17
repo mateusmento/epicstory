@@ -39,7 +39,7 @@ export class FindBacklogItemsQuery implements IQueryHandler<FindBacklogItems> {
   }: FindBacklogItems) {
     const content = await this.backlogItemRepo.find({
       where: { backlogId, projectId },
-      relations: { issue: { assignees: true } },
+      relations: { issue: { assignees: true, labels: true } },
       order: {
         issue: {
           createdAt: orderBy === 'createdAt' ? (order ?? 'asc') : undefined,

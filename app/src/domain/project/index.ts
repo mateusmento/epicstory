@@ -1,3 +1,3 @@
 export * from "./types/project.type";
-export * from "./services/project.service";
+export * from "./api/project.api";
 export * from "./composables/projects";

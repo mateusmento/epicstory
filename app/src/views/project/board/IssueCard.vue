@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { useDraggingById } from "@/components/board/useDraggingById";
+import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
 import { cn } from "@/design-system/utils";
 import { type BacklogItem } from "@/domain/backlog";
-import type { Issue } from "@/domain/issues";
+import { type Issue } from "@/domain/issues";
 import { formatDistanceToNow } from "date-fns";
 
 const props = defineProps<{ item: BacklogItem }>();
 
 const emit = defineEmits<{
   (e: "openIssue", issue: Issue): void;
+  (e: "labels-change", issue: Issue, labels: number[]): void;
 }>();
 
 type ColumnStatus = "todo" | "doing" | "done";
@@ -39,6 +41,10 @@ function statusBadge(status: ColumnStatus) {
 
 function openIssue(issue: Issue) {
   emit("openIssue", issue);
+}
+
+function onLabelsChange(issue: Issue, labels: number[]) {
+  emit("labels-change", issue, labels);
 }
 </script>
 
@@ -91,7 +97,7 @@ function openIssue(issue: Issue) {
       {{ item.issue.description }}
     </div>
 
-    <div v-if="item.issue.assignees?.length" class="flex:row-md mt-3">
+    <div v-if="item.issue.assignees?.length || item.issue.labels?.length" class="flex:row-md flex-wrap mt-3">
       <img
         v-for="(assignee, i) in item.issue.assignees.slice(0, 5)"
         :key="assignee.id"
@@ -106,6 +112,13 @@ function openIssue(issue: Issue) {
       >
         +{{ item.issue.assignees.length - 5 }}
       </div>
+
+      <LabelMultiSelect
+        :workspace-id="+item.issue.workspaceId"
+        :disabled="!item.issue"
+        :model-value="(item.issue?.labels ?? []).map((l) => l.id)"
+        @update:model-value="onLabelsChange(item.issue, $event)"
+      />
     </div>
   </div>
 </template>

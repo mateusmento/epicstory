@@ -44,6 +44,20 @@ export function useIssues() {
     return issue;
   }
 
+  async function addLabel(issueId: number, labelId: number) {
+    const issue = await issueApi.addLabel(issueId, labelId);
+    const index = store.issues.findIndex((i) => i.id === issueId);
+    if (index >= 0) store.issues[index] = issue;
+    return issue;
+  }
+
+  async function removeLabel(issueId: number, labelId: number) {
+    const issue = await issueApi.removeLabel(issueId, labelId);
+    const index = store.issues.findIndex((i) => i.id === issueId);
+    if (index >= 0) store.issues[index] = issue;
+    return issue;
+  }
+
   return {
     ...storeToRefs(store),
     fetchIssues,
@@ -51,5 +65,7 @@ export function useIssues() {
     updateIssue,
     removeIssue,
     addAssignee,
+    addLabel,
+    removeLabel,
   };
 }

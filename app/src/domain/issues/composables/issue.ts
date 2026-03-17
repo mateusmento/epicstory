@@ -27,10 +27,22 @@ export function useIssue() {
     store.issue = await issueApi.addAssignee(store.issue.id, userId);
   }
 
+  async function addLabel(labelId: number) {
+    if (!store.issue) return;
+    store.issue = await issueApi.addLabel(store.issue.id, labelId);
+  }
+
+  async function removeLabel(labelId: number) {
+    if (!store.issue) return;
+    store.issue = await issueApi.removeLabel(store.issue.id, labelId);
+  }
+
   return {
     ...storeToRefs(store),
     fetchIssue,
     updateIssue,
     addAssignee,
+    addLabel,
+    removeLabel,
   };
 }

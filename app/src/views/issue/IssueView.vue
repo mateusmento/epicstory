@@ -8,6 +8,7 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
 import { UserSelect } from "@/components/user";
+import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
 import type { User } from "@/domain/user";
 import { Icon } from "@/design-system/icons";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
@@ -32,7 +33,7 @@ const props = defineProps<{
   issueId: string;
 }>();
 
-const { issue, fetchIssue, updateIssue, addAssignee } = useIssue();
+const { issue, fetchIssue, updateIssue, addAssignee, addLabel, removeLabel } = useIssue();
 
 const projectApi = useDependency(ProjectApi);
 const project = ref<Project | null>(null);
@@ -134,6 +135,26 @@ async function savePatch(data: Parameters<typeof updateIssue>[0]) {
     saveError.value = e?.message ?? "Failed to save changes";
   } finally {
     isSaving.value = false;
+  }
+}
+
+async function onLabelsChange(nextIds: number[]) {
+  if (!issue.value) return;
+  const prev = new Set((issue.value.labels ?? []).map((l) => l.id));
+  const next = new Set(nextIds);
+
+  // Add new labels
+  for (const id of next) {
+    if (!prev.has(id)) {
+      await addLabel(id);
+    }
+  }
+
+  // Remove missing labels
+  for (const id of prev) {
+    if (!next.has(id)) {
+      await removeLabel(id);
+    }
   }
 }
 
@@ -498,6 +519,19 @@ watch(
                   @update:model-value="onDueDateChange"
                 />
               </div>
+            </div>
+          </div>
+
+          <!-- Labels -->
+          <div class="flex:col-sm">
+            <div class="text-xs text-secondary-foreground">Labels</div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <LabelMultiSelect
+                :workspace-id="+props.workspaceId"
+                :disabled="!issue"
+                :model-value="(issue?.labels ?? []).map((l) => l.id)"
+                @update:model-value="onLabelsChange"
+              />
             </div>
           </div>
         </div>

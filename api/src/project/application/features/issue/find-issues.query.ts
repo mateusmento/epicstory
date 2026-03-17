@@ -45,7 +45,7 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
   }: FindIssues) {
     const content = await this.issueRepo.find({
       where: { workspaceId, projectId },
-      relations: { assignees: true },
+      relations: { assignees: true, labels: true },
       order: {
         createdAt: orderBy === 'createdAt' ? (order ?? 'asc') : undefined,
         priority: orderBy === 'priority' ? (order ?? 'asc') : undefined,

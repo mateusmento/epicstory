@@ -1,4 +1,5 @@
 import type { User } from "@/domain/auth";
+import type { Label } from "@/domain/labels";
 
 export type Issue = {
   id: number;
@@ -12,4 +13,5 @@ export type Issue = {
   dueDate: string;
   assignees: User[];
   priority: number;
+  labels: Label[];
 };

@@ -27,11 +27,20 @@ import Signal1Bar from "./priority-toggler/Signal1Bar.vue";
 import Signal2Bars from "./priority-toggler/Signal2Bars.vue";
 import Signal3Bars from "./priority-toggler/Signal3Bars.vue";
 import UrgentIcon from "./priority-toggler/Urgent.vue";
+import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
-const { backlogItems, fetchBacklogItems, removeBacklogItem, moveBacklogItem, updateIssue, addAssignee } =
-  useBacklog();
+const {
+  backlogItems,
+  fetchBacklogItems,
+  removeBacklogItem,
+  moveBacklogItem,
+  updateIssue,
+  addAssignee,
+  addLabel,
+  removeLabel,
+} = useBacklog();
 
 const orderBy = useStorage("backlog.orderBy", "manual");
 const order = useStorage<"asc" | "desc">("backlog.order", "asc");
@@ -228,6 +237,26 @@ const groupedItems = computed<IssueGroup[]>(() => {
     },
   ];
 });
+
+async function onLabelsChange(issue: Issue, nextIds: number[]) {
+  if (!issue) return;
+  const prev = new Set((issue.labels ?? []).map((l) => l.id));
+  const next = new Set(nextIds);
+
+  // Add new labels
+  for (const id of next) {
+    if (!prev.has(id)) {
+      await addLabel(issue.id, id);
+    }
+  }
+
+  // Remove missing labels
+  for (const id of prev) {
+    if (!next.has(id)) {
+      await removeLabel(issue.id, id);
+    }
+  }
+}
 </script>
 
 <script lang="tsx">
@@ -340,25 +369,42 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
 
               <!-- Title -->
               <div class="min-w-0">
-                <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y min-w-0">
-                  <Tooltip>
-                    <TooltipTrigger as-child>
-                      <div class="min-w-0" @dblclick.stop="openIssue(issue)">
-                        <div class="truncate text-sm text-foreground">
-                          {{ issue.title }}
+                <div v-if="editingIssue.id !== issue.id" class="min-w-0">
+                  <div class="flex:row-lg flex:center-y min-w-0">
+                    <Tooltip>
+                      <TooltipTrigger as-child>
+                        <div class="min-w-0" @dblclick.stop="openIssue(issue)">
+                          <div class="truncate text-sm text-foreground">
+                            {{ issue.title }}
+                          </div>
                         </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {{ issue.title }}
-                    </TooltipContent>
-                  </Tooltip>
-                  <Icon
-                    name="fa-regular-edit"
-                    @click="openIssueEdit(issue)"
-                    class="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                    title="Edit title"
-                  />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {{ issue.title }}
+                      </TooltipContent>
+                    </Tooltip>
+                    <Icon
+                      name="fa-regular-edit"
+                      @click="openIssueEdit(issue)"
+                      class="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                      title="Edit title"
+                    />
+                  </div>
+
+                  <div v-if="issue.labels?.length" class="mt-0.5 flex flex-wrap gap-1 min-w-0">
+                    <span
+                      v-for="l in issue.labels"
+                      :key="l.id"
+                      class="inline-flex items-center gap-1 rounded-md border bg-white px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                      :title="l.name"
+                    >
+                      <span
+                        class="h-2 w-2 rounded-full ring-1 ring-border"
+                        :style="{ backgroundColor: l.color }"
+                      />
+                      <span class="max-w-24 truncate">{{ l.name }}</span>
+                    </span>
+                  </div>
                 </div>
 
                 <Form v-else @submit="saveEdit" class="flex:row-md flex:center-y">
@@ -475,7 +521,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                     </span>
                   </div>
 
-                  <div class="min-w-0">
+                  <div class="flex:row-auto flex:center-y min-w-0">
                     <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y min-w-0">
                       <Tooltip>
                         <TooltipTrigger as-child>
@@ -502,6 +548,15 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                       <Button type="submit" size="badge">Save</Button>
                       <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
                     </Form>
+
+                    <div v-if="issue.labels?.length" class="mt-0.5 flex flex-wrap gap-1 min-w-0">
+                      <LabelMultiSelect
+                        :workspace-id="+props.workspaceId"
+                        :disabled="!issue"
+                        :model-value="(issue?.labels ?? []).map((l) => l.id)"
+                        @update:model-value="onLabelsChange(issue, $event)"
+                      />
+                    </div>
                   </div>
 
                   <div class="justify-self-start">

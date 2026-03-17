@@ -45,4 +45,12 @@ export class IssueApi {
   async addAssignee(issueId: number, userId: number) {
     return this.axios.post<Issue>(`/issues/${issueId}/assignees`, { userId }).then((res) => res.data);
   }
+
+  async addLabel(issueId: number, labelId: number) {
+    return this.axios.post<Issue>(`/issues/${issueId}/labels`, { labelId }).then((res) => res.data);
+  }
+
+  async removeLabel(issueId: number, labelId: number) {
+    return this.axios.delete<Issue>(`/issues/${issueId}/labels/${labelId}`).then((res) => res.data);
+  }
 }

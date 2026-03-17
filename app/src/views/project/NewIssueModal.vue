@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
 import { UserSelect } from "@/components/user";
 import {
   Button,
@@ -12,15 +13,19 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useBacklog } from "@/domain/backlog";
+import type { Label } from "@/domain/labels";
+import { useLabels } from "@/domain/labels";
 import type { User } from "@/domain/user";
-import { DropdownMenuItemIndicator } from "radix-vue";
+import { useWorkspace } from "@/domain/workspace";
 import { computed, ref } from "vue";
 
 const props = defineProps<{
   projectId: number;
 }>();
 
-const { backlogItems, createBacklogItem, updateIssue, addAssignee } = useBacklog();
+const { backlogItems, createBacklogItem, updateIssue, addAssignee, addLabel } = useBacklog();
+const { workspace } = useWorkspace();
+const { labelsById } = useLabels();
 
 const title = ref("");
 const description = ref("");
@@ -30,6 +35,16 @@ const assignee = ref<User | undefined>();
 const createMore = ref(false);
 const isSubmitting = ref(false);
 const closeBtn = ref<HTMLButtonElement | null>(null);
+const selectedLabelIds = ref<number[]>([]);
+
+const workspaceId = computed(() => workspace.value?.id ?? 0);
+
+const selectedLabels = computed(() => {
+  return selectedLabelIds.value
+    .map((id) => labelsById.value.get(id))
+    .filter((l): l is Label => Boolean(l))
+    .sort((a, b) => a.name.localeCompare(b.name));
+});
 
 const afterOf = computed(() => {
   return backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined;
@@ -71,12 +86,20 @@ async function onCreateIssue() {
       await addAssignee(item.issue.id, assignee.value.id);
     }
 
+    if (selectedLabelIds.value.length > 0) {
+      // labels are workspace-scoped; attach them after creation
+      for (const id of selectedLabelIds.value) {
+        await addLabel(item.issue.id, id);
+      }
+    }
+
     if (createMore.value) {
       title.value = "";
       description.value = "";
       status.value = "todo";
       priority.value = 0;
       assignee.value = undefined;
+      selectedLabelIds.value = [];
     } else {
       closeBtn.value?.click();
     }
@@ -189,10 +212,26 @@ async function onCreateIssue() {
         </UserSelect>
 
         <!-- Labels -->
-        <Button type="button" variant="outline" size="badge" class="flex items-center gap-2" disabled>
-          <Icon name="hi-plus" class="w-4 h-4 text-muted-foreground" />
-          Labels
-        </Button>
+        <LabelMultiSelect
+          v-model="selectedLabelIds"
+          :workspace-id="workspaceId"
+          :disabled="workspaceId === 0"
+        />
+
+        <div v-for="l in selectedLabels" :key="l.id" class="flex items-center">
+          <div class="flex items-center gap-2 rounded-md border px-2 py-0.5 text-xs" title="Label">
+            <span class="h-2 w-2 rounded-full ring-1 ring-border" :style="{ backgroundColor: l.color }" />
+            <span class="max-w-28 truncate">{{ l.name }}</span>
+            <button
+              type="button"
+              class="text-muted-foreground hover:text-foreground"
+              @click="selectedLabelIds = selectedLabelIds.filter((id) => id !== l.id)"
+              title="Remove label"
+            >
+              ×
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Footer -->

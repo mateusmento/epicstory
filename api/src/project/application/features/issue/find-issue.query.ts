@@ -19,8 +19,9 @@ export class FindIssueQuery implements IQueryHandler<FindIssue> {
       where: { id: issueId },
       relations: {
         assignees: true,
+        labels: true,
         parentIssue: true,
-        subIssues: { assignees: true },
+        subIssues: { assignees: true, labels: true },
       },
     });
   }
