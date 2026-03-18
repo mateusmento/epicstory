@@ -17,6 +17,7 @@ import {
   UpdateIssue,
   RemoveIssue,
   AddAssignee,
+  RemoveAssignee,
   AddLabel,
   RemoveLabel,
 } from '../features';
@@ -65,6 +66,19 @@ export class IssueController {
   ) {
     return this.commandBus.execute(
       new AddAssignee({ ...data, issueId, issuer }),
+    );
+  }
+
+  @Delete(':id/assignees/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  removeAssignee(
+    @Param('id') issueId: number,
+    @Param('userId') userId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new RemoveAssignee({ issueId, userId, issuer }),
     );
   }
 

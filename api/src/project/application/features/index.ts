@@ -4,6 +4,7 @@ export * from './backlog/find-project-backlog-items.query';
 export * from './backlog/remove-backlog-item.command';
 export * from './backlog/reorder-backlog-item.command';
 export * from './issue/add-assignee.command';
+export * from './issue/remove-assignee.command';
 export * from './issue/add-label.command';
 export * from './issue/create-issue.command';
 export * from './issue/find-issue.query';

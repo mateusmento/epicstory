@@ -1,24 +1,26 @@
 <script lang="tsx" setup>
 import { UserSelect } from "@/components/user";
-import { Button, Field, Form, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
+import IssueContextMenu from "@/components/issue/IssueContextMenu.vue";
 import { animations } from "@formkit/drag-and-drop";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { parseAbsolute } from "@internationalized/date";
 import { useStorage } from "@vueuse/core";
 import { debounce } from "lodash";
-import { Trash2Icon } from "lucide-vue-next";
 import {
   computed,
   onMounted,
+  nextTick,
   reactive,
   ref,
   watch,
   withModifiers,
   type FunctionalComponent as FC,
+  type ComponentPublicInstance,
 } from "vue";
 import { useRouter } from "vue-router";
 import { DueDatePicker } from "./date-picker";
@@ -34,12 +36,13 @@ const props = defineProps<{ workspaceId: string; projectId: string }>();
 const {
   backlogItems,
   fetchBacklogItems,
-  removeBacklogItem,
   moveBacklogItem,
   updateIssue,
   addAssignee,
+  removeAssignee,
   addLabel,
   removeLabel,
+  removeIssue,
 } = useBacklog();
 
 const orderBy = useStorage("backlog.orderBy", "manual");
@@ -125,9 +128,36 @@ const editingIssue = reactive<{
   title: string;
 }>({ id: null, title: "" });
 
+const editTitleEl = ref<HTMLDivElement | null>(null);
+
+function setEditTitleEl(el: Element | ComponentPublicInstance | null) {
+  editTitleEl.value = (el as HTMLDivElement | null) ?? null;
+}
+
+watch(
+  () => editingIssue.id,
+  async (id) => {
+    if (!id) return;
+    await nextTick();
+    const el = editTitleEl.value;
+    if (!el) return;
+    el.textContent = editingIssue.title ?? "";
+    el.focus();
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    } catch {
+      // ignore selection errors (e.g. non-browser env)
+    }
+  },
+);
+
 function openIssueEdit(issue: Issue) {
-  editingIssue.id = issue.id;
   editingIssue.title = issue.title;
+  editingIssue.id = issue.id;
 }
 
 function closeIssueEdit() {
@@ -136,9 +166,32 @@ function closeIssueEdit() {
 }
 
 function saveEdit() {
-  const { id, ...data } = editingIssue;
-  if (id) updateIssue(id, data);
+  const id = editingIssue.id;
+  if (!id) return closeIssueEdit();
+  const title = editingIssue.title.trim();
+  if (!title) return closeIssueEdit();
+  updateIssue(id, { title });
   closeIssueEdit();
+}
+
+function onEditableTitleInput(e: Event) {
+  const el = e.target as HTMLDivElement | null;
+  if (!el) return;
+  editingIssue.title = (el.innerText ?? "").replace(/\n/g, "");
+}
+
+function onEditableTitleKeydown(e: KeyboardEvent) {
+  // Prevent parent handlers (e.g. context-menu trigger / row interactions) from hijacking typing/navigation keys.
+  e.stopPropagation();
+  if (e.key === "Enter") {
+    e.preventDefault();
+    saveEdit();
+    return;
+  }
+  if (e.key === "Escape") {
+    e.preventDefault();
+    closeIssueEdit();
+  }
 }
 
 function updateIssueStatus(issue: Issue) {
@@ -341,178 +394,26 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
       <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden" style="scrollbar-gutter: stable">
         <div ref="itemsContainer" class="divide-y">
           <template v-if="groupBy === 'none'">
-            <div
-              v-for="{ id, issue } of backlogItems"
-              :key="issue.id"
-              class="group grid gap-x-4 items-center px-3 py-2 hover:bg-zinc-50"
-              :class="cn(GRID_COLS, { 'opacity-70': draggingId === id })"
-            >
-              <!-- Drag handle (only useful in manual order) -->
-              <div
-                class="opacity-0 group-hover:opacity-100 transition-opacity"
-                :class="cn(orderBy !== 'manual' && 'opacity-0')"
-                title="Drag to reorder"
+            <div v-for="{ id, issue } of backlogItems" :key="issue.id">
+              <IssueContextMenu
+                :issue="issue"
+                :workspace-id="+props.workspaceId"
+                :actions="{ updateIssue, addAssignee, removeAssignee, addLabel, removeLabel, removeIssue }"
               >
-                <Icon name="bi-grip-vertical" class="text-muted-foreground" />
-              </div>
-
-              <!-- Status + key -->
-              <div class="flex items-center gap-2 min-w-0">
-                <button
-                  class="w-2.5 h-2.5 rounded-full ring-1 ring-border"
-                  :class="issueStatusDotClass(issue.status)"
-                  :title="issue.status"
-                  @click="updateIssueStatus(issue)"
-                />
-                <span class="text-xs text-muted-foreground tabular-nums shrink-0"> EP-{{ issue.id }} </span>
-              </div>
-
-              <!-- Title -->
-              <div class="min-w-0 flex:row-lg flex:center-y">
-                <div v-if="editingIssue.id !== issue.id" class="min-w-0">
-                  <div class="flex:row-lg flex:center-y min-w-0">
-                    <Tooltip>
-                      <TooltipTrigger as-child>
-                        <div class="min-w-0" @dblclick.stop="openIssue(issue)">
-                          <div class="truncate text-sm text-foreground flex items-center gap-1 min-w-0">
-                            <span class="truncate min-w-0">{{ issue.title }}</span>
-                            <template v-if="issue.parentIssue?.title">
-                              <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
-                              <span class="text-muted-foreground truncate max-w-56">{{ issue.parentIssue.title }}</span>
-                            </template>
-                          </div>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <template v-if="issue.parentIssue?.title">
-                          {{ issue.title }} <Icon name="oi-chevron-right" class="inline w-3 h-3 text-muted-foreground" />
-                          {{ issue.parentIssue.title }}
-                        </template>
-                        <template v-else>
-                          {{ issue.title }}
-                        </template>
-                      </TooltipContent>
-                    </Tooltip>
-                    <Icon
-                      name="fa-regular-edit"
-                      @click="openIssueEdit(issue)"
-                      class="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                      title="Edit title"
-                    />
-                  </div>
-                </div>
-
-                <Form v-else @submit="saveEdit" class="flex:row-md flex:center-y">
-                  <Field v-model="editingIssue.title" size="badge" name="title" />
-                  <Button type="submit" size="badge">Save</Button>
-                  <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
-                </Form>
-
-                <div v-if="issue.labels?.length" class="mt-0.5 ml-auto flex flex-wrap gap-1 min-w-0">
-                  <LabelMultiSelect
-                    :workspace-id="+props.workspaceId"
-                    :disabled="!issue"
-                    :model-value="(issue?.labels ?? []).map((l) => l.id)"
-                    @update:model-value="onLabelsChange(issue, $event)"
-                  />
-                </div>
-              </div>
-
-              <div class="justify-self-start">
-                <PriorityToggler
-                  :value="issue.priority"
-                  @update:value="updateIssue(issue.id, { priority: $event })"
-                />
-              </div>
-
-              <UserSelect @update:model-value="$event && addAssignee(issue.id, $event.id)">
-                <template #trigger>
-                  <div class="flex items-center justify-start">
-                    <div class="flex items-center">
-                      <img
-                        v-for="(assignee, i) of issue.assignees"
-                        :key="assignee.id"
-                        :src="assignee.picture"
-                        class="cursor-pointer w-5 h-5 rounded-full border border-background"
-                        :class="cn(i > 0 && 'ml-[-0.45rem]')"
-                      />
-                    </div>
-                    <div
-                      v-if="issue.assignees.length === 0"
-                      class="ml-1 flex flex:center w-fit p-0.5 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
-                      title="Add assignee"
-                    >
-                      <Icon
-                        name="fa-user-plus"
-                        class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
-                      />
-                    </div>
-                  </div>
-                </template>
-              </UserSelect>
-
-              <div class="justify-self-start">
-                <DueDatePicker
-                  size="badge"
-                  :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"
-                  @update:model-value="
-                    updateIssue(issue.id, { dueDate: $event?.toDate('America/Sao_Paulo').toString() })
-                  "
-                />
-              </div>
-
-              <div class="justify-self-end">
-                <Trash2Icon
-                  @click="removeBacklogItem(id)"
-                  class="h-4 w-4 cursor-pointer text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
-                  title="Remove"
-                />
-              </div>
-            </div>
-          </template>
-
-          <template v-else>
-            <template v-for="group of groupedItems" :key="group.id">
-              <button
-                type="button"
-                class="w-full flex items-center justify-between px-3 py-2 bg-zinc-50 hover:bg-zinc-100"
-                @click="toggleGroup(group.id)"
-              >
-                <div class="flex items-center gap-2 text-sm">
-                  <Icon
-                    :name="isCollapsed(group.id) ? 'oi-chevron-down' : 'oi-chevron-up'"
-                    class="w-3 h-3 text-muted-foreground"
-                  />
-                  <span
-                    v-if="group.kind === 'status'"
-                    class="w-2 h-2 rounded-full ring-1 ring-border"
-                    :class="issueStatusDotClass(group.key as string)"
-                  />
-                  <span v-else-if="group.kind === 'priority'" class="opacity-60 scale-75 origin-left">
-                    <UrgentIcon v-if="group.key === 4" />
-                    <Signal3Bars v-else-if="group.key === 3" />
-                    <Signal2Bars v-else-if="group.key === 2" />
-                    <Signal1Bar v-else-if="group.key === 1" />
-                  </span>
-                  <span class="font-medium text-muted-foreground">{{ group.label }}</span>
-                </div>
-                <span class="text-xs text-muted-foreground tabular-nums">{{ group.items.length }}</span>
-              </button>
-
-              <div v-show="!isCollapsed(group.id)" class="divide-y">
                 <div
-                  v-for="{ id, issue } of group.items"
-                  :key="issue.id"
                   class="group grid gap-x-4 items-center px-3 py-2 hover:bg-zinc-50"
                   :class="cn(GRID_COLS, { 'opacity-70': draggingId === id })"
                 >
+                  <!-- Drag handle (only useful in manual order) -->
                   <div
                     class="opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Drag disabled while grouped"
+                    :class="cn(orderBy !== 'manual' && 'opacity-0')"
+                    title="Drag to reorder"
                   >
                     <Icon name="bi-grip-vertical" class="text-muted-foreground" />
                   </div>
 
+                  <!-- Status + key -->
                   <div class="flex items-center gap-2 min-w-0">
                     <button
                       class="w-2.5 h-2.5 rounded-full ring-1 ring-border"
@@ -525,45 +426,81 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                     </span>
                   </div>
 
-                  <div class="flex:row-lg flex:center-y min-w-0">
-                    <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y min-w-0">
-                      <Tooltip>
-                        <TooltipTrigger as-child>
-                          <div class="min-w-0" @dblclick.stop="openIssue(issue)">
-                            <div class="truncate text-sm text-foreground flex items-center gap-1 min-w-0">
-                              <span class="truncate min-w-0">{{ issue.title }}</span>
-                              <template v-if="issue.parentIssue?.title">
-                                <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
-                                <span class="text-muted-foreground truncate max-w-56">
-                                  {{ issue.parentIssue.title }}
-                                </span>
-                              </template>
+                  <!-- Title -->
+                  <div class="min-w-0 flex:row-lg flex:center-y">
+                    <div v-if="editingIssue.id !== issue.id" class="min-w-0">
+                      <div class="flex:row-lg flex:center-y min-w-0">
+                        <Tooltip>
+                          <TooltipTrigger as-child>
+                            <div class="min-w-0" @dblclick.stop="openIssue(issue)">
+                              <div class="truncate text-sm text-foreground flex items-center gap-1 min-w-0">
+                                <span class="truncate min-w-0">{{ issue.title }}</span>
+                                <template v-if="issue.parentIssue?.title">
+                                  <Icon
+                                    name="oi-chevron-right"
+                                    class="w-3 h-3 text-muted-foreground shrink-0"
+                                  />
+                                  <span class="text-muted-foreground truncate max-w-56">{{
+                                    issue.parentIssue.title
+                                  }}</span>
+                                </template>
+                              </div>
                             </div>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <template v-if="issue.parentIssue?.title">
-                            {{ issue.title }} <Icon name="oi-chevron-right" class="inline w-3 h-3 text-muted-foreground" />
-                            {{ issue.parentIssue.title }}
-                          </template>
-                          <template v-else>
-                            {{ issue.title }}
-                          </template>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Icon
-                        name="fa-regular-edit"
-                        @click="openIssueEdit(issue)"
-                        class="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                        title="Edit title"
-                      />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <template v-if="issue.parentIssue?.title">
+                              {{ issue.title }}
+                              <Icon name="oi-chevron-right" class="inline w-3 h-3 text-muted-foreground" />
+                              {{ issue.parentIssue.title }}
+                            </template>
+                            <template v-else>
+                              {{ issue.title }}
+                            </template>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Icon
+                          name="fa-regular-edit"
+                          @click="openIssueEdit(issue)"
+                          class="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                          title="Edit title"
+                        />
+                      </div>
                     </div>
 
-                    <Form v-else @submit="saveEdit" class="flex:row-md flex:center-y">
-                      <Field v-model="editingIssue.title" size="badge" name="title" />
-                      <Button type="submit" size="badge">Save</Button>
-                      <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
-                    </Form>
+                    <div v-else class="flex items-center gap-1 min-w-0">
+                      <div class="flex items-center gap-1 min-w-0 text-sm">
+                        <div
+                          :ref="setEditTitleEl"
+                          contenteditable="true"
+                          role="textbox"
+                          aria-label="Issue title"
+                          data-placeholder="Issue title"
+                          class="inline-block max-w-full whitespace-nowrap bg-transparent outline-none leading-5 text-foreground empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
+                          @input="onEditableTitleInput"
+                          @keydown.stop="onEditableTitleKeydown"
+                          @keyup.stop
+                          @keypress.stop
+                        />
+                        <template v-if="issue.parentIssue?.title">
+                          <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
+                          <span class="text-muted-foreground truncate max-w-56">{{
+                            issue.parentIssue.title
+                          }}</span>
+                        </template>
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" title="Save" @click="saveEdit">
+                        <Icon name="bi-check" class="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        title="Cancel"
+                        @click="closeIssueEdit()"
+                      >
+                        <Icon name="io-close" class="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                      </Button>
+                    </div>
 
                     <div v-if="issue.labels?.length" class="mt-0.5 ml-auto flex flex-wrap gap-1 min-w-0">
                       <LabelMultiSelect
@@ -620,13 +557,214 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                     />
                   </div>
 
-                  <div class="justify-self-end">
-                    <Trash2Icon
-                      @click="removeBacklogItem(id)"
-                      class="h-4 w-4 cursor-pointer text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
-                      title="Remove"
-                    />
-                  </div>
+                  <div class="justify-self-end" />
+                </div>
+              </IssueContextMenu>
+            </div>
+          </template>
+
+          <template v-else>
+            <template v-for="group of groupedItems" :key="group.id">
+              <button
+                type="button"
+                class="w-full flex items-center justify-between px-3 py-2 bg-zinc-50 hover:bg-zinc-100"
+                @click="toggleGroup(group.id)"
+              >
+                <div class="flex items-center gap-2 text-sm">
+                  <Icon
+                    :name="isCollapsed(group.id) ? 'oi-chevron-down' : 'oi-chevron-up'"
+                    class="w-3 h-3 text-muted-foreground"
+                  />
+                  <span
+                    v-if="group.kind === 'status'"
+                    class="w-2 h-2 rounded-full ring-1 ring-border"
+                    :class="issueStatusDotClass(group.key as string)"
+                  />
+                  <span v-else-if="group.kind === 'priority'" class="opacity-60 scale-75 origin-left">
+                    <UrgentIcon v-if="group.key === 4" />
+                    <Signal3Bars v-else-if="group.key === 3" />
+                    <Signal2Bars v-else-if="group.key === 2" />
+                    <Signal1Bar v-else-if="group.key === 1" />
+                  </span>
+                  <span class="font-medium text-muted-foreground">{{ group.label }}</span>
+                </div>
+                <span class="text-xs text-muted-foreground tabular-nums">{{ group.items.length }}</span>
+              </button>
+
+              <div v-show="!isCollapsed(group.id)" class="divide-y">
+                <div v-for="{ id, issue } of group.items" :key="issue.id">
+                  <IssueContextMenu
+                    :issue="issue"
+                    :workspace-id="+props.workspaceId"
+                    :actions="{
+                      updateIssue,
+                      addAssignee,
+                      removeAssignee,
+                      addLabel,
+                      removeLabel,
+                      removeIssue,
+                    }"
+                  >
+                    <div
+                      class="group grid gap-x-4 items-center px-3 py-2 hover:bg-zinc-50"
+                      :class="cn(GRID_COLS, { 'opacity-70': draggingId === id })"
+                    >
+                      <div
+                        class="opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Drag disabled while grouped"
+                      >
+                        <Icon name="bi-grip-vertical" class="text-muted-foreground" />
+                      </div>
+
+                      <div class="flex items-center gap-2 min-w-0">
+                        <button
+                          class="w-2.5 h-2.5 rounded-full ring-1 ring-border"
+                          :class="issueStatusDotClass(issue.status)"
+                          :title="issue.status"
+                          @click="updateIssueStatus(issue)"
+                        />
+                        <span class="text-xs text-muted-foreground tabular-nums shrink-0">
+                          EP-{{ issue.id }}
+                        </span>
+                      </div>
+
+                      <div class="flex:row-lg flex:center-y min-w-0">
+                        <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y min-w-0">
+                          <Tooltip>
+                            <TooltipTrigger as-child>
+                              <div class="min-w-0" @dblclick.stop="openIssue(issue)">
+                                <div class="truncate text-sm text-foreground flex items-center gap-1 min-w-0">
+                                  <span class="truncate min-w-0">{{ issue.title }}</span>
+                                  <template v-if="issue.parentIssue?.title">
+                                    <Icon
+                                      name="oi-chevron-right"
+                                      class="w-3 h-3 text-muted-foreground shrink-0"
+                                    />
+                                    <span class="text-muted-foreground truncate max-w-56">
+                                      {{ issue.parentIssue.title }}
+                                    </span>
+                                  </template>
+                                </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <template v-if="issue.parentIssue?.title">
+                                {{ issue.title }}
+                                <Icon name="oi-chevron-right" class="inline w-3 h-3 text-muted-foreground" />
+                                {{ issue.parentIssue.title }}
+                              </template>
+                              <template v-else>
+                                {{ issue.title }}
+                              </template>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Icon
+                            name="fa-regular-edit"
+                            @click="openIssueEdit(issue)"
+                            class="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                            title="Edit title"
+                          />
+                        </div>
+
+                        <div v-else class="flex items-center gap-1 min-w-0">
+                          <div class="flex items-center gap-1 min-w-0 text-sm">
+                            <div
+                              :ref="setEditTitleEl"
+                              contenteditable="true"
+                              role="textbox"
+                              aria-label="Issue title"
+                              data-placeholder="Issue title"
+                              class="inline-block max-w-full whitespace-nowrap bg-transparent outline-none leading-5 text-foreground empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
+                              @input="onEditableTitleInput"
+                              @keydown.stop="onEditableTitleKeydown"
+                              @keyup.stop
+                              @keypress.stop
+                            />
+                            <template v-if="issue.parentIssue?.title">
+                              <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
+                              <span class="text-muted-foreground truncate max-w-56">{{
+                                issue.parentIssue.title
+                              }}</span>
+                            </template>
+                          </div>
+                          <Button type="button" variant="ghost" size="icon" title="Save" @click="saveEdit">
+                            <Icon
+                              name="bi-check"
+                              class="w-4 h-4 text-muted-foreground hover:text-foreground"
+                            />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            title="Cancel"
+                            @click="closeIssueEdit()"
+                          >
+                            <Icon
+                              name="io-close"
+                              class="w-4 h-4 text-muted-foreground hover:text-foreground"
+                            />
+                          </Button>
+                        </div>
+
+                        <div v-if="issue.labels?.length" class="mt-0.5 ml-auto flex flex-wrap gap-1 min-w-0">
+                          <LabelMultiSelect
+                            :workspace-id="+props.workspaceId"
+                            :disabled="!issue"
+                            :model-value="(issue?.labels ?? []).map((l) => l.id)"
+                            @update:model-value="onLabelsChange(issue, $event)"
+                          />
+                        </div>
+                      </div>
+
+                      <div class="justify-self-start">
+                        <PriorityToggler
+                          :value="issue.priority"
+                          @update:value="updateIssue(issue.id, { priority: $event })"
+                        />
+                      </div>
+
+                      <UserSelect @update:model-value="$event && addAssignee(issue.id, $event.id)">
+                        <template #trigger>
+                          <div class="flex items-center justify-start">
+                            <div class="flex items-center">
+                              <img
+                                v-for="(assignee, i) of issue.assignees"
+                                :key="assignee.id"
+                                :src="assignee.picture"
+                                class="cursor-pointer w-5 h-5 rounded-full border border-background"
+                                :class="cn(i > 0 && 'ml-[-0.45rem]')"
+                              />
+                            </div>
+                            <div
+                              v-if="issue.assignees.length === 0"
+                              class="ml-1 flex flex:center w-fit p-0.5 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
+                              title="Add assignee"
+                            >
+                              <Icon
+                                name="fa-user-plus"
+                                class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
+                              />
+                            </div>
+                          </div>
+                        </template>
+                      </UserSelect>
+
+                      <div class="justify-self-start">
+                        <DueDatePicker
+                          size="badge"
+                          :modelValue="
+                            issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined
+                          "
+                          @update:model-value="
+                            updateIssue(issue.id, { dueDate: $event?.toDate('America/Sao_Paulo').toString() })
+                          "
+                        />
+                      </div>
+
+                      <div class="justify-self-end" />
+                    </div>
+                  </IssueContextMenu>
                 </div>
               </div>
             </template>

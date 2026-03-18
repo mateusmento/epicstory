@@ -58,4 +58,6 @@ export {
   BiGripVertical,
   BiThreeDots,
   BiCheck,
+  FaRegularSave,
+  FaRegularTimesCircle,
 } from "oh-vue-icons/icons";

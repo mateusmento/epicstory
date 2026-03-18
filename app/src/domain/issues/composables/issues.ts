@@ -44,6 +44,13 @@ export function useIssues() {
     return issue;
   }
 
+  async function removeAssignee(issueId: number, userId: number) {
+    const issue = await issueApi.removeAssignee(issueId, userId);
+    const index = store.issues.findIndex((i) => i.id === issueId);
+    if (index >= 0) store.issues[index] = issue;
+    return issue;
+  }
+
   async function addLabel(issueId: number, labelId: number) {
     const issue = await issueApi.addLabel(issueId, labelId);
     const index = store.issues.findIndex((i) => i.id === issueId);
@@ -65,6 +72,7 @@ export function useIssues() {
     updateIssue,
     removeIssue,
     addAssignee,
+    removeAssignee,
     addLabel,
     removeLabel,
   };

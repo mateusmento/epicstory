@@ -27,6 +27,11 @@ export function useIssue() {
     store.issue = await issueApi.addAssignee(store.issue.id, userId);
   }
 
+  async function removeAssignee(userId: number) {
+    if (!store.issue) return;
+    store.issue = await issueApi.removeAssignee(store.issue.id, userId);
+  }
+
   async function addLabel(labelId: number) {
     if (!store.issue) return;
     store.issue = await issueApi.addLabel(store.issue.id, labelId);
@@ -42,6 +47,7 @@ export function useIssue() {
     fetchIssue,
     updateIssue,
     addAssignee,
+    removeAssignee,
     addLabel,
     removeLabel,
   };

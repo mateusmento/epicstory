@@ -52,6 +52,13 @@ export function useBacklog() {
     return issue;
   }
 
+  async function removeAssignee(issueId: number, userId: number) {
+    const issue = await issueApi.removeAssignee(issueId, userId);
+    const index = store.backlogItems.findIndex((i) => i.issue.id === issueId);
+    if (index >= 0) store.backlogItems[index].issue = issue;
+    return issue;
+  }
+
   async function addLabel(issueId: number, labelId: number) {
     const issue = await issueApi.addLabel(issueId, labelId);
     const index = store.backlogItems.findIndex((i) => i.issue.id === issueId);
@@ -66,6 +73,11 @@ export function useBacklog() {
     return issue;
   }
 
+  async function removeIssue(issueId: number) {
+    await issueApi.removeIssue(issueId);
+    store.backlogItems = store.backlogItems.filter((item) => item.issue.id !== issueId);
+  }
+
   return {
     ...storeToRefs(store),
     fetchBacklogItems,
@@ -74,7 +86,9 @@ export function useBacklog() {
     removeBacklogItem,
     updateIssue,
     addAssignee,
+    removeAssignee,
     addLabel,
     removeLabel,
+    removeIssue,
   };
 }
