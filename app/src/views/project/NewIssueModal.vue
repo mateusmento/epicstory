@@ -217,21 +217,6 @@ async function onCreateIssue() {
           :workspace-id="workspaceId"
           :disabled="workspaceId === 0"
         />
-
-        <div v-for="l in selectedLabels" :key="l.id" class="flex items-center">
-          <div class="flex items-center gap-2 rounded-md border px-2 py-0.5 text-xs" title="Label">
-            <span class="h-2 w-2 rounded-full ring-1 ring-border" :style="{ backgroundColor: l.color }" />
-            <span class="max-w-28 truncate">{{ l.name }}</span>
-            <button
-              type="button"
-              class="text-muted-foreground hover:text-foreground"
-              @click="selectedLabelIds = selectedLabelIds.filter((id) => id !== l.id)"
-              title="Remove label"
-            >
-              ×
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- Footer -->

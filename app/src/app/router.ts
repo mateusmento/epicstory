@@ -86,6 +86,12 @@ const authenticatedRoutes = defineRoutes({
               component: () => import("@/views/project/board/Board.vue"),
             },
             {
+              path: "timeline",
+              name: "project-timeline",
+              props: true,
+              component: () => import("@/views/project/timeline/Timeline.vue"),
+            },
+            {
               path: "issue/:issueId",
               name: "project-issue",
               props: true,

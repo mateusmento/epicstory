@@ -15,8 +15,12 @@ const meta = {
           <Field name="email" label="Email" class="flex:col-xl" />
           <Field type="password" name="password" label="Password" class="flex:col-xl" />
           <div class="flex:row-md ml-auto">
-            <Button v-bind="args" legacy legacy-size="md" legacy-variant="default" title="Cancel" />
-            <Button v-bind="args" legacy legacy-size="md" legacy-variant="invitational" title="Sign in" />
+            <Button v-bind="args" legacy legacy-size="md" legacy-variant="default">
+              Cancel
+            </Button>
+            <Button v-bind="args" legacy legacy-size="md" legacy-variant="invitational">
+              Sign in
+            </Button>
           </div>
         </Form>
       );

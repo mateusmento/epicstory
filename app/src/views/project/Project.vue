@@ -53,6 +53,8 @@ const routeName = computed(() => {
       return "backlog";
     case "project-board":
       return "board";
+    case "project-timeline":
+      return "timeline";
     default:
       return undefined;
   }

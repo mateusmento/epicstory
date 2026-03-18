@@ -36,6 +36,7 @@ export {
   IoTrashBin,
   FaUserPlus,
   MdSignalcellularaltRound,
+  MdTune,
   BiExclamationSquareFill,
   IoClose,
   BiArrowDownShort,

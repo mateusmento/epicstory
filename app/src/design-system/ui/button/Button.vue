@@ -11,7 +11,6 @@ interface Props extends /* @vue-ignore */ ButtonHTMLAttributes, PrimitiveProps {
   variant?: ButtonVariants["variant"];
   size?: ButtonVariants["size"];
   class?: HTMLAttributes["class"];
-  title?: string;
   legacy?: boolean;
   legacyVariant?: ButtonVariant;
   legacySize?: ButtonSize;
@@ -34,7 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
         : cn(buttonVariants({ variant, size }), props.class)
     "
   >
-    <slot>{{ title }}</slot>
+    <slot />
   </Primitive>
 </template>
 

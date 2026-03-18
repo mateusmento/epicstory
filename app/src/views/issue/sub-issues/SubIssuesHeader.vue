@@ -35,7 +35,11 @@ const progressStyle = computed(() => ({
     >
       <Icon :name="collapsed ? 'oi-chevron-down' : 'oi-chevron-up'" class="w-3 h-3" />
       <span class="font-medium">Sub-issues</span>
-      <span class="inline-flex h-4 w-4 rounded-full ring-1 ring-border" :style="progressStyle" aria-hidden="true" />
+      <span
+        class="inline-flex h-4 w-4 rounded-full ring-1 ring-border"
+        :style="progressStyle"
+        aria-hidden="true"
+      />
       <span class="text-xs tabular-nums">{{ doneCount }}/{{ totalCount }}</span>
     </button>
 
@@ -58,4 +62,3 @@ const progressStyle = computed(() => ({
     </div>
   </div>
 </template>
-

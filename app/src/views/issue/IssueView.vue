@@ -90,7 +90,11 @@ const dueDateValue = computed<DateValue | undefined>(() => {
 
 const editor = useEditor({
   extensions: [
-    StarterKit,
+    StarterKit.configure({
+      // Avoid duplicate extension warnings when we include Link/Underline explicitly.
+      link: false,
+      underline: false,
+    }),
     Underline,
     Link.configure({
       openOnClick: false,
