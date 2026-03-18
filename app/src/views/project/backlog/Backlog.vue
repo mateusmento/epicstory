@@ -1,6 +1,6 @@
 <script lang="tsx" setup>
 import { UserSelect } from "@/components/user";
-import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
+import { Button, ContentEditable, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
@@ -14,13 +14,11 @@ import { debounce } from "lodash";
 import {
   computed,
   onMounted,
-  nextTick,
   reactive,
   ref,
   watch,
   withModifiers,
   type FunctionalComponent as FC,
-  type ComponentPublicInstance,
 } from "vue";
 import { useRouter } from "vue-router";
 import { DueDatePicker } from "./date-picker";
@@ -128,32 +126,12 @@ const editingIssue = reactive<{
   title: string;
 }>({ id: null, title: "" });
 
-const editTitleEl = ref<HTMLDivElement | null>(null);
-
-function setEditTitleEl(el: Element | ComponentPublicInstance | null) {
-  editTitleEl.value = (el as HTMLDivElement | null) ?? null;
-}
-
-watch(
-  () => editingIssue.id,
-  async (id) => {
-    if (!id) return;
-    await nextTick();
-    const el = editTitleEl.value;
-    if (!el) return;
-    el.textContent = editingIssue.title ?? "";
-    el.focus();
-    try {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-    } catch {
-      // ignore selection errors (e.g. non-browser env)
-    }
+const titleEditable = computed({
+  get: () => editingIssue.id !== null,
+  set: (isOpen) => {
+    if (!isOpen) closeIssueEdit();
   },
-);
+});
 
 function openIssueEdit(issue: Issue) {
   editingIssue.title = issue.title;
@@ -172,26 +150,6 @@ function saveEdit() {
   if (!title) return closeIssueEdit();
   updateIssue(id, { title });
   closeIssueEdit();
-}
-
-function onEditableTitleInput(e: Event) {
-  const el = e.target as HTMLDivElement | null;
-  if (!el) return;
-  editingIssue.title = (el.innerText ?? "").replace(/\n/g, "");
-}
-
-function onEditableTitleKeydown(e: KeyboardEvent) {
-  // Prevent parent handlers (e.g. context-menu trigger / row interactions) from hijacking typing/navigation keys.
-  e.stopPropagation();
-  if (e.key === "Enter") {
-    e.preventDefault();
-    saveEdit();
-    return;
-  }
-  if (e.key === "Escape") {
-    e.preventDefault();
-    closeIssueEdit();
-  }
 }
 
 function updateIssueStatus(issue: Issue) {
@@ -469,17 +427,14 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
 
                     <div v-else class="flex items-center gap-1 min-w-0">
                       <div class="flex items-center gap-1 min-w-0 text-sm">
-                        <div
-                          :ref="setEditTitleEl"
-                          contenteditable="true"
-                          role="textbox"
-                          aria-label="Issue title"
-                          data-placeholder="Issue title"
-                          class="inline-block max-w-full whitespace-nowrap bg-transparent outline-none leading-5 text-foreground empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
-                          @input="onEditableTitleInput"
-                          @keydown.stop="onEditableTitleKeydown"
-                          @keyup.stop
-                          @keypress.stop
+                        <ContentEditable
+                          v-model="editingIssue.title"
+                          v-model:editable="titleEditable"
+                          as="div"
+                          placeholder="Issue title"
+                          class="inline-block max-w-full whitespace-nowrap bg-transparent outline-none leading-5 text-foreground"
+                          @submit="saveEdit"
+                          @cancel="closeIssueEdit"
                         />
                         <template v-if="issue.parentIssue?.title">
                           <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
@@ -668,17 +623,14 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
 
                         <div v-else class="flex items-center gap-1 min-w-0">
                           <div class="flex items-center gap-1 min-w-0 text-sm">
-                            <div
-                              :ref="setEditTitleEl"
-                              contenteditable="true"
-                              role="textbox"
-                              aria-label="Issue title"
-                              data-placeholder="Issue title"
-                              class="inline-block max-w-full whitespace-nowrap bg-transparent outline-none leading-5 text-foreground empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground empty:before:pointer-events-none"
-                              @input="onEditableTitleInput"
-                              @keydown.stop="onEditableTitleKeydown"
-                              @keyup.stop
-                              @keypress.stop
+                            <ContentEditable
+                              v-model="editingIssue.title"
+                              v-model:editable="titleEditable"
+                              as="div"
+                              placeholder="Issue title"
+                              class="inline-block max-w-full whitespace-nowrap bg-transparent outline-none leading-5 text-foreground"
+                              @submit="saveEdit"
+                              @cancel="closeIssueEdit"
                             />
                             <template v-if="issue.parentIssue?.title">
                               <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
