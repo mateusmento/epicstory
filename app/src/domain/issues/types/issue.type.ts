@@ -14,4 +14,7 @@ export type Issue = {
   assignees: User[];
   priority: number;
   labels: Label[];
+  parentIssueId?: number | null;
+  parentIssue?: Issue | null;
+  subIssues?: Issue[];
 };

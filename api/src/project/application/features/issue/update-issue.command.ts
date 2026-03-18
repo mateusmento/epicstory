@@ -113,7 +113,11 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
     // Load the issue with all relations for WebSocket emission
     const loadedIssue = await this.issueRepo.findOne({
       where: { id: savedIssue.id },
-      relations: ['assignees'],
+      relations: {
+        assignees: true,
+        labels: true,
+        subIssues: true,
+      },
     });
 
     // Emit WebSocket event to notify all clients in the project room

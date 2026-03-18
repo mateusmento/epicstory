@@ -20,7 +20,7 @@ export function useIssues() {
   }
 
   async function createIssue(projectId: number, title: string) {
-    const issue = await issueApi.createIssue(projectId, title);
+    const issue = await issueApi.createIssue(projectId, { title });
     store.issues.push(issue);
     return issue;
   }

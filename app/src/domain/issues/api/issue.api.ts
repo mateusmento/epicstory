@@ -30,8 +30,8 @@ export class IssueApi {
     return this.axios.get<Issue>(`/issues/${issueId}`).then((res) => res.data);
   }
 
-  createIssue(projectId: number, title: string) {
-    return this.axios.post<Issue>(`/projects/${projectId}/issues`, { title }).then((res) => res.data);
+  createIssue(projectId: number, data: { title: string; description?: string; parentIssueId?: number }) {
+    return this.axios.post<Issue>(`/projects/${projectId}/issues`, data).then((res) => res.data);
   }
 
   updateIssue(issueId: number, data: UpdateIssueData) {

@@ -16,6 +16,7 @@ export {
   BiChevronContract,
   OiChevronUp,
   OiChevronDown,
+  OiChevronRight,
   OiSidebarExpand,
   OiSidebarCollapse,
   MdDraghandleRound,
@@ -55,4 +56,6 @@ export {
   BiCalendar,
   OiPerson,
   BiGripVertical,
+  BiThreeDots,
+  BiCheck,
 } from "oh-vue-icons/icons";

@@ -368,19 +368,29 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
               </div>
 
               <!-- Title -->
-              <div class="min-w-0">
+              <div class="min-w-0 flex:row-lg flex:center-y">
                 <div v-if="editingIssue.id !== issue.id" class="min-w-0">
                   <div class="flex:row-lg flex:center-y min-w-0">
                     <Tooltip>
                       <TooltipTrigger as-child>
                         <div class="min-w-0" @dblclick.stop="openIssue(issue)">
-                          <div class="truncate text-sm text-foreground">
-                            {{ issue.title }}
+                          <div class="truncate text-sm text-foreground flex items-center gap-1 min-w-0">
+                            <span class="truncate min-w-0">{{ issue.title }}</span>
+                            <template v-if="issue.parentIssue?.title">
+                              <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
+                              <span class="text-muted-foreground truncate max-w-56">{{ issue.parentIssue.title }}</span>
+                            </template>
                           </div>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {{ issue.title }}
+                        <template v-if="issue.parentIssue?.title">
+                          {{ issue.title }} <Icon name="oi-chevron-right" class="inline w-3 h-3 text-muted-foreground" />
+                          {{ issue.parentIssue.title }}
+                        </template>
+                        <template v-else>
+                          {{ issue.title }}
+                        </template>
                       </TooltipContent>
                     </Tooltip>
                     <Icon
@@ -390,21 +400,6 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                       title="Edit title"
                     />
                   </div>
-
-                  <div v-if="issue.labels?.length" class="mt-0.5 flex flex-wrap gap-1 min-w-0">
-                    <span
-                      v-for="l in issue.labels"
-                      :key="l.id"
-                      class="inline-flex items-center gap-1 rounded-md border bg-white px-1.5 py-0.5 text-[11px] text-muted-foreground"
-                      :title="l.name"
-                    >
-                      <span
-                        class="h-2 w-2 rounded-full ring-1 ring-border"
-                        :style="{ backgroundColor: l.color }"
-                      />
-                      <span class="max-w-24 truncate">{{ l.name }}</span>
-                    </span>
-                  </div>
                 </div>
 
                 <Form v-else @submit="saveEdit" class="flex:row-md flex:center-y">
@@ -412,6 +407,15 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                   <Button type="submit" size="badge">Save</Button>
                   <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
                 </Form>
+
+                <div v-if="issue.labels?.length" class="mt-0.5 ml-auto flex flex-wrap gap-1 min-w-0">
+                  <LabelMultiSelect
+                    :workspace-id="+props.workspaceId"
+                    :disabled="!issue"
+                    :model-value="(issue?.labels ?? []).map((l) => l.id)"
+                    @update:model-value="onLabelsChange(issue, $event)"
+                  />
+                </div>
               </div>
 
               <div class="justify-self-start">
@@ -521,18 +525,30 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                     </span>
                   </div>
 
-                  <div class="flex:row-auto flex:center-y min-w-0">
+                  <div class="flex:row-lg flex:center-y min-w-0">
                     <div v-if="editingIssue.id !== issue.id" class="flex:row-lg flex:center-y min-w-0">
                       <Tooltip>
                         <TooltipTrigger as-child>
                           <div class="min-w-0" @dblclick.stop="openIssue(issue)">
-                            <div class="truncate text-sm text-foreground">
-                              {{ issue.title }}
+                            <div class="truncate text-sm text-foreground flex items-center gap-1 min-w-0">
+                              <span class="truncate min-w-0">{{ issue.title }}</span>
+                              <template v-if="issue.parentIssue?.title">
+                                <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
+                                <span class="text-muted-foreground truncate max-w-56">
+                                  {{ issue.parentIssue.title }}
+                                </span>
+                              </template>
                             </div>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          {{ issue.title }}
+                          <template v-if="issue.parentIssue?.title">
+                            {{ issue.title }} <Icon name="oi-chevron-right" class="inline w-3 h-3 text-muted-foreground" />
+                            {{ issue.parentIssue.title }}
+                          </template>
+                          <template v-else>
+                            {{ issue.title }}
+                          </template>
                         </TooltipContent>
                       </Tooltip>
                       <Icon
@@ -549,7 +565,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                       <Button type="button" size="badge" @click="closeIssueEdit()">Cancel</Button>
                     </Form>
 
-                    <div v-if="issue.labels?.length" class="mt-0.5 flex flex-wrap gap-1 min-w-0">
+                    <div v-if="issue.labels?.length" class="mt-0.5 ml-auto flex flex-wrap gap-1 min-w-0">
                       <LabelMultiSelect
                         :workspace-id="+props.workspaceId"
                         :disabled="!issue"

@@ -1,31 +1,32 @@
 <script lang="ts" setup>
-import { useIssue } from "@/domain/issues/composables/issue";
+import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
+import { UserSelect } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Combobox, Input } from "@/design-system";
+import { Icon } from "@/design-system/icons";
+import SubIssuesSection from "./SubIssuesSection.vue";
+import { useIssue } from "@/domain/issues/composables/issue";
 import { ProjectApi, type Project } from "@/domain/project";
-import { parseAbsolute, getLocalTimeZone, type DateValue } from "@internationalized/date";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import type { User } from "@/domain/user";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
-import { UserSelect } from "@/components/user";
-import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
-import type { User } from "@/domain/user";
-import { Icon } from "@/design-system/icons";
-import { EditorContent, useEditor } from "@tiptap/vue-3";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
+import { getLocalTimeZone, parseAbsolute, type DateValue } from "@internationalized/date";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import Underline from "@tiptap/extension-underline";
+import StarterKit from "@tiptap/starter-kit";
+import { EditorContent, useEditor } from "@tiptap/vue-3";
 import {
   Bold,
   Italic,
-  Underline as UnderlineIcon,
+  Link2,
   List,
   ListOrdered,
-  Link2,
-  Undo2,
   Redo2,
+  Underline as UnderlineIcon,
+  Undo2,
 } from "lucide-vue-next";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 
 const props = defineProps<{
   workspaceId: string;
@@ -74,7 +75,7 @@ const selectedStatus = computed({
   set(next) {
     if (!next || !issue.value) return;
     if (next.value === issue.value.status) return;
-    void savePatch({ status: next.value });
+    savePatch({ status: next.value });
   },
 });
 
@@ -158,12 +159,16 @@ async function onLabelsChange(nextIds: number[]) {
   }
 }
 
+async function refreshIssue() {
+  await fetchIssue(+props.issueId);
+}
+
 function saveMainFields() {
   if (!issue.value) return;
   const data: any = {};
   if (form.title !== issue.value.title) data.title = form.title;
   if (Object.keys(data).length === 0) return;
-  void savePatch(data);
+  savePatch(data);
 }
 
 function startEditTitle() {
@@ -203,7 +208,7 @@ function finishEditDescription() {
   const instance = editor.value;
   if (!instance) return;
   const html = instance.getHTML();
-  if (html !== issue.value.description) void savePatch({ description: html });
+  if (html !== issue.value.description) savePatch({ description: html });
 }
 
 watch(isEditingDescription, (editing) => {
@@ -227,18 +232,18 @@ function toggleLink() {
 function onDueDateChange(next?: DateValue) {
   if (!issue.value) return;
   if (!next) {
-    void savePatch({ dueDate: null });
+    savePatch({ dueDate: null });
     return;
   }
-  void savePatch({ dueDate: next.toDate(getLocalTimeZone()).toISOString() });
+  savePatch({ dueDate: next.toDate(getLocalTimeZone()).toISOString() });
 }
 
 function clearDueDate() {
-  void savePatch({ dueDate: null });
+  savePatch({ dueDate: null });
 }
 
 onMounted(() => {
-  fetchIssue(+props.issueId);
+  refreshIssue();
 });
 
 watch(
@@ -301,7 +306,7 @@ watch(
           </div>
         </div>
 
-        <div class="flex:col-sm flex-1 min-h-0">
+        <div class="flex:col-sm min-h-0">
           <div class="flex:row-md flex:center-y">
             <div class="text-sm text-secondary-foreground">Description</div>
             <div class="flex-1" />
@@ -424,6 +429,16 @@ watch(
             <EditorContent :editor="editor" />
           </div>
         </div>
+
+        <SubIssuesSection
+          v-if="issue"
+          :workspace-id="props.workspaceId"
+          :project-id="props.projectId"
+          :parent-issue-id="issue.id"
+          :sub-issues="issue.subIssues ?? []"
+          :disabled="!issue"
+          @changed="refreshIssue"
+        />
       </div>
 
       <!-- Sidebar -->

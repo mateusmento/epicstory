@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDraggingById } from "@/components/board/useDraggingById";
 import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
+import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
@@ -61,11 +62,22 @@ function onLabelsChange(issue: Issue, labels: number[]) {
     "
     @dblclick.stop="openIssue(item.issue)"
   >
+    <div
+      v-if="item.issue.parentIssue?.title"
+      class="text-[11px] text-secondary-foreground truncate mb-1 flex items-center gap-1"
+    >
+      <span class="shrink-0">EP-{{ item.issue.id }}</span>
+      <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
+      <span class="truncate">{{ item.issue.parentIssue.title }}</span>
+    </div>
+
     <div class="flex:row-md flex:center-y justify-between gap-2">
       <div class="font-medium text-sm text-foreground line-clamp-2">
         {{ item.issue.title || "Untitled issue" }}
       </div>
-      <div class="text-[11px] text-secondary-foreground">#{{ item.issue.id }}</div>
+      <div v-if="!item.issue.parentIssue?.title" class="text-[11px] text-secondary-foreground">
+        #{{ item.issue.id }}
+      </div>
     </div>
 
     <div class="mt-2 flex:row-md flex:center-y gap-2 flex-wrap">
@@ -91,10 +103,6 @@ function onLabelsChange(issue: Issue, labels: number[]) {
       <span v-if="formatDueDate(item.issue.dueDate)" class="text-xs text-secondary-foreground">
         Due {{ formatDueDate(item.issue.dueDate) }}
       </span>
-    </div>
-
-    <div v-if="item.issue.description" class="text-xs text-secondary-foreground line-clamp-2 mt-2">
-      {{ item.issue.description }}
     </div>
 
     <div v-if="item.issue.assignees?.length || item.issue.labels?.length" class="flex:row-md flex-wrap mt-3">

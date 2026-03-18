@@ -27,6 +27,10 @@ export class CreateBacklogItem {
   @IsOptional()
   description?: string;
 
+  @IsNumber()
+  @IsOptional()
+  parentIssueId?: number;
+
   constructor(data: Partial<CreateBacklogItem>) {
     patch(this, data);
   }
@@ -50,6 +54,7 @@ export class CreateBacklogItemCommand
     issuer,
     title,
     description,
+    parentIssueId,
   }: CreateBacklogItem) {
     const project = await this.findProject(projectId); // ensure project exists
 
@@ -59,7 +64,7 @@ export class CreateBacklogItemCommand
     );
 
     const issue = await this.commandBus.execute(
-      new CreateIssue({ issuer, projectId, title, description }),
+      new CreateIssue({ issuer, projectId, title, description, parentIssueId }),
     );
 
     const backlogItem = await this.backlogItemRepo.save({
