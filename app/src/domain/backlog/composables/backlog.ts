@@ -1,7 +1,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { IssueApi, type UpdateIssueData } from "@/domain/issues";
 import { defineStore, storeToRefs } from "pinia";
-import { reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { BacklogItemApi, type FindBacklogItemsQuery } from "../api";
 import type { BacklogItem } from "../types";
 

@@ -20,7 +20,8 @@ import IssueDeleteDialog from "./issue-context-menu/IssueDeleteDialog.vue";
 import IssueRenameDialog from "./issue-context-menu/IssueRenameDialog.vue";
 import type { IssueContextMenuActions } from "./issue-context-menu/types";
 import { closeAllContextMenusExcept } from "./issue-context-menu/context-menu-registry";
-import ContextMenuRegistryBridge from "./issue-context-menu/ContextMenuRegistryBridge.vue";
+import { onBeforeUnmount, onMounted } from "vue";
+import { registerContextMenu } from "./issue-context-menu/context-menu-registry";
 
 const props = defineProps<{
   issue: Issue;
@@ -32,6 +33,7 @@ const props = defineProps<{
 const renameOpen = ref(false);
 const deleteOpen = ref(false);
 const actionsQuery = ref("");
+const open = ref(false);
 
 const menuId = getCurrentInstance()?.uid ?? Math.floor(Math.random() * 1_000_000_000);
 
@@ -89,18 +91,26 @@ const showRename = computed(() => !q.value || "rename".includes(q.value));
 const showDelete = computed(() => !q.value || "delete".includes(q.value) || "remove".includes(q.value));
 
 function onOpenUpdate(isOpen: boolean) {
-  if (!isOpen) return;
-  closeAllContextMenusExcept(menuId);
+  open.value = isOpen;
+  if (isOpen) closeAllContextMenusExcept(menuId);
 }
+
+let unregister: (() => void) | undefined;
+onMounted(() => {
+  unregister = registerContextMenu(menuId, () => {
+    open.value = false;
+  });
+});
+onBeforeUnmount(() => {
+  unregister?.();
+});
 </script>
 
 <template>
-  <ContextMenu @update:open="onOpenUpdate">
+  <ContextMenu :open="open" @update:open="onOpenUpdate">
     <ContextMenuTrigger as-child>
       <slot />
     </ContextMenuTrigger>
-
-    <ContextMenuRegistryBridge :menu-id="menuId" />
 
     <ContextMenuContent class="w-64">
       <div class="px-2 py-1" @click.stop @pointerdown.stop>
