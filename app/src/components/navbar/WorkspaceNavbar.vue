@@ -8,11 +8,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuItem,
   NavTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import DropdownMenu from "@/design-system/ui/dropdown-menu/DropdownMenu.vue";
-import DropdownMenuItem from "@/design-system/ui/dropdown-menu/DropdownMenuItem.vue";
 import { useAuth } from "@/domain/auth";
 import { useWorkspace } from "@/domain/workspace";
 import { ArrowLeft, ArrowRight, LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";

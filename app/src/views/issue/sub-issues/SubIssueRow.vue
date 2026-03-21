@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/design-system/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/design-system";
 import type { Issue } from "@/domain/issues";
 import { computed } from "vue";
 
