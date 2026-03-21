@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useDraggingById } from "@/components/board/useDraggingById";
 import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
-import IssueContextMenu from "@/components/issue/IssueContextMenu.vue";
+import { IssueContextMenu } from "@/components/issue";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { type BacklogItem } from "@/domain/backlog";
