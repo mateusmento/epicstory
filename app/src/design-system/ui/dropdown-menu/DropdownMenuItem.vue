@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { cn } from "@/design-system/utils";
-import { DropdownMenuItem, type DropdownMenuItemProps, useForwardProps } from "radix-vue";
-import { computed, type HTMLAttributes } from "vue";
+import { reactiveOmit } from "@vueuse/core";
+import type { DropdownMenuItemEmits, DropdownMenuItemProps } from "reka-ui";
+import { DropdownMenuItem, useForwardPropsEmits } from "reka-ui";
+import { type HTMLAttributes } from "vue";
 import { type ButtonVariants } from "../button";
 
 const props = defineProps<
@@ -11,14 +13,11 @@ const props = defineProps<
     variant?: ButtonVariants["variant"];
   }
 >();
+const emits = defineEmits<DropdownMenuItemEmits>();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
+const delegatedProps = reactiveOmit(props, "class");
 
-  return delegated;
-});
-
-const forwardedProps = useForwardProps(delegatedProps);
+const forwardedProps = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>

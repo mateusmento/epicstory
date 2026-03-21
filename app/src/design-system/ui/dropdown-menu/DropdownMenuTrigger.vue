@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DropdownMenuTrigger, type DropdownMenuTriggerProps, useForwardProps } from "radix-vue";
+import { DropdownMenuTrigger, type DropdownMenuTriggerProps, useForwardProps } from "reka-ui";
 import { onMounted, ref, watchEffect } from "vue";
 import { useDropdownMenuZContext } from "./dropdown-menu.context";
 

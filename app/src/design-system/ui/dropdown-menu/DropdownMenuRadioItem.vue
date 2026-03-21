@@ -1,25 +1,15 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from "vue";
-import {
-  DropdownMenuItemIndicator,
-  DropdownMenuRadioItem,
-  type DropdownMenuRadioItemEmits,
-  type DropdownMenuRadioItemProps,
-  Slot,
-  useForwardPropsEmits,
-} from "radix-vue";
-import { DotFilledIcon } from "@radix-icons/vue";
 import { cn } from "@/design-system/utils";
+import { DotFilledIcon } from "@radix-icons/vue";
+import { reactiveOmit } from "@vueuse/core";
+import type { DropdownMenuRadioItemEmits, DropdownMenuRadioItemProps } from "reka-ui";
+import { DropdownMenuItemIndicator, DropdownMenuRadioItem, useForwardPropsEmits } from "reka-ui";
+import { type HTMLAttributes } from "vue";
 
 const props = defineProps<DropdownMenuRadioItemProps & { class?: HTMLAttributes["class"] }>();
-
 const emits = defineEmits<DropdownMenuRadioItemEmits>();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, "class");
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>

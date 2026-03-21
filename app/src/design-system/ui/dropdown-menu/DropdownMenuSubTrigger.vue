@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type HTMLAttributes, computed } from "vue";
-import { DropdownMenuSubTrigger, type DropdownMenuSubTriggerProps, useForwardProps } from "radix-vue";
+import { DropdownMenuSubTrigger, type DropdownMenuSubTriggerProps, useForwardProps } from "reka-ui";
 import { ChevronRightIcon } from "@radix-icons/vue";
 import { cn } from "@/design-system/utils";
 

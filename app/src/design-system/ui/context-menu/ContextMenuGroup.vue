@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { ContextMenuGroupProps } from "reka-ui"
-import { ContextMenuGroup } from "reka-ui"
+import { ContextMenuGroup, type ContextMenuGroupProps } from "reka-ui";
 
-const props = defineProps<ContextMenuGroupProps>()
+const props = defineProps<ContextMenuGroupProps>();
 </script>
 
 <template>

@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from "vue";
-import { DropdownMenuLabel, type DropdownMenuLabelProps, useForwardProps } from "radix-vue";
 import { cn } from "@/design-system/utils";
+import { reactiveOmit } from "@vueuse/core";
+import { DropdownMenuLabel, type DropdownMenuLabelProps, useForwardProps } from "reka-ui";
+import { type HTMLAttributes } from "vue";
 
 const props = defineProps<DropdownMenuLabelProps & { class?: HTMLAttributes["class"]; inset?: boolean }>();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, "class");
 
 const forwardedProps = useForwardProps(delegatedProps);
 </script>

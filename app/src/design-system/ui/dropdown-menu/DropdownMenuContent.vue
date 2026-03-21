@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from "vue";
-import {
-  DropdownMenuContent,
-  type DropdownMenuContentEmits,
-  type DropdownMenuContentProps,
-  DropdownMenuPortal,
-  useForwardPropsEmits,
-} from "radix-vue";
 import { cn } from "@/design-system/utils";
+import { reactiveOmit } from "@vueuse/core";
+import type { DropdownMenuContentEmits, DropdownMenuContentProps } from "reka-ui";
+import { DropdownMenuContent, DropdownMenuPortal, useForwardPropsEmits } from "reka-ui";
+import { type HTMLAttributes, computed } from "vue";
 import { useDropdownMenuZContext } from "./dropdown-menu.context";
 
 const props = withDefaults(
@@ -19,11 +15,7 @@ const props = withDefaults(
 );
 const emits = defineEmits<DropdownMenuContentEmits>();
 
-const delegatedProps = computed(() => {
-  const delegated: any = { ...props };
-  delete delegated.class;
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, "class");
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 
