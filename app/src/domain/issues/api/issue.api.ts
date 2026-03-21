@@ -10,10 +10,13 @@ export type UpdateIssueData = {
   status?: string;
   dueDate?: string | null;
   priority?: number | null;
+  parentIssueId?: number | null;
 };
 
 export type FindIssuesQuery = PageQuery & {
   projectId: number;
+  search?: string;
+  assigneeId?: number;
 };
 
 @injectable()

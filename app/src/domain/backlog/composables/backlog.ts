@@ -1,7 +1,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { IssueApi, type UpdateIssueData } from "@/domain/issues";
 import { defineStore, storeToRefs } from "pinia";
-import { computed, reactive, ref } from "vue";
+import { reactive, ref } from "vue";
 import { BacklogItemApi, type FindBacklogItemsQuery } from "../api";
 import type { BacklogItem } from "../types";
 
@@ -73,6 +73,13 @@ export function useBacklog() {
     return issue;
   }
 
+  async function markAsSubIssueOf(subIssueId: number, parentIssueId: number) {
+    const issue = await issueApi.updateIssue(subIssueId, { parentIssueId });
+    const index = store.backlogItems.findIndex((i) => i.issue.id === subIssueId);
+    if (index >= 0) store.backlogItems[index].issue = issue;
+    return issue;
+  }
+
   async function removeIssue(issueId: number) {
     await issueApi.removeIssue(issueId);
     store.backlogItems = store.backlogItems.filter((item) => item.issue.id !== issueId);
@@ -89,6 +96,7 @@ export function useBacklog() {
     removeAssignee,
     addLabel,
     removeLabel,
+    markAsSubIssueOf,
     removeIssue,
   };
 }

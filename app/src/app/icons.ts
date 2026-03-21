@@ -61,4 +61,5 @@ export {
   BiCheck,
   FaRegularSave,
   FaRegularTimesCircle,
+  OiChevronLeft,
 } from "oh-vue-icons/icons";

@@ -1,4 +1,5 @@
 import { InjectAxios } from "@/core/axios";
+import type { Page } from "@/core/types";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { User } from "../types";
@@ -7,12 +8,16 @@ import type { User } from "../types";
 export class UserApi {
   constructor(@InjectAxios() private axios: Axios) {}
 
-  findUsers(username: string) {
-    return this.axios.get<User[]>(`/auth/users`, { params: { username } }).then((res) => res.data);
+  findUsers(username: string, opts?: { page?: number; count?: number }) {
+    return this.axios
+      .get<Page<User>>(`/auth/users`, { params: { username, page: opts?.page, count: opts?.count } })
+      .then((res) => res.data);
   }
 
-  findUsersByName(name: string) {
-    return this.axios.get<User[]>(`/auth/users`, { params: { name } }).then((res) => res.data);
+  findUsersByName(name: string, opts?: { page?: number; count?: number }) {
+    return this.axios
+      .get<Page<User>>(`/auth/users`, { params: { name, page: opts?.page, count: opts?.count } })
+      .then((res) => res.data);
   }
 
   updatePicture(data: FormData) {

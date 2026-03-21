@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ContextMenuItem, ContextMenuSeparator } from "@/design-system";
-import { Icon } from "@/design-system/icons";
-import { computed } from "vue";
-import { ref } from "vue";
+import { MenuInput, MenuItem, MenuSeparator } from "@/design-system";
+import { Check } from "lucide-vue-next";
+import { computed, ref } from "vue";
 
 const props = defineProps<{
   value: string | null | undefined;
@@ -34,28 +33,21 @@ function onSelect(value: string) {
 </script>
 
 <template>
-  <div class="px-2 py-1" @click.stop @pointerdown.stop>
-    <input
-      v-model="query"
-      type="text"
-      class="h-8 w-full rounded-md border bg-transparent px-2 text-sm outline-none"
-      placeholder="Search status…"
-    />
-  </div>
-  <ContextMenuSeparator />
+  <div>
+    <MenuInput v-model="query" placeholder="Search status…" auto-focus />
 
-  <ContextMenuItem
-    v-for="opt in filtered"
-    :key="opt.value"
-    class="flex items-center gap-2"
-    @click="onSelect(opt.value)"
-  >
-    <span class="h-2 w-2 rounded-full ring-1 ring-border" :class="opt.dotClass" />
-    <span class="flex-1">{{ opt.label }}</span>
-    <Icon
-      v-if="(props.value ?? 'todo') === opt.value"
-      name="bi-check"
-      class="h-4 w-4 text-muted-foreground"
-    />
-  </ContextMenuItem>
+    <MenuSeparator />
+
+    <MenuItem
+      v-for="opt in filtered"
+      :key="opt.value"
+      class="flex items-center gap-2 text-xs"
+      @click="onSelect(opt.value)"
+    >
+      <span class="h-2 w-2 rounded-full ring-1 ring-border" :class="opt.dotClass" />
+      <span class="flex-1">{{ opt.label }}</span>
+
+      <Check v-if="(props.value ?? 'todo') === opt.value" class="w-4 h-4 text-muted-foreground" />
+    </MenuItem>
+  </div>
 </template>

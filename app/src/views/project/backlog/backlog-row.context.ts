@@ -18,7 +18,7 @@ export type BacklogRowContext = {
   cancelEdit(): void;
   saveEdit(): void;
 
-  toggleStatus(issue: Issue): void;
+  updateIssueStatus(issue: Issue, status: string): void;
   statusDotClass(status: string): string;
 
   onLabelsChange(issue: Issue, nextIds: number[]): void | Promise<void>;

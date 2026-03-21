@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
 import { UserSelect } from "@/components/user";
-import { Button, ContentEditable, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
+import {
+  Button,
+  ContentEditable,
+  Menu,
+  MenuContent,
+  MenuTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import type { Issue } from "@/domain/issues";
@@ -10,6 +19,7 @@ import { computed } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
 import { useBacklogRowContext } from "./backlog-row.context";
+import { IssueStatusMenu } from "@/components/issue";
 
 const props = defineProps<{
   itemId: number;
@@ -30,7 +40,7 @@ const {
   startEdit,
   cancelEdit,
   saveEdit,
-  toggleStatus,
+  updateIssueStatus,
   statusDotClass,
   onLabelsChange,
 } = ctx;
@@ -67,16 +77,20 @@ const editableModel = computed({
     </div>
 
     <!-- Status + key -->
-    <div class="flex items-center gap-2 min-w-0">
-      <button
-        type="button"
-        class="w-2.5 h-2.5 rounded-full ring-1 ring-border"
-        :class="statusDotClass(issue.status)"
-        :title="issue.status"
-        @click="toggleStatus(issue)"
-      />
-      <span class="text-xs text-muted-foreground tabular-nums shrink-0"> EP-{{ issue.id }} </span>
-    </div>
+    <Menu type="dropdown-menu">
+      <MenuTrigger class="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          class="w-2.5 h-2.5 rounded-full ring-1 ring-border"
+          :class="statusDotClass(issue.status)"
+          :title="issue.status"
+        />
+        <span class="text-xs text-muted-foreground tabular-nums shrink-0"> EP-{{ issue.id }} </span>
+      </MenuTrigger>
+      <MenuContent as-child align="start" side="bottom">
+        <IssueStatusMenu :value="issue.status" @select="updateIssueStatus(issue, $event)" />
+      </MenuContent>
+    </Menu>
 
     <!-- Title -->
     <div class="min-w-0 flex:row-lg flex:center-y">
@@ -89,7 +103,9 @@ const editableModel = computed({
                   <span class="truncate min-w-0">{{ issue.title }}</span>
                   <template v-if="issue.parentIssue?.title">
                     <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
-                    <span class="text-muted-foreground truncate max-w-56">{{ issue.parentIssue.title }}</span>
+                    <span class="text-muted-foreground truncate max-w-56 text-xs">{{
+                      issue.parentIssue.title
+                    }}</span>
                   </template>
                 </div>
               </div>

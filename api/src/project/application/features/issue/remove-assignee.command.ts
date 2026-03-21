@@ -42,7 +42,7 @@ export class RemoveAssigneeCommand implements ICommandHandler<RemoveAssignee> {
 
     const updated = await this.issueRepo.findOne({
       where: { id: issueId },
-      relations: { assignees: true },
+      relations: { assignees: true, parentIssue: true, labels: true },
     });
     if (!updated) throw new NotFoundException('Issue not found');
 

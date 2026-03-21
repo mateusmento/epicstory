@@ -53,7 +53,7 @@ export class RemoveLabelCommand implements ICommandHandler<RemoveLabel> {
 
     const updated = await this.issueRepo.findOne({
       where: { id: issueId },
-      relations: { assignees: true, labels: true },
+      relations: { assignees: true, labels: true, parentIssue: true },
     });
     if (!updated) throw new NotFoundException('Issue not found');
     return updated;

@@ -23,6 +23,7 @@ export const buttonVariants = cva(
         sm: "h-8 rounded-md px-2 text-xs",
         lg: "h-10 rounded-md px-8",
         icon: "p-1",
+        "icon-sm": "p-0.5",
         badge: "py-0.5 px-1 rounded text-xs",
       },
     },

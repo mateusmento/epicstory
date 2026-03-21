@@ -57,7 +57,7 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
       if (!parentIssue) throw new NotFoundException('Parent issue not found');
     }
 
-    return this.issueRepo.save(
+    const issue = await this.issueRepo.save(
       Issue.create({
         ...data,
         workspaceId,
@@ -65,5 +65,15 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
         createdById: issuer.id,
       }),
     );
+
+    return this.issueRepo.findOne({
+      where: { id: issue.id },
+      relations: {
+        assignees: true,
+        labels: true,
+        parentIssue: true,
+        subIssues: true,
+      },
+    });
   }
 }

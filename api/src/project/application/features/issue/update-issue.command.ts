@@ -34,6 +34,10 @@ export class UpdateIssue {
   @IsOptional()
   priority?: number | null;
 
+  @IsNumber()
+  @IsOptional()
+  parentIssueId?: number | null;
+
   constructor(data: Partial<UpdateIssue> = {}) {
     patch(this, data);
   }
@@ -116,6 +120,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
       relations: {
         assignees: true,
         labels: true,
+        parentIssue: true,
         subIssues: true,
       },
     });

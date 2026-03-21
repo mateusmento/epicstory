@@ -1,13 +1,13 @@
 <script lang="tsx" setup>
+import { IssueContextMenu } from "@/components/issue";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
-import IssueContextMenu from "@/components/issue/IssueContextMenu.vue";
 import { animations } from "@formkit/drag-and-drop";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { useStorage } from "@vueuse/core";
-import { concat, debounce, uniq, uniqBy } from "lodash";
+import { concat, debounce, uniq } from "lodash";
 import {
   computed,
   onMounted,
@@ -18,12 +18,12 @@ import {
   type FunctionalComponent as FC,
 } from "vue";
 import { useRouter } from "vue-router";
+import BacklogItemRow from "./BacklogItemRow.vue";
+import { provideBacklogRowContext } from "./backlog-row.context";
 import Signal1Bar from "./priority-toggler/Signal1Bar.vue";
 import Signal2Bars from "./priority-toggler/Signal2Bars.vue";
 import Signal3Bars from "./priority-toggler/Signal3Bars.vue";
 import UrgentIcon from "./priority-toggler/Urgent.vue";
-import BacklogItemRow from "./BacklogItemRow.vue";
-import { provideBacklogRowContext } from "./backlog-row.context";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
@@ -143,8 +143,7 @@ function saveEdit() {
   closeIssueEdit();
 }
 
-function updateIssueStatus(issue: Issue) {
-  const status = issue.status === "todo" ? "doing" : issue.status === "doing" ? "done" : "todo";
+function updateIssueStatus(issue: Issue, status: string) {
   updateIssue(issue.id, { status });
 }
 
@@ -269,7 +268,7 @@ provideBacklogRowContext({
   startEdit: openIssueEdit,
   cancelEdit: closeIssueEdit,
   saveEdit,
-  toggleStatus: updateIssueStatus,
+  updateIssueStatus,
   statusDotClass: issueStatusDotClass,
   onLabelsChange,
 });
