@@ -13,13 +13,6 @@ import {
 import { Channel } from './channel.entity';
 import { MessageReply } from './message-reply.entity';
 
-export type MessageReactionsGroup = {
-  emoji: string;
-  reactedBy: User[];
-  firstReactedAt?: Date;
-  reactedByMe: boolean;
-};
-
 @Entity({ schema: CHANNEL_SCHEMA, name: 'messages' })
 export class Message {
   @PrimaryGeneratedColumn()
@@ -54,16 +47,6 @@ export class Message {
   @Exclude()
   @OneToMany(() => MessageReply, (reply) => reply.message)
   allReplies: MessageReply[];
-
-  repliesCount: number;
-  repliers: { user: User; repliesCount: number }[];
-  reactions: MessageReactionsGroup[];
-
-  constructor() {
-    this.reactions = [];
-    this.repliesCount = 0;
-    this.repliers = [];
-  }
 }
 
 @Unique('unique_message_reaction', ['messageId', 'emoji', 'userId'])

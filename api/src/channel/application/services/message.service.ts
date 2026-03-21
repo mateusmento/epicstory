@@ -17,12 +17,26 @@ import { Transactional } from 'typeorm-transactional';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
 import { normalizeTiptapDoc, tiptapToPlainText } from '../utils/tiptap';
 
+export type MessageReactionsGroup = {
+  emoji: string;
+  reactedBy: User[];
+  firstReactedAt?: Date;
+  reactedByMe: boolean;
+};
+
 export class MessageDto extends Message {
   mentionedUsers?: User[];
   displayContent?: string;
 
+  repliesCount: number;
+  repliers: { user: User; repliesCount: number }[];
+  reactions: MessageReactionsGroup[];
+
   constructor(data: Partial<MessageDto>) {
     super();
+    this.reactions = [];
+    this.repliesCount = 0;
+    this.repliers = [];
     patch(this, data);
   }
 }

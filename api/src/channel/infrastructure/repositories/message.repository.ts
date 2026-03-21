@@ -19,7 +19,7 @@ export class MessageRepository extends Repository<Message> {
 
     const repliesCount = await this.createQueryBuilder('m')
       .leftJoin('m.allReplies', 'r')
-      .where('r.messageId IN (:...messageIds)', { messageIds })
+      .where('m.id IN (:...messageIds)', { messageIds })
       .groupBy('m.id')
       .orderBy('m.sentAt', 'ASC')
       .select('m.id', 'messageId')
