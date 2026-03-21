@@ -1,5 +1,5 @@
 import { config } from "@/config";
-import { http, HttpResponse, RequestHandler } from "msw";
+import { http, HttpResponse } from "msw";
 
 const API_URL = config.API_URL;
 
@@ -12,6 +12,20 @@ export function mockAuthAccessEndpoint() {
 export function mockSigninEndpoint() {
   return http.post(`${API_URL}/auth/tokens`, () => {
     return HttpResponse.json({ token: "", user: {} });
+  });
+}
+
+export function mockAuthenticateEndpoint() {
+  return http.get(`${API_URL}/auth/tokens/current`, () => {
+    return HttpResponse.json({
+      token: "storybook-token",
+      user: {
+        id: 1,
+        name: "Storybook User",
+        email: "storybook@local",
+        picture: "",
+      },
+    });
   });
 }
 
@@ -35,7 +49,7 @@ export function mockWorkspacesEndpoint() {
   let counter = 1;
 
   return [
-    http.get(`${API_URL}/workspaces`, async ({ request }) => {
+    http.get(`${API_URL}/workspaces`, async () => {
       const raw = localStorage.getItem("workspaces") ?? "[]";
       const workspaces: any[] = JSON.parse(raw);
       return HttpResponse.json({ content: workspaces });
