@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Get,
   NotFoundException,
+  Patch,
   Param,
   Post,
   Query,
@@ -17,6 +18,7 @@ import {
   FindIssues,
   FindLabels,
   FindProjects,
+  UpdateLabel,
 } from '../features';
 import { ExceptionFilter } from 'src/core';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -79,6 +81,20 @@ export class WorkspaceController {
   ) {
     return this.commandBus.execute(
       new CreateLabel({ ...data, workspaceId, issuer }),
+    );
+  }
+
+  @Patch(':id/labels/:labelId')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  updateLabel(
+    @Param('id') workspaceId: number,
+    @Param('labelId') labelId: number,
+    @Body() data: UpdateLabel,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new UpdateLabel({ ...data, workspaceId, labelId, issuer }),
     );
   }
 }

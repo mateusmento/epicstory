@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDraggingById } from "@/components/board/useDraggingById";
-import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
+import { IssueLabelTags } from "@/components/issue";
 import { IssueContextMenu } from "@/components/issue";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
@@ -132,7 +132,7 @@ function onLabelsChange(issue: Issue, labels: number[]) {
           +{{ item.issue.assignees.length - 5 }}
         </div>
 
-        <LabelMultiSelect
+        <IssueLabelTags
           :workspace-id="+item.issue.workspaceId"
           :disabled="!item.issue"
           :model-value="(item.issue?.labels ?? []).map((l) => l.id)"

@@ -121,7 +121,7 @@ onBeforeUnmount(() => {
 
       <MenuSub>
         <MenuSubTrigger :disabled="disabled">Labels</MenuSubTrigger>
-        <MenuSubContent class="p-0 w-80">
+        <MenuSubContent as-child>
           <IssueLabelsMenu
             :workspace-id="workspaceId"
             :disabled="disabled"
@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
 
       <MenuSeparator />
 
-      <MenuItem :disabled="disabled" variant="destructive" @click="deleteOpen = true"> Delete </MenuItem>
+      <MenuItem :disabled="disabled" variant="destructive" @click="deleteOpen = true">Delete</MenuItem>
     </MenuContent>
   </Menu>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
+import { IssueLabelTags } from "@/components/issue";
 import { UserSelect } from "@/components/user";
 import {
   Button,
@@ -212,7 +212,7 @@ async function onCreateIssue() {
         </UserSelect>
 
         <!-- Labels -->
-        <LabelMultiSelect
+        <IssueLabelTags
           v-model="selectedLabelIds"
           :workspace-id="workspaceId"
           :disabled="workspaceId === 0"

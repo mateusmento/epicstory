@@ -2,6 +2,7 @@ export * from "./ui/badge";
 export * from "./ui/breadcrumb";
 export * from "./ui/button";
 export * from "./ui/calendar";
+export * from "./ui/checkbox";
 export * from "./ui/collapsible";
 export * from "./ui/combobox";
 export * from "./ui/command";

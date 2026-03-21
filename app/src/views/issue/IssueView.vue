@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
+import { IssueLabelTags } from "@/components/issue";
 import { UserSelect } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Combobox, Input } from "@/design-system";
@@ -545,7 +545,7 @@ watch(
           <div class="flex:col-sm">
             <div class="text-xs text-secondary-foreground">Labels</div>
             <div class="flex flex-wrap items-center gap-1.5">
-              <LabelMultiSelect
+              <IssueLabelTags
                 :workspace-id="+props.workspaceId"
                 :disabled="!issue"
                 :model-value="(issue?.labels ?? []).map((l) => l.id)"

@@ -1,9 +1,8 @@
 import { useDependency } from "@/core/dependency-injection";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
-import { LabelApi, type CreateLabelData } from "../api";
+import { LabelApi, type CreateLabelData, type UpdateLabelData } from "../api";
 import type { Label } from "../types";
-import { useWorkspace } from "@/domain/workspace";
 
 const useLabelStore = defineStore("labels", () => {
   const labels = ref<Label[]>([]);
@@ -14,7 +13,6 @@ const useLabelStore = defineStore("labels", () => {
 export function useLabels() {
   const store = useLabelStore();
   const api = useDependency(LabelApi);
-  const { workspace } = useWorkspace();
 
   const labelsById = computed(() => {
     const map = new Map<number, Label>();
@@ -38,10 +36,18 @@ export function useLabels() {
     return created;
   }
 
+  async function updateLabel(workspaceId: number, labelId: number, data: UpdateLabelData) {
+    const updated = await api.updateLabel(workspaceId, labelId, data);
+    store.labels = store.labels.map((l) => (l.id === labelId ? updated : l));
+    store.workspaceId = workspaceId;
+    return updated;
+  }
+
   return {
     ...storeToRefs(store),
     labelsById,
     fetchLabels,
     createLabel,
+    updateLabel,
   };
 }

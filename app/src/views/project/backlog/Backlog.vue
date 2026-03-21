@@ -353,7 +353,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
       </div>
 
       <!-- List -->
-      <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden" style="scrollbar-gutter: stable">
+      <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
         <div ref="itemsContainer" class="divide-y">
           <template v-if="groupBy === 'none'">
             <IssueContextMenu

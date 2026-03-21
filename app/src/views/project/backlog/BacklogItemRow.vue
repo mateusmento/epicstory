@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LabelMultiSelect from "@/components/labels/LabelMultiSelect.vue";
+import { IssueLabelTags } from "@/components/issue";
 import { UserSelect } from "@/components/user";
 import {
   Button,
@@ -155,7 +155,7 @@ const editableModel = computed({
       </div>
 
       <div v-if="issue.labels?.length" class="mt-0.5 ml-auto flex flex-wrap gap-1 min-w-0">
-        <LabelMultiSelect
+        <IssueLabelTags
           :workspace-id="workspaceId"
           :disabled="!issue"
           :model-value="(issue?.labels ?? []).map((l) => l.id)"

@@ -14,6 +14,7 @@ export * from './issue/remove-issue.command';
 export * from './issue/update-issue.command';
 export * from './label/create-label.command';
 export * from './label/find-labels.query';
+export * from './label/update-label.command';
 export * from './project/create-project.command';
 export * from './project/find-project.query';
 export * from './project/find-projects.query';

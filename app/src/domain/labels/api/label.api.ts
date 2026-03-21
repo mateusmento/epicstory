@@ -8,6 +8,11 @@ export type CreateLabelData = {
   color: string;
 };
 
+export type UpdateLabelData = {
+  name: string;
+  color: string;
+};
+
 @injectable()
 export class LabelApi {
   constructor(@InjectAxios() private axios: Axios) {}
@@ -19,5 +24,10 @@ export class LabelApi {
   createLabel(workspaceId: number, data: CreateLabelData) {
     return this.axios.post<Label>(`/workspaces/${workspaceId}/labels`, data).then((res) => res.data);
   }
-}
 
+  updateLabel(workspaceId: number, labelId: number, data: UpdateLabelData) {
+    return this.axios
+      .patch<Label>(`/workspaces/${workspaceId}/labels/${labelId}`, data)
+      .then((res) => res.data);
+  }
+}
