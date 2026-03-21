@@ -79,7 +79,7 @@ function onLabelsChange(issue: Issue, labels: number[]) {
         <span class="truncate">{{ item.issue.parentIssue.title }}</span>
       </div>
 
-      <div class="flex:row-md flex:center-y justify-between gap-2">
+      <div class="flex:row-md items-baseline justify-between gap-2">
         <div class="font-medium text-sm text-foreground line-clamp-2">
           {{ item.issue.title || "Untitled issue" }}
         </div>

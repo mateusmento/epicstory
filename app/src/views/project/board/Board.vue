@@ -124,7 +124,7 @@ function onLabelsChange(issue: Issue, labels: number[]) {
       <BoardColumn
         group="project-board"
         v-model="todo"
-        class="flex:col-lg flex-shrink-0 w-80 min-w-80 rounded-xl border border-border bg-background/60"
+        class="flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl border border-border bg-background/60"
         @drop="onColumnDrop('todo', $event)"
       >
         <div class="flex:row-md flex:center-y justify-between px-4 pt-4">
@@ -160,7 +160,7 @@ function onLabelsChange(issue: Issue, labels: number[]) {
       <BoardColumn
         group="project-board"
         v-model="doing"
-        class="flex:col-lg flex-shrink-0 w-80 min-w-80 rounded-xl border border-border bg-background/60"
+        class="flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl border border-border bg-background/60"
         @drop="onColumnDrop('doing', $event)"
       >
         <div class="flex:row-md flex:center-y justify-between px-4 pt-4">
@@ -196,7 +196,7 @@ function onLabelsChange(issue: Issue, labels: number[]) {
       <BoardColumn
         group="project-board"
         v-model="done"
-        class="flex:col-lg flex-shrink-0 w-80 min-w-80 rounded-xl border border-border bg-background/60"
+        class="flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl border border-border bg-background/60"
         @drop="onColumnDrop('done', $event)"
       >
         <div class="flex:row-md flex:center-y justify-between px-4 pt-4">
