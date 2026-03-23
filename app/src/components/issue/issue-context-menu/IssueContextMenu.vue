@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
         <MenuSubTrigger :disabled="disabled">
           {{ issue.dueDate ? "Change due date" : "Set due date" }}
         </MenuSubTrigger>
-        <MenuSubContent class="p-0 w-72">
+        <MenuSubContent class="p-0">
           <IssueDueDateMenu :due-date="issue.dueDate" :disabled="disabled" @change="onDueDateChange" />
         </MenuSubContent>
       </MenuSub>

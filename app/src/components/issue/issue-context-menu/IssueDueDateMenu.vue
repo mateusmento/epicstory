@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Button } from "@/design-system";
-import { parseAbsolute, type DateValue, getLocalTimeZone } from "@internationalized/date";
+import { Button, Calendar } from "@/design-system";
+import { getLocalTimeZone, parseAbsolute, type DateValue } from "@internationalized/date";
+import { formatDate, isThisYear, isToday } from "date-fns";
+import { CalendarIcon } from "lucide-vue-next";
 import { computed } from "vue";
-import { DueDatePicker } from "@/views/project/backlog/date-picker";
 
 const props = defineProps<{
   dueDate: string | null | undefined;
@@ -26,12 +27,22 @@ function onChange(next: DateValue | undefined) {
   if (!next) return;
   emit("change", next.toDate(getLocalTimeZone()).toISOString());
 }
+
+function formatDueDate(date: Date) {
+  if (isToday(date)) return "Today";
+  if (isThisYear(date)) return formatDate(date, "MMM d");
+  return formatDate(date, "MMM d, yyyy");
+}
 </script>
 
 <template>
-  <div class="px-2 py-2 w-64" @click.stop>
+  <div class="px-2 py-2" @click.stop>
     <div class="flex items-center justify-between mb-2">
-      <div class="text-[11px] text-muted-foreground">Due date</div>
+      <div class="flex:row-sm items-center text-xs text-muted-foreground">
+        <CalendarIcon class="mr-2 h-3 w-3" />
+        {{ value ? formatDueDate(value.toDate(getLocalTimeZone())) : "No due date" }}
+      </div>
+
       <Button
         v-if="dueDate"
         type="button"
@@ -45,6 +56,12 @@ function onChange(next: DateValue | undefined) {
       </Button>
     </div>
 
-    <DueDatePicker :model-value="value" size="sm" :disabled="disabled" @update:model-value="onChange" />
+    <Calendar
+      :model-value="value"
+      initial-focus
+      :disabled="disabled"
+      @update:model-value="onChange"
+      class="p-0"
+    />
   </div>
 </template>
