@@ -7,7 +7,6 @@ import IssueLabelsDropdown from "../issue/issue-context-menu/IssueLabelsDropdown
 
 const props = withDefaults(
   defineProps<{
-    workspaceId: number;
     disabled?: boolean;
     placeholder?: string;
   }>(),
@@ -24,14 +23,14 @@ const open = ref(false);
 const { labelsById, fetchLabels } = useLabels();
 
 onMounted(() => {
-  fetchLabels(props.workspaceId);
+  fetchLabels();
 });
 
 watch(
   open,
   async (isOpen) => {
     if (!isOpen) return;
-    await fetchLabels(props.workspaceId);
+    await fetchLabels();
   },
   { immediate: false },
 );
@@ -48,7 +47,6 @@ const selectedLabels = computed(() => {
   <IssueLabelsDropdown
     v-for="label in selectedLabels"
     :key="label.id"
-    :workspace-id="workspaceId"
     :disabled="disabled"
     v-model="modelValue"
   >
@@ -58,7 +56,7 @@ const selectedLabels = computed(() => {
     </button>
   </IssueLabelsDropdown>
 
-  <IssueLabelsDropdown :workspace-id="workspaceId" :disabled="disabled" v-model="modelValue">
+  <IssueLabelsDropdown :disabled="disabled" v-model="modelValue">
     <button
       class="flex items-center gap-2 rounded-full border p-1 text-xs bg-white"
       title="Label"

@@ -1,11 +1,10 @@
 import { useDependency } from "@/core/dependency-injection";
+import type { PageQuery } from "@/core/types";
 import { StorageSerializers, useStorage } from "@vueuse/core";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 import { WorkspaceApi } from "../services";
 import type { Project, Team, Workspace, WorkspaceMember } from "../types";
-import type { PageQuery } from "@/core/types";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
   const workspace = useStorage<Workspace>("workspace", null, localStorage, {
@@ -31,7 +30,6 @@ export const useWorkspaceStore = defineStore("workspace", () => {
 
 export function useWorkspace() {
   const store = useWorkspaceStore();
-  const router = useRouter();
   const workspaceApi = useDependency(WorkspaceApi);
 
   const workspaceId = computed(() => {
@@ -41,10 +39,6 @@ export function useWorkspace() {
 
     return store.workspace.id;
   });
-
-  const selectWorkspace = (workspace: Workspace) => {
-    router.push(`/${workspace.id}`);
-  };
 
   async function fetchWorkspace(workspaceId: number) {
     store.workspace = await workspaceApi.findWorkspace(workspaceId);
@@ -128,7 +122,7 @@ export function useWorkspace() {
   return {
     ...storeToRefs(store),
     isFetchingMoreProjects,
-    selectWorkspace,
+    workspaceId,
     fetchWorkspace,
     fetchWorkspaceMembers,
     addWorkspaceMember,

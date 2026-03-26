@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { useDraggingById } from "@/components/board/useDraggingById";
-import { IssueLabelTags } from "@/components/issue";
-import { IssueContextMenu } from "@/components/issue";
+import { IssueContextMenu, IssueLabelTags } from "@/components/issue";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { type BacklogItem } from "@/domain/backlog";
-import { useBacklog } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
 import { formatDistanceToNow } from "date-fns";
 
@@ -19,7 +17,6 @@ const emit = defineEmits<{
 type ColumnStatus = "todo" | "doing" | "done";
 
 const { isDragging } = useDraggingById();
-const { updateIssue, addAssignee, removeAssignee, addLabel, removeLabel, removeIssue } = useBacklog();
 
 function formatDueDate(date: string | null | undefined) {
   if (!date) return null;
@@ -53,11 +50,7 @@ function onLabelsChange(issue: Issue, labels: number[]) {
 </script>
 
 <template>
-  <IssueContextMenu
-    :issue="item.issue"
-    :workspace-id="+item.issue.workspaceId"
-    :actions="{ updateIssue, addAssignee, removeAssignee, addLabel, removeLabel, removeIssue }"
-  >
+  <IssueContextMenu :issue="item.issue">
     <div
       :class="
         cn(

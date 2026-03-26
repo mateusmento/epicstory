@@ -9,8 +9,9 @@ import {
   MenuSubTrigger,
   MenuTrigger,
 } from "@/design-system";
+import { useBacklog } from "@/domain/backlog";
 import type { Issue } from "@/domain/issues";
-import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { closeAllContextMenusExcept, registerContextMenu } from "./context-menu-registry";
 import IssueAssigneesMenu from "./IssueAssigneesMenu.vue";
 import IssueDeleteDialog from "./IssueDeleteDialog.vue";
@@ -19,12 +20,9 @@ import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 import IssueRenameDialog from "./IssueRenameDialog.vue";
 import IssueStatusMenu from "./IssueStatusMenu.vue";
 import IssueSubIssueMenu from "./IssueSubIssueMenu.vue";
-import type { IssueContextMenuActions } from "./types";
 
 const props = defineProps<{
   issue: Issue;
-  workspaceId: number;
-  actions: IssueContextMenuActions;
   disabled?: boolean;
 }>();
 
@@ -36,51 +34,32 @@ const menuId = getCurrentInstance()?.uid ?? Math.floor(Math.random() * 1_000_000
 
 const labelIds = computed(() => (props.issue?.labels ?? []).map((l) => l.id));
 
+const { addLabel, removeLabel, updateIssue, addAssignee, removeAssignee, removeIssue } = useBacklog();
+
 async function onLabelsUpdate(nextIds: number[]) {
   const prev = new Set(labelIds.value);
   const next = new Set(nextIds);
 
   for (const id of next) {
     if (!prev.has(id)) {
-      await props.actions.addLabel(props.issue.id, id);
+      await addLabel(props.issue.id, id);
     }
   }
 
   for (const id of prev) {
     if (!next.has(id)) {
-      await props.actions.removeLabel(props.issue.id, id);
+      await removeLabel(props.issue.id, id);
     }
   }
 }
 
-function onStatusSelect(status: string) {
-  props.actions.updateIssue(props.issue.id, { status });
-}
-
-function onAssigneeAdd(userId: number) {
-  props.actions.addAssignee(props.issue.id, userId);
-}
-
-function onAssigneeRemove(userId: number) {
-  props.actions.removeAssignee(props.issue.id, userId);
-}
-
-function onDueDateChange(dueDate: string | null) {
-  props.actions.updateIssue(props.issue.id, { dueDate });
-}
-
-function onRename(title: string) {
-  props.actions.updateIssue(props.issue.id, { title });
-}
-
-function onDelete() {
-  props.actions.removeIssue(props.issue.id);
-}
-
-function onOpenUpdate(isOpen: boolean) {
-  open.value = isOpen;
-  if (isOpen) closeAllContextMenusExcept(menuId);
-}
+watch(
+  open,
+  (isOpen) => {
+    if (isOpen) closeAllContextMenusExcept(menuId);
+  },
+  { immediate: true },
+);
 
 let unregister: (() => void) | undefined;
 onMounted(() => {
@@ -94,7 +73,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <Menu type="context-menu" :open="open" @update:open="onOpenUpdate">
+  <Menu type="context-menu" v-model:open="open">
     <MenuTrigger as-child>
       <slot />
     </MenuTrigger>
@@ -103,7 +82,7 @@ onBeforeUnmount(() => {
       <MenuSub>
         <MenuSubTrigger :disabled="disabled">Status</MenuSubTrigger>
         <MenuSubContent as-child>
-          <IssueStatusMenu :value="issue.status" @select="onStatusSelect" />
+          <IssueStatusMenu :value="issue.status" @select="updateIssue(issue.id, { status: $event })" />
         </MenuSubContent>
       </MenuSub>
 
@@ -113,8 +92,8 @@ onBeforeUnmount(() => {
           <IssueAssigneesMenu
             :assignees="issue.assignees ?? []"
             :disabled="disabled"
-            @add="onAssigneeAdd"
-            @remove="onAssigneeRemove"
+            @add="addAssignee(issue.id, $event)"
+            @remove="removeAssignee(issue.id, $event)"
           />
         </MenuSubContent>
       </MenuSub>
@@ -123,7 +102,6 @@ onBeforeUnmount(() => {
         <MenuSubTrigger :disabled="disabled">Labels</MenuSubTrigger>
         <MenuSubContent as-child>
           <IssueLabelsMenu
-            :workspace-id="workspaceId"
             :disabled="disabled"
             :model-value="labelIds"
             @update:model-value="onLabelsUpdate"
@@ -136,7 +114,11 @@ onBeforeUnmount(() => {
           {{ issue.dueDate ? "Change due date" : "Set due date" }}
         </MenuSubTrigger>
         <MenuSubContent class="p-0">
-          <IssueDueDateMenu :due-date="issue.dueDate" :disabled="disabled" @change="onDueDateChange" />
+          <IssueDueDateMenu
+            :due-date="issue.dueDate"
+            :disabled="disabled"
+            @change="updateIssue(props.issue.id, { dueDate: $event })"
+          />
         </MenuSubContent>
       </MenuSub>
 
@@ -160,7 +142,7 @@ onBeforeUnmount(() => {
     :current-title="issue.title ?? ''"
     :disabled="disabled"
     @update:open="renameOpen = $event"
-    @confirm="onRename"
+    @confirm="updateIssue(props.issue.id, { title: $event })"
   />
 
   <IssueDeleteDialog
@@ -168,6 +150,6 @@ onBeforeUnmount(() => {
     :title="issue.title ?? ''"
     :disabled="disabled"
     @update:open="deleteOpen = $event"
-    @confirm="onDelete"
+    @confirm="removeIssue(issue.id)"
   />
 </template>

@@ -13,14 +13,20 @@ import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { cn } from "@/design-system/utils";
 import { useWorkspace, useWorkspaces, type Workspace } from "@/domain/workspace";
 import { onMounted } from "vue";
+import { useRouter } from "vue-router";
 
 const { workspaces, createWorkspace, fetchWorkspaces } = useWorkspaces();
-const { workspace: currentWorkspace, selectWorkspace } = useWorkspace();
+const { workspace: currentWorkspace } = useWorkspace();
 const { viewContent } = useNavTrigger("navbar");
 
 onMounted(async () => {
   fetchWorkspaces();
 });
+
+const router = useRouter();
+const selectWorkspace = (workspace: Workspace) => {
+  router.push(`/${workspace.id}`);
+};
 
 function onSelectWorkspace(workspace: Workspace) {
   selectWorkspace(workspace);

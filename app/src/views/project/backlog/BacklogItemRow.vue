@@ -20,6 +20,7 @@ import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
 import { useBacklogRowContext } from "./backlog-row.context";
 import { IssueStatusMenu } from "@/components/issue";
+import { useBacklog } from "@/domain/backlog";
 
 const props = defineProps<{
   itemId: number;
@@ -35,7 +36,6 @@ const {
   workspaceId,
   gridColsClass,
   editing,
-  actions,
   openIssue,
   startEdit,
   cancelEdit,
@@ -45,7 +45,7 @@ const {
   onLabelsChange,
 } = ctx;
 
-const { updateIssue, addAssignee } = actions;
+const { updateIssue, addAssignee } = useBacklog();
 
 const isEditing = computed(() => editing.id === props.issue.id);
 

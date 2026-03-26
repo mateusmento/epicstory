@@ -3,16 +3,19 @@ import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
 import { LabelApi, type CreateLabelData, type UpdateLabelData } from "../api";
 import type { Label } from "../types";
+import { useWorkspace } from "@/domain/workspace";
+import { sortBy } from "lodash";
 
 const useLabelStore = defineStore("labels", () => {
   const labels = ref<Label[]>([]);
-  const workspaceId = ref<number | null>(null);
-  return { labels, workspaceId };
+  return { labels };
 });
 
 export function useLabels() {
   const store = useLabelStore();
   const api = useDependency(LabelApi);
+
+  const { workspaceId } = useWorkspace();
 
   const labelsById = computed(() => {
     const map = new Map<number, Label>();
@@ -20,26 +23,21 @@ export function useLabels() {
     return map;
   });
 
-  async function fetchLabels(workspaceId: number) {
-    // Avoid refetching if we already have labels for the same workspace.
-    if (store.workspaceId === workspaceId && store.labels.length > 0) return store.labels;
-    store.workspaceId = workspaceId;
-    store.labels = await api.fetchLabels(workspaceId);
+  async function fetchLabels() {
+    store.labels = await api.fetchLabels(workspaceId.value);
     return store.labels;
   }
 
-  async function createLabel(workspaceId: number, data: CreateLabelData) {
-    const created = await api.createLabel(workspaceId, data);
-    // keep sorted by name
-    store.labels = [...store.labels, created].sort((a, b) => a.name.localeCompare(b.name));
-    store.workspaceId = workspaceId;
+  async function createLabel(data: CreateLabelData) {
+    const created = await api.createLabel(workspaceId.value, data);
+    store.labels = sortBy([...store.labels, created], "name");
     return created;
   }
 
-  async function updateLabel(workspaceId: number, labelId: number, data: UpdateLabelData) {
-    const updated = await api.updateLabel(workspaceId, labelId, data);
-    store.labels = store.labels.map((l) => (l.id === labelId ? updated : l));
-    store.workspaceId = workspaceId;
+  async function updateLabel(labelId: number, data: UpdateLabelData) {
+    const updated = await api.updateLabel(workspaceId.value, labelId, data);
+    const index = store.labels.findIndex((l) => l.id === labelId);
+    if (index >= 0) store.labels[index] = updated;
     return updated;
   }
 

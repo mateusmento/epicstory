@@ -1,12 +1,9 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 
-const props = defineProps({
-  render: {
-    type: Function,
-    required: true,
-  },
-});
+const props = defineProps<{
+  render: () => any;
+}>();
 
 // Wrap the render fn into a component so Vue can render returned VNodes.
 const Comp = computed(() => ({

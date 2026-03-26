@@ -3,7 +3,6 @@ import { Menu, MenuTrigger, MenuContent } from "@/design-system";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 
 const props = defineProps<{
-  workspaceId: number;
   disabled?: boolean;
   modelValue: number[];
 }>();
@@ -25,7 +24,6 @@ function onUpdateModelValue(value: number[]) {
 
     <MenuContent as-child>
       <IssueLabelsMenu
-        :workspace-id="workspaceId"
         :disabled="disabled"
         :model-value="modelValue"
         @update:model-value="onUpdateModelValue"

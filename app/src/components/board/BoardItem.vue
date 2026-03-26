@@ -2,7 +2,6 @@
 import { useDraggable } from "@vue-dnd-kit/core";
 import { pointerSensor } from "./sensor";
 import { applySortableTransferById } from "./sortable";
-import { computed } from "vue";
 
 const props = defineProps<{
   group: string;

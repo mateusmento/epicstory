@@ -6,7 +6,6 @@ import { computed, onMounted, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    workspaceId: number;
     disabled?: boolean;
     placeholder?: string;
   }>(),
@@ -36,14 +35,14 @@ const COLOR_PRESETS = {
 const { labels, fetchLabels, createLabel, updateLabel } = useLabels();
 
 onMounted(() => {
-  fetchLabels(props.workspaceId);
+  fetchLabels();
 });
 
 watch(
   open,
   async (isOpen) => {
     if (!isOpen) return;
-    await fetchLabels(props.workspaceId);
+    await fetchLabels();
   },
   { immediate: false },
 );
@@ -69,7 +68,7 @@ async function onCreate(selectedColor: string) {
   if (isCreating.value) return;
   isCreating.value = true;
   try {
-    const created = await createLabel(props.workspaceId, { name, color: selectedColor });
+    const created = await createLabel({ name, color: selectedColor });
     toggle(created.id);
     query.value = "";
   } finally {
@@ -88,7 +87,7 @@ async function onEditLabel(event: MouseEvent, color: string) {
   event.preventDefault();
   const label = labelToEdit.value;
   if (!label) return;
-  await updateLabel(props.workspaceId, label.id, { name: label.name, color });
+  await updateLabel(label.id, { name: label.name, color });
   editLabel(null);
 }
 </script>

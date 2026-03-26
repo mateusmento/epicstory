@@ -27,19 +27,7 @@ import UrgentIcon from "./priority-toggler/Urgent.vue";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
-const {
-  backlogItems,
-  fetchBacklogItems,
-  moveBacklogItem,
-  updateIssue,
-  addAssignee,
-  removeAssignee,
-  addLabel,
-  removeLabel,
-  removeIssue,
-} = useBacklog();
-
-const rowActions = { updateIssue, addAssignee, removeAssignee, addLabel, removeLabel, removeIssue };
+const { backlogItems, fetchBacklogItems, moveBacklogItem, updateIssue, addLabel, removeLabel } = useBacklog();
 
 const orderBy = useStorage("backlog.orderBy", "manual");
 const order = useStorage<"asc" | "desc">("backlog.order", "asc");
@@ -263,7 +251,6 @@ provideBacklogRowContext({
   workspaceId: +props.workspaceId,
   gridColsClass: GRID_COLS,
   editing: editingIssue,
-  actions: rowActions,
   openIssue,
   startEdit: openIssueEdit,
   cancelEdit: closeIssueEdit,
@@ -356,13 +343,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
       <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
         <div ref="itemsContainer" class="divide-y">
           <template v-if="groupBy === 'none'">
-            <IssueContextMenu
-              v-for="{ id: itemId, issue } of backlogItems"
-              :key="issue.id"
-              :issue="issue"
-              :workspace-id="+props.workspaceId"
-              :actions="rowActions"
-            >
+            <IssueContextMenu v-for="{ id: itemId, issue } of backlogItems" :key="issue.id" :issue="issue">
               <BacklogItemRow
                 :item-id="itemId"
                 :issue="issue"
@@ -402,13 +383,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
               </button>
 
               <div v-show="!isCollapsed(group.id)" class="divide-y">
-                <IssueContextMenu
-                  v-for="{ id: itemId, issue } of group.items"
-                  :key="issue.id"
-                  :issue="issue"
-                  :workspace-id="+props.workspaceId"
-                  :actions="rowActions"
-                >
+                <IssueContextMenu v-for="{ id: itemId, issue } of group.items" :key="issue.id" :issue="issue">
                   <BacklogItemRow
                     :item-id="itemId"
                     :issue="issue"
