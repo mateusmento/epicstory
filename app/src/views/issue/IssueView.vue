@@ -546,7 +546,6 @@ watch(
             <div class="text-xs text-secondary-foreground">Labels</div>
             <div class="flex flex-wrap items-center gap-1.5">
               <IssueLabelTags
-                :workspace-id="+props.workspaceId"
                 :disabled="!issue"
                 :model-value="(issue?.labels ?? []).map((l) => l.id)"
                 @update:model-value="onLabelsChange"

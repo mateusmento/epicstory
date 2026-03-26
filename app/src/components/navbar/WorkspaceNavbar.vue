@@ -2,14 +2,14 @@
 import { UserProfile } from "@/components/user";
 import {
   Button,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-  DropdownMenu,
-  DropdownMenuItem,
+  MenuContent,
+  MenuGroup,
+  MenuLabel,
+  MenuSeparator,
+  MenuShortcut,
+  MenuTrigger,
+  Menu,
+  MenuItem,
   NavTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -97,12 +97,12 @@ const { user, signOut } = useAuth();
 
     <div class="flex-1"></div>
 
-    <DropdownMenu>
-      <DropdownMenuTrigger as-child>
+    <Menu type="dropdown-menu">
+      <MenuTrigger as-child>
         <UserProfile />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuLabel class="flex:col-sm flex-1 min-w-0 max-w-44">
+      </MenuTrigger>
+      <MenuContent>
+        <MenuLabel class="flex:col-sm flex-1 min-w-0 max-w-44">
           <div class="font-medium whitespace-nowrap text-ellipsis overflow-hidden">
             {{ user?.name }}
           </div>
@@ -111,36 +111,32 @@ const { user, signOut } = useAuth();
           >
             {{ user?.email }}
           </div>
-        </DropdownMenuLabel>
+        </MenuLabel>
 
-        <DropdownMenuSeparator />
+        <MenuSeparator />
 
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            :as="RouterLink"
-            :to="`/${workspace.id}/settings/user-account`"
-            class="text-[13px] w-44"
-          >
+        <MenuGroup>
+          <MenuItem :as="RouterLink" :to="`/${workspace.id}/settings/user-account`" class="text-[13px] w-44">
             <UserIcon class="mr-2 h-4 w-4" />
             <span>Profile</span>
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-          </DropdownMenuItem>
+            <MenuShortcut>⇧⌘P</MenuShortcut>
+          </MenuItem>
 
-          <DropdownMenuItem class="text-[13px] w-44">
+          <MenuItem class="text-[13px] w-44">
             <SettingsIcon class="mr-2 h-4 w-4" />
             <span>Settings</span>
-            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-          </DropdownMenuItem>
+            <MenuShortcut>⌘S</MenuShortcut>
+          </MenuItem>
 
-          <DropdownMenuSeparator />
+          <MenuSeparator />
 
-          <DropdownMenuItem @click="signOut" variant="destructive" class="text-[13px] w-44">
+          <MenuItem @click="signOut" variant="destructive" class="text-[13px] w-44">
             <LogOutIcon class="mr-2 h-4 w-4" />
             <span>Sign out</span>
-            <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <MenuShortcut>⇧⌘Q</MenuShortcut>
+          </MenuItem>
+        </MenuGroup>
+      </MenuContent>
+    </Menu>
   </div>
 </template>

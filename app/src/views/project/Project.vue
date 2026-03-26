@@ -13,11 +13,11 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
+  Menu,
+  MenuContent,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuTrigger,
   Separator,
 } from "@/design-system";
 import { Icon, IconSearch } from "@/design-system/icons";
@@ -223,25 +223,21 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
 
       <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y ml-auto">
         <div class="text-xs">Group by:</div>
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
+        <Menu>
+          <MenuTrigger as-child>
             <Button variant="outline" size="badge" class="flex:row-md flex:center-y">
               {{ GROUP_BY_OPTIONS[groupBy ?? "none"] }}
               <Icon name="oi-chevron-down" class="text-muted-foreground" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-56">
-            <DropdownMenuRadioGroup v-model="groupBy">
-              <DropdownMenuRadioItem
-                v-for="(label, option) in GROUP_BY_OPTIONS"
-                :key="option"
-                :value="option"
-              >
+          </MenuTrigger>
+          <MenuContent align="end" class="w-56">
+            <MenuRadioGroup v-model="groupBy">
+              <MenuRadioItem v-for="(label, option) in GROUP_BY_OPTIONS" :key="option" :value="option">
                 {{ label }}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              </MenuRadioItem>
+            </MenuRadioGroup>
+          </MenuContent>
+        </Menu>
       </div>
     </div>
 

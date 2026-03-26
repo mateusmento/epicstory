@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { Button, MenuInput, MenuItem, MenuSeparator, ScrollArea } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { useUsers } from "@/domain/user";
+import { useUsers, type User } from "@/domain/user";
 import { computed, ref, watch } from "vue";
 
-type Assignee = { id: number; name: string; picture: string };
-
 const props = defineProps<{
-  assignees: Assignee[];
+  assignees: User[];
   disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: "add", userId: number): void;
-  (e: "remove", userId: number): void;
+  (e: "add", user: User): void;
+  (e: "remove", user: User): void;
 }>();
 
 const sortedAssignees = computed(() =>
@@ -46,16 +44,16 @@ async function fetchMoreUsers() {
     <div v-if="assignees.length === 0" class="px-2 py-2 text-sm text-muted-foreground">No assignees</div>
 
     <div v-else class="max-h-44 overflow-auto">
-      <MenuItem v-for="a in sortedAssignees" :key="a.id" class="flex:row-md flex:center-y text-sm">
-        <img :src="a.picture" class="h-5 w-5 rounded-full" :title="a.name" />
-        <div class="flex-1 truncate">{{ a.name }}</div>
+      <MenuItem v-for="user in sortedAssignees" :key="user.id" class="flex:row-md flex:center-y text-sm">
+        <img :src="user.picture" class="h-5 w-5 rounded-full" :title="user.name" />
+        <div class="flex-1 truncate">{{ user.name }}</div>
         <Button
           type="button"
           size="icon-sm"
           variant="ghost"
           :disabled="disabled"
           title="Remove assignee"
-          @click.stop="emit('remove', a.id)"
+          @click.stop="emit('remove', user)"
           @pointerdown.stop
         >
           <Icon name="io-close" class="h-4 w-4" />
@@ -74,7 +72,7 @@ async function fetchMoreUsers() {
           :disabled="disabled"
           @select="
             $event.preventDefault(); // prevent the menu from closing
-            !disabled && emit('add', user.id);
+            !disabled && emit('add', user);
           "
         >
           <img :src="user.picture" class="w-5 h-5 rounded-full" :title="user.name" />

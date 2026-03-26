@@ -126,7 +126,6 @@ function onLabelsChange(issue: Issue, labels: number[]) {
         </div>
 
         <IssueLabelTags
-          :workspace-id="+item.issue.workspaceId"
           :disabled="!item.issue"
           :model-value="(item.issue?.labels ?? []).map((l) => l.id)"
           @update:model-value="onLabelsChange(item.issue, $event)"

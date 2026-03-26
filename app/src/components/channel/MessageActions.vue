@@ -1,12 +1,5 @@
 <script lang="ts" setup>
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/design-system";
+import { Button, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/design-system";
 import { IconReplies } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
@@ -60,30 +53,30 @@ defineExpose({
       <IconReplies class="w-5 h-5 text-primary/40" />
     </Button>
 
-    <DropdownMenu>
-      <DropdownMenuTrigger as-child>
+    <Menu>
+      <MenuTrigger as-child>
         <Button variant="ghost" size="icon" class="w-8 h-8">
           <DotsHorizontalIcon class="w-5 h-5" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" disabled-portal>
-        <DropdownMenuItem>
+      </MenuTrigger>
+      <MenuContent align="end" disabled-portal>
+        <MenuItem>
           <span>Copy message</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
+        </MenuItem>
+        <MenuItem>
           <span>Edit message</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
+        </MenuItem>
+        <MenuItem>
           <span>Quote message</span>
-        </DropdownMenuItem>
+        </MenuItem>
         <template v-if="sender === 'me'">
-          <DropdownMenuSeparator />
-          <DropdownMenuItem @click="emit('message-deleted')" variant="destructive">
+          <MenuSeparator />
+          <MenuItem @click="emit('message-deleted')" variant="destructive">
             <span>Delete message</span>
-          </DropdownMenuItem>
+          </MenuItem>
         </template>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </MenuContent>
+    </Menu>
   </div>
 </template>
 

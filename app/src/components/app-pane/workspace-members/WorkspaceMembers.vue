@@ -5,11 +5,11 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  Menu,
+  MenuContent,
+  MenuGroup,
+  MenuItem,
+  MenuTrigger,
   Field,
   Form,
   Separator,
@@ -81,21 +81,21 @@ const selectedUser = ref<User>();
           </div>
         </div>
         <div class="flex:col ml-auto">
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
+          <Menu>
+            <MenuTrigger as-child>
               <Button variant="ghost" size="icon" class="self-end">
                 <DotsHorizontalIcon />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="bottom" align="end">
-              <DropdownMenuGroup>
-                <DropdownMenuItem @click="removeMember(member.id)" variant="destructive">
+            </MenuTrigger>
+            <MenuContent side="bottom" align="end">
+              <MenuGroup>
+                <MenuItem @click="removeMember(member.id)" variant="destructive">
                   <Trash2Icon class="mr-2 h-4 w-4" />
                   <span class="whitespace-nowrap">Remove from workspace</span>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </MenuItem>
+              </MenuGroup>
+            </MenuContent>
+          </Menu>
         </div>
       </div>
     </div>

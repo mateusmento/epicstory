@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { IssueLabelTags } from "@/components/issue";
-import { UserSelect } from "@/components/user";
+import { IssueAssigneesMenu, IssueLabelTags } from "@/components/issue";
 import {
   Button,
   DialogClose,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
+  Menu,
+  MenuContent,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuTrigger,
   Switch,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
+import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
 import type { Label } from "@/domain/labels";
 import { useLabels } from "@/domain/labels";
@@ -31,7 +31,7 @@ const title = ref("");
 const description = ref("");
 const status = ref<"todo" | "doing" | "done">("todo");
 const priority = ref<number>(0);
-const assignee = ref<User | undefined>();
+const selectedAssignees = ref<User[]>([]);
 const createMore = ref(false);
 const isSubmitting = ref(false);
 const closeBtn = ref<HTMLButtonElement | null>(null);
@@ -49,6 +49,15 @@ const selectedLabels = computed(() => {
 const afterOf = computed(() => {
   return backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined;
 });
+
+function addSelectedAssignee(assignee: User) {
+  if (selectedAssignees.value.some((a) => a.id === assignee.id)) return;
+  selectedAssignees.value.push(assignee);
+}
+
+function removeSelectedAssignee(assignee: User) {
+  selectedAssignees.value = selectedAssignees.value.filter((a) => a.id !== assignee.id);
+}
 
 function statusDotClass(s: string) {
   if (s === "doing") return "bg-blue-500";
@@ -82,8 +91,10 @@ async function onCreateIssue() {
       priority: priority.value,
     });
 
-    if (assignee.value?.id) {
-      await addAssignee(item.issue.id, assignee.value.id);
+    if (selectedAssignees.value.length > 0) {
+      for (const assignee of selectedAssignees.value) {
+        await addAssignee(item.issue.id, assignee.id);
+      }
     }
 
     if (selectedLabelIds.value.length > 0) {
@@ -98,7 +109,7 @@ async function onCreateIssue() {
       description.value = "";
       status.value = "todo";
       priority.value = 0;
-      assignee.value = undefined;
+      selectedAssignees.value = [];
       selectedLabelIds.value = [];
     } else {
       closeBtn.value?.click();
@@ -151,37 +162,37 @@ async function onCreateIssue() {
       <!-- Chips row -->
       <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
         <!-- Status -->
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
+        <Menu>
+          <MenuTrigger as-child>
             <Button variant="outline" size="badge" class="flex items-center gap-2">
               <span class="w-2 h-2 rounded-full ring-1 ring-border" :class="statusDotClass(status)" />
               {{ statusLabel[status] }}
               <Icon name="oi-chevron-down" class="w-3 h-3 text-muted-foreground" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" class="w-44">
-            <DropdownMenuRadioGroup v-model="status">
-              <DropdownMenuRadioItem value="todo">
+          </MenuTrigger>
+          <MenuContent align="start" class="w-44">
+            <MenuRadioGroup v-model="status">
+              <MenuRadioItem value="todo">
                 <template #indicator>
                   <div class="w-2 h-2 rounded-full ring-1 ring-border" :class="statusDotClass('todo')" />
                 </template>
                 Todo
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="doing">
+              </MenuRadioItem>
+              <MenuRadioItem value="doing">
                 <template #indicator>
                   <div class="w-2 h-2 rounded-full ring-1 ring-border" :class="statusDotClass('doing')" />
                 </template>
                 Doing
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="done">
+              </MenuRadioItem>
+              <MenuRadioItem value="done">
                 <template #indicator>
                   <div class="w-2 h-2 rounded-full ring-1 ring-border" :class="statusDotClass('done')" />
                 </template>
                 Done
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              </MenuRadioItem>
+            </MenuRadioGroup>
+          </MenuContent>
+        </Menu>
 
         <!-- Priority (simple cycler to match Linear "chip") -->
         <Button
@@ -196,27 +207,34 @@ async function onCreateIssue() {
         </Button>
 
         <!-- Assignee -->
-        <UserSelect v-model="assignee">
-          <template #trigger>
+        <Menu type="dropdown-menu">
+          <MenuTrigger as-child>
             <Button type="button" variant="outline" size="badge" class="flex items-center gap-2">
-              <template v-if="assignee">
-                <img :src="assignee.picture" class="w-4 h-4 rounded-full" />
-                <span class="max-w-36 truncate">{{ assignee.name }}</span>
-              </template>
-              <template v-else>
-                <Icon name="oi-person" class="w-4 h-4 text-muted-foreground" />
-                Assignee
-              </template>
+              <div v-if="selectedAssignees.length > 0" class="flex:row flex:center-y">
+                <img
+                  v-for="(assignee, i) in selectedAssignees"
+                  :key="assignee.id"
+                  :src="assignee.picture"
+                  class="w-4 h-4 rounded-full"
+                  :class="cn(i > 0 && 'ml-[-0.45rem]')"
+                />
+              </div>
+              <Icon v-else name="oi-person" class="w-4 h-4 text-muted-foreground" />
+              Assignee
             </Button>
-          </template>
-        </UserSelect>
+          </MenuTrigger>
+          <MenuContent as-child>
+            <IssueAssigneesMenu
+              :assignees="selectedAssignees"
+              @add="addSelectedAssignee"
+              @remove="removeSelectedAssignee"
+            >
+            </IssueAssigneesMenu>
+          </MenuContent>
+        </Menu>
 
         <!-- Labels -->
-        <IssueLabelTags
-          v-model="selectedLabelIds"
-          :workspace-id="workspaceId"
-          :disabled="workspaceId === 0"
-        />
+        <IssueLabelTags v-model="selectedLabelIds" :disabled="workspaceId === 0" />
       </div>
 
       <!-- Footer -->

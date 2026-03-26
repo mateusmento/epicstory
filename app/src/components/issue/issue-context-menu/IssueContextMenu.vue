@@ -92,8 +92,8 @@ onBeforeUnmount(() => {
           <IssueAssigneesMenu
             :assignees="issue.assignees ?? []"
             :disabled="disabled"
-            @add="addAssignee(issue.id, $event)"
-            @remove="removeAssignee(issue.id, $event)"
+            @add="addAssignee(issue.id, $event.id)"
+            @remove="removeAssignee(issue.id, $event.id)"
           />
         </MenuSubContent>
       </MenuSub>
