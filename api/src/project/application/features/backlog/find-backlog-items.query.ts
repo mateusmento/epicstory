@@ -10,7 +10,6 @@ import {
 } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { Page } from 'src/core/page';
-import { logQuery } from 'src/core/typeorm/logging';
 import { BacklogItemRepository } from 'src/project/infrastructure/repositories';
 import {
   Equal,
