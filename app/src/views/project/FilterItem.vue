@@ -15,7 +15,6 @@ import { Icon } from "@/design-system/icons";
 import { IssueDueDateMenu, IssueLabelsDropdown, IssueStatusMenu } from "@/components/issue";
 import { formatDate, isThisYear, isToday } from "date-fns";
 import { computed, ref, watch } from "vue";
-import IssuePickerMenu from "./filters/IssuePickerMenu.vue";
 import {
   FIELD_ALLOWED_OPERATORS,
   FILTER_FIELDS,
@@ -23,6 +22,8 @@ import {
   type ProjectFilter,
   type ProjectFilterOperator,
 } from "./filters/project-filters.types";
+import { IssuePickerMenu } from "@/components/issue";
+import { useIssues } from "@/domain/issues";
 
 defineEmits<{
   (e: "remove"): void;
@@ -104,10 +105,16 @@ const priorityPreview = computed(() => {
   return PRIORITY_LABEL[n] ?? `Priority ${n}`;
 });
 
+const { issues } = useIssues();
+
+const parentIssue = computed(() => {
+  const v = modelValue.value.value as any;
+  if (!v) return null;
+  return issues.value.find((i) => i.id === v);
+});
+
 const parentPreview = computed(() => {
-  const v = modelValue.value.value;
-  if (!v) return "Any";
-  return `#${v}`;
+  return parentIssue.value ? `EP-${parentIssue.value.id}` : "Any";
 });
 </script>
 
@@ -141,7 +148,7 @@ const parentPreview = computed(() => {
         @update:model-value="setValue($event)"
         v-slot="{ selectedLabels }"
       >
-        <Button variant="outline" size="badge" class="flex:row-sm flex:center-y">
+        <Button variant="outline" size="badge" class="flex:row-sm flex:center-y text-muted-foreground">
           <template v-if="selectedLabels.length === 0">Any</template>
           <span
             v-for="label in selectedLabels"
@@ -156,7 +163,7 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'status'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge">{{ statusPreview }}</Button>
+          <Button variant="outline" size="badge" class="text-muted-foreground">{{ statusPreview }}</Button>
         </MenuTrigger>
         <MenuContent as-child align="start" side="bottom">
           <IssueStatusMenu :value="(modelValue.value as any) ?? null" @select="setValue($event)" />
@@ -167,7 +174,7 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'dueDate'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge">{{ dueDatePreview }}</Button>
+          <Button variant="outline" size="badge" class="text-muted-foreground">{{ dueDatePreview }}</Button>
         </MenuTrigger>
         <MenuContent class="p-0" align="start" side="bottom">
           <IssueDueDateMenu :due-date="(modelValue.value as any) ?? null" @change="setValue($event)" />
@@ -178,7 +185,7 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'priority'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge">{{ priorityPreview }}</Button>
+          <Button variant="outline" size="badge" class="text-muted-foreground">{{ priorityPreview }}</Button>
         </MenuTrigger>
         <MenuContent align="start" class="w-56">
           <MenuItem class="text-xs text-muted-foreground" @select.prevent="setValue(undefined)">Any</MenuItem>
@@ -193,7 +200,9 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'title'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge" class="max-w-56 truncate">{{ titlePreview }}</Button>
+          <Button variant="outline" size="badge" class="max-w-56 truncate text-muted-foreground">{{
+            titlePreview
+          }}</Button>
         </MenuTrigger>
         <MenuContent class="w-72">
           <MenuInput v-model="titleDraft" placeholder="Search title…" auto-focus />
@@ -223,10 +232,11 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'parentIssueId'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge">{{ parentPreview }}</Button>
+          <Button variant="outline" size="badge" class="text-muted-foreground">{{ parentPreview }}</Button>
         </MenuTrigger>
-        <MenuContent as-child align="start" side="bottom">
+        <MenuContent as-child align="start" side="bottom" class="w-80 min-h-14">
           <IssuePickerMenu
+            :model-issue="modelValue.value"
             :project-id="props.projectId"
             @select="setValue($event.id)"
             @clear="setValue(undefined)"

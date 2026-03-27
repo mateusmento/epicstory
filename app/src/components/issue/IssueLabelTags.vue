@@ -3,7 +3,7 @@ import { Icon } from "@/design-system/icons";
 import type { Label } from "@/domain/labels";
 import { useLabels } from "@/domain/labels";
 import { computed, onMounted, ref, watch } from "vue";
-import IssueLabelsDropdown from "../issue/issue-context-menu/IssueLabelsDropdown.vue";
+import IssueLabelsDropdown from "./IssueLabelsDropdown.vue";
 
 const props = withDefaults(
   defineProps<{

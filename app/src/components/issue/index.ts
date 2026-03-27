@@ -1,2 +1,10 @@
-export * from "./issue-context-menu";
 export { default as IssueLabelTags } from "./IssueLabelTags.vue";
+export { default as IssuePickerMenu } from "./IssuePickerMenu.vue";
+export { default as IssueAssigneesMenu } from "./IssueAssigneesMenu.vue";
+export { default as IssueDueDateMenu } from "./IssueDueDateMenu.vue";
+export { default as IssueLabelsDropdown } from "./IssueLabelsDropdown.vue";
+export { default as IssueLabelsMenu } from "./IssueLabelsMenu.vue";
+export { default as IssueStatusMenu } from "./IssueStatusMenu.vue";
+export { default as IssueDeleteDialog } from "./IssueDeleteDialog.vue";
+export { default as IssueRenameDialog } from "./IssueRenameDialog.vue";
+export { default as IssueContextMenu } from "./IssueContextMenu.vue";

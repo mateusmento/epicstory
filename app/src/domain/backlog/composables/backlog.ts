@@ -70,7 +70,7 @@ export function useBacklog() {
     return store.updateIssue(issue);
   }
 
-  async function markAsSubIssueOf(subIssueId: number, parentIssueId: number) {
+  async function markAsSubIssueOf(subIssueId: number, parentIssueId: number | null) {
     const issue = await issueApi.updateIssue(subIssueId, { parentIssueId });
     return store.updateIssue(issue);
   }

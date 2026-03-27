@@ -1,80 +1,95 @@
 <script setup lang="ts">
 import { MenuInput, MenuItem, MenuSeparator, ScrollArea } from "@/design-system";
-import { useBacklog } from "@/domain/backlog";
 import { useIssues, type Issue } from "@/domain/issues";
 import { computed, ref, watchEffect } from "vue";
 
 const props = defineProps<{
-  issue: Issue;
+  projectId: number;
+  placeholder?: string;
   disabled?: boolean;
+  clearButtonLabel?: string;
 }>();
 
-const { issues, isFetchingIssues, hasMoreIssues, fetchIssues, fetchMoreIssues } = useIssues();
+const emit = defineEmits<{
+  (e: "select", issue: Pick<Issue, "id" | "title" | "status">): void;
+  (e: "clear"): void;
+}>();
 
-const { markAsSubIssueOf } = useBacklog();
+const issue = defineModel<Issue | null | undefined>("issue", { required: false });
 
 const query = ref("");
 
+const { issues, isFetchingIssues, hasMoreIssues, fetchIssues, fetchMoreIssues } = useIssues();
+
 watchEffect(() => {
   fetchIssues({
-    projectId: props.issue.projectId,
+    projectId: props.projectId,
     page: 0,
     count: 20,
     orderBy: "createdAt",
-    assigneeId: 1,
     order: "desc",
     search: query.value.trim(),
-  });
+  } as any);
 });
 
 function onReachedBottom() {
   fetchMoreIssues({
-    projectId: props.issue.projectId,
+    projectId: props.projectId,
     search: query.value.trim(),
     orderBy: "createdAt",
     order: "desc",
-  });
+  } as any);
 }
 
 type StatusOption = { label: string; dotClass: string };
 
-const options = computed<Record<string, StatusOption>>(() => ({
+const statuses = computed<Record<string, StatusOption>>(() => ({
   backlog: { label: "Backlog", dotClass: "bg-zinc-300" },
   todo: { label: "Todo", dotClass: "bg-zinc-300" },
   doing: { label: "In progress", dotClass: "bg-blue-500" },
   done: { label: "Done", dotClass: "bg-emerald-500" },
 }));
 
-function issueStatusDotClass(status: string | null | undefined) {
+function dotClass(status: string | null | undefined) {
   if (!status) return "bg-zinc-300";
-  return options.value[status]?.dotClass ?? "bg-zinc-300";
+  return statuses.value[status]?.dotClass ?? "bg-zinc-300";
 }
 
-function onIssueSelect(issueId: number) {
-  markAsSubIssueOf(props.issue.id, issueId);
+function onSelect(issue: any) {
+  issue.value = issue;
+  emit("select", { id: issue.id, title: issue.title, status: issue.status });
 }
 </script>
 
 <template>
   <div>
-    <MenuInput v-model="query" placeholder="Search issues…" auto-focus />
+    <MenuInput v-model="query" :placeholder="placeholder ?? 'Search issues…'" auto-focus />
     <MenuSeparator />
+
+    <div v-if="issue" class="flex:row-lg flex:center-y m-2 mb-1">
+      <div class="w-2 h-2 rounded-full ring-1 ring-border" :class="dotClass(issue.status)"></div>
+      <div class="flex-1 truncate text-xs">{{ issue.title }}</div>
+      <MenuItem v-if="!disabled" class="text-xs text-muted-foreground" @select="emit('clear')">
+        {{ clearButtonLabel ?? "Clear selection" }}
+      </MenuItem>
+    </div>
+
     <div class="px-2 py-1 text-[11px] text-muted-foreground">Issues</div>
+
     <ScrollArea class="h-96" @click.stop @reached-bottom="onReachedBottom">
       <div class="!block">
         <MenuItem
           v-for="issue in issues"
           :key="issue.id"
           class="flex:row-lg flex:center-y"
-          @select="onIssueSelect(issue.id)"
+          :disabled="disabled"
+          @select="onSelect(issue)"
         >
-          <div
-            class="w-2 h-2 rounded-full ring-1 ring-border"
-            :class="issueStatusDotClass(issue.status)"
-          ></div>
-          <div class="flex-1 truncate text-sm">{{ issue.title }}</div>
-          <div class="text-xs text-muted-foreground">{{ options[issue.status]?.label ?? "Unknown" }}</div>
+          <div class="w-2 h-2 rounded-full ring-1 ring-border" :class="dotClass(issue.status)"></div>
+          <div class="flex-1 truncate text-xs">{{ issue.title }}</div>
+          <div class="text-xs text-muted-foreground">{{ statuses[issue.status]?.label ?? "Unknown" }}</div>
         </MenuItem>
+
         <div v-if="isFetchingIssues" class="ml-2 my-2 text-xs text-muted-foreground">Loading…</div>
         <div v-else-if="issues.length === 0" class="ml-2 my-2 text-xs text-muted-foreground">
           No issues found

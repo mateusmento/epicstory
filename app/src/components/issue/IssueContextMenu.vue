@@ -13,13 +13,13 @@ import { useBacklog } from "@/domain/backlog";
 import type { Issue } from "@/domain/issues";
 import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { closeAllContextMenusExcept, registerContextMenu } from "./context-menu-registry";
+import IssuePickerMenu from "./IssuePickerMenu.vue";
 import IssueAssigneesMenu from "./IssueAssigneesMenu.vue";
 import IssueDeleteDialog from "./IssueDeleteDialog.vue";
 import IssueDueDateMenu from "./IssueDueDateMenu.vue";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 import IssueRenameDialog from "./IssueRenameDialog.vue";
 import IssueStatusMenu from "./IssueStatusMenu.vue";
-import IssueSubIssueMenu from "./IssueSubIssueMenu.vue";
 
 const props = defineProps<{
   issue: Issue;
@@ -34,7 +34,8 @@ const menuId = getCurrentInstance()?.uid ?? Math.floor(Math.random() * 1_000_000
 
 const labelIds = computed(() => (props.issue?.labels ?? []).map((l) => l.id));
 
-const { addLabel, removeLabel, updateIssue, addAssignee, removeAssignee, removeIssue } = useBacklog();
+const { addLabel, removeLabel, updateIssue, addAssignee, removeAssignee, removeIssue, markAsSubIssueOf } =
+  useBacklog();
 
 async function onLabelsUpdate(nextIds: number[]) {
   const prev = new Set(labelIds.value);
@@ -127,7 +128,13 @@ onBeforeUnmount(() => {
       <MenuSub>
         <MenuSubTrigger :disabled="disabled"> Mark as sub-issue of… </MenuSubTrigger>
         <MenuSubContent class="w-96">
-          <IssueSubIssueMenu :issue="issue" :disabled="disabled" />
+          <IssuePickerMenu
+            :issue="issue.parentIssue"
+            :project-id="issue.projectId"
+            :disabled="disabled"
+            @select="markAsSubIssueOf(issue.id, $event.id)"
+            @clear="markAsSubIssueOf(issue.id, null)"
+          />
         </MenuSubContent>
       </MenuSub>
 
