@@ -41,4 +41,3 @@ const emit = defineEmits<{
     <div class="text-xs text-muted-foreground" v-if="isCreating">Adding…</div>
   </div>
 </template>
-

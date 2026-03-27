@@ -91,4 +91,3 @@ function onSelect(issue: any) {
     </ScrollArea>
   </div>
 </template>
-

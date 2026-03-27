@@ -21,4 +21,3 @@ export function useProjectFilters() {
   if (!ctx) throw new Error("ProjectFiltersContext is not provided");
   return ctx;
 }
-

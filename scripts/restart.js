@@ -48,7 +48,10 @@ function runDocker(args) {
     const child = spawn("docker", args, { stdio: "inherit" });
     child.on("close", (code) => {
       if (code === 0) resolve();
-      else reject(new Error(`docker ${args.join(" ")} failed with exit code ${code}`));
+      else
+        reject(
+          new Error(`docker ${args.join(" ")} failed with exit code ${code}`),
+        );
     });
     child.on("error", reject);
   });
@@ -80,7 +83,15 @@ async function main() {
 
   if (build) {
     // Recreate (and build) rather than "restart" so code/image changes are picked up.
-    const upArgs = ["compose", "-f", composeFile, "up", "-d", "--build", "--force-recreate"];
+    const upArgs = [
+      "compose",
+      "-f",
+      composeFile,
+      "up",
+      "-d",
+      "--build",
+      "--force-recreate",
+    ];
     if (service) upArgs.push(service);
     await runDocker(upArgs);
   } else {
@@ -101,4 +112,3 @@ main().catch((err) => {
   console.error("❌ Restart failed:", err.message);
   process.exit(1);
 });
-
