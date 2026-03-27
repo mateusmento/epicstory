@@ -100,7 +100,10 @@ async function onEditLabel(event: MouseEvent, color: string) {
       <MenuSeparator />
 
       <MenuItem v-for="label in filteredLabels" :key="label.id" @click="toggle(label.id)">
-        <Checkbox :model-value="isLabelSelected(label.id)" />
+        <Checkbox
+          :model-value="isLabelSelected(label.id)"
+          class="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700"
+        />
         <span class="h-2 w-2 rounded-full ring-1 ring-border" :style="{ backgroundColor: label.color }" />
         <span class="capitalize truncate">{{ label.name }}</span>
 
@@ -132,7 +135,7 @@ async function onEditLabel(event: MouseEvent, color: string) {
         @click="labelToEdit ? onEditLabel($event, color) : onCreate(color)"
       >
         <div class="h-3 w-3 rounded-full" :style="{ backgroundColor: color }" />
-        <span class="capitalize">{{ colorName }}</span>
+        <span class="capitalize truncate">{{ colorName }}</span>
       </MenuItem>
     </template>
   </div>

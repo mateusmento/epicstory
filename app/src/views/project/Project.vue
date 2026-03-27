@@ -19,16 +19,14 @@ import {
   MenuRadioItem,
   MenuTrigger,
   Separator,
-} from "@/design-system";
-import { Icon, IconSearch } from "@/design-system/icons";
-import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from "@/design-system/ui/breadcrumb";
-import ToggleGroup from "@/design-system/ui/toggle-group/ToggleGroup.vue";
-import ToggleGroupItem from "@/design-system/ui/toggle-group/ToggleGroupItem.vue";
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/design-system";
+import { Icon, IconSearch } from "@/design-system/icons";
 import { IssueApi, type Issue } from "@/domain/issues";
 import { ProjectApi, type Project } from "@/domain/project";
 import { useMagicKeys, useStorage, whenever } from "@vueuse/core";
@@ -36,6 +34,9 @@ import { Calculator, Calendar, CreditCard, Settings, Smile, SquarePen, User } fr
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import NewIssueModal from "./NewIssueModal.vue";
+import ProjectFiltersBar from "./filters/ProjectFiltersBar.vue";
+import { provideProjectFilters } from "./filters/project-filters.context";
+import { createDefaultFilter, type ProjectFilter } from "./filters/project-filters.types";
 
 const props = defineProps<{ workspaceId: string; projectId: string; issueId?: string }>();
 
@@ -93,6 +94,47 @@ const GROUP_BY_OPTIONS = {
 } as const;
 
 type GroupBy = keyof typeof GROUP_BY_OPTIONS;
+
+function hasValue(f: ProjectFilter) {
+  const v: any = f.value;
+  if (f.field === "labels") return Array.isArray(v) && v.length > 0;
+  if (v === null || v === undefined) return false;
+  if (typeof v === "string") return v.trim().length > 0;
+  if (typeof v === "number") return Number.isFinite(v);
+  return true;
+}
+
+const filters = useStorage<ProjectFilter[]>(`backlog.filters.${props.projectId}`, [], localStorage, {
+  listenToStorageChanges: true,
+});
+
+function setFilters(next: ProjectFilter[]) {
+  filters.value = next.filter(hasValue);
+}
+
+function addFilter(field: ProjectFilter["field"]) {
+  if (filters.value.some((f) => f.field === field)) return;
+  filters.value = [...filters.value, createDefaultFilter(field)];
+}
+
+function removeFilter(field: ProjectFilter["field"]) {
+  filters.value = filters.value.filter((f) => f.field !== field);
+}
+
+function updateFilter(field: ProjectFilter["field"], next: ProjectFilter) {
+  const normalized = hasValue(next) ? next : null;
+  const current = filters.value ?? [];
+  if (!normalized) return removeFilter(field);
+  filters.value = current.map((f) => (f.field === field ? normalized : f));
+}
+
+provideProjectFilters({
+  filters,
+  setFilters,
+  addFilter,
+  removeFilter,
+  updateFilter,
+});
 </script>
 
 <template>
@@ -221,7 +263,9 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
         </ToggleGroupItem>
       </ToggleGroup>
 
-      <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y ml-auto">
+      <ProjectFiltersBar :project-id="+projectId" />
+
+      <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y">
         <div class="text-xs">Group by:</div>
         <Menu>
           <MenuTrigger as-child>

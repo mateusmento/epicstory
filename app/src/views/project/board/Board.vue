@@ -7,10 +7,12 @@ import type { Issue } from "@/domain/issues";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import IssueCard from "./IssueCard.vue";
+import { useProjectFilters } from "../filters/project-filters.context";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
 const { backlogItems, fetchBacklogItems, updateIssue, moveBacklogItem, addLabel, removeLabel } = useBacklog();
+const { filters: activeFilters } = useProjectFilters();
 
 type ColumnStatus = "todo" | "doing" | "done";
 
@@ -84,10 +86,30 @@ onMounted(async () => {
     count: 200,
     orderBy: "manual",
     order: "asc",
+    filters: activeFilters.value as any,
   } as any);
 
   // The watch below will do the initial sync.
 });
+
+watch(
+  () => [props.projectId, activeFilters.value],
+  async () => {
+    // Allow the backlogItems watcher to re-sync the columns after refetching.
+    todo.value.splice(0, todo.value.length);
+    doing.value.splice(0, doing.value.length);
+    done.value.splice(0, done.value.length);
+
+    await fetchBacklogItems({
+      projectId: +props.projectId,
+      page: 0,
+      count: 200,
+      orderBy: "manual",
+      order: "asc",
+      filters: activeFilters.value as any,
+    } as any);
+  },
+);
 
 watch(
   backlogItems,

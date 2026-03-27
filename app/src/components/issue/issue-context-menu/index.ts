@@ -1,5 +1,6 @@
 export { default as IssueAssigneesMenu } from "./IssueAssigneesMenu.vue";
 export { default as IssueDueDateMenu } from "./IssueDueDateMenu.vue";
+export { default as IssueLabelsDropdown } from "./IssueLabelsDropdown.vue";
 export { default as IssueLabelsMenu } from "./IssueLabelsMenu.vue";
 export { default as IssueStatusMenu } from "./IssueStatusMenu.vue";
 export { default as IssueSubIssueMenu } from "./IssueSubIssueMenu.vue";

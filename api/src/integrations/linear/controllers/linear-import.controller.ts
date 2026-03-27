@@ -15,7 +15,10 @@ import { Auth, Issuer } from 'src/core/auth';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { LinearApiService } from '../services';
-import { LinearImportJobRepository, LinearImportMismatchRepository } from '../repositories';
+import {
+  LinearImportJobRepository,
+  LinearImportMismatchRepository,
+} from '../repositories';
 
 class CreateLinearImportJobDto {
   @IsBoolean()
@@ -48,7 +51,10 @@ export class LinearImportController {
     @Param('workspaceId') workspaceId: number,
     @Auth() issuer: Issuer,
   ) {
-    const isMember = await this.workspaceRepo.memberExists(workspaceId, issuer.id);
+    const isMember = await this.workspaceRepo.memberExists(
+      workspaceId,
+      issuer.id,
+    );
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
     return this.linearApi.listTeams(workspaceId);
   }
@@ -60,7 +66,10 @@ export class LinearImportController {
     @Param('workspaceId') workspaceId: number,
     @Auth() issuer: Issuer,
   ) {
-    const isMember = await this.workspaceRepo.memberExists(workspaceId, issuer.id);
+    const isMember = await this.workspaceRepo.memberExists(
+      workspaceId,
+      issuer.id,
+    );
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
     return this.linearApi.listProjects(workspaceId);
   }
@@ -73,7 +82,10 @@ export class LinearImportController {
     @Body() body: CreateLinearImportJobDto,
     @Auth() issuer: Issuer,
   ) {
-    const isMember = await this.workspaceRepo.memberExists(workspaceId, issuer.id);
+    const isMember = await this.workspaceRepo.memberExists(
+      workspaceId,
+      issuer.id,
+    );
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
 
     // Validate Linear connection exists early
@@ -107,7 +119,10 @@ export class LinearImportController {
     const job = await this.jobRepo.findOne({ where: { id: jobId } });
     if (!job) throw new NotFoundException('Import job not found');
 
-    const isMember = await this.workspaceRepo.memberExists(job.workspaceId, issuer.id);
+    const isMember = await this.workspaceRepo.memberExists(
+      job.workspaceId,
+      issuer.id,
+    );
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
 
     return job;
@@ -120,7 +135,10 @@ export class LinearImportController {
     const job = await this.jobRepo.findOne({ where: { id: jobId } });
     if (!job) throw new NotFoundException('Import job not found');
 
-    const isMember = await this.workspaceRepo.memberExists(job.workspaceId, issuer.id);
+    const isMember = await this.workspaceRepo.memberExists(
+      job.workspaceId,
+      issuer.id,
+    );
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
 
     return this.mismatchRepo.find({
@@ -129,4 +147,3 @@ export class LinearImportController {
     });
   }
 }
-

@@ -4,8 +4,15 @@ import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { BacklogItem } from "../types";
 
+export interface BacklogItemFieldFilter {
+  field: string;
+  operator: string;
+  value: unknown;
+}
+
 export type FindBacklogItemsQuery = PageQuery & {
   projectId: number;
+  filters?: BacklogItemFieldFilter[];
 };
 
 @injectable()
@@ -14,7 +21,9 @@ export class BacklogItemApi {
 
   findAll({ projectId, ...query }: FindBacklogItemsQuery) {
     return this.axios
-      .get<Page<BacklogItem>>(`/projects/${projectId}/backlog-items`, { params: query })
+      .get<
+        Page<BacklogItem>
+      >(`/projects/${projectId}/backlog-items`, { params: { ...query, filters: JSON.stringify(query.filters) } })
       .then((res) => res.data);
   }
 

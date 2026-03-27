@@ -14,6 +14,8 @@ export class Page<T> {
   hasNext: boolean;
   hasPrevious: boolean;
   total: number;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
 
   constructor(data: Partial<Page<T>>) {
     patch(this, data);

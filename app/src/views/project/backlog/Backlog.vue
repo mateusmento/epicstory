@@ -24,10 +24,12 @@ import Signal1Bar from "./priority-toggler/Signal1Bar.vue";
 import Signal2Bars from "./priority-toggler/Signal2Bars.vue";
 import Signal3Bars from "./priority-toggler/Signal3Bars.vue";
 import UrgentIcon from "./priority-toggler/Urgent.vue";
+import { useProjectFilters } from "../filters/project-filters.context";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
 const { backlogItems, fetchBacklogItems, moveBacklogItem, updateIssue, addLabel, removeLabel } = useBacklog();
+const { filters: activeFilters } = useProjectFilters();
 
 const orderBy = useStorage("backlog.orderBy", "manual");
 const order = useStorage<"asc" | "desc">("backlog.order", "asc");
@@ -89,13 +91,14 @@ onMounted(async () => {
     orderBy: orderBy.value,
     page: 0,
     count: 150,
+    filters: activeFilters.value as any,
   });
 
   setupDragAndDrop();
 });
 
 watch(
-  () => [props.projectId, orderBy.value, order.value],
+  () => [props.projectId, orderBy.value, order.value, activeFilters.value],
   async () => {
     fetchBacklogItems({
       projectId: +props.projectId,
@@ -103,6 +106,7 @@ watch(
       orderBy: orderBy.value,
       page: 0,
       count: 150,
+      filters: activeFilters.value as any,
     });
   },
 );

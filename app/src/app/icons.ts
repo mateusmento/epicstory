@@ -62,4 +62,6 @@ export {
   FaRegularSave,
   FaRegularTimesCircle,
   OiChevronLeft,
+  BiFilter,
+  OiFilter,
 } from "oh-vue-icons/icons";

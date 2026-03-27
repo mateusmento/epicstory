@@ -12,7 +12,8 @@ export class LinearApiService {
   ) {}
 
   async getWorkspaceClient(workspaceId: number) {
-    const connection = await this.connectionRepo.findWorkspaceConnection(workspaceId);
+    const connection =
+      await this.connectionRepo.findWorkspaceConnection(workspaceId);
     if (!connection) throw new NotFoundException('Linear connection not found');
     const accessToken = this.crypto.decrypt(connection.accessTokenEncrypted);
     return {
@@ -56,4 +57,3 @@ export class LinearApiService {
     }));
   }
 }
-
