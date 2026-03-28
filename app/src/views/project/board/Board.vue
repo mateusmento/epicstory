@@ -7,12 +7,12 @@ import type { Issue } from "@/domain/issues";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import IssueCard from "./IssueCard.vue";
-import { useProjectFilters } from "../filters/project-filters.context";
+import { useProjectFilters } from "@/domain/project";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
 const { backlogItems, fetchBacklogItems, updateIssue, moveBacklogItem, addLabel, removeLabel } = useBacklog();
-const { filters: activeFilters } = useProjectFilters();
+const { filters: activeFilters } = useProjectFilters(+props.projectId);
 
 type ColumnStatus = "todo" | "doing" | "done";
 

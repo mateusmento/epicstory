@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbSeparator,
   Button,
   Command,
   CommandEmpty,
@@ -19,10 +23,6 @@ import {
   MenuRadioItem,
   MenuTrigger,
   Separator,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbSeparator,
   ToggleGroup,
   ToggleGroupItem,
 } from "@/design-system";
@@ -35,8 +35,6 @@ import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import NewIssueModal from "./NewIssueModal.vue";
 import ProjectFiltersBar from "./filters/ProjectFiltersBar.vue";
-import { provideProjectFilters } from "./filters/project-filters.context";
-import { createDefaultFilter, type ProjectFilter } from "./filters/project-filters.types";
 
 const props = defineProps<{ workspaceId: string; projectId: string; issueId?: string }>();
 
@@ -94,47 +92,6 @@ const GROUP_BY_OPTIONS = {
 } as const;
 
 type GroupBy = keyof typeof GROUP_BY_OPTIONS;
-
-function hasValue(f: ProjectFilter) {
-  const v: any = f.value;
-  if (f.field === "labels") return Array.isArray(v) && v.length > 0;
-  if (v === null || v === undefined) return false;
-  if (typeof v === "string") return v.trim().length > 0;
-  if (typeof v === "number") return Number.isFinite(v);
-  return true;
-}
-
-const filters = useStorage<ProjectFilter[]>(`backlog.filters.${props.projectId}`, [], localStorage, {
-  listenToStorageChanges: true,
-});
-
-function setFilters(next: ProjectFilter[]) {
-  filters.value = next.filter(hasValue);
-}
-
-function addFilter(field: ProjectFilter["field"]) {
-  if (filters.value.some((f) => f.field === field)) return;
-  filters.value = [...filters.value, createDefaultFilter(field)];
-}
-
-function removeFilter(field: ProjectFilter["field"]) {
-  filters.value = filters.value.filter((f) => f.field !== field);
-}
-
-function updateFilter(field: ProjectFilter["field"], next: ProjectFilter) {
-  const normalized = hasValue(next) ? next : null;
-  const current = filters.value ?? [];
-  if (!normalized) return removeFilter(field);
-  filters.value = current.map((f) => (f.field === field ? normalized : f));
-}
-
-provideProjectFilters({
-  filters,
-  setFilters,
-  addFilter,
-  removeFilter,
-  updateFilter,
-});
 </script>
 
 <template>

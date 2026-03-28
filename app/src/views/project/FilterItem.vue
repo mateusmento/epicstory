@@ -21,7 +21,7 @@ import {
   FILTER_OPERATORS,
   type ProjectFilter,
   type ProjectFilterOperator,
-} from "./filters/project-filters.types";
+} from "@/domain/project";
 import { IssuePickerMenu } from "@/components/issue";
 import { useIssues } from "@/domain/issues";
 

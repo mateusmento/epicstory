@@ -2,14 +2,13 @@
 import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import FilterItem from "../FilterItem.vue";
-import { useProjectFilters } from "./project-filters.context";
-import { FILTER_FIELDS, type ProjectFilterField } from "./project-filters.types";
+import { FILTER_FIELDS, type ProjectFilterField, useProjectFilters } from "@/domain/project";
 
 const props = defineProps<{
   projectId: number;
 }>();
 
-const { filters, addFilter, removeFilter, updateFilter } = useProjectFilters();
+const { filters, addFilter, removeFilter, updateFilter } = useProjectFilters(+props.projectId);
 
 const ALL_FIELDS = Object.keys(FILTER_FIELDS) as ProjectFilterField[];
 
