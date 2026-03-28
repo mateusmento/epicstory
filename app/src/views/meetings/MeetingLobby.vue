@@ -120,7 +120,9 @@ const joined = computed(() => occurrence.value?.meeting?.attendees ?? []);
           <Button variant="outline" size="sm" @click="router.back()">Back</Button>
         </div>
 
-        <div class="mt-4 rounded-lg border bg-black overflow-hidden aspect-video flex items-center justify-center">
+        <div
+          class="mt-4 rounded-lg border bg-black overflow-hidden aspect-video flex items-center justify-center"
+        >
           <video
             v-if="canPreview"
             ref="videoEl"
@@ -133,9 +135,7 @@ const joined = computed(() => occurrence.value?.meeting?.attendees ?? []);
         </div>
 
         <div class="mt-3 flex items-center gap-2">
-          <Button variant="destructive" size="sm" @click="cancelScheduledMeeting">
-            Cancel series
-          </Button>
+          <Button variant="destructive" size="sm" @click="cancelScheduledMeeting"> Cancel series </Button>
           <Button variant="outline" size="sm" @click="toggleCamera" :disabled="!previewStream">
             <Icon :name="isCameraOn ? 'bi-camera-video' : 'bi-camera-video-off'" class="mr-2" />
             {{ isCameraOn ? "Camera on" : "Camera off" }}
@@ -173,7 +173,11 @@ const joined = computed(() => occurrence.value?.meeting?.attendees ?? []);
 
         <div class="mt-4 text-sm font-semibold">Joined</div>
         <div class="mt-2 flex flex-wrap gap-2">
-          <div v-for="a in joined" :key="a.remoteId" class="flex items-center gap-2 rounded-full border px-2 py-1">
+          <div
+            v-for="a in joined"
+            :key="a.remoteId"
+            class="flex items-center gap-2 rounded-full border px-2 py-1"
+          >
             <img v-if="a.user?.picture" :src="a.user.picture" class="w-5 h-5 rounded-full" />
             <div class="text-xs">{{ a.user?.name ?? "Unknown" }}</div>
           </div>
@@ -183,4 +187,3 @@ const joined = computed(() => occurrence.value?.meeting?.attendees ?? []);
     </div>
   </div>
 </template>
-

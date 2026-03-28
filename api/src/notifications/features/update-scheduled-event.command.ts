@@ -48,14 +48,19 @@ export class UpdateScheduledEventCommand
       where: { id: command.id as any, userId: command.userId },
     });
 
-    console.log('event', event);
-
     if (!event) {
       throw new Error('Scheduled event not found');
     }
 
     if (command.payload !== undefined) {
-      event.payload = command.payload;
+      event.payload = {
+        ...(event.payload ?? {}),
+        ...(command.payload ?? {}),
+        type:
+          (event.payload as any)?.type ??
+          (command.payload as any)?.type ??
+          'calendar_event',
+      };
     }
 
     if (command.dueAt !== undefined) {

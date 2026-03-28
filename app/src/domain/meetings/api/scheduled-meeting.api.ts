@@ -53,7 +53,9 @@ export class ScheduledMeetingApi {
     const query: any = { workspaceId: params.workspaceId };
     if (params.start) query.start = params.start.toISOString();
     if (params.end) query.end = params.end.toISOString();
-    return this.axios.get<ScheduledMeetingOccurrence[]>("/scheduled-meetings", { params: query }).then((r) => r.data);
+    return this.axios
+      .get<ScheduledMeetingOccurrence[]>("/scheduled-meetings", { params: query })
+      .then((r) => r.data);
   }
 
   getOccurrence(occurrenceId: string) {
@@ -64,4 +66,3 @@ export class ScheduledMeetingApi {
     return this.axios.delete(`/scheduled-meetings/${scheduledMeetingId}`).then((r) => r.data);
   }
 }
-

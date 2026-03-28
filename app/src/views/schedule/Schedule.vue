@@ -68,6 +68,11 @@ const meetingRecurrenceFrequency = ref<RecurrenceFrequency>("weekly");
 const meetingRecurrenceInterval = ref(1);
 const meetingRecurrenceByWeekday = ref<number[]>([new Date().getDay()]);
 
+type EventRecurrenceFrequency = "once" | "daily" | "weekly";
+const eventRecurrenceFrequency = ref<EventRecurrenceFrequency>("once");
+const eventRecurrenceInterval = ref(1);
+const eventRecurrenceByWeekday = ref<number[]>([new Date().getDay()]);
+
 const isCreating = ref(false);
 const isLoading = ref(false);
 const isResizing = ref(false);
@@ -133,6 +138,13 @@ function toggleWeekday(day: number, enabled: boolean) {
   if (enabled) set.add(day);
   else set.delete(day);
   meetingRecurrenceByWeekday.value = Array.from(set.values()).sort((a, b) => a - b);
+}
+
+function toggleEventWeekday(day: number, enabled: boolean) {
+  const set = new Set(eventRecurrenceByWeekday.value);
+  if (enabled) set.add(day);
+  else set.delete(day);
+  eventRecurrenceByWeekday.value = Array.from(set.values()).sort((a, b) => a - b);
 }
 
 const eventsByDayKey = computed(() => {
@@ -385,7 +397,8 @@ function handleEventClick(event: ScheduledEvent) {
     });
     return;
   }
-  editingEvent.value = event;
+  const seriesId = (event.payload as any)?.seriesId as string | undefined;
+  editingEvent.value = seriesId && seriesId !== event.id ? ({ ...event, id: seriesId } as any) : event;
   editingMeeting.value = null;
   const eventDate = new Date(event.dueAt);
   eventDateTime.value = toCalendarDate(parseDate(format(eventDate, "yyyy-MM-dd")));
@@ -394,6 +407,22 @@ function handleEventClick(event: ScheduledEvent) {
   eventTitle.value = event.payload.title || "";
   eventDescription.value = event.payload.description || "";
   itemType.value = "event";
+
+  const rec = (event.payload as any)?.recurrence;
+  if (rec?.frequency === "daily") {
+    eventRecurrenceFrequency.value = "daily";
+    eventRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
+  } else if (rec?.frequency === "weekly") {
+    eventRecurrenceFrequency.value = "weekly";
+    eventRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
+    eventRecurrenceByWeekday.value =
+      Array.isArray(rec.byWeekday) && rec.byWeekday.length ? rec.byWeekday : [eventDate.getDay()];
+  } else {
+    eventRecurrenceFrequency.value = "once";
+    eventRecurrenceInterval.value = 1;
+    eventRecurrenceByWeekday.value = [eventDate.getDay()];
+  }
+
   showEventDialog.value = true;
 }
 
@@ -464,6 +493,9 @@ function openCreateDialog(date?: DateValue, startTime?: string, endTime?: string
   eventTime.value = startTime || "09:00";
   eventEndTime.value = endTime || "10:00";
   itemType.value = "event";
+  eventRecurrenceFrequency.value = "once";
+  eventRecurrenceInterval.value = 1;
+  eventRecurrenceByWeekday.value = [new Date().getDay()];
   meetingChannelId.value = null;
   meetingIsPublic.value = true;
   meetingNotifyMinutesBefore.value = 1;
@@ -532,24 +564,52 @@ async function saveEvent() {
         await scheduledMeetingApi.removeScheduledMeeting(editingMeeting.value.scheduledMeetingId);
       }
     } else if (editingEvent.value) {
+      const recurrence =
+        eventRecurrenceFrequency.value === "once"
+          ? { frequency: "once" as const }
+          : eventRecurrenceFrequency.value === "daily"
+            ? { frequency: "daily" as const, interval: Math.max(1, eventRecurrenceInterval.value) }
+            : {
+                frequency: "weekly" as const,
+                interval: Math.max(1, eventRecurrenceInterval.value),
+                byWeekday: eventRecurrenceByWeekday.value.length
+                  ? eventRecurrenceByWeekday.value
+                  : [new Date(dueAt).getDay()],
+              };
       await scheduledEventApi.updateScheduledEvent({
         id: editingEvent.value.id,
         userId: user.value.id,
         payload: {
+          type: "calendar_event",
           title: eventTitle.value.trim(),
           description: eventDescription.value?.trim() || "",
           endTime: eventEndTime.value,
+          recurrence,
         },
         dueAt: dueAt,
       });
     } else {
+      const recurrence =
+        eventRecurrenceFrequency.value === "once"
+          ? { frequency: "once" as const }
+          : eventRecurrenceFrequency.value === "daily"
+            ? { frequency: "daily" as const, interval: Math.max(1, eventRecurrenceInterval.value) }
+            : {
+                frequency: "weekly" as const,
+                interval: Math.max(1, eventRecurrenceInterval.value),
+                byWeekday: eventRecurrenceByWeekday.value.length
+                  ? eventRecurrenceByWeekday.value
+                  : [new Date(dueAt).getDay()],
+              };
       await scheduledEventApi.createScheduledEvent({
         userId: user.value.id,
         workspaceId: workspace.value.id,
         payload: {
+          type: "calendar_event",
           title: eventTitle.value.trim(),
           description: eventDescription.value?.trim() || "",
           endTime: eventEndTime.value, // Store end time in payload
+          recurrence,
         },
         dueAt: dueAt,
       });
@@ -584,7 +644,8 @@ async function removeCalendarItem(event: ScheduledEvent) {
     return;
   }
 
-  await scheduledEventApi.removeScheduledEvent(event.id);
+  const seriesId = (event.payload as any)?.seriesId as string | undefined;
+  await scheduledEventApi.removeScheduledEvent(seriesId ?? event.id);
   await fetchEvents();
 }
 
@@ -597,11 +658,16 @@ function closeDialog() {
   eventTime.value = "09:00";
   eventEndTime.value = "10:00";
   itemType.value = "event";
+  eventRecurrenceFrequency.value = "once";
+  eventRecurrenceInterval.value = 1;
+  eventRecurrenceByWeekday.value = [new Date().getDay()];
 }
 
 // Resize handlers
 function handleResizeStart(event: ScheduledEvent, type: "start" | "end", mouseEvent: MouseEvent) {
   if (event.payload?.type === "scheduled_meeting") return;
+  const seriesId = (event.payload as any)?.seriesId as string | undefined;
+  if (seriesId && seriesId !== event.id) return; // recurring occurrence: series-only, no per-occurrence edits
   mouseEvent.preventDefault();
   mouseEvent.stopPropagation();
   isResizing.value = true;
@@ -1100,6 +1166,51 @@ const dayHours = computed(() => {
               class="mt-1.5 w-full resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none"
               placeholder="Add description…"
             />
+
+            <!-- Event recurrence -->
+            <div v-if="itemType === 'event'" class="mt-2.5 rounded-md border bg-zinc-50 p-2.5">
+              <div class="mt-0.5 grid grid-cols-2 gap-2">
+                <label class="text-xs text-muted-foreground">
+                  Recurrence
+                  <select
+                    v-model="eventRecurrenceFrequency"
+                    class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm"
+                  >
+                    <option value="once">Once</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                  </select>
+                </label>
+                <label class="text-xs text-muted-foreground">
+                  Interval
+                  <input
+                    v-model.number="eventRecurrenceInterval"
+                    type="number"
+                    min="1"
+                    class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                    :disabled="eventRecurrenceFrequency === 'once'"
+                  />
+                </label>
+              </div>
+
+              <div v-if="eventRecurrenceFrequency === 'weekly'" class="mt-2">
+                <div class="text-xs text-muted-foreground mb-1">Weekdays</div>
+                <div class="grid grid-cols-7 gap-1">
+                  <label
+                    v-for="(lbl, idx) in ['S', 'M', 'T', 'W', 'T', 'F', 'S']"
+                    :key="idx"
+                    class="flex items-center justify-center gap-1 text-xs"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="eventRecurrenceByWeekday.includes(idx)"
+                      @change="toggleEventWeekday(idx, ($event.target as HTMLInputElement).checked)"
+                    />
+                    <span>{{ lbl }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
 
             <!-- Meeting settings -->
             <div

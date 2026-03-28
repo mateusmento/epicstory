@@ -57,6 +57,12 @@ export class ScheduledMeeting {
   @Column({ default: '' })
   description: string;
 
+  @Column({ type: 'timestamptz' })
+  startsAt: Date;
+
+  @Column({ type: 'timestamptz' })
+  endsAt: Date;
+
   @Column({ default: true })
   isPublic: boolean;
 

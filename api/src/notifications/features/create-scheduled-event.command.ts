@@ -29,10 +29,14 @@ export class CreateScheduledEventCommand
   constructor(private scheduledEventRepo: ScheduledEventRepository) {}
 
   async execute(command: CreateScheduledEvent): Promise<ScheduledEvent> {
+    const payload = {
+      ...(command.payload ?? {}),
+      type: command.payload?.type ?? 'calendar_event',
+    };
     const scheduledEvent = ScheduledEvent.create({
       userId: command.userId,
       workspaceId: command.workspaceId,
-      payload: command.payload,
+      payload,
       dueAt: command.dueAt,
     });
     return this.scheduledEventRepo.save(scheduledEvent);

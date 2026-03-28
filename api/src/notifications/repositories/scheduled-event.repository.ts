@@ -45,6 +45,7 @@ export class ScheduledEventRepository extends Repository<ScheduledEvent> {
         FROM scheduler.scheduled_events
         WHERE
           processed = false                               -- Only process events that haven't been completed yet.
+          AND (payload->>'type' IS DISTINCT FROM 'calendar_event') -- Calendar events are UI-only series; never process as notifications.
           AND (
             lock_id IS NULL                               -- Take events that are currently unlocked...
             OR locked_at < now() - interval '5 minutes'   -- ...or whose lock is stale with TTL of 5 minutes (to recover from previous worker that likely died).

@@ -21,7 +21,6 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/w
 import { addDays, addMinutes, isAfter, isBefore, startOfDay } from 'date-fns';
 import {
   ChannelRepository,
-  ScheduledMeetingOccurrenceRepository,
   ScheduledMeetingRepository,
 } from 'src/channel/infrastructure/repositories';
 import {
@@ -117,6 +116,24 @@ function generateOccurrences(args: {
   return [{ startsAt, endsAt }];
 }
 
+function nextOccurrenceAfter(args: {
+  startsAt: Date;
+  endsAt: Date;
+  recurrence: ScheduledMeetingRecurrence;
+  after: Date;
+}) {
+  const { startsAt, endsAt, recurrence, after } = args;
+  // Search at most 1 year ahead to find the next occurrence.
+  const horizonDays = 366;
+  const occs = generateOccurrences({
+    startsAt,
+    endsAt,
+    recurrence,
+    horizonDays,
+  });
+  return occs.find((o) => o.startsAt.getTime() >= after.getTime()) ?? null;
+}
+
 export class CreateScheduledMeeting {
   @IsNumber()
   workspaceId: number;
@@ -174,7 +191,6 @@ export class CreateScheduledMeetingCommand
     private workspaceRepo: WorkspaceRepository,
     private channelRepo: ChannelRepository,
     private scheduledMeetingRepo: ScheduledMeetingRepository,
-    private occurrenceRepo: ScheduledMeetingOccurrenceRepository,
     private scheduledEventRepo: ScheduledEventRepository,
   ) {}
 
@@ -218,8 +234,6 @@ export class CreateScheduledMeetingCommand
       participants = channel.peers;
     } else {
       const ids = Array.from(new Set(command.participantIds ?? []));
-      if (ids.length === 0)
-        throw new BadRequestException('participantIds are required');
 
       // Ensure all are workspace members.
       const members = await this.workspaceRepo.findMembers(
@@ -235,12 +249,7 @@ export class CreateScheduledMeetingCommand
 
       // Ensure issuer is included.
       if (!found.has(command.issuerId)) {
-        const issuerUser = await this.workspaceRepo.findMembers(
-          { workspaceId: command.workspaceId, userIds: [command.issuerId] },
-          { user: true },
-        );
-        if (!issuerUser[0]?.user) throw new IssuerUserIsNotWorkspaceMember();
-        users.push(issuerUser[0].user);
+        users.push(issuer.user);
       }
 
       participants = users;
@@ -252,6 +261,8 @@ export class CreateScheduledMeetingCommand
       createdById: command.issuerId,
       title: command.title ?? '',
       description: command.description ?? '',
+      startsAt: command.startsAt,
+      endsAt: command.endsAt,
       isPublic: command.isPublic ?? true,
       notifyMinutesBefore,
       recurrence: command.recurrence,
@@ -261,26 +272,19 @@ export class CreateScheduledMeetingCommand
 
     const saved = await this.scheduledMeetingRepo.save(meeting);
 
-    const occurrences = generateOccurrences({
+    // Series-only: don't persist occurrences up-front.
+    // Only schedule the NEXT reminder job per participant; cronjob will advance it.
+    const next = nextOccurrenceAfter({
       startsAt: command.startsAt,
       endsAt: command.endsAt,
       recurrence: command.recurrence,
-      horizonDays: 90,
-    }).map((o) =>
-      this.occurrenceRepo.create({
-        scheduledMeetingId: saved.id,
-        startsAt: o.startsAt,
-        endsAt: o.endsAt,
-        meetingId: null,
-      }),
-    );
-
-    const savedOccurrences = await this.occurrenceRepo.save(occurrences);
+      after: new Date(),
+    });
 
     const reminderEvents: ScheduledEvent[] = [];
-    for (const occ of savedOccurrences) {
+    if (next) {
       for (const user of participants) {
-        const dueAt = addMinutes(occ.startsAt, -notifyMinutesBefore);
+        const dueAt = addMinutes(next.startsAt, -notifyMinutesBefore);
         reminderEvents.push(
           ScheduledEvent.create({
             userId: user.id,
@@ -289,12 +293,11 @@ export class CreateScheduledMeetingCommand
             payload: {
               type: 'scheduled_meeting_reminder',
               scheduledMeetingId: saved.id,
-              occurrenceId: occ.id,
               title: saved.title,
               channelId: saved.channelId,
               isPublic: saved.isPublic,
-              startsAt: occ.startsAt,
-              endsAt: occ.endsAt,
+              startsAt: next.startsAt,
+              endsAt: next.endsAt,
               notifyMinutesBefore,
             },
           }),
@@ -302,15 +305,13 @@ export class CreateScheduledMeetingCommand
       }
     }
 
-    await this.scheduledEventRepo.save(reminderEvents);
+    if (reminderEvents.length) {
+      await this.scheduledEventRepo.save(reminderEvents);
+    }
 
     return {
       scheduledMeetingId: saved.id,
-      occurrences: savedOccurrences.map((o) => ({
-        id: o.id,
-        startsAt: o.startsAt,
-        endsAt: o.endsAt,
-      })),
+      occurrences: [],
     };
   }
 }

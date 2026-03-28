@@ -92,7 +92,7 @@ describe('Scheduled meetings', () => {
   it('creates occurrences + reminder scheduled events (recurring)', async () => {
     const { ws, u1, u2 } = await seedWorkspaceWithMembers();
 
-    const startsAt = new Date();
+    const startsAt = new Date(Date.now() + 60 * 60 * 1000);
     startsAt.setSeconds(0, 0);
     const endsAt = new Date(startsAt.getTime() + 30 * 60 * 1000);
 
@@ -116,13 +116,14 @@ describe('Scheduled meetings', () => {
     );
 
     expect(res.scheduledMeetingId).toBeTruthy();
-    expect(res.occurrences.length).toBeGreaterThan(1);
+    expect(res.occurrences.length).toBe(0);
 
     const seRepo = dataSource.getRepository(ScheduledEvent);
     const count = await seRepo.count();
 
     // Participants include u1 (issuer) + u2
-    expect(count).toBe(res.occurrences.length * 2);
+    // Series-only: we only schedule the NEXT reminder event per participant.
+    expect(count).toBe(2);
   });
 
   it('enforces private meeting access (standalone)', async () => {
@@ -146,12 +147,20 @@ describe('Scheduled meetings', () => {
       }),
     );
 
-    const occId = created.occurrences[0].id;
+    const occRepo = dataSource.getRepository(ScheduledMeetingOccurrence);
+    const occ = (await occRepo.save(
+      occRepo.create({
+        scheduledMeetingId: created.scheduledMeetingId,
+        startsAt,
+        endsAt,
+        meetingId: null,
+      } as any),
+    )) as unknown as ScheduledMeetingOccurrence;
 
     await expect(
       queryBus.execute(
         new GetScheduledMeetingOccurrence({
-          occurrenceId: occId,
+          occurrenceId: occ.id,
           issuerId: u2.id,
         }),
       ),
@@ -161,7 +170,8 @@ describe('Scheduled meetings', () => {
   it('cronjob creates meeting session idempotently for reminder events', async () => {
     const { ws, u1 } = await seedWorkspaceWithMembers();
 
-    const startsAt = new Date(Date.now() - 5 * 60 * 1000);
+    // Make the reminder due immediately: starts in 1 minute, notify 1 minute before.
+    const startsAt = new Date(Date.now() + 60 * 1000);
     startsAt.setSeconds(0, 0);
     const endsAt = new Date(startsAt.getTime() + 30 * 60 * 1000);
 
@@ -173,24 +183,33 @@ describe('Scheduled meetings', () => {
         startsAt,
         endsAt,
         isPublic: true,
-        notifyMinutesBefore: 0,
+        notifyMinutesBefore: 1,
         recurrence: { frequency: 'daily', interval: 1 },
         participantIds: [u1.id],
       }),
     );
 
-    const occId = created.occurrences[0].id;
     const occRepo = dataSource.getRepository(ScheduledMeetingOccurrence);
 
     // Before cron: session may or may not exist; ensure it doesn't.
-    const before = await occRepo.findOne({ where: { id: occId as any } });
-    expect(before?.meetingId ?? null).toBeNull();
+    const before = await occRepo.findOne({
+      where: {
+        scheduledMeetingId: created.scheduledMeetingId as any,
+        startsAt: startsAt as any,
+      } as any,
+    });
+    expect(before).toBeNull();
 
     // Run cron twice; should create only one meeting row.
     await cron.handleCron();
     await cron.handleCron();
 
-    const after = await occRepo.findOne({ where: { id: occId as any } });
+    const after = await occRepo.findOne({
+      where: {
+        scheduledMeetingId: created.scheduledMeetingId as any,
+        startsAt: startsAt as any,
+      } as any,
+    });
     expect(after?.meetingId).toBeTruthy();
 
     const meetingRepo = dataSource.getRepository(Meeting);
