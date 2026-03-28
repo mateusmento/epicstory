@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import {
+  ChannelRepository,
   MeetingAttendeeRepository,
   MeetingRepository,
 } from 'src/channel/infrastructure';
@@ -14,16 +15,20 @@ export class MeetingService {
   constructor(
     private meetingRepo: MeetingRepository,
     private meetingAttendeeRepo: MeetingAttendeeRepository,
+    private channelRepo: ChannelRepository,
   ) {}
 
   async findMeeting(id: number) {
-    const meeting = await this.meetingRepo.findOneBy({ id });
+    const meeting = await this.meetingRepo.findOne({
+      where: { id },
+      relations: { attendees: true },
+    });
     if (!meeting) throw new MeetingNotFoundException();
     return meeting;
   }
 
-  findOngoingMeeting(channelId: number) {
-    const meeting = this.meetingRepo.findOne({
+  async findOngoingMeeting(channelId: number) {
+    const meeting = await this.meetingRepo.findOne({
       where: { channelId, ongoing: true },
       relations: { attendees: true },
     });
@@ -36,7 +41,9 @@ export class MeetingService {
   }
 
   async startMeeting(channelId: number, attendee: MeetingAttendee) {
-    const meeting = Meeting.ongoing(channelId);
+    const channel = await this.channelRepo.findChannel(channelId);
+    if (!channel) throw new Error('Channel not found');
+    const meeting = Meeting.ongoing(channelId, channel.workspaceId);
     meeting.addAttendee(attendee);
     return await this.meetingRepo.save(meeting);
   }

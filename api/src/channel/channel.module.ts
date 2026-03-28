@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import * as controllers from './application/controllers';
 import * as features from './application/features';
@@ -14,6 +15,7 @@ import * as repositories from './infrastructure/repositories';
     TypeOrmModule.forFeature(Object.values(entities)),
     AuthModule,
     WorkspaceModule,
+    NotificationsModule,
   ],
   controllers: Object.values(controllers),
   providers: [

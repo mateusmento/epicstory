@@ -14,15 +14,55 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
+import { useChannels } from "@/domain/channels";
+import { useMeeting } from "@/domain/channels";
+import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
 import { ArrowLeft, ArrowRight, LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
+import { computed } from "vue";
 import { RouterLink } from "vue-router";
+import { useRouter } from "vue-router";
 import { NavListItem } from "../layout";
 
 defineProps<{ isAppPaneOpen: boolean }>();
 
 const { workspace } = useWorkspace();
 const { user, signOut } = useAuth();
+const router = useRouter();
+
+const { channels } = useChannels();
+const { currentMeeting, joinMeeting } = useMeeting();
+const { notifications } = useNotifications({ autoSubscribe: true });
+
+const scheduledMeetingNotif = computed(() => {
+  return notifications.value.find(
+    (n) =>
+      !n.seen &&
+      n.payload?.type === "scheduled_meeting_reminder" &&
+      Boolean((n.payload as any)?.occurrenceId),
+  );
+});
+
+const activeChannelMeeting = computed(() => {
+  return channels.value.find((c) => c.meeting);
+});
+
+const showHuddleCard = computed(() => {
+  return Boolean(currentMeeting.value || scheduledMeetingNotif.value || activeChannelMeeting.value);
+});
+
+async function onJoinScheduledMeeting() {
+  const occId = (scheduledMeetingNotif.value?.payload as any)?.occurrenceId as string | undefined;
+  if (!occId) return;
+  router.push({ name: "meeting-lobby", params: { workspaceId: workspace.value.id, occurrenceId: occId } });
+}
+
+async function onJoinChannelMeeting() {
+  const channel = activeChannelMeeting.value;
+  if (!channel) return;
+  await joinMeeting(channel as any);
+  router.push({ name: "channel-meeting", params: { workspaceId: workspace.value.id, channelId: channel.id } });
+}
 </script>
 
 <template>
@@ -55,6 +95,46 @@ const { user, signOut } = useAuth();
         <NavTrigger view="navbar" content="settings" :as="Button" variant="ghost" size="icon">
           <Icon name="md-settings-round" />
         </NavTrigger>
+      </div>
+    </div>
+
+    <div v-if="showHuddleCard" class="px-2">
+      <div class="rounded-xl border bg-white p-2 flex:row-md flex:center-y gap-2">
+        <div class="flex -space-x-2">
+          <img
+            v-for="p in (activeChannelMeeting?.peers ?? []).slice(0, 4)"
+            :key="p.id"
+            :src="p.picture"
+            class="w-6 h-6 rounded-full border-2 border-white object-cover"
+          />
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-medium truncate">
+            <template v-if="scheduledMeetingNotif">
+              {{ (scheduledMeetingNotif.payload as any)?.title ?? "Scheduled meeting" }}
+            </template>
+            <template v-else-if="activeChannelMeeting">
+              Huddle in {{ activeChannelMeeting.name || "channel" }}
+            </template>
+            <template v-else>Meeting</template>
+          </div>
+          <div class="text-[11px] text-secondary-foreground truncate">
+            <template v-if="scheduledMeetingNotif">Starting soon</template>
+            <template v-else-if="activeChannelMeeting">Live now</template>
+            <template v-else>Live now</template>
+          </div>
+        </div>
+
+        <Button
+          v-if="scheduledMeetingNotif"
+          size="sm"
+          class="h-8"
+          @click="onJoinScheduledMeeting"
+        >
+          Join
+        </Button>
+        <Button v-else-if="activeChannelMeeting" size="sm" class="h-8" @click="onJoinChannelMeeting">Join</Button>
       </div>
     </div>
 

@@ -39,12 +39,26 @@ export type IssueAssignedNotificationPayload = {
   issuer: User;
 };
 
+export type ScheduledMeetingReminderNotificationPayload = {
+  type: "scheduled_meeting_reminder";
+  occurrenceId: string;
+  scheduledMeetingId: string;
+  meetingId: number;
+  workspaceId: number;
+  channelId?: number | null;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  notifyMinutesBefore?: number;
+};
+
 export type NotificationPayload =
   | MentionNotificationPayload
   | ReplyNotificationPayload
   | DirectMessageNotificationPayload
   | IssueDueDateNotificationPayload
-  | IssueAssignedNotificationPayload;
+  | IssueAssignedNotificationPayload
+  | ScheduledMeetingReminderNotificationPayload;
 
 export type Notification = {
   id: string;

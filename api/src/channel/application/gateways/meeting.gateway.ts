@@ -9,6 +9,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import {
   MeetingHasntStartedException,
   MeetingNotFoundException,
@@ -17,6 +18,8 @@ import { MeetingService } from '../services/meeting.service';
 
 const channelMeetingRoom = (channelId) => `channel:${channelId}:meeting`;
 const meetingRoom = (meetingId) => `meeting:${meetingId}`;
+const workspaceMeetingRoom = (workspaceId) =>
+  `workspace:${workspaceId}:meetings`;
 
 @WebSocketGateway()
 export class MeetingGateway implements OnGatewayDisconnect {
@@ -26,6 +29,7 @@ export class MeetingGateway implements OnGatewayDisconnect {
   constructor(
     private meetingService: MeetingService,
     private channelRepo: ChannelRepository,
+    private workspaceRepo: WorkspaceRepository,
   ) {}
 
   async handleDisconnect(socket: Socket) {
@@ -63,6 +67,19 @@ export class MeetingGateway implements OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('subscribe-workspace-meetings')
+  async subscribeWorkspaceMeetings(
+    @MessageBody() { workspaceId }: any,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = (socket.request as any).user;
+    const userId = user?.id;
+    const member = await this.workspaceRepo.findMember(workspaceId, userId);
+    if (!member) return;
+    socket.leave(workspaceMeetingRoom(workspaceId));
+    socket.join(workspaceMeetingRoom(workspaceId));
+  }
+
   @SubscribeMessage('join-meeting')
   async joinMeeting(
     @MessageBody() { channelId, remoteId, isCameraOn, isMicrophoneOn }: any,
@@ -94,6 +111,14 @@ export class MeetingGateway implements OnGatewayDisconnect {
       this.server
         .to(channelMeetingRoom(channelId))
         .emit('incoming-meeting', { meeting, channelId });
+
+      this.server
+        .to(workspaceMeetingRoom(meeting.workspaceId))
+        .emit('meeting-session-started', {
+          meeting,
+          workspaceId: meeting.workspaceId,
+          channelId,
+        });
     }
 
     socket.leave(meetingRoom(meeting.id));
@@ -102,6 +127,49 @@ export class MeetingGateway implements OnGatewayDisconnect {
     socket.data.meetingAttendee = { meetingId: meeting.id, remoteId };
 
     return meeting;
+  }
+
+  @SubscribeMessage('join-meeting-session')
+  async joinMeetingSession(
+    @MessageBody() { meetingId, remoteId, isCameraOn, isMicrophoneOn }: any,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = (socket.request as any).user;
+    const userId = user?.id;
+
+    const meeting = await this.meetingService.findMeeting(meetingId);
+
+    const member = await this.workspaceRepo.findMember(
+      meeting.workspaceId,
+      userId,
+    );
+    if (!member) return;
+
+    const attendee = MeetingAttendee.of({
+      remoteId,
+      userId,
+      isCameraOn,
+      isMicrophoneOn,
+    });
+
+    const joined = await this.meetingService.joinMeeting(meeting, attendee);
+    const data = { attendee, meeting: joined };
+
+    socket.to(meetingRoom(meetingId)).emit('attendee-joined', data);
+    this.server
+      .to(workspaceMeetingRoom(joined.workspaceId))
+      .emit('meeting-attendee-joined', {
+        meetingId: joined.id,
+        workspaceId: joined.workspaceId,
+        channelId: joined.channelId,
+        attendee,
+      });
+
+    socket.leave(meetingRoom(meetingId));
+    socket.join(meetingRoom(meetingId));
+    socket.data.meetingAttendee = { meetingId: joined.id, remoteId };
+
+    return joined;
   }
 
   @SubscribeMessage('leave-meeting')
@@ -120,13 +188,23 @@ export class MeetingGateway implements OnGatewayDisconnect {
 
     if (attendeesCount > 0) {
       socket.to(meetingRoom(meetingId)).emit('attendee-left', { remoteId });
-      socket
-        .to(channelMeetingRoom(channelId))
-        .emit('leaving-attendee', { meetingId, channelId, remoteId, user });
+      if (channelId) {
+        socket
+          .to(channelMeetingRoom(channelId))
+          .emit('leaving-attendee', { meetingId, channelId, remoteId, user });
+      }
       socket.leave(meetingRoom(meetingId));
     } else {
+      const meeting = await this.meetingService.findMeeting(meetingId);
       this.meetingService.endMeeting(meetingId);
-      this.emitMeetingEnded(channelId, meetingId, this.server);
+      if (channelId) this.emitMeetingEnded(channelId, meetingId, this.server);
+      this.server
+        .to(workspaceMeetingRoom(meeting.workspaceId))
+        .emit('meeting-session-ended', {
+          meetingId,
+          workspaceId: meeting.workspaceId,
+          channelId: meeting.channelId,
+        });
       this.server.socketsLeave(meetingRoom(meetingId));
     }
 
@@ -142,9 +220,11 @@ export class MeetingGateway implements OnGatewayDisconnect {
     this.server
       .to(meetingRoom(meetingId))
       .emit('camera-toggled', { remoteId, enabled });
-    this.server
-      .to(channelMeetingRoom(channelId))
-      .emit('camera-toggled', { meetingId, channelId, remoteId, enabled });
+    if (channelId) {
+      this.server
+        .to(channelMeetingRoom(channelId))
+        .emit('camera-toggled', { meetingId, channelId, remoteId, enabled });
+    }
   }
 
   @SubscribeMessage('microphone-toggled')
@@ -158,9 +238,14 @@ export class MeetingGateway implements OnGatewayDisconnect {
     this.server
       .to(meetingRoom(meetingId))
       .emit('microphone-toggled', { remoteId, enabled });
-    this.server
-      .to(channelMeetingRoom(channelId))
-      .emit('microphone-toggled', { meetingId, channelId, remoteId, enabled });
+    if (channelId) {
+      this.server.to(channelMeetingRoom(channelId)).emit('microphone-toggled', {
+        meetingId,
+        channelId,
+        remoteId,
+        enabled,
+      });
+    }
   }
 
   @SubscribeMessage('end-meeting')
@@ -168,9 +253,17 @@ export class MeetingGateway implements OnGatewayDisconnect {
     @MessageBody() { meetingId }: any,
     @ConnectedSocket() socket: Socket,
   ) {
-    const { channelId } = await this.meetingService.findMeeting(meetingId);
+    const meeting = await this.meetingService.findMeeting(meetingId);
     this.meetingService.endMeeting(meetingId);
-    this.emitMeetingEnded(channelId, meetingId, this.server);
+    if (meeting.channelId)
+      this.emitMeetingEnded(meeting.channelId, meetingId, this.server);
+    this.server
+      .to(workspaceMeetingRoom(meeting.workspaceId))
+      .emit('meeting-session-ended', {
+        meetingId,
+        workspaceId: meeting.workspaceId,
+        channelId: meeting.channelId,
+      });
     this.server.socketsLeave(meetingRoom(meetingId));
     delete socket.data.meetingAttendee;
   }

@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { UserRepository } from 'src/auth';
+import { DataSource } from 'typeorm';
+import { Meeting } from 'src/channel/domain/entities/meeting.entity';
+import { ScheduledMeetingOccurrence } from 'src/channel/domain/entities/scheduled-meeting-occurrence.entity';
 import { ScheduledEventRepository } from '../repositories';
 import { NotificationService } from '../services';
 
@@ -14,6 +17,7 @@ export class NotificationsCronjob {
     private scheduledEventRepo: ScheduledEventRepository,
     private notificationService: NotificationService,
     private userRepo: UserRepository,
+    private dataSource: DataSource,
   ) {}
 
   /**
@@ -45,6 +49,61 @@ export class NotificationsCronjob {
       try {
         // Determine notification type based on payload
         const notificationType = event.payload.type || 'issue_due_date';
+
+        // Scheduled meeting reminder: ensure a meeting session exists for the occurrence.
+        // This is idempotent due to the UNIQUE constraint on meetings.scheduled_occurrence_id.
+        if (notificationType === 'scheduled_meeting_reminder') {
+          const occurrenceId = event.payload?.occurrenceId as
+            | string
+            | undefined;
+          if (occurrenceId) {
+            const occRepo =
+              this.dataSource.getRepository<ScheduledMeetingOccurrence>(
+                ScheduledMeetingOccurrence,
+              );
+            const meetingRepo = this.dataSource.getRepository<Meeting>(Meeting);
+
+            const occ = await occRepo.findOne({
+              where: { id: occurrenceId as any },
+              relations: { scheduledMeeting: true },
+            });
+
+            if (occ?.scheduledMeeting) {
+              // If already linked, nothing to do.
+              if (!occ.meetingId) {
+                // Try to find an existing session by occurrence id.
+                const existing = await meetingRepo.findOne({
+                  where: { scheduledOccurrenceId: occ.id as any },
+                });
+
+                const session =
+                  existing ??
+                  (await meetingRepo.save(
+                    Meeting.scheduled({
+                      workspaceId: occ.scheduledMeeting.workspaceId,
+                      scheduledOccurrenceId: occ.id,
+                      channelId: occ.scheduledMeeting.channelId ?? null,
+                    }),
+                  ));
+
+                occ.meetingId = session.id;
+                await occRepo.save(occ);
+              }
+
+              // Enrich notification payload with deep link data.
+              event.payload = {
+                ...event.payload,
+                workspaceId: occ.scheduledMeeting.workspaceId,
+                meetingId: occ.meetingId,
+                channelId: occ.scheduledMeeting.channelId,
+                scheduledMeetingId: occ.scheduledMeeting.id,
+                startsAt: occ.startsAt,
+                endsAt: occ.endsAt,
+                title: occ.scheduledMeeting.title,
+              };
+            }
+          }
+        }
 
         // Fetch user info if needed (for mentions/replies, we need sender info)
         let userInfo = null;

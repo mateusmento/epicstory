@@ -14,6 +14,8 @@ export class NotificationGateway {
   server: Server;
 
   sendNotification(userId: number, notification: Notification) {
+    // In some execution contexts (e.g. unit/integration tests) the websocket server may not be initialized.
+    if (!this.server) return;
     this.server
       .to(`user:${userId}:notifications`)
       .emit('incoming-notification', notification);

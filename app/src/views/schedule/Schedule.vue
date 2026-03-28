@@ -5,6 +5,8 @@ import { Icon } from "@/design-system/icons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
 import { useAuth } from "@/domain/auth";
+import { useChannels } from "@/domain/channels";
+import { ScheduledMeetingApi } from "@/domain/meetings";
 import { ScheduledEventApi, type ScheduledEvent } from "@/domain/scheduled-events";
 import { useWorkspace } from "@/domain/workspace";
 import {
@@ -29,13 +31,17 @@ import {
   startOfMonth,
 } from "date-fns";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 
 type ViewType = "month" | "week" | "day";
 
 const { user } = useAuth();
-const { workspace } = useWorkspace();
+const { workspace, members, fetchWorkspaceMembers } = useWorkspace();
+const { channels, fetchChannels } = useChannels();
 
 const scheduledEventApi = useDependency(ScheduledEventApi);
+const scheduledMeetingApi = useDependency(ScheduledMeetingApi);
+const router = useRouter();
 
 const today = () => todayFn(getLocalTimeZone());
 
@@ -49,6 +55,17 @@ const eventDescription = ref("");
 const eventDateTime = ref<DateValue>(today());
 const eventTime = ref("09:00");
 const eventEndTime = ref("10:00");
+
+type ItemType = "event" | "meeting";
+const itemType = ref<ItemType>("event");
+const meetingChannelId = ref<number | null>(null);
+const meetingIsPublic = ref(true);
+const meetingNotifyMinutesBefore = ref(1);
+const meetingParticipantIds = ref<number[]>([]);
+type RecurrenceFrequency = "daily" | "weekly";
+const meetingRecurrenceFrequency = ref<RecurrenceFrequency>("weekly");
+const meetingRecurrenceInterval = ref(1);
+const meetingRecurrenceByWeekday = ref<number[]>([new Date().getDay()]);
 
 const isCreating = ref(false);
 const isLoading = ref(false);
@@ -103,6 +120,20 @@ const monthWeekdayLabels = computed(() => {
   return Array.from({ length: 7 }, (_, i) => format(addDays(base, i), "EEE"));
 });
 
+function toggleParticipant(userId: number, enabled: boolean) {
+  const set = new Set(meetingParticipantIds.value);
+  if (enabled) set.add(userId);
+  else set.delete(userId);
+  meetingParticipantIds.value = Array.from(set.values());
+}
+
+function toggleWeekday(day: number, enabled: boolean) {
+  const set = new Set(meetingRecurrenceByWeekday.value);
+  if (enabled) set.add(day);
+  else set.delete(day);
+  meetingRecurrenceByWeekday.value = Array.from(set.values()).sort((a, b) => a - b);
+}
+
 const eventsByDayKey = computed(() => {
   const map = new Map<string, ScheduledEvent[]>();
   for (const ev of events.value) {
@@ -148,6 +179,10 @@ onMounted(async () => {
   if (user.value) {
     await fetchEvents();
   }
+  if (workspace.value?.id) {
+    fetchChannels();
+    fetchWorkspaceMembers();
+  }
   document.addEventListener("mousemove", handleResizeMove);
   document.addEventListener("mouseup", handleResizeEnd);
 });
@@ -166,7 +201,40 @@ async function fetchEvents() {
       startDate: dateRange.value.start,
       endDate: dateRange.value.end,
     });
-    events.value = fetched;
+    const meetings = workspace.value?.id
+      ? await scheduledMeetingApi.findScheduledMeetings({
+          workspaceId: workspace.value.id,
+          start: dateRange.value.start,
+          end: dateRange.value.end,
+        })
+      : [];
+
+    const meetingAsEvents: ScheduledEvent[] = meetings.map((occ: any) => {
+      const end = new Date(occ.endsAt);
+      const endTime = `${end.getHours().toString().padStart(2, "0")}:${end
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}`;
+      return {
+        id: `meeting:${occ.id}`,
+        userId: user.value!.id,
+        dueAt: occ.startsAt,
+        processed: false,
+        lockId: "",
+        payload: {
+          type: "scheduled_meeting",
+          occurrenceId: occ.id,
+          scheduledMeetingId: occ.scheduledMeeting.id,
+          meetingId: occ.meetingId,
+          channelId: occ.scheduledMeeting.channelId,
+          title: occ.scheduledMeeting.title,
+          description: occ.scheduledMeeting.description,
+          endTime,
+        },
+      } as any;
+    });
+
+    events.value = [...fetched, ...meetingAsEvents];
   } catch (error) {
     console.error("Failed to fetch events:", error);
   } finally {
@@ -305,6 +373,15 @@ function handleTimeSlotClick(date: Date, hour: number, event?: MouseEvent) {
 }
 
 function handleEventClick(event: ScheduledEvent) {
+  if (event.payload?.type === "scheduled_meeting") {
+    const occurrenceId = event.payload?.occurrenceId;
+    if (!occurrenceId) return;
+    router.push({
+      name: "meeting-lobby",
+      params: { workspaceId: workspace.value.id, occurrenceId },
+    });
+    return;
+  }
   editingEvent.value = event;
   const eventDate = new Date(event.dueAt);
   eventDateTime.value = toCalendarDate(parseDate(format(eventDate, "yyyy-MM-dd")));
@@ -312,6 +389,7 @@ function handleEventClick(event: ScheduledEvent) {
   eventEndTime.value = event.payload.endTime || format(getEventEndTime(event), "HH:mm");
   eventTitle.value = event.payload.title || "";
   eventDescription.value = event.payload.description || "";
+  itemType.value = "event";
   showEventDialog.value = true;
 }
 
@@ -321,6 +399,14 @@ function openCreateDialog(date?: DateValue, startTime?: string, endTime?: string
   eventDescription.value = "";
   eventTime.value = startTime || "09:00";
   eventEndTime.value = endTime || "10:00";
+  itemType.value = "event";
+  meetingChannelId.value = null;
+  meetingIsPublic.value = true;
+  meetingNotifyMinutesBefore.value = 1;
+  meetingParticipantIds.value = [];
+  meetingRecurrenceFrequency.value = "weekly";
+  meetingRecurrenceInterval.value = 1;
+  meetingRecurrenceByWeekday.value = [new Date().getDay()];
   if (date) {
     eventDateTime.value = date;
   }
@@ -341,7 +427,39 @@ async function saveEvent() {
     const dueAt = new Date(datePart);
     dueAt.setHours(hours, minutes, 0, 0);
 
-    if (editingEvent.value) {
+    if (itemType.value === "meeting") {
+      const [endHours, endMinutes] = eventEndTime.value.split(":").map(Number);
+      const endsAt = new Date(datePart);
+      endsAt.setHours(endHours, endMinutes, 0, 0);
+
+      const channelId = meetingChannelId.value ?? undefined;
+      const recurrence =
+        meetingRecurrenceFrequency.value === "daily"
+          ? {
+              frequency: "daily" as const,
+              interval: Math.max(1, meetingRecurrenceInterval.value),
+            }
+          : {
+              frequency: "weekly" as const,
+              interval: Math.max(1, meetingRecurrenceInterval.value),
+              byWeekday: meetingRecurrenceByWeekday.value.length
+                ? meetingRecurrenceByWeekday.value
+                : [new Date(dueAt).getDay()],
+            };
+
+      await scheduledMeetingApi.createScheduledMeeting({
+        workspaceId: workspace.value.id,
+        channelId,
+        title: eventTitle.value,
+        description: eventDescription.value,
+        startsAt: dueAt,
+        endsAt,
+        isPublic: meetingIsPublic.value,
+        notifyMinutesBefore: meetingNotifyMinutesBefore.value,
+        recurrence,
+        participantIds: channelId ? undefined : meetingParticipantIds.value,
+      });
+    } else if (editingEvent.value) {
       await scheduledEventApi.updateScheduledEvent({
         id: editingEvent.value.id,
         userId: user.value.id,
@@ -381,10 +499,12 @@ function closeDialog() {
   eventDescription.value = "";
   eventTime.value = "09:00";
   eventEndTime.value = "10:00";
+  itemType.value = "event";
 }
 
 // Resize handlers
 function handleResizeStart(event: ScheduledEvent, type: "start" | "end", mouseEvent: MouseEvent) {
+  if (event.payload?.type === "scheduled_meeting") return;
   mouseEvent.preventDefault();
   mouseEvent.stopPropagation();
   isResizing.value = true;
@@ -428,6 +548,12 @@ async function handleResizeEnd() {
   }
 
   const event = resizingEvent.value;
+  if (event.payload?.type === "scheduled_meeting") {
+    isResizing.value = false;
+    resizingEvent.value = null;
+    resizeType.value = null;
+    return;
+  }
   const eventDate = new Date(event.dueAt);
   const endTime = event.payload.endTime || format(getEventEndTime(event), "HH:mm");
 
@@ -790,6 +916,15 @@ const dayHours = computed(() => {
           </DialogHeader>
 
           <form class="px-3 pb-3" @submit.prevent="saveEvent">
+            <!-- Type -->
+            <div class="mt-1 flex items-center justify-between gap-2">
+              <div class="text-[11px] text-muted-foreground">Type</div>
+              <ToggleGroup v-model="itemType" type="single" :disabled="Boolean(editingEvent)">
+                <ToggleGroupItem value="event">Event</ToggleGroupItem>
+                <ToggleGroupItem value="meeting">Meeting</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
             <!-- Title / Description (blended, no borders) -->
             <label for="event-title" class="sr-only">Title</label>
             <input
@@ -809,6 +944,102 @@ const dayHours = computed(() => {
               class="mt-1.5 w-full resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none"
               placeholder="Add description…"
             />
+
+            <!-- Meeting settings -->
+            <div
+              v-if="itemType === 'meeting' && !editingEvent"
+              class="mt-2.5 rounded-md border bg-zinc-50 p-2.5"
+            >
+              <div class="grid grid-cols-2 gap-2">
+                <label class="text-xs text-muted-foreground">
+                  Channel (optional)
+                  <select
+                    v-model.number="meetingChannelId"
+                    class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm"
+                  >
+                    <option :value="null">No channel</option>
+                    <option v-for="c in channels" :key="c.id" :value="c.id">
+                      {{ c.name || `Channel ${c.id}` }}
+                    </option>
+                  </select>
+                </label>
+
+                <label class="text-xs text-muted-foreground">
+                  Notify (minutes before)
+                  <input
+                    v-model.number="meetingNotifyMinutesBefore"
+                    type="number"
+                    min="0"
+                    class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                  />
+                </label>
+              </div>
+
+              <div class="mt-2 flex items-center justify-between">
+                <label class="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input v-model="meetingIsPublic" type="checkbox" class="h-4 w-4" />
+                  Public (workspace members with link can join)
+                </label>
+              </div>
+
+              <div class="mt-2 grid grid-cols-2 gap-2">
+                <label class="text-xs text-muted-foreground">
+                  Recurrence
+                  <select
+                    v-model="meetingRecurrenceFrequency"
+                    class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                  </select>
+                </label>
+                <label class="text-xs text-muted-foreground">
+                  Interval
+                  <input
+                    v-model.number="meetingRecurrenceInterval"
+                    type="number"
+                    min="1"
+                    class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                  />
+                </label>
+              </div>
+
+              <div v-if="meetingRecurrenceFrequency === 'weekly'" class="mt-2">
+                <div class="text-xs text-muted-foreground mb-1">Weekdays</div>
+                <div class="grid grid-cols-7 gap-1">
+                  <label
+                    v-for="(lbl, idx) in ['S', 'M', 'T', 'W', 'T', 'F', 'S']"
+                    :key="idx"
+                    class="flex items-center justify-center gap-1 text-xs"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="meetingRecurrenceByWeekday.includes(idx)"
+                      @change="toggleWeekday(idx, ($event.target as HTMLInputElement).checked)"
+                    />
+                    <span>{{ lbl }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div v-if="!meetingChannelId" class="mt-2">
+                <div class="text-xs text-muted-foreground mb-1">Participants (notified)</div>
+                <div class="max-h-40 overflow-auto rounded-md border bg-white p-2">
+                  <label v-for="m in members" :key="m.user.id" class="flex items-center gap-2 text-sm py-1">
+                    <input
+                      type="checkbox"
+                      :checked="meetingParticipantIds.includes(m.user.id)"
+                      @change="toggleParticipant(m.user.id, ($event.target as HTMLInputElement).checked)"
+                    />
+                    <span class="truncate">{{ m.user.name }}</span>
+                    <span class="ml-auto text-xs text-muted-foreground truncate">{{ m.user.email }}</span>
+                  </label>
+                </div>
+              </div>
+              <div v-else class="mt-2 text-xs text-muted-foreground">
+                Participants are derived from channel members.
+              </div>
+            </div>
 
             <!-- Date + Start + End (same line) -->
             <div class="mt-2.5 flex items-center gap-2">

@@ -12,3 +12,6 @@ export * from './send-direct-message.command';
 export * from './toggle-message-reaction.command';
 export * from './toggle-reply.reaction.command';
 export * from './reply-message.command';
+export * from './create-scheduled-meeting.command';
+export * from './find-scheduled-meetings.query';
+export * from './get-scheduled-meeting-occurrence.query';
