@@ -87,6 +87,13 @@ async function join() {
   router.push({ name: "meeting-session", params: { workspaceId: workspaceId.value, meetingId } });
 }
 
+async function cancelScheduledMeeting() {
+  const scheduledMeetingId = occurrence.value?.scheduledMeeting?.id as string | undefined;
+  if (!scheduledMeetingId) return;
+  await scheduledMeetingApi.removeScheduledMeeting(scheduledMeetingId);
+  router.push({ name: "schedule", params: { workspaceId: workspaceId.value } });
+}
+
 onMounted(async () => {
   await fetchOccurrence();
   await setupPreview();
@@ -126,6 +133,9 @@ const joined = computed(() => occurrence.value?.meeting?.attendees ?? []);
         </div>
 
         <div class="mt-3 flex items-center gap-2">
+          <Button variant="destructive" size="sm" @click="cancelScheduledMeeting">
+            Cancel series
+          </Button>
           <Button variant="outline" size="sm" @click="toggleCamera" :disabled="!previewStream">
             <Icon :name="isCameraOn ? 'bi-camera-video' : 'bi-camera-video-off'" class="mr-2" />
             {{ isCameraOn ? "Camera on" : "Camera off" }}

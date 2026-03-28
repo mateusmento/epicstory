@@ -54,6 +54,10 @@ function generateOccurrences(args: {
   const maxEnd = isBefore(until, horizonEnd) ? until : horizonEnd;
   const out: Array<{ startsAt: Date; endsAt: Date }> = [];
 
+  if (recurrence.frequency === 'once') {
+    return [{ startsAt, endsAt }];
+  }
+
   if (recurrence.frequency === 'daily') {
     const interval = Math.max(1, recurrence.interval || 1);
     for (let i = 0; ; i += interval) {

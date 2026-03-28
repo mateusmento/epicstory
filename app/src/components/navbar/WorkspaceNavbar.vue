@@ -14,7 +14,7 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import { useChannels } from "@/domain/channels";
+import { useSyncedChannels } from "@/domain/channels";
 import { useMeeting } from "@/domain/channels";
 import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
@@ -30,7 +30,7 @@ const { workspace } = useWorkspace();
 const { user, signOut } = useAuth();
 const router = useRouter();
 
-const { channels } = useChannels();
+const { channels } = useSyncedChannels();
 const { currentMeeting, joinMeeting } = useMeeting();
 const { notifications } = useNotifications({ autoSubscribe: true });
 
@@ -61,7 +61,10 @@ async function onJoinChannelMeeting() {
   const channel = activeChannelMeeting.value;
   if (!channel) return;
   await joinMeeting(channel as any);
-  router.push({ name: "channel-meeting", params: { workspaceId: workspace.value.id, channelId: channel.id } });
+  router.push({
+    name: "channel-meeting",
+    params: { workspaceId: workspace.value.id, channelId: channel.id },
+  });
 }
 </script>
 
@@ -126,15 +129,12 @@ async function onJoinChannelMeeting() {
           </div>
         </div>
 
-        <Button
-          v-if="scheduledMeetingNotif"
-          size="sm"
-          class="h-8"
-          @click="onJoinScheduledMeeting"
-        >
+        <Button v-if="scheduledMeetingNotif" size="sm" class="h-8" @click="onJoinScheduledMeeting">
           Join
         </Button>
-        <Button v-else-if="activeChannelMeeting" size="sm" class="h-8" @click="onJoinChannelMeeting">Join</Button>
+        <Button v-else-if="activeChannelMeeting" size="sm" class="h-8" @click="onJoinChannelMeeting"
+          >Join</Button
+        >
       </div>
     </div>
 

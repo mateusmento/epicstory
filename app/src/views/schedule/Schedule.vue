@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
-import { Button } from "@/design-system";
+import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
@@ -50,6 +50,7 @@ const currentDate = ref<DateValue>(today());
 const events = ref<ScheduledEvent[]>([]);
 const showEventDialog = ref(false);
 const editingEvent = ref<ScheduledEvent | null>(null);
+const editingMeeting = ref<{ scheduledMeetingId: string; occurrenceId: string } | null>(null);
 const eventTitle = ref("");
 const eventDescription = ref("");
 const eventDateTime = ref<DateValue>(today());
@@ -62,7 +63,7 @@ const meetingChannelId = ref<number | null>(null);
 const meetingIsPublic = ref(true);
 const meetingNotifyMinutesBefore = ref(1);
 const meetingParticipantIds = ref<number[]>([]);
-type RecurrenceFrequency = "daily" | "weekly";
+type RecurrenceFrequency = "once" | "daily" | "weekly";
 const meetingRecurrenceFrequency = ref<RecurrenceFrequency>("weekly");
 const meetingRecurrenceInterval = ref(1);
 const meetingRecurrenceByWeekday = ref<number[]>([new Date().getDay()]);
@@ -227,6 +228,8 @@ async function fetchEvents() {
           scheduledMeetingId: occ.scheduledMeeting.id,
           meetingId: occ.meetingId,
           channelId: occ.scheduledMeeting.channelId,
+          isPublic: occ.scheduledMeeting.isPublic,
+          notifyMinutesBefore: occ.scheduledMeeting.notifyMinutesBefore,
           title: occ.scheduledMeeting.title,
           description: occ.scheduledMeeting.description,
           endTime,
@@ -383,6 +386,7 @@ function handleEventClick(event: ScheduledEvent) {
     return;
   }
   editingEvent.value = event;
+  editingMeeting.value = null;
   const eventDate = new Date(event.dueAt);
   eventDateTime.value = toCalendarDate(parseDate(format(eventDate, "yyyy-MM-dd")));
   eventTime.value = format(eventDate, "HH:mm");
@@ -393,8 +397,68 @@ function handleEventClick(event: ScheduledEvent) {
   showEventDialog.value = true;
 }
 
+async function openEditMeetingFromCalendar(event: ScheduledEvent) {
+  const occurrenceId = event.payload?.occurrenceId as string | undefined;
+  const scheduledMeetingId = event.payload?.scheduledMeetingId as string | undefined;
+  if (!occurrenceId || !scheduledMeetingId) return;
+
+  editingEvent.value = null;
+  editingMeeting.value = { scheduledMeetingId, occurrenceId };
+  itemType.value = "meeting";
+
+  const eventDate = new Date(event.dueAt);
+  eventDateTime.value = toCalendarDate(parseDate(format(eventDate, "yyyy-MM-dd")));
+  eventTime.value = format(eventDate, "HH:mm");
+  eventEndTime.value = event.payload.endTime || format(getEventEndTime(event), "HH:mm");
+  eventTitle.value = event.payload.title || "";
+  eventDescription.value = event.payload.description || "";
+  meetingChannelId.value = (event.payload.channelId ?? null) as any;
+  meetingIsPublic.value = Boolean(event.payload.isPublic ?? true);
+  meetingNotifyMinutesBefore.value = Number(event.payload.notifyMinutesBefore ?? 1);
+
+  try {
+    const occ: any = await scheduledMeetingApi.getOccurrence(occurrenceId);
+    const sm = occ?.scheduledMeeting;
+    if (sm) {
+      meetingChannelId.value = (sm.channelId ?? null) as any;
+      meetingIsPublic.value = Boolean(sm.isPublic ?? true);
+      meetingNotifyMinutesBefore.value = Number(sm.notifyMinutesBefore ?? 1);
+
+      // Recurrence + participants come from the occurrence detail.
+      const rec = sm.recurrence;
+      if (rec?.frequency === "once") {
+        meetingRecurrenceFrequency.value = "once";
+      } else if (rec?.frequency === "daily") {
+        meetingRecurrenceFrequency.value = "daily";
+        meetingRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
+      } else if (rec?.frequency === "weekly") {
+        meetingRecurrenceFrequency.value = "weekly";
+        meetingRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
+        meetingRecurrenceByWeekday.value =
+          Array.isArray(rec.byWeekday) && rec.byWeekday.length
+            ? rec.byWeekday
+            : [new Date(event.dueAt).getDay()];
+      }
+
+      if (!sm.channelId) {
+        meetingParticipantIds.value = Array.isArray(sm.participants)
+          ? sm.participants.map((p: any) => p.id).filter((x: any) => typeof x === "number")
+          : [];
+      }
+
+      eventTitle.value = sm.title ?? eventTitle.value;
+      eventDescription.value = sm.description ?? eventDescription.value;
+    }
+  } catch (e) {
+    console.error("Failed to fetch meeting occurrence for edit:", e);
+  }
+
+  showEventDialog.value = true;
+}
+
 function openCreateDialog(date?: DateValue, startTime?: string, endTime?: string) {
   editingEvent.value = null;
+  editingMeeting.value = null;
   eventTitle.value = "";
   eventDescription.value = "";
   eventTime.value = startTime || "09:00";
@@ -434,24 +498,26 @@ async function saveEvent() {
 
       const channelId = meetingChannelId.value ?? undefined;
       const recurrence =
-        meetingRecurrenceFrequency.value === "daily"
-          ? {
-              frequency: "daily" as const,
-              interval: Math.max(1, meetingRecurrenceInterval.value),
-            }
-          : {
-              frequency: "weekly" as const,
-              interval: Math.max(1, meetingRecurrenceInterval.value),
-              byWeekday: meetingRecurrenceByWeekday.value.length
-                ? meetingRecurrenceByWeekday.value
-                : [new Date(dueAt).getDay()],
-            };
+        meetingRecurrenceFrequency.value === "once"
+          ? { frequency: "once" as const }
+          : meetingRecurrenceFrequency.value === "daily"
+            ? {
+                frequency: "daily" as const,
+                interval: Math.max(1, meetingRecurrenceInterval.value),
+              }
+            : {
+                frequency: "weekly" as const,
+                interval: Math.max(1, meetingRecurrenceInterval.value),
+                byWeekday: meetingRecurrenceByWeekday.value.length
+                  ? meetingRecurrenceByWeekday.value
+                  : [new Date(dueAt).getDay()],
+              };
 
       await scheduledMeetingApi.createScheduledMeeting({
         workspaceId: workspace.value.id,
         channelId,
-        title: eventTitle.value,
-        description: eventDescription.value,
+        title: eventTitle.value.trim(),
+        description: eventDescription.value?.trim() || undefined,
         startsAt: dueAt,
         endsAt,
         isPublic: meetingIsPublic.value,
@@ -459,13 +525,19 @@ async function saveEvent() {
         recurrence,
         participantIds: channelId ? undefined : meetingParticipantIds.value,
       });
+
+      // "Edit meeting" is implemented as recreate (new series) then delete old series,
+      // only exposed in the UI before the meeting is rolling.
+      if (editingMeeting.value?.scheduledMeetingId) {
+        await scheduledMeetingApi.removeScheduledMeeting(editingMeeting.value.scheduledMeetingId);
+      }
     } else if (editingEvent.value) {
       await scheduledEventApi.updateScheduledEvent({
         id: editingEvent.value.id,
         userId: user.value.id,
         payload: {
-          title: eventTitle.value,
-          description: eventDescription.value,
+          title: eventTitle.value.trim(),
+          description: eventDescription.value?.trim() || "",
           endTime: eventEndTime.value,
         },
         dueAt: dueAt,
@@ -475,8 +547,8 @@ async function saveEvent() {
         userId: user.value.id,
         workspaceId: workspace.value.id,
         payload: {
-          title: eventTitle.value,
-          description: eventDescription.value,
+          title: eventTitle.value.trim(),
+          description: eventDescription.value?.trim() || "",
           endTime: eventEndTime.value, // Store end time in payload
         },
         dueAt: dueAt,
@@ -492,9 +564,34 @@ async function saveEvent() {
   }
 }
 
+async function removeEvent() {
+  if (!editingEvent.value) return;
+  await scheduledEventApi.removeScheduledEvent(editingEvent.value.id);
+  closeDialog();
+  await fetchEvents();
+}
+
+function isScheduledMeetingEvent(event: ScheduledEvent) {
+  return event.payload?.type === "scheduled_meeting";
+}
+
+async function removeCalendarItem(event: ScheduledEvent) {
+  if (isScheduledMeetingEvent(event)) {
+    const scheduledMeetingId = event.payload?.scheduledMeetingId;
+    if (!scheduledMeetingId) return;
+    await scheduledMeetingApi.removeScheduledMeeting(scheduledMeetingId);
+    await fetchEvents();
+    return;
+  }
+
+  await scheduledEventApi.removeScheduledEvent(event.id);
+  await fetchEvents();
+}
+
 function closeDialog() {
   showEventDialog.value = false;
   editingEvent.value = null;
+  editingMeeting.value = null;
   eventTitle.value = "";
   eventDescription.value = "";
   eventTime.value = "09:00";
@@ -690,17 +787,34 @@ const dayHours = computed(() => {
                 </div>
 
                 <div class="mt-1 flex-1 min-h-0 overflow-hidden space-y-1">
-                  <div
-                    v-for="event in getPreviewEventsForDayCell(day)"
-                    :key="event.id"
-                    @click.stop="handleEventClick(event)"
-                    class="px-2 py-1 rounded bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
-                    title="Open event"
-                  >
-                    <div class="text-[11px] font-medium text-blue-900 truncate">
-                      {{ format(new Date(event.dueAt), "HH:mm") }} {{ event.payload.title }}
-                    </div>
-                  </div>
+                  <Menu v-for="event in getPreviewEventsForDayCell(day)" :key="event.id" type="context-menu">
+                    <MenuTrigger as-child>
+                      <div
+                        @click.stop="handleEventClick(event)"
+                        class="px-2 py-1 rounded bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
+                        title="Open event"
+                      >
+                        <div class="text-[11px] font-medium text-blue-900 truncate">
+                          {{ format(new Date(event.dueAt), "HH:mm") }} {{ event.payload.title }}
+                        </div>
+                      </div>
+                    </MenuTrigger>
+                    <MenuContent class="w-40" disabled-portal>
+                      <template v-if="event.payload?.type === 'scheduled_meeting'">
+                        <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
+                          >Open lobby</MenuItem
+                        >
+                        <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
+                        <MenuItem variant="destructive" @click="removeCalendarItem(event)"
+                          >Cancel series</MenuItem
+                        >
+                      </template>
+                      <template v-else>
+                        <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
+                        <MenuItem variant="destructive" @click="removeCalendarItem(event)">Remove</MenuItem>
+                      </template>
+                    </MenuContent>
+                  </Menu>
 
                   <div
                     v-if="getOverflowCountForDayCell(day) > 0"
@@ -752,56 +866,73 @@ const dayHours = computed(() => {
               class="h-16 border-b cursor-pointer hover:bg-gray-50 transition-colors relative"
               @click="(e) => handleTimeSlotClick(day, hour, e)"
             >
-              <div
-                v-for="event in getEventsStartingAtHour(day, hour)"
-                :key="event.id"
-                @click.stop="handleEventClick(event)"
-                class="absolute left-0 right-0 p-1 m-1 rounded bg-blue-500 text-white text-xs cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
-                :style="{
-                  top: `${getEventTopOffset(event)}px`,
-                  height: `${getEventHeightPx(event, 18)}px`,
-                }"
-              >
-                <!-- Top resize handle -->
-                <div
-                  @mousedown.stop="(e) => handleResizeStart(event, 'start', e)"
-                  class="absolute top-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-t"
-                  :class="{
-                    'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'start',
-                  }"
-                ></div>
-                <div class="min-h-0 flex flex-col gap-0.5">
-                  <div class="flex items-center gap-1 min-w-0">
-                    <span
-                      v-if="getEventLayoutMode(event) !== 'normal'"
-                      class="shrink-0 text-[10px] opacity-90"
-                    >
-                      {{ format(new Date(event.dueAt), "HH:mm") }}
-                    </span>
-                    <div class="font-medium truncate min-w-0">
-                      {{ event.payload.title }}
-                    </div>
-                  </div>
+              <Menu v-for="event in getEventsStartingAtHour(day, hour)" :key="event.id" type="context-menu">
+                <MenuTrigger as-child>
                   <div
-                    v-if="getEventLayoutMode(event) === 'normal' && event.payload.description"
-                    class="text-[10px] opacity-90 truncate"
+                    @click.stop="handleEventClick(event)"
+                    class="absolute left-0 right-0 p-1 m-1 rounded bg-blue-500 text-white text-xs cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
+                    :style="{
+                      top: `${getEventTopOffset(event)}px`,
+                      height: `${getEventHeightPx(event, 18)}px`,
+                    }"
                   >
-                    {{ event.payload.description }}
+                    <!-- Top resize handle -->
+                    <div
+                      @mousedown.stop="(e) => handleResizeStart(event, 'start', e)"
+                      class="absolute top-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-t"
+                      :class="{
+                        'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'start',
+                      }"
+                    ></div>
+                    <div class="min-h-0 flex flex-col gap-0.5">
+                      <div class="flex items-center gap-1 min-w-0">
+                        <span
+                          v-if="getEventLayoutMode(event) !== 'normal'"
+                          class="shrink-0 text-[10px] opacity-90"
+                        >
+                          {{ format(new Date(event.dueAt), "HH:mm") }}
+                        </span>
+                        <div class="font-medium truncate min-w-0">
+                          {{ event.payload.title }}
+                        </div>
+                      </div>
+                      <div
+                        v-if="getEventLayoutMode(event) === 'normal' && event.payload.description"
+                        class="text-[10px] opacity-90 truncate"
+                      >
+                        {{ event.payload.description }}
+                      </div>
+                      <div v-if="getEventLayoutMode(event) === 'normal'" class="text-[10px] opacity-75">
+                        {{ format(new Date(event.dueAt), "HH:mm") }} -
+                        {{ format(getEventEndTime(event), "HH:mm") }}
+                      </div>
+                    </div>
+                    <!-- Bottom resize handle -->
+                    <div
+                      @mousedown.stop="(e) => handleResizeStart(event, 'end', e)"
+                      class="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-b"
+                      :class="{
+                        'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'end',
+                      }"
+                    ></div>
                   </div>
-                  <div v-if="getEventLayoutMode(event) === 'normal'" class="text-[10px] opacity-75">
-                    {{ format(new Date(event.dueAt), "HH:mm") }} -
-                    {{ format(getEventEndTime(event), "HH:mm") }}
-                  </div>
-                </div>
-                <!-- Bottom resize handle -->
-                <div
-                  @mousedown.stop="(e) => handleResizeStart(event, 'end', e)"
-                  class="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-b"
-                  :class="{
-                    'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'end',
-                  }"
-                ></div>
-              </div>
+                </MenuTrigger>
+                <MenuContent class="w-40" disabled-portal>
+                  <template v-if="event.payload?.type === 'scheduled_meeting'">
+                    <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
+                      >Open lobby</MenuItem
+                    >
+                    <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
+                    <MenuItem variant="destructive" @click="removeCalendarItem(event)"
+                      >Cancel series</MenuItem
+                    >
+                  </template>
+                  <template v-else>
+                    <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
+                    <MenuItem variant="destructive" @click="removeCalendarItem(event)">Remove</MenuItem>
+                  </template>
+                </MenuContent>
+              </Menu>
             </div>
           </div>
         </div>
@@ -846,59 +977,80 @@ const dayHours = computed(() => {
                   )
               "
             >
-              <div
+              <Menu
                 v-for="event in getEventsStartingAtHour(
                   new Date(currentDate.year, currentDate.month - 1, currentDate.day),
                   hour,
                 )"
                 :key="event.id"
-                @click.stop="handleEventClick(event)"
-                class="absolute left-0 right-0 p-2 m-1 rounded bg-blue-500 text-white cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
-                :style="{
-                  top: `${getEventTopOffset(event)}px`,
-                  height: `${getEventHeightPx(event, 24)}px`,
-                }"
+                type="context-menu"
               >
-                <!-- Top resize handle -->
-                <div
-                  @mousedown.stop="(e) => handleResizeStart(event, 'start', e)"
-                  class="absolute top-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-t"
-                  :class="{
-                    'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'start',
-                  }"
-                ></div>
-                <div class="min-h-0 flex flex-col gap-1">
-                  <div class="flex items-center gap-1 min-w-0">
-                    <span
-                      v-if="getEventLayoutMode(event) !== 'normal'"
-                      class="shrink-0 text-[10px] opacity-90"
-                    >
-                      {{ format(new Date(event.dueAt), "HH:mm") }}
-                    </span>
-                    <div class="font-medium truncate min-w-0">
-                      {{ event.payload.title }}
-                    </div>
-                  </div>
+                <MenuTrigger as-child>
                   <div
-                    v-if="getEventLayoutMode(event) === 'normal' && event.payload.description"
-                    class="text-[11px] opacity-90 line-clamp-2"
+                    @click.stop="handleEventClick(event)"
+                    class="absolute left-0 right-0 p-2 m-1 rounded bg-blue-500 text-white cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
+                    :style="{
+                      top: `${getEventTopOffset(event)}px`,
+                      height: `${getEventHeightPx(event, 24)}px`,
+                    }"
                   >
-                    {{ event.payload.description }}
+                    <!-- Top resize handle -->
+                    <div
+                      @mousedown.stop="(e) => handleResizeStart(event, 'start', e)"
+                      class="absolute top-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-t"
+                      :class="{
+                        'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'start',
+                      }"
+                    ></div>
+                    <div class="min-h-0 flex flex-col gap-1">
+                      <div class="flex items-center gap-1 min-w-0">
+                        <span
+                          v-if="getEventLayoutMode(event) !== 'normal'"
+                          class="shrink-0 text-[10px] opacity-90"
+                        >
+                          {{ format(new Date(event.dueAt), "HH:mm") }}
+                        </span>
+                        <div class="font-medium truncate min-w-0">
+                          {{ event.payload.title }}
+                        </div>
+                      </div>
+                      <div
+                        v-if="getEventLayoutMode(event) === 'normal' && event.payload.description"
+                        class="text-[11px] opacity-90 line-clamp-2"
+                      >
+                        {{ event.payload.description }}
+                      </div>
+                      <div v-if="getEventLayoutMode(event) === 'normal'" class="text-[10px] opacity-75">
+                        {{ format(new Date(event.dueAt), "HH:mm") }} -
+                        {{ format(getEventEndTime(event), "HH:mm") }}
+                      </div>
+                    </div>
+                    <!-- Bottom resize handle -->
+                    <div
+                      @mousedown.stop="(e) => handleResizeStart(event, 'end', e)"
+                      class="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-b"
+                      :class="{
+                        'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'end',
+                      }"
+                    ></div>
                   </div>
-                  <div v-if="getEventLayoutMode(event) === 'normal'" class="text-[10px] opacity-75">
-                    {{ format(new Date(event.dueAt), "HH:mm") }} -
-                    {{ format(getEventEndTime(event), "HH:mm") }}
-                  </div>
-                </div>
-                <!-- Bottom resize handle -->
-                <div
-                  @mousedown.stop="(e) => handleResizeStart(event, 'end', e)"
-                  class="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-b"
-                  :class="{
-                    'bg-blue-400': isResizing && resizingEvent?.id === event.id && resizeType === 'end',
-                  }"
-                ></div>
-              </div>
+                </MenuTrigger>
+                <MenuContent class="w-40" disabled-portal>
+                  <template v-if="event.payload?.type === 'scheduled_meeting'">
+                    <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
+                      >Open lobby</MenuItem
+                    >
+                    <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
+                    <MenuItem variant="destructive" @click="removeCalendarItem(event)"
+                      >Cancel series</MenuItem
+                    >
+                  </template>
+                  <template v-else>
+                    <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
+                    <MenuItem variant="destructive" @click="removeCalendarItem(event)">Remove</MenuItem>
+                  </template>
+                </MenuContent>
+              </Menu>
             </div>
           </div>
         </div>
@@ -911,7 +1063,7 @@ const dayHours = computed(() => {
         <div class="rounded-lg bg-white !p-0">
           <DialogHeader class="px-3 pt-3 pb-1">
             <DialogTitle class="text-sm font-medium text-muted-foreground">
-              {{ editingEvent ? "Edit event" : "New event" }}
+              {{ editingEvent ? "Edit event" : editingMeeting ? "Edit meeting" : "New event" }}
             </DialogTitle>
           </DialogHeader>
 
@@ -919,7 +1071,11 @@ const dayHours = computed(() => {
             <!-- Type -->
             <div class="mt-1 flex items-center justify-between gap-2">
               <div class="text-[11px] text-muted-foreground">Type</div>
-              <ToggleGroup v-model="itemType" type="single" :disabled="Boolean(editingEvent)">
+              <ToggleGroup
+                v-model="itemType"
+                type="single"
+                :disabled="Boolean(editingEvent) || Boolean(editingMeeting)"
+              >
                 <ToggleGroupItem value="event">Event</ToggleGroupItem>
                 <ToggleGroupItem value="meeting">Meeting</ToggleGroupItem>
               </ToggleGroup>
@@ -989,6 +1145,7 @@ const dayHours = computed(() => {
                     v-model="meetingRecurrenceFrequency"
                     class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm"
                   >
+                    <option value="once">Once</option>
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                   </select>
@@ -1000,6 +1157,7 @@ const dayHours = computed(() => {
                     type="number"
                     min="1"
                     class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                    :disabled="meetingRecurrenceFrequency === 'once'"
                   />
                 </label>
               </div>
@@ -1070,6 +1228,17 @@ const dayHours = computed(() => {
 
             <!-- Footer -->
             <div class="mt-3 flex items-center justify-end gap-2 border-t pt-2.5">
+              <Button
+                v-if="editingEvent"
+                type="button"
+                variant="destructive"
+                size="sm"
+                class="mr-auto"
+                @click="removeEvent"
+                :disabled="isCreating"
+              >
+                Remove
+              </Button>
               <Button type="button" variant="outline" size="sm" @click="closeDialog" :disabled="isCreating">
                 Cancel
               </Button>

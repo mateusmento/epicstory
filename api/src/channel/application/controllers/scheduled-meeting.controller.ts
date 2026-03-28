@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -14,6 +15,7 @@ import {
   CreateScheduledMeeting,
   FindScheduledMeetings,
   GetScheduledMeetingOccurrence,
+  RemoveScheduledMeeting,
 } from '../features';
 
 @Controller('scheduled-meetings')
@@ -47,6 +49,20 @@ export class ScheduledMeetingController {
   ) {
     return this.queryBus.execute(
       new GetScheduledMeetingOccurrence({ occurrenceId, issuerId: issuer.id }),
+    );
+  }
+
+  @Delete(':scheduledMeetingId')
+  @UseGuards(JwtAuthGuard)
+  remove(
+    @Param('scheduledMeetingId', ParseUUIDPipe) scheduledMeetingId: string,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new RemoveScheduledMeeting({
+        scheduledMeetingId,
+        issuerId: issuer.id,
+      }),
     );
   }
 }

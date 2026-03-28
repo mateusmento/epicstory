@@ -3,6 +3,7 @@ import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 
 export type ScheduledMeetingRecurrence =
+  | { frequency: "once" }
   | { frequency: "daily"; interval: number; until?: string }
   | { frequency: "weekly"; interval: number; byWeekday: number[]; until?: string };
 
@@ -57,6 +58,10 @@ export class ScheduledMeetingApi {
 
   getOccurrence(occurrenceId: string) {
     return this.axios.get(`/scheduled-meetings/${occurrenceId}`).then((r) => r.data);
+  }
+
+  removeScheduledMeeting(scheduledMeetingId: string) {
+    return this.axios.delete(`/scheduled-meetings/${scheduledMeetingId}`).then((r) => r.data);
   }
 }
 

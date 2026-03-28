@@ -17,6 +17,9 @@ import { ScheduledMeetingOccurrence } from './scheduled-meeting-occurrence.entit
 
 export type ScheduledMeetingRecurrence =
   | {
+      frequency: 'once';
+    }
+  | {
       frequency: 'daily';
       interval: number; // every N days
       until?: string; // ISO date-time

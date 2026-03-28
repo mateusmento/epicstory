@@ -15,6 +15,7 @@ import { NotificationsCronjob } from 'src/notifications/jobs/notifications.cronj
 import {
   CreateScheduledMeeting,
   GetScheduledMeetingOccurrence,
+  RemoveScheduledMeeting,
 } from '../index';
 import {
   ScheduledMeeting,
@@ -195,5 +196,47 @@ describe('Scheduled meetings', () => {
     const meetingRepo = dataSource.getRepository(Meeting);
     const meetings = await meetingRepo.find();
     expect(meetings.length).toBe(1);
+  });
+
+  it('removes scheduled meeting series and clears unprocessed reminder events', async () => {
+    const { ws, u1 } = await seedWorkspaceWithMembers();
+
+    const startsAt = new Date(Date.now() + 60 * 60 * 1000);
+    startsAt.setSeconds(0, 0);
+    const endsAt = new Date(startsAt.getTime() + 30 * 60 * 1000);
+
+    const created = await commandBus.execute(
+      new CreateScheduledMeeting({
+        workspaceId: ws.id,
+        issuerId: u1.id,
+        title: 'Delete me',
+        startsAt,
+        endsAt,
+        isPublic: true,
+        notifyMinutesBefore: 1,
+        recurrence: { frequency: 'once' },
+        participantIds: [u1.id],
+      }),
+    );
+
+    const seRepo = dataSource.getRepository(ScheduledEvent);
+    const beforeCount = await seRepo.count();
+    expect(beforeCount).toBeGreaterThan(0);
+
+    await commandBus.execute(
+      new RemoveScheduledMeeting({
+        scheduledMeetingId: created.scheduledMeetingId,
+        issuerId: u1.id,
+      }),
+    );
+
+    const meetingRepo = dataSource.getRepository(ScheduledMeeting);
+    const still = await meetingRepo.findOne({
+      where: { id: created.scheduledMeetingId as any },
+    });
+    expect(still).toBeNull();
+
+    const afterCount = await seRepo.count();
+    expect(afterCount).toBe(0);
   });
 });

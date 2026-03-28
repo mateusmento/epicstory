@@ -56,4 +56,8 @@ export class ScheduledEventApi {
     }
     return this.axios.patch<ScheduledEvent>(`/scheduled-events/${data.id}`, body).then((res) => res.data);
   }
+
+  removeScheduledEvent(id: string) {
+    return this.axios.delete(`/scheduled-events/${id}`).then((res) => res.data);
+  }
 }

@@ -15,3 +15,4 @@ export * from './reply-message.command';
 export * from './create-scheduled-meeting.command';
 export * from './find-scheduled-meetings.query';
 export * from './get-scheduled-meeting-occurrence.query';
+export * from './remove-scheduled-meeting.command';
