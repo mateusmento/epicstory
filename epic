@@ -382,6 +382,8 @@ Examples:
   epic remove                 Stop and remove all containers
   epic restart                Restart all containers
   epic restart api            Restart the api service container
+  epic restart --recreate     Recreate all containers (force-recreate; refresh env)
+  epic restart api --recreate Recreate api (force-recreate; refresh env)
   epic restart --build        Recreate all containers (build + force-recreate)
   epic restart api --build    Recreate api (build + force-recreate)
   epic restart api --logs     Restart api and follow logs
