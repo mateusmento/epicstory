@@ -5,5 +5,3 @@ export * from './message.repository';
 export * from './message-reply.repository';
 export * from './message-reply-reaction.repository';
 export * from './message-reaction.repository';
-export * from './scheduled-meeting.repository';
-export * from './scheduled-meeting-occurrence.repository';

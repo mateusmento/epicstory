@@ -8,6 +8,8 @@ import { ChannelModule } from './channel/channel.module';
 import { ProjectModule } from './project/project.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LinearIntegrationModule } from './integrations/linear/linear.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { SchedulingModule } from './scheduling/scheduling.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { LinearIntegrationModule } from './integrations/linear/linear.module';
     ProjectModule,
     ChannelModule,
     NotificationsModule,
+    CalendarModule,
+    SchedulingModule,
     LinearIntegrationModule,
   ],
   controllers: [AppController],

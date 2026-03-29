@@ -44,7 +44,12 @@ export class SchedulingCronjob {
         await this.emitter.emitAsync(`scheduled-job.${event.type}`, event);
 
         // Only mark as processed if job processing was successful
-        await this.scheduledEventRepo.markAsProcessed(event.id, lockId);
+        await this.scheduledEventRepo.markAsProcessed({
+          eventId: event.id,
+          lockId,
+          recurrenceFrequency: event.recurrence?.frequency ?? null,
+          occurrenceAt: event.occurrenceAt ?? null,
+        });
 
         this.logger.debug(
           `Processed scheduled job ${event.id} for workspace ${event.workspaceId}`,

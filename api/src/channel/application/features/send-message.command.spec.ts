@@ -12,6 +12,8 @@ import {
 import { DataSource } from 'typeorm';
 import { SendDirectMessage } from './send-direct-message.command';
 import { Workspace } from 'src/workspace/domain/entities';
+import { WorkspaceMember } from 'src/workspace/domain/entities/workspace-member.entity';
+import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 
 describe('SendMessageCommand', () => {
   let postgres: StartedPostgreSqlContainer;
@@ -40,6 +42,7 @@ describe('SendMessageCommand', () => {
       MessageReaction,
       Message,
       Channel,
+      WorkspaceMember,
       Workspace,
       User,
     ]);
@@ -109,8 +112,9 @@ describe('SendMessageCommand', () => {
   }
 
   it('should find a multi-direct channel', async () => {
+    const [workspace] = await seedWorkspace();
     const users = await seedUsers();
-    const channels = await seedChannels(users, 1);
+    const channels = await seedChannels(users, workspace.id);
 
     const [user1, user2, user3, user4] = users;
     const [channel1, channel2, channel3] = channels;
@@ -142,10 +146,16 @@ describe('SendMessageCommand', () => {
   it('should send a message to a multi-direct channel', async () => {
     const [workspace] = await seedWorkspace();
     const users = await seedUsers();
-    const channels = await seedChannels(users, workspace.id);
+    await dataSource.manager.save(
+      WorkspaceMember,
+      users.map((u) => ({
+        workspaceId: workspace.id,
+        userId: u.id,
+        role: WorkspaceRole.COLLABORATOR,
+      })),
+    );
 
     const [user1, user2, user3, user4] = users;
-    const [, , channel3] = channels;
 
     const result = await commandBus.execute(
       new SendDirectMessage({
@@ -157,7 +167,16 @@ describe('SendMessageCommand', () => {
     );
 
     expect(result).toBeDefined();
-    expect(result.channelId).toBe(channel3.id);
+    expect(result.channelId).toBeTruthy();
+
+    const created = await dataSource.getRepository(Channel).findOne({
+      where: { id: result.channelId },
+      relations: { peers: true },
+    });
+    expect(created).toBeTruthy();
+    expect((created!.peers ?? []).map((u) => u.id)).toEqual(
+      expect.arrayContaining([user1.id, user2.id, user3.id]),
+    );
 
     const result2 = await commandBus.execute(
       new SendDirectMessage({
@@ -168,6 +187,13 @@ describe('SendMessageCommand', () => {
       }),
     );
 
-    expect(result2.channelId).toBe(4);
+    const created2 = await dataSource.getRepository(Channel).findOne({
+      where: { id: result2.channelId },
+      relations: { peers: true },
+    });
+    expect(created2).toBeTruthy();
+    expect((created2!.peers ?? []).map((u) => u.id)).toEqual(
+      expect.arrayContaining([user1.id, user4.id]),
+    );
   });
 });

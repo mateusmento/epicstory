@@ -14,5 +14,6 @@ import * as jobs from './jobs';
     ...Object.values(features),
     ...Object.values(jobs),
   ],
+  exports: [...Object.values(repositories)],
 })
 export class SchedulingModule {}

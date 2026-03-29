@@ -61,7 +61,10 @@ export class MeetingService {
 
   async endMeeting(meetingId: number) {
     await this.meetingAttendeeRepo.delete({ meetingId });
-    return this.meetingRepo.delete({ id: meetingId });
+    return this.meetingRepo.update({ id: meetingId }, {
+      ongoing: false,
+      endedAt: new Date(),
+    } as any);
   }
 
   async updateAttendee(

@@ -10,6 +10,7 @@ import { initializeTransactionalContext } from 'typeorm-transactional';
 import { typeorm } from '../typeorm';
 import entities from '../typeorm/entities';
 import { migrations, runMigrations } from '../typeorm/migrations';
+import { User } from 'src/auth';
 
 export async function startPostgresTestContainer() {
   return await new PostgreSqlContainer('postgres:14')
@@ -50,6 +51,31 @@ export async function createTestingModule(
   await module.init();
 
   await runMigrations(module.get(DataSource));
+
+  // Many command tests assume an issuer user exists (id=1). Seed a default user once per container DB.
+  const ds = module.get(DataSource);
+  await ds
+    .getRepository(User)
+    .createQueryBuilder()
+    .insert()
+    .values([
+      {
+        id: 1,
+        name: 'Test User',
+        email: 'test-user@epicstory.local',
+        password: null as any,
+        picture: null as any,
+      } as any,
+      {
+        id: 2,
+        name: 'Test User 2',
+        email: 'test-user-2@epicstory.local',
+        password: null as any,
+        picture: null as any,
+      } as any,
+    ])
+    .orIgnore()
+    .execute();
 
   return module;
 }

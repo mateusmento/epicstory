@@ -1,6 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Meeting } from 'src/channel/domain';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 
 export class MeetingRepository extends Repository<Meeting> {
   constructor(
@@ -8,5 +8,19 @@ export class MeetingRepository extends Repository<Meeting> {
     repo: Repository<Meeting>,
   ) {
     super(repo.target, repo.manager, repo.queryRunner);
+  }
+
+  findMeeting(
+    calendarEventId: string,
+    occurrenceStartsAt: Date,
+    relations?: FindOptionsRelations<Meeting>,
+  ) {
+    return this.findOne({
+      where: {
+        calendarEventId,
+        occurrenceStartsAt,
+      },
+      relations,
+    });
   }
 }

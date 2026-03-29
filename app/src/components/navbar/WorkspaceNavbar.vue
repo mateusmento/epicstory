@@ -38,8 +38,9 @@ const scheduledMeetingNotif = computed(() => {
   return notifications.value.find(
     (n) =>
       !n.seen &&
-      n.payload?.type === "scheduled_meeting_reminder" &&
-      Boolean((n.payload as any)?.occurrenceId),
+      n.type === "calendar_meeting_reminder" &&
+      Boolean((n.payload as any)?.calendarEventId) &&
+      Boolean((n.payload as any)?.occurrenceAt),
   );
 });
 
@@ -52,9 +53,16 @@ const showHuddleCard = computed(() => {
 });
 
 async function onJoinScheduledMeeting() {
-  const occId = (scheduledMeetingNotif.value?.payload as any)?.occurrenceId as string | undefined;
-  if (!occId) return;
-  router.push({ name: "meeting-lobby", params: { workspaceId: workspace.value.id, occurrenceId: occId } });
+  const calendarEventId = (scheduledMeetingNotif.value?.payload as any)?.calendarEventId as
+    | string
+    | undefined;
+  const occurrenceAt = (scheduledMeetingNotif.value?.payload as any)?.occurrenceAt as string | undefined;
+  if (!calendarEventId || !occurrenceAt) return;
+  router.push({
+    name: "meeting-lobby",
+    params: { workspaceId: workspace.value.id, calendarEventId },
+    query: { occurrenceAt },
+  });
 }
 
 async function onJoinChannelMeeting() {

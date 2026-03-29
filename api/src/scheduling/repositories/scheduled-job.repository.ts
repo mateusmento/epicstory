@@ -38,9 +38,50 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
       -- Pattern:
       --  1) SELECT candidate rows + lock them (FOR UPDATE SKIP LOCKED)
       --  2) UPDATE exactly those rows to set lock_id/locked_at, then RETURN them
-      WITH locked_rows AS (
-        SELECT id, retry_count, last_retry_at
-        FROM scheduling.scheduled_jobs
+      --
+      -- Important concepts used below:
+      --  - due_at:
+      --      For frequency=once, this is the exact trigger timestamp.
+      --      For recurring jobs, this is the series anchor/start timestamp:
+      --        * the series must not run before it starts (occurrence_at >= due_at)
+      --        * interval math (every N days/weeks) is anchored off due_at's day
+      --  - occurrence_at:
+      --      The candidate "this occurrence" timestamp we are evaluating for the current cron tick.
+      --      For recurring jobs, this is computed as: start-of-day(dueBy) + recurrence.timeOfDay.
+      --  - last_run_at:
+      --      For recurring jobs, guards against re-processing the same occurrence on every cron tick.
+      --      After a successful run, we advance last_run_at = occurrence_at.
+      --  - until:
+      --      If set, prevents occurrences after the cutoff timestamp.
+      WITH computed AS (
+        SELECT
+          se.*,
+          -- Compute the candidate occurrence timestamp for THIS cron tick.
+          -- For recurring jobs we evaluate "today at timeOfDay" (based on dueBy's day),
+          -- and then apply guards (>= due_at, <= until_at, interval matching, last_run_at).
+          CASE
+            WHEN (se.recurrence->>'frequency' IS NULL OR se.recurrence->>'frequency' = 'once')
+              THEN se.due_at
+            ELSE (
+              date_trunc('day', $2::timestamptz)
+              + (se.recurrence->>'timeOfDay')::time
+            )
+          END AS occurrence_at,
+          -- Optional series cutoff.
+          CASE
+            WHEN (se.recurrence->>'until') IS NULL THEN NULL
+            ELSE (se.recurrence->>'until')::timestamptz
+          END AS until_at,
+          -- Recurrence interval (defaults to 1).
+          CASE
+            WHEN (se.recurrence->>'interval') IS NULL THEN 1
+            ELSE GREATEST(1, (se.recurrence->>'interval')::int)
+          END AS interval_n
+        FROM scheduling.scheduled_jobs se
+      ),
+      locked_rows AS (
+        SELECT id, retry_count, last_retry_at, occurrence_at
+        FROM computed
         WHERE
           processed = false                               -- Only process events that haven't been completed yet.
           AND (
@@ -59,14 +100,23 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
             -- and only if the series has started (due_at <= occurrence time).
             (
               recurrence->>'frequency' = 'daily'
+              AND occurrence_at <= $2
+              AND occurrence_at >= due_at
+              AND (until_at IS NULL OR occurrence_at <= until_at)
               AND (
-                date_trunc('day', $2::timestamptz)
-                + (recurrence->>'timeOfDay')::time
-              ) <= $2
+                -- Run-once-per-occurrence guard: don't pick the same daily occurrence again.
+                last_run_at IS NULL
+                OR occurrence_at > last_run_at
+              )
               AND (
-                date_trunc('day', $2::timestamptz)
-                + (recurrence->>'timeOfDay')::time
-              ) >= due_at
+                -- "Every N days" check:
+                -- daysSinceStart = day(occurrence_at) - day(due_at)
+                -- Only run when daysSinceStart % interval_n == 0 (i.e., day 0, N, 2N, ... from series start).
+                MOD(
+                  (DATE_PART('day', date_trunc('day', occurrence_at) - date_trunc('day', due_at)))::int,
+                  interval_n
+                ) = 0
+              )
             )
             OR
             -- Weekly jobs: match by weekday and time-of-day on the current day (anchored by dueBy date),
@@ -78,14 +128,23 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
                 FROM jsonb_array_elements_text(recurrence->'weekdays') AS w(day_txt)
                 WHERE w.day_txt::int = extract(dow from $2::timestamptz)::int
               )
+              AND occurrence_at <= $2
+              AND occurrence_at >= due_at
+              AND (until_at IS NULL OR occurrence_at <= until_at)
               AND (
-                date_trunc('day', $2::timestamptz)
-                + (recurrence->>'timeOfDay')::time
-              ) <= $2
+                -- Run-once-per-occurrence guard: don't pick the same weekly occurrence again.
+                last_run_at IS NULL
+                OR occurrence_at > last_run_at
+              )
               AND (
-                date_trunc('day', $2::timestamptz)
-                + (recurrence->>'timeOfDay')::time
-              ) >= due_at
+                -- "Every N weeks" check (anchored on due_at week):
+                -- weeksSinceStart = floor((day(occurrence_at) - day(due_at)) / 7)
+                -- Only run when weeksSinceStart % interval_n == 0.
+                MOD(
+                  (FLOOR(DATE_PART('day', date_trunc('day', occurrence_at) - date_trunc('day', due_at)) / 7))::int,
+                  interval_n
+                ) = 0
+              )
             )
           )
           AND retry_count < $4                            -- Do not retry forever: skip events that already hit the retry limit.
@@ -122,10 +181,12 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
         se.retry_count,
         se.last_error,
         se.last_retry_at,
+        se.last_run_at,
         se.notify_minutes_before,
         se.recurrence,
         se.created_at,
-        se.updated_at;
+        se.updated_at,
+        locked_rows.occurrence_at as occurrence_at;
     `;
 
     const [rows, count] = await this.manager.query(sql, [
@@ -157,10 +218,14 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
             lastRetryAt: row.last_retry_at
               ? new Date(row.last_retry_at)
               : undefined,
+            lastRunAt: row.last_run_at ? new Date(row.last_run_at) : undefined,
             notifyMinutesBefore: row.notify_minutes_before || 1,
             recurrence: row.recurrence,
             createdAt: new Date(row.created_at),
             updatedAt: new Date(row.updated_at),
+            occurrenceAt: row.occurrence_at
+              ? new Date(row.occurrence_at)
+              : undefined,
           });
           return event;
         }),
@@ -171,21 +236,51 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
    * Marks an event as processed and clears the lock
    * Also resets retry count and error information on success
    */
-  async markAsProcessed(eventId: string, lockId: string): Promise<void> {
+  async markAsProcessed(args: {
+    eventId: string;
+    lockId: string;
+    recurrenceFrequency?: string | null;
+    occurrenceAt?: Date | null;
+  }): Promise<void> {
+    const { eventId, lockId, recurrenceFrequency, occurrenceAt } = args;
     if (!eventId || !lockId) {
       throw new Error('Event ID and lock ID are required');
     }
+    const freq = recurrenceFrequency ?? 'once';
+
     // Use raw SQL to avoid UUID type issues with TypeORM
+    if (!freq || freq === 'once') {
+      await this.manager.query(
+        `UPDATE scheduling.scheduled_jobs
+         SET processed = true,
+             lock_id = NULL,
+             locked_at = NULL,
+             retry_count = 0,
+             last_error = NULL,
+             last_retry_at = NULL
+         WHERE id = $1 AND lock_id = $2`,
+        [eventId, lockId],
+      );
+      return;
+    }
+
+    // Recurring job: keep processed=false, advance last_run_at to the occurrence timestamp.
+    if (!occurrenceAt) {
+      throw new Error(
+        `markAsProcessed requires occurrenceAt for recurring jobs (eventId=${eventId}, freq=${freq})`,
+      );
+    }
     await this.manager.query(
       `UPDATE scheduling.scheduled_jobs
-       SET processed = true,
+       SET processed = false,
+           last_run_at = $3,
            lock_id = NULL,
            locked_at = NULL,
            retry_count = 0,
            last_error = NULL,
            last_retry_at = NULL
        WHERE id = $1 AND lock_id = $2`,
-      [eventId, lockId],
+      [eventId, lockId, occurrenceAt],
     );
   }
 

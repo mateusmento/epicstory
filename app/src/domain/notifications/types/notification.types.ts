@@ -39,17 +39,21 @@ export type IssueAssignedNotificationPayload = {
   issuer: User;
 };
 
-export type ScheduledMeetingReminderNotificationPayload = {
-  type: "scheduled_meeting_reminder";
-  occurrenceId: string;
-  scheduledMeetingId: string;
+export type CalendarMeetingReminderNotificationPayload = {
+  type?: "calendar_meeting_reminder";
+  calendarEventId: string;
+  occurrenceAt: string;
   meetingId: number;
-  workspaceId: number;
   channelId?: number | null;
   title: string;
-  startsAt: string;
-  endsAt: string;
-  notifyMinutesBefore?: number;
+};
+
+export type CalendarEventReminderNotificationPayload = {
+  type?: "calendar_event_reminder";
+  calendarEventId: string;
+  occurrenceAt: string;
+  channelId?: number | null;
+  title: string;
 };
 
 export type NotificationPayload =
@@ -58,7 +62,8 @@ export type NotificationPayload =
   | DirectMessageNotificationPayload
   | IssueDueDateNotificationPayload
   | IssueAssignedNotificationPayload
-  | ScheduledMeetingReminderNotificationPayload;
+  | CalendarMeetingReminderNotificationPayload
+  | CalendarEventReminderNotificationPayload;
 
 export type Notification = {
   id: string;

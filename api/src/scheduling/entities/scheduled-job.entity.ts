@@ -17,12 +17,16 @@ export type Recurrence =
     }
   | {
       frequency: 'daily';
-      timeOfDay: string; // ISO date-time
+      interval?: number;
+      timeOfDay: string; // HH:mm[:ss]
+      until?: string; // ISO timestamp
     }
   | {
       frequency: 'weekly';
+      interval?: number;
       weekdays: number[]; // 0=Sun .. 6=Sat
-      timeOfDay: string; // ISO date-time
+      timeOfDay: string; // HH:mm[:ss]
+      until?: string; // ISO timestamp
     };
 
 @Entity({ schema: SCHEDULING_SCHEMA, name: 'scheduled_jobs' })
@@ -44,6 +48,10 @@ export class ScheduledJob {
 
   @Column({ type: 'jsonb' })
   recurrence: Recurrence;
+
+  // For recurring jobs: last occurrence timestamp that was successfully processed.
+  @Column({ type: 'timestamptz', nullable: true })
+  lastRunAt?: Date;
 
   @Column({ default: false })
   processed: boolean;
@@ -74,6 +82,8 @@ export class ScheduledJob {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  occurrenceAt?: Date;
+
   constructor(data: Partial<ScheduledJob>) {
     patch(this, data);
   }
@@ -87,6 +97,7 @@ export class ScheduledJob {
       | 'workspaceId'
       | 'notifyMinutesBefore'
       | 'recurrence'
+      | 'occurrenceAt'
     >,
   ) {
     return new ScheduledJob({

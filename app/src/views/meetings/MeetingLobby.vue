@@ -2,7 +2,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { ScheduledMeetingApi } from "@/domain/meetings";
+import { CalendarEventApi } from "@/domain/calendar";
 import { useMeeting } from "@/domain/channels";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -10,14 +10,20 @@ import { useRoute, useRouter } from "vue-router";
 const route = useRoute();
 const router = useRouter();
 
-const scheduledMeetingApi = useDependency(ScheduledMeetingApi);
+const calendarEventApi = useDependency(CalendarEventApi);
 const { joinMeetingSession, isCameraOn, isMicrophoneOn } = useMeeting();
 
 const workspaceId = computed(() => Number(route.params.workspaceId));
-const occurrenceId = computed(() => String(route.params.occurrenceId));
+const calendarEventId = computed(() => String(route.params.calendarEventId));
+const occurrenceAt = computed(() => {
+  const raw = route.query.occurrenceAt;
+  const str = Array.isArray(raw) ? raw[0] : raw;
+  const d = str ? new Date(String(str)) : null;
+  return d && !Number.isNaN(d.getTime()) ? d : null;
+});
 
 const isLoading = ref(false);
-const occurrence = ref<any | null>(null);
+const lobby = ref<any | null>(null);
 
 const previewStream = ref<MediaStream | null>(null);
 const videoEl = ref<HTMLVideoElement | null>(null);
@@ -27,7 +33,11 @@ const canPreview = ref(true);
 async function fetchOccurrence() {
   isLoading.value = true;
   try {
-    occurrence.value = await scheduledMeetingApi.getOccurrence(occurrenceId.value);
+    if (!occurrenceAt.value) {
+      lobby.value = null;
+      return;
+    }
+    lobby.value = await calendarEventApi.getMeetingLobby(calendarEventId.value, occurrenceAt.value);
   } finally {
     isLoading.value = false;
   }
@@ -73,7 +83,13 @@ function toggleMic() {
 }
 
 async function join() {
-  const meetingId = occurrence.value?.meetingId ?? occurrence.value?.meeting?.id;
+  if (!occurrenceAt.value) return;
+  let meetingId = lobby.value?.meeting?.id as number | undefined;
+  if (!meetingId) {
+    const res = await calendarEventApi.ensureMeetingSession(calendarEventId.value, occurrenceAt.value);
+    meetingId = res?.meetingId;
+    await fetchOccurrence();
+  }
   if (!meetingId) return;
 
   await joinMeetingSession({
@@ -87,10 +103,8 @@ async function join() {
   router.push({ name: "meeting-session", params: { workspaceId: workspaceId.value, meetingId } });
 }
 
-async function cancelScheduledMeeting() {
-  const scheduledMeetingId = occurrence.value?.scheduledMeeting?.id as string | undefined;
-  if (!scheduledMeetingId) return;
-  await scheduledMeetingApi.removeScheduledMeeting(scheduledMeetingId);
+async function cancelSeries() {
+  await calendarEventApi.removeCalendarEvent(calendarEventId.value);
   router.push({ name: "schedule", params: { workspaceId: workspaceId.value } });
 }
 
@@ -103,9 +117,9 @@ onUnmounted(() => {
   teardownPreview();
 });
 
-const title = computed(() => occurrence.value?.scheduledMeeting?.title ?? "Meeting");
-const participants = computed(() => occurrence.value?.scheduledMeeting?.participants ?? []);
-const joined = computed(() => occurrence.value?.meeting?.attendees ?? []);
+const title = computed(() => lobby.value?.calendarEvent?.title ?? "Meeting");
+const participants = computed(() => lobby.value?.calendarEvent?.participants ?? []);
+const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
 </script>
 
 <template>
@@ -135,7 +149,7 @@ const joined = computed(() => occurrence.value?.meeting?.attendees ?? []);
         </div>
 
         <div class="mt-3 flex items-center gap-2">
-          <Button variant="destructive" size="sm" @click="cancelScheduledMeeting"> Cancel series </Button>
+          <Button variant="destructive" size="sm" @click="cancelSeries"> Cancel series </Button>
           <Button variant="outline" size="sm" @click="toggleCamera" :disabled="!previewStream">
             <Icon :name="isCameraOn ? 'bi-camera-video' : 'bi-camera-video-off'" class="mr-2" />
             {{ isCameraOn ? "Camera on" : "Camera off" }}
@@ -147,13 +161,11 @@ const joined = computed(() => occurrence.value?.meeting?.attendees ?? []);
 
           <div class="flex-1" />
 
-          <Button size="sm" @click="join" :disabled="isLoading || !occurrence?.meetingId">
-            Join meeting
-          </Button>
+          <Button size="sm" @click="join" :disabled="isLoading || !occurrenceAt"> Join meeting </Button>
         </div>
 
-        <div v-if="!occurrence?.meetingId" class="mt-2 text-xs text-muted-foreground">
-          Meeting session is not ready yet. Try again in a moment.
+        <div v-if="!lobby?.meeting?.id" class="mt-2 text-xs text-muted-foreground">
+          Session will be created when the reminder fires, or when you click Join.
         </div>
       </div>
 

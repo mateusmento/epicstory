@@ -1,7 +1,12 @@
 import { UUID } from 'crypto';
 import { patch } from 'src/core/objects';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { ScheduledEvent } from './scheduled-event.entity';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Workspace } from 'src/workspace/domain/entities';
 
 @Entity({ schema: 'scheduler', name: 'notifications' })
@@ -18,9 +23,6 @@ export class Notification {
   @Column({ type: 'jsonb' })
   payload: any;
 
-  @Column({ type: 'timestamptz', default: () => 'now()' })
-  createdAt: Date;
-
   @Column({ default: false })
   seen: boolean;
 
@@ -29,18 +31,13 @@ export class Notification {
   @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
   workspace: Workspace;
 
+  @Column({ type: 'timestamptz', default: () => 'now()' })
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
   constructor(data: Partial<Notification>) {
     patch(this, data);
-  }
-
-  static fromEvent(event: ScheduledEvent) {
-    return new Notification({
-      type: 'scheduled_event',
-      userId: event.userId,
-      workspaceId: event.workspaceId,
-      payload: event.payload,
-      createdAt: new Date(),
-      seen: false,
-    });
   }
 }

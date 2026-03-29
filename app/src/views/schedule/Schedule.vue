@@ -6,8 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-syste
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
 import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";
-import { ScheduledMeetingApi } from "@/domain/meetings";
-import { ScheduledEventApi, type ScheduledEvent } from "@/domain/scheduled-events";
+import { CalendarEventApi } from "@/domain/calendar";
 import { useWorkspace } from "@/domain/workspace";
 import {
   getLocalTimeZone,
@@ -39,18 +38,16 @@ const { user } = useAuth();
 const { workspace, members, fetchWorkspaceMembers } = useWorkspace();
 const { channels, fetchChannels } = useChannels();
 
-const scheduledEventApi = useDependency(ScheduledEventApi);
-const scheduledMeetingApi = useDependency(ScheduledMeetingApi);
+const calendarEventApi = useDependency(CalendarEventApi);
 const router = useRouter();
 
 const today = () => todayFn(getLocalTimeZone());
 
 const currentView = ref<ViewType>("month");
 const currentDate = ref<DateValue>(today());
-const events = ref<ScheduledEvent[]>([]);
+const events = ref<any[]>([]);
 const showEventDialog = ref(false);
-const editingEvent = ref<ScheduledEvent | null>(null);
-const editingMeeting = ref<{ scheduledMeetingId: string; occurrenceId: string } | null>(null);
+const editingEvent = ref<any | null>(null);
 const eventTitle = ref("");
 const eventDescription = ref("");
 const eventDateTime = ref<DateValue>(today());
@@ -76,7 +73,7 @@ const eventRecurrenceByWeekday = ref<number[]>([new Date().getDay()]);
 const isCreating = ref(false);
 const isLoading = ref(false);
 const isResizing = ref(false);
-const resizingEvent = ref<ScheduledEvent | null>(null);
+const resizingEvent = ref<any | null>(null);
 const resizeType = ref<"start" | "end" | null>(null);
 const resizeStartY = ref(0);
 const resizeStartTime = ref(0);
@@ -148,16 +145,16 @@ function toggleEventWeekday(day: number, enabled: boolean) {
 }
 
 const eventsByDayKey = computed(() => {
-  const map = new Map<string, ScheduledEvent[]>();
+  const map = new Map<string, any[]>();
   for (const ev of events.value) {
-    const key = format(new Date(ev.dueAt), "yyyy-MM-dd");
+    const key = format(new Date(ev.startsAt), "yyyy-MM-dd");
     const list = map.get(key) ?? [];
     list.push(ev);
     map.set(key, list);
   }
 
   for (const [key, list] of map.entries()) {
-    list.sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+    list.sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
     map.set(key, list);
   }
 
@@ -209,47 +206,38 @@ async function fetchEvents() {
   if (!user.value) return;
   isLoading.value = true;
   try {
-    const fetched = await scheduledEventApi.getScheduledEvents({
-      userId: user.value.id,
+    if (!workspace.value?.id) {
+      events.value = [];
+      return;
+    }
+    const fetched = await calendarEventApi.findCalendarEvents({
+      workspaceId: workspace.value.id,
       startDate: dateRange.value.start,
       endDate: dateRange.value.end,
     });
-    const meetings = workspace.value?.id
-      ? await scheduledMeetingApi.findScheduledMeetings({
-          workspaceId: workspace.value.id,
-          start: dateRange.value.start,
-          end: dateRange.value.end,
-        })
-      : [];
 
-    const meetingAsEvents: ScheduledEvent[] = meetings.map((occ: any) => {
-      const end = new Date(occ.endsAt);
+    events.value = fetched.map((ev: any) => {
+      const end = new Date(ev.endsAt);
       const endTime = `${end.getHours().toString().padStart(2, "0")}:${end
         .getMinutes()
         .toString()
         .padStart(2, "0")}`;
+
+      const payload = {
+        ...(ev.payload ?? {}),
+        endTime,
+        // backend already sets seriesId for expanded recurrences; keep a fallback for single events
+        seriesId: (ev.payload as any)?.seriesId ?? (typeof ev.id === "string" ? ev.id.split(":")[0] : ev.id),
+      };
+
       return {
-        id: `meeting:${occ.id}`,
+        ...ev,
         userId: user.value!.id,
-        dueAt: occ.startsAt,
         processed: false,
         lockId: "",
-        payload: {
-          type: "scheduled_meeting",
-          occurrenceId: occ.id,
-          scheduledMeetingId: occ.scheduledMeeting.id,
-          meetingId: occ.meetingId,
-          channelId: occ.scheduledMeeting.channelId,
-          isPublic: occ.scheduledMeeting.isPublic,
-          notifyMinutesBefore: occ.scheduledMeeting.notifyMinutesBefore,
-          title: occ.scheduledMeeting.title,
-          description: occ.scheduledMeeting.description,
-          endTime,
-        },
-      } as any;
+        payload,
+      };
     });
-
-    events.value = [...fetched, ...meetingAsEvents];
   } catch (error) {
     console.error("Failed to fetch events:", error);
   } finally {
@@ -258,17 +246,17 @@ async function fetchEvents() {
 }
 
 // Get events that start at a specific hour (for rendering)
-function getEventsStartingAtHour(date: Date, hour: number): ScheduledEvent[] {
+function getEventsStartingAtHour(date: Date, hour: number): any[] {
   return events.value.filter((event) => {
-    const eventDate = new Date(event.dueAt);
+    const eventDate = new Date(event.startsAt);
     const eventHour = getHours(eventDate);
     return isSameDay(eventDate, date) && eventHour === hour;
   });
 }
 
 // Get event end time (from payload or calculate default 1 hour duration)
-function getEventEndTime(event: ScheduledEvent): Date {
-  const startTime = new Date(event.dueAt);
+function getEventEndTime(event: any): Date {
+  const startTime = new Date(event.startsAt);
   if (event.payload.endTime) {
     const [hours, minutes] = event.payload.endTime.split(":").map(Number);
     const endTime = new Date(startTime);
@@ -280,14 +268,14 @@ function getEventEndTime(event: ScheduledEvent): Date {
 }
 
 // Calculate event top offset in pixels (for sub-hour positioning)
-function getEventTopOffset(event: ScheduledEvent): number {
-  const startTime = new Date(event.dueAt);
+function getEventTopOffset(event: any): number {
+  const startTime = new Date(event.startsAt);
   const minutes = startTime.getMinutes();
   return minutes * PX_PER_MINUTE;
 }
 
-function getEventDurationMinutes(event: ScheduledEvent): number {
-  const startTime = new Date(event.dueAt);
+function getEventDurationMinutes(event: any): number {
+  const startTime = new Date(event.startsAt);
   const endTime = getEventEndTime(event);
   const durationMs = endTime.getTime() - startTime.getTime();
   const minutes = durationMs / (60 * 1000);
@@ -295,11 +283,11 @@ function getEventDurationMinutes(event: ScheduledEvent): number {
   return Math.max(1, minutes);
 }
 
-function getEventHeightPx(event: ScheduledEvent, minPx: number) {
+function getEventHeightPx(event: any, minPx: number) {
   return Math.max(minPx, getEventDurationMinutes(event) * PX_PER_MINUTE);
 }
 
-function getEventLayoutMode(event: ScheduledEvent) {
+function getEventLayoutMode(event: any) {
   // Use natural (non-clamped) height so we can render short events compactly.
   const h = getEventDurationMinutes(event) * PX_PER_MINUTE;
   if (h < 22) return "tiny" as const;
@@ -387,28 +375,27 @@ function handleTimeSlotClick(date: Date, hour: number, event?: MouseEvent) {
   openCreateDialog(dateValue, startTimeStr, endTimeStr);
 }
 
-function handleEventClick(event: ScheduledEvent) {
-  if (event.payload?.type === "scheduled_meeting") {
-    const occurrenceId = event.payload?.occurrenceId;
-    if (!occurrenceId) return;
+function handleEventClick(event: any) {
+  if (event.type === "meeting") {
+    const calendarEventId = (event.payload as any)?.seriesId ?? event.id?.split?.(":")?.[0] ?? event.id;
     router.push({
       name: "meeting-lobby",
-      params: { workspaceId: workspace.value.id, occurrenceId },
+      params: { workspaceId: workspace.value.id, calendarEventId },
+      query: { occurrenceAt: new Date(event.startsAt).toISOString() },
     });
     return;
   }
   const seriesId = (event.payload as any)?.seriesId as string | undefined;
   editingEvent.value = seriesId && seriesId !== event.id ? ({ ...event, id: seriesId } as any) : event;
-  editingMeeting.value = null;
-  const eventDate = new Date(event.dueAt);
+  const eventDate = new Date(event.startsAt);
   eventDateTime.value = toCalendarDate(parseDate(format(eventDate, "yyyy-MM-dd")));
   eventTime.value = format(eventDate, "HH:mm");
   eventEndTime.value = event.payload.endTime || format(getEventEndTime(event), "HH:mm");
-  eventTitle.value = event.payload.title || "";
-  eventDescription.value = event.payload.description || "";
+  eventTitle.value = event.title || "";
+  eventDescription.value = event.description || "";
   itemType.value = "event";
 
-  const rec = (event.payload as any)?.recurrence;
+  const rec = event.recurrence ?? (event.payload as any)?.recurrence;
   if (rec?.frequency === "daily") {
     eventRecurrenceFrequency.value = "daily";
     eventRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
@@ -426,60 +413,42 @@ function handleEventClick(event: ScheduledEvent) {
   showEventDialog.value = true;
 }
 
-async function openEditMeetingFromCalendar(event: ScheduledEvent) {
-  const occurrenceId = event.payload?.occurrenceId as string | undefined;
-  const scheduledMeetingId = event.payload?.scheduledMeetingId as string | undefined;
-  if (!occurrenceId || !scheduledMeetingId) return;
+function openEditMeetingFromCalendar(event: any) {
+  const seriesId =
+    (event.payload as any)?.seriesId ?? (typeof event.id === "string" ? event.id.split(":")[0] : event.id);
 
-  editingEvent.value = null;
-  editingMeeting.value = { scheduledMeetingId, occurrenceId };
+  editingEvent.value = seriesId && seriesId !== event.id ? ({ ...event, id: seriesId } as any) : event;
   itemType.value = "meeting";
 
-  const eventDate = new Date(event.dueAt);
+  const eventDate = new Date(event.startsAt);
   eventDateTime.value = toCalendarDate(parseDate(format(eventDate, "yyyy-MM-dd")));
   eventTime.value = format(eventDate, "HH:mm");
-  eventEndTime.value = event.payload.endTime || format(getEventEndTime(event), "HH:mm");
-  eventTitle.value = event.payload.title || "";
-  eventDescription.value = event.payload.description || "";
-  meetingChannelId.value = (event.payload.channelId ?? null) as any;
-  meetingIsPublic.value = Boolean(event.payload.isPublic ?? true);
-  meetingNotifyMinutesBefore.value = Number(event.payload.notifyMinutesBefore ?? 1);
+  eventEndTime.value = event.payload?.endTime || format(getEventEndTime(event), "HH:mm");
 
-  try {
-    const occ: any = await scheduledMeetingApi.getOccurrence(occurrenceId);
-    const sm = occ?.scheduledMeeting;
-    if (sm) {
-      meetingChannelId.value = (sm.channelId ?? null) as any;
-      meetingIsPublic.value = Boolean(sm.isPublic ?? true);
-      meetingNotifyMinutesBefore.value = Number(sm.notifyMinutesBefore ?? 1);
+  eventTitle.value = event.title || "";
+  eventDescription.value = event.description || "";
 
-      // Recurrence + participants come from the occurrence detail.
-      const rec = sm.recurrence;
-      if (rec?.frequency === "once") {
-        meetingRecurrenceFrequency.value = "once";
-      } else if (rec?.frequency === "daily") {
-        meetingRecurrenceFrequency.value = "daily";
-        meetingRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
-      } else if (rec?.frequency === "weekly") {
-        meetingRecurrenceFrequency.value = "weekly";
-        meetingRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
-        meetingRecurrenceByWeekday.value =
-          Array.isArray(rec.byWeekday) && rec.byWeekday.length
-            ? rec.byWeekday
-            : [new Date(event.dueAt).getDay()];
-      }
+  meetingChannelId.value = ((event.payload as any)?.channelId ?? null) as any;
+  meetingIsPublic.value = Boolean(event.isPublic ?? true);
+  meetingNotifyMinutesBefore.value = Number(event.notifyMinutesBefore ?? 1);
 
-      if (!sm.channelId) {
-        meetingParticipantIds.value = Array.isArray(sm.participants)
-          ? sm.participants.map((p: any) => p.id).filter((x: any) => typeof x === "number")
-          : [];
-      }
-
-      eventTitle.value = sm.title ?? eventTitle.value;
-      eventDescription.value = sm.description ?? eventDescription.value;
-    }
-  } catch (e) {
-    console.error("Failed to fetch meeting occurrence for edit:", e);
+  const rec = event.recurrence ?? (event.payload as any)?.recurrence;
+  if (rec?.frequency === "once") {
+    meetingRecurrenceFrequency.value = "once";
+    meetingRecurrenceInterval.value = 1;
+    meetingRecurrenceByWeekday.value = [eventDate.getDay()];
+  } else if (rec?.frequency === "daily") {
+    meetingRecurrenceFrequency.value = "daily";
+    meetingRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
+  } else if (rec?.frequency === "weekly") {
+    meetingRecurrenceFrequency.value = "weekly";
+    meetingRecurrenceInterval.value = Math.max(1, Number(rec.interval ?? 1));
+    meetingRecurrenceByWeekday.value =
+      Array.isArray(rec.byWeekday) && rec.byWeekday.length ? rec.byWeekday : [eventDate.getDay()];
+  } else {
+    meetingRecurrenceFrequency.value = "weekly";
+    meetingRecurrenceInterval.value = 1;
+    meetingRecurrenceByWeekday.value = [eventDate.getDay()];
   }
 
   showEventDialog.value = true;
@@ -487,7 +456,6 @@ async function openEditMeetingFromCalendar(event: ScheduledEvent) {
 
 function openCreateDialog(date?: DateValue, startTime?: string, endTime?: string) {
   editingEvent.value = null;
-  editingMeeting.value = null;
   eventTitle.value = "";
   eventDescription.value = "";
   eventTime.value = startTime || "09:00";
@@ -520,8 +488,8 @@ async function saveEvent() {
     const datePart = parse(dateStr, "yyyy-MM-dd", new Date());
     const [hours, minutes] = eventTime.value.split(":").map(Number);
 
-    const dueAt = new Date(datePart);
-    dueAt.setHours(hours, minutes, 0, 0);
+    const startsAt = new Date(datePart);
+    startsAt.setHours(hours, minutes, 0, 0);
 
     if (itemType.value === "meeting") {
       const [endHours, endMinutes] = eventEndTime.value.split(":").map(Number);
@@ -542,26 +510,37 @@ async function saveEvent() {
                 interval: Math.max(1, meetingRecurrenceInterval.value),
                 byWeekday: meetingRecurrenceByWeekday.value.length
                   ? meetingRecurrenceByWeekday.value
-                  : [new Date(dueAt).getDay()],
+                  : [new Date(startsAt).getDay()],
               };
 
-      await scheduledMeetingApi.createScheduledMeeting({
-        workspaceId: workspace.value.id,
-        channelId,
-        title: eventTitle.value.trim(),
-        description: eventDescription.value?.trim() || undefined,
-        startsAt: dueAt,
-        endsAt,
-        isPublic: meetingIsPublic.value,
-        notifyMinutesBefore: meetingNotifyMinutesBefore.value,
-        recurrence,
-        participantIds: channelId ? undefined : meetingParticipantIds.value,
-      });
+      const payload = { type: "calendar_event" };
 
-      // "Edit meeting" is implemented as recreate (new series) then delete old series,
-      // only exposed in the UI before the meeting is rolling.
-      if (editingMeeting.value?.scheduledMeetingId) {
-        await scheduledMeetingApi.removeScheduledMeeting(editingMeeting.value.scheduledMeetingId);
+      if (editingEvent.value) {
+        await calendarEventApi.updateCalendarEvent({
+          id: editingEvent.value.id,
+          type: "meeting",
+          title: eventTitle.value.trim(),
+          description: eventDescription.value?.trim() || "",
+          payload,
+          startsAt,
+          endsAt,
+          recurrence,
+        });
+      } else {
+        await calendarEventApi.createCalendarEvent({
+          workspaceId: workspace.value.id,
+          channelId,
+          type: "meeting",
+          title: eventTitle.value.trim(),
+          description: eventDescription.value?.trim() || "",
+          payload,
+          startsAt,
+          endsAt,
+          isPublic: meetingIsPublic.value,
+          notifyMinutesBefore: meetingNotifyMinutesBefore.value,
+          recurrence,
+          participantIds: channelId ? undefined : meetingParticipantIds.value,
+        });
       }
     } else if (editingEvent.value) {
       const recurrence =
@@ -574,19 +553,20 @@ async function saveEvent() {
                 interval: Math.max(1, eventRecurrenceInterval.value),
                 byWeekday: eventRecurrenceByWeekday.value.length
                   ? eventRecurrenceByWeekday.value
-                  : [new Date(dueAt).getDay()],
+                  : [new Date(startsAt).getDay()],
               };
-      await scheduledEventApi.updateScheduledEvent({
+      const [endHours, endMinutes] = eventEndTime.value.split(":").map(Number);
+      const endsAt = new Date(datePart);
+      endsAt.setHours(endHours, endMinutes, 0, 0);
+      await calendarEventApi.updateCalendarEvent({
         id: editingEvent.value.id,
-        userId: user.value.id,
-        payload: {
-          type: "calendar_event",
-          title: eventTitle.value.trim(),
-          description: eventDescription.value?.trim() || "",
-          endTime: eventEndTime.value,
-          recurrence,
-        },
-        dueAt: dueAt,
+        type: "event",
+        title: eventTitle.value.trim(),
+        description: eventDescription.value?.trim() || "",
+        payload: { type: "calendar_event" },
+        startsAt,
+        endsAt,
+        recurrence,
       });
     } else {
       const recurrence =
@@ -599,19 +579,20 @@ async function saveEvent() {
                 interval: Math.max(1, eventRecurrenceInterval.value),
                 byWeekday: eventRecurrenceByWeekday.value.length
                   ? eventRecurrenceByWeekday.value
-                  : [new Date(dueAt).getDay()],
+                  : [new Date(startsAt).getDay()],
               };
-      await scheduledEventApi.createScheduledEvent({
-        userId: user.value.id,
+      const [endHours, endMinutes] = eventEndTime.value.split(":").map(Number);
+      const endsAt = new Date(datePart);
+      endsAt.setHours(endHours, endMinutes, 0, 0);
+      await calendarEventApi.createCalendarEvent({
         workspaceId: workspace.value.id,
-        payload: {
-          type: "calendar_event",
-          title: eventTitle.value.trim(),
-          description: eventDescription.value?.trim() || "",
-          endTime: eventEndTime.value, // Store end time in payload
-          recurrence,
-        },
-        dueAt: dueAt,
+        type: "event",
+        title: eventTitle.value.trim(),
+        description: eventDescription.value?.trim() || "",
+        payload: { type: "calendar_event" },
+        startsAt,
+        endsAt,
+        recurrence,
       });
     }
 
@@ -626,33 +607,20 @@ async function saveEvent() {
 
 async function removeEvent() {
   if (!editingEvent.value) return;
-  await scheduledEventApi.removeScheduledEvent(editingEvent.value.id);
+  await calendarEventApi.removeCalendarEvent(editingEvent.value.id);
   closeDialog();
   await fetchEvents();
 }
 
-function isScheduledMeetingEvent(event: ScheduledEvent) {
-  return event.payload?.type === "scheduled_meeting";
-}
-
-async function removeCalendarItem(event: ScheduledEvent) {
-  if (isScheduledMeetingEvent(event)) {
-    const scheduledMeetingId = event.payload?.scheduledMeetingId;
-    if (!scheduledMeetingId) return;
-    await scheduledMeetingApi.removeScheduledMeeting(scheduledMeetingId);
-    await fetchEvents();
-    return;
-  }
-
+async function removeCalendarItem(event: any) {
   const seriesId = (event.payload as any)?.seriesId as string | undefined;
-  await scheduledEventApi.removeScheduledEvent(seriesId ?? event.id);
+  await calendarEventApi.removeCalendarEvent(seriesId ?? event.id);
   await fetchEvents();
 }
 
 function closeDialog() {
   showEventDialog.value = false;
   editingEvent.value = null;
-  editingMeeting.value = null;
   eventTitle.value = "";
   eventDescription.value = "";
   eventTime.value = "09:00";
@@ -664,8 +632,8 @@ function closeDialog() {
 }
 
 // Resize handlers
-function handleResizeStart(event: ScheduledEvent, type: "start" | "end", mouseEvent: MouseEvent) {
-  if (event.payload?.type === "scheduled_meeting") return;
+function handleResizeStart(event: any, type: "start" | "end", mouseEvent: MouseEvent) {
+  if (event.type === "meeting") return;
   const seriesId = (event.payload as any)?.seriesId as string | undefined;
   if (seriesId && seriesId !== event.id) return; // recurring occurrence: series-only, no per-occurrence edits
   mouseEvent.preventDefault();
@@ -675,7 +643,7 @@ function handleResizeStart(event: ScheduledEvent, type: "start" | "end", mouseEv
   resizeType.value = type;
   resizeStartY.value = mouseEvent.clientY;
   resizeStartTime.value =
-    type === "start" ? new Date(event.dueAt).getTime() : getEventEndTime(event).getTime();
+    type === "start" ? new Date(event.startsAt).getTime() : getEventEndTime(event).getTime();
 }
 
 function handleResizeMove(mouseEvent: MouseEvent) {
@@ -694,8 +662,9 @@ function handleResizeMove(mouseEvent: MouseEvent) {
   if (eventIndex !== -1) {
     const updatedEvent = { ...events.value[eventIndex] };
     if (resizeType.value === "start") {
-      updatedEvent.dueAt = newTime.toISOString();
+      updatedEvent.startsAt = newTime.toISOString();
     } else {
+      updatedEvent.endsAt = newTime.toISOString();
       updatedEvent.payload = {
         ...updatedEvent.payload,
         endTime: format(newTime, "HH:mm"),
@@ -711,30 +680,28 @@ async function handleResizeEnd() {
   }
 
   const event = resizingEvent.value;
-  if (event.payload?.type === "scheduled_meeting") {
+  if (event.type === "meeting") {
     isResizing.value = false;
     resizingEvent.value = null;
     resizeType.value = null;
     return;
   }
-  const eventDate = new Date(event.dueAt);
+  const eventDate = new Date(event.startsAt);
   const endTime = event.payload.endTime || format(getEventEndTime(event), "HH:mm");
 
   try {
     if (resizeType.value === "start") {
-      await scheduledEventApi.updateScheduledEvent({
+      await calendarEventApi.updateCalendarEvent({
         id: event.id,
-        userId: user.value.id,
-        dueAt: eventDate,
+        startsAt: eventDate,
       });
     } else {
-      await scheduledEventApi.updateScheduledEvent({
+      const [eh, em] = endTime.split(":").map(Number);
+      const endsAt = new Date(eventDate);
+      endsAt.setHours(eh, em, 0, 0);
+      await calendarEventApi.updateCalendarEvent({
         id: event.id,
-        userId: user.value.id,
-        payload: {
-          ...event.payload,
-          endTime: endTime,
-        },
+        endsAt,
       });
     }
     await fetchEvents();
@@ -861,19 +828,19 @@ const dayHours = computed(() => {
                         title="Open event"
                       >
                         <div class="text-[11px] font-medium text-blue-900 truncate">
-                          {{ format(new Date(event.dueAt), "HH:mm") }} {{ event.payload.title }}
+                          {{ format(new Date(event.startsAt), "HH:mm") }} {{ event.title }}
                         </div>
                       </div>
                     </MenuTrigger>
                     <MenuContent class="w-40" disabled-portal>
-                      <template v-if="event.payload?.type === 'scheduled_meeting'">
+                      <template v-if="event.type === 'meeting'">
                         <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
                           >Open lobby</MenuItem
                         >
                         <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
-                        <MenuItem variant="destructive" @click="removeCalendarItem(event)"
-                          >Cancel series</MenuItem
-                        >
+                        <MenuItem variant="destructive" @click="removeCalendarItem(event)">
+                          Cancel series
+                        </MenuItem>
                       </template>
                       <template v-else>
                         <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
@@ -956,20 +923,20 @@ const dayHours = computed(() => {
                           v-if="getEventLayoutMode(event) !== 'normal'"
                           class="shrink-0 text-[10px] opacity-90"
                         >
-                          {{ format(new Date(event.dueAt), "HH:mm") }}
+                          {{ format(new Date(event.startsAt), "HH:mm") }}
                         </span>
                         <div class="font-medium truncate min-w-0">
-                          {{ event.payload.title }}
+                          {{ event.title }}
                         </div>
                       </div>
                       <div
-                        v-if="getEventLayoutMode(event) === 'normal' && event.payload.description"
+                        v-if="getEventLayoutMode(event) === 'normal' && event.description"
                         class="text-[10px] opacity-90 truncate"
                       >
-                        {{ event.payload.description }}
+                        {{ event.description }}
                       </div>
                       <div v-if="getEventLayoutMode(event) === 'normal'" class="text-[10px] opacity-75">
-                        {{ format(new Date(event.dueAt), "HH:mm") }} -
+                        {{ format(new Date(event.startsAt), "HH:mm") }} -
                         {{ format(getEventEndTime(event), "HH:mm") }}
                       </div>
                     </div>
@@ -984,14 +951,14 @@ const dayHours = computed(() => {
                   </div>
                 </MenuTrigger>
                 <MenuContent class="w-40" disabled-portal>
-                  <template v-if="event.payload?.type === 'scheduled_meeting'">
+                  <template v-if="event.type === 'meeting'">
                     <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
                       >Open lobby</MenuItem
                     >
                     <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
-                    <MenuItem variant="destructive" @click="removeCalendarItem(event)"
-                      >Cancel series</MenuItem
-                    >
+                    <MenuItem variant="destructive" @click="removeCalendarItem(event)">
+                      Cancel series
+                    </MenuItem>
                   </template>
                   <template v-else>
                     <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
@@ -1074,20 +1041,20 @@ const dayHours = computed(() => {
                           v-if="getEventLayoutMode(event) !== 'normal'"
                           class="shrink-0 text-[10px] opacity-90"
                         >
-                          {{ format(new Date(event.dueAt), "HH:mm") }}
+                          {{ format(new Date(event.startsAt), "HH:mm") }}
                         </span>
                         <div class="font-medium truncate min-w-0">
-                          {{ event.payload.title }}
+                          {{ event.title }}
                         </div>
                       </div>
                       <div
-                        v-if="getEventLayoutMode(event) === 'normal' && event.payload.description"
+                        v-if="getEventLayoutMode(event) === 'normal' && event.description"
                         class="text-[11px] opacity-90 line-clamp-2"
                       >
-                        {{ event.payload.description }}
+                        {{ event.description }}
                       </div>
                       <div v-if="getEventLayoutMode(event) === 'normal'" class="text-[10px] opacity-75">
-                        {{ format(new Date(event.dueAt), "HH:mm") }} -
+                        {{ format(new Date(event.startsAt), "HH:mm") }} -
                         {{ format(getEventEndTime(event), "HH:mm") }}
                       </div>
                     </div>
@@ -1102,14 +1069,14 @@ const dayHours = computed(() => {
                   </div>
                 </MenuTrigger>
                 <MenuContent class="w-40" disabled-portal>
-                  <template v-if="event.payload?.type === 'scheduled_meeting'">
+                  <template v-if="event.type === 'meeting'">
                     <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
                       >Open lobby</MenuItem
                     >
                     <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
-                    <MenuItem variant="destructive" @click="removeCalendarItem(event)"
-                      >Cancel series</MenuItem
-                    >
+                    <MenuItem variant="destructive" @click="removeCalendarItem(event)">
+                      Cancel series
+                    </MenuItem>
                   </template>
                   <template v-else>
                     <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
@@ -1129,7 +1096,15 @@ const dayHours = computed(() => {
         <div class="rounded-lg bg-white !p-0">
           <DialogHeader class="px-3 pt-3 pb-1">
             <DialogTitle class="text-sm font-medium text-muted-foreground">
-              {{ editingEvent ? "Edit event" : editingMeeting ? "Edit meeting" : "New event" }}
+              {{
+                editingEvent
+                  ? itemType === "meeting"
+                    ? "Edit meeting"
+                    : "Edit event"
+                  : itemType === "meeting"
+                    ? "New meeting"
+                    : "New event"
+              }}
             </DialogTitle>
           </DialogHeader>
 
@@ -1137,11 +1112,7 @@ const dayHours = computed(() => {
             <!-- Type -->
             <div class="mt-1 flex items-center justify-between gap-2">
               <div class="text-[11px] text-muted-foreground">Type</div>
-              <ToggleGroup
-                v-model="itemType"
-                type="single"
-                :disabled="Boolean(editingEvent) || Boolean(editingMeeting)"
-              >
+              <ToggleGroup v-model="itemType" type="single" :disabled="Boolean(editingEvent)">
                 <ToggleGroupItem value="event">Event</ToggleGroupItem>
                 <ToggleGroupItem value="meeting">Meeting</ToggleGroupItem>
               </ToggleGroup>

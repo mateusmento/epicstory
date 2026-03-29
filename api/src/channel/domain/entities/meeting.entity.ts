@@ -1,17 +1,18 @@
 import { Channel } from './channel.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { MeetingAttendee } from './meeting-attendee.entity';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import { Workspace } from 'src/workspace/domain/entities';
-import { ScheduledMeetingOccurrence } from './scheduled-meeting-occurrence.entity';
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'meetings' })
 export class Meeting {
@@ -40,18 +41,24 @@ export class Meeting {
   @JoinColumn()
   channel?: Channel | null;
 
+  // Calendar-backed meeting occurrence identity (series-only)
   @Column({ type: 'uuid', nullable: true })
-  scheduledOccurrenceId?: string | null;
+  calendarEventId?: string | null;
 
-  @OneToOne(() => ScheduledMeetingOccurrence, {
-    nullable: true,
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn({ name: 'scheduled_occurrence_id' })
-  scheduledOccurrence?: ScheduledMeetingOccurrence | null;
+  @Column({ type: 'timestamptz', nullable: true })
+  occurrenceStartsAt?: Date | null;
 
   @Column({ type: 'timestamptz', default: () => 'now()' })
   startsAt: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  endedAt?: Date | null;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   static ongoing(channel: number, workspaceId: number) {
     const meeting = new Meeting();
@@ -62,17 +69,20 @@ export class Meeting {
     return meeting;
   }
 
-  static scheduled(data: {
+  static scheduledFromCalendar(data: {
     workspaceId: number;
-    scheduledOccurrenceId: string;
+    calendarEventId: string;
+    occurrenceStartsAt: Date;
     channelId?: number | null;
   }) {
     const meeting = new Meeting();
     meeting.ongoing = true;
     meeting.workspaceId = data.workspaceId;
-    meeting.scheduledOccurrenceId = data.scheduledOccurrenceId;
+    meeting.calendarEventId = data.calendarEventId;
+    meeting.occurrenceStartsAt = data.occurrenceStartsAt;
     meeting.channelId = data.channelId ?? null;
     meeting.attendees = [];
+    meeting.startsAt = data.occurrenceStartsAt;
     return meeting;
   }
 
