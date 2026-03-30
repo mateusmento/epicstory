@@ -5,6 +5,7 @@ import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
 
 export class FindChannels {
@@ -35,11 +36,17 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
       .createQueryBuilder('c')
       .innerJoin('c.peers', 'peer', 'peer.id = :userId', { userId: issuer.id })
       .leftJoinAndSelect('c.peers', 'p')
-      .leftJoinAndSelect('c.meeting', 'm')
+      // Map the *ongoing* meeting (if any) into the virtual `c.meeting` field.
+      .leftJoinAndMapOne(
+        'c.meeting',
+        Meeting,
+        'm',
+        'm.channel_id = c.id AND m.ongoing = true',
+      )
       .leftJoinAndSelect('c.lastMessage', 'msg')
       .where('c.workspaceId = :workspaceId', { workspaceId });
 
-    if (teamId) query = query.where('c.teamId = :teamId', { teamId });
+    if (teamId) query = query.andWhere('c.teamId = :teamId', { teamId });
 
     query = query.orderBy(
       'CASE WHEN msg.id is null THEN c.createdAt ELSE msg.sentAt END',

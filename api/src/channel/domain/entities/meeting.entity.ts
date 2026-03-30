@@ -6,8 +6,8 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
+  RelationId,
   UpdateDateColumn,
 } from 'typeorm';
 import { MeetingAttendee } from './meeting-attendee.entity';
@@ -34,12 +34,12 @@ export class Meeting {
   })
   attendees: MeetingAttendee[];
 
-  @Column({ nullable: true })
-  channelId?: number | null;
-
-  @OneToOne(() => Channel, { nullable: true, onDelete: 'CASCADE' })
-  @JoinColumn()
+  @ManyToOne(() => Channel, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'channel_id' })
   channel?: Channel | null;
+
+  @RelationId((m: Meeting) => m.channel)
+  channelId?: number | null;
 
   // Calendar-backed meeting occurrence identity (series-only)
   @Column({ type: 'uuid', nullable: true })
@@ -60,10 +60,10 @@ export class Meeting {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  static ongoing(channel: number, workspaceId: number) {
+  static ongoing(channelId: number, workspaceId: number) {
     const meeting = new Meeting();
     meeting.ongoing = true;
-    meeting.channelId = channel;
+    meeting.channel = { id: channelId } as any satisfies Partial<Channel>;
     meeting.workspaceId = workspaceId;
     meeting.attendees = [];
     return meeting;
@@ -80,7 +80,10 @@ export class Meeting {
     meeting.workspaceId = data.workspaceId;
     meeting.calendarEventId = data.calendarEventId;
     meeting.occurrenceStartsAt = data.occurrenceStartsAt;
-    meeting.channelId = data.channelId ?? null;
+    meeting.channel =
+      data.channelId != null
+        ? ({ id: data.channelId } as any satisfies Partial<Channel>)
+        : null;
     meeting.attendees = [];
     meeting.startsAt = data.occurrenceStartsAt;
     return meeting;

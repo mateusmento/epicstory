@@ -7,7 +7,6 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Meeting } from './meeting.entity';
@@ -53,8 +52,7 @@ export class Channel {
 
   speakingTo: User;
 
-  @OneToOne(() => Meeting, (m) => m.channel)
-  meeting: Meeting;
+  meeting?: Meeting | null;
 
   @Column({ default: null })
   lastMessageId: number;

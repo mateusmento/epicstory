@@ -29,7 +29,7 @@ export class MeetingService {
 
   async findOngoingMeeting(channelId: number) {
     const meeting = await this.meetingRepo.findOne({
-      where: { channelId, ongoing: true },
+      where: { channel: { id: channelId }, ongoing: true } as any,
       relations: { attendees: true },
     });
     if (!meeting) throw new MeetingHasntStartedException();
@@ -44,6 +44,7 @@ export class MeetingService {
     const channel = await this.channelRepo.findChannel(channelId);
     if (!channel) throw new Error('Channel not found');
     const meeting = Meeting.ongoing(channelId, channel.workspaceId);
+    meeting.channel = channel as any;
     meeting.addAttendee(attendee);
     return await this.meetingRepo.save(meeting);
   }

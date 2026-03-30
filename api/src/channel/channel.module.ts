@@ -26,6 +26,6 @@ import * as repositories from './infrastructure/repositories';
     ...Object.values(reactions),
     ...Object.values(gateways),
   ].flat(),
-  exports: [...Object.values(repositories)],
+  exports: [...Object.values(repositories), gateways.MeetingGateway],
 })
 export class ChannelModule {}

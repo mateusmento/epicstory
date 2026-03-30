@@ -64,4 +64,5 @@ export {
   OiChevronLeft,
   BiFilter,
   OiFilter,
+  BiTelephoneX,
 } from "oh-vue-icons/icons";

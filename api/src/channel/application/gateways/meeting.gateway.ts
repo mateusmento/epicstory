@@ -32,6 +32,16 @@ export class MeetingGateway implements OnGatewayDisconnect {
     private workspaceRepo: WorkspaceRepository,
   ) {}
 
+  emitMeetingSessionStarted(meeting: Meeting) {
+    this.server
+      .to(workspaceMeetingRoom(meeting.workspaceId))
+      .emit('meeting-session-started', {
+        meeting,
+        workspaceId: meeting.workspaceId,
+        channelId: meeting.channelId ?? meeting.channel?.id ?? null,
+      });
+  }
+
   async handleDisconnect(socket: Socket) {
     try {
       if (!socket.data.meetingAttendee) return;

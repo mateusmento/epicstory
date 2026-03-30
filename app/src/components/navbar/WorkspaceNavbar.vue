@@ -14,14 +14,14 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import { useSyncedChannels } from "@/domain/channels";
-import { useMeeting } from "@/domain/channels";
-import { useNotifications } from "@/domain/notifications";
+import { useLiveScheduledMeeting, useMeeting } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
 import { ArrowLeft, ArrowRight, LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { useRouter } from "vue-router";
+import CurrentMeetingControlsCard from "./CurrentMeetingControlsCard.vue";
+import LiveMeetingJoinCard from "./LiveMeetingJoinCard.vue";
 import { NavListItem } from "../layout";
 
 defineProps<{ isAppPaneOpen: boolean }>();
@@ -30,48 +30,27 @@ const { workspace } = useWorkspace();
 const { user, signOut } = useAuth();
 const router = useRouter();
 
-const { channels } = useSyncedChannels();
-const { currentMeeting, joinMeeting } = useMeeting();
-const { notifications } = useNotifications({ autoSubscribe: true });
+const { currentMeeting } = useMeeting();
 
-const scheduledMeetingNotif = computed(() => {
-  return notifications.value.find(
-    (n) =>
-      !n.seen &&
-      n.type === "calendar_meeting_reminder" &&
-      Boolean((n.payload as any)?.calendarEventId) &&
-      Boolean((n.payload as any)?.occurrenceAt),
-  );
-});
-
-const activeChannelMeeting = computed(() => {
-  return channels.value.find((c) => c.meeting);
-});
+const { liveScheduledMeeting } = useLiveScheduledMeeting();
 
 const showHuddleCard = computed(() => {
-  return Boolean(currentMeeting.value || scheduledMeetingNotif.value || activeChannelMeeting.value);
+  // Only show the joinable meeting card when you're NOT already in a meeting.
+  return Boolean(!currentMeeting.value && liveScheduledMeeting.value);
 });
 
-async function onJoinScheduledMeeting() {
-  const calendarEventId = (scheduledMeetingNotif.value?.payload as any)?.calendarEventId as
-    | string
-    | undefined;
-  const occurrenceAt = (scheduledMeetingNotif.value?.payload as any)?.occurrenceAt as string | undefined;
+const huddlePeers = computed(() => {
+  return (liveScheduledMeeting.value?.participantsPreview ?? []).slice(0, 4);
+});
+
+async function onJoinLiveScheduledMeeting() {
+  const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
+  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt;
   if (!calendarEventId || !occurrenceAt) return;
   router.push({
     name: "meeting-lobby",
     params: { workspaceId: workspace.value.id, calendarEventId },
     query: { occurrenceAt },
-  });
-}
-
-async function onJoinChannelMeeting() {
-  const channel = activeChannelMeeting.value;
-  if (!channel) return;
-  await joinMeeting(channel as any);
-  router.push({
-    name: "channel-meeting",
-    params: { workspaceId: workspace.value.id, channelId: channel.id },
   });
 }
 </script>
@@ -110,40 +89,11 @@ async function onJoinChannelMeeting() {
     </div>
 
     <div v-if="showHuddleCard" class="px-2">
-      <div class="rounded-xl border bg-white p-2 flex:row-md flex:center-y gap-2">
-        <div class="flex -space-x-2">
-          <img
-            v-for="p in (activeChannelMeeting?.peers ?? []).slice(0, 4)"
-            :key="p.id"
-            :src="p.picture"
-            class="w-6 h-6 rounded-full border-2 border-white object-cover"
-          />
-        </div>
-
-        <div class="min-w-0 flex-1">
-          <div class="text-xs font-medium truncate">
-            <template v-if="scheduledMeetingNotif">
-              {{ (scheduledMeetingNotif.payload as any)?.title ?? "Scheduled meeting" }}
-            </template>
-            <template v-else-if="activeChannelMeeting">
-              Huddle in {{ activeChannelMeeting.name || "channel" }}
-            </template>
-            <template v-else>Meeting</template>
-          </div>
-          <div class="text-[11px] text-secondary-foreground truncate">
-            <template v-if="scheduledMeetingNotif">Starting soon</template>
-            <template v-else-if="activeChannelMeeting">Live now</template>
-            <template v-else>Live now</template>
-          </div>
-        </div>
-
-        <Button v-if="scheduledMeetingNotif" size="sm" class="h-8" @click="onJoinScheduledMeeting">
-          Join
-        </Button>
-        <Button v-else-if="activeChannelMeeting" size="sm" class="h-8" @click="onJoinChannelMeeting"
-          >Join</Button
-        >
-      </div>
+      <LiveMeetingJoinCard
+        :title="liveScheduledMeeting?.calendarEvent.title ?? 'Meeting'"
+        :people="huddlePeers"
+        @join="onJoinLiveScheduledMeeting"
+      />
     </div>
 
     <nav class="flex:col-md">
@@ -184,6 +134,10 @@ async function onJoinChannelMeeting() {
     </nav>
 
     <div class="flex-1"></div>
+
+    <div v-if="currentMeeting" class="px-2 pb-2">
+      <CurrentMeetingControlsCard />
+    </div>
 
     <Menu type="dropdown-menu">
       <MenuTrigger as-child>

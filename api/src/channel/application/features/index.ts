@@ -12,3 +12,4 @@ export * from './send-direct-message.command';
 export * from './toggle-message-reaction.command';
 export * from './toggle-reply-reaction.command';
 export * from './reply-message.command';
+export * from './find-live-scheduled-meeting.query';

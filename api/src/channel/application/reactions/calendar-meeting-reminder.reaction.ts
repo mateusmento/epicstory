@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { concat, uniq } from 'lodash';
 import { CalendarEvent } from 'src/calendar/entities';
-import { CalendarMeetingReminderPayload } from 'src/calendar/types';
+import { CalendarMeetingEventPayload } from 'src/calendar/types';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import {
   ChannelRepository,
   MeetingRepository,
 } from 'src/channel/infrastructure';
+import { MeetingGateway } from 'src/channel/application/gateways';
 import { NotificationService } from 'src/notifications/services/notification.service';
 import { ScheduledJobWithPayload } from 'src/scheduling/types';
 import { DataSource } from 'typeorm';
@@ -18,11 +19,12 @@ export class CalendarMeetingReminderReaction {
     private notificationService: NotificationService,
     private meetingRepo: MeetingRepository,
     private channelRepo: ChannelRepository,
+    private meetingGateway: MeetingGateway,
     private dataSource: DataSource,
   ) {}
 
   @OnEvent('scheduled-job.calendar.meeting-reminder', { async: true })
-  async handle(job: ScheduledJobWithPayload<CalendarMeetingReminderPayload>) {
+  async handle(job: ScheduledJobWithPayload<CalendarMeetingEventPayload>) {
     const { calendarEventId } = job.payload;
     const occurrenceAt = job.occurrenceAt;
 
@@ -63,6 +65,8 @@ export class CalendarMeetingReminderReaction {
           channelId,
         }),
       );
+      // Notify workspace subscribers that a meeting session is now live (or about to be joined).
+      this.meetingGateway.emitMeetingSessionStarted(meeting as any);
     }
 
     for (const userId of recipientIds) {

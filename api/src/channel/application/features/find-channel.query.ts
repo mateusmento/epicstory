@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ChannelRepository } from 'src/channel/infrastructure';
+import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -23,14 +24,18 @@ export class FindChannelQuery implements IQueryHandler<FindChannel> {
   ) {}
 
   async execute({ channelId, issuerId }: FindChannel) {
-    const channel = await this.channelRepo.findOne({
-      where: { id: channelId },
-      relations: {
-        peers: true,
-        lastMessage: true,
-        meeting: true,
-      },
-    });
+    const channel = await this.channelRepo
+      .createQueryBuilder('c')
+      .leftJoinAndSelect('c.peers', 'p')
+      .leftJoinAndSelect('c.lastMessage', 'msg')
+      .leftJoinAndMapOne(
+        'c.meeting',
+        Meeting,
+        'm',
+        'm.channel_id = c.id AND m.ongoing = true',
+      )
+      .where('c.id = :id', { id: channelId })
+      .getOne();
 
     if (!channel) throw new NotFoundException('Channel not found');
 

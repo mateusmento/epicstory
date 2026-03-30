@@ -165,9 +165,10 @@ export class CreateCalendarEventCommand
 }
 
 function toTimeOfDay(d: Date) {
-  const hh = d.getHours().toString().padStart(2, '0');
-  const mm = d.getMinutes().toString().padStart(2, '0');
-  const ss = d.getSeconds().toString().padStart(2, '0');
+  // Store as UTC wall-clock time (HH:mm:ss), independent of server/local TZ.
+  const hh = d.getUTCHours().toString().padStart(2, '0');
+  const mm = d.getUTCMinutes().toString().padStart(2, '0');
+  const ss = d.getUTCSeconds().toString().padStart(2, '0');
   return `${hh}:${mm}:${ss}`;
 }
 
@@ -198,13 +199,13 @@ function mapCalendarRecurrenceToJob(args: {
   if (freq === 'weekly') {
     const by = Array.isArray(args.recurrence?.byWeekday)
       ? args.recurrence.byWeekday
-      : [args.startsAt.getDay()];
+      : [args.startsAt.getUTCDay()];
     return {
       dueAt: reminderAt,
       recurrence: {
         frequency: 'weekly',
         interval: Math.max(1, Number(args.recurrence?.interval ?? 1)),
-        weekdays: by.length ? by : [args.startsAt.getDay()],
+        weekdays: by.length ? by : [args.startsAt.getUTCDay()],
         timeOfDay: toTimeOfDay(reminderAt),
         until: args.recurrence?.until,
       },
