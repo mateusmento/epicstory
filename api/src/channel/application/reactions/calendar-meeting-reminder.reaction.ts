@@ -2,15 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { concat, uniq } from 'lodash';
 import { CalendarEvent } from 'src/calendar/entities';
-import { CalendarMeetingEventPayload } from 'src/calendar/types';
+import { MeetingGateway } from 'src/channel/application/gateways';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import {
   ChannelRepository,
   MeetingRepository,
 } from 'src/channel/infrastructure';
-import { MeetingGateway } from 'src/channel/application/gateways';
 import { NotificationService } from 'src/notifications/services/notification.service';
-import { ScheduledJobWithPayload } from 'src/scheduling/types';
+import { ScheduledJobTypes } from 'src/scheduling/constants';
+import {
+  MeetingReminderPayload,
+  ScheduledJobWithPayload,
+} from 'src/scheduling/types';
 import { DataSource } from 'typeorm';
 
 @Injectable()
@@ -23,9 +26,11 @@ export class CalendarMeetingReminderReaction {
     private dataSource: DataSource,
   ) {}
 
-  @OnEvent('scheduled-job.calendar.meeting-reminder', { async: true })
-  async handle(job: ScheduledJobWithPayload<CalendarMeetingEventPayload>) {
-    const { calendarEventId } = job.payload;
+  @OnEvent(`scheduled-job.${ScheduledJobTypes.meeting_reminder}`, {
+    async: true,
+  })
+  async handle(job: ScheduledJobWithPayload<MeetingReminderPayload>) {
+    const { calendarEventId, channelId } = job.payload;
     const occurrenceAt = job.occurrenceAt;
 
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);
@@ -36,11 +41,6 @@ export class CalendarMeetingReminderReaction {
     });
     if (!event) return;
 
-    const channelId = event.payload.channelId;
-
-    // Determine recipients:
-    // - Channel meeting: notify channel members
-    // - Standalone meeting: notify participants
     let channelMembers: number[] = [];
     if (channelId) {
       const channel = await this.channelRepo.findChannel(channelId, {
@@ -65,6 +65,7 @@ export class CalendarMeetingReminderReaction {
           channelId,
         }),
       );
+
       // Notify workspace subscribers that a meeting session is now live (or about to be joined).
       this.meetingGateway.emitMeetingSessionStarted(meeting as any);
     }

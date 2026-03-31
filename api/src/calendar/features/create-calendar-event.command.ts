@@ -4,24 +4,25 @@ import {
   ArrayNotEmpty,
   IsBoolean,
   IsDate,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsObject,
   IsOptional,
   IsString,
-  IsIn,
 } from 'class-validator';
-import { addMinutes } from 'date-fns';
 import { uniq } from 'lodash';
 import { patch } from 'src/core/objects';
+import { ScheduledJobTypes } from 'src/scheduling/constants';
 import { ScheduledJob } from 'src/scheduling/entities';
-import type { Recurrence as JobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
+import { buildScheduledJobPayload } from 'src/scheduling/types/payload';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { CalendarEvent } from '../entities';
 import type { CalendarEventType } from '../entities/calendar-event.entity';
 import { CalendarEventRepository } from '../repositories';
-import type { CalendarEventPayload } from '../types';
+import { buildCalendarEventPayload, type CalendarEventPayload } from '../types';
+import { mapCalendarRecurrenceToJob } from '../utils/map-calendar-recurrence-to-job';
 
 export class CreateCalendarEvent {
   issuerId: number;
@@ -29,9 +30,9 @@ export class CreateCalendarEvent {
   @IsNumber()
   workspaceId: number;
 
-  @IsOptional()
   @IsIn(['event', 'meeting'])
-  type?: CalendarEventType;
+  @Transform(({ value }) => value ?? 'event')
+  type: CalendarEventType;
 
   @IsNotEmpty()
   title: string;
@@ -91,35 +92,37 @@ export class CreateCalendarEventCommand
     private scheduledJobRepo: ScheduledJobRepository,
   ) {}
 
-  async execute(command: CreateCalendarEvent): Promise<CalendarEvent> {
-    const member = await this.workspaceRepo.findMember(
-      command.workspaceId,
-      command.issuerId,
-      { user: true },
-    );
+  async execute({
+    workspaceId,
+    channelId,
+    issuerId,
+    ...command
+  }: CreateCalendarEvent): Promise<CalendarEvent> {
+    const member = await this.workspaceRepo.findMember(workspaceId, issuerId, {
+      user: true,
+    });
     if (!member) throw new Error('Issuer is not a workspace member');
 
-    const userIds = uniq([command.issuerId, ...command.participantIds]);
+    const userIds = uniq([issuerId, ...command.participantIds]);
     const participants = await this.workspaceRepo.findMembers(
-      {
-        workspaceId: command.workspaceId,
-        userIds,
-      },
+      { workspaceId, userIds },
       { user: true },
     );
 
     const participantUsers = participants.map((p) => p.user);
 
-    const payload: CalendarEventPayload = {
-      ...(command.payload ?? {}),
-      channelId: command.channelId ?? null,
-    };
+    const type = command.type ?? 'event';
+
+    const payload: CalendarEventPayload = buildCalendarEventPayload(type, {
+      ...command.payload,
+      ...(channelId ? { channelId } : {}),
+    });
 
     const event = await this.calendarEventRepo.save(
       CalendarEvent.create({
-        workspaceId: command.workspaceId,
+        workspaceId,
+        type,
         payload,
-        type: (command.type ?? 'event') as any,
         startsAt: command.startsAt,
         endsAt: command.endsAt,
         isPublic: command.isPublic ?? true,
@@ -127,16 +130,18 @@ export class CreateCalendarEventCommand
         notifyMinutesBefore: command.notifyMinutesBefore ?? 10,
         recurrence: command.recurrence ?? { frequency: 'once' },
         participants: participantUsers,
-        createdById: command.issuerId,
+        createdById: issuerId,
         title: command.title,
         description: command.description ?? '',
       }),
     );
 
-    // Schedule ONE recurring reminder job per series (no chaining).
-    // Recurring jobs advance using last_run_at.
-    if (!event.notifyEnabled) return event;
+    if (event.notifyEnabled) await this.createReminder(event);
 
+    return event;
+  }
+
+  async createReminder(event: CalendarEvent) {
     const notifyMinutesBefore = Math.max(0, event.notifyMinutesBefore ?? 0);
     const mapped = mapCalendarRecurrenceToJob({
       startsAt: event.startsAt,
@@ -146,70 +151,21 @@ export class CreateCalendarEventCommand
 
     const type =
       event.type === 'meeting'
-        ? 'calendar.meeting-reminder'
-        : 'calendar.event-reminder';
+        ? ScheduledJobTypes.meeting_reminder
+        : ScheduledJobTypes.calendar_event_reminder;
 
-    await this.scheduledJobRepo.save(
+    const job = await this.scheduledJobRepo.save(
       ScheduledJob.create({
         type,
         workspaceId: event.workspaceId,
         dueAt: mapped.dueAt,
         notifyMinutesBefore,
         recurrence: mapped.recurrence,
-        payload: { calendarEventId: event.id },
+        payload: buildScheduledJobPayload(type, { calendarEventId: event.id }),
       }),
     );
 
-    return event;
+    event.scheduledJob = job;
+    await this.calendarEventRepo.save(event);
   }
-}
-
-function toTimeOfDay(d: Date) {
-  // Store as UTC wall-clock time (HH:mm:ss), independent of server/local TZ.
-  const hh = d.getUTCHours().toString().padStart(2, '0');
-  const mm = d.getUTCMinutes().toString().padStart(2, '0');
-  const ss = d.getUTCSeconds().toString().padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
-}
-
-function mapCalendarRecurrenceToJob(args: {
-  startsAt: Date;
-  notifyMinutesBefore: number;
-  recurrence: any;
-}): { dueAt: Date; recurrence: JobRecurrence } {
-  const reminderAt = addMinutes(
-    args.startsAt,
-    -Math.max(0, args.notifyMinutesBefore),
-  );
-  const freq = args.recurrence?.frequency ?? 'once';
-  if (freq === 'once') {
-    return { dueAt: reminderAt, recurrence: { frequency: 'once' } };
-  }
-  if (freq === 'daily') {
-    return {
-      dueAt: reminderAt,
-      recurrence: {
-        frequency: 'daily',
-        interval: Math.max(1, Number(args.recurrence?.interval ?? 1)),
-        timeOfDay: toTimeOfDay(reminderAt),
-        until: args.recurrence?.until,
-      },
-    };
-  }
-  if (freq === 'weekly') {
-    const by = Array.isArray(args.recurrence?.byWeekday)
-      ? args.recurrence.byWeekday
-      : [args.startsAt.getUTCDay()];
-    return {
-      dueAt: reminderAt,
-      recurrence: {
-        frequency: 'weekly',
-        interval: Math.max(1, Number(args.recurrence?.interval ?? 1)),
-        weekdays: by.length ? by : [args.startsAt.getUTCDay()],
-        timeOfDay: toTimeOfDay(reminderAt),
-        until: args.recurrence?.until,
-      },
-    };
-  }
-  return { dueAt: reminderAt, recurrence: { frequency: 'once' } };
 }

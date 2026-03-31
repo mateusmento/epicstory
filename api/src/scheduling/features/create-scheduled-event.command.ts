@@ -1,18 +1,21 @@
-import { IsDate, IsNumber, IsObject } from 'class-validator';
+import { IsDate, IsIn, IsNotEmpty, IsNumber, IsObject } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ScheduledJobRepository } from '../repositories';
-import { Recurrence, ScheduledJob } from '../entities';
+import { ScheduledJobRecurrence, ScheduledJob } from '../entities';
+import { ScheduledJobType, type ScheduledJobPayload } from '../types';
+import { ScheduledJobTypes } from 'src/scheduling/constants';
 
 export class CreateScheduledJob {
-  @IsNumber()
-  type: string;
+  @IsIn(Object.keys(ScheduledJobTypes))
+  @IsNotEmpty()
+  type: ScheduledJobType;
 
   @IsNumber()
   workspaceId: number;
 
   @IsObject()
-  payload: any;
+  payload: ScheduledJobPayload;
 
   @IsDate()
   dueAt: Date;
@@ -21,7 +24,7 @@ export class CreateScheduledJob {
   notifyMinutesBefore: number;
 
   @IsObject()
-  recurrence: Recurrence;
+  recurrence: ScheduledJobRecurrence;
 
   constructor(data: Partial<CreateScheduledJob>) {
     patch(this, data);
@@ -36,7 +39,7 @@ export class CreateScheduledJobCommand
 
   async execute(command: CreateScheduledJob): Promise<ScheduledJob> {
     const scheduledJob = ScheduledJob.create({
-      type: command.type ?? 'scheduled_job',
+      type: command.type,
       workspaceId: command.workspaceId,
       payload: command.payload,
       dueAt: command.dueAt,

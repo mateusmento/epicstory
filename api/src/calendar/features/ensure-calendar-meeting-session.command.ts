@@ -2,15 +2,15 @@ import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import { IsDate, IsString } from 'class-validator';
-import { patch } from 'src/core/objects';
-import { DataSource } from 'typeorm';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { Meeting } from 'src/channel/domain/entities/meeting.entity';
-import { CalendarEventRepository } from '../repositories';
-import { MeetingRepository } from 'src/channel/infrastructure';
 import { MeetingGateway } from 'src/channel/application/gateways';
+import { Meeting } from 'src/channel/domain/entities/meeting.entity';
+import { MeetingRepository } from 'src/channel/infrastructure';
+import { patch } from 'src/core/objects';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { DataSource } from 'typeorm';
+import { CalendarEventRepository } from '../repositories';
 import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
-import { CalendarMeetingPayload } from '../types';
+import { MeetingCalendarEventPayload } from '../types';
 
 export class EnsureCalendarMeetingSession {
   @IsString()
@@ -46,7 +46,7 @@ export class EnsureCalendarMeetingSessionCommand
     });
     if (!event) throw new BadRequestException('Calendar event not found');
 
-    const payload = event.payload as CalendarMeetingPayload;
+    const payload = event.payload as MeetingCalendarEventPayload;
 
     const channelId = payload.channelId;
 

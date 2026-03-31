@@ -40,15 +40,10 @@ export class RemoveCalendarEventCommand
       throw new ForbiddenException('Issuer is not a workspace member');
     if (event.createdById !== command.userId) throw new ForbiddenException();
 
-    // Remove any reminder jobs tied to this series.
-    await this.scheduledJobRepo
-      .createQueryBuilder()
-      .delete()
-      .where(`type IN (:...types)`, {
-        types: ['calendar.meeting-reminder', 'calendar.event-reminder'],
-      })
-      .andWhere(`payload->>'calendarEventId' = :id`, { id: event.id as any })
-      .execute();
+    // Remove reminder job for this series (primary: FK from event -> scheduled job).
+    if (event.scheduledJobId) {
+      await this.scheduledJobRepo.delete({ id: event.scheduledJobId as any });
+    }
 
     await this.calendarEventRepo.delete({ id: command.id as any });
     return { success: true, id: command.id };

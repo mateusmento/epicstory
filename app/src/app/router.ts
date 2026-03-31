@@ -1,12 +1,7 @@
 import { UnauthorizedException } from "@/core/axios";
 import { useAuth } from "@/domain/auth";
-import {
-  createRouter,
-  createWebHistory,
-  type NavigationGuardWithThis,
-  type RouteRecordRaw,
-} from "vue-router";
-
+import { createRouter, createWebHistory } from "vue-router";
+import type { NavigationGuardWithThis, RouteRecordRaw } from "vue-router";
 type RouteOptions = Pick<RouteRecordRaw, "beforeEnter" | "meta" | "props">;
 
 const openRoutes = defineRoutes({

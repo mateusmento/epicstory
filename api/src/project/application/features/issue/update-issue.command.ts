@@ -3,10 +3,12 @@ import { IsDate, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
+import { ScheduledJobTypes } from 'src/scheduling/constants';
+import { ScheduledJob } from 'src/scheduling/entities';
+import { ScheduledJobRepository } from 'src/scheduling/repositories';
+import { buildScheduledJobPayload } from 'src/scheduling/types/payload';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { ScheduledJobRepository } from 'src/scheduling/repositories';
-import { ScheduledJob } from 'src/scheduling/entities';
 import { Transactional } from 'typeorm-transactional';
 import { ProjectGateway } from '../../gateways/project.gateway';
 
@@ -95,17 +97,20 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
 
         // Create a new scheduled job with the new due date
         const scheduledJob = ScheduledJob.create({
-          type: 'issue.due-date',
+          type: ScheduledJobTypes.due_issue_reminder,
           workspaceId: issue.workspaceId,
           notifyMinutesBefore: 0,
           recurrence: { frequency: 'once' },
-          payload: {
-            userId: notifyUserId,
-            title: issueTitle,
-            description: `Issue "${issueTitle}" is due`,
-            issueId: issue.id,
-            projectId: issue.projectId,
-          },
+          payload: buildScheduledJobPayload(
+            ScheduledJobTypes.due_issue_reminder,
+            {
+              userId: notifyUserId,
+              title: issueTitle,
+              description: `Issue "${issueTitle}" is due`,
+              issueId: issue.id,
+              projectId: issue.projectId,
+            },
+          ),
           dueAt: dueDate,
         });
         const savedJob = await this.scheduledJobRepo.save(scheduledJob);

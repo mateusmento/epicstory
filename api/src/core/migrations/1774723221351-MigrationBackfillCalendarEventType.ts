@@ -6,16 +6,23 @@ export class MigrationBackfillCalendarEventType1774723221351
   name = 'MigrationBackfillCalendarEventType1774723221351';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Backfill "calendar_event" type for legacy calendar events created before we added payload.type defaults.
-    // Heuristic: calendar events have (title + endTime) and do NOT have issueId.
+    // Legacy backfill for very old data (safe no-op if the legacy table doesn't exist).
+    // We no longer persist `payload.endTime`, so we avoid relying on it here.
     await queryRunner.query(`
-      UPDATE scheduler.scheduled_events
-      SET payload = jsonb_set(payload, '{type}', '"calendar_event"', true)
-      WHERE
-        (payload->>'type') IS NULL
-        AND payload ? 'title'
-        AND payload ? 'endTime'
-        AND NOT (payload ? 'issueId')
+      DO $$
+      BEGIN
+        IF to_regclass('scheduler.scheduled_events') IS NULL THEN
+          RETURN;
+        END IF;
+
+        UPDATE scheduler.scheduled_events
+        SET payload = jsonb_set(payload, '{type}', '"calendar_event"', true)
+        WHERE
+          (payload->>'type') IS NULL
+          AND payload ? 'title'
+          AND NOT (payload ? 'issueId');
+      END
+      $$;
     `);
   }
 

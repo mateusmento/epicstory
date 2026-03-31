@@ -20,6 +20,7 @@ import {
   RemoveCalendarEvent,
   UpdateCalendarEvent,
 } from '../features';
+import { UUID } from 'crypto';
 
 @Controller('calendar-events')
 export class CalendarEventController {
@@ -84,12 +85,12 @@ export class CalendarEventController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   updateScheduledEvent(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUUIDPipe) id: UUID,
     @Body() command: UpdateCalendarEvent,
     @Auth() issuer: Issuer,
   ) {
     return this.commandBus.execute(
-      new UpdateCalendarEvent({ ...command, id, userId: issuer.id }),
+      new UpdateCalendarEvent({ ...command, eventId: id, userId: issuer.id }),
     );
   }
 

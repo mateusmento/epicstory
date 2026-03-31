@@ -5,6 +5,11 @@ export interface IMeeting {
   channelId?: number | null;
   workspaceId?: number;
   attendees: IMeetingAttendee[];
+  ongoing: boolean;
+  startsAt: string;
+  endedAt: string | null;
+  occurrenceStartsAt: string;
+  calendarEventId: string;
 }
 
 export interface IMeetingAttendee {

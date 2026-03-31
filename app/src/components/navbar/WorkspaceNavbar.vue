@@ -35,8 +35,8 @@ const { currentMeeting } = useMeeting();
 const { liveScheduledMeeting } = useLiveScheduledMeeting();
 
 const showHuddleCard = computed(() => {
-  // Only show the joinable meeting card when you're NOT already in a meeting.
-  return Boolean(!currentMeeting.value && liveScheduledMeeting.value);
+  console.log(currentMeeting.value, liveScheduledMeeting.value);
+  return Boolean(!currentMeeting.value && liveScheduledMeeting.value?.meeting?.ongoing);
 });
 
 const huddlePeers = computed(() => {
@@ -45,7 +45,8 @@ const huddlePeers = computed(() => {
 
 async function onJoinLiveScheduledMeeting() {
   const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
-  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt;
+  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceStartsAt;
+  console.log(calendarEventId, liveScheduledMeeting.value?.meeting);
   if (!calendarEventId || !occurrenceAt) return;
   router.push({
     name: "meeting-lobby",

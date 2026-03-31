@@ -65,4 +65,7 @@ export {
   BiFilter,
   OiFilter,
   BiTelephoneX,
+  BiBoxArrowUpRight,
+  OiLinkExternal,
+  HiExternalLink,
 } from "oh-vue-icons/icons";

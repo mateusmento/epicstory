@@ -2,17 +2,22 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
+  RelationId,
   UpdateDateColumn,
 } from 'typeorm';
 import { UUID } from 'crypto';
-import { patch } from 'src/core/objects';
+import { patch, patchEntity } from 'src/core/objects';
 import { Workspace } from 'src/workspace/domain/entities';
 import { User } from 'src/auth/domain/entities';
 import type { CalendarEventPayload } from '../types';
+import { pickBy } from 'lodash';
+import { ScheduledJob } from 'src/scheduling/entities';
 
 export type CalendarEventRecurrence =
   | { frequency: 'once'; until?: string }
@@ -87,11 +92,44 @@ export class CalendarEvent {
   @ManyToOne(() => User)
   createdBy: User;
 
+  @OneToOne(() => ScheduledJob, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'scheduled_job_id' })
+  scheduledJob?: ScheduledJob | null;
+
+  @RelationId((event: CalendarEvent) => event.scheduledJob)
+  scheduledJobId?: UUID | null;
+
   constructor(data: Partial<CalendarEvent>) {
     patch(this, data);
   }
 
   static create(data: Partial<CalendarEvent>) {
-    return new CalendarEvent(data);
+    return new CalendarEvent({
+      ...data,
+      isPublic: data.isPublic ?? true,
+      notifyEnabled: data.notifyEnabled ?? true,
+      notifyMinutesBefore: data.notifyMinutesBefore ?? 10,
+      recurrence: data.recurrence ?? { frequency: 'once' },
+    });
   }
+
+  hasParticipant(userId: number) {
+    if (!this.isPublic) {
+      const isParticipant =
+        this.createdById === userId ||
+        (this.participants ?? []).some((u) => u.id === userId);
+      if (!isParticipant) return false;
+    }
+    return true;
+  }
+}
+
+export function patchCalendarEvent(
+  event: CalendarEvent,
+  partial: Partial<CalendarEvent>,
+) {
+  partial = pickBy(partial, (v) => v != null);
+  patchEntity(event, partial);
+  if (partial.notifyMinutesBefore)
+    event.notifyMinutesBefore = Math.max(0, partial.notifyMinutesBefore ?? 0);
 }

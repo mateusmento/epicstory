@@ -3,11 +3,8 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import type { User } from "@/domain/auth";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
-import {
-  createMediaStreaming,
-  untilOpen,
-  type MediaStreaming,
-} from "@/domain/channels/utils/media-streaming";
+import { createMediaStreaming, untilOpen } from "@/domain/channels/utils/media-streaming";
+import type { MediaStreaming } from "@/domain/channels/utils/media-streaming";
 import { useWorkspace } from "@/domain/workspace";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";

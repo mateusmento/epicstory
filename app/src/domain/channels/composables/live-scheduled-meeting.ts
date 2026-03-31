@@ -2,8 +2,8 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
 import { onMounted, onUnmounted, ref, watch } from "vue";
-import { MeetingApi, type LiveScheduledMeeting } from "../services/meeting.api";
-
+import { MeetingApi } from "../services/meeting.api";
+import type { LiveScheduledMeeting } from "../services/meeting.api";
 export function useLiveScheduledMeeting() {
   const { workspace } = useWorkspace();
   const sockets = useWebSockets();

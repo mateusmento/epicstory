@@ -10,8 +10,9 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { SCHEDULING_SCHEMA } from '../constants';
+import { ScheduledJobPayload, ScheduledJobType } from '../types/payload';
 
-export type Recurrence =
+export type ScheduledJobRecurrence =
   | {
       frequency: 'once';
     }
@@ -34,11 +35,11 @@ export class ScheduledJob {
   @PrimaryGeneratedColumn('uuid')
   id: UUID;
 
-  @Column({ nullable: true })
-  type: string;
+  @Column()
+  type: ScheduledJobType;
 
   @Column({ type: 'jsonb' })
-  payload: any;
+  payload: ScheduledJobPayload;
 
   @Column({ type: 'timestamptz' })
   dueAt: Date;
@@ -47,9 +48,8 @@ export class ScheduledJob {
   notifyMinutesBefore: number;
 
   @Column({ type: 'jsonb' })
-  recurrence: Recurrence;
+  recurrence: ScheduledJobRecurrence;
 
-  // For recurring jobs: last occurrence timestamp that was successfully processed.
   @Column({ type: 'timestamptz', nullable: true })
   lastRunAt?: Date;
 
@@ -104,5 +104,12 @@ export class ScheduledJob {
       ...data,
       processed: false,
     });
+  }
+
+  hasElapsed() {
+    return (
+      this.recurrence.frequency === 'once' &&
+      this.dueAt.getTime() < new Date().getTime()
+    );
   }
 }

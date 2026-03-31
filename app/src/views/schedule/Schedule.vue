@@ -8,13 +8,8 @@ import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";
 import { CalendarEventApi } from "@/domain/calendar";
 import { useWorkspace } from "@/domain/workspace";
-import {
-  getLocalTimeZone,
-  parseDate,
-  toCalendarDate,
-  today as todayFn,
-  type DateValue,
-} from "@internationalized/date";
+import { getLocalTimeZone, parseDate, toCalendarDate, today as todayFn } from "@internationalized/date";
+import type { DateValue } from "@internationalized/date";
 import {
   addDays,
   endOfWeek as dateFnsEndOfWeek,
@@ -31,6 +26,7 @@ import {
 } from "date-fns";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import type { CalendarEventDto } from "@/domain/calendar/api/calendar-event.api";
 
 type ViewType = "month" | "week" | "day";
 
@@ -45,9 +41,9 @@ const today = () => todayFn(getLocalTimeZone());
 
 const currentView = ref<ViewType>("month");
 const currentDate = ref<DateValue>(today());
-const events = ref<any[]>([]);
+const events = ref<CalendarEventDto[]>([]);
 const showEventDialog = ref(false);
-const editingEvent = ref<any | null>(null);
+const editingEvent = ref<CalendarEventDto | null>(null);
 const eventTitle = ref("");
 const eventDescription = ref("");
 const eventDateTime = ref<DateValue>(today());
@@ -73,7 +69,7 @@ const eventRecurrenceByWeekday = ref<number[]>([new Date().getDay()]);
 const isCreating = ref(false);
 const isLoading = ref(false);
 const isResizing = ref(false);
-const resizingEvent = ref<any | null>(null);
+const resizingEvent = ref<CalendarEventDto | null>(null);
 const resizeType = ref<"start" | "end" | null>(null);
 const resizeStartY = ref(0);
 const resizeStartTime = ref(0);
@@ -145,7 +141,7 @@ function toggleEventWeekday(day: number, enabled: boolean) {
 }
 
 const eventsByDayKey = computed(() => {
-  const map = new Map<string, any[]>();
+  const map = new Map<string, CalendarEventDto[]>();
   for (const ev of events.value) {
     const key = format(new Date(ev.startsAt), "yyyy-MM-dd");
     const list = map.get(key) ?? [];
@@ -216,28 +212,7 @@ async function fetchEvents() {
       endDate: dateRange.value.end,
     });
 
-    events.value = fetched.map((ev: any) => {
-      const end = new Date(ev.endsAt);
-      const endTime = `${end.getHours().toString().padStart(2, "0")}:${end
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}`;
-
-      const payload = {
-        ...(ev.payload ?? {}),
-        endTime,
-        // backend already sets seriesId for expanded recurrences; keep a fallback for single events
-        seriesId: (ev.payload as any)?.seriesId ?? (typeof ev.id === "string" ? ev.id.split(":")[0] : ev.id),
-      };
-
-      return {
-        ...ev,
-        userId: user.value!.id,
-        processed: false,
-        lockId: "",
-        payload,
-      };
-    });
+    events.value = fetched;
   } catch (error) {
     console.error("Failed to fetch events:", error);
   } finally {
@@ -246,7 +221,7 @@ async function fetchEvents() {
 }
 
 // Get events that start at a specific hour (for rendering)
-function getEventsStartingAtHour(date: Date, hour: number): any[] {
+function getEventsStartingAtHour(date: Date, hour: number): CalendarEventDto[] {
   return events.value.filter((event) => {
     const eventDate = new Date(event.startsAt);
     const eventHour = getHours(eventDate);
@@ -255,26 +230,22 @@ function getEventsStartingAtHour(date: Date, hour: number): any[] {
 }
 
 // Get event end time (from payload or calculate default 1 hour duration)
-function getEventEndTime(event: any): Date {
+function getEventEndTime(event: CalendarEventDto): Date {
   const startTime = new Date(event.startsAt);
-  if (event.payload.endTime) {
-    const [hours, minutes] = event.payload.endTime.split(":").map(Number);
-    const endTime = new Date(startTime);
-    endTime.setHours(hours, minutes, 0, 0);
-    return endTime;
-  }
-  // Default to 1 hour if no end time specified
+  const endsAt = new Date(event.endsAt);
+  if (!Number.isNaN(endsAt.getTime())) return endsAt;
+  // Fallback (shouldn't happen): default to 1 hour if endsAt is missing/invalid.
   return new Date(startTime.getTime() + 60 * 60 * 1000);
 }
 
 // Calculate event top offset in pixels (for sub-hour positioning)
-function getEventTopOffset(event: any): number {
+function getEventTopOffset(event: CalendarEventDto): number {
   const startTime = new Date(event.startsAt);
   const minutes = startTime.getMinutes();
   return minutes * PX_PER_MINUTE;
 }
 
-function getEventDurationMinutes(event: any): number {
+function getEventDurationMinutes(event: CalendarEventDto): number {
   const startTime = new Date(event.startsAt);
   const endTime = getEventEndTime(event);
   const durationMs = endTime.getTime() - startTime.getTime();
@@ -283,11 +254,11 @@ function getEventDurationMinutes(event: any): number {
   return Math.max(1, minutes);
 }
 
-function getEventHeightPx(event: any, minPx: number) {
+function getEventHeightPx(event: CalendarEventDto, minPx: number) {
   return Math.max(minPx, getEventDurationMinutes(event) * PX_PER_MINUTE);
 }
 
-function getEventLayoutMode(event: any) {
+function getEventLayoutMode(event: CalendarEventDto) {
   // Use natural (non-clamped) height so we can render short events compactly.
   const h = getEventDurationMinutes(event) * PX_PER_MINUTE;
   if (h < 22) return "tiny" as const;
@@ -375,9 +346,9 @@ function handleTimeSlotClick(date: Date, hour: number, event?: MouseEvent) {
   openCreateDialog(dateValue, startTimeStr, endTimeStr);
 }
 
-function handleEventClick(event: any) {
+function handleEventClick(event: CalendarEventDto) {
   if (event.type === "meeting") {
-    const calendarEventId = (event.payload as any)?.seriesId ?? event.id?.split?.(":")?.[0] ?? event.id;
+    const calendarEventId = event.id;
     router.push({
       name: "meeting-lobby",
       params: { workspaceId: workspace.value.id, calendarEventId },
@@ -385,12 +356,11 @@ function handleEventClick(event: any) {
     });
     return;
   }
-  const seriesId = (event.payload as any)?.seriesId as string | undefined;
-  editingEvent.value = seriesId && seriesId !== event.id ? ({ ...event, id: seriesId } as any) : event;
+  editingEvent.value = event;
   const eventDate = new Date(event.startsAt);
   eventDateTime.value = toCalendarDate(parseDate(format(eventDate, "yyyy-MM-dd")));
   eventTime.value = format(eventDate, "HH:mm");
-  eventEndTime.value = event.payload.endTime || format(getEventEndTime(event), "HH:mm");
+  eventEndTime.value = format(getEventEndTime(event), "HH:mm");
   eventTitle.value = event.title || "";
   eventDescription.value = event.description || "";
   itemType.value = "event";
@@ -413,17 +383,14 @@ function handleEventClick(event: any) {
   showEventDialog.value = true;
 }
 
-function openEditMeetingFromCalendar(event: any) {
-  const seriesId =
-    (event.payload as any)?.seriesId ?? (typeof event.id === "string" ? event.id.split(":")[0] : event.id);
-
-  editingEvent.value = seriesId && seriesId !== event.id ? ({ ...event, id: seriesId } as any) : event;
+function openEditMeetingFromCalendar(event: CalendarEventDto) {
+  editingEvent.value = event;
   itemType.value = "meeting";
 
   const eventDate = new Date(event.startsAt);
   eventDateTime.value = toCalendarDate(parseDate(format(eventDate, "yyyy-MM-dd")));
   eventTime.value = format(eventDate, "HH:mm");
-  eventEndTime.value = event.payload?.endTime || format(getEventEndTime(event), "HH:mm");
+  eventEndTime.value = format(getEventEndTime(event), "HH:mm");
 
   eventTitle.value = event.title || "";
   eventDescription.value = event.description || "";
@@ -612,9 +579,8 @@ async function removeEvent() {
   await fetchEvents();
 }
 
-async function removeCalendarItem(event: any) {
-  const seriesId = (event.payload as any)?.seriesId as string | undefined;
-  await calendarEventApi.removeCalendarEvent(seriesId ?? event.id);
+async function removeCalendarItem(event: CalendarEventDto) {
+  await calendarEventApi.removeCalendarEvent(event.id);
   await fetchEvents();
 }
 
@@ -632,10 +598,9 @@ function closeDialog() {
 }
 
 // Resize handlers
-function handleResizeStart(event: any, type: "start" | "end", mouseEvent: MouseEvent) {
+function handleResizeStart(event: CalendarEventDto, type: "start" | "end", mouseEvent: MouseEvent) {
   if (event.type === "meeting") return;
-  const seriesId = (event.payload as any)?.seriesId as string | undefined;
-  if (seriesId && seriesId !== event.id) return; // recurring occurrence: series-only, no per-occurrence edits
+  if (event.occurrenceId !== event.id) return; // recurring occurrence: series-only, no per-occurrence edits
   mouseEvent.preventDefault();
   mouseEvent.stopPropagation();
   isResizing.value = true;
@@ -665,10 +630,6 @@ function handleResizeMove(mouseEvent: MouseEvent) {
       updatedEvent.startsAt = newTime.toISOString();
     } else {
       updatedEvent.endsAt = newTime.toISOString();
-      updatedEvent.payload = {
-        ...updatedEvent.payload,
-        endTime: format(newTime, "HH:mm"),
-      };
     }
     events.value[eventIndex] = updatedEvent;
   }
@@ -687,7 +648,6 @@ async function handleResizeEnd() {
     return;
   }
   const eventDate = new Date(event.startsAt);
-  const endTime = event.payload.endTime || format(getEventEndTime(event), "HH:mm");
 
   try {
     if (resizeType.value === "start") {
@@ -696,9 +656,7 @@ async function handleResizeEnd() {
         startsAt: eventDate,
       });
     } else {
-      const [eh, em] = endTime.split(":").map(Number);
-      const endsAt = new Date(eventDate);
-      endsAt.setHours(eh, em, 0, 0);
+      const endsAt = new Date(event.endsAt);
       await calendarEventApi.updateCalendarEvent({
         id: event.id,
         endsAt,
@@ -820,7 +778,11 @@ const dayHours = computed(() => {
                 </div>
 
                 <div class="mt-1 flex-1 min-h-0 overflow-hidden space-y-1">
-                  <Menu v-for="event in getPreviewEventsForDayCell(day)" :key="event.id" type="context-menu">
+                  <Menu
+                    v-for="event in getPreviewEventsForDayCell(day)"
+                    :key="event.occurrenceId"
+                    type="context-menu"
+                  >
                     <MenuTrigger as-child>
                       <div
                         @click.stop="handleEventClick(event)"
@@ -899,7 +861,11 @@ const dayHours = computed(() => {
               class="h-16 border-b cursor-pointer hover:bg-gray-50 transition-colors relative"
               @click="(e) => handleTimeSlotClick(day, hour, e)"
             >
-              <Menu v-for="event in getEventsStartingAtHour(day, hour)" :key="event.id" type="context-menu">
+              <Menu
+                v-for="event in getEventsStartingAtHour(day, hour)"
+                :key="event.occurrenceId"
+                type="context-menu"
+              >
                 <MenuTrigger as-child>
                   <div
                     @click.stop="handleEventClick(event)"
@@ -1015,7 +981,7 @@ const dayHours = computed(() => {
                   new Date(currentDate.year, currentDate.month - 1, currentDate.day),
                   hour,
                 )"
-                :key="event.id"
+                :key="event.occurrenceId"
                 type="context-menu"
               >
                 <MenuTrigger as-child>

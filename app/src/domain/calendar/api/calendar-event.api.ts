@@ -9,6 +9,7 @@ export type CalendarEventRecurrence =
 
 export type CalendarEventDto = {
   id: string;
+  occurrenceId: string;
   workspaceId: number;
   createdById: number;
   type: "event" | "meeting";
@@ -20,7 +21,7 @@ export type CalendarEventDto = {
   notifyEnabled: boolean;
   notifyMinutesBefore: number;
   recurrence: CalendarEventRecurrence;
-  payload: any;
+  payload: Record<string, any>;
 };
 
 export type CreateCalendarEventData = {
@@ -28,7 +29,7 @@ export type CreateCalendarEventData = {
   type: "event" | "meeting";
   title: string;
   description?: string;
-  payload?: any;
+  payload?: Record<string, any>;
   startsAt: Date;
   endsAt: Date;
   channelId?: number | null;
@@ -65,7 +66,7 @@ export class CalendarEventApi {
     type?: "event" | "meeting";
     title?: string;
     description?: string;
-    payload?: any;
+    payload?: Record<string, any>;
     startsAt?: Date;
     endsAt?: Date;
     isPublic?: boolean;
