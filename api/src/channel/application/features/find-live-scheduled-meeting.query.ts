@@ -100,7 +100,7 @@ export class FindLiveScheduledMeetingHandler
       .orderBy('m.startsAt', 'ASC')
       .getOne();
 
-    if (!meeting || !meeting.calendarEventId || !meeting.occurrenceStartsAt)
+    if (!meeting || !meeting.calendarEventId || !meeting.occurrenceAt)
       return null;
 
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);

@@ -45,7 +45,7 @@ const huddlePeers = computed(() => {
 
 async function onJoinLiveScheduledMeeting() {
   const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
-  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceStartsAt;
+  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt;
   console.log(calendarEventId, liveScheduledMeeting.value?.meeting);
   if (!calendarEventId || !occurrenceAt) return;
   router.push({

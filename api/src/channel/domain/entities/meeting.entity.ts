@@ -46,7 +46,7 @@ export class Meeting {
   calendarEventId?: string | null;
 
   @Column({ type: 'timestamptz', nullable: true })
-  occurrenceStartsAt?: Date | null;
+  occurrenceAt?: Date | null;
 
   @Column({ type: 'timestamptz', default: () => 'now()' })
   startsAt: Date;
@@ -72,20 +72,20 @@ export class Meeting {
   static scheduledFromCalendar(data: {
     workspaceId: number;
     calendarEventId: string;
-    occurrenceStartsAt: Date;
+    occurrenceAt: Date;
     channelId?: number | null;
   }) {
     const meeting = new Meeting();
     meeting.ongoing = true;
     meeting.workspaceId = data.workspaceId;
     meeting.calendarEventId = data.calendarEventId;
-    meeting.occurrenceStartsAt = data.occurrenceStartsAt;
+    meeting.occurrenceAt = data.occurrenceAt;
     meeting.channel =
       data.channelId != null
         ? ({ id: data.channelId } as any satisfies Partial<Channel>)
         : null;
     meeting.attendees = [];
-    meeting.startsAt = data.occurrenceStartsAt;
+    meeting.startsAt = data.occurrenceAt;
     return meeting;
   }
 

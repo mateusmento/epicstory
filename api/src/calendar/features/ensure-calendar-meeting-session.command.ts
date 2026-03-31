@@ -67,7 +67,7 @@ export class EnsureCalendarMeetingSessionCommand
         Meeting.scheduledFromCalendar({
           workspaceId: event.workspaceId,
           calendarEventId: event.id as any,
-          occurrenceStartsAt: occurrenceAt,
+          occurrenceAt,
           channelId,
         }),
       );

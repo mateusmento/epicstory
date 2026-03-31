@@ -8,7 +8,7 @@ export interface IMeeting {
   ongoing: boolean;
   startsAt: string;
   endedAt: string | null;
-  occurrenceStartsAt: string;
+  occurrenceAt: string;
   calendarEventId: string;
 }
 

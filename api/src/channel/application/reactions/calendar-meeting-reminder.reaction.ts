@@ -61,7 +61,7 @@ export class CalendarMeetingReminderReaction {
         Meeting.scheduledFromCalendar({
           workspaceId: event.workspaceId,
           calendarEventId: event.id,
-          occurrenceStartsAt: occurrenceAt,
+          occurrenceAt,
           channelId,
         }),
       );

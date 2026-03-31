@@ -12,13 +12,13 @@ export class MeetingRepository extends Repository<Meeting> {
 
   findMeeting(
     calendarEventId: string,
-    occurrenceStartsAt: Date,
+    occurrenceAt: Date,
     relations?: FindOptionsRelations<Meeting>,
   ) {
     return this.findOne({
       where: {
         calendarEventId,
-        occurrenceStartsAt,
+        occurrenceAt,
       },
       relations,
     });

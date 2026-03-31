@@ -56,7 +56,7 @@ export class GetCalendarMeetingLobbyHandler
     const meeting = await meetingRepo.findOne({
       where: {
         calendarEventId: event.id as any,
-        occurrenceStartsAt: query.occurrenceAt as any,
+        occurrenceAt: query.occurrenceAt as any,
       } as any,
       relations: { attendees: { user: true } } as any,
     });
