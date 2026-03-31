@@ -14,7 +14,7 @@ import { Message } from './message.entity';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import { Team, Workspace } from 'src/workspace/domain/entities';
 
-export type ChannelType = 'direct' | 'multi-direct' | 'group';
+export type ChannelType = 'direct' | 'multi-direct' | 'group' | 'meeting';
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'channel' })
 export class Channel {

@@ -40,12 +40,12 @@ export class MeetingService {
     return this.meetingRepo.save(meeting);
   }
 
-  async startMeeting(channelId: number, attendee: MeetingAttendee) {
+  async startMeeting(channelId: number, attendee?: MeetingAttendee) {
     const channel = await this.channelRepo.findChannel(channelId);
     if (!channel) throw new Error('Channel not found');
     const meeting = Meeting.ongoing(channelId, channel.workspaceId);
     meeting.channel = channel as any;
-    meeting.addAttendee(attendee);
+    if (attendee) meeting.addAttendee(attendee);
     return await this.meetingRepo.save(meeting);
   }
 
