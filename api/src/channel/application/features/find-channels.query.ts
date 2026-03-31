@@ -36,7 +36,6 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
       .createQueryBuilder('c')
       .innerJoin('c.peers', 'peer', 'peer.id = :userId', { userId: issuer.id })
       .leftJoinAndSelect('c.peers', 'p')
-      // Map the *ongoing* meeting (if any) into the virtual `c.meeting` field.
       .leftJoinAndMapOne(
         'c.meeting',
         Meeting,

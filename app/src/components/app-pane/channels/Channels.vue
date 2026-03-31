@@ -5,6 +5,10 @@ import {
   DialogContent,
   DialogTrigger,
   Separator,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -40,8 +44,13 @@ const { currentMeeting, joinMeeting } = useMeeting();
 
     <Separator />
 
-    <div class="flex:col flex-1">
-      <div class="flex:col-md m-2">
+    <Tabs default-value="messages" as-child>
+      <TabsList class="flex:row mt-2 w-auto mx-2">
+        <TabsTrigger value="all" class="text-xs">All</TabsTrigger>
+        <TabsTrigger value="messages" class="text-xs">Messages</TabsTrigger>
+      </TabsList>
+      <TabsContent value="all" as-child> </TabsContent>
+      <TabsContent value="messages" class="flex:col-md flex-1 m-2">
         <InboxMessage
           v-for="channel of channels"
           :key="channel.id"
@@ -52,26 +61,26 @@ const { currentMeeting, joinMeeting } = useMeeting();
         />
 
         <div class="w-fit mt-4 mx-auto text-xs text-secondary-foreground">You have no more messages</div>
-      </div>
 
-      <Dialog>
-        <DialogTrigger as-child>
-          <Button
-            legacy
-            legacy-variant="primary"
-            legacy-size="sm"
-            class="flex:row-md flex:center-y m-8 mt-auto ml-auto text-sm"
-          >
-            <IconChannel />
-            Create Channel
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogTitle>Create channel</DialogTitle>
-          <CreateChannel />
-        </DialogContent>
-      </Dialog>
-    </div>
+        <Dialog>
+          <DialogTrigger as-child>
+            <Button
+              legacy
+              legacy-variant="primary"
+              legacy-size="sm"
+              class="flex:row-md flex:center-y m-8 mt-auto ml-auto text-sm"
+            >
+              <IconChannel />
+              Create Channel
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogTitle>Create channel</DialogTitle>
+            <CreateChannel />
+          </DialogContent>
+        </Dialog>
+      </TabsContent>
+    </Tabs>
   </div>
 </template>
 
