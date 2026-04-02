@@ -2,16 +2,18 @@ import { BadRequestException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import { IsDate, IsString } from 'class-validator';
+import { UUID } from 'crypto';
+import { isFuture } from 'date-fns';
+import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { patch } from 'src/core/objects';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { DataSource } from 'typeorm';
 import { CalendarEvent } from '../entities';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
 
 export class GetCalendarMeetingLobby {
   @IsString()
-  calendarEventId: string;
+  calendarEventId: UUID;
 
   @Type(() => Date)
   @IsDate()
@@ -38,7 +40,7 @@ export class GetCalendarMeetingLobbyHandler
     const meetingRepo = this.dataSource.getRepository(Meeting);
 
     const event = await calendarRepo.findOne({
-      where: { id: query.calendarEventId as any },
+      where: { id: query.calendarEventId },
       relations: { participants: true },
     });
     if (!event) throw new BadRequestException('Calendar event not found');
@@ -56,24 +58,16 @@ export class GetCalendarMeetingLobbyHandler
     const meeting = await meetingRepo.findOne({
       where: {
         calendarEventId: event.id as any,
-        occurrenceAt: query.occurrenceAt as any,
+        scheduledStartsAt: query.occurrenceAt as any,
       } as any,
       relations: { attendees: { user: true } } as any,
     });
 
     return {
-      calendarEvent: {
-        id: event.id,
-        workspaceId: event.workspaceId,
-        channelId,
-        title: event.title,
-        description: event.description,
-        isPublic: event.isPublic,
-        notifyMinutesBefore: event.notifyMinutesBefore,
-        participants: event.participants ?? [],
-      },
+      calendarEvent: event,
       occurrenceAt: query.occurrenceAt,
       meeting,
+      joinable: !isFuture(query.occurrenceAt),
     };
   }
 }

@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
+import { addMilliseconds } from 'date-fns';
 import { Repository } from 'typeorm';
 import { ScheduledJob } from '../entities';
+import type { ScheduledJobType } from '../types/payload';
 
 @Injectable()
 export class ScheduledJobRepository extends Repository<ScheduledJob> {
@@ -25,7 +27,7 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
   ): Promise<[lockId: string, events: ScheduledJob[]]> {
     const lockId = randomUUID();
     const now = new Date();
-    const dueBy = new Date(now.getTime() + windowMs);
+    const dueBy = addMilliseconds(now, windowMs);
     console.log('dueBy', dueBy);
     const batchSize = 5000;
 
@@ -231,6 +233,39 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
           return event;
         }),
     ];
+  }
+
+  async findByTypeAndCalendarEventId(args: {
+    type: ScheduledJobType;
+    calendarEventId: string;
+    workspaceId: number;
+  }): Promise<ScheduledJob | null> {
+    const { type, calendarEventId, workspaceId } = args;
+    return this.createQueryBuilder('job')
+      .where('job.type = :type', { type })
+      .andWhere('job.workspaceId = :workspaceId', { workspaceId })
+      .andWhere(`job.payload ->> 'calendarEventId' = :calendarEventId`, {
+        calendarEventId,
+      })
+      .orderBy('job.createdAt', 'DESC')
+      .getOne();
+  }
+
+  async deleteByTypeAndCalendarEventId(args: {
+    type: ScheduledJobType;
+    calendarEventId: string;
+    workspaceId: number;
+  }): Promise<void> {
+    const { type, calendarEventId, workspaceId } = args;
+    await this.createQueryBuilder()
+      .delete()
+      .from(ScheduledJob)
+      .where('type = :type', { type })
+      .andWhere('workspaceId = :workspaceId', { workspaceId })
+      .andWhere(`payload ->> 'calendarEventId' = :calendarEventId`, {
+        calendarEventId,
+      })
+      .execute();
   }
 
   /**

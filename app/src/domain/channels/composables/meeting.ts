@@ -3,14 +3,14 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import type { User } from "@/domain/auth";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
-import { createMediaStreaming, untilOpen } from "@/domain/channels/utils/media-streaming";
 import type { MediaStreaming } from "@/domain/channels/utils/media-streaming";
+import { createMediaStreaming, untilOpen } from "@/domain/channels/utils/media-streaming";
 import { useWorkspace } from "@/domain/workspace";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
 import { ref, shallowRef } from "vue";
-import type { IChannel, IMeeting, IMeetingAttendee } from "../types";
-import { useChannel } from "./channel";
+import type { IMeeting, IMeetingAttendee } from "../types";
+import { useMeetingSocket } from "./meeting-socket";
 
 export type MeetingStreamingAttendee = {
   remoteId: string;
@@ -31,8 +31,9 @@ export function useMeeting() {
 const useMeetingStore = defineStore("meeting", () => {
   const sockets = useWebSockets();
   const { workspace } = useWorkspace();
-  const { openChannel } = useChannel();
+  const meetingSocket = useMeetingSocket();
 
+  const incomingMeeting = ref<IMeeting | null>(null);
   const currentMeeting = ref<IMeeting | null>();
   const streaming = shallowRef<MediaStreaming | null>();
 
@@ -46,26 +47,35 @@ const useMeetingStore = defineStore("meeting", () => {
   const meetingApi = useDependency(MeetingApi);
 
   async function subscribeMeetings() {
-    sockets.websocket.emit("subscribe-meetings", {
-      workspaceId: workspace.value.id,
-    });
+    meetingSocket.emitSubscribeMeetings(workspace.value.id);
+    meetingSocket.onIncomingMeeting(onIncomingMeeting);
+    meetingSocket.onMeetingEnded(onMeetingEnded);
   }
 
-  async function subscribeWorkspaceMeetings(workspaceId: number) {
-    sockets.websocket.emit("subscribe-workspace-meetings", { workspaceId });
-  }
-
-  async function joinMeeting(channel: IChannel) {
-    const camera = await (async () => {
-      try {
-        return await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "NotAllowedError") {
-          console.log("Joining meeting without camera permission", error);
-          return;
-        }
+  async function getCamera() {
+    try {
+      return await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        console.log("Joining meeting without camera permission", error);
+        return;
       }
-    })();
+    }
+  }
+
+  async function connectMeeting(
+    {
+      camera: existingCamera,
+    }: {
+      camera?: MediaStream;
+    },
+    meetingFactory: (data: {
+      remoteId: string;
+      isCameraOn: boolean;
+      isMicrophoneOn: boolean;
+    }) => Promise<IMeeting>,
+  ) {
+    const camera = existingCamera ?? (await getCamera());
 
     if (!camera) return;
 
@@ -97,15 +107,14 @@ const useMeetingStore = defineStore("meeting", () => {
     });
 
     const data = {
-      channelId: channel.id,
       remoteId: streaming.value.localId,
       isCameraOn: isCameraOn.value,
       isMicrophoneOn: isMicrophoneOn.value,
     };
 
-    const meeting = await new Promise<IMeeting>((res) => {
-      sockets.websocket.emit("join-meeting", data, (meeting: IMeeting) => res(meeting));
-    });
+    const meeting = await meetingFactory(data);
+
+    currentMeeting.value = meeting;
 
     subscribeMeetings();
 
@@ -118,80 +127,50 @@ const useMeetingStore = defineStore("meeting", () => {
     sockets.websocket.on("attendee-joined", attendeeJoined);
     sockets.websocket.on("camera-toggled", onCameraToggled);
     sockets.websocket.on("microphone-toggled", onMicrophoneToggled);
-    sockets.websocket.once(`current-meeting-ended`, onMeetingEnded);
+    sockets.websocket.once("current-meeting-ended", onMeetingEnded);
 
     sockets.websocket.listeners("attendee-joined");
 
-    openChannel(channel);
-    currentMeeting.value = meeting;
+    return meeting;
   }
 
-  async function joinMeetingSession(args: { meetingId: number; workspaceId: number; camera?: MediaStream }) {
-    const camera = args.camera ?? (await (async () => {
-      try {
-        return await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "NotAllowedError") {
-          console.log("Joining meeting without camera permission", error);
-          return;
-        }
-      }
-    })());
-
-    if (!camera) return;
-
-    mycamera.value = camera;
-
-    const rtc = await untilOpen(
-      new Peer({
-        host: config.PEERJS_SERVER_HOST,
-        port: config.PEERJS_SERVER_PORT,
-        path: config.PEERJS_SERVER_PATH,
-      }),
-    );
-
-    localRemoteId.value = rtc.id;
-
-    streaming.value = createMediaStreaming({
-      rtc,
-      media: camera,
-      async mediaAdded(remoteId, cam) {
-        const [attendee] = await meetingApi.findAttendees({ remoteId, meetingId: args.meetingId });
-        attendees.value.push({
-          remoteId,
-          camera: cam,
-          user: attendee?.user,
-          isCameraOn: attendee?.isCameraOn ?? false,
-          isMicrophoneOn: attendee?.isMicrophoneOn ?? false,
-        });
-      },
+  async function joinMeeting({ meetingId, camera }: { meetingId: number; camera?: MediaStream }) {
+    return connectMeeting({ camera }, async (data) => {
+      return await new Promise<IMeeting>((res) => {
+        console.log("join-meeting", { ...data, meetingId });
+        sockets.websocket.emit("join-meeting", { ...data, meetingId }, (m: IMeeting) => res(m));
+      });
     });
+  }
 
-    const data = {
-      meetingId: args.meetingId,
-      remoteId: streaming.value.localId,
-      isCameraOn: isCameraOn.value,
-      isMicrophoneOn: isMicrophoneOn.value,
-    };
-
-    const meeting = await new Promise<IMeeting>((res) => {
-      sockets.websocket.emit("join-meeting-session", data, (m: IMeeting) => res(m));
+  function joinScheduledMeeting({
+    calendarEventId,
+    occurrenceAt,
+    camera,
+  }: {
+    calendarEventId: string;
+    occurrenceAt: Date;
+    camera?: MediaStream;
+  }) {
+    return connectMeeting({ camera }, async (data) => {
+      const joinData = {
+        ...data,
+        calendarEventId,
+        occurrenceAt: occurrenceAt ? occurrenceAt.toISOString() : undefined,
+      };
+      return await new Promise<IMeeting>((res) => {
+        sockets.websocket.emit("join-scheduled-meeting", joinData, (m: IMeeting) => res(m));
+      });
     });
+  }
 
-    subscribeWorkspaceMeetings(args.workspaceId);
-
-    sockets.websocket.off("attendee-left", attendeeLeft);
-    sockets.websocket.off("attendee-joined", attendeeJoined);
-    sockets.websocket.off("camera-toggled", onCameraToggled);
-    sockets.websocket.off("microphone-toggled", onMicrophoneToggled);
-
-    sockets.websocket.on("attendee-left", attendeeLeft);
-    sockets.websocket.on("attendee-joined", attendeeJoined);
-    sockets.websocket.on("camera-toggled", onCameraToggled);
-    sockets.websocket.on("microphone-toggled", onMicrophoneToggled);
-    sockets.websocket.once(`current-meeting-ended`, onMeetingEnded);
-
-    currentMeeting.value = meeting;
+  function joinChannelMeeting({ channelId, camera }: { channelId: number; camera?: MediaStream }) {
+    return connectMeeting({ camera }, async (data) => {
+      const joinData = { ...data, channelId };
+      return await new Promise<IMeeting>((res) => {
+        sockets.websocket.emit("join-channel-meeting", joinData, (m: IMeeting) => res(m));
+      });
+    });
   }
 
   function attendeeJoined({ attendee }: { attendee: IMeetingAttendee }) {
@@ -233,8 +212,25 @@ const useMeetingStore = defineStore("meeting", () => {
     }
   }
 
+  function onIncomingMeeting({ meeting }: { meeting: IMeeting }) {
+    incomingMeeting.value = meeting;
+  }
+
   function onMeetingEnded({ meetingId }: { meetingId: number }) {
-    closeMeeting();
+    if (incomingMeeting.value?.id === meetingId) incomingMeeting.value = null;
+    if (currentMeeting.value?.id === meetingId) {
+      closeMeeting();
+    }
+  }
+
+  async function acceptIncomingMeeting() {
+    if (!incomingMeeting.value) return;
+    await joinMeeting({ meetingId: incomingMeeting.value.id });
+    incomingMeeting.value = null;
+  }
+
+  function rejectIncomingMeeting() {
+    incomingMeeting.value = null;
   }
 
   async function leaveMeeting() {
@@ -290,13 +286,17 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   return {
+    incomingMeeting,
     currentMeeting,
     mycamera,
     attendees,
     isCameraOn,
     isMicrophoneOn,
     joinMeeting,
-    joinMeetingSession,
+    joinScheduledMeeting,
+    joinChannelMeeting,
+    acceptIncomingMeeting,
+    rejectIncomingMeeting,
     leaveMeeting,
     endMeeting,
     stopCamera,

@@ -11,7 +11,7 @@ const route = useRoute();
 const router = useRouter();
 
 const calendarEventApi = useDependency(CalendarEventApi);
-const { joinMeetingSession, isCameraOn, isMicrophoneOn } = useMeeting();
+const { joinScheduledMeeting, isCameraOn, isMicrophoneOn } = useMeeting();
 
 const workspaceId = computed(() => Number(route.params.workspaceId));
 const calendarEventId = computed(() => String(route.params.calendarEventId));
@@ -84,19 +84,13 @@ function toggleMic() {
 
 async function join() {
   if (!occurrenceAt.value) return;
-  let meetingId = lobby.value?.meeting?.id as number | undefined;
-  if (!meetingId) {
-    const res = await calendarEventApi.ensureMeetingSession(calendarEventId.value, occurrenceAt.value);
-    meetingId = res?.meetingId;
-    await fetchOccurrence();
-  }
-  if (!meetingId) return;
-
-  await joinMeetingSession({
-    meetingId,
-    workspaceId: workspaceId.value,
+  const meeting = await joinScheduledMeeting({
+    calendarEventId: calendarEventId.value,
+    occurrenceAt: occurrenceAt.value,
     camera: previewStream.value ?? undefined,
   });
+  const meetingId = meeting?.id;
+  if (!meetingId) return;
 
   // Preview is now owned by meeting streaming, don't stop tracks here.
   previewStream.value = null;
@@ -161,11 +155,13 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
 
           <div class="flex-1" />
 
-          <Button size="sm" @click="join" :disabled="isLoading || !occurrenceAt"> Join meeting </Button>
+          <Button size="sm" @click="join" :disabled="isLoading || !occurrenceAt || !lobby?.joinable">
+            Join meeting
+          </Button>
         </div>
 
-        <div v-if="!lobby?.meeting?.id" class="mt-2 text-xs text-muted-foreground">
-          Session will be created when the reminder fires, or when you click Join.
+        <div v-if="!lobby?.joinable" class="mt-2 text-xs text-muted-foreground">
+          Meeting will be joinable at the scheduled start time.
         </div>
       </div>
 

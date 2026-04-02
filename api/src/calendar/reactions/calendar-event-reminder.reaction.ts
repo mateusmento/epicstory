@@ -9,6 +9,7 @@ import {
 } from 'src/scheduling/types';
 import { DataSource } from 'typeorm';
 import { CalendarEvent } from '../entities';
+import { addMinutes } from 'date-fns';
 
 @Injectable()
 export class CalendarEventReminderReaction {
@@ -22,12 +23,17 @@ export class CalendarEventReminderReaction {
   })
   async handle(job: ScheduledJobWithPayload<CalendarEventReminderPayload>) {
     const { calendarEventId } = job.payload;
-    const occurrenceAt = job.occurrenceAt;
+    const reminderAt = job.occurrenceAt;
+    if (!reminderAt) return;
+    const occurrenceStartsAt = addMinutes(
+      reminderAt,
+      Math.max(0, job.notifyMinutesBefore ?? 0),
+    );
 
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);
 
     const event = await calendarRepo.findOne({
-      where: { id: calendarEventId as any },
+      where: { id: calendarEventId },
       relations: { participants: true },
     });
     if (!event) return;
@@ -42,7 +48,7 @@ export class CalendarEventReminderReaction {
         workspaceId: event.workspaceId,
         payload: {
           calendarEventId: event.id,
-          occurrenceAt,
+          occurrenceAt: occurrenceStartsAt,
           title: event.title,
         },
       });

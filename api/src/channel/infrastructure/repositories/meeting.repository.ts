@@ -1,6 +1,12 @@
 import { InjectRepository } from '@nestjs/typeorm';
+import { UUID } from 'crypto';
 import { Meeting } from 'src/channel/domain';
-import { FindOptionsRelations, Repository } from 'typeorm';
+import {
+  FindOptionsRelations,
+  FindOptionsWhere,
+  LessThanOrEqual,
+  Repository,
+} from 'typeorm';
 
 export class MeetingRepository extends Repository<Meeting> {
   constructor(
@@ -11,7 +17,7 @@ export class MeetingRepository extends Repository<Meeting> {
   }
 
   findMeeting(
-    calendarEventId: string,
+    calendarEventId: UUID,
     occurrenceAt: Date,
     relations?: FindOptionsRelations<Meeting>,
   ) {
@@ -19,6 +25,34 @@ export class MeetingRepository extends Repository<Meeting> {
       where: {
         calendarEventId,
         occurrenceAt,
+      },
+      relations,
+    });
+  }
+
+  findScheduled(
+    calendarEventId: UUID,
+    scheduledStartsAt: Date,
+    relations?: FindOptionsRelations<Meeting>,
+  ) {
+    return this.findOne({
+      where: {
+        calendarEventId,
+        scheduledStartsAt,
+      },
+      relations,
+    });
+  }
+
+  findOngoing(
+    filter: FindOptionsWhere<Meeting>,
+    relations?: FindOptionsRelations<Meeting>,
+  ) {
+    return this.findOne({
+      where: {
+        ...filter,
+        ongoing: true,
+        startedAt: LessThanOrEqual(new Date()),
       },
       relations,
     });

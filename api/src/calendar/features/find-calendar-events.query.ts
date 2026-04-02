@@ -1,6 +1,11 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Transform, Type } from 'class-transformer';
 import { IsDate, IsNumber, IsOptional } from 'class-validator';
+import {
+  addMilliseconds,
+  compareAsc,
+  differenceInMilliseconds,
+} from 'date-fns';
 import { patch } from 'src/core/objects';
 import { CalendarEventRepository } from '../repositories';
 import { expandRecurringEvent } from '../utils/calendar-event-recurrence';
@@ -78,7 +83,7 @@ export class FindCalendarEventsHandler
         });
         const durationMs = Math.max(
           0,
-          new Date(event.endsAt).getTime() - new Date(event.startsAt).getTime(),
+          differenceInMilliseconds(event.endsAt, event.startsAt),
         );
         return { event, recurrence, occurrenceAts, durationMs };
       })
@@ -91,11 +96,11 @@ export class FindCalendarEventsHandler
         return occurrenceAts.map((occurrenceAt) => ({
           ...event,
           startsAt: occurrenceAt,
-          endsAt: new Date(occurrenceAt.getTime() + durationMs),
+          endsAt: addMilliseconds(occurrenceAt, durationMs),
           occurrenceId: `${event.id}:${occurrenceAt.toISOString()}`,
         }));
       })
-      .sort((a: any, b: any) => a.startsAt.getTime() - b.startsAt.getTime());
+      .sort((a: any, b: any) => compareAsc(a.startsAt, b.startsAt));
 
     return expanded;
   }

@@ -136,12 +136,24 @@ export class CreateCalendarEventCommand
       }),
     );
 
-    if (event.notifyEnabled) await this.createReminder(event);
+    if (event.type === 'meeting') {
+      await this.ensureMeetingJobs(event);
+    } else if (event.notifyEnabled) {
+      await this.ensureReminderJob(event);
+    }
 
     return event;
   }
 
-  async createReminder(event: CalendarEvent) {
+  private async ensureMeetingJobs(event: CalendarEvent) {
+    // For meetings we want:
+    // - meeting_start: always (materializes + starts the meeting and emits incoming-meeting)
+    // - meeting_reminder: only if notifyEnabled (creates a non-ongoing meeting + sends notification)
+    await this.ensureMeetingStartJob(event);
+    if (event.notifyEnabled) await this.ensureMeetingReminderJob(event);
+  }
+
+  private async ensureReminderJob(event: CalendarEvent) {
     const notifyMinutesBefore = Math.max(0, event.notifyMinutesBefore ?? 0);
     const mapped = mapCalendarRecurrenceToJob({
       startsAt: event.startsAt,
@@ -161,11 +173,41 @@ export class CreateCalendarEventCommand
         dueAt: mapped.dueAt,
         notifyMinutesBefore,
         recurrence: mapped.recurrence,
-        payload: buildScheduledJobPayload(type, { calendarEventId: event.id }),
+        payload: buildScheduledJobPayload(type, {
+          calendarEventId: event.id,
+          ...event.payload,
+        }),
       }),
     );
 
     event.scheduledJob = job;
     await this.calendarEventRepo.save(event);
+  }
+
+  private async ensureMeetingReminderJob(event: CalendarEvent) {
+    // meeting_reminder uses notifyMinutesBefore; keep event.scheduledJob pointing to this reminder job.
+    await this.ensureReminderJob(event);
+  }
+
+  private async ensureMeetingStartJob(event: CalendarEvent) {
+    const mapped = mapCalendarRecurrenceToJob({
+      startsAt: event.startsAt,
+      notifyMinutesBefore: 0,
+      recurrence: event.recurrence,
+    });
+
+    await this.scheduledJobRepo.save(
+      ScheduledJob.create({
+        type: ScheduledJobTypes.meeting_start,
+        workspaceId: event.workspaceId,
+        dueAt: mapped.dueAt,
+        notifyMinutesBefore: 0,
+        recurrence: mapped.recurrence,
+        payload: buildScheduledJobPayload(ScheduledJobTypes.meeting_start, {
+          calendarEventId: event.id,
+          ...event.payload,
+        }),
+      }),
+    );
   }
 }

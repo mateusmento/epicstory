@@ -30,12 +30,11 @@ const { workspace } = useWorkspace();
 const { user, signOut } = useAuth();
 const router = useRouter();
 
-const { currentMeeting } = useMeeting();
+const { currentMeeting, incomingMeeting } = useMeeting();
 
 const { liveScheduledMeeting } = useLiveScheduledMeeting();
 
 const showHuddleCard = computed(() => {
-  console.log(currentMeeting.value, liveScheduledMeeting.value);
   return Boolean(!currentMeeting.value && liveScheduledMeeting.value?.meeting?.ongoing);
 });
 
@@ -46,7 +45,6 @@ const huddlePeers = computed(() => {
 async function onJoinLiveScheduledMeeting() {
   const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
   const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt;
-  console.log(calendarEventId, liveScheduledMeeting.value?.meeting);
   if (!calendarEventId || !occurrenceAt) return;
   router.push({
     name: "meeting-lobby",
@@ -136,7 +134,7 @@ async function onJoinLiveScheduledMeeting() {
 
     <div class="flex-1"></div>
 
-    <div v-if="currentMeeting" class="px-2 pb-2">
+    <div v-if="currentMeeting || incomingMeeting" class="px-2 pb-2">
       <CurrentMeetingControlsCard />
     </div>
 

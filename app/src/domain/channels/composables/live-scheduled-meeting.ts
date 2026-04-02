@@ -4,16 +4,19 @@ import { useWorkspace } from "@/domain/workspace";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { MeetingApi } from "../services/meeting.api";
 import type { LiveScheduledMeeting } from "../services/meeting.api";
+import { useMeetingSocket } from "./meeting-socket";
+
 export function useLiveScheduledMeeting() {
   const { workspace } = useWorkspace();
   const sockets = useWebSockets();
+  const meetingSocket = useMeetingSocket();
   const meetingApi = useDependency(MeetingApi);
 
   const liveScheduledMeeting = ref<LiveScheduledMeeting | null>(null);
   const isLoadingLiveScheduledMeeting = ref(false);
 
-  function subscribeWorkspaceMeetings(workspaceId: number) {
-    sockets.websocket?.emit("subscribe-workspace-meetings", { workspaceId });
+  function subscribeMeetings(workspaceId: number) {
+    meetingSocket.emitSubscribeMeetings(workspaceId);
   }
 
   async function refreshLiveScheduledMeeting() {
@@ -41,8 +44,8 @@ export function useLiveScheduledMeeting() {
   });
 
   onUnmounted(() => {
-    sockets.websocket?.off("meeting-session-started", onMeetingSessionChanged);
-    sockets.websocket?.off("meeting-session-ended", onMeetingSessionChanged);
+    meetingSocket.offIncomingMeeting(onMeetingSessionChanged);
+    meetingSocket.offMeetingEnded(onMeetingSessionChanged);
     sockets.websocket?.off("connect", onSocketConnected);
   });
 
@@ -50,14 +53,14 @@ export function useLiveScheduledMeeting() {
     () => workspace.value?.id,
     async () => {
       const workspaceId = workspace.value?.id;
-      if (workspaceId) subscribeWorkspaceMeetings(workspaceId);
+      if (workspaceId) subscribeMeetings(workspaceId);
       await refreshLiveScheduledMeeting();
 
-      sockets.websocket?.off("meeting-session-started", onMeetingSessionChanged);
-      sockets.websocket?.on("meeting-session-started", onMeetingSessionChanged);
+      meetingSocket.offIncomingMeeting(onMeetingSessionChanged);
+      meetingSocket.onIncomingMeeting(onMeetingSessionChanged);
 
-      sockets.websocket?.off("meeting-session-ended", onMeetingSessionChanged);
-      sockets.websocket?.on("meeting-session-ended", onMeetingSessionChanged);
+      meetingSocket.offMeetingEnded(onMeetingSessionChanged);
+      meetingSocket.onMeetingEnded(onMeetingSessionChanged);
 
       sockets.websocket?.off("connect", onSocketConnected);
       sockets.websocket?.on("connect", onSocketConnected);

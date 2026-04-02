@@ -53,7 +53,7 @@ export class CalendarEventController {
   @Get(':id/lobby')
   @UseGuards(JwtAuthGuard)
   getMeetingLobby(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUUIDPipe) id: UUID,
     @Query('occurrenceAt') occurrenceAt: string,
     @Auth() issuer: Issuer,
   ) {
@@ -97,7 +97,7 @@ export class CalendarEventController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   removeScheduledEvent(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', ParseUUIDPipe) id: UUID,
     @Auth() issuer: Issuer,
   ) {
     return this.commandBus.execute(

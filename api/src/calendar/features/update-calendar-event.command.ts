@@ -118,6 +118,26 @@ export class UpdateCalendarEventCommand
         })
       : null;
 
+    if (saved.type === 'meeting') {
+      // Meetings have two jobs:
+      // - meeting_start: always
+      // - meeting_reminder: only if notifyEnabled (and it's the one linked by scheduledJobId)
+      await this.upsertMeetingStartJob(saved, scheduleChanged);
+
+      if (!saved.notifyEnabled) {
+        if (existing?.id) {
+          await this.scheduledJobRepo.delete({ id: existing.id });
+          saved.scheduledJob = null;
+          await this.calendarEventRepo.save(saved);
+        }
+      } else {
+        await this.updateScheduledJob(saved, existing, scheduleChanged);
+      }
+
+      return saved;
+    }
+
+    // Non-meeting events: single reminder job.
     if (!saved.notifyEnabled) {
       if (existing?.id) {
         await this.scheduledJobRepo.delete({ id: existing.id });
@@ -125,9 +145,9 @@ export class UpdateCalendarEventCommand
         await this.calendarEventRepo.save(saved);
       }
       return saved;
-    } else {
-      this.updateScheduledJob(saved, existing, scheduleChanged);
     }
+
+    await this.updateScheduledJob(saved, existing, scheduleChanged);
 
     return saved;
   }
@@ -166,6 +186,7 @@ export class UpdateCalendarEventCommand
           recurrence: mapped.recurrence,
           payload: buildScheduledJobPayload(desiredType, {
             calendarEventId: event.id,
+            ...(event.payload as any),
           }),
         }),
       );
@@ -173,5 +194,47 @@ export class UpdateCalendarEventCommand
       event.scheduledJob = created;
       await this.calendarEventRepo.save(event);
     }
+  }
+
+  private async upsertMeetingStartJob(
+    event: CalendarEvent,
+    scheduleChanged: boolean,
+  ) {
+    const mapped = mapCalendarRecurrenceToJob({
+      startsAt: event.startsAt,
+      notifyMinutesBefore: 0,
+      recurrence: event.recurrence,
+    });
+
+    const existingStart =
+      await this.scheduledJobRepo.findByTypeAndCalendarEventId({
+        type: ScheduledJobTypes.meeting_start,
+        calendarEventId: event.id as any,
+        workspaceId: event.workspaceId,
+      });
+
+    if (existingStart) {
+      existingStart.dueAt = mapped.dueAt;
+      existingStart.notifyMinutesBefore = 0;
+      existingStart.recurrence = mapped.recurrence;
+      existingStart.processed = false;
+      if (scheduleChanged) existingStart.lastRunAt = null;
+      await this.scheduledJobRepo.save(existingStart);
+      return;
+    }
+
+    await this.scheduledJobRepo.save(
+      ScheduledJob.create({
+        type: ScheduledJobTypes.meeting_start,
+        workspaceId: event.workspaceId,
+        dueAt: mapped.dueAt,
+        notifyMinutesBefore: 0,
+        recurrence: mapped.recurrence,
+        payload: buildScheduledJobPayload(ScheduledJobTypes.meeting_start, {
+          calendarEventId: event.id,
+          ...(event.payload as any),
+        }),
+      }),
+    );
   }
 }

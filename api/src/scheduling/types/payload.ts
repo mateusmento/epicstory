@@ -1,8 +1,15 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
-import { patch } from 'src/core/objects';
-import { ScheduledJob } from '../entities';
+import {
+  IsBoolean,
+  IsDate,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 import { UUID } from 'crypto';
+import { patch } from 'src/core/objects';
 import { ScheduledJobTypes } from '../constants';
+import { ScheduledJob } from '../entities';
 
 export type ScheduledJobWithPayload<T> = ScheduledJob & {
   payload: T;
@@ -12,6 +19,7 @@ export type ScheduledJobType = keyof typeof ScheduledJobTypes;
 
 export type ScheduledJobPayload =
   | MeetingReminderPayload
+  | MeetingStartPayload
   | CalendarEventReminderPayload
   | DueIssueReminderPayload;
 
@@ -28,17 +36,44 @@ export class MeetingReminderPayload {
   @IsBoolean()
   isPublic: boolean;
 
+  @IsOptional()
+  @IsDate()
+  scheduledStartsAt?: Date;
+
+  @IsOptional()
+  @IsDate()
+  scheduledEndsAt?: Date;
+
   constructor(data: Partial<MeetingReminderPayload>) {
     patch(this, data);
     this.type = 'meeting_reminder';
   }
 }
 
+export class MeetingStartPayload {
+  type: 'meeting_start';
+
+  @IsUUID()
+  calendarEventId: UUID;
+
+  @IsOptional()
+  @IsNumber()
+  channelId?: number;
+
+  @IsBoolean()
+  isPublic: boolean;
+
+  constructor(data: Partial<MeetingStartPayload>) {
+    patch(this, data);
+    this.type = 'meeting_start';
+  }
+}
+
 export class CalendarEventReminderPayload {
   type: 'calendar_event_reminder';
 
-  @IsNotEmpty()
-  calendarEventId: string;
+  @IsUUID()
+  calendarEventId: UUID;
 
   constructor(data: Partial<CalendarEventReminderPayload>) {
     patch(this, data);
@@ -65,6 +100,8 @@ export function buildScheduledJobPayload(
   switch (type) {
     case 'meeting_reminder':
       return new MeetingReminderPayload(payload);
+    case 'meeting_start':
+      return new MeetingStartPayload(payload);
     case 'calendar_event_reminder':
       return new CalendarEventReminderPayload(payload);
     case 'due_issue_reminder':

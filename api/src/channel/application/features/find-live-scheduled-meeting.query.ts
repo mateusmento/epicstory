@@ -1,9 +1,8 @@
-import { ForbiddenException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { Type } from 'class-transformer';
-import { IsDate, IsNumber, IsOptional } from 'class-validator';
+import { IsNumber } from 'class-validator';
 import { compact, take, uniqBy } from 'lodash';
 import { CalendarEvent } from 'src/calendar/entities';
+import { Meeting } from 'src/channel/domain';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import { DataSource } from 'typeorm';
@@ -11,7 +10,6 @@ import {
   ChannelRepository,
   MeetingRepository,
 } from '../../infrastructure/repositories';
-import { Meeting } from 'src/channel/domain';
 
 export type LiveScheduledMeetingDto = {
   meeting: Meeting;
@@ -30,9 +28,6 @@ export class FindLiveScheduledMeeting {
   @IsNumber()
   issuerId: number;
 
-  @Type(() => Date)
-  @IsDate()
-  @IsOptional()
   now?: Date;
 
   constructor(data: Partial<FindLiveScheduledMeeting>) {
@@ -54,22 +49,18 @@ export class FindLiveScheduledMeetingHandler
   async execute(
     query: FindLiveScheduledMeeting,
   ): Promise<LiveScheduledMeetingDto | null> {
+    const { workspaceId, issuerId } = query;
     const now = query.now ?? new Date();
 
-    const member = await this.workspaceRepo.findMember(
-      query.workspaceId,
-      query.issuerId,
-    );
-    if (!member) throw new ForbiddenException('Not a workspace member');
+    await this.workspaceRepo.requiresMembership(workspaceId, issuerId);
 
     const meeting = await this.meetingRepo
       .createQueryBuilder('m')
       // Scheduled-only: calendar-backed meeting session.
       .innerJoin(CalendarEvent, 'ev', 'ev.id = m.calendar_event_id')
-      .where('m.workspaceId = :workspaceId', { workspaceId: query.workspaceId })
-      .andWhere('m.ongoing = true')
-      .andWhere('m.startsAt <= :now', { now })
       .andWhere('m.calendar_event_id IS NOT NULL')
+      .andWhere('m.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('m.startedAt <= :now', { now })
       .andWhere(
         `(
           (
@@ -85,7 +76,7 @@ export class FindLiveScheduledMeetingHandler
           (
             m.channel_id IS NULL
             AND (
-              ev.createdById = :userId
+              ev.created_by_id = :userId
               OR EXISTS (
                 SELECT 1
                 FROM calendar.calendar_event_participants cep
@@ -97,15 +88,15 @@ export class FindLiveScheduledMeetingHandler
         )`,
         { userId: query.issuerId },
       )
-      .orderBy('m.startsAt', 'ASC')
+      .orderBy('m.startedAt', 'ASC')
       .getOne();
 
-    if (!meeting || !meeting.calendarEventId || !meeting.occurrenceAt)
+    if (!meeting || !meeting.calendarEventId || !meeting.scheduledStartsAt)
       return null;
 
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);
     const event = await calendarRepo.findOne({
-      where: { id: meeting.calendarEventId as any },
+      where: { id: meeting.calendarEventId },
       relations: { participants: true, createdBy: true } as any,
     });
     if (!event) return null;

@@ -25,6 +25,7 @@ import * as repositories from './infrastructure/repositories';
     ...Object.values(features),
     ...Object.values(reactions),
     ...Object.values(gateways),
+    { provide: 'MeetingGateway', useExisting: gateways.MeetingGateway },
   ].flat(),
   exports: [...Object.values(repositories), gateways.MeetingGateway],
 })

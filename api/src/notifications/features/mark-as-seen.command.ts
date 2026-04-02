@@ -1,11 +1,12 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsString } from 'class-validator';
+import { IsUUID } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { NotificationRepository } from '../repositories';
+import { UUID } from 'crypto';
 
 export class MarkAsSeen {
-  @IsString()
-  notificationId: string;
+  @IsUUID()
+  notificationId: UUID;
 
   constructor(data: Partial<MarkAsSeen>) {
     patch(this, data);

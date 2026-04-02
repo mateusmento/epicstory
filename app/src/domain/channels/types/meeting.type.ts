@@ -6,7 +6,7 @@ export interface IMeeting {
   workspaceId?: number;
   attendees: IMeetingAttendee[];
   ongoing: boolean;
-  startsAt: string;
+  startedAt: string;
   endedAt: string | null;
   occurrenceAt: string;
   calendarEventId: string;

@@ -2,7 +2,6 @@ import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import { IsDate, IsString } from 'class-validator';
-import { MeetingGateway } from 'src/channel/application/gateways';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { MeetingRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
@@ -11,6 +10,7 @@ import { DataSource } from 'typeorm';
 import { CalendarEventRepository } from '../repositories';
 import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
 import { MeetingCalendarEventPayload } from '../types';
+import { addMilliseconds, differenceInMilliseconds } from 'date-fns';
 
 export class EnsureCalendarMeetingSession {
   @IsString()
@@ -36,7 +36,6 @@ export class EnsureCalendarMeetingSessionCommand
     private workspaceRepo: WorkspaceRepository,
     private calendarRepo: CalendarEventRepository,
     private meetingRepo: MeetingRepository,
-    private meetingGateway: MeetingGateway,
   ) {}
 
   async execute(command: EnsureCalendarMeetingSession) {
@@ -60,18 +59,25 @@ export class EnsureCalendarMeetingSessionCommand
 
     const occurrenceAt = command.occurrenceAt;
 
-    let meeting = await this.meetingRepo.findMeeting(event.id, occurrenceAt);
+    const durationMs = differenceInMilliseconds(event.endsAt, event.startsAt);
+    const occurrenceEndsAt = addMilliseconds(occurrenceAt, durationMs);
+
+    let meeting = await this.meetingRepo.findScheduled(event.id, occurrenceAt);
 
     if (!meeting) {
-      meeting = await this.meetingRepo.save(
-        Meeting.scheduledFromCalendar({
-          workspaceId: event.workspaceId,
-          calendarEventId: event.id as any,
-          occurrenceAt,
-          channelId,
-        }),
-      );
-      this.meetingGateway.emitMeetingSessionStarted(meeting as any);
+      const created = Meeting.create({
+        workspaceId: event.workspaceId,
+        calendarEventId: event.id as any,
+        channelId,
+        scheduledStartsAt: occurrenceAt,
+        scheduledEndsAt: occurrenceEndsAt,
+        // Keep legacy column aligned for now; scheduledStartsAt is the real occurrence identity.
+        occurrenceAt,
+      });
+      // Ensure-session is a "create" step, never a "start" step.
+      created.ongoing = false;
+      created.startedAt = occurrenceAt;
+      meeting = await this.meetingRepo.save(created);
     }
 
     return { meetingId: meeting.id };

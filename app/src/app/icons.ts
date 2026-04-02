@@ -68,4 +68,7 @@ export {
   BiBoxArrowUpRight,
   OiLinkExternal,
   HiExternalLink,
+  FaTrash,
+  BiPencilSquare,
+  BiTelephone,
 } from "oh-vue-icons/icons";

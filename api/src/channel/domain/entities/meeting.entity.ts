@@ -1,4 +1,7 @@
-import { Channel } from './channel.entity';
+import { isFuture } from 'date-fns';
+import { CHANNEL_SCHEMA } from 'src/channel/constants';
+import { create, patch } from 'src/core/objects';
+import { Workspace } from 'src/workspace/domain/entities';
 import {
   Column,
   CreateDateColumn,
@@ -7,12 +10,11 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  RelationId,
   UpdateDateColumn,
 } from 'typeorm';
+import { Channel } from './channel.entity';
 import { MeetingAttendee } from './meeting-attendee.entity';
-import { CHANNEL_SCHEMA } from 'src/channel/constants';
-import { Workspace } from 'src/workspace/domain/entities';
+import { UUID } from 'crypto';
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'meetings' })
 export class Meeting {
@@ -25,6 +27,7 @@ export class Meeting {
 
   @Column()
   workspaceId: number;
+
   @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'workspace_id' })
   workspace: Workspace;
@@ -38,21 +41,27 @@ export class Meeting {
   @JoinColumn({ name: 'channel_id' })
   channel?: Channel | null;
 
-  @RelationId((m: Meeting) => m.channel)
+  @Column({ nullable: true })
   channelId?: number | null;
 
   // Calendar-backed meeting occurrence identity (series-only)
   @Column({ type: 'uuid', nullable: true })
-  calendarEventId?: string | null;
+  calendarEventId?: UUID | null;
 
   @Column({ type: 'timestamptz', nullable: true })
   occurrenceAt?: Date | null;
 
   @Column({ type: 'timestamptz', default: () => 'now()' })
-  startsAt: Date;
+  startedAt: Date;
 
   @Column({ type: 'timestamptz', nullable: true })
   endedAt?: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  scheduledStartsAt?: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  scheduledEndsAt?: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -60,18 +69,47 @@ export class Meeting {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  constructor(data: Partial<Meeting> = {}) {
+    patch(this, data);
+  }
+
+  static create(data: Partial<Meeting> = {}) {
+    const scheduledStartElapsed =
+      !!data.scheduledStartsAt && !isFuture(data.scheduledStartsAt);
+
+    const meeting = new Meeting({
+      workspaceId: data.workspaceId,
+      channel: create(Channel, { id: data.channelId }),
+      channelId: data.channelId,
+      attendees: [],
+      scheduledStartsAt: data.scheduledStartsAt,
+      scheduledEndsAt: data.scheduledEndsAt,
+      // if no scheduled start time or the scheduled start time has elapsed, the meeting is ongoing
+      ongoing: !data.scheduledStartsAt || scheduledStartElapsed,
+      // For scheduled meetings we keep startedAt aligned with the scheduled start time until an explicit "start" updates it.
+      startedAt: data.scheduledStartsAt ?? new Date(),
+
+      calendarEventId: data.calendarEventId,
+      occurrenceAt: data.occurrenceAt,
+    });
+
+    return meeting;
+  }
+
   static ongoing(channelId: number, workspaceId: number) {
     const meeting = new Meeting();
     meeting.ongoing = true;
-    meeting.channel = { id: channelId } as any satisfies Partial<Channel>;
+    meeting.channel = create(Channel, { id: channelId });
+    meeting.channelId = channelId;
     meeting.workspaceId = workspaceId;
     meeting.attendees = [];
+    meeting.startedAt = new Date();
     return meeting;
   }
 
   static scheduledFromCalendar(data: {
     workspaceId: number;
-    calendarEventId: string;
+    calendarEventId: UUID;
     occurrenceAt: Date;
     channelId?: number | null;
   }) {
@@ -81,11 +119,9 @@ export class Meeting {
     meeting.calendarEventId = data.calendarEventId;
     meeting.occurrenceAt = data.occurrenceAt;
     meeting.channel =
-      data.channelId != null
-        ? ({ id: data.channelId } as any satisfies Partial<Channel>)
-        : null;
+      data.channelId != null ? create(Channel, { id: data.channelId }) : null;
     meeting.attendees = [];
-    meeting.startsAt = data.occurrenceAt;
+    meeting.startedAt = data.occurrenceAt;
     return meeting;
   }
 

@@ -5,22 +5,34 @@ import { defineStore, storeToRefs } from "pinia";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { ChannelApi, type CreateDirectChannel, type CreateGroupChannel } from "../services";
 import type { IChannel } from "../types";
+import { assign } from "lodash";
+import { useMeetingSocket } from "./meeting-socket";
 
 const useChannelsStore = defineStore("channels", () => {
   const channels = ref<IChannel[]>([]);
-  return { channels };
+
+  function findChannel(channelId: number) {
+    return channels.value.find((c) => c.id === channelId);
+  }
+
+  function updateChannel(id: number, data: Partial<IChannel>) {
+    const channel = findChannel(id);
+    if (channel) assign(channel, data);
+  }
+
+  return { channels, findChannel, updateChannel };
 });
 
 export function useChannels() {
   const store = useChannelsStore();
   const sockets = useWebSockets();
   const { workspace } = useWorkspace();
+  const meetingSocket = useMeetingSocket();
 
   const channelApi = useDependency(ChannelApi);
 
   function onReceiveMessage({ message, channelId }: any) {
-    const channel = store.channels.find((c) => c.id === channelId);
-    if (channel) channel.lastMessage = message;
+    store.updateChannel(channelId, { lastMessage: message });
   }
 
   function subscribeMessages() {
@@ -37,33 +49,23 @@ export function useChannels() {
   }
 
   function onIncomingMeeting({ meeting, channelId }: any) {
-    const channel = store.channels.find((c) => c.id === channelId);
-    if (channel) channel.meeting = meeting;
-    console.log("incoming-meeting", { channelId, channel });
+    store.updateChannel(channelId, { meeting });
   }
 
   function onMeetingEnded({ channelId }: any) {
-    console.log("channels meeting-ended", { channelId });
-    const channel = store.channels.find((c) => c.id === channelId);
-    if (channel) channel.meeting = null;
+    store.updateChannel(channelId, { meeting: null });
   }
 
   function subscribeMeetings() {
-    sockets.websocket?.emit("subscribe-meetings", {
-      workspaceId: workspace.value.id,
-    });
+    meetingSocket.emitSubscribeMeetings(workspace.value.id);
 
-    console.log("channels subscribe meetings");
-    sockets.websocket.off("incoming-meeting", onIncomingMeeting);
-    sockets.websocket.on("incoming-meeting", onIncomingMeeting);
-
-    sockets.websocket.off("meeting-ended", onMeetingEnded);
-    sockets.websocket.on("meeting-ended", onMeetingEnded);
+    meetingSocket.onIncomingMeeting(onIncomingMeeting);
+    meetingSocket.onMeetingEnded(onMeetingEnded);
   }
 
   function unsubscribeMeetings() {
-    sockets.websocket.off("incoming-meeting", onIncomingMeeting);
-    sockets.websocket.off("meeting-ended", onMeetingEnded);
+    meetingSocket.offIncomingMeeting(onIncomingMeeting);
+    meetingSocket.offMeetingEnded(onMeetingEnded);
   }
 
   async function fetchChannels() {

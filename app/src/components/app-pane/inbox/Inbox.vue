@@ -9,12 +9,16 @@ import type {
   DirectMessageNotificationPayload,
   IssueDueDateNotificationPayload,
   IssueAssignedNotificationPayload,
+  CalendarMeetingReminderNotificationPayload,
+  CalendarEventReminderNotificationPayload,
 } from "@/domain/notifications/types/notification.types";
 import MentionNotification from "./notifications/MentionNotification.vue";
 import ReplyNotification from "./notifications/ReplyNotification.vue";
 import MessageNotification from "./notifications/MessageNotification.vue";
 import DueDateNotification from "./notifications/DueDateNotification.vue";
 import IssueAssignedNotification from "./notifications/IssueAssignedNotification.vue";
+import CalendarMeetingReminderNotification from "./notifications/CalendarMeetingReminderNotification.vue";
+import CalendarEventReminderNotification from "./notifications/CalendarEventReminderNotification.vue";
 import { Separator } from "@/design-system";
 
 const { notifications, markAsSeen } = useNotifications({ limit: 100 });
@@ -67,6 +71,34 @@ async function openNotification(notification: Notification) {
         },
       });
     }
+    return;
+  }
+
+  if (notification.type === "calendar_meeting_reminder") {
+    const payload = notification.payload as CalendarMeetingReminderNotificationPayload;
+    if (workspaceId && payload?.calendarEventId && payload?.occurrenceAt) {
+      router.push({
+        name: "meeting-lobby",
+        params: { workspaceId, calendarEventId: payload.calendarEventId },
+        query: { occurrenceAt: payload.occurrenceAt },
+      });
+    }
+    return;
+  }
+
+  if (notification.type === "calendar_event_reminder") {
+    const payload = notification.payload as CalendarEventReminderNotificationPayload;
+    if (workspaceId) {
+      router.push({
+        name: "schedule",
+        params: { workspaceId },
+        query: {
+          calendarEventId: payload?.calendarEventId,
+          occurrenceAt: payload?.occurrenceAt,
+        },
+      });
+    }
+    return;
   }
 }
 </script>
@@ -120,6 +152,16 @@ async function openNotification(notification: Notification) {
           <IssueAssignedNotification
             v-else-if="notification.type === 'issue_assigned'"
             :payload="notification.payload as IssueAssignedNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <CalendarMeetingReminderNotification
+            v-else-if="notification.type === 'calendar_meeting_reminder'"
+            :payload="notification.payload as CalendarMeetingReminderNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <CalendarEventReminderNotification
+            v-else-if="notification.type === 'calendar_event_reminder'"
+            :payload="notification.payload as CalendarEventReminderNotificationPayload"
             :createdAt="notification.createdAt"
           />
           <div v-else class="text-sm text-secondary-foreground">

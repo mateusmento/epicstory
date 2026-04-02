@@ -8,6 +8,7 @@ import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";
 import { CalendarEventApi } from "@/domain/calendar";
 import { useWorkspace } from "@/domain/workspace";
+import { useMeetingSocket } from "@/domain/channels/composables/meeting-socket";
 import { getLocalTimeZone, parseDate, toCalendarDate, today as todayFn } from "@internationalized/date";
 import type { DateValue } from "@internationalized/date";
 import {
@@ -36,6 +37,7 @@ const { channels, fetchChannels } = useChannels();
 
 const calendarEventApi = useDependency(CalendarEventApi);
 const router = useRouter();
+const meetingSocket = useMeetingSocket();
 
 const today = () => todayFn(getLocalTimeZone());
 
@@ -509,6 +511,9 @@ async function saveEvent() {
           participantIds: channelId ? undefined : meetingParticipantIds.value,
         });
       }
+
+      // Refresh server-side room membership so reminder/start websocket events can reach this user immediately.
+      meetingSocket.emitSubscribeMeetings(workspace.value.id);
     } else if (editingEvent.value) {
       const recurrence =
         eventRecurrenceFrequency.value === "once"

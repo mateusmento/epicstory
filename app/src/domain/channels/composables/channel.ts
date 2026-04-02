@@ -7,7 +7,8 @@ import { defineStore, storeToRefs } from "pinia";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChannelApi } from "../services";
-import type { IChannel, IMeeting, IMessage, IMessageGroup } from "../types";
+import type { IChannel, IMessage, IMessageGroup } from "../types";
+import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
 
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
@@ -21,6 +22,7 @@ export function useChannel() {
   const sockets = useWebSockets();
   const channelApi = useDependency(ChannelApi);
   const { workspace } = useWorkspace();
+  const meetingSocket = useMeetingSocket();
 
   const messageGroups = computed(() => groupMessages(store.messages));
 
@@ -68,29 +70,29 @@ export function useChannel() {
     sockets.websocket.off("message-deleted", onMessageDeleted);
   }
 
-  function onIncomingMeeting({ meeting, channelId }: { meeting: IMeeting; channelId: number }) {
-    if (store.channel?.id === channelId) store.channel.meeting = meeting;
+  function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
+    if (channelId && store.channel?.id === channelId) {
+      store.channel.meeting = meeting;
+    }
   }
 
-  function onMeetingEnded({ channelId }: { channelId: number }) {
-    if (store.channel?.id === channelId) store.channel.meeting = null;
+  function onMeetingEnded({ meetingId }: MeetingEndedPayload) {
+    if (store.channel?.meeting?.id === meetingId) store.channel.meeting = null;
   }
 
   function subscribeMeetings() {
-    sockets.websocket?.emit("subscribe-meetings", {
-      workspaceId: workspace.value.id,
-    });
+    meetingSocket.emitSubscribeMeetings(workspace.value.id);
 
-    sockets.websocket.off("incoming-meeting", onIncomingMeeting);
-    sockets.websocket.on("incoming-meeting", onIncomingMeeting);
+    meetingSocket.offIncomingMeeting(onIncomingMeeting);
+    meetingSocket.onIncomingMeeting(onIncomingMeeting);
 
-    sockets.websocket.off("meeting-ended", onMeetingEnded);
-    sockets.websocket.on("meeting-ended", onMeetingEnded);
+    meetingSocket.offMeetingEnded(onMeetingEnded);
+    meetingSocket.onMeetingEnded(onMeetingEnded);
   }
 
   function unsubscribeMeetings() {
-    sockets.websocket.off("incoming-meeting", onIncomingMeeting);
-    sockets.websocket.off("meeting-ended", onMeetingEnded);
+    meetingSocket.offIncomingMeeting(onIncomingMeeting);
+    meetingSocket.offMeetingEnded(onMeetingEnded);
   }
 
   async function sendMessage({ content, contentRich }: { content: string; contentRich: any }) {
@@ -199,7 +201,6 @@ export function useSyncedChannel() {
   });
 
   watch(channelId, async (channelId) => {
-    console.log(channelId);
     await fetchChannel(channelId);
     joinChannel();
     fetchMessages();

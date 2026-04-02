@@ -308,8 +308,30 @@ export class MigrationSquashCalendarScheduling1774996376040
     `);
 
     await queryRunner.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'channel'
+            AND table_name = 'meetings'
+            AND column_name = 'starts_at'
+        ) AND NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'channel'
+            AND table_name = 'meetings'
+            AND column_name = 'started_at'
+        ) THEN
+          ALTER TABLE "channel"."meetings"
+          RENAME COLUMN "starts_at" TO "started_at";
+        END IF;
+      END$$;
+    `);
+
+    await queryRunner.query(`
       ALTER TABLE "channel"."meetings"
-      ADD COLUMN IF NOT EXISTS "starts_at" TIMESTAMPTZ NOT NULL DEFAULT now()
+      ADD COLUMN IF NOT EXISTS "started_at" TIMESTAMPTZ NOT NULL DEFAULT now()
     `);
     await queryRunner.query(`
       ALTER TABLE "channel"."meetings"
@@ -318,6 +340,15 @@ export class MigrationSquashCalendarScheduling1774996376040
     await queryRunner.query(`
       ALTER TABLE "channel"."meetings"
       ADD COLUMN IF NOT EXISTS "ended_at" TIMESTAMPTZ
+    `);
+
+    await queryRunner.query(`
+      ALTER TABLE "channel"."meetings"
+      ADD COLUMN IF NOT EXISTS "scheduled_starts_at" TIMESTAMPTZ
+    `);
+    await queryRunner.query(`
+      ALTER TABLE "channel"."meetings"
+      ADD COLUMN IF NOT EXISTS "scheduled_ends_at" TIMESTAMPTZ
     `);
 
     await queryRunner.query(`
@@ -452,6 +483,14 @@ export class MigrationSquashCalendarScheduling1774996376040
     `);
     await queryRunner.query(`
       ALTER TABLE "channel"."meetings"
+      DROP COLUMN IF EXISTS "scheduled_ends_at"
+    `);
+    await queryRunner.query(`
+      ALTER TABLE "channel"."meetings"
+      DROP COLUMN IF EXISTS "scheduled_starts_at"
+    `);
+    await queryRunner.query(`
+      ALTER TABLE "channel"."meetings"
       DROP COLUMN IF EXISTS "occurrence_at"
     `);
     await queryRunner.query(`
@@ -460,7 +499,7 @@ export class MigrationSquashCalendarScheduling1774996376040
     `);
     await queryRunner.query(`
       ALTER TABLE "channel"."meetings"
-      DROP COLUMN IF EXISTS "starts_at"
+      DROP COLUMN IF EXISTS "started_at"
     `);
     await queryRunner.query(`
       ALTER TABLE "channel"."meetings"

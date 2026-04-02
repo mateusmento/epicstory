@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import IconAcceptCall from "@/components/icons/IconAcceptCall.vue";
 import { useChannel, type IChannel } from "@/domain/channels";
 import { formatDate, isToday } from "date-fns";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps<{
   channel: IChannel;
   open?: boolean;
-  canJoinMeeting?: boolean;
 }>();
-
-const emit = defineEmits(["join-meeting"]);
 
 const { openChannel } = useChannel();
 
@@ -26,19 +22,24 @@ function formatMessageDate(date: string) {
   if (!date) return;
   return isToday(date) ? formatDate(date, "H:mm a") : formatDate(date, "MMM d");
 }
+
+const isHoveringImage = ref(false);
 </script>
 
 <template>
   <div
-    @click="onOpenChannel()"
     class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
     :class="{ 'bg-secondary': open }"
+    @click="onOpenChannel()"
+    @pointerover="isHoveringImage = true"
+    @pointerleave="isHoveringImage = false"
   >
-    <div class="flex flex:center w-10 h-10">
+    <div class="w-10 h-10 flex flex:center">
       <img
         :src="image"
-        class="rounded-full self-center"
+        class="rounded-full"
         :class="{ 'w-10 h-10': channel.type === 'direct', 'w-8 h-8': channel.type === 'group' }"
+        key="img"
       />
     </div>
 
@@ -47,7 +48,7 @@ function formatMessageDate(date: string) {
         <div class="text-sm text-foreground">
           {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
         </div>
-        <div v-if="!canJoinMeeting" class="text-xs text-secondary-foreground">
+        <div class="text-xs text-secondary-foreground">
           {{ channel.lastMessage ? formatMessageDate(channel.lastMessage.sentAt) : "" }}
         </div>
       </div>
@@ -60,18 +61,28 @@ function formatMessageDate(date: string) {
           {{ channel.lastMessage?.displayContent ?? channel.lastMessage?.content }}
         </div>
         <div
-          v-if="!channel.unreadMessagesCount && canJoinMeeting"
+          v-if="!channel.unreadMessagesCount"
           class="w-fit px-1 py-0 rounded-sm bg-secondary text-secondary-foreground text-xs"
         >
           {{ channel.unreadMessagesCount }}
         </div>
       </div>
     </div>
-
-    <div v-if="canJoinMeeting" class="accept-call w-fit flex gap-5">
-      <button @click.stop="emit('join-meeting')" class="p-2 h-fit border-none rounded-full bg-green-500">
-        <IconAcceptCall />
-      </button>
-    </div>
   </div>
 </template>
+
+<style scoped>
+.inbox-swap-enter-active,
+.inbox-swap-leave-active {
+  transition: opacity 100ms;
+}
+
+.inbox-swap-leave-active {
+  pointer-events: none;
+}
+
+.inbox-swap-enter-from,
+.inbox-swap-leave-to {
+  opacity: 0;
+}
+</style>

@@ -3,7 +3,13 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogTitle,
   DialogTrigger,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
   Separator,
   Tabs,
   TabsContent,
@@ -14,14 +20,13 @@ import {
   TooltipTrigger,
 } from "@/design-system";
 import { Icon, IconChannel } from "@/design-system/icons";
-import { useChannel, useMeeting, useSyncedChannels } from "@/domain/channels";
-import { SquarePen } from "lucide-vue-next";
+import { useChannel, useSyncedChannels } from "@/domain/channels";
+import { HashIcon, HeadphonesIcon, LogOutIcon, SquarePen, SquarePenIcon, Trash2Icon } from "lucide-vue-next";
 import CreateChannel from "./CreateChannel.vue";
 import InboxMessage from "./InboxMessage.vue";
 
 const { channel: currentChannel } = useChannel();
 const { channels } = useSyncedChannels();
-const { currentMeeting, joinMeeting } = useMeeting();
 </script>
 
 <template>
@@ -49,16 +54,81 @@ const { currentMeeting, joinMeeting } = useMeeting();
         <TabsTrigger value="all" class="text-xs">All</TabsTrigger>
         <TabsTrigger value="messages" class="text-xs">Messages</TabsTrigger>
       </TabsList>
-      <TabsContent value="all" as-child> </TabsContent>
-      <TabsContent value="messages" class="flex:col-md flex-1 m-2">
-        <InboxMessage
-          v-for="channel of channels"
+      <TabsContent value="all" class="flex:col-md m-2 flex-1">
+        <div class="text-xs text-secondary-foreground mt-2 ml-2">Channels</div>
+
+        <Menu v-for="channel of channels" :key="channel.id" type="context-menu">
+          <MenuTrigger>
+            <div class="flex:row-lg flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer">
+              <HashIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+              <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+            </div>
+          </MenuTrigger>
+          <MenuContent>
+            <MenuItem class="text-xs">
+              <SquarePenIcon scale="1.2" />
+              <div>Rename</div>
+            </MenuItem>
+            <MenuItem class="text-xs">
+              <LogOutIcon scale="1.2" />
+              <div>Leave channel</div>
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem variant="destructive" class="text-xs">
+              <Trash2Icon name="fa-trash" scale="1.2" />
+              <div>Delete channel</div>
+            </MenuItem>
+          </MenuContent>
+        </Menu>
+
+        <div class="text-xs text-secondary-foreground mt-2 ml-2">Meetings</div>
+
+        <div
+          v-for="channel of channels.filter((channel) => channel.type !== 'direct')"
           :key="channel.id"
-          :channel="channel"
-          :can-join-meeting="!!channel.meeting && channel.meeting.id !== currentMeeting?.id"
-          @join-meeting="joinMeeting(channel)"
-          :open="channel.id === currentChannel?.id"
-        />
+          class="flex:row-lg flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+        >
+          <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+          <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+        </div>
+
+        <div class="text-xs text-secondary-foreground mt-2 ml-2">Direct messages</div>
+
+        <div
+          v-for="channel of channels.filter((channel) => channel.type === 'direct')"
+          :key="channel.id"
+          class="flex:row-lg flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+        >
+          <img
+            v-if="channel.speakingTo?.picture"
+            :src="channel.speakingTo?.picture"
+            class="w-4 h-4 rounded-full"
+          />
+          <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+          <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+        </div>
+      </TabsContent>
+      <TabsContent value="messages" class="flex:col-md flex-1 m-2">
+        <Menu v-for="channel of channels" :key="channel.id" type="context-menu">
+          <MenuTrigger>
+            <InboxMessage :channel="channel" :open="channel.id === currentChannel?.id" />
+          </MenuTrigger>
+          <MenuContent>
+            <MenuItem class="text-xs">
+              <SquarePenIcon scale="1.2" />
+              <div>Rename</div>
+            </MenuItem>
+            <MenuItem class="text-xs">
+              <LogOutIcon scale="1.2" />
+              <div>Leave channel</div>
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem variant="destructive" class="text-xs">
+              <Trash2Icon name="fa-trash" scale="1.2" />
+              <div>Delete channel</div>
+            </MenuItem>
+          </MenuContent>
+        </Menu>
 
         <div class="w-fit mt-4 mx-auto text-xs text-secondary-foreground">You have no more messages</div>
 

@@ -1,6 +1,14 @@
-import { Controller, Get, Param, Put, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FindNotifications, MarkAsSeen } from '../features';
+import { UUID } from 'crypto';
 
 @Controller('notifications')
 export class NotificationController {
@@ -15,7 +23,7 @@ export class NotificationController {
   }
 
   @Put(':id/seen')
-  async markAsSeen(@Param('id') notificationId: string) {
+  async markAsSeen(@Param('id', ParseUUIDPipe) notificationId: UUID) {
     return this.commandBus.execute(new MarkAsSeen({ notificationId }));
   }
 }
