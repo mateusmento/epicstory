@@ -55,13 +55,13 @@ export class JoinChannelMeetingHandler
 
     let meeting = await this.meetingRepo.findOngoing(
       { channelId },
-      { attendees: true },
+      { attendees: { user: true } },
     );
 
     if (!meeting) {
       meeting = Meeting.ongoing(channelId, workspaceId);
       meeting = await this.meetingRepo.save(meeting);
-      this.meetingGateway.emitIncomingMeeting(meeting);
+      this.meetingGateway.emitIncomingMeeting(meeting, issuerId);
     }
 
     const attendee = MeetingAttendee.of({

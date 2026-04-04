@@ -9,7 +9,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { DataSource } from 'typeorm';
 import { CalendarEventRepository } from '../repositories';
 import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
-import { MeetingCalendarEventPayload } from '../types';
+import { ScheduledMeetingPayload } from '../types';
 import { addMilliseconds, differenceInMilliseconds } from 'date-fns';
 
 export class EnsureCalendarMeetingSession {
@@ -45,7 +45,7 @@ export class EnsureCalendarMeetingSessionCommand
     });
     if (!event) throw new BadRequestException('Calendar event not found');
 
-    const payload = event.payload as MeetingCalendarEventPayload;
+    const payload = event.payload as ScheduledMeetingPayload;
 
     const channelId = payload.channelId;
 
@@ -59,8 +59,9 @@ export class EnsureCalendarMeetingSessionCommand
 
     const occurrenceAt = command.occurrenceAt;
 
-    const durationMs = differenceInMilliseconds(event.endsAt, event.startsAt);
-    const occurrenceEndsAt = addMilliseconds(occurrenceAt, durationMs);
+    const occurrenceEndsAt = event.duration()
+      ? addMilliseconds(occurrenceAt, event.duration())
+      : null;
 
     let meeting = await this.meetingRepo.findScheduled(event.id, occurrenceAt);
 

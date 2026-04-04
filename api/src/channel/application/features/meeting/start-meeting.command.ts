@@ -33,6 +33,7 @@ export class StartMeetingHandler implements ICommandHandler<StartMeeting> {
   async execute(command: StartMeeting): Promise<Meeting> {
     const meeting = await this.meetingRepo.findOne({
       where: { id: command.meetingId },
+      relations: { attendees: true },
     });
     if (!meeting) throw new MeetingNotFoundException();
 

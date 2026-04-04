@@ -78,11 +78,9 @@ export class JoinScheduledMeetingHandler
     let meeting = await this.meetingRepo.findScheduled(event.id, occurrenceAt);
 
     if (!meeting) {
-      const durationMs = Math.max(
-        0,
-        differenceInMilliseconds(event.endsAt, event.startsAt),
-      );
-      const scheduledEndsAt = addMilliseconds(occurrenceAt, durationMs);
+      const scheduledEndsAt = event.duration()
+        ? addMilliseconds(occurrenceAt, event.duration())
+        : null;
 
       meeting = await this.meetingRepo.save(
         Meeting.create({
@@ -98,9 +96,7 @@ export class JoinScheduledMeetingHandler
 
       // Ensure scheduled meeting is created as NOT ongoing; start happens separately.
       meeting.ongoing = false;
-      await this.meetingRepo.update({ id: meeting.id }, {
-        ongoing: false,
-      } as any);
+      await this.meetingRepo.update({ id: meeting.id }, { ongoing: false });
     }
 
     // Joinability: never allow joining before the scheduled start timestamp.

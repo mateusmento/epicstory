@@ -9,7 +9,7 @@ import {
 } from 'src/scheduling/types';
 import { DataSource } from 'typeorm';
 import { CalendarEvent } from '../entities';
-import { addMinutes } from 'date-fns';
+import { addMilliseconds, addMinutes, differenceInMilliseconds } from 'date-fns';
 
 @Injectable()
 export class CalendarEventReminderReaction {
@@ -25,10 +25,8 @@ export class CalendarEventReminderReaction {
     const { calendarEventId } = job.payload;
     const reminderAt = job.occurrenceAt;
     if (!reminderAt) return;
-    const occurrenceStartsAt = addMinutes(
-      reminderAt,
-      Math.max(0, job.notifyMinutesBefore ?? 0),
-    );
+    const notifyMinutesBefore = Math.max(0, job.notifyMinutesBefore ?? 0);
+    const occurrenceStartsAt = addMinutes(reminderAt, notifyMinutesBefore);
 
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);
 
@@ -37,6 +35,14 @@ export class CalendarEventReminderReaction {
       relations: { participants: true },
     });
     if (!event) return;
+
+    const durationMs = Math.max(
+      0,
+      differenceInMilliseconds(event.endsAt, event.startsAt),
+    );
+    const occurrenceEndsAt = addMilliseconds(occurrenceStartsAt, durationMs);
+    const channelId =
+      (event.payload as { channelId?: number | null })?.channelId ?? null;
 
     const participantIds = event.participants?.map((u) => u.id) ?? [];
     const recipientIds = uniq(concat(participantIds, [event.createdById]));
@@ -50,6 +56,15 @@ export class CalendarEventReminderReaction {
           calendarEventId: event.id,
           occurrenceAt: occurrenceStartsAt,
           title: event.title,
+          description: event.description ?? '',
+          notifyMinutesBefore,
+          calendarEventType: event.type,
+          startsAt: occurrenceStartsAt,
+          endsAt: occurrenceEndsAt,
+          isPublic: event.isPublic,
+          notifyEnabled: event.notifyEnabled,
+          channelId,
+          eventPayload: event.payload,
         },
       });
     }

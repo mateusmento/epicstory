@@ -44,7 +44,6 @@ export class Meeting {
   @Column({ nullable: true })
   channelId?: number | null;
 
-  // Calendar-backed meeting occurrence identity (series-only)
   @Column({ type: 'uuid', nullable: true })
   calendarEventId?: UUID | null;
 

@@ -11,10 +11,13 @@ const route = useRoute();
 const router = useRouter();
 
 const calendarEventApi = useDependency(CalendarEventApi);
-const { joinScheduledMeeting, isCameraOn, isMicrophoneOn } = useMeeting();
+const { joinMeeting, joinScheduledMeeting, isCameraOn, isMicrophoneOn } = useMeeting();
 
-const workspaceId = computed(() => Number(route.params.workspaceId));
-const calendarEventId = computed(() => String(route.params.calendarEventId));
+const workspaceId = computed(() => (route.params.workspaceId ? +route.params.workspaceId : undefined));
+const meetingId = computed(() => (route.query.meetingId ? +route.query.meetingId : undefined));
+const calendarEventId = computed(() =>
+  route.query.calendarEventId ? String(route.query.calendarEventId) : undefined,
+);
 const occurrenceAt = computed(() => {
   const raw = route.query.occurrenceAt;
   const str = Array.isArray(raw) ? raw[0] : raw;
@@ -30,14 +33,25 @@ const videoEl = ref<HTMLVideoElement | null>(null);
 
 const canPreview = ref(true);
 
-async function fetchOccurrence() {
+async function fetchMeeting() {
   isLoading.value = true;
   try {
-    if (!occurrenceAt.value) {
-      lobby.value = null;
+    lobby.value = null;
+
+    if (meetingId.value) {
+      lobby.value = await calendarEventApi.getMeetingLobby({ meetingId: meetingId.value });
+      isLoading.value = false;
       return;
     }
-    lobby.value = await calendarEventApi.getMeetingLobby(calendarEventId.value, occurrenceAt.value);
+
+    if (calendarEventId.value && occurrenceAt.value) {
+      lobby.value = await calendarEventApi.getMeetingLobby({
+        calendarEventId: calendarEventId.value,
+        occurrenceAt: occurrenceAt.value,
+      });
+      isLoading.value = false;
+      return;
+    }
   } finally {
     isLoading.value = false;
   }
@@ -83,27 +97,39 @@ function toggleMic() {
 }
 
 async function join() {
-  if (!occurrenceAt.value) return;
-  const meeting = await joinScheduledMeeting({
-    calendarEventId: calendarEventId.value,
-    occurrenceAt: occurrenceAt.value,
-    camera: previewStream.value ?? undefined,
-  });
-  const meetingId = meeting?.id;
-  if (!meetingId) return;
+  const meeting = await (() => {
+    if (occurrenceAt.value && calendarEventId.value) {
+      console.log({
+        calendarEventId: calendarEventId.value,
+        occurrenceAt: occurrenceAt.value,
+      });
+      return joinScheduledMeeting({
+        calendarEventId: calendarEventId.value,
+        occurrenceAt: occurrenceAt.value,
+        camera: previewStream.value ?? undefined,
+      });
+    }
+    if (meetingId.value) {
+      return joinMeeting({ meetingId: meetingId.value, camera: previewStream.value ?? undefined });
+    }
+  })();
+
+  if (!meeting) return;
 
   // Preview is now owned by meeting streaming, don't stop tracks here.
   previewStream.value = null;
-  router.push({ name: "meeting-session", params: { workspaceId: workspaceId.value, meetingId } });
+  router.push({ name: "meeting-session", params: { workspaceId: workspaceId.value, meetingId: meeting.id } });
 }
 
 async function cancelSeries() {
-  await calendarEventApi.removeCalendarEvent(calendarEventId.value);
-  router.push({ name: "schedule", params: { workspaceId: workspaceId.value } });
+  if (calendarEventId.value) {
+    await calendarEventApi.removeCalendarEvent(calendarEventId.value);
+    router.push({ name: "schedule", params: { workspaceId: workspaceId.value } });
+  }
 }
 
 onMounted(async () => {
-  await fetchOccurrence();
+  await fetchMeeting();
   await setupPreview();
 });
 
@@ -155,7 +181,11 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
 
           <div class="flex-1" />
 
-          <Button size="sm" @click="join" :disabled="isLoading || !occurrenceAt || !lobby?.joinable">
+          <Button
+            size="sm"
+            @click="join"
+            :disabled="isLoading || (!occurrenceAt && !meetingId) || !lobby?.joinable"
+          >
             Join meeting
           </Button>
         </div>

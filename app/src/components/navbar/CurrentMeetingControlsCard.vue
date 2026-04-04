@@ -97,6 +97,16 @@ async function joinIncomingMeeting() {
       </template>
 
       <template v-else-if="incomingMeeting">
+        <Button variant="outline" size="icon" class="p-2.5 rounded-full" @click="stopCamera">
+          <IconCameraOn v-if="isCameraOn" class="w-6 h-6 text-muted-foreground" />
+          <IconCameraOff v-else class="w-6 h-6 text-muted-foreground" />
+        </Button>
+
+        <Button variant="outline" size="icon" class="p-2.5 rounded-full" @click="stopMicrophone">
+          <IconMicrophoneOn v-if="isMicrophoneOn" class="w-6 h-6 text-muted-foreground" />
+          <IconMicrophoneOff v-else class="w-6 h-6 text-muted-foreground" />
+        </Button>
+
         <Button variant="destructive" size="icon" class="p-2.5 rounded-full" @click="rejectIncomingMeeting">
           <Icon name="bi-telephone-x" class="w-6 h-6" />
         </Button>

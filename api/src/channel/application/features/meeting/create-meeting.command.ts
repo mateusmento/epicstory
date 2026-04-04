@@ -85,7 +85,8 @@ export class CreateMeetingHandler implements ICommandHandler<CreateMeeting> {
 
     meeting = await this.meetingRepo.save(meeting);
 
-    if (meeting.ongoing) this.meetingGateway.emitIncomingMeeting(meeting);
+    if (meeting.ongoing)
+      this.meetingGateway.emitIncomingMeeting(meeting, issuerId);
 
     meeting = await this.meetingRepo.findOne({
       where: { id: meeting.id },

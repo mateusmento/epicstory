@@ -14,10 +14,11 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import { useLiveScheduledMeeting, useMeeting } from "@/domain/channels";
+import { useLiveMeeting, useMeeting } from "@/domain/channels";
+import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
 import { ArrowLeft, ArrowRight, LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { useRouter } from "vue-router";
 import CurrentMeetingControlsCard from "./CurrentMeetingControlsCard.vue";
@@ -30,9 +31,11 @@ const { workspace } = useWorkspace();
 const { user, signOut } = useAuth();
 const router = useRouter();
 
-const { currentMeeting, incomingMeeting } = useMeeting();
+const { currentMeeting, incomingMeeting, subscribeMeetings } = useMeeting();
 
-const { liveScheduledMeeting } = useLiveScheduledMeeting();
+const { liveScheduledMeeting } = useLiveMeeting();
+
+const { unseenCount } = useNotifications();
 
 const showHuddleCard = computed(() => {
   return Boolean(!currentMeeting.value && liveScheduledMeeting.value?.meeting?.ongoing);
@@ -42,14 +45,19 @@ const huddlePeers = computed(() => {
   return (liveScheduledMeeting.value?.participantsPreview ?? []).slice(0, 4);
 });
 
+onMounted(() => {
+  subscribeMeetings();
+});
+
 async function onJoinLiveScheduledMeeting() {
+  if (!liveScheduledMeeting.value?.meeting) return;
   const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
   const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt;
-  if (!calendarEventId || !occurrenceAt) return;
+  // if (!calendarEventId || !occurrenceAt) return;
   router.push({
     name: "meeting-lobby",
-    params: { workspaceId: workspace.value.id, calendarEventId },
-    query: { occurrenceAt },
+    params: { workspaceId: workspace.value.id },
+    query: { occurrenceAt, calendarEventId, meetingId: liveScheduledMeeting.value?.meeting.id },
   });
 }
 </script>
@@ -89,14 +97,19 @@ async function onJoinLiveScheduledMeeting() {
 
     <div v-if="showHuddleCard" class="px-2">
       <LiveMeetingJoinCard
-        :title="liveScheduledMeeting?.calendarEvent.title ?? 'Meeting'"
+        :title="liveScheduledMeeting?.calendarEvent?.title ?? 'Meeting'"
         :people="huddlePeers"
         @join="onJoinLiveScheduledMeeting"
       />
     </div>
 
     <nav class="flex:col-md">
-      <NavListItem view="app-pane" content="inbox" class="flex:row-md flex:center-y">
+      <NavListItem
+        view="app-pane"
+        content="inbox"
+        class="flex:row-md flex:center-y"
+        :badge-count="unseenCount"
+      >
         <Icon name="oi-inbox" />
         Inbox
       </NavListItem>

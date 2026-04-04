@@ -1,7 +1,13 @@
 import { BadRequestException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
-import { IsDate, IsString } from 'class-validator';
+import {
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { UUID } from 'crypto';
 import { isFuture } from 'date-fns';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
@@ -10,14 +16,22 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { DataSource } from 'typeorm';
 import { CalendarEvent } from '../entities';
 import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
+import { ScheduledMeetingPayload } from '../types';
+import { IsUndefinedIgnored } from 'src/core/validation';
 
 export class GetCalendarMeetingLobby {
-  @IsString()
-  calendarEventId: UUID;
+  @IsOptional()
+  @IsUUID()
+  calendarEventId?: UUID;
 
+  @IsOptional()
   @Type(() => Date)
   @IsDate()
-  occurrenceAt: Date;
+  occurrenceAt?: Date;
+
+  @IsOptional()
+  @IsNumber()
+  meetingId?: number;
 
   issuerId: number;
 
@@ -39,13 +53,33 @@ export class GetCalendarMeetingLobbyHandler
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);
     const meetingRepo = this.dataSource.getRepository(Meeting);
 
+    if (query.meetingId) {
+      const meeting = await meetingRepo.findOne({
+        where: { id: query.meetingId },
+        relations: { attendees: { user: true } },
+      });
+
+      const event = await calendarRepo.findOne({
+        where: { id: meeting.calendarEventId },
+        relations: { participants: true },
+      });
+
+      return {
+        calendarEvent: event,
+        occurrenceAt: query.occurrenceAt,
+        meeting,
+        joinable: !isFuture(query.occurrenceAt),
+      };
+    }
+
     const event = await calendarRepo.findOne({
       where: { id: query.calendarEventId },
       relations: { participants: true },
     });
     if (!event) throw new BadRequestException('Calendar event not found');
 
-    const channelId = (event.payload as any)?.channelId ?? null;
+    const channelId =
+      (event.payload as ScheduledMeetingPayload)?.channelId ?? null;
 
     await assertCalendarMeetingAccess({
       dataSource: this.dataSource,
@@ -57,10 +91,10 @@ export class GetCalendarMeetingLobbyHandler
 
     const meeting = await meetingRepo.findOne({
       where: {
-        calendarEventId: event.id as any,
-        scheduledStartsAt: query.occurrenceAt as any,
-      } as any,
-      relations: { attendees: { user: true } } as any,
+        calendarEventId: event.id,
+        scheduledStartsAt: query.occurrenceAt,
+      },
+      relations: { attendees: { user: true } },
     });
 
     return {

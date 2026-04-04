@@ -10,6 +10,12 @@ export class MeetingHasntStartedException extends Error {
   }
 }
 
+export class MeetingHasEndedException extends Error {
+  constructor() {
+    super('Meeting has ended');
+  }
+}
+
 export class MeetingOngoingException extends Error {
   constructor() {
     super('Meeting already ongoing');

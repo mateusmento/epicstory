@@ -127,7 +127,7 @@ const useMeetingStore = defineStore("meeting", () => {
     sockets.websocket.on("attendee-joined", attendeeJoined);
     sockets.websocket.on("camera-toggled", onCameraToggled);
     sockets.websocket.on("microphone-toggled", onMicrophoneToggled);
-    sockets.websocket.once("current-meeting-ended", onMeetingEnded);
+    sockets.websocket.once("current-meeting-ended", onCurrentMeetingEnded);
 
     sockets.websocket.listeners("attendee-joined");
 
@@ -135,6 +135,7 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   async function joinMeeting({ meetingId, camera }: { meetingId: number; camera?: MediaStream }) {
+    incomingMeeting.value = null;
     return connectMeeting({ camera }, async (data) => {
       return await new Promise<IMeeting>((res) => {
         console.log("join-meeting", { ...data, meetingId });
@@ -152,6 +153,7 @@ const useMeetingStore = defineStore("meeting", () => {
     occurrenceAt: Date;
     camera?: MediaStream;
   }) {
+    incomingMeeting.value = null;
     return connectMeeting({ camera }, async (data) => {
       const joinData = {
         ...data,
@@ -165,6 +167,7 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   function joinChannelMeeting({ channelId, camera }: { channelId: number; camera?: MediaStream }) {
+    incomingMeeting.value = null;
     return connectMeeting({ camera }, async (data) => {
       const joinData = { ...data, channelId };
       return await new Promise<IMeeting>((res) => {
@@ -216,11 +219,14 @@ const useMeetingStore = defineStore("meeting", () => {
     incomingMeeting.value = meeting;
   }
 
-  function onMeetingEnded({ meetingId }: { meetingId: number }) {
-    if (incomingMeeting.value?.id === meetingId) incomingMeeting.value = null;
+  function onCurrentMeetingEnded({ meetingId }: { meetingId: number }) {
     if (currentMeeting.value?.id === meetingId) {
       closeMeeting();
     }
+  }
+
+  function onMeetingEnded({ meetingId }: { meetingId: number }) {
+    if (incomingMeeting.value?.id === meetingId) incomingMeeting.value = null;
   }
 
   async function acceptIncomingMeeting() {
@@ -243,7 +249,7 @@ const useMeetingStore = defineStore("meeting", () => {
 
   function endMeeting() {
     sockets.websocket.emit("end-meeting", { meetingId: currentMeeting.value?.id });
-    streaming.value?.close();
+    closeMeeting();
   }
 
   function closeMeeting() {
@@ -288,6 +294,7 @@ const useMeetingStore = defineStore("meeting", () => {
   return {
     incomingMeeting,
     currentMeeting,
+    subscribeMeetings,
     mycamera,
     attendees,
     isCameraOn,

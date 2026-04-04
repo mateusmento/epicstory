@@ -2,7 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsNumber } from 'class-validator';
 import { compact, take, uniqBy } from 'lodash';
 import { CalendarEvent } from 'src/calendar/entities';
-import { Meeting } from 'src/channel/domain';
+import { Channel, Meeting } from 'src/channel/domain';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import { DataSource } from 'typeorm';
@@ -10,6 +10,7 @@ import {
   ChannelRepository,
   MeetingRepository,
 } from '../../infrastructure/repositories';
+import { logQuery } from 'src/core/typeorm/logging';
 
 export type LiveScheduledMeetingDto = {
   meeting: Meeting;
@@ -21,7 +22,7 @@ export type LiveScheduledMeetingDto = {
   }>;
 };
 
-export class FindLiveScheduledMeeting {
+export class FindLiveMeeting {
   @IsNumber()
   workspaceId: number;
 
@@ -30,15 +31,13 @@ export class FindLiveScheduledMeeting {
 
   now?: Date;
 
-  constructor(data: Partial<FindLiveScheduledMeeting>) {
+  constructor(data: Partial<FindLiveMeeting>) {
     patch(this, data);
   }
 }
 
-@QueryHandler(FindLiveScheduledMeeting)
-export class FindLiveScheduledMeetingHandler
-  implements IQueryHandler<FindLiveScheduledMeeting>
-{
+@QueryHandler(FindLiveMeeting)
+export class FindLiveMeetingHandler implements IQueryHandler<FindLiveMeeting> {
   constructor(
     private meetingRepo: MeetingRepository,
     private channelRepo: ChannelRepository,
@@ -47,18 +46,18 @@ export class FindLiveScheduledMeetingHandler
   ) {}
 
   async execute(
-    query: FindLiveScheduledMeeting,
+    query: FindLiveMeeting,
   ): Promise<LiveScheduledMeetingDto | null> {
     const { workspaceId, issuerId } = query;
     const now = query.now ?? new Date();
 
     await this.workspaceRepo.requiresMembership(workspaceId, issuerId);
 
-    const meeting = await this.meetingRepo
+    const qb = await this.meetingRepo
       .createQueryBuilder('m')
-      // Scheduled-only: calendar-backed meeting session.
-      .innerJoin(CalendarEvent, 'ev', 'ev.id = m.calendar_event_id')
-      .andWhere('m.calendar_event_id IS NOT NULL')
+      .leftJoinAndSelect(CalendarEvent, 'ev', 'ev.id = m.calendar_event_id')
+      .andWhere('m.ongoing')
+      .andWhere('m.endedAt IS NULL')
       .andWhere('m.workspaceId = :workspaceId', { workspaceId })
       .andWhere('m.startedAt <= :now', { now })
       .andWhere(
@@ -74,7 +73,7 @@ export class FindLiveScheduledMeetingHandler
           )
           OR
           (
-            m.channel_id IS NULL
+            m.calendar_event_id IS NOT NULL
             AND (
               ev.created_by_id = :userId
               OR EXISTS (
@@ -85,23 +84,28 @@ export class FindLiveScheduledMeetingHandler
               )
             )
           )
+          OR
+          (m.channel_id IS NULL AND m.calendar_event_id IS NULL)
         )`,
         { userId: query.issuerId },
       )
-      .orderBy('m.startedAt', 'ASC')
-      .getOne();
+      .orderBy('m.startedAt', 'ASC');
 
-    if (!meeting || !meeting.calendarEventId || !meeting.scheduledStartsAt)
-      return null;
+    logQuery(qb);
+
+    const meeting = await qb.getOne();
+
+    if (!meeting) return null;
 
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);
-    const event = await calendarRepo.findOne({
-      where: { id: meeting.calendarEventId },
-      relations: { participants: true, createdBy: true } as any,
-    });
-    if (!event) return null;
+    const event = meeting.calendarEventId
+      ? await calendarRepo.findOne({
+          where: { id: meeting.calendarEventId },
+          relations: { participants: true, createdBy: true } as any,
+        })
+      : null;
 
-    const channelId = meeting.channelId ?? meeting.channel?.id ?? null;
+    const channelId = meeting.channelId;
 
     const participantsPreview = await (async () => {
       if (channelId) {
@@ -115,16 +119,20 @@ export class FindLiveScheduledMeetingHandler
         }));
       }
 
-      const uniqueUsers = uniqBy(
-        compact([event.createdBy, ...(event.participants ?? [])]) as any[],
-        'id',
-      ).slice(0, 4);
+      if (event) {
+        const uniqueUsers = uniqBy(
+          compact([event.createdBy, ...(event.participants ?? [])]) as any[],
+          'id',
+        ).slice(0, 4);
 
-      return uniqueUsers.map((u: any) => ({
-        id: u.id,
-        name: u.name,
-        picture: u.picture ?? null,
-      }));
+        uniqueUsers.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          picture: u.picture ?? null,
+        }));
+      }
+
+      return [];
     })();
 
     return {

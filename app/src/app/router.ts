@@ -43,7 +43,7 @@ const authenticatedRoutes = defineRoutes({
           component: () => import("@/views/schedule/Schedule.vue"),
         },
         {
-          path: "meetings/:calendarEventId",
+          path: "meetings",
           name: "meeting-lobby",
           component: () => import("@/views/meetings/MeetingLobby.vue"),
           props: true,

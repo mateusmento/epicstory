@@ -46,6 +46,16 @@ export type CalendarMeetingReminderNotificationPayload = {
   meetingId: number;
   channelId?: number | null;
   title: string;
+  /** Minutes before start this reminder was scheduled for (from scheduled job / event). */
+  notifyMinutesBefore?: number;
+  description?: string;
+  calendarEventType?: "event" | "meeting";
+  startsAt?: string;
+  endsAt?: string;
+  isPublic?: boolean;
+  notifyEnabled?: boolean;
+  /** Calendar row `payload` JSON (e.g. meeting channelId). */
+  eventPayload?: Record<string, unknown>;
 };
 
 export type CalendarEventReminderNotificationPayload = {
@@ -54,6 +64,15 @@ export type CalendarEventReminderNotificationPayload = {
   occurrenceAt: string;
   channelId?: number | null;
   title: string;
+  /** Minutes before start this reminder was scheduled for (from scheduled job / event). */
+  notifyMinutesBefore?: number;
+  description?: string;
+  calendarEventType?: "event" | "meeting";
+  startsAt?: string;
+  endsAt?: string;
+  isPublic?: boolean;
+  notifyEnabled?: boolean;
+  eventPayload?: Record<string, unknown>;
 };
 
 export type NotificationPayload =

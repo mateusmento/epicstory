@@ -91,16 +91,18 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     }
   }
 
-  emitIncomingMeeting(meeting: Meeting) {
+  emitIncomingMeeting(meeting: Meeting, issuerId?: number) {
     if (meeting.channelId) {
       this.server
         .to(channelMeetingRoom(meeting.channelId))
+        .except(issuerId ? userRoom(issuerId) : [])
         .emit('incoming-meeting', { meeting, channelId: meeting.channelId });
     }
 
     if (meeting.calendarEventId) {
       this.server
         .to(scheduledMeetingRoom(meeting.calendarEventId))
+        .except(issuerId ? userRoom(issuerId) : [])
         .emit('incoming-meeting', {
           meeting,
           calendarEventId: meeting.calendarEventId,
@@ -252,6 +254,9 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
     if (!meetingId) throw new Error('Invalid request: missing meetingId');
 
+    socket.leave(userRoom(issuerId));
+    socket.join(userRoom(issuerId));
+
     const meeting: Meeting = await this.commandBus.execute(
       new JoinMeeting({
         meetingId,
@@ -289,6 +294,9 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     const d = new Date(occurrenceAt);
     if (!isDate(d)) throw new Error('Invalid occurrenceAt');
 
+    socket.leave(userRoom(issuerId));
+    socket.join(userRoom(issuerId));
+
     const meeting: Meeting = await this.commandBus.execute(
       new JoinScheduledMeeting({
         calendarEventId,
@@ -310,6 +318,9 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   ) {
     const issuerId = (socket.request as any).user?.id;
     if (!issuerId) throw new UnauthorizedException();
+
+    socket.leave(userRoom(issuerId));
+    socket.join(userRoom(issuerId));
 
     const meeting: Meeting = await this.commandBus.execute(
       new JoinChannelMeeting({
@@ -368,7 +379,10 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   ) {
     const user = (socket.request as any).user;
 
-    const { channelId } = await this.meetingService.findMeeting({ meetingId });
+    const meeting = await this.meetingService.findMeeting({ meetingId });
+    if (!meeting) throw new Error('Meeting not found');
+
+    const channelId = meeting?.channelId;
 
     const attendeesCount = await this.meetingService.leaveMeeting(
       meetingId,
@@ -384,8 +398,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
       }
       socket.leave(meetingRoom(meetingId));
     } else {
-      this.meetingService.endMeeting(meetingId);
-      if (channelId) this.emitMeetingEnded(channelId, meetingId, this.server);
+      await this.meetingService.endMeeting(meetingId);
+      this.emitMeetingEnded(meeting, socket);
       this.server.socketsLeave(meetingRoom(meetingId));
     }
 
@@ -398,23 +412,32 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     @ConnectedSocket() socket: Socket,
   ) {
     const meeting = await this.meetingService.findMeeting({ meetingId });
-    this.meetingService.endMeeting(meetingId);
+    if (!meeting) throw new MeetingNotFoundException();
 
-    if (meeting.channelId)
-      this.emitMeetingEnded(meeting.channelId, meetingId, this.server);
+    await this.meetingService.endMeeting(meetingId);
+
+    this.emitMeetingEnded(meeting, socket);
 
     this.server.socketsLeave(meetingRoom(meetingId));
 
     await this.clearSocketMeetingAttendee(socket.id);
   }
 
-  emitMeetingEnded(
-    channelId: number,
-    meetingId: number,
-    socket: Socket | Server,
-  ) {
-    const data = { meetingId, channelId };
-    socket.to(channelMeetingRoom(channelId)).emit('meeting-ended', data);
-    socket.to(meetingRoom(meetingId)).emit('current-meeting-ended', data);
+  async emitMeetingEnded(meeting: Meeting, socket: Socket) {
+    const data = { meetingId: meeting.id, channelId: meeting.channelId };
+
+    this.server.to(meetingRoom(meeting.id)).emit('current-meeting-ended', data);
+
+    if (meeting.channelId) {
+      this.server
+        .to(channelMeetingRoom(meeting.channelId))
+        .emit('meeting-ended', data);
+    } else if (meeting.calendarEventId) {
+      this.server
+        .to(scheduledMeetingRoom(meeting.calendarEventId))
+        .emit('meeting-ended', data);
+    } else {
+      this.server.to(meetingRoom(meeting.id)).emit('meeting-ended', data);
+    }
   }
 }

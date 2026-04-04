@@ -1,13 +1,18 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsBoolean, IsString } from 'class-validator';
 import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import { MeetingRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
-import { MeetingNotFoundException } from '../../exceptions';
+import {
+  MeetingHasEndedException,
+  MeetingHasntStartedException,
+  MeetingNotFoundException,
+} from '../../exceptions';
 import { Inject } from '@nestjs/common';
 import type { MeetingGateway } from '../../gateways';
+import { StartMeeting } from './start-meeting.command';
 
 export class JoinMeeting {
   issuerId: number;
@@ -29,6 +34,7 @@ export class JoinMeeting {
 @CommandHandler(JoinMeeting)
 export class JoinMeetingHandler implements ICommandHandler<JoinMeeting> {
   constructor(
+    private commandBus: CommandBus,
     private meetingRepo: MeetingRepository,
     private workspaceRepo: WorkspaceRepository,
     @Inject('MeetingGateway') private meetingGateway: MeetingGateway,
@@ -41,7 +47,7 @@ export class JoinMeetingHandler implements ICommandHandler<JoinMeeting> {
 
     let meeting = await this.meetingRepo.findOne({
       where: { id: meetingId },
-      relations: { attendees: true },
+      relations: { attendees: { user: true } },
     });
 
     if (!meeting) throw new MeetingNotFoundException();
@@ -53,6 +59,14 @@ export class JoinMeetingHandler implements ICommandHandler<JoinMeeting> {
 
     if (!member) throw new MeetingNotFoundException();
 
+    if (meeting.endedAt) {
+      // throw new MeetingHasEndedException();
+    }
+
+    if (meeting.attendees.length === 0) {
+      this.commandBus.execute(new StartMeeting({ meetingId }));
+    }
+
     const attendee = MeetingAttendee.of({
       remoteId,
       userId: issuerId,
@@ -60,17 +74,13 @@ export class JoinMeetingHandler implements ICommandHandler<JoinMeeting> {
       isMicrophoneOn,
     });
 
-    const attendeeExists = meeting.attendees.find(
+    const attendeeExists = meeting.attendees.some(
       (a) => a.remoteId === remoteId || a.userId === issuerId,
     );
 
     if (!attendeeExists) {
       meeting.addAttendee(attendee);
       meeting = await this.meetingRepo.save(meeting);
-    }
-
-    if (attendeeExists) {
-    } else {
       this.meetingGateway.emitAttendeeJoined(meeting, attendee);
     }
 

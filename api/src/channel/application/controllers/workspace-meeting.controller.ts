@@ -1,7 +1,7 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { FindLiveScheduledMeeting } from '../features/find-live-scheduled-meeting.query';
+import { FindLiveMeeting } from '../features/find-live-meeting.query';
 
 @Controller('workspaces/:workspaceId/meetings')
 export class WorkspaceMeetingController {
@@ -9,12 +9,12 @@ export class WorkspaceMeetingController {
 
   @Get('live-scheduled')
   @UseGuards(JwtAuthGuard)
-  findLiveScheduledMeeting(
+  async findLiveScheduledMeeting(
     @Param('workspaceId') workspaceId: number,
     @Auth() issuer: Issuer,
   ) {
-    return this.queryBus.execute(
-      new FindLiveScheduledMeeting({
+    return await this.queryBus.execute(
+      new FindLiveMeeting({
         workspaceId,
         issuerId: issuer.id,
         now: new Date(),

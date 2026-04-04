@@ -6,7 +6,7 @@ export * from './delete-reply.command';
 export * from './find-channel-members.query';
 export * from './find-channel.query';
 export * from './find-channels.query';
-export * from './find-live-scheduled-meeting.query';
+export * from './find-live-meeting.query';
 export * from './meeting/create-meeting.command';
 export * from './meeting/join-scheduled-meeting.command';
 export * from './meeting/join-channel-meeting.command';

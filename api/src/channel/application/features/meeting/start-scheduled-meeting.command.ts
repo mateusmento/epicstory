@@ -52,11 +52,9 @@ export class StartScheduledMeetingHandler
 
     const channelId = (event.payload as any)?.channelId ?? null;
 
-    const durationMs = Math.max(
-      0,
-      differenceInMilliseconds(event.endsAt, event.startsAt),
-    );
-    const scheduledEndsAt = addMilliseconds(command.occurrenceAt, durationMs);
+    const scheduledEndsAt = event.duration()
+      ? addMilliseconds(command.occurrenceAt, event.duration())
+      : null;
 
     let meeting = await this.meetingRepo.findScheduled(
       event.id,

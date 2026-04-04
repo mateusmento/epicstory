@@ -52,6 +52,7 @@ export class MeetingRepository extends Repository<Meeting> {
       where: {
         ...filter,
         ongoing: true,
+        endedAt: null,
         startedAt: LessThanOrEqual(new Date()),
       },
       relations,

@@ -60,11 +60,9 @@ export class SendScheduledMeetingReminderHandler
       Math.max(0, command.notifyMinutesBefore ?? 0),
     );
 
-    const durationMs = Math.max(
-      0,
-      differenceInMilliseconds(event.endsAt, event.startsAt),
-    );
-    const occurrenceEndsAt = addMilliseconds(occurrenceAt, durationMs);
+    const occurrenceEndsAt = event.duration()
+      ? addMilliseconds(occurrenceAt, event.duration())
+      : null;
 
     const channel = channelId
       ? await this.channelRepo.findChannel(channelId, { peers: true })
@@ -103,7 +101,15 @@ export class SendScheduledMeetingReminderHandler
           occurrenceAt: occurrenceAt,
           meetingId: meeting.id,
           title: event.title,
+          description: event.description ?? '',
+          notifyMinutesBefore: Math.max(0, command.notifyMinutesBefore ?? 0),
+          calendarEventType: event.type,
+          startsAt: occurrenceAt,
+          endsAt: occurrenceEndsAt,
+          isPublic: event.isPublic,
+          notifyEnabled: event.notifyEnabled,
           channelId,
+          eventPayload: event.payload,
         },
       });
     }

@@ -103,7 +103,7 @@ export class CreateCalendarEventCommand
     });
     if (!member) throw new Error('Issuer is not a workspace member');
 
-    const userIds = uniq([issuerId, ...command.participantIds]);
+    const userIds = uniq([issuerId, ...(command.participantIds ?? [])]);
     const participants = await this.workspaceRepo.findMembers(
       { workspaceId, userIds },
       { user: true },

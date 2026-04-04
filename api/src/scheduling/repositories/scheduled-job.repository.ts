@@ -28,7 +28,6 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
     const lockId = randomUUID();
     const now = new Date();
     const dueBy = addMilliseconds(now, windowMs);
-    console.log('dueBy', dueBy);
     const batchSize = 5000;
 
     // Use raw SQL with FOR UPDATE SKIP LOCKED for concurrency-safe locking

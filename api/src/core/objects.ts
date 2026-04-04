@@ -101,3 +101,19 @@ export function groupBy<T>(
 export function mapBy<T, K extends keyof T>(array: T[], key: K): Map<T[K], T> {
   return new Map(array.map((item) => [item[key], item]));
 }
+
+export function cached<T extends (...args: any) => any>(
+  fn: (...args: Parameters<T>) => ReturnType<T>,
+) {
+  let cache = null;
+  return (...args: Parameters<T>): ReturnType<T> => {
+    const [cachedResult, ...cacheArgs] = cache ?? [];
+    const isSameCachedArguments =
+      args.length === cacheArgs.length &&
+      args.every((v, i) => v === cacheArgs[i]);
+    const result =
+      !cachedResult || isSameCachedArguments ? fn(...args) : cachedResult;
+    if (!cachedResult || isSameCachedArguments) cache = [cachedResult, ...args];
+    return result;
+  };
+}

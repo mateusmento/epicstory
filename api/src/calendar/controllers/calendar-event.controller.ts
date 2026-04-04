@@ -50,17 +50,15 @@ export class CalendarEventController {
     return this.queryBus.execute(query);
   }
 
-  @Get(':id/lobby')
+  @Get('/lobby')
   @UseGuards(JwtAuthGuard)
   getMeetingLobby(
-    @Param('id', ParseUUIDPipe) id: UUID,
-    @Query('occurrenceAt') occurrenceAt: string,
+    @Query() query: GetCalendarMeetingLobby,
     @Auth() issuer: Issuer,
   ) {
     return this.queryBus.execute(
       new GetCalendarMeetingLobby({
-        calendarEventId: id,
-        occurrenceAt: new Date(occurrenceAt),
+        ...query,
         issuerId: issuer.id,
       }),
     );

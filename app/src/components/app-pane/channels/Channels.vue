@@ -20,13 +20,14 @@ import {
   TooltipTrigger,
 } from "@/design-system";
 import { Icon, IconChannel } from "@/design-system/icons";
-import { useChannel, useSyncedChannels } from "@/domain/channels";
+import { useChannel, useMeeting, useSyncedChannels } from "@/domain/channels";
 import { HashIcon, HeadphonesIcon, LogOutIcon, SquarePen, SquarePenIcon, Trash2Icon } from "lucide-vue-next";
 import CreateChannel from "./CreateChannel.vue";
 import InboxMessage from "./InboxMessage.vue";
 
-const { channel: currentChannel } = useChannel();
+const { channel: currentChannel, openChannel } = useChannel();
 const { channels } = useSyncedChannels();
+const { joinMeeting } = useMeeting();
 </script>
 
 <template>
@@ -59,7 +60,10 @@ const { channels } = useSyncedChannels();
 
         <Menu v-for="channel of channels" :key="channel.id" type="context-menu">
           <MenuTrigger>
-            <div class="flex:row-lg flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer">
+            <div
+              class="flex:row-lg flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+              @click="openChannel(channel)"
+            >
               <HashIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
               <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
             </div>
@@ -87,6 +91,7 @@ const { channels } = useSyncedChannels();
           v-for="channel of channels.filter((channel) => channel.type !== 'direct')"
           :key="channel.id"
           class="flex:row-lg flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+          @click="openChannel(channel)"
         >
           <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
           <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
@@ -94,19 +99,44 @@ const { channels } = useSyncedChannels();
 
         <div class="text-xs text-secondary-foreground mt-2 ml-2">Direct messages</div>
 
-        <div
+        <template
           v-for="channel of channels.filter((channel) => channel.type === 'direct')"
           :key="channel.id"
-          class="flex:row-lg flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
         >
-          <img
-            v-if="channel.speakingTo?.picture"
-            :src="channel.speakingTo?.picture"
-            class="w-4 h-4 rounded-full"
-          />
-          <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-          <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
-        </div>
+          <div
+            v-if="!channel.meeting"
+            class="flex:row-lg flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
+            @click="openChannel(channel)"
+          >
+            <img
+              v-if="channel.speakingTo?.picture"
+              :src="channel.speakingTo?.picture"
+              class="w-4 h-4 rounded-full"
+            />
+            <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+            <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+          </div>
+          <div v-else class="flex:row-sm">
+            <div
+              class="flex:row-lg flex:center-y flex-1 p-2 rounded-lg hover:bg-secondary cursor-pointer"
+              @click="openChannel(channel)"
+            >
+              <img
+                v-if="channel.speakingTo?.picture"
+                :src="channel.speakingTo?.picture"
+                class="w-4 h-4 rounded-full"
+              />
+              <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+              <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+            </div>
+            <div
+              class="p-2 rounded-lg hover:bg-secondary cursor-pointer"
+              @click="joinMeeting({ meetingId: channel.meeting.id })"
+            >
+              <HeadphonesIcon class="w-4 h-4 text-muted-foreground" />
+            </div>
+          </div>
+        </template>
       </TabsContent>
       <TabsContent value="messages" class="flex:col-md flex-1 m-2">
         <Menu v-for="channel of channels" :key="channel.id" type="context-menu">

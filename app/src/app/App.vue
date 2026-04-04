@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { UnauthorizedException } from "@/core/axios";
 import { TooltipProvider } from "@/design-system";
-import { Suspense, onErrorCaptured } from "vue";
+import { Toaster } from "@/design-system/ui/sonner";
+import { Suspense, Teleport, onErrorCaptured } from "vue";
 import { RouterView, useRouter } from "vue-router";
 
 const router = useRouter();
@@ -18,6 +19,9 @@ onErrorCaptured((err) => {
     <Suspense timeout="0">
       <template #default>
         <TooltipProvider>
+          <Teleport to="body">
+            <Toaster position="top-center" :expand="true" :rich-colors="true" close-button />
+          </Teleport>
           <component :is="Component"></component>
         </TooltipProvider>
       </template>

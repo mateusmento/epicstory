@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { Button, NavTrigger } from "@/design-system";
+import { Badge, Button, NavTrigger } from "@/design-system";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { cn } from "@/design-system/utils";
-import { computed } from "vue";
+import { computed, toRefs } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 import type { RouteLocationRaw } from "vue-router";
 
@@ -10,7 +10,11 @@ const props = defineProps<{
   view: string;
   content: string;
   to?: RouteLocationRaw;
+  /** Unread / unseen count; shown when greater than zero. */
+  badgeCount?: number;
 }>();
+
+const { view, content, to, badgeCount } = toRefs(props);
 
 const route = useRoute();
 const router = useRouter();
@@ -36,21 +40,45 @@ const active = computed(() => {
   <NavTrigger
     v-if="!to"
     :as="Button"
-    v-bind="props"
+    :view="view"
+    :content="content"
     size="sm"
     variant="ghost"
-    :class="cn('justify-start', { 'bg-secondary': active })"
+    :class="cn('w-full justify-start gap-0', { 'bg-secondary': active })"
   >
-    <slot />
+    <span class="flex flex-1 min-w-0 items-center gap-2">
+      <slot />
+    </span>
+    <Badge
+      v-if="badgeCount != null && badgeCount > 0"
+      size="xs"
+      class="justify-center rounded-full tabular-nums font-semibold leading-none shadow-none"
+      :class="{ 'w-6': badgeCount > 99 }"
+    >
+      {{ badgeCount > 99 ? "99+" : badgeCount }}
+    </Badge>
   </NavTrigger>
   <Button
     v-else
     :as="RouterLink"
-    v-bind="{ ...props, to }"
+    :view="view"
+    :content="content"
+    :to="to!"
     size="sm"
     variant="ghost"
-    :class="cn('justify-start', { 'bg-secondary': active })"
+    :class="cn('w-full justify-start gap-0', { 'bg-secondary': active })"
   >
-    <slot />
+    <span class="flex flex-1 min-w-0 items-center gap-2">
+      <slot />
+    </span>
+    <Badge
+      v-if="badgeCount != null && badgeCount > 0"
+      variant="destructive"
+      size="xs"
+      class="shrink-0 justify-center rounded-full tabular-nums font-semibold leading-none shadow-none"
+      :class="{ 'w-6': badgeCount > 99 }"
+    >
+      {{ badgeCount > 99 ? "99+" : badgeCount }}
+    </Badge>
   </Button>
 </template>

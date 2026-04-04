@@ -7,6 +7,9 @@ import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { CalendarEventRepository } from '../repositories';
 import { IsUUID } from 'class-validator';
+import { DataSource } from 'typeorm';
+import { Meeting } from 'src/channel/domain';
+import { MeetingRepository } from 'src/channel/infrastructure';
 
 export class RemoveCalendarEvent {
   @IsUUID()
@@ -23,13 +26,20 @@ export class RemoveCalendarEvent {
 export class RemoveCalendarEventCommand
   implements ICommandHandler<RemoveCalendarEvent>
 {
+  private meetingRepo: MeetingRepository;
+
   constructor(
+    private dataSource: DataSource,
     private calendarEventRepo: CalendarEventRepository,
     private workspaceRepo: WorkspaceRepository,
     private scheduledJobRepo: ScheduledJobRepository,
   ) {}
 
   async execute(command: RemoveCalendarEvent) {
+    this.meetingRepo = new MeetingRepository(
+      this.dataSource.getRepository(Meeting),
+    );
+
     const event = await this.calendarEventRepo.findOne({
       where: { id: command.id },
     });
@@ -49,6 +59,11 @@ export class RemoveCalendarEventCommand
 
     // Remove meeting_start job (linked via payload.calendarEventId).
     if (event.type === 'meeting') {
+      this.meetingRepo.update(
+        { calendarEventId: event.id },
+        { calendarEventId: null },
+      );
+
       await this.scheduledJobRepo.deleteByTypeAndCalendarEventId({
         type: ScheduledJobTypes.meeting_start,
         calendarEventId: event.id,

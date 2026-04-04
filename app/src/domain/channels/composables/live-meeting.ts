@@ -1,12 +1,12 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
-import { onMounted, onUnmounted, ref, watch } from "vue";
-import { MeetingApi } from "../services/meeting.api";
+import { onUnmounted, ref, watch } from "vue";
 import type { LiveScheduledMeeting } from "../services/meeting.api";
+import { MeetingApi } from "../services/meeting.api";
 import { useMeetingSocket } from "./meeting-socket";
 
-export function useLiveScheduledMeeting() {
+export function useLiveMeeting() {
   const { workspace } = useWorkspace();
   const sockets = useWebSockets();
   const meetingSocket = useMeetingSocket();
@@ -32,16 +32,13 @@ export function useLiveScheduledMeeting() {
   }
 
   function onMeetingSessionChanged() {
+    console.log("meeting session changed");
     void refreshLiveScheduledMeeting();
   }
 
   function onSocketConnected() {
     void refreshLiveScheduledMeeting();
   }
-
-  onMounted(async () => {
-    await refreshLiveScheduledMeeting();
-  });
 
   onUnmounted(() => {
     meetingSocket.offIncomingMeeting(onMeetingSessionChanged);

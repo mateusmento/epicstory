@@ -21,7 +21,7 @@ import CalendarMeetingReminderNotification from "./notifications/CalendarMeeting
 import CalendarEventReminderNotification from "./notifications/CalendarEventReminderNotification.vue";
 import { Separator } from "@/design-system";
 
-const { notifications, markAsSeen } = useNotifications({ limit: 100 });
+const { notifications, markAsSeen } = useNotifications();
 const router = useRouter();
 const route = useRoute();
 

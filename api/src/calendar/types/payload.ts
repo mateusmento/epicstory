@@ -5,14 +5,14 @@ export type CalendarEventPayload = {
   type: string;
 };
 
-export class MeetingCalendarEventPayload {
+export class ScheduledMeetingPayload {
   type: 'meeting';
 
   @IsOptional()
   @IsNumber()
   channelId: number | null;
 
-  constructor(data: Partial<MeetingCalendarEventPayload>) {
+  constructor(data: Partial<ScheduledMeetingPayload>) {
     patch(this, data);
     this.type = 'meeting';
   }
@@ -25,7 +25,7 @@ export function buildCalendarEventPayload(
   payload = payload ?? {};
   switch (type) {
     case 'meeting':
-      return new MeetingCalendarEventPayload(payload);
+      return new ScheduledMeetingPayload(payload);
     case 'event':
     default:
       return {
