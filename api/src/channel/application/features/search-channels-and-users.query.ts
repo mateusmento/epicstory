@@ -25,8 +25,6 @@ import {
   type ChannelUserSearchScope,
 } from './search-channels-and-users.subqueries';
 import {
-  executeUnionCountAndPage,
-  mergeUnionFragments,
   searchUnionKind,
   type SearchUnionRow,
 } from './search-channels-and-users.union';
@@ -97,22 +95,62 @@ export class SearchChannelsAndUsersQuery
       scope,
     );
 
-    const { unionSql, params: unionParams } = mergeUnionFragments(
-      channelQb.getQueryAndParameters(),
-      userQb.getQueryAndParameters(),
-    );
+    // Channels should always appear before people; the UI depends on this.
+    // A UNION COUNT(*) over (channel ∪ user) can be expensive because it may force evaluating
+    // `sort_key` for all rows. Instead, we paginate in two phases:
+    // - page channels first
+    // - if we still have room, fill with users
+    const [channelCountRaw, userCountRaw] = await Promise.all([
+      channelQb
+        .clone()
+        .select('COUNT(DISTINCT c.id)', 'cnt')
+        .getRawOne<{ cnt: string | number }>(),
+      userQb
+        .clone()
+        .select('COUNT(DISTINCT u.id)', 'cnt')
+        .getRawOne<{ cnt: string | number }>(),
+    ]);
 
-    const { total, rows } = await executeUnionCountAndPage(
-      this.channelRepo.manager,
-      unionSql,
-      unionParams,
-      limit,
-      offset,
-    );
+    const channelTotal = Number(channelCountRaw?.cnt ?? 0);
+    const userTotal = Number(userCountRaw?.cnt ?? 0);
+
+    const rows: SearchUnionRow[] = [];
+    const remainingLimit = Math.min(50, Math.max(1, Math.floor(Number(limit))));
+    const off = Math.max(0, Math.floor(Number(offset)));
+
+    if (off < channelTotal) {
+      const channelLimit = Math.max(
+        0,
+        Math.min(remainingLimit, channelTotal - off),
+      );
+      if (channelLimit > 0) {
+        const channelRows = await channelQb
+          .clone()
+          .orderBy('sort_key', 'ASC')
+          .addOrderBy('ref_id', 'ASC')
+          .limit(channelLimit)
+          .offset(off)
+          .getRawMany<SearchUnionRow>();
+        rows.push(...channelRows);
+      }
+    }
+
+    const userLimit = remainingLimit - rows.length;
+    if (userLimit > 0) {
+      const userOffset = Math.max(0, off - channelTotal);
+      const userRows = await userQb
+        .clone()
+        .orderBy('sort_key', 'ASC')
+        .addOrderBy('ref_id', 'ASC')
+        .limit(userLimit)
+        .offset(userOffset)
+        .getRawMany<SearchUnionRow>();
+      rows.push(...userRows);
+    }
 
     return {
       items: await this.hydrateInRowOrder(rows, issuer.id),
-      total,
+      total: channelTotal + userTotal,
       page,
       limit,
     };
