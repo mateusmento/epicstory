@@ -61,7 +61,10 @@ export class JoinChannelMeetingHandler
     if (!meeting) {
       meeting = Meeting.ongoing(channelId, workspaceId);
       meeting = await this.meetingRepo.save(meeting);
-      this.meetingGateway.emitIncomingMeeting(meeting, issuerId);
+      // Meeting channels are persistent (always ongoing) so we don't treat creation as an "incoming call".
+      if (channel.type !== 'meeting') {
+        this.meetingGateway.emitIncomingMeeting(meeting, issuerId);
+      }
     }
 
     const attendee = MeetingAttendee.of({

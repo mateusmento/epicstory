@@ -12,14 +12,17 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
   AddChannelMember,
+  CreateDirectOrMultiDirectChannel,
   RemoveChannelMember,
   SendDirectMessage,
 } from '../features';
 import { CreateDirectChannel } from '../features/create-direct-channel.command';
 import { CreateGroupChannel } from '../features/create-group-channel.command';
+import { CreateMeetingChannel } from '../features/create-meeting-channel.command';
 import { FindChannelMembers } from '../features/find-channel-members.query';
 import { FindChannel } from '../features/find-channel.query';
 import { FindChannels } from '../features/find-channels.query';
+import { FindChannelGroups } from '../features/find-channel-groups.query';
 import { SearchChannelsAndUsers } from '../features/search-channels-and-users.query';
 
 @Controller('workspaces/:workspaceId/channels')
@@ -53,6 +56,18 @@ export class WorkspaceChannelController {
     );
   }
 
+  @Get('groups')
+  @UseGuards(JwtAuthGuard)
+  findChannelGroups(
+    @Param('workspaceId') workspaceId: number,
+    @Query() query: FindChannelGroups,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.queryBus.execute(
+      new FindChannelGroups({ ...query, workspaceId, issuer }),
+    );
+  }
+
   @Post('group')
   @UseGuards(JwtAuthGuard)
   createGroupChannel(
@@ -65,6 +80,18 @@ export class WorkspaceChannelController {
     );
   }
 
+  @Post('meeting')
+  @UseGuards(JwtAuthGuard)
+  createMeetingChannel(
+    @Param('workspaceId') workspaceId: number,
+    @Body() command: CreateMeetingChannel,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new CreateMeetingChannel({ ...command, workspaceId, issuer }),
+    );
+  }
+
   @Post('direct')
   @UseGuards(JwtAuthGuard)
   createDirectChannel(
@@ -74,6 +101,18 @@ export class WorkspaceChannelController {
   ) {
     return this.commandBus.execute(
       new CreateDirectChannel({ ...command, workspaceId, issuer }),
+    );
+  }
+
+  @Post('direct/peers')
+  @UseGuards(JwtAuthGuard)
+  createDirectOrMultiDirect(
+    @Param('workspaceId') workspaceId: number,
+    @Body() command: CreateDirectOrMultiDirectChannel,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new CreateDirectOrMultiDirectChannel({ ...command, workspaceId, issuer }),
     );
   }
 

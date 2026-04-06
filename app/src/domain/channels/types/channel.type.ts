@@ -1,6 +1,7 @@
 import type { User } from "@/domain/user";
 import type { IMeeting } from "./meeting.type";
 import type { IMessage } from "./message.type";
+import type { Page } from "@/core/types";
 
 export type IChannel = {
   id: number;
@@ -18,9 +19,8 @@ export type ISearchChannelsAndUsersItem =
   | { kind: "channel"; channel: IChannel }
   | { kind: "user"; user: User };
 
-export type ISearchChannelsAndUsersResponse = {
-  items: ISearchChannelsAndUsersItem[];
-  total: number;
-  page: number;
-  limit: number;
+export type ChannelGroupsPage = {
+  groupChannels: Page<IChannel>;
+  meetingChannels: Page<IChannel>;
+  directChannels: Page<IChannel>;
 };

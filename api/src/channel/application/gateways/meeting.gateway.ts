@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import {
   ConnectedSocket,
@@ -383,23 +383,31 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     if (!meeting) throw new Error('Meeting not found');
 
     const channelId = meeting?.channelId;
+    const channel =
+      channelId !== null && channelId !== undefined
+        ? await this.channelRepo.findOneBy({ id: channelId })
+        : null;
+    const isPersistentMeetingChannel = channel?.type === 'meeting';
 
     const attendeesCount = await this.meetingService.leaveMeeting(
       meetingId,
       remoteId,
     );
 
-    if (attendeesCount > 0) {
-      socket.to(meetingRoom(meetingId)).emit('attendee-left', { remoteId });
-      if (channelId) {
-        socket
-          .to(channelMeetingRoom(channelId))
-          .emit('leaving-attendee', { meetingId, channelId, remoteId, user });
-      }
-      socket.leave(meetingRoom(meetingId));
-    } else {
+    // Always emit the attendee-left event. If the room is empty, there will be no receivers anyway.
+    socket.to(meetingRoom(meetingId)).emit('attendee-left', { remoteId });
+    if (channelId) {
+      socket
+        .to(channelMeetingRoom(channelId))
+        .emit('leaving-attendee', { meetingId, channelId, remoteId, user });
+    }
+    socket.leave(meetingRoom(meetingId));
+
+    // For regular meetings, we end the meeting when the last attendee leaves.
+    // For "meeting channels", the meeting is persistent (always ongoing) and must never end.
+    if (attendeesCount <= 0 && !isPersistentMeetingChannel) {
       await this.meetingService.endMeeting(meetingId);
-      this.emitMeetingEnded(meeting, socket);
+      this.emitMeetingEnded(meeting);
       this.server.socketsLeave(meetingRoom(meetingId));
     }
 
@@ -414,16 +422,27 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     const meeting = await this.meetingService.findMeeting({ meetingId });
     if (!meeting) throw new MeetingNotFoundException();
 
+    if (meeting.channelId) {
+      const channel = await this.channelRepo.findOneBy({
+        id: meeting.channelId,
+      });
+      if (channel?.type === 'meeting') {
+        throw new BadRequestException(
+          'Meeting channels are persistent and cannot be ended',
+        );
+      }
+    }
+
     await this.meetingService.endMeeting(meetingId);
 
-    this.emitMeetingEnded(meeting, socket);
+    this.emitMeetingEnded(meeting);
 
     this.server.socketsLeave(meetingRoom(meetingId));
 
     await this.clearSocketMeetingAttendee(socket.id);
   }
 
-  async emitMeetingEnded(meeting: Meeting, socket: Socket) {
+  async emitMeetingEnded(meeting: Meeting) {
     const data = { meetingId: meeting.id, channelId: meeting.channelId };
 
     this.server.to(meetingRoom(meeting.id)).emit('current-meeting-ended', data);

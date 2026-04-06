@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ScrollArea, Separator } from "@/design-system";
 import type { ISearchChannelsAndUsersItem } from "@/domain/channels/types";
+import type { Page } from "@/core/types";
 import { HashIcon, Loader2Icon } from "lucide-vue-next";
 
 const props = defineProps<{
-  items: ISearchChannelsAndUsersItem[];
+  page: Page<ISearchChannelsAndUsersItem>;
   loading: boolean;
 }>();
 
@@ -28,14 +29,14 @@ const shouldShowPeopleHeader = (items: ISearchChannelsAndUsersItem[], index: num
   <ScrollArea class="min-h-0 flex-1" @reached-bottom="emit('reached-bottom')">
     <div class="!block !min-h-0">
       <div
-        v-if="!props.loading && props.items.length === 0"
+        v-if="!props.loading && props.page.content.length === 0"
         class="px-3 py-8 text-center text-xs text-secondary-foreground"
       >
         No channels or people match your search.
       </div>
 
-      <template v-for="(item, index) in props.items" :key="getItemKey(item)">
-        <template v-if="shouldShowPeopleHeader(props.items, index)">
+      <template v-for="(item, index) in props.page.content" :key="getItemKey(item)">
+        <template v-if="shouldShowPeopleHeader(props.page.content, index)">
           <Separator class="my-2" />
           <div
             class="px-3 py-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground first:border-t-0"
@@ -82,7 +83,7 @@ const shouldShowPeopleHeader = (items: ISearchChannelsAndUsersItem[], index: num
         </button>
       </template>
 
-      <div v-if="props.loading && props.items.length > 0" class="flex justify-center py-3">
+      <div v-if="props.loading && props.page.content.length > 0" class="flex justify-center py-3">
         <Loader2Icon class="h-4 w-4 animate-spin text-muted-foreground" />
       </div>
     </div>

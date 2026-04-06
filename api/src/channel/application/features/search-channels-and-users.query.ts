@@ -14,6 +14,7 @@ import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { enrichChannelsForListView } from 'src/channel/application/utils/channel-list-enrichment';
 import { Issuer } from 'src/core/auth';
+import { Page } from 'src/core/page';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories';
@@ -50,7 +51,7 @@ export class SearchChannelsAndUsers {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number;
+  count?: number;
 
   @IsOptional()
   @IsNumber()
@@ -78,8 +79,8 @@ export class SearchChannelsAndUsersQuery
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
 
     const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
-    const offset = (page - 1) * limit;
+    const count = query.count ?? 20;
+    const offset = (page - 1) * count;
     const qTrim = query.q?.trim() ?? '';
 
     const scope: ChannelUserSearchScope = {
@@ -115,7 +116,7 @@ export class SearchChannelsAndUsersQuery
     const userTotal = Number(userCountRaw?.cnt ?? 0);
 
     const rows: SearchUnionRow[] = [];
-    const remainingLimit = Math.min(50, Math.max(1, Math.floor(Number(limit))));
+    const remainingLimit = Math.min(50, Math.max(1, Math.floor(Number(count))));
     const off = Math.max(0, Math.floor(Number(offset)));
 
     if (off < channelTotal) {
@@ -148,12 +149,10 @@ export class SearchChannelsAndUsersQuery
       rows.push(...userRows);
     }
 
-    return {
-      items: await this.hydrateInRowOrder(rows, issuer.id),
-      total: channelTotal + userTotal,
-      page,
-      limit,
-    };
+    const content = await this.hydrateInRowOrder(rows, issuer.id);
+    const total = channelTotal + userTotal;
+
+    return Page.fromResult(content, total, { page, count: remainingLimit });
   }
 
   private async hydrateInRowOrder(

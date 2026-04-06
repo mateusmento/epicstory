@@ -3,7 +3,13 @@ import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
 import { defineStore, storeToRefs } from "pinia";
 import { onMounted, onUnmounted, ref, watch } from "vue";
-import { ChannelApi, type CreateDirectChannel, type CreateGroupChannel } from "../services";
+import {
+  ChannelApi,
+  type CreateDirectChannel,
+  type CreateDirectOrMultiDirectChannel,
+  type CreateGroupChannel,
+  type CreateMeetingChannel,
+} from "../services";
 import type { IChannel } from "../types";
 import { assign } from "lodash";
 import { useMeetingSocket } from "./meeting-socket";
@@ -72,11 +78,24 @@ export function useChannels() {
     store.channels = await channelApi.findChannels(workspace.value.id);
   }
 
-  async function createChannel(data: CreateDirectChannel | CreateGroupChannel) {
-    const channel =
-      data.type === "direct"
-        ? await channelApi.createDirectChannel(workspace.value.id, data)
-        : await channelApi.createGroupChannel(workspace.value.id, data);
+  async function createChannel(
+    data:
+      | CreateDirectChannel
+      | CreateDirectOrMultiDirectChannel
+      | CreateGroupChannel
+      | CreateMeetingChannel,
+  ) {
+    let channel;
+    if (data.type === "direct") {
+      channel =
+        "peers" in data
+          ? await channelApi.createDirectOrMultiDirectChannel(workspace.value.id, data)
+          : await channelApi.createDirectChannel(workspace.value.id, data);
+    } else if (data.type === "meeting") {
+      channel = await channelApi.createMeetingChannel(workspace.value.id, data);
+    } else {
+      channel = await channelApi.createGroupChannel(workspace.value.id, data);
+    }
 
     store.channels.unshift(channel);
     return channel;

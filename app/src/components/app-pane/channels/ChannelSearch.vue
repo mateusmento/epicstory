@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useDependency } from "@/core/dependency-injection";
+import type { Page } from "@/core/types";
 import { useChannel, useSyncedChannels } from "@/domain/channels";
 import { ChannelApi } from "@/domain/channels/services";
-import type { ISearchChannelsAndUsersResponse } from "@/domain/channels/types";
+import type { ISearchChannelsAndUsersItem } from "@/domain/channels/types";
 import { useWorkspace } from "@/domain/workspace";
 import { watchDebounced } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
@@ -11,11 +12,11 @@ import ChannelSearchResult from "./ChannelSearchResult.vue";
 
 const SEARCH_LIMIT = 20;
 const normalizeQuery = (value: string) => value.trim() || undefined;
-const hasMoreResults = (result: ISearchChannelsAndUsersResponse | null) =>
-  !!result && result.items.length < result.total;
+const hasMoreResults = (result: Page<ISearchChannelsAndUsersItem> | null) => !!result?.hasNext;
 
-const appendSearchResults = <T extends { items: any[] }>(previous: T | null, next: T) =>
-  previous ? { ...next, items: [...previous.items, ...next.items] } : next;
+function appendSearchResults<T>(previous: Page<T> | null, next: Page<T>): Page<T> {
+  return previous ? { ...next, content: [...previous.content, ...next.content] } : next;
+}
 
 const searchActive = defineModel<boolean>("searchActive", { default: false });
 
@@ -28,13 +29,12 @@ const searchQuery = ref("");
 const searchFocused = ref(false);
 const searchReady = ref(false);
 const searchLoading = ref(false);
-const searchResult = ref<ISearchChannelsAndUsersResponse | null>(null);
+const searchResult = ref<Page<ISearchChannelsAndUsersItem> | null>(null);
 const searchPage = ref(1);
 const searchBar = ref<{ blur: () => void } | null>(null);
 
 const trimmedQuery = computed(() => searchQuery.value.trim());
 const inSearchMode = computed(() => searchFocused.value || trimmedQuery.value.length > 0);
-const resultItems = computed(() => searchResult.value?.items ?? []);
 const showResults = computed(
   () => inSearchMode.value && (searchLoading.value || searchResult.value !== null),
 );
@@ -53,7 +53,7 @@ async function fetchSearchPage(page: number) {
     return await channelApi.searchChannelsAndUsers(workspace.value.id, {
       q: normalizeQuery(searchQuery.value),
       page,
-      limit: SEARCH_LIMIT,
+      count: SEARCH_LIMIT,
     });
   } finally {
     searchLoading.value = false;
@@ -142,7 +142,16 @@ async function onPickUser(email: string) {
 
     <ChannelSearchResult
       v-if="showResults"
-      :items="resultItems"
+      :page="
+        searchResult ?? {
+          content: [],
+          page: 1,
+          count: SEARCH_LIMIT,
+          hasNext: false,
+          hasPrevious: false,
+          total: 0,
+        }
+      "
       :loading="searchLoading"
       @reached-bottom="onLoadMore"
       @select-channel="onPickChannel"

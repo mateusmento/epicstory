@@ -2,6 +2,7 @@ import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import type { User } from "@/domain/auth";
+import { ChannelApi } from "@/domain/channels/services";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import type { MediaStreaming } from "@/domain/channels/utils/media-streaming";
 import { createMediaStreaming, untilOpen } from "@/domain/channels/utils/media-streaming";
@@ -9,7 +10,7 @@ import { useWorkspace } from "@/domain/workspace";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
 import { ref, shallowRef } from "vue";
-import type { IMeeting, IMeetingAttendee } from "../types";
+import type { IChannel, IMeeting, IMeetingAttendee } from "../types";
 import { useMeetingSocket } from "./meeting-socket";
 
 export type MeetingStreamingAttendee = {
@@ -45,6 +46,9 @@ const useMeetingStore = defineStore("meeting", () => {
   const isMicrophoneOn = ref(true);
 
   const meetingApi = useDependency(MeetingApi);
+  const channelApi = useDependency(ChannelApi);
+
+  const currentMeetingChannelType = ref<IChannel["type"] | null>(null);
 
   async function subscribeMeetings() {
     meetingSocket.emitSubscribeMeetings(workspace.value.id);
@@ -115,6 +119,15 @@ const useMeetingStore = defineStore("meeting", () => {
     const meeting = await meetingFactory(data);
 
     currentMeeting.value = meeting;
+    currentMeetingChannelType.value = null;
+    if (meeting?.channelId) {
+      try {
+        const channel = await channelApi.findChannel(meeting.channelId);
+        currentMeetingChannelType.value = channel.type;
+      } catch {
+        currentMeetingChannelType.value = null;
+      }
+    }
 
     subscribeMeetings();
 
@@ -248,6 +261,11 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   function endMeeting() {
+    if (currentMeetingChannelType.value === "meeting") {
+      // Meeting channels are persistent; "end" behaves like leave.
+      leaveMeeting();
+      return;
+    }
     sockets.websocket.emit("end-meeting", { meetingId: currentMeeting.value?.id });
     closeMeeting();
   }
@@ -256,6 +274,7 @@ const useMeetingStore = defineStore("meeting", () => {
     streaming.value?.close();
     removeCameras();
     currentMeeting.value = null;
+    currentMeetingChannelType.value = null;
   }
 
   function removeCameras() {
@@ -294,6 +313,7 @@ const useMeetingStore = defineStore("meeting", () => {
   return {
     incomingMeeting,
     currentMeeting,
+    currentMeetingChannelType,
     subscribeMeetings,
     mycamera,
     attendees,
