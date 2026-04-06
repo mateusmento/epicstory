@@ -1,7 +1,8 @@
 <script setup lang="tsx">
 import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { useChannel, type IMessage, type IMessageGroup, type IReply } from "@/domain/channels";
+import type { IMessage, IMessageGroup, IReply } from "@/domain/channels";
+import { useChannel } from "@/domain/channels";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
 import { last } from "lodash";
 import { computed, onMounted } from "vue";

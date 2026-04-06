@@ -1,21 +1,4 @@
 <script setup lang="ts">
-import {
-  Button,
-  Separator,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/design-system";
-import { Icon } from "@/design-system/icons";
-import { SquarePen } from "lucide-vue-next";
-import AllTab from "./tabs/AllTab.vue";
-import MessagesTab from "./tabs/MessagesTab.vue";
-
-import { SearchBar } from "@/components/searchbar";
 import { useDependency } from "@/core/dependency-injection";
 import { useChannel, useSyncedChannels } from "@/domain/channels";
 import { ChannelApi } from "@/domain/channels/services";
@@ -23,6 +6,7 @@ import type { ISearchChannelsAndUsersResponse } from "@/domain/channels/types";
 import { useWorkspace } from "@/domain/workspace";
 import { watchDebounced } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
+import { SearchBar } from "@/components/searchbar";
 import ChannelSearchResult from "./ChannelSearchResult.vue";
 
 const SEARCH_LIMIT = 20;
@@ -36,7 +20,7 @@ const appendSearchResults = <T extends { items: any[] }>(previous: T | null, nex
 const searchActive = defineModel<boolean>("searchActive", { default: false });
 
 const { openChannel } = useChannel();
-const { createChannel } = useSyncedChannels();
+const { channels, createChannel } = useSyncedChannels();
 const { workspace } = useWorkspace();
 const channelApi = useDependency(ChannelApi);
 
@@ -125,72 +109,44 @@ function onLoadMore() {
   appendSearchResultsPage();
 }
 
+async function resolveChannel(channelId: number) {
+  return channels.value.find((channel) => channel.id === channelId) ?? channelApi.findChannel(channelId);
+}
+
 async function onPickChannel(channelId: number) {
-  const channel = await channelApi.findChannel(channelId);
+  const channel = await resolveChannel(channelId);
   openChannel(channel);
-  // exitSearchUi();
+  //   exitSearchUi();
 }
 
 async function onPickUser(email: string) {
   const channel = await createChannel({ type: "direct", username: email });
+  console.log("openChannel", channel);
   openChannel(channel);
-  // exitSearchUi();
+  //   exitSearchUi();
 }
 </script>
 
 <template>
-  <div class="flex:col h-full min-h-0 w-96">
-    <div class="flex:row-auto flex:center-y h-10 p-4">
-      <div class="flex:row-sm flex:center-y">
-        <Icon name="fa-slack-hash" scale="1.2" />
-        <div class="text-sm font-medium">Channels</div>
-      </div>
+  <div class="flex:col gap-1.5 mx-2 mt-2" :class="inSearchMode ? 'min-h-0 flex-1' : 'shrink-0'">
+    <SearchBar
+      ref="searchBar"
+      v-model="searchQuery"
+      v-model:focused="searchFocused"
+      :loading="searchLoading"
+      placeholder="Search channels & people"
+      @focus="onSearchFocus"
+      @blur="onSearchBlur"
+      @clear="exitSearchUi"
+    />
 
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <Button variant="ghost" size="icon">
-            <SquarePen class="h-4 w-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent> Write a new message </TooltipContent>
-      </Tooltip>
-    </div>
-
-    <Separator class="shrink-0" />
-
-    <div class="flex:col gap-1.5 mx-2 mt-2" :class="inSearchMode ? 'min-h-0 flex-1' : 'shrink-0'">
-      <SearchBar
-        ref="searchBar"
-        v-model="searchQuery"
-        v-model:focused="searchFocused"
-        :loading="searchLoading"
-        placeholder="Search channels & people"
-        @focus="onSearchFocus"
-        @blur="onSearchBlur"
-        @clear="exitSearchUi"
-      />
-
-      <ChannelSearchResult
-        v-if="showResults"
-        :items="resultItems"
-        :loading="searchLoading"
-        @reached-bottom="onLoadMore"
-        @select-channel="onPickChannel"
-        @select-user="onPickUser"
-      />
-    </div>
-
-    <Tabs v-if="!inSearchMode" default-value="messages" as-child>
-      <TabsList class="flex:row mt-2 w-auto mx-2">
-        <TabsTrigger value="all" class="text-xs">All</TabsTrigger>
-        <TabsTrigger value="messages" class="text-xs">Messages</TabsTrigger>
-      </TabsList>
-      <TabsContent value="all" class="flex-1 min-h-0" as-child>
-        <AllTab />
-      </TabsContent>
-      <TabsContent value="messages" class="flex-1 min-h-0" as-child>
-        <MessagesTab />
-      </TabsContent>
-    </Tabs>
+    <ChannelSearchResult
+      v-if="showResults"
+      :items="resultItems"
+      :loading="searchLoading"
+      @reached-bottom="onLoadMore"
+      @select-channel="onPickChannel"
+      @select-user="onPickUser"
+    />
   </div>
 </template>

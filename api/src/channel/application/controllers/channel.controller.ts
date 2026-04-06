@@ -20,6 +20,7 @@ import { CreateGroupChannel } from '../features/create-group-channel.command';
 import { FindChannelMembers } from '../features/find-channel-members.query';
 import { FindChannel } from '../features/find-channel.query';
 import { FindChannels } from '../features/find-channels.query';
+import { SearchChannelsAndUsers } from '../features/search-channels-and-users.query';
 
 @Controller('workspaces/:workspaceId/channels')
 export class WorkspaceChannelController {
@@ -27,6 +28,18 @@ export class WorkspaceChannelController {
     private queryBus: QueryBus,
     private commandBus: CommandBus,
   ) {}
+
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  searchChannelsAndUsers(
+    @Param('workspaceId') workspaceId: number,
+    @Query() query: SearchChannelsAndUsers,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.queryBus.execute(
+      new SearchChannelsAndUsers({ ...query, workspaceId, issuer }),
+    );
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard)

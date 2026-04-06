@@ -1,7 +1,7 @@
 import { InjectAxios } from "@/core/axios";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
-import type { IChannel } from "../types/channel.type";
+import type { IChannel, ISearchChannelsAndUsersResponse } from "../types/channel.type";
 import type { IMessage, IReaction, IReply } from "../types";
 import type { User } from "@/domain/auth";
 
@@ -21,6 +21,15 @@ export class ChannelApi {
 
   findChannels(workspaceId: number) {
     return this.axios.get<IChannel[]>(`/workspaces/${workspaceId}/channels`).then((res) => res.data);
+  }
+
+  searchChannelsAndUsers(
+    workspaceId: number,
+    params: { q?: string; page?: number; limit?: number },
+  ) {
+    return this.axios
+      .get<ISearchChannelsAndUsersResponse>(`/workspaces/${workspaceId}/channels/search`, { params })
+      .then((res) => res.data);
   }
 
   findChannel(channelId: number) {
