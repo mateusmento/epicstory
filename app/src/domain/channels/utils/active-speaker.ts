@@ -41,6 +41,10 @@ type SourceState = {
   audioContext: AudioContext;
   analyser: AnalyserNode;
   sourceNode: MediaStreamAudioSourceNode;
+  /**
+   * Some TS/DOM typings can be strict about the backing buffer type for analyser methods.
+   * We allocate an explicit `ArrayBuffer` when creating this `Uint8Array` (see `buildState`).
+   */
   buffer: Uint8Array;
 
   // Dynamic baseline / smoothing.
@@ -72,7 +76,7 @@ function hasUsableAudio(stream: MediaStream | null | undefined) {
   return t.length > 0;
 }
 
-function rmsFromTimeDomainBytes(buf: Uint8Array) {
+function rmsFromTimeDomainBytes(buf: ArrayLike<number>) {
   // buf is 0..255 where 128 is "center".
   let sumSq = 0;
   for (let i = 0; i < buf.length; i++) {
@@ -109,7 +113,8 @@ export function createActiveSpeakerDetector(
     const sourceNode = audioContext.createMediaStreamSource(stream);
     sourceNode.connect(analyser);
 
-    const buffer = new Uint8Array(analyser.fftSize);
+    // Force an `ArrayBuffer`-backed typed array (not SharedArrayBuffer) for stricter DOM typings.
+    const buffer = new Uint8Array(new ArrayBuffer(analyser.fftSize));
     const now = Date.now();
 
     const s: SourceState = {
@@ -162,7 +167,9 @@ export function createActiveSpeakerDetector(
       // If a track was removed mid-call, analysis becomes meaningless.
       if (!hasUsableAudio(s.stream)) continue;
 
-      s.analyser.getByteTimeDomainData(s.buffer);
+      // TypeScript DOM typings can disagree about the underlying buffer type
+      // (`ArrayBuffer` vs `ArrayBufferLike`). The runtime API only needs a Uint8Array.
+      s.analyser.getByteTimeDomainData(s.buffer as any);
       const rms = rmsFromTimeDomainBytes(s.buffer);
 
       // Update baseline noise floor (slow), biased toward lower levels.
