@@ -50,6 +50,11 @@ const useMeetingStore = defineStore("meeting", () => {
   const isCameraOn = ref(true);
   const isMicrophoneOn = ref(true);
 
+  // --- Layout mode (meeting grid) ---
+  const layoutMode = ref<"speaker" | "grid">("speaker");
+  const peersDock = ref<"both" | "top" | "right">("both");
+  const topDockMax = ref<number>(4);
+
   // --- Active speaker detection ---
   const speakingIds = ref<Set<SpeakerId>>(new Set());
   const activeSpeakerId = ref<SpeakerId | null>(null);
@@ -68,8 +73,22 @@ const useMeetingStore = defineStore("meeting", () => {
     return src;
   });
 
+  function setLayoutMode(mode: "speaker" | "grid") {
+    layoutMode.value = mode;
+  }
+
+  function setPeersDock(dock: "both" | "top" | "right") {
+    peersDock.value = dock;
+  }
+
+  function setTopDockMax(n: number) {
+    topDockMax.value = Math.max(0, Math.floor(n));
+  }
+
   function pinSpeaker(id: SpeakerId) {
     pinnedSpeakerId.value = id;
+    // Decision: pinning from grid should switch to speaker focus.
+    if (layoutMode.value === "grid") layoutMode.value = "speaker";
   }
 
   function unpinSpeaker() {
@@ -77,7 +96,13 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   function togglePinSpeaker(id: SpeakerId) {
-    pinnedSpeakerId.value = pinnedSpeakerId.value === id ? null : id;
+    if (pinnedSpeakerId.value === id) {
+      pinnedSpeakerId.value = null;
+      return;
+    }
+    pinnedSpeakerId.value = id;
+    // Decision: pinning from grid should switch to speaker focus.
+    if (layoutMode.value === "grid") layoutMode.value = "speaker";
   }
 
   function setupDetector() {
@@ -390,6 +415,12 @@ const useMeetingStore = defineStore("meeting", () => {
     attendees,
     isCameraOn,
     isMicrophoneOn,
+    layoutMode,
+    peersDock,
+    topDockMax,
+    setLayoutMode,
+    setPeersDock,
+    setTopDockMax,
     speakingIds,
     activeSpeakerId,
     pinnedSpeakerId,
