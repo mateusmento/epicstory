@@ -22,6 +22,10 @@ const {
   activeSpeakerId,
   pinnedSpeakerId,
   togglePinSpeaker,
+  layoutMode,
+  peersDock,
+  topDockMax,
+  setLayoutMode,
 } = useMeeting();
 
 const canEndMeeting = computed(() => currentMeetingChannelType.value !== "meeting");
@@ -69,7 +73,21 @@ const featured = computed<Participant>(() => {
   );
 });
 
-const thumbnails = computed(() => participants.value.filter((p) => p.id !== featured.value.id));
+const others = computed(() => participants.value.filter((p) => p.id !== featured.value.id));
+
+const topDockPeers = computed(() => {
+  if (layoutMode.value !== "speaker") return [];
+  if (peersDock.value === "right") return [];
+  if (peersDock.value === "top") return others.value;
+  return others.value.slice(0, topDockMax.value);
+});
+
+const rightDockPeers = computed(() => {
+  if (layoutMode.value !== "speaker") return [];
+  if (peersDock.value === "top") return [];
+  if (peersDock.value === "right") return others.value;
+  return others.value.slice(topDockMax.value);
+});
 
 function isSpeaking(id: string) {
   return speakingIds.value?.has?.(id) ?? false;
@@ -98,60 +116,44 @@ function AttendeeBlankPicture({ user }: { user: User }) {
 </script>
 
 <template>
-  <section class="meeting flex:col min-h-0">
-    <div class="meeting-conference">
-      <div class="w-full h-full relative">
-        <div
-          class="w-full h-full rounded-3xl overflow-hidden relative cursor-pointer select-none"
-          :class="[
-            isSpeaking(featured.id) ? 'ring-4 ring-emerald-400/80' : 'ring-0',
-            pinnedSpeakerId === featured.id ? 'outline outline-2 outline-amber-300/70' : '',
-          ]"
-          @click="togglePinSpeaker(featured.id)"
-          :title="pinnedSpeakerId === featured.id ? 'Unpin' : 'Pin (disable auto-switch)'"
-        >
-          <video
-            v-if="featured.stream && featured.isCameraOn"
-            class="w-full h-full object-cover"
-            autoplay
-            :muted="featured.isLocal"
-            playsinline
-            :ref="(el) => el && ((el as HTMLVideoElement).srcObject = featured.stream)"
-          />
-          <AttendeeBlankPicture v-else :user="(featured.user ?? user)!" />
+  <section class="h-full w-full p-3 min-h-0 flex flex-col gap-3">
+    <!-- Mode switch -->
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-md text-xs border transition"
+        :class="layoutMode === 'speaker' ? 'bg-white/10 text-white border-white/20' : 'bg-transparent text-white/80 border-white/10 hover:bg-white/5'"
+        @click="setLayoutMode('speaker')"
+      >
+        Speaker
+      </button>
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-md text-xs border transition"
+        :class="layoutMode === 'grid' ? 'bg-white/10 text-white border-white/20' : 'bg-transparent text-white/80 border-white/10 hover:bg-white/5'"
+        @click="setLayoutMode('grid')"
+      >
+        Grid
+      </button>
 
-          <div
-            v-if="featured.user?.name"
-            class="absolute bottom-28 left-1/2 -translate-x-1/2 backdrop-blur-sm bg-[#dddddd44] px-2 py-1 rounded-lg text-white"
-          >
-            {{ featured.user.name }}
-          </div>
+      <div class="flex-1" />
 
-          <div
-            v-if="pinnedSpeakerId === featured.id"
-            class="absolute top-4 left-4 backdrop-blur-sm bg-[#dddddd44] px-2 py-1 rounded-lg text-white flex items-center gap-2"
-          >
-            <Pin class="w-4 h-4" />
-            <div class="text-xs">Pinned</div>
-          </div>
-        </div>
-
-        <MeetingControls
-          :isCameraOn="isCameraOn"
-          :isMicrophoneOn="isMicrophoneOn"
-          :showEnd="canEndMeeting"
-          @toggle-camera="stopCamera"
-          @toggle-microphone="stopMicrophone"
-          @leave-meeting="leaveMeeting"
-          @end-meeting="endMeeting"
-        />
+      <div v-if="layoutMode === 'speaker'" class="text-xs text-white/60 select-none">
+        Tip: click a tile to pin/unpin
       </div>
+      <div v-else class="text-xs text-white/60 select-none">
+        Tip: click a tile to pin (switches to Speaker)
+      </div>
+    </div>
 
-      <div v-if="thumbnails.length" class="thumbnails">
+    <!-- Speaker focus mode -->
+    <div v-if="layoutMode === 'speaker'" class="flex flex-col flex-1 min-h-0 gap-3">
+      <!-- Top dock -->
+      <div v-if="topDockPeers.length" class="flex items-center gap-2 overflow-x-auto pr-2">
         <div
-          v-for="p in thumbnails"
+          v-for="p in topDockPeers"
           :key="p.id"
-          class="thumb cursor-pointer select-none"
+          class="relative shrink-0 w-56 aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black cursor-pointer select-none"
           :class="[
             isSpeaking(p.id) ? 'ring-2 ring-emerald-400/80' : 'ring-0',
             pinnedSpeakerId === p.id ? 'outline outline-2 outline-amber-300/70' : '',
@@ -167,66 +169,149 @@ function AttendeeBlankPicture({ user }: { user: User }) {
             playsinline
             :ref="(el) => el && ((el as HTMLVideoElement).srcObject = p.stream)"
           />
-          <div v-else class="w-full h-full object-cover flex items-center justify-center bg-gray-800">
-            <img
-              v-if="p.user?.picture"
-              :src="p.user.picture"
-              :alt="p.user.name"
-              class="w-12 h-12 rounded-full object-cover"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center text-white text-lg font-semibold"
-            >
+          <div v-else class="w-full h-full flex items-center justify-center bg-gray-800">
+            <img v-if="p.user?.picture" :src="p.user.picture" :alt="p.user.name" class="w-10 h-10 rounded-full object-cover" />
+            <div v-else class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white text-lg font-semibold">
               {{ p.user?.name?.charAt(0)?.toUpperCase() || "?" }}
             </div>
           </div>
-
-          <div class="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-white/90 bg-black/40 px-2 py-0.5 rounded">
+          <div class="absolute bottom-2 left-2 text-[10px] text-white/90 bg-black/40 px-2 py-0.5 rounded">
             {{ p.user?.name ?? (p.isLocal ? "You" : "Unknown") }}
           </div>
+        </div>
+      </div>
+
+      <!-- Center stage + right dock -->
+      <div class="flex flex-1 min-h-0 gap-3">
+        <div class="relative flex-1 min-h-0">
+          <div
+            class="relative w-full h-full rounded-3xl overflow-hidden bg-black cursor-pointer select-none"
+            :class="[
+              isSpeaking(featured.id) ? 'ring-4 ring-emerald-400/80' : 'ring-0',
+              pinnedSpeakerId === featured.id ? 'outline outline-2 outline-amber-300/70' : '',
+            ]"
+            @click="togglePinSpeaker(featured.id)"
+            :title="pinnedSpeakerId === featured.id ? 'Unpin' : 'Pin (disable auto-switch)'"
+          >
+            <video
+              v-if="featured.stream && featured.isCameraOn"
+              class="w-full h-full object-cover"
+              autoplay
+              :muted="featured.isLocal"
+              playsinline
+              :ref="(el) => el && ((el as HTMLVideoElement).srcObject = featured.stream)"
+            />
+            <AttendeeBlankPicture v-else :user="(featured.user ?? user)!" />
+
+            <div
+              v-if="featured.user?.name"
+              class="absolute bottom-28 left-1/2 -translate-x-1/2 backdrop-blur-sm bg-[#dddddd44] px-2 py-1 rounded-lg text-white"
+            >
+              {{ featured.user.name }}
+            </div>
+
+            <div
+              v-if="pinnedSpeakerId === featured.id"
+              class="absolute top-4 left-4 backdrop-blur-sm bg-[#dddddd44] px-2 py-1 rounded-lg text-white flex items-center gap-2"
+            >
+              <Pin class="w-4 h-4" />
+              <div class="text-xs">Pinned</div>
+            </div>
+          </div>
+
+          <div class="absolute left-1/2 -translate-x-1/2 bottom-8">
+            <MeetingControls
+              :isCameraOn="isCameraOn"
+              :isMicrophoneOn="isMicrophoneOn"
+              :showEnd="canEndMeeting"
+              @toggle-camera="stopCamera"
+              @toggle-microphone="stopMicrophone"
+              @leave-meeting="leaveMeeting"
+              @end-meeting="endMeeting"
+            />
+          </div>
+        </div>
+
+        <div v-if="rightDockPeers.length" class="w-64 shrink-0 min-h-0 overflow-y-auto pr-1 flex flex-col gap-2">
+          <div
+            v-for="p in rightDockPeers"
+            :key="p.id"
+            class="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black cursor-pointer select-none"
+            :class="[
+              isSpeaking(p.id) ? 'ring-2 ring-emerald-400/80' : 'ring-0',
+              pinnedSpeakerId === p.id ? 'outline outline-2 outline-amber-300/70' : '',
+            ]"
+            @click="togglePinSpeaker(p.id)"
+            :title="pinnedSpeakerId === p.id ? 'Unpin' : 'Pin (disable auto-switch)'"
+          >
+            <video
+              v-if="p.stream && p.isCameraOn"
+              class="w-full h-full object-cover"
+              autoplay
+              :muted="p.isLocal"
+              playsinline
+              :ref="(el) => el && ((el as HTMLVideoElement).srcObject = p.stream)"
+            />
+            <div v-else class="w-full h-full flex items-center justify-center bg-gray-800">
+              <img v-if="p.user?.picture" :src="p.user.picture" :alt="p.user.name" class="w-10 h-10 rounded-full object-cover" />
+              <div v-else class="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white text-lg font-semibold">
+                {{ p.user?.name?.charAt(0)?.toUpperCase() || "?" }}
+              </div>
+            </div>
+            <div class="absolute bottom-2 left-2 text-[10px] text-white/90 bg-black/40 px-2 py-0.5 rounded">
+              {{ p.user?.name ?? (p.isLocal ? "You" : "Unknown") }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Equal grid mode -->
+    <div
+      v-else
+      class="flex-1 min-h-0 overflow-auto grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] content-start"
+    >
+      <div
+        v-for="p in participants"
+        :key="p.id"
+        class="relative aspect-video rounded-2xl overflow-hidden bg-black cursor-pointer select-none"
+        :class="[
+          isSpeaking(p.id) ? 'ring-2 ring-emerald-400/80' : 'ring-0',
+          pinnedSpeakerId === p.id ? 'outline outline-2 outline-amber-300/70' : '',
+        ]"
+        @click="togglePinSpeaker(p.id)"
+        :title="pinnedSpeakerId === p.id ? 'Unpin' : 'Pin (switches to Speaker focus)'"
+      >
+        <video
+          v-if="p.stream && p.isCameraOn"
+          class="w-full h-full object-cover"
+          autoplay
+          :muted="p.isLocal"
+          playsinline
+          :ref="(el) => el && ((el as HTMLVideoElement).srcObject = p.stream)"
+        />
+        <div v-else class="w-full h-full flex items-center justify-center bg-gray-800">
+          <img v-if="p.user?.picture" :src="p.user.picture" :alt="p.user.name" class="w-16 h-16 rounded-full object-cover" />
+          <div
+            v-else
+            class="w-16 h-16 rounded-full bg-gray-600 flex items-center justify-center text-white text-2xl font-semibold"
+          >
+            {{ p.user?.name?.charAt(0)?.toUpperCase() || "?" }}
+          </div>
+        </div>
+
+        <div class="absolute bottom-2 left-2 text-xs text-white/90 bg-black/40 px-2 py-1 rounded">
+          {{ p.user?.name ?? (p.isLocal ? "You" : "Unknown") }}
+        </div>
+
+        <div
+          v-if="pinnedSpeakerId === p.id"
+          class="absolute top-2 left-2 backdrop-blur-sm bg-[#dddddd44] px-2 py-1 rounded-lg text-white flex items-center gap-2"
+        >
+          <Pin class="w-4 h-4" />
+          <div class="text-xs">Pinned</div>
         </div>
       </div>
     </div>
   </section>
 </template>
-
-<style scoped>
-.meeting {
-  height: 100%;
-  padding: 10px;
-}
-
-.meeting-conference {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  aspect-ratio: 4 / 3;
-}
-
-.thumbnails {
-  position: absolute;
-  top: 40px;
-  right: 40px;
-  display: flex;
-  gap: 10px;
-  flex-direction: column;
-}
-
-.meeting-controls {
-  position: absolute;
-  width: fit-content;
-  left: 50%;
-  bottom: 2rem;
-  transform: translateX(-50%);
-}
-
-.thumb {
-  position: relative;
-  width: 240px;
-  height: 160px;
-  border-radius: 24px;
-  overflow: hidden;
-  border: 2px solid #dddddd44;
-}
-</style>
