@@ -2,15 +2,15 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsNumber } from 'class-validator';
 import { compact, take, uniqBy } from 'lodash';
 import { CalendarEvent } from 'src/calendar/entities';
-import { Channel, Meeting } from 'src/channel/domain';
+import { Meeting } from 'src/channel/domain';
 import { patch } from 'src/core/objects';
+import { logQuery } from 'src/core/typeorm/logging';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import { DataSource } from 'typeorm';
 import {
   ChannelRepository,
   MeetingRepository,
 } from '../../infrastructure/repositories';
-import { logQuery } from 'src/core/typeorm/logging';
 
 export type LiveScheduledMeetingDto = {
   meeting: Meeting;
@@ -56,8 +56,10 @@ export class FindLiveMeetingHandler implements IQueryHandler<FindLiveMeeting> {
     const qb = await this.meetingRepo
       .createQueryBuilder('m')
       .leftJoinAndSelect(CalendarEvent, 'ev', 'ev.id = m.calendar_event_id')
+      .leftJoin('m.channel', 'ch')
       .andWhere('m.ongoing')
       .andWhere('m.endedAt IS NULL')
+      .andWhere('(m.channel IS NULL or ch.type != :type)', { type: 'meeting' })
       .andWhere('m.workspaceId = :workspaceId', { workspaceId })
       .andWhere('m.startedAt <= :now', { now })
       .andWhere(

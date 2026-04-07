@@ -13,7 +13,9 @@ import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
   AddChannelMember,
   CreateDirectOrMultiDirectChannel,
+  DeleteChannel,
   RemoveChannelMember,
+  RenameChannel,
   SendDirectMessage,
 } from '../features';
 import { CreateDirectChannel } from '../features/create-direct-channel.command';
@@ -141,6 +143,26 @@ export class ChannelController {
   findChannel(@Param('id') channelId: number, @Auth() issuer: Issuer) {
     return this.queryBus.execute(
       new FindChannel({ channelId, issuerId: issuer.id }),
+    );
+  }
+
+  @Post(':id/rename')
+  @UseGuards(JwtAuthGuard)
+  renameChannel(
+    @Param('id') channelId: number,
+    @Body() command: RenameChannel,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new RenameChannel({ ...command, channelId, issuerId: issuer.id }),
+    );
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  deleteChannel(@Param('id') channelId: number, @Auth() issuer: Issuer) {
+    return this.commandBus.execute(
+      new DeleteChannel({ channelId, issuerId: issuer.id }),
     );
   }
 

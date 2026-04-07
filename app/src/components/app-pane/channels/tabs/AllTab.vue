@@ -16,6 +16,7 @@ import { useDependency } from "@/core/dependency-injection";
 import type { Page } from "@/core/types";
 import {
   useChannel,
+  useChannelActions,
   useMeeting,
   useMeetingSocket,
   type IncomingMeetingPayload,
@@ -27,6 +28,8 @@ import { useWorkspace } from "@/domain/workspace";
 import { HashIcon, HeadphonesIcon, LogOutIcon, PlusIcon, SquarePenIcon, Trash2Icon } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import CreateChannel from "../CreateChannel.vue";
+import ChannelDeleteDialog from "../ChannelDeleteDialog.vue";
+import ChannelRenameDialog from "../ChannelRenameDialog.vue";
 
 const props = defineProps<{
   class?: string;
@@ -37,6 +40,7 @@ const { joinMeeting, joinChannelMeeting } = useMeeting();
 const { workspace } = useWorkspace();
 const channelApi = useDependency(ChannelApi);
 const meetingSocket = useMeetingSocket();
+const channelActions = useChannelActions();
 
 type ChannelPage = Page<IChannel>;
 
@@ -191,10 +195,73 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
   createDialogOpen[item.createKey] = false;
   await fetchInitial();
 }
+
+const renamingChannel = ref<IChannel | null>(null);
+const deletingChannel = ref<IChannel | null>(null);
+const renameOpen = ref(false);
+const deleteOpen = ref(false);
+const actionLoading = ref(false);
+
+function openRename(channel: IChannel) {
+  renamingChannel.value = channel;
+  renameOpen.value = true;
+}
+
+function openDelete(channel: IChannel) {
+  deletingChannel.value = channel;
+  deleteOpen.value = true;
+}
+
+async function leaveChannel(channel: IChannel) {
+  actionLoading.value = true;
+  try {
+    await channelActions.leaveChannel(channel, { refresh: fetchInitial });
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function confirmRename(nextName: string) {
+  if (!renamingChannel.value) return;
+  actionLoading.value = true;
+  try {
+    await channelActions.renameChannel(renamingChannel.value.id, nextName, { refresh: fetchInitial });
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function confirmDelete() {
+  if (!deletingChannel.value) return;
+  actionLoading.value = true;
+  try {
+    await channelActions.deleteChannel(deletingChannel.value, { refresh: fetchInitial });
+  } finally {
+    actionLoading.value = false;
+  }
+}
 </script>
 
 <template>
   <div :class="cn('flex:col-md m-2 flex-1', props.class)">
+    <ChannelRenameDialog
+      :open="renameOpen"
+      :disabled="actionLoading"
+      :currentName="renamingChannel?.name ?? ''"
+      title="Rename channel"
+      placeholder="Channel name"
+      @update:open="renameOpen = $event"
+      @confirm="confirmRename"
+    />
+
+    <ChannelDeleteDialog
+      :open="deleteOpen"
+      :disabled="actionLoading"
+      :title="deletingChannel?.name ?? ''"
+      @update:open="deleteOpen = $event"
+      @confirm="confirmDelete"
+    />
+
     <template v-for="item in items" :key="item.title">
       <div class="mt-2 ml-2 flex items-center justify-between gap-2">
         <div class="text-xs text-secondary-foreground">{{ item.title }}</div>
@@ -253,33 +320,37 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
           </div>
         </MenuTrigger>
         <MenuContent>
-          <MenuItem class="text-xs">
+          <MenuItem class="text-xs" @click="openRename(channel)" :disabled="channel.type === 'direct'">
             <SquarePenIcon scale="1.2" />
             <div>Rename</div>
           </MenuItem>
-          <MenuItem class="text-xs">
+          <MenuItem class="text-xs" @click="leaveChannel(channel)" :disabled="actionLoading">
             <LogOutIcon scale="1.2" />
             <div>Leave channel</div>
           </MenuItem>
           <MenuSeparator />
-          <MenuItem variant="destructive" class="text-xs">
+          <MenuItem
+            variant="destructive"
+            class="text-xs"
+            @click="openDelete(channel)"
+            :disabled="actionLoading"
+          >
             <Trash2Icon name="fa-trash" scale="1.2" />
             <div>Delete channel</div>
           </MenuItem>
         </MenuContent>
       </Menu>
 
-      <div v-if="item.page?.hasNext" class="px-2 py-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          class="w-full justify-start text-xs text-muted-foreground"
-          :disabled="item.loading"
-          @click="item.onLoadMore"
-        >
-          Load more
-        </Button>
-      </div>
+      <Button
+        v-if="item.page?.hasNext"
+        size="icon"
+        variant="ghost"
+        class="w-fit ml-2 text-xs text-muted-foreground"
+        :disabled="item.loading"
+        @click="item.onLoadMore"
+      >
+        Load more
+      </Button>
     </template>
   </div>
 </template>

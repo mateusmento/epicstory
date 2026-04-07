@@ -1,6 +1,9 @@
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { addTransactionalDataSource } from 'typeorm-transactional';
+import {
+  addTransactionalDataSource,
+  getDataSourceByName,
+} from 'typeorm-transactional';
 import { AppConfig } from '../app.config';
 import { BetterSqlite3ConnectionOptions } from 'typeorm/driver/better-sqlite3/BetterSqlite3ConnectionOptions';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
@@ -13,8 +16,20 @@ const createTypeOrmModule = (
 ) =>
   TypeOrmModule.forRootAsync({
     inject: [AppConfig],
-    dataSourceFactory: async (config) =>
-      addTransactionalDataSource(new DataSource(config)),
+    dataSourceFactory: async (options) => {
+      /**
+       * Nest's TypeORM retry mechanism calls `dataSourceFactory` again on connection failure.
+       * `typeorm-transactional` stores DataSources in a global map and throws if the same name
+       * is added twice ("default" by default). To avoid crashing on retries, only register a
+       * transactional DataSource after a successful initialization.
+       */
+      const existing = getDataSourceByName('default');
+      if (existing) return existing;
+
+      const dataSource = new DataSource(options);
+      await dataSource.initialize();
+      return addTransactionalDataSource(dataSource);
+    },
     useFactory: async (config: AppConfig) => options(config),
   });
 

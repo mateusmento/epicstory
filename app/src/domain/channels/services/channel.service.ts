@@ -2,11 +2,7 @@ import { InjectAxios } from "@/core/axios";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { Page } from "@/core/types";
-import type {
-  ChannelGroupsPage,
-  IChannel,
-  ISearchChannelsAndUsersItem,
-} from "../types/channel.type";
+import type { ChannelGroupsPage, IChannel, ISearchChannelsAndUsersItem } from "../types/channel.type";
 import type { IMessage, IReaction, IReply } from "../types";
 import type { User } from "@/domain/auth";
 
@@ -40,15 +36,9 @@ export class ChannelApi {
     return this.axios.get<IChannel[]>(`/workspaces/${workspaceId}/channels`).then((res) => res.data);
   }
 
-  searchChannelsAndUsers(
-    workspaceId: number,
-    params: { q?: string; page?: number; count?: number },
-  ) {
+  searchChannelsAndUsers(workspaceId: number, params: { q?: string; page?: number; count?: number }) {
     return this.axios
-      .get<Page<ISearchChannelsAndUsersItem>>(
-        `/workspaces/${workspaceId}/channels/search`,
-        { params },
-      )
+      .get<Page<ISearchChannelsAndUsersItem>>(`/workspaces/${workspaceId}/channels/search`, { params })
       .then((res) => res.data);
   }
 
@@ -73,6 +63,14 @@ export class ChannelApi {
     return this.axios.get<IChannel>(`/channels/${channelId}`).then((res) => res.data);
   }
 
+  renameChannel(channelId: number, name: string) {
+    return this.axios.post<IChannel>(`/channels/${channelId}/rename`, { name }).then((res) => res.data);
+  }
+
+  deleteChannel(channelId: number) {
+    return this.axios.delete<{ channelId: number }>(`/channels/${channelId}`).then((res) => res.data);
+  }
+
   createGroupChannel(workspaceId: number, data: Omit<CreateGroupChannel, "type">) {
     return this.axios
       .post<IChannel>(`/workspaces/${workspaceId}/channels/group`, data)
@@ -85,7 +83,10 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  createDirectOrMultiDirectChannel(workspaceId: number, data: Omit<CreateDirectOrMultiDirectChannel, "type">) {
+  createDirectOrMultiDirectChannel(
+    workspaceId: number,
+    data: Omit<CreateDirectOrMultiDirectChannel, "type">,
+  ) {
     return this.axios
       .post<IChannel>(`/workspaces/${workspaceId}/channels/direct/peers`, data)
       .then((res) => res.data);
