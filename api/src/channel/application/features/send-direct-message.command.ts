@@ -82,10 +82,11 @@ export class SendDirectMessageCommand
     ]);
 
     if (!channel) {
+      const participants = [sender, ...peerUsers];
       channel = await this.channelRepo.save(
         Channel.createMultiDirect({
           workspaceId: workspace.id,
-          peers: peerUsers,
+          peers: participants,
         }),
       );
     }

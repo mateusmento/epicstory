@@ -12,14 +12,20 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
   AddChannelMember,
+  CreateDirectOrMultiDirectChannel,
+  DeleteChannel,
   RemoveChannelMember,
+  RenameChannel,
   SendDirectMessage,
 } from '../features';
 import { CreateDirectChannel } from '../features/create-direct-channel.command';
 import { CreateGroupChannel } from '../features/create-group-channel.command';
+import { CreateMeetingChannel } from '../features/create-meeting-channel.command';
 import { FindChannelMembers } from '../features/find-channel-members.query';
 import { FindChannel } from '../features/find-channel.query';
 import { FindChannels } from '../features/find-channels.query';
+import { FindChannelGroups } from '../features/find-channel-groups.query';
+import { SearchChannelsAndUsers } from '../features/search-channels-and-users.query';
 
 @Controller('workspaces/:workspaceId/channels')
 export class WorkspaceChannelController {
@@ -27,6 +33,18 @@ export class WorkspaceChannelController {
     private queryBus: QueryBus,
     private commandBus: CommandBus,
   ) {}
+
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  searchChannelsAndUsers(
+    @Param('workspaceId') workspaceId: number,
+    @Query() query: SearchChannelsAndUsers,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.queryBus.execute(
+      new SearchChannelsAndUsers({ ...query, workspaceId, issuer }),
+    );
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -37,6 +55,18 @@ export class WorkspaceChannelController {
   ) {
     return this.queryBus.execute(
       new FindChannels({ ...query, workspaceId, issuer }),
+    );
+  }
+
+  @Get('groups')
+  @UseGuards(JwtAuthGuard)
+  findChannelGroups(
+    @Param('workspaceId') workspaceId: number,
+    @Query() query: FindChannelGroups,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.queryBus.execute(
+      new FindChannelGroups({ ...query, workspaceId, issuer }),
     );
   }
 
@@ -52,6 +82,18 @@ export class WorkspaceChannelController {
     );
   }
 
+  @Post('meeting')
+  @UseGuards(JwtAuthGuard)
+  createMeetingChannel(
+    @Param('workspaceId') workspaceId: number,
+    @Body() command: CreateMeetingChannel,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new CreateMeetingChannel({ ...command, workspaceId, issuer }),
+    );
+  }
+
   @Post('direct')
   @UseGuards(JwtAuthGuard)
   createDirectChannel(
@@ -61,6 +103,18 @@ export class WorkspaceChannelController {
   ) {
     return this.commandBus.execute(
       new CreateDirectChannel({ ...command, workspaceId, issuer }),
+    );
+  }
+
+  @Post('direct/peers')
+  @UseGuards(JwtAuthGuard)
+  createDirectOrMultiDirect(
+    @Param('workspaceId') workspaceId: number,
+    @Body() command: CreateDirectOrMultiDirectChannel,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new CreateDirectOrMultiDirectChannel({ ...command, workspaceId, issuer }),
     );
   }
 
@@ -89,6 +143,26 @@ export class ChannelController {
   findChannel(@Param('id') channelId: number, @Auth() issuer: Issuer) {
     return this.queryBus.execute(
       new FindChannel({ channelId, issuerId: issuer.id }),
+    );
+  }
+
+  @Post(':id/rename')
+  @UseGuards(JwtAuthGuard)
+  renameChannel(
+    @Param('id') channelId: number,
+    @Body() command: RenameChannel,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new RenameChannel({ ...command, channelId, issuerId: issuer.id }),
+    );
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  deleteChannel(@Param('id') channelId: number, @Auth() issuer: Issuer) {
+    return this.commandBus.execute(
+      new DeleteChannel({ channelId, issuerId: issuer.id }),
     );
   }
 

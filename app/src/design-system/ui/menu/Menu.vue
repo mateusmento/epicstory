@@ -8,7 +8,7 @@ import type {
 import { ContextMenuRoot, DropdownMenuRoot, useForwardPropsEmits } from "reka-ui";
 import { provideMenuImplementation, type MenuImplementation } from "./menu.context";
 import { computed } from "vue";
-import { provideDropdownMenuZContext } from "../dropdown-menu/dropdown-menu.context";
+import { provideDropdownMenuZContext } from "./menu.context";
 
 type MenuProps = DropdownMenuRootProps & ContextMenuRootProps & { type?: MenuImplementation };
 type MenuEmits = DropdownMenuRootEmits & ContextMenuRootEmits;

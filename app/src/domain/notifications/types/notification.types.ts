@@ -39,12 +39,50 @@ export type IssueAssignedNotificationPayload = {
   issuer: User;
 };
 
+export type CalendarMeetingReminderNotificationPayload = {
+  type?: "calendar_meeting_reminder";
+  calendarEventId: string;
+  occurrenceAt: string;
+  meetingId: number;
+  channelId?: number | null;
+  title: string;
+  /** Minutes before start this reminder was scheduled for (from scheduled job / event). */
+  notifyMinutesBefore?: number;
+  description?: string;
+  calendarEventType?: "event" | "meeting";
+  startsAt?: string;
+  endsAt?: string;
+  isPublic?: boolean;
+  notifyEnabled?: boolean;
+  /** Calendar row `payload` JSON (e.g. meeting channelId). */
+  eventPayload?: Record<string, unknown>;
+};
+
+export type CalendarEventReminderNotificationPayload = {
+  type?: "calendar_event_reminder";
+  calendarEventId: string;
+  occurrenceAt: string;
+  channelId?: number | null;
+  title: string;
+  /** Minutes before start this reminder was scheduled for (from scheduled job / event). */
+  notifyMinutesBefore?: number;
+  description?: string;
+  calendarEventType?: "event" | "meeting";
+  startsAt?: string;
+  endsAt?: string;
+  isPublic?: boolean;
+  notifyEnabled?: boolean;
+  eventPayload?: Record<string, unknown>;
+};
+
 export type NotificationPayload =
   | MentionNotificationPayload
   | ReplyNotificationPayload
   | DirectMessageNotificationPayload
   | IssueDueDateNotificationPayload
-  | IssueAssignedNotificationPayload;
+  | IssueAssignedNotificationPayload
+  | CalendarMeetingReminderNotificationPayload
+  | CalendarEventReminderNotificationPayload;
 
 export type Notification = {
   id: string;

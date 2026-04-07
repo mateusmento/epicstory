@@ -6,9 +6,9 @@ import { LinearImportMismatch } from '../entities';
 @Injectable()
 export class LinearImportMismatchRepository extends Repository<LinearImportMismatch> {
   constructor(
-    @InjectRepository(LinearImportMismatch) repo: Repository<LinearImportMismatch>,
+    @InjectRepository(LinearImportMismatch)
+    repo: Repository<LinearImportMismatch>,
   ) {
     super(repo.target, repo.manager, repo.queryRunner);
   }
 }
-

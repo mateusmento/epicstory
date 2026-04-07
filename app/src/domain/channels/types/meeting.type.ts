@@ -2,8 +2,14 @@ import type { User } from "@/domain/auth";
 
 export interface IMeeting {
   id: number;
-  channelId: number;
+  channelId?: number | null;
+  workspaceId?: number;
   attendees: IMeetingAttendee[];
+  ongoing: boolean;
+  startedAt: string;
+  endedAt: string | null;
+  occurrenceAt: string;
+  calendarEventId: string;
 }
 
 export interface IMeetingAttendee {

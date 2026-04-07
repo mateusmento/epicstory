@@ -28,7 +28,7 @@ services:
     env_file:
       - ./api/.env
     environment:
-      DEBUG: false
+      DEBUG: true
       DATABASE_HOST: epicstory-postgres
       REDIS_URL: "redis://epicstory-redis:6379"
     depends_on:

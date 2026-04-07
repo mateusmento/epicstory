@@ -1,12 +1,7 @@
 import { UnauthorizedException } from "@/core/axios";
 import { useAuth } from "@/domain/auth";
-import {
-  createRouter,
-  createWebHistory,
-  type NavigationGuardWithThis,
-  type RouteRecordRaw,
-} from "vue-router";
-
+import { createRouter, createWebHistory } from "vue-router";
+import type { NavigationGuardWithThis, RouteRecordRaw } from "vue-router";
 type RouteOptions = Pick<RouteRecordRaw, "beforeEnter" | "meta" | "props">;
 
 const openRoutes = defineRoutes({
@@ -46,6 +41,18 @@ const authenticatedRoutes = defineRoutes({
           path: "schedule",
           name: "schedule",
           component: () => import("@/views/schedule/Schedule.vue"),
+        },
+        {
+          path: "meetings",
+          name: "meeting-lobby",
+          component: () => import("@/views/meetings/MeetingLobby.vue"),
+          props: true,
+        },
+        {
+          path: "meetings/session/:meetingId",
+          name: "meeting-session",
+          component: () => import("@/views/meetings/MeetingSession.vue"),
+          props: true,
         },
         {
           path: "settings/user-account",

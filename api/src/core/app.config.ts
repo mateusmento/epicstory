@@ -20,7 +20,7 @@ export class AppConfig {
   @IsBoolean()
   @IsOptional()
   @Transform(({ value }) => value === 'true')
-  DEBUG: boolean = false;
+  DEBUG: boolean = true;
 
   @IsNumber()
   @Transform(({ value }) => +value)

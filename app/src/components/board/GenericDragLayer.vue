@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
 import RenderVNode from "./RenderVNode.vue";
 
@@ -10,14 +10,21 @@ import RenderVNode from "./RenderVNode.vue";
  * - Match the dragged item's size (width/height) by reading the original node rect.
  * - Allow per-item overlay UI via `data.overlay.component` + `data.overlay.props`.
  */
-const props = defineProps({
-  id: { type: [String, Number], default: "" },
-  node: { type: Object, default: null }, // HTMLElement
-  data: { type: Object, default: null },
-});
+const props = withDefaults(
+  defineProps<{
+    id?: string | number;
+    node?: HTMLElement | Element | null;
+    data?: any;
+  }>(),
+  {
+    id: "",
+    node: null,
+    data: null,
+  },
+);
 
 // Freeze the size once to avoid jitter when the source element changes styles/layout during drag.
-const frozenRect = shallowRef(null);
+const frozenRect = shallowRef<DOMRect | null>(null);
 
 watch(
   () => props.node,

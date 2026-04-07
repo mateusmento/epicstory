@@ -29,7 +29,8 @@ export class BacklogItemController {
     @Param('id') projectId: number,
     @Query() query: FindBacklogItems,
   ) {
-    return this.queryBus.execute(new FindBacklogItems({ ...query, projectId }));
+    query.projectId = projectId;
+    return this.queryBus.execute(query);
   }
 
   @Post('projects/:id/backlog-items')

@@ -2,7 +2,8 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
-import { onMounted, onUnmounted, ref, type Ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
+import type { Ref } from "vue";
 import type { IAggregatedReaction, IMessage, IReply } from "../types";
 
 type UseMessageThreadOptions = {

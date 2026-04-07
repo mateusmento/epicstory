@@ -8,7 +8,7 @@ import { computed } from "vue";
 
 const { user } = useAuth();
 const { channel, messageGroups, sendMessage, deleteMessage } = useSyncedChannel();
-const { currentMeeting, joinMeeting } = useMeeting();
+const { currentMeeting, joinChannelMeeting } = useMeeting();
 
 const emit = defineEmits<{
   (e: "message-deleted", messageId: number): void;
@@ -55,7 +55,7 @@ function onMessageDeleted(messageId: number) {
         }
       "
       :channel="channel"
-      @join-meeting="joinMeeting(channel)"
+      @join-meeting="joinChannelMeeting({ channelId: channel.id })"
       @more-details="viewContent('channel')"
       @message-deleted="onMessageDeleted"
       :key="2"

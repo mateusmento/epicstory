@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/design-system";
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
 import type { Issue } from "@/domain/issues";
 import { computed } from "vue";
 
@@ -84,8 +84,8 @@ const assigneesOverflow = computed(() =>
         </div>
       </div>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
+      <Menu>
+        <MenuTrigger as-child>
           <Button
             type="button"
             variant="ghost"
@@ -95,13 +95,11 @@ const assigneesOverflow = computed(() =>
           >
             <Icon name="bi-three-dots" class="w-4 h-4" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" class="w-44">
-          <DropdownMenuItem class="text-red-600" @click="emit('remove', sub.id)">
-            Remove issue
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </MenuTrigger>
+        <MenuContent align="end" class="w-44">
+          <MenuItem class="text-red-600" @click="emit('remove', sub.id)"> Remove issue </MenuItem>
+        </MenuContent>
+      </Menu>
     </div>
   </div>
 </template>

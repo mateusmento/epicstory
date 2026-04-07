@@ -1,5 +1,5 @@
 import { useDependency } from "@/core/dependency-injection";
-import { IssueApi, type UpdateIssueData } from "@/domain/issues";
+import { IssueApi, type Issue, type UpdateIssueData } from "@/domain/issues";
 import { defineStore, storeToRefs } from "pinia";
 import { reactive, ref } from "vue";
 import { BacklogItemApi, type FindBacklogItemsQuery } from "../api";
@@ -7,7 +7,14 @@ import type { BacklogItem } from "../types";
 
 const useBacklogStore = defineStore("backlog", () => {
   const backlogItems = ref<BacklogItem[]>([]);
-  return { backlogItems };
+
+  async function updateIssue(issue: Issue) {
+    const index = backlogItems.value.findIndex((b) => b.issue.id === issue.id);
+    if (index >= 0) backlogItems.value[index].issue = issue;
+    return issue;
+  }
+
+  return { backlogItems, updateIssue };
 });
 
 export function useBacklog() {
@@ -40,44 +47,32 @@ export function useBacklog() {
 
   async function updateIssue(issueId: number, data: UpdateIssueData) {
     const issue = await issueApi.updateIssue(issueId, data);
-    const index = store.backlogItems.findIndex((item) => item.issue.id === issueId);
-    if (index >= 0) store.backlogItems[index].issue = issue;
-    return issue;
+    return store.updateIssue(issue);
   }
 
   async function addAssignee(issueId: number, userId: number) {
     const issue = await issueApi.addAssignee(issueId, userId);
-    const index = store.backlogItems.findIndex((i) => i.issue.id === issueId);
-    if (index >= 0) store.backlogItems[index].issue = issue;
-    return issue;
+    return store.updateIssue(issue);
   }
 
   async function removeAssignee(issueId: number, userId: number) {
     const issue = await issueApi.removeAssignee(issueId, userId);
-    const index = store.backlogItems.findIndex((i) => i.issue.id === issueId);
-    if (index >= 0) store.backlogItems[index].issue = issue;
-    return issue;
+    return store.updateIssue(issue);
   }
 
   async function addLabel(issueId: number, labelId: number) {
     const issue = await issueApi.addLabel(issueId, labelId);
-    const index = store.backlogItems.findIndex((i) => i.issue.id === issueId);
-    if (index >= 0) store.backlogItems[index].issue = issue;
-    return issue;
+    return store.updateIssue(issue);
   }
 
   async function removeLabel(issueId: number, labelId: number) {
     const issue = await issueApi.removeLabel(issueId, labelId);
-    const index = store.backlogItems.findIndex((i) => i.issue.id === issueId);
-    if (index >= 0) store.backlogItems[index].issue = issue;
-    return issue;
+    return store.updateIssue(issue);
   }
 
-  async function markAsSubIssueOf(subIssueId: number, parentIssueId: number) {
+  async function markAsSubIssueOf(subIssueId: number, parentIssueId: number | null) {
     const issue = await issueApi.updateIssue(subIssueId, { parentIssueId });
-    const index = store.backlogItems.findIndex((i) => i.issue.id === subIssueId);
-    if (index >= 0) store.backlogItems[index].issue = issue;
-    return issue;
+    return store.updateIssue(issue);
   }
 
   async function removeIssue(issueId: number) {

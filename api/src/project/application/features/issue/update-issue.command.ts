@@ -3,10 +3,12 @@ import { IsDate, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
+import { ScheduledJobTypes } from 'src/scheduling/constants';
+import { ScheduledJob } from 'src/scheduling/entities';
+import { ScheduledJobRepository } from 'src/scheduling/repositories';
+import { buildScheduledJobPayload } from 'src/scheduling/types/payload';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { ScheduledEventRepository } from 'src/notifications/repositories/scheduled-event.repository';
-import { ScheduledEvent } from 'src/notifications/entities/scheduled-event.entity';
 import { Transactional } from 'typeorm-transactional';
 import { ProjectGateway } from '../../gateways/project.gateway';
 
@@ -48,7 +50,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
   constructor(
     private issueRepo: IssueRepository,
     private workspaceRepo: WorkspaceRepository,
-    private scheduledEventRepo: ScheduledEventRepository,
+    private scheduledJobRepo: ScheduledJobRepository,
     private projectGateway: ProjectGateway,
   ) {}
 
@@ -79,7 +81,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
       if (dueDate === null) {
         // Due date is being removed - cancel the scheduled event if not processed
         if (previousScheduledEventId) {
-          await this.scheduledEventRepo.deleteUnprocessedEvent(
+          await this.scheduledJobRepo.deleteUnprocessedEvent(
             previousScheduledEventId,
           );
           issue.scheduledEventId = null;
@@ -88,26 +90,31 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
         // Due date is being set or updated
         // Delete existing scheduled event if it exists and hasn't been processed
         if (previousScheduledEventId) {
-          await this.scheduledEventRepo.deleteUnprocessedEvent(
+          await this.scheduledJobRepo.deleteUnprocessedEvent(
             previousScheduledEventId,
           );
         }
 
-        // Create a new scheduled event with the new due date
-        const scheduledEvent = ScheduledEvent.create({
-          userId: notifyUserId,
+        // Create a new scheduled job with the new due date
+        const scheduledJob = ScheduledJob.create({
+          type: ScheduledJobTypes.due_issue_reminder,
           workspaceId: issue.workspaceId,
-          payload: {
-            type: 'issue_due_date',
-            title: issueTitle,
-            description: `Issue "${issueTitle}" is due`,
-            issueId: issue.id,
-            projectId: issue.projectId,
-          },
+          notifyMinutesBefore: 0,
+          recurrence: { frequency: 'once' },
+          payload: buildScheduledJobPayload(
+            ScheduledJobTypes.due_issue_reminder,
+            {
+              userId: notifyUserId,
+              title: issueTitle,
+              description: `Issue "${issueTitle}" is due`,
+              issueId: issue.id,
+              projectId: issue.projectId,
+            },
+          ),
           dueAt: dueDate,
         });
-        const savedEvent = await this.scheduledEventRepo.save(scheduledEvent);
-        issue.scheduledEventId = savedEvent.id as string;
+        const savedJob = await this.scheduledJobRepo.save(scheduledJob);
+        issue.scheduledEventId = savedJob.id as string;
       }
     }
 

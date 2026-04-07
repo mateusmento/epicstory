@@ -13,6 +13,7 @@ import ThreadDrawer from "@/components/channel/ThreadDrawer.vue";
 import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout";
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { NotFoundException, UnauthorizedException } from "@/core/axios";
+import { useNotificationIncomingAlerts, useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
 import { computed, ref, watch } from "vue";
 import { RouterView, useRoute, useRouter } from "vue-router";
@@ -35,6 +36,9 @@ const isDetailsPaneOpen = computed({
 const workspaceId = computed(() => +route.params.workspaceId);
 
 const { fetchWorkspace } = useWorkspace();
+
+useNotifications({ manageConnection: true, limit: 100 });
+useNotificationIncomingAlerts();
 
 async function loadWorkspace() {
   try {

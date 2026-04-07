@@ -20,6 +20,7 @@ import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
 import { useBacklogRowContext } from "./backlog-row.context";
 import { IssueStatusMenu } from "@/components/issue";
+import { useBacklog } from "@/domain/backlog";
 
 const props = defineProps<{
   itemId: number;
@@ -35,7 +36,6 @@ const {
   workspaceId,
   gridColsClass,
   editing,
-  actions,
   openIssue,
   startEdit,
   cancelEdit,
@@ -45,7 +45,7 @@ const {
   onLabelsChange,
 } = ctx;
 
-const { updateIssue, addAssignee } = actions;
+const { updateIssue, addAssignee } = useBacklog();
 
 const isEditing = computed(() => editing.id === props.issue.id);
 
@@ -156,7 +156,6 @@ const editableModel = computed({
 
       <div v-if="issue.labels?.length" class="mt-0.5 ml-auto flex flex-wrap gap-1 min-w-0">
         <IssueLabelTags
-          :workspace-id="workspaceId"
           :disabled="!issue"
           :model-value="(issue?.labels ?? []).map((l) => l.id)"
           @update:model-value="onLabelsChange(issue, $event)"

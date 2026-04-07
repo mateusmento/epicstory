@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { WorkspaceMember } from 'src/workspace/domain/entities/workspace-member.entity';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
+import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { AddWorkspaceMemberPrerequisite } from 'src/workspace/domain/values/add-workspace-member-prerequisite.value';
 import { FindOptionsRelations, In, Like, Repository } from 'typeorm';
 
@@ -28,6 +29,12 @@ export class WorkspaceRepository extends Repository<Workspace> {
     const issuer = await this.findMember(workspaceId, issuerId);
     const memberExists = await this.memberExists(workspaceId, userId);
     return new AddWorkspaceMemberPrerequisite(issuer, !!issuer, memberExists);
+  }
+
+  async requiresMembership(workspaceId: number, userId: number) {
+    const member = await this.findMember(workspaceId, userId);
+    if (!member) throw new IssuerUserIsNotWorkspaceMember();
+    return member;
   }
 
   findMember(

@@ -5,6 +5,7 @@ import { IconCameraOff, IconCameraOn, IconHangupCall, IconMicrophoneOff, IconMic
 defineProps<{
   isCameraOn: boolean;
   isMicrophoneOn: boolean;
+  showEnd?: boolean;
 }>();
 
 const emit = defineEmits(["toggle-camera", "toggle-microphone", "leave-meeting", "end-meeting"]);
@@ -34,6 +35,7 @@ const emit = defineEmits(["toggle-camera", "toggle-microphone", "leave-meeting",
       <ExitIcon class="w-5 h-5" />
     </button>
     <button
+      v-if="showEnd ?? true"
       class="flex flex:center w-10 h-10 border-none rounded-full bg-red-500 text-white"
       @click="emit('end-meeting')"
     >

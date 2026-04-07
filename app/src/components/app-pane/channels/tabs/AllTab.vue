@@ -1,0 +1,356 @@
+<script setup lang="ts">
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+} from "@/design-system";
+import { cn } from "@/design-system/utils";
+import { useDependency } from "@/core/dependency-injection";
+import type { Page } from "@/core/types";
+import {
+  useChannel,
+  useChannelActions,
+  useMeeting,
+  useMeetingSocket,
+  type IncomingMeetingPayload,
+  type MeetingEndedPayload,
+} from "@/domain/channels";
+import { ChannelApi } from "@/domain/channels/services";
+import type { IChannel } from "@/domain/channels/types";
+import { useWorkspace } from "@/domain/workspace";
+import { HashIcon, HeadphonesIcon, LogOutIcon, PlusIcon, SquarePenIcon, Trash2Icon } from "lucide-vue-next";
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import CreateChannel from "../CreateChannel.vue";
+import ChannelDeleteDialog from "../ChannelDeleteDialog.vue";
+import ChannelRenameDialog from "../ChannelRenameDialog.vue";
+
+const props = defineProps<{
+  class?: string;
+}>();
+
+const { openChannel } = useChannel();
+const { joinMeeting, joinChannelMeeting } = useMeeting();
+const { workspace } = useWorkspace();
+const channelApi = useDependency(ChannelApi);
+const meetingSocket = useMeetingSocket();
+const channelActions = useChannelActions();
+
+type ChannelPage = Page<IChannel>;
+
+const groupChannels = ref<ChannelPage | null>(null);
+const meetingChannels = ref<ChannelPage | null>(null);
+const directChannels = ref<ChannelPage | null>(null);
+
+const loadingGroup = ref(false);
+const loadingMeeting = ref(false);
+const loadingDirect = ref(false);
+
+const GROUP_COUNT = 20;
+const createDialogOpen = reactive({
+  group: false,
+  meeting: false,
+  direct: false,
+});
+
+function mergePages<T>(previous: Page<T> | null, next: Page<T>): Page<T> {
+  return previous ? { ...next, content: [...previous.content, ...next.content] } : next;
+}
+
+async function fetchInitial() {
+  const result = await channelApi.findChannelGroups(workspace.value.id, {
+    groupPage: 1,
+    meetingPage: 1,
+    directPage: 1,
+    count: GROUP_COUNT,
+  });
+  groupChannels.value = result.groupChannels;
+  meetingChannels.value = result.meetingChannels;
+  directChannels.value = result.directChannels;
+}
+
+async function loadMoreGroup() {
+  if (!groupChannels.value?.hasNext || loadingGroup.value) return;
+  loadingGroup.value = true;
+  try {
+    const nextPage = groupChannels.value.page + 1;
+    const result = await channelApi.findChannelGroups(workspace.value.id, {
+      groupPage: nextPage,
+      count: GROUP_COUNT,
+    });
+    groupChannels.value = mergePages(groupChannels.value, result.groupChannels);
+  } finally {
+    loadingGroup.value = false;
+  }
+}
+
+async function loadMoreMeetings() {
+  if (!meetingChannels.value?.hasNext || loadingMeeting.value) return;
+  loadingMeeting.value = true;
+  try {
+    const nextPage = meetingChannels.value.page + 1;
+    const result = await channelApi.findChannelGroups(workspace.value.id, {
+      meetingPage: nextPage,
+      count: GROUP_COUNT,
+    });
+    meetingChannels.value = mergePages(meetingChannels.value, result.meetingChannels);
+  } finally {
+    loadingMeeting.value = false;
+  }
+}
+
+async function loadMoreDirect() {
+  if (!directChannels.value?.hasNext || loadingDirect.value) return;
+  loadingDirect.value = true;
+  try {
+    const nextPage = directChannels.value.page + 1;
+    const result = await channelApi.findChannelGroups(workspace.value.id, {
+      directPage: nextPage,
+      count: GROUP_COUNT,
+    });
+    directChannels.value = mergePages(directChannels.value, result.directChannels);
+  } finally {
+    loadingDirect.value = false;
+  }
+}
+
+function updateChannelMeeting(channelId: number, meeting: any | null) {
+  const patch = (page: ChannelPage | null) => {
+    const ch = page?.content.find((c) => c.id === channelId);
+    if (ch) ch.meeting = meeting;
+  };
+  patch(groupChannels.value);
+  patch(meetingChannels.value);
+  patch(directChannels.value);
+}
+
+function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
+  if (!channelId) return;
+  updateChannelMeeting(channelId, meeting);
+}
+
+function onMeetingEnded({ channelId }: MeetingEndedPayload) {
+  if (!channelId) return;
+  updateChannelMeeting(channelId, null);
+}
+
+function subscribeMeetingEvents() {
+  meetingSocket.emitSubscribeMeetings(workspace.value.id);
+  meetingSocket.onIncomingMeeting(onIncomingMeeting);
+  meetingSocket.onMeetingEnded(onMeetingEnded);
+}
+
+function unsubscribeMeetingEvents() {
+  meetingSocket.offIncomingMeeting(onIncomingMeeting);
+  meetingSocket.offMeetingEnded(onMeetingEnded);
+}
+
+const items = computed(() => [
+  {
+    title: "Channels",
+    createKey: "group" as const,
+    createTitle: "Create channel",
+    page: groupChannels.value,
+    onLoadMore: loadMoreGroup,
+    loading: loadingGroup.value,
+  },
+  {
+    title: "Meetings",
+    createKey: "meeting" as const,
+    createTitle: "Create meeting channel",
+    page: meetingChannels.value,
+    onLoadMore: loadMoreMeetings,
+    loading: loadingMeeting.value,
+  },
+  {
+    title: "Direct messages",
+    createKey: "direct" as const,
+    createTitle: "Start a direct message",
+    page: directChannels.value,
+    onLoadMore: loadMoreDirect,
+    loading: loadingDirect.value,
+  },
+]);
+
+onMounted(async () => {
+  await fetchInitial();
+  subscribeMeetingEvents();
+});
+
+onUnmounted(() => {
+  unsubscribeMeetingEvents();
+});
+
+watch(workspace, async () => {
+  await fetchInitial();
+});
+
+async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct" }) {
+  createDialogOpen[item.createKey] = false;
+  await fetchInitial();
+}
+
+const renamingChannel = ref<IChannel | null>(null);
+const deletingChannel = ref<IChannel | null>(null);
+const renameOpen = ref(false);
+const deleteOpen = ref(false);
+const actionLoading = ref(false);
+
+function openRename(channel: IChannel) {
+  renamingChannel.value = channel;
+  renameOpen.value = true;
+}
+
+function openDelete(channel: IChannel) {
+  deletingChannel.value = channel;
+  deleteOpen.value = true;
+}
+
+async function leaveChannel(channel: IChannel) {
+  actionLoading.value = true;
+  try {
+    await channelActions.leaveChannel(channel, { refresh: fetchInitial });
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function confirmRename(nextName: string) {
+  if (!renamingChannel.value) return;
+  actionLoading.value = true;
+  try {
+    await channelActions.renameChannel(renamingChannel.value.id, nextName, { refresh: fetchInitial });
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function confirmDelete() {
+  if (!deletingChannel.value) return;
+  actionLoading.value = true;
+  try {
+    await channelActions.deleteChannel(deletingChannel.value, { refresh: fetchInitial });
+  } finally {
+    actionLoading.value = false;
+  }
+}
+</script>
+
+<template>
+  <div :class="cn('flex:col-md m-2 flex-1', props.class)">
+    <ChannelRenameDialog
+      :open="renameOpen"
+      :disabled="actionLoading"
+      :currentName="renamingChannel?.name ?? ''"
+      title="Rename channel"
+      placeholder="Channel name"
+      @update:open="renameOpen = $event"
+      @confirm="confirmRename"
+    />
+
+    <ChannelDeleteDialog
+      :open="deleteOpen"
+      :disabled="actionLoading"
+      :title="deletingChannel?.name ?? ''"
+      @update:open="deleteOpen = $event"
+      @confirm="confirmDelete"
+    />
+
+    <template v-for="item in items" :key="item.title">
+      <div class="mt-2 ml-2 flex items-center justify-between gap-2">
+        <div class="text-xs text-secondary-foreground">{{ item.title }}</div>
+        <Dialog v-model:open="createDialogOpen[item.createKey]">
+          <DialogTrigger as-child>
+            <Button size="icon" variant="ghost" class="h-6 w-6" :title="item.createTitle">
+              <PlusIcon class="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogTitle>{{ item.createTitle }}</DialogTitle>
+            <CreateChannel
+              :initialType="item.createKey"
+              :showTypeSelector="false"
+              @created="onChannelCreated(item)"
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Menu v-for="channel of item.page?.content ?? []" :key="channel.id" type="context-menu">
+        <MenuTrigger>
+          <div class="flex:row-sm">
+            <div
+              class="flex:row-lg flex:center-y flex-1 p-2 rounded-lg hover:bg-secondary cursor-pointer"
+              @click="openChannel(channel)"
+            >
+              <img
+                v-if="channel.speakingTo?.picture"
+                :src="channel.speakingTo?.picture"
+                class="w-4 h-4 rounded-full"
+              />
+              <HeadphonesIcon
+                v-else-if="channel.type === 'meeting'"
+                class="h-4 w-4 text-muted-foreground"
+                stroke-width="2.5"
+              />
+              <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+              <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+            </div>
+            <button
+              v-if="channel.type === 'meeting' || channel.meeting"
+              type="button"
+              class="p-2 rounded-lg hover:bg-secondary cursor-pointer shrink-0"
+              @mousedown.prevent
+              @touchstart.prevent
+              @click.stop="
+                channel.type === 'meeting'
+                  ? joinChannelMeeting({ channelId: channel.id })
+                  : channel.meeting && joinMeeting({ meetingId: channel.meeting.id })
+              "
+              title="Join meeting"
+            >
+              <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+            </button>
+          </div>
+        </MenuTrigger>
+        <MenuContent>
+          <MenuItem class="text-xs" @click="openRename(channel)" :disabled="channel.type === 'direct'">
+            <SquarePenIcon scale="1.2" />
+            <div>Rename</div>
+          </MenuItem>
+          <MenuItem class="text-xs" @click="leaveChannel(channel)" :disabled="actionLoading">
+            <LogOutIcon scale="1.2" />
+            <div>Leave channel</div>
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem
+            variant="destructive"
+            class="text-xs"
+            @click="openDelete(channel)"
+            :disabled="actionLoading"
+          >
+            <Trash2Icon name="fa-trash" scale="1.2" />
+            <div>Delete channel</div>
+          </MenuItem>
+        </MenuContent>
+      </Menu>
+
+      <Button
+        v-if="item.page?.hasNext"
+        size="icon"
+        variant="ghost"
+        class="w-fit ml-2 text-xs text-muted-foreground"
+        :disabled="item.loading"
+        @click="item.onLoadMore"
+      >
+        Load more
+      </Button>
+    </template>
+  </div>
+</template>

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 
 @Injectable()
 export class ChannelRepository extends Repository<Channel> {
@@ -12,8 +12,8 @@ export class ChannelRepository extends Repository<Channel> {
     super(repo.target, repo.manager, repo.queryRunner);
   }
 
-  findChannel(id: number) {
-    return this.findOne({ where: { id } });
+  findChannel(id: number, relations?: FindOptionsRelations<Channel>) {
+    return this.findOne({ where: { id }, relations });
   }
 
   findMultiDirectChannel(peers: number[]) {

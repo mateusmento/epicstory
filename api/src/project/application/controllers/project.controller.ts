@@ -35,11 +35,11 @@ export class ProjectController {
     return this.queryBus.execute(new FindProject({ projectId }));
   }
 
-  @Get(':id/backlog-items')
+  @Post(':id/backlog-items')
   @UseGuards(JwtAuthGuard)
   findProjectBacklogItems(
     @Param('id') projectId: number,
-    @Query() query: FindBacklogItems,
+    @Body() query: FindBacklogItems,
   ) {
     return this.queryBus.execute(new FindBacklogItems({ ...query, projectId }));
   }

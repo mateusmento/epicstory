@@ -1,5 +1,4 @@
 import type { Issue } from "@/domain/issues";
-import type { IssueContextMenuActions } from "@/components/issue/issue-context-menu/types";
 import { inject, provide, type InjectionKey } from "vue";
 
 export type BacklogEditingState = {
@@ -11,7 +10,6 @@ export type BacklogRowContext = {
   workspaceId: number;
   gridColsClass: string;
   editing: BacklogEditingState;
-  actions: IssueContextMenuActions;
 
   openIssue(issue: Issue): void;
   startEdit(issue: Issue): void;

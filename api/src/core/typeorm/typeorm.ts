@@ -1,6 +1,9 @@
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { addTransactionalDataSource } from 'typeorm-transactional';
+import {
+  addTransactionalDataSource,
+  getDataSourceByName,
+} from 'typeorm-transactional';
 import { AppConfig } from '../app.config';
 import { BetterSqlite3ConnectionOptions } from 'typeorm/driver/better-sqlite3/BetterSqlite3ConnectionOptions';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
@@ -13,15 +16,44 @@ const createTypeOrmModule = (
 ) =>
   TypeOrmModule.forRootAsync({
     inject: [AppConfig],
-    dataSourceFactory: async (config) =>
-      addTransactionalDataSource(new DataSource(config)),
+    dataSourceFactory: async (options) => {
+      /**
+       * Nest's TypeORM retry mechanism calls `dataSourceFactory` again on connection failure.
+       * `typeorm-transactional` stores DataSources in a global map and throws if the same name
+       * is added twice ("default" by default). To avoid crashing on retries, only register a
+       * transactional DataSource after a successful initialization.
+       */
+      const existing = getDataSourceByName('default');
+      if (existing) return existing;
+
+      const dataSource = new DataSource(options);
+      await dataSource.initialize();
+      return addTransactionalDataSource(dataSource);
+    },
     useFactory: async (config: AppConfig) => options(config),
   });
 
 const postgres =
   (options: OptionsFactory<PostgresConnectionOptions> = () => ({})) =>
-  (config: AppConfig) =>
-    ({
+  (config: AppConfig) => {
+    const opt = options(config);
+
+    // Scheduling recurrence uses Postgres functions that depend on the *session* TimeZone
+    // (e.g. date_trunc('day', timestamptz) and extract(dow from timestamptz)).
+    // We standardize the session TZ to UTC to make recurrence evaluation deterministic.
+    const baseExtra = (opt as any).extra ?? {};
+    const prevOptions = String(baseExtra.options ?? '').trim();
+    const mergedOptions = [prevOptions, `-c TimeZone=UTC`]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    const mergedExtra = {
+      ...baseExtra,
+      options: mergedOptions,
+    };
+
+    return {
       type: 'postgres',
       host: config.DATABASE_HOST,
       port: config.DATABASE_PORT,
@@ -31,8 +63,10 @@ const postgres =
       logger: 'advanced-console',
       autoLoadEntities: false,
       namingStrategy: new SnakeNamingStrategy(),
-      ...options(config),
-    }) satisfies TypeOrmModuleOptions;
+      ...opt,
+      extra: mergedExtra,
+    } satisfies TypeOrmModuleOptions;
+  };
 
 const betterSqlite =
   (options: OptionsFactory<BetterSqlite3ConnectionOptions> = () => ({})) =>

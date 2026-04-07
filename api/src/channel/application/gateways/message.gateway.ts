@@ -11,8 +11,9 @@ import { MessageReply } from 'src/channel/domain/entities';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { MessageService } from '../services/message.service';
 
-const channelMessagingRoom = (channelId) => `channel:${channelId}:messaging`;
-const userRoom = (userId) => `user:${userId}`;
+const channelMessagingRoom = (channelId) =>
+  `channel:${channelId}:messaging` as const;
+const userRoom = (userId) => `user:${userId}` as const;
 
 @WebSocketGateway()
 export class MessageGateway {

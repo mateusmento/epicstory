@@ -7,7 +7,6 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Meeting } from './meeting.entity';
@@ -15,7 +14,7 @@ import { Message } from './message.entity';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import { Team, Workspace } from 'src/workspace/domain/entities';
 
-export type ChannelType = 'direct' | 'multi-direct' | 'group';
+export type ChannelType = 'direct' | 'multi-direct' | 'group' | 'meeting';
 
 @Entity({ schema: CHANNEL_SCHEMA, name: 'channel' })
 export class Channel {
@@ -53,8 +52,7 @@ export class Channel {
 
   speakingTo: User;
 
-  @OneToOne(() => Meeting, (m) => m.channel)
-  meeting: Meeting;
+  meeting?: Meeting | null;
 
   @Column({ default: null })
   lastMessageId: number;

@@ -1,7 +1,8 @@
 import { InjectAxios } from "@/core/axios";
 import type { Axios } from "axios";
 import { injectable } from "tsyringe";
-import type { IChannel } from "../types/channel.type";
+import type { Page } from "@/core/types";
+import type { ChannelGroupsPage, IChannel, ISearchChannelsAndUsersItem } from "../types/channel.type";
 import type { IMessage, IReaction, IReply } from "../types";
 import type { User } from "@/domain/auth";
 
@@ -10,9 +11,21 @@ export type CreateDirectChannel = {
   username: string;
 };
 
+export type CreateDirectOrMultiDirectChannel = {
+  type: "direct";
+  peers: number[];
+};
+
 export type CreateGroupChannel = {
   type: "group";
   name: string;
+  members?: number[];
+};
+
+export type CreateMeetingChannel = {
+  type: "meeting";
+  name: string;
+  members?: number[];
 };
 
 @injectable()
@@ -23,8 +36,39 @@ export class ChannelApi {
     return this.axios.get<IChannel[]>(`/workspaces/${workspaceId}/channels`).then((res) => res.data);
   }
 
+  searchChannelsAndUsers(workspaceId: number, params: { q?: string; page?: number; count?: number }) {
+    return this.axios
+      .get<Page<ISearchChannelsAndUsersItem>>(`/workspaces/${workspaceId}/channels/search`, { params })
+      .then((res) => res.data);
+  }
+
+  findChannelGroups(
+    workspaceId: number,
+    params?: {
+      teamId?: number;
+      groupPage?: number;
+      meetingPage?: number;
+      directPage?: number;
+      count?: number;
+    },
+  ) {
+    return this.axios
+      .get<ChannelGroupsPage>(`/workspaces/${workspaceId}/channels/groups`, {
+        params,
+      })
+      .then((res) => res.data);
+  }
+
   findChannel(channelId: number) {
     return this.axios.get<IChannel>(`/channels/${channelId}`).then((res) => res.data);
+  }
+
+  renameChannel(channelId: number, name: string) {
+    return this.axios.post<IChannel>(`/channels/${channelId}/rename`, { name }).then((res) => res.data);
+  }
+
+  deleteChannel(channelId: number) {
+    return this.axios.delete<{ channelId: number }>(`/channels/${channelId}`).then((res) => res.data);
   }
 
   createGroupChannel(workspaceId: number, data: Omit<CreateGroupChannel, "type">) {
@@ -36,6 +80,21 @@ export class ChannelApi {
   createDirectChannel(workspaceId: number, data: Omit<CreateDirectChannel, "type">) {
     return this.axios
       .post<IChannel>(`/workspaces/${workspaceId}/channels/direct`, data)
+      .then((res) => res.data);
+  }
+
+  createDirectOrMultiDirectChannel(
+    workspaceId: number,
+    data: Omit<CreateDirectOrMultiDirectChannel, "type">,
+  ) {
+    return this.axios
+      .post<IChannel>(`/workspaces/${workspaceId}/channels/direct/peers`, data)
+      .then((res) => res.data);
+  }
+
+  createMeetingChannel(workspaceId: number, data: Omit<CreateMeetingChannel, "type">) {
+    return this.axios
+      .post<IChannel>(`/workspaces/${workspaceId}/channels/meeting`, data)
       .then((res) => res.data);
   }
 

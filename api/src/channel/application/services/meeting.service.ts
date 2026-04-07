@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Meeting, MeetingAttendee } from 'src/channel/domain';
+import { MeetingAttendee } from 'src/channel/domain';
 import {
   MeetingAttendeeRepository,
   MeetingRepository,
 } from 'src/channel/infrastructure';
-import {
-  MeetingHasntStartedException,
-  MeetingNotFoundException,
-} from '../exceptions';
 
 @Injectable()
 export class MeetingService {
@@ -16,35 +12,17 @@ export class MeetingService {
     private meetingAttendeeRepo: MeetingAttendeeRepository,
   ) {}
 
-  async findMeeting(id: number) {
-    const meeting = await this.meetingRepo.findOneBy({ id });
-    if (!meeting) throw new MeetingNotFoundException();
-    return meeting;
-  }
-
-  findOngoingMeeting(channelId: number) {
-    const meeting = this.meetingRepo.findOne({
-      where: { channelId, ongoing: true },
+  async findMeeting({
+    meetingId,
+    channelId,
+  }:
+    | { meetingId: number; channelId?: never }
+    | { channelId: number; meetingId?: never }) {
+    const meeting = await this.meetingRepo.findOne({
+      where: { id: meetingId, channelId },
       relations: { attendees: true },
     });
-    if (!meeting) throw new MeetingHasntStartedException();
     return meeting;
-  }
-
-  save(meeting: Meeting) {
-    return this.meetingRepo.save(meeting);
-  }
-
-  async startMeeting(channelId: number, attendee: MeetingAttendee) {
-    const meeting = Meeting.ongoing(channelId);
-    meeting.addAttendee(attendee);
-    return await this.meetingRepo.save(meeting);
-  }
-
-  async joinMeeting(meeting: Meeting, attendee: MeetingAttendee) {
-    if (!meeting || !meeting.ongoing) throw new MeetingHasntStartedException();
-    meeting.addAttendee(attendee);
-    return await this.meetingRepo.save(meeting);
   }
 
   async leaveMeeting(meetingId: number, remoteId: string) {
@@ -54,7 +32,10 @@ export class MeetingService {
 
   async endMeeting(meetingId: number) {
     await this.meetingAttendeeRepo.delete({ meetingId });
-    return this.meetingRepo.delete({ id: meetingId });
+    return this.meetingRepo.update({ id: meetingId }, {
+      ongoing: false,
+      endedAt: new Date(),
+    } as any);
   }
 
   async updateAttendee(

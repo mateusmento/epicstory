@@ -2,6 +2,7 @@
 import { useAuth } from "@/domain/auth";
 import { useMeeting } from "@/domain/channels";
 import type { User } from "@/domain/user";
+import { computed } from "vue";
 import MeetingControls from "./MeetingControls.vue";
 
 const { user } = useAuth();
@@ -15,7 +16,10 @@ const {
   endMeeting,
   stopCamera,
   stopMicrophone,
+  currentMeetingChannelType,
 } = useMeeting();
+
+const canEndMeeting = computed(() => currentMeetingChannelType.value !== "meeting");
 </script>
 
 <script lang="tsx">
@@ -55,6 +59,7 @@ function AttendeeBlankPicture({ user }: { user: User }) {
         <MeetingControls
           :isCameraOn="isCameraOn"
           :isMicrophoneOn="isMicrophoneOn"
+          :showEnd="canEndMeeting"
           @toggle-camera="stopCamera"
           @toggle-microphone="stopMicrophone"
           @leave-meeting="leaveMeeting"
@@ -82,6 +87,7 @@ function AttendeeBlankPicture({ user }: { user: User }) {
           <MeetingControls
             :isCameraOn="isCameraOn"
             :isMicrophoneOn="isMicrophoneOn"
+            :showEnd="canEndMeeting"
             @toggle-camera="stopCamera"
             @toggle-microphone="stopMicrophone"
             @leave-meeting="leaveMeeting"
@@ -112,6 +118,7 @@ function AttendeeBlankPicture({ user }: { user: User }) {
             <MeetingControls
               :isCameraOn="isCameraOn"
               :isMicrophoneOn="isMicrophoneOn"
+              :showEnd="canEndMeeting"
               @toggle-camera="stopCamera"
               @toggle-microphone="stopMicrophone"
               @leave-meeting="leaveMeeting"

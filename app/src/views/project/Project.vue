@@ -1,6 +1,10 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbSeparator,
   Button,
   Command,
   CommandEmpty,
@@ -13,22 +17,16 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
+  Menu,
+  MenuContent,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuTrigger,
   Separator,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@/design-system";
 import { Icon, IconSearch } from "@/design-system/icons";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/design-system/ui/breadcrumb";
-import ToggleGroup from "@/design-system/ui/toggle-group/ToggleGroup.vue";
-import ToggleGroupItem from "@/design-system/ui/toggle-group/ToggleGroupItem.vue";
 import { IssueApi, type Issue } from "@/domain/issues";
 import { ProjectApi, type Project } from "@/domain/project";
 import { useMagicKeys, useStorage, whenever } from "@vueuse/core";
@@ -36,6 +34,7 @@ import { Calculator, Calendar, CreditCard, Settings, Smile, SquarePen, User } fr
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import NewIssueModal from "./NewIssueModal.vue";
+import ProjectFiltersBar from "./filters/ProjectFiltersBar.vue";
 
 const props = defineProps<{ workspaceId: string; projectId: string; issueId?: string }>();
 
@@ -221,27 +220,25 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
         </ToggleGroupItem>
       </ToggleGroup>
 
-      <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y ml-auto">
+      <ProjectFiltersBar :project-id="+projectId" />
+
+      <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y">
         <div class="text-xs">Group by:</div>
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
+        <Menu>
+          <MenuTrigger as-child>
             <Button variant="outline" size="badge" class="flex:row-md flex:center-y">
               {{ GROUP_BY_OPTIONS[groupBy ?? "none"] }}
               <Icon name="oi-chevron-down" class="text-muted-foreground" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-56">
-            <DropdownMenuRadioGroup v-model="groupBy">
-              <DropdownMenuRadioItem
-                v-for="(label, option) in GROUP_BY_OPTIONS"
-                :key="option"
-                :value="option"
-              >
+          </MenuTrigger>
+          <MenuContent align="end" class="w-56">
+            <MenuRadioGroup v-model="groupBy">
+              <MenuRadioItem v-for="(label, option) in GROUP_BY_OPTIONS" :key="option" :value="option">
                 {{ label }}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              </MenuRadioItem>
+            </MenuRadioGroup>
+          </MenuContent>
+        </Menu>
       </div>
     </div>
 

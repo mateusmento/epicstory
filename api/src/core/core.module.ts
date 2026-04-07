@@ -3,6 +3,7 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TypedConfigModule, dotenvLoader } from 'nest-typed-config';
 import { AppConfig } from './app.config';
+import { RedisService } from './redis.service';
 
 @Global()
 @Module({
@@ -15,5 +16,7 @@ import { AppConfig } from './app.config';
     CqrsModule.forRoot(),
     EventEmitterModule.forRoot({ global: true }),
   ],
+  providers: [RedisService],
+  exports: [RedisService],
 })
 export class CoreModule {}

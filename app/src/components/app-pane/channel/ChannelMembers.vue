@@ -1,12 +1,5 @@
 <script lang="ts" setup>
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/design-system";
+import { Button, Menu, MenuContent, MenuGroup, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
@@ -76,23 +69,21 @@ function removeMember(memberId: number) {
           </div>
         </div>
 
-        <div class="flex:col-auto">
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="ghost" size="icon" class="self-end">
-                <DotsHorizontalIcon />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="bottom" align="end">
-              <DropdownMenuGroup>
-                <DropdownMenuItem @click="removeMember(member.id)" variant="destructive">
-                  <Trash2Icon class="mr-2 h-4 w-4" />
-                  <span class="whitespace-nowrap">Remove from channel</span>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <Menu>
+          <MenuTrigger as-child>
+            <Button variant="ghost" size="icon">
+              <DotsHorizontalIcon />
+            </Button>
+          </MenuTrigger>
+          <MenuContent side="bottom" align="end">
+            <MenuGroup>
+              <MenuItem @click="removeMember(member.id)" variant="destructive">
+                <Trash2Icon class="mr-2 h-4 w-4" />
+                <span class="whitespace-nowrap">Remove from channel</span>
+              </MenuItem>
+            </MenuGroup>
+          </MenuContent>
+        </Menu>
       </div>
     </div>
   </div>

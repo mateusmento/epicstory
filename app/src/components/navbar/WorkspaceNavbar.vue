@@ -2,27 +2,64 @@
 import { UserProfile } from "@/components/user";
 import {
   Button,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-  DropdownMenu,
-  DropdownMenuItem,
+  MenuContent,
+  MenuGroup,
+  MenuLabel,
+  MenuSeparator,
+  MenuShortcut,
+  MenuTrigger,
+  Menu,
+  MenuItem,
   NavTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
+import { useLiveMeeting, useMeeting } from "@/domain/channels";
+import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
 import { ArrowLeft, ArrowRight, LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
+import { computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
+import { useRouter } from "vue-router";
+import CurrentMeetingControlsCard from "./CurrentMeetingControlsCard.vue";
+import LiveMeetingJoinCard from "./LiveMeetingJoinCard.vue";
 import { NavListItem } from "../layout";
 
 defineProps<{ isAppPaneOpen: boolean }>();
 
 const { workspace } = useWorkspace();
 const { user, signOut } = useAuth();
+const router = useRouter();
+
+const { currentMeeting, incomingMeeting, subscribeMeetings } = useMeeting();
+
+const { liveScheduledMeeting } = useLiveMeeting();
+
+const { unseenCount } = useNotifications();
+
+const showHuddleCard = computed(() => {
+  return Boolean(!currentMeeting.value && liveScheduledMeeting.value?.meeting?.ongoing);
+});
+
+const huddlePeers = computed(() => {
+  return (liveScheduledMeeting.value?.participantsPreview ?? []).slice(0, 4);
+});
+
+onMounted(() => {
+  subscribeMeetings();
+});
+
+async function onJoinLiveScheduledMeeting() {
+  if (!liveScheduledMeeting.value?.meeting) return;
+  const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
+  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt;
+  // if (!calendarEventId || !occurrenceAt) return;
+  router.push({
+    name: "meeting-lobby",
+    params: { workspaceId: workspace.value.id },
+    query: { occurrenceAt, calendarEventId, meetingId: liveScheduledMeeting.value?.meeting.id },
+  });
+}
 </script>
 
 <template>
@@ -58,8 +95,21 @@ const { user, signOut } = useAuth();
       </div>
     </div>
 
+    <div v-if="showHuddleCard" class="px-2">
+      <LiveMeetingJoinCard
+        :title="liveScheduledMeeting?.calendarEvent?.title ?? 'Meeting'"
+        :people="huddlePeers"
+        @join="onJoinLiveScheduledMeeting"
+      />
+    </div>
+
     <nav class="flex:col-md">
-      <NavListItem view="app-pane" content="inbox" class="flex:row-md flex:center-y">
+      <NavListItem
+        view="app-pane"
+        content="inbox"
+        class="flex:row-md flex:center-y"
+        :badge-count="unseenCount"
+      >
         <Icon name="oi-inbox" />
         Inbox
       </NavListItem>
@@ -97,12 +147,16 @@ const { user, signOut } = useAuth();
 
     <div class="flex-1"></div>
 
-    <DropdownMenu>
-      <DropdownMenuTrigger as-child>
+    <div v-if="currentMeeting || incomingMeeting" class="px-2 pb-2">
+      <CurrentMeetingControlsCard />
+    </div>
+
+    <Menu type="dropdown-menu">
+      <MenuTrigger as-child>
         <UserProfile />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuLabel class="flex:col-sm flex-1 min-w-0 max-w-44">
+      </MenuTrigger>
+      <MenuContent>
+        <MenuLabel class="flex:col-sm flex-1 min-w-0 max-w-44">
           <div class="font-medium whitespace-nowrap text-ellipsis overflow-hidden">
             {{ user?.name }}
           </div>
@@ -111,36 +165,32 @@ const { user, signOut } = useAuth();
           >
             {{ user?.email }}
           </div>
-        </DropdownMenuLabel>
+        </MenuLabel>
 
-        <DropdownMenuSeparator />
+        <MenuSeparator />
 
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            :as="RouterLink"
-            :to="`/${workspace.id}/settings/user-account`"
-            class="text-[13px] w-44"
-          >
+        <MenuGroup>
+          <MenuItem :as="RouterLink" :to="`/${workspace.id}/settings/user-account`" class="text-[13px] w-44">
             <UserIcon class="mr-2 h-4 w-4" />
             <span>Profile</span>
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-          </DropdownMenuItem>
+            <MenuShortcut>⇧⌘P</MenuShortcut>
+          </MenuItem>
 
-          <DropdownMenuItem class="text-[13px] w-44">
+          <MenuItem class="text-[13px] w-44">
             <SettingsIcon class="mr-2 h-4 w-4" />
             <span>Settings</span>
-            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-          </DropdownMenuItem>
+            <MenuShortcut>⌘S</MenuShortcut>
+          </MenuItem>
 
-          <DropdownMenuSeparator />
+          <MenuSeparator />
 
-          <DropdownMenuItem @click="signOut" variant="destructive" class="text-[13px] w-44">
+          <MenuItem @click="signOut" variant="destructive" class="text-[13px] w-44">
             <LogOutIcon class="mr-2 h-4 w-4" />
             <span>Sign out</span>
-            <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <MenuShortcut>⇧⌘Q</MenuShortcut>
+          </MenuItem>
+        </MenuGroup>
+      </MenuContent>
+    </Menu>
   </div>
 </template>
