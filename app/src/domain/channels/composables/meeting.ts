@@ -6,10 +6,15 @@ import { ChannelApi } from "@/domain/channels/services";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import type { MediaStreaming } from "@/domain/channels/utils/media-streaming";
 import { createMediaStreaming, untilOpen } from "@/domain/channels/utils/media-streaming";
+import {
+  createActiveSpeakerDetector,
+  type ActiveSpeakerDetector,
+  type SpeakerId,
+} from "@/domain/channels/utils/active-speaker";
 import { useWorkspace } from "@/domain/workspace";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
-import { ref, shallowRef } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import type { IChannel, IMeeting, IMeetingAttendee } from "../types";
 import { useMeetingSocket } from "./meeting-socket";
 
@@ -45,10 +50,57 @@ const useMeetingStore = defineStore("meeting", () => {
   const isCameraOn = ref(true);
   const isMicrophoneOn = ref(true);
 
+  // --- Active speaker detection ---
+  const speakingIds = ref<Set<SpeakerId>>(new Set());
+  const activeSpeakerId = ref<SpeakerId | null>(null);
+  const pinnedSpeakerId = ref<SpeakerId | null>(null);
+  const detector = shallowRef<ActiveSpeakerDetector | null>(null);
+
   const meetingApi = useDependency(MeetingApi);
   const channelApi = useDependency(ChannelApi);
 
   const currentMeetingChannelType = ref<IChannel["type"] | null>(null);
+
+  const sources = computed(() => {
+    const src: { id: SpeakerId; stream: MediaStream | null }[] = [];
+    src.push({ id: "local", stream: mycamera.value });
+    for (const a of attendees.value) src.push({ id: a.remoteId, stream: a.camera });
+    return src;
+  });
+
+  function pinSpeaker(id: SpeakerId) {
+    pinnedSpeakerId.value = id;
+  }
+
+  function unpinSpeaker() {
+    pinnedSpeakerId.value = null;
+  }
+
+  function togglePinSpeaker(id: SpeakerId) {
+    pinnedSpeakerId.value = pinnedSpeakerId.value === id ? null : id;
+  }
+
+  function setupDetector() {
+    if (detector.value) return;
+    detector.value = createActiveSpeakerDetector(({ speakingIds: nextSpeaking, newestSpeakerId }) => {
+      speakingIds.value = nextSpeaking;
+      if (!pinnedSpeakerId.value) activeSpeakerId.value = newestSpeakerId;
+    });
+  }
+
+  function syncDetectorSources() {
+    setupDetector();
+    detector.value?.setSources(sources.value);
+    void detector.value?.resume();
+  }
+
+  function teardownDetector() {
+    detector.value?.stop();
+    detector.value = null;
+    speakingIds.value = new Set();
+    activeSpeakerId.value = null;
+    pinnedSpeakerId.value = null;
+  }
 
   async function subscribeMeetings() {
     meetingSocket.emitSubscribeMeetings(workspace.value.id);
@@ -85,6 +137,9 @@ const useMeetingStore = defineStore("meeting", () => {
 
     mycamera.value = camera;
 
+    // Start (or refresh) active speaker detection once we have a local stream.
+    syncDetectorSources();
+
     const rtc = await untilOpen(
       new Peer({
         host: config.PEERJS_SERVER_HOST,
@@ -107,6 +162,7 @@ const useMeetingStore = defineStore("meeting", () => {
           isCameraOn: attendee?.isCameraOn ?? false,
           isMicrophoneOn: attendee?.isMicrophoneOn ?? false,
         });
+        syncDetectorSources();
       },
     });
 
@@ -196,6 +252,9 @@ const useMeetingStore = defineStore("meeting", () => {
   function attendeeLeft({ remoteId }: { remoteId: string }) {
     streaming.value?.disconnect(remoteId);
     attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId);
+    if (activeSpeakerId.value === remoteId) activeSpeakerId.value = null;
+    if (pinnedSpeakerId.value === remoteId) pinnedSpeakerId.value = null;
+    syncDetectorSources();
   }
 
   function onCameraToggled({ remoteId, enabled }: { remoteId: string; enabled: boolean }) {
@@ -275,6 +334,7 @@ const useMeetingStore = defineStore("meeting", () => {
     removeCameras();
     currentMeeting.value = null;
     currentMeetingChannelType.value = null;
+    teardownDetector();
   }
 
   function removeCameras() {
@@ -310,6 +370,17 @@ const useMeetingStore = defineStore("meeting", () => {
     });
   }
 
+  // Keep detector inputs synced when local/remote streams change (camera reacquired, etc).
+  watch(
+    sources,
+    () => {
+      if (!detector.value) return;
+      detector.value.setSources(sources.value);
+      void detector.value.resume();
+    },
+    { deep: false },
+  );
+
   return {
     incomingMeeting,
     currentMeeting,
@@ -319,6 +390,12 @@ const useMeetingStore = defineStore("meeting", () => {
     attendees,
     isCameraOn,
     isMicrophoneOn,
+    speakingIds,
+    activeSpeakerId,
+    pinnedSpeakerId,
+    pinSpeaker,
+    unpinSpeaker,
+    togglePinSpeaker,
     joinMeeting,
     joinScheduledMeeting,
     joinChannelMeeting,
