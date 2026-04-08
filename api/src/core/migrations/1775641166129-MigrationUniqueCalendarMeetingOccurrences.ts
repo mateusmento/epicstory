@@ -1,9 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class MigrationUniqueCalendarMeetingOccurrences1779000000000
+export class MigrationUniqueCalendarMeetingOccurrences1775641166129
   implements MigrationInterface
 {
-  name = 'MigrationUniqueCalendarMeetingOccurrences1779000000000';
+  name = 'MigrationUniqueCalendarMeetingOccurrences1775641166129';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Ensure calendar-backed meetings are unique per occurrence start.

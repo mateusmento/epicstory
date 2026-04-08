@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { patch } from 'src/core/objects';
@@ -8,11 +8,9 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 export class RenameChannel {
-  @IsNumber()
-  channelId: number;
-
-  @IsNumber()
   issuerId: number;
+
+  channelId: number;
 
   @IsString()
   @IsNotEmpty()
