@@ -22,9 +22,14 @@ import { useChannel, useSyncedChannels } from "@/domain/channels";
 import { ChannelApi } from "@/domain/channels/services";
 import type { ISearchChannelsAndUsersItem } from "@/domain/channels/types";
 import { useWorkspace } from "@/domain/workspace";
-import { watchDebounced } from "@vueuse/core";
+import { StorageSerializers, useStorage, watchDebounced } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";
 import ChannelSearchResult from "./ChannelSearchResult.vue";
+
+const activeTab = useStorage<string>("channels.activeTab", "all", localStorage, {
+  serializer: StorageSerializers.string,
+  mergeDefaults: true,
+});
 
 const SEARCH_LIMIT = 20;
 const normalizeQuery = (value: string) => value.trim() || undefined;
@@ -172,7 +177,16 @@ async function onPickUser(email: string) {
 
       <ChannelSearchResult
         v-if="showResults"
-        :page="searchResult ?? { content: [], page: 1, count: SEARCH_LIMIT, hasNext: false, hasPrevious: false, total: 0 }"
+        :page="
+          searchResult ?? {
+            content: [],
+            page: 1,
+            count: SEARCH_LIMIT,
+            hasNext: false,
+            hasPrevious: false,
+            total: 0,
+          }
+        "
         :loading="searchLoading"
         @reached-bottom="onLoadMore"
         @select-channel="onPickChannel"
@@ -180,7 +194,7 @@ async function onPickUser(email: string) {
       />
     </div>
 
-    <Tabs v-if="!inSearchMode" default-value="messages" as-child>
+    <Tabs v-if="!inSearchMode" v-model="activeTab" as-child>
       <TabsList class="flex:row mt-2 w-auto mx-2">
         <TabsTrigger value="all" class="text-xs">All</TabsTrigger>
         <TabsTrigger value="messages" class="text-xs">Messages</TabsTrigger>
