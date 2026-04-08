@@ -1,0 +1,27 @@
+{
+  # Dev-only Caddyfile intended to run inside Docker.
+  #
+  # Run via docker compose service `caddy` (see docker-compose.caddy.yml).
+  #
+  # This expects mkcert-generated files mounted into the container at:
+  #   /certs/epicstory.io.pem
+  #   /certs/epicstory.io-key.pem
+}
+
+epicstory.io {
+  tls /certs/epicstory.io.pem /certs/epicstory.io-key.pem
+
+  encode gzip zstd
+
+  # API (REST + Socket.IO)
+  @api path /api* /api/*
+  reverse_proxy @api 127.0.0.1:3000
+
+  # PeerJS
+  @peerjs path /peerjs* /peerjs/*
+  reverse_proxy @peerjs 127.0.0.1:3001
+
+  # Vite dev server (app + HMR websocket)
+  reverse_proxy 127.0.0.1:8080
+}
+
