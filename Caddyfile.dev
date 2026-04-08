@@ -1,0 +1,30 @@
+{
+  # Dev-only Caddyfile for local HTTPS.
+  # Run with: caddy run --config Caddyfile.dev --adapter caddyfile
+  #
+  # Certs:
+  # - Generate with mkcert and place files at:
+  #   ./certs/epicstory.io.pem
+  #   ./certs/epicstory.io-key.pem
+  #
+  # Host mapping:
+  # - Ensure epicstory.io resolves to your LAN host (hosts file / local DNS).
+}
+
+epicstory.io {
+  tls ./certs/epicstory.io.pem ./certs/epicstory.io-key.pem
+
+  encode gzip zstd
+
+  # API (REST + Socket.IO)
+  @api path /api* /api/*
+  reverse_proxy @api 127.0.0.1:3000
+
+  # PeerJS
+  @peerjs path /peerjs* /peerjs/*
+  reverse_proxy @peerjs 127.0.0.1:3001
+
+  # Vite dev server (app + HMR websocket)
+  reverse_proxy 127.0.0.1:8080
+}
+

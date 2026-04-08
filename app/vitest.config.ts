@@ -3,7 +3,8 @@ import { mergeConfig, defineConfig, configDefaults } from "vitest/config";
 import viteConfig from "./vite.config";
 
 export default mergeConfig(
-  viteConfig,
+  // `viteConfig` is a Vite `UserConfigExport` function; cast to keep TS happy under vue-tsc build mode.
+  viteConfig as any,
   defineConfig({
     test: {
       environment: "jsdom",
