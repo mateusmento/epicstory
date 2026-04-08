@@ -1,0 +1,14 @@
+services:
+  caddy:
+    image: caddy:2
+    container_name: epicstory-caddy
+    restart: unless-stopped
+
+    # Linux: easiest way for a containerized reverse-proxy to reach your locally-running
+    # Vite (8080) + API (3000) while also binding to :443 on the host.
+    network_mode: host
+
+    volumes:
+      - ./Caddyfile.docker:/etc/caddy/Caddyfile:ro
+      - ./certs:/certs:ro
+

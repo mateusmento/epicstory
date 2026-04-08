@@ -65,10 +65,26 @@ pnpm dev
 
 ## 6) Run Caddy as the HTTPS reverse proxy
 
-From repo root:
+From repo root (pick one):
+
+### Option A — Caddy installed locally
 
 ```bash
 caddy run --config Caddyfile.dev --adapter caddyfile
+```
+
+### Option B — Caddy via Docker Compose (Linux)
+
+This runs Caddy in a container but proxies to your **locally-running** Vite/API via `network_mode: host`.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d caddy
+```
+
+Logs:
+
+```bash
+docker logs -f epicstory-caddy
 ```
 
 Now open:
