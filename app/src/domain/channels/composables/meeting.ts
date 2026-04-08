@@ -173,6 +173,7 @@ const useMeetingStore = defineStore("meeting", () => {
         host: config.PEERJS_SERVER_HOST,
         port: config.PEERJS_SERVER_PORT,
         path: config.PEERJS_SERVER_PATH,
+        secure: (config as any).PEERJS_SERVER_SECURE ?? window.location.protocol === "https:",
       }),
     );
 
