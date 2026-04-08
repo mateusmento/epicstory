@@ -298,4 +298,3 @@ export function createActiveSpeakerDetector(
     getSnapshot: computeSnapshot,
   };
 }
-

@@ -158,7 +158,10 @@ const useMeetingStore = defineStore("meeting", () => {
   ) {
     const camera = existingCamera ?? (await getCamera());
 
-    if (!camera) return;
+    if (!camera) {
+      console.log("Can not join meeting without camera permission");
+      return;
+    }
 
     mycamera.value = camera;
 
