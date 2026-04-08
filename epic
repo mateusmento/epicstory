@@ -298,6 +298,19 @@ async function postgres(action, args = []) {
   }
 }
 
+async function https(action, args = []) {
+  try {
+    if (!action || ["help", "--help", "-h"].includes(action)) {
+      await runCommand("node", [path.join(scriptsDir, "https.js"), "help"]);
+      return;
+    }
+    await runCommand("node", [path.join(scriptsDir, "https.js"), action, ...args]);
+  } catch (error) {
+    console.error(`❌ HTTPS ${action} failed:`, error.message);
+    process.exit(1);
+  }
+}
+
 // Main CLI logic
 function main() {
   const args = process.argv.slice(2);
@@ -340,6 +353,9 @@ function main() {
     case "postgres":
       postgres(rest[0], rest.slice(1));
       break;
+    case "https":
+      https(rest[0], rest.slice(1));
+      break;
     case "help":
     case "--help":
     case "-h":
@@ -368,6 +384,7 @@ Usage:
   epic restart                 Restart containers (optionally rebuild)
   epic migrations <command>    Manage API database migrations
   epic postgres <command>      Rotate/list/restore postgres data folder
+  epic https <command>         Local HTTPS dev helpers (mkcert, CA install)
   epic help                    Show this help message
 
 Examples:
@@ -394,6 +411,8 @@ Examples:
   epic postgres list
   epic postgres restore 20260208T120000Z
   epic postgres restore-latest
+  epic https gen-certs --domain epicstory.io
+  epic https install-ca --remote mateus@192.168.0.6 --nss auto
 
 Postgres tips:
   - Postgres commands default to running via sudo (data dir is often root/docker-owned)
