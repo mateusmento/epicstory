@@ -413,6 +413,7 @@ Examples:
   epic postgres restore-latest
   epic https gen-certs --domain epicstory.io
   epic https install-ca --remote mateus@192.168.0.6 --nss auto
+  epic https install-ca-local --nss auto
 
 Postgres tips:
   - Postgres commands default to running via sudo (data dir is often root/docker-owned)
