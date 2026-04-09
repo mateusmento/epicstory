@@ -5,6 +5,7 @@ import {
   selectConfig,
   TypedConfigModule,
 } from 'nest-typed-config';
+import { jwtExpiresInToSeconds } from './auth';
 
 export function loadAppConfig() {
   return selectConfig(
@@ -68,7 +69,7 @@ export class AppConfig {
   JWT_SECRET: string;
 
   @IsNumber()
-  @Transform(({ value }) => +value)
+  @Transform(({ value }) => jwtExpiresInToSeconds(value))
   JWT_EXPIRES_IN: number;
 
   @IsNotEmpty()

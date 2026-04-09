@@ -10,9 +10,7 @@ import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
 
-defineProps<{
-  meId: number;
-}>();
+defineProps<{ meId: number }>();
 
 const message = defineModel<IMessage>("message", { required: true });
 

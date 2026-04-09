@@ -44,9 +44,9 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 <template>
   <!--   -->
   <aside class="flex:col h-full w-96 border-l border-zinc-300/60">
-    <div class="flex:row-lg flex:center-y p-4 min-h-14 whitespace-nowrap">
+    <div class="flex:row-lg flex:center-y px-2 min-h-10 whitespace-nowrap">
       <IconChannel class="overflow-visible" />
-      <div class="text-base font-semibold">Channel</div>
+      <div class="text-sm">Channel</div>
       <Button variant="ghost" size="icon" class="ml-auto" @click="emit('close')">
         <IconClose class="w-4 h-4" />
       </Button>
