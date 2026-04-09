@@ -1,0 +1,14 @@
+---
+description: Vue app — concise UI, composable FP-leaning frontend
+globs: app/**/*
+alwaysApply: false
+---
+
+# Frontend (app/)
+
+- **UX**: Sensible loading/empty/error states; avoid dead ends. Touch targets and spacing consistent with the design system.
+- **Top-down**: Define the screen’s data flow and responsibilities first; then split into composables and presentational pieces.
+- **Bottom-up**: Implement with **small pure helpers** and **composables** that compose; avoid giant `setup()` blocks.
+- **Concision**: Smaller SFCs; extract when templates or script exceed a screen or repeat.
+- **Reuse**: Use `@/design-system` and existing composables before new primitives.
+- **State**: Colocate; avoid prop drilling via shared stores/composables when data is cross-cutting.

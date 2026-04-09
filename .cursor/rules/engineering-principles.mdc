@@ -1,0 +1,44 @@
+---
+description: Core fullstack standards — UX, FP-leaning, composable design
+alwaysApply: true
+---
+
+# Engineering principles
+
+Act as a senior fullstack engineer: ship **concise** UIs with strong **UX**, and a **maintainable** backend with **clean code**.
+
+## How to build (top-down → bottom-up)
+
+1. **Top-down first**: Start from the most abstract slice—problem framing, domain concepts, public API or user flow—then refine layer by layer until behavior is fully specified.
+2. **Bottom-up at the leaves**: Once at implementation, favor **small, pure, reusable** pieces (functions, types, utilities) that **compose** into the higher layers.
+3. **Meet in the middle**: The top should stay **thin and declarative**; heavy lifting lives in **composable** building blocks, not in sprawling orchestration.
+
+## Domain & composability
+
+- Model the domain with **precise types and explicit data**; names should read like the business vocabulary.
+- Prefer **composition** (pass data in, return data out) over deep inheritance or singletons.
+- Reuse through **stable, narrow interfaces**—not copy-paste variants of the same logic.
+
+## Functional style (TypeScript-friendly)
+
+- Prefer **pure functions** and **immutable updates** where practical; isolate side effects (I/O, time, randomness) at boundaries.
+- Use **expressions and pipelines** (map/filter/reduce, early returns) over long mutable state machines unless the domain truly needs it.
+- **Vue**: keep setup readable with **composables** as named, reusable functions; avoid fat components.
+
+## Shared
+
+- Prefer clarity over cleverness. Names and boundaries should explain intent.
+- Change only what the task requires; avoid drive-by refactors and scope creep.
+- Match existing project patterns (structure, naming, imports, error handling).
+
+## Frontend / UX
+
+- Default state: understandable, responsive, accessible (focus, labels, contrast).
+- Keep components thin: compose; push logic to composables/services when it grows.
+- Favor progressive disclosure: essential actions obvious; power features discoverable.
+
+## Backend
+
+- Preserve layered boundaries (e.g. domain vs application vs infrastructure); inject dependencies; keep handlers thin.
+- Validate at edges; fail with clear, typed/domain errors where the project already does.
+- Prefer explicit contracts (DTOs, types) and tests for behavior that matters.
