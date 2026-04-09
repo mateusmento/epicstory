@@ -6,41 +6,69 @@ export const untilOpen = (peer: Peer) =>
     peer.on("error", (error) => rej(error));
   });
 
-const getStream = (conn: MediaConnection) =>
-  new Promise<MediaStream>((res) => conn.on("stream", (stream) => res(stream)));
+export function resolveMediaStream(call: MediaConnection, timeoutMs = 60_000) {
+  return new Promise<MediaStream>((res, rej) => {
+    let settled = false;
 
-export interface MediaStreaming {
+    const timeout = setTimeout(() => {
+      finish(() => rej(new Error(`WebRTC connection timeout after ${timeoutMs}ms`)));
+    }, timeoutMs);
+
+    function finish(fn: () => void) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      fn();
+    }
+
+    call.on("stream", (stream) => finish(() => res(stream)));
+    call.on("error", (error) => finish(() => rej(error)));
+    call.on("close", () => finish(() => rej(new Error("WebRTC connection closed"))));
+  });
+}
+
+export interface PeerSession {
   localId: string;
-  connect: (remoteId: string) => void;
+  connect: (remoteId: string) => Promise<void>;
   disconnect: (remoteId: string) => void;
   close: () => void;
   getConnection: (remoteId: string) => MediaConnection | undefined;
 }
 
-export function createMediaStreaming({
-  rtc,
-  media,
-  mediaAdded,
-}: {
+export type PeerSessionOptions = {
   rtc: Peer;
   media: MediaStream;
-  mediaAdded?: (remoteId: string, peerMedia: MediaStream) => void;
-}): MediaStreaming {
+  onIncomingStream?: (remoteId: string, peerMedia: MediaStream) => void;
+};
+
+export function createPeersSession(opts: PeerSessionOptions): PeerSession {
+  const { rtc, media, onIncomingStream } = opts;
+
   const peers = {} as Record<string, MediaConnection>;
 
   rtc.on("call", async (call) => {
     call.answer(media);
     addPeer(call.peer, call);
-    const stream = await getStream(call);
-    mediaAdded?.(call.peer, stream);
+    try {
+      const stream = await resolveMediaStream(call);
+      onIncomingStream?.(call.peer, stream);
+    } catch (error) {
+      console.error("Incoming peer media failed", error);
+      disconnect(call.peer);
+    }
   });
 
-  async function connect(remoteId: string) {
+  async function connect(remoteId: string): Promise<void> {
     const call = rtc.call(remoteId, media);
     addPeer(remoteId, call);
     call === undefined && console.log("call is undefined");
-    const stream = await getStream(call);
-    mediaAdded?.(remoteId, stream);
+    try {
+      const stream = await resolveMediaStream(call);
+      onIncomingStream?.(call.peer, stream);
+    } catch (error) {
+      console.error("Incoming peer media failed", error);
+      disconnect(call.peer);
+    }
   }
 
   function addPeer(remoteId: string, call: MediaConnection) {

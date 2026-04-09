@@ -4,8 +4,8 @@ import { useWebSockets } from "@/core/websockets";
 import type { User } from "@/domain/auth";
 import { ChannelApi } from "@/domain/channels/services";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
-import type { MediaStreaming } from "@/domain/channels/utils/media-streaming";
-import { createMediaStreaming, untilOpen } from "@/domain/channels/utils/media-streaming";
+import type { PeerSession } from "@/domain/channels/utils/media-streaming";
+import { createPeersSession, untilOpen } from "@/domain/channels/utils/media-streaming";
 import {
   createActiveSpeakerDetector,
   type ActiveSpeakerDetector,
@@ -41,7 +41,7 @@ const useMeetingStore = defineStore("meeting", () => {
 
   const incomingMeeting = ref<IMeeting | null>(null);
   const currentMeeting = ref<IMeeting | null>();
-  const streaming = shallowRef<MediaStreaming | null>();
+  const session = shallowRef<PeerSession | null>();
 
   const localRemoteId = ref<string | null>(null);
   const mycamera = ref<MediaStream | null>(null);
@@ -152,6 +152,16 @@ const useMeetingStore = defineStore("meeting", () => {
     }
   }
 
+  function createAttendee(remoteId: string, camera: MediaStream, attendee: IMeetingAttendee) {
+    return {
+      remoteId,
+      camera,
+      user: attendee.user,
+      isCameraOn: attendee.isCameraOn,
+      isMicrophoneOn: attendee.isMicrophoneOn,
+    };
+  }
+
   async function connectMeeting(
     {
       camera: existingCamera,
@@ -187,29 +197,23 @@ const useMeetingStore = defineStore("meeting", () => {
 
     localRemoteId.value = rtc.id;
 
-    streaming.value = createMediaStreaming({
-      rtc,
-      media: camera,
-      async mediaAdded(remoteId, camera) {
-        const [attendee] = await meetingApi.findAttendees({ remoteId, meetingId: meeting.id });
-        attendees.value.push({
-          remoteId,
-          camera,
-          user: attendee?.user,
-          isCameraOn: attendee?.isCameraOn ?? false,
-          isMicrophoneOn: attendee?.isMicrophoneOn ?? false,
-        });
-        syncDetectorSources();
-      },
-    });
-
     const data = {
-      remoteId: streaming.value.localId,
+      remoteId: localRemoteId.value,
       isCameraOn: isCameraOn.value,
       isMicrophoneOn: isMicrophoneOn.value,
     };
 
     const meeting = await meetingFactory(data);
+
+    session.value = createPeersSession({
+      rtc,
+      media: camera,
+      async onIncomingStream(remoteId, camera) {
+        const [attendee] = await meetingApi.findAttendees({ remoteId, meetingId: meeting.id });
+        attendees.value.push(createAttendee(remoteId, camera, attendee));
+        syncDetectorSources();
+      },
+    });
 
     currentMeeting.value = meeting;
     currentMeetingChannelType.value = null;
@@ -283,11 +287,11 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   function attendeeJoined({ attendee }: { attendee: IMeetingAttendee }) {
-    streaming.value?.connect(attendee.remoteId);
+    session.value?.connect(attendee.remoteId);
   }
 
   function attendeeLeft({ remoteId }: { remoteId: string }) {
-    streaming.value?.disconnect(remoteId);
+    session.value?.disconnect(remoteId);
     attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId);
     if (activeSpeakerId.value === remoteId) activeSpeakerId.value = null;
     if (pinnedSpeakerId.value === remoteId) pinnedSpeakerId.value = null;
@@ -351,7 +355,7 @@ const useMeetingStore = defineStore("meeting", () => {
   async function leaveMeeting() {
     sockets.websocket.emit("leave-meeting", {
       meetingId: currentMeeting.value?.id,
-      remoteId: streaming.value?.localId,
+      remoteId: session.value?.localId,
     });
     closeMeeting();
   }
@@ -367,7 +371,7 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   function closeMeeting() {
-    streaming.value?.close();
+    session.value?.close();
     removeCameras();
     currentMeeting.value = null;
     currentMeetingChannelType.value = null;

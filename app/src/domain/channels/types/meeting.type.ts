@@ -15,4 +15,6 @@ export interface IMeeting {
 export interface IMeetingAttendee {
   remoteId: string;
   user: User;
+  isCameraOn: boolean;
+  isMicrophoneOn: boolean;
 }
