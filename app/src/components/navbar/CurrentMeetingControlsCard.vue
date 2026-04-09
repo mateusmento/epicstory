@@ -28,11 +28,14 @@ const {
   rejectIncomingMeeting,
 } = useMeeting();
 
-const people = computed(() => {
+const candidates = computed(() => {
   const me = user.value;
   const attendeeUsers = (attendees.value ?? []).map((a) => a.user);
-  const candidates = compact([me, ...attendeeUsers]);
-  return take(uniqBy(candidates, "id"), 4);
+  return compact([me, ...attendeeUsers]);
+});
+
+const people = computed(() => {
+  return take(uniqBy(candidates.value, "id"), 4);
 });
 
 function openMeeting() {
@@ -54,7 +57,7 @@ async function joinIncomingMeeting() {
     <div class="self-stretch bg-secondary p-2 py-4 rounded-lg">
       <div class="flow-root">
         <div class="flex flex:center flex-wrap gap-2 place-content-center content-center">
-          <template v-for="(p, i) in people.flat()" :key="i">
+          <template v-for="(p, i) in people" :key="i">
             <img v-if="p.picture" :src="p.picture" class="rounded-full w-14 h-14" :title="p.name" />
             <div
               v-else
@@ -64,6 +67,13 @@ async function joinIncomingMeeting() {
               {{ p.name?.slice(0, 2)?.toUpperCase() || "?" }}
             </div>
           </template>
+          <div
+            v-if="candidates.length > 4"
+            class="flex flex:center w-14 h-14 rounded-full text-lg font-semibold font-dmSans text-gray-700 bg-gray-300"
+            :title="`${candidates.length} participants`"
+          >
+            +{{ candidates.length - 4 }}
+          </div>
         </div>
       </div>
     </div>

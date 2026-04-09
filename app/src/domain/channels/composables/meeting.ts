@@ -55,6 +55,9 @@ const useMeetingStore = defineStore("meeting", () => {
   const peersDock = ref<"both" | "top" | "right">("both");
   const topDockMax = ref<number>(4);
 
+  // --- Grid paging (large meetings) ---
+  const gridPage = ref<number>(1);
+
   // --- Active speaker detection ---
   const speakingIds = ref<Set<SpeakerId>>(new Set());
   const activeSpeakerId = ref<SpeakerId | null>(null);
@@ -75,6 +78,7 @@ const useMeetingStore = defineStore("meeting", () => {
 
   function setLayoutMode(mode: "speaker" | "grid") {
     layoutMode.value = mode;
+    if (mode === "grid") gridPage.value = 1;
   }
 
   function setPeersDock(dock: "both" | "top" | "right") {
@@ -83,6 +87,10 @@ const useMeetingStore = defineStore("meeting", () => {
 
   function setTopDockMax(n: number) {
     topDockMax.value = Math.max(0, Math.floor(n));
+  }
+
+  function setGridPage(page: number) {
+    gridPage.value = Math.max(1, Math.floor(page));
   }
 
   function pinSpeaker(id: SpeakerId) {
@@ -425,6 +433,8 @@ const useMeetingStore = defineStore("meeting", () => {
     setLayoutMode,
     setPeersDock,
     setTopDockMax,
+    gridPage,
+    setGridPage,
     speakingIds,
     activeSpeakerId,
     pinnedSpeakerId,

@@ -1,0 +1,74 @@
+import type { Ref } from "vue";
+import { onBeforeUnmount, onMounted, watch } from "vue";
+
+type MaybeStream = MediaStream | null | undefined;
+
+/**
+ * Attach/detach a MediaStream to a <video> element in a performant way:
+ * - only assigns srcObject when needed (avoids doing it every render)
+ * - detaches when the element isn't visible (IntersectionObserver), reducing decode/paint work
+ */
+export function useMediaStreamVideo(
+  videoEl: Ref<HTMLVideoElement | null>,
+  stream: Ref<MaybeStream>,
+  enabled?: Ref<boolean>,
+) {
+  let observer: IntersectionObserver | null = null;
+  let isVisible = true;
+
+  function detach(el: HTMLVideoElement) {
+    if (el.srcObject) el.srcObject = null;
+  }
+
+  function attach(el: HTMLVideoElement, s: MediaStream) {
+    if (el.srcObject !== s) el.srcObject = s;
+  }
+
+  function sync() {
+    const el = videoEl.value;
+    if (!el) return;
+
+    const s = stream.value ?? null;
+    const on = enabled?.value ?? true;
+    const shouldAttach = !!s && on && isVisible;
+
+    if (!shouldAttach) {
+      detach(el);
+      return;
+    }
+
+    attach(el, s);
+  }
+
+  function observe(el: HTMLVideoElement) {
+    observer?.disconnect();
+    observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        isVisible = !!entry?.isIntersecting;
+        sync();
+      },
+      { threshold: 0.01 },
+    );
+    observer.observe(el);
+  }
+
+  onMounted(() => {
+    if (videoEl.value) observe(videoEl.value);
+    sync();
+  });
+
+  watch(videoEl, (el, prev) => {
+    if (prev) detach(prev);
+    if (el) observe(el);
+    sync();
+  });
+
+  watch([stream, enabled ?? stream], sync);
+
+  onBeforeUnmount(() => {
+    observer?.disconnect();
+    observer = null;
+    if (videoEl.value) detach(videoEl.value);
+  });
+}
