@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Button, Separator } from "@/design-system";
-import { useMeeting } from "@/domain/channels";
+import { useMeeting, useMeetingMediaDevicesStore } from "@/domain/channels";
 import { useMeetingLayout } from "@/domain/channels/composables/meeting-layout";
-import { computed } from "vue";
+import { storeToRefs } from "pinia";
+import { computed, onMounted } from "vue";
 import MeetingControls from "./MeetingControls.vue";
 import MeetingGrid from "./MeetingGrid.vue";
 import MeetingSpeakerView from "./MeetingSpeakerView.vue";
@@ -21,17 +22,29 @@ const {
   setLayoutMode,
   gridPage,
   setGridPage,
+  applySelectedInputDevices,
 } = useMeeting();
 
 const { participants, featured, topDockPeers, rightDockPeers, isSpeaking } = useMeetingLayout();
 
+const mediaDevices = useMeetingMediaDevicesStore();
+const { selectedSpeakerId } = storeToRefs(mediaDevices);
+
 const canEndMeeting = computed(() => currentMeetingChannelType.value !== "meeting");
+
+async function onMeetingInputDevicesChange() {
+  await applySelectedInputDevices();
+}
+
+onMounted(() => {
+  void mediaDevices.refreshDevices();
+});
 </script>
 
 <template>
   <section class="relative h-full w-full min-h-0 flex flex-col">
     <!-- Mode switch -->
-    <div class="sticky top-0 z-20 px-3 h-10 flex items-center gap-2">
+    <div class="sticky top-0 z-20 px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-2 min-h-10">
       <Button
         type="button"
         size="icon"
@@ -72,6 +85,7 @@ const canEndMeeting = computed(() => currentMeetingChannelType.value !== "meetin
         :isSpeaking="isSpeaking"
         :pinnedId="pinnedSpeakerId"
         :onTogglePin="togglePinSpeaker"
+        :remote-audio-output-device-id="selectedSpeakerId"
       />
 
       <MeetingGrid
@@ -83,6 +97,7 @@ const canEndMeeting = computed(() => currentMeetingChannelType.value !== "meetin
         :onTogglePin="togglePinSpeaker"
         :page="gridPage"
         :onSetPage="setGridPage"
+        :remote-audio-output-device-id="selectedSpeakerId"
       />
     </div>
 
@@ -94,6 +109,7 @@ const canEndMeeting = computed(() => currentMeetingChannelType.value !== "meetin
         :showEnd="canEndMeeting"
         @toggle-camera="stopCamera"
         @toggle-microphone="stopMicrophone"
+        @apply-input-devices="onMeetingInputDevicesChange"
         @leave-meeting="leaveMeeting"
         @end-meeting="endMeeting"
       />

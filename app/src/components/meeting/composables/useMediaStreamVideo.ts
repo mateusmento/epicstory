@@ -1,5 +1,5 @@
 import type { Ref } from "vue";
-import { onBeforeUnmount, onMounted, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 type MaybeStream = MediaStream | null | undefined;
 
@@ -7,12 +7,15 @@ type MaybeStream = MediaStream | null | undefined;
  * Attach/detach a MediaStream to a <video> element in a performant way:
  * - only assigns srcObject when needed (avoids doing it every render)
  * - detaches when the element isn't visible (IntersectionObserver), reducing decode/paint work
+ * - optional `audioSinkId`: `HTMLMediaElement.setSinkId` for remote playback routing (where supported)
  */
 export function useMediaStreamVideo(
   videoEl: Ref<HTMLVideoElement | null>,
   stream: Ref<MaybeStream>,
   enabled?: Ref<boolean>,
+  audioSinkId?: Ref<string | null | undefined>,
 ) {
+  const sinkRef = audioSinkId ?? ref<string | null | undefined>(undefined);
   let observer: IntersectionObserver | null = null;
   let isVisible = true;
 
@@ -38,6 +41,13 @@ export function useMediaStreamVideo(
     }
 
     attach(el, s);
+    applySinkId(el);
+  }
+
+  function applySinkId(el: HTMLVideoElement) {
+    const sink = sinkRef.value;
+    if (!sink || typeof el.setSinkId !== "function") return;
+    void el.setSinkId(sink).catch(() => {});
   }
 
   function observe(el: HTMLVideoElement) {
@@ -64,7 +74,7 @@ export function useMediaStreamVideo(
     sync();
   });
 
-  watch([stream, enabled ?? stream], sync);
+  watch([stream, enabled ?? stream, sinkRef], sync);
 
   onBeforeUnmount(() => {
     observer?.disconnect();

@@ -1,42 +1,56 @@
 <script lang="ts" setup>
 import { ExitIcon } from "@radix-icons/vue";
 import { IconCameraOff, IconCameraOn, IconHangupCall, IconMicrophoneOff, IconMicrophoneOn } from "../icons";
+import MeetingDeviceMenu from "./MeetingDeviceMenu.vue";
 
-defineProps<{
-  isCameraOn: boolean;
-  isMicrophoneOn: boolean;
-  showEnd?: boolean;
-}>();
+withDefaults(
+  defineProps<{
+    isCameraOn: boolean;
+    isMicrophoneOn: boolean;
+    showEnd?: boolean;
+    /** Show ⋮ menu for camera / mic / speaker (in-call). */
+    showDeviceMenu?: boolean;
+  }>(),
+  { showDeviceMenu: true },
+);
 
-const emit = defineEmits(["toggle-camera", "toggle-microphone", "leave-meeting", "end-meeting"]);
+const emit = defineEmits([
+  "toggle-camera",
+  "toggle-microphone",
+  "leave-meeting",
+  "end-meeting",
+  "apply-input-devices",
+]);
+
+const controlBtnClass =
+  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-none bg-slate-400/20 text-white backdrop-blur-sm outline-none ring-offset-background transition hover:bg-slate-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 </script>
 
 <template>
   <div class="meeting-controls flex justify-center gap-5">
-    <button
-      class="flex flex:center w-10 h-10 border-none rounded-full bg-slate-400 bg-opacity-20 backdrop-blur-sm text-white"
-      @click="emit('toggle-camera')"
-    >
+    <button type="button" :class="controlBtnClass" @click="emit('toggle-camera')">
       <IconCameraOn v-if="isCameraOn" />
       <IconCameraOff v-else />
     </button>
-    <button
-      class="flex flex:center w-10 h-10 border-none rounded-full bg-slate-400 bg-opacity-20 backdrop-blur-sm text-white"
-      @click="emit('toggle-microphone')"
-    >
+    <button type="button" :class="controlBtnClass" @click="emit('toggle-microphone')">
       <IconMicrophoneOn v-if="isMicrophoneOn" />
       <IconMicrophoneOff v-else />
     </button>
-    <button
-      class="flex flex:center w-10 h-10 border-none rounded-full bg-slate-400 bg-opacity-20 backdrop-blur-sm text-white"
-      @click="emit('leave-meeting')"
-    >
+    <MeetingDeviceMenu
+      v-if="showDeviceMenu"
+      trigger-variant="control-circle"
+      content-side="top"
+      content-align="center"
+      @input-devices-change="emit('apply-input-devices')"
+    />
+    <button type="button" :class="controlBtnClass" @click="emit('leave-meeting')">
       <!-- <IconRefuseCall /> -->
       <ExitIcon class="w-5 h-5" />
     </button>
     <button
       v-if="showEnd ?? true"
-      class="flex flex:center w-10 h-10 border-none rounded-full bg-red-500 text-white"
+      type="button"
+      class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-none bg-red-500 text-white outline-none ring-offset-background transition hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       @click="emit('end-meeting')"
     >
       <IconHangupCall />

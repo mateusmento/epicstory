@@ -13,6 +13,8 @@ const props = defineProps<{
   variant?: "grid" | "dock" | "featured";
   class?: string;
   title?: string;
+  /** When set (remote tiles only), routes playback to this output device if the browser supports `setSinkId`. */
+  audioOutputDeviceId?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -34,6 +36,9 @@ useMediaStreamVideo(
   videoEl,
   computed(() => props.participant.stream),
   computed(() => props.participant.isCameraOn),
+  computed(() =>
+    props.participant.isLocal ? null : (props.audioOutputDeviceId ?? null),
+  ),
 );
 
 function initial() {

@@ -3,7 +3,8 @@ import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { CalendarEventApi } from "@/domain/calendar";
-import { useMeeting } from "@/domain/channels";
+import { useMeeting, useMeetingMediaDevicesStore } from "@/domain/channels";
+import MeetingDeviceMenu from "@/components/meeting/MeetingDeviceMenu.vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -12,6 +13,7 @@ const router = useRouter();
 
 const calendarEventApi = useDependency(CalendarEventApi);
 const { joinMeeting, joinScheduledMeeting, isCameraOn, isMicrophoneOn } = useMeeting();
+const meetingDevices = useMeetingMediaDevicesStore();
 
 const workspaceId = computed(() => (route.params.workspaceId ? +route.params.workspaceId : undefined));
 const meetingId = computed(() => (route.query.meetingId ? +route.query.meetingId : undefined));
@@ -59,13 +61,19 @@ async function fetchMeeting() {
 
 async function setupPreview() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia(meetingDevices.streamConstraints());
     previewStream.value = stream;
     isCameraOn.value = true;
     isMicrophoneOn.value = true;
+    canPreview.value = true;
   } catch {
     canPreview.value = false;
   }
+}
+
+async function onLobbyDeviceInputChange() {
+  teardownPreview();
+  await setupPreview();
 }
 
 function teardownPreview() {
@@ -130,6 +138,7 @@ async function cancelSeries() {
 
 onMounted(async () => {
   await fetchMeeting();
+  await meetingDevices.ensurePermissionAndLabels();
   await setupPreview();
 });
 
@@ -168,26 +177,34 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
           <div v-else class="text-sm text-white/80">Camera preview unavailable</div>
         </div>
 
-        <div class="mt-3 flex items-center gap-2">
-          <Button variant="destructive" size="sm" @click="cancelSeries"> Cancel series </Button>
-          <Button variant="outline" size="sm" @click="toggleCamera" :disabled="!previewStream">
-            <Icon :name="isCameraOn ? 'bi-camera-video' : 'bi-camera-video-off'" class="mr-2" />
-            {{ isCameraOn ? "Camera on" : "Camera off" }}
-          </Button>
-          <Button variant="outline" size="sm" @click="toggleMic" :disabled="!previewStream">
-            <Icon :name="isMicrophoneOn ? 'bi-mic' : 'bi-mic-mute'" class="mr-2" />
-            {{ isMicrophoneOn ? "Mic on" : "Mic off" }}
-          </Button>
+        <div class="mt-3 flex flex-col gap-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <MeetingDeviceMenu
+              trigger-variant="lobby-button"
+              content-side="bottom"
+              content-align="start"
+              @input-devices-change="onLobbyDeviceInputChange"
+            />
+            <Button variant="destructive" size="sm" @click="cancelSeries"> Cancel series </Button>
+            <Button variant="outline" size="sm" @click="toggleCamera" :disabled="!previewStream">
+              <Icon :name="isCameraOn ? 'bi-camera-video' : 'bi-camera-video-off'" class="mr-2" />
+              {{ isCameraOn ? "Camera on" : "Camera off" }}
+            </Button>
+            <Button variant="outline" size="sm" @click="toggleMic" :disabled="!previewStream">
+              <Icon :name="isMicrophoneOn ? 'bi-mic' : 'bi-mic-mute'" class="mr-2" />
+              {{ isMicrophoneOn ? "Mic on" : "Mic off" }}
+            </Button>
 
-          <div class="flex-1" />
+            <div class="flex-1" />
 
-          <Button
-            size="sm"
-            @click="join"
-            :disabled="isLoading || (!occurrenceAt && !meetingId) || !lobby?.joinable"
-          >
-            Join meeting
-          </Button>
+            <Button
+              size="sm"
+              @click="join"
+              :disabled="isLoading || (!occurrenceAt && !meetingId) || !lobby?.joinable"
+            >
+              Join meeting
+            </Button>
+          </div>
         </div>
 
         <div v-if="!lobby?.joinable" class="mt-2 text-xs text-muted-foreground">

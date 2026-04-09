@@ -10,6 +10,8 @@ const props = defineProps<{
   isSpeaking: (id: string) => boolean;
   pinnedId: string | null;
   onTogglePin: (id: string) => void;
+  /** Pass through to remote `MeetingTile` elements for `setSinkId` where supported. */
+  remoteAudioOutputDeviceId?: string | null;
   class?: string;
 }>();
 </script>
@@ -25,6 +27,7 @@ const props = defineProps<{
           variant="dock"
           class="shrink-0 w-56 aspect-video rounded-2xl border border-white/10"
           :participant="p"
+          :audio-output-device-id="remoteAudioOutputDeviceId"
           :speaking="isSpeaking(p.id)"
           :pinned="pinnedId === p.id"
           :title="pinnedId === p.id ? 'Unpin' : 'Pin (disable auto-switch)'"
@@ -40,6 +43,7 @@ const props = defineProps<{
           variant="featured"
           class="w-full h-full rounded-3xl"
           :participant="featured"
+          :audio-output-device-id="remoteAudioOutputDeviceId"
           :speaking="isSpeaking(featured.id)"
           :pinned="pinnedId === featured.id"
           :title="pinnedId === featured.id ? 'Unpin' : 'Pin (disable auto-switch)'"
@@ -57,6 +61,7 @@ const props = defineProps<{
           variant="dock"
           class="w-full aspect-video rounded-2xl border border-white/10"
           :participant="p"
+          :audio-output-device-id="remoteAudioOutputDeviceId"
           :speaking="isSpeaking(p.id)"
           :pinned="pinnedId === p.id"
           :title="pinnedId === p.id ? 'Unpin' : 'Pin (disable auto-switch)'"

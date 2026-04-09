@@ -16,6 +16,7 @@ const props = defineProps<{
   page: number;
   onSetPage: (page: number) => void;
 
+  remoteAudioOutputDeviceId?: string | null;
   class?: string;
 }>();
 
@@ -93,6 +94,7 @@ function nextPage() {
             variant="grid"
             :class="disableAspectRatio ? 'w-full h-full rounded-2xl' : 'w-full aspect-video rounded-2xl'"
             :participant="p"
+            :audio-output-device-id="remoteAudioOutputDeviceId"
             :speaking="isSpeaking(p.id)"
             :pinned="pinnedId === p.id"
             :title="pinnedId === p.id ? 'Unpin' : 'Pin (switches to Speaker focus)'"

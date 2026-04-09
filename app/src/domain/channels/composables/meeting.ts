@@ -6,6 +6,7 @@ import { ChannelApi } from "@/domain/channels/services";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import type { PeerSession } from "@/domain/channels/utils/media-streaming";
 import { createPeersSession, untilOpen } from "@/domain/channels/utils/media-streaming";
+import { replaceOutgoingTracksForPeers } from "@/domain/channels/utils/meeting-peer-replace-tracks";
 import {
   createActiveSpeakerDetector,
   type ActiveSpeakerDetector,
@@ -16,6 +17,7 @@ import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref, shallowRef, watch } from "vue";
 import type { IChannel, IMeeting, IMeetingAttendee } from "../types";
+import { useMeetingMediaDevicesStore } from "./meeting-media-devices";
 import { useMeetingSocket } from "./meeting-socket";
 
 export type MeetingStreamingAttendee = {
@@ -142,14 +144,71 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   async function getCamera() {
+    const mediaDevices = useMeetingMediaDevicesStore();
+    await mediaDevices.refreshDevices();
     try {
-      return await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      return await navigator.mediaDevices.getUserMedia(mediaDevices.streamConstraints());
     } catch (error) {
       if (error instanceof DOMException && error.name === "NotAllowedError") {
         console.log("Joining meeting without camera permission", error);
         return;
       }
     }
+  }
+
+  /**
+   * Re-acquire camera/mic from the selected devices, swap tracks on the existing local
+   * {@link MediaStream} (same object PeerJS holds), and {@link RTCRtpSender.replaceTrack}
+   * so remotes keep working.
+   */
+  async function applySelectedInputDevices() {
+    if (!mycamera.value) return;
+    const mediaDeviceStore = useMeetingMediaDevicesStore();
+    let incoming: MediaStream;
+    try {
+      incoming = await navigator.mediaDevices.getUserMedia(mediaDeviceStore.streamConstraints());
+    } catch (e) {
+      console.warn("Could not acquire media for selected devices", e);
+      return;
+    }
+
+    const stream = mycamera.value;
+    const newVideo = incoming.getVideoTracks()[0];
+    const newAudio = incoming.getAudioTracks()[0];
+
+    const remoteIds = attendees.value.map((a) => a.remoteId);
+    if (session.value && remoteIds.length > 0) {
+      replaceOutgoingTracksForPeers(
+        newVideo,
+        newAudio,
+        (id) => session.value?.getConnection(id),
+        remoteIds,
+      );
+    }
+
+    for (const t of [...stream.getVideoTracks()]) {
+      stream.removeTrack(t);
+      t.stop();
+    }
+    for (const t of [...stream.getAudioTracks()]) {
+      stream.removeTrack(t);
+      t.stop();
+    }
+
+    if (newVideo) {
+      stream.addTrack(newVideo);
+      newVideo.enabled = isCameraOn.value;
+    }
+    if (newAudio) {
+      stream.addTrack(newAudio);
+      newAudio.enabled = isMicrophoneOn.value;
+    }
+
+    incoming.getTracks().forEach((t) => {
+      if (!stream.getTracks().includes(t)) t.stop();
+    });
+
+    syncDetectorSources();
   }
 
   function createAttendee(remoteId: string, camera: MediaStream, attendee: IMeetingAttendee) {
@@ -454,5 +513,6 @@ const useMeetingStore = defineStore("meeting", () => {
     endMeeting,
     stopCamera,
     stopMicrophone,
+    applySelectedInputDevices,
   };
 });
