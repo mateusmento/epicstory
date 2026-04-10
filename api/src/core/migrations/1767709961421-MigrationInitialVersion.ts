@@ -7,6 +7,14 @@ export class MigrationInitialVersion1767709961421
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
+      CREATE SCHEMA IF NOT EXISTS auth;
+      CREATE SCHEMA IF NOT EXISTS workspace;
+      CREATE SCHEMA IF NOT EXISTS channel;
+      CREATE SCHEMA IF NOT EXISTS scheduler;
+      CREATE SCHEMA IF NOT EXISTS integration;
+    `);
+
+    await queryRunner.query(`
             CREATE TABLE "workspace"."team" (
                 "id" SERIAL NOT NULL,
                 "name" character varying NOT NULL,

@@ -29,18 +29,7 @@ export function migrations(): any[] {
 }
 
 export async function runMigrations(dataSource: DataSource) {
-  await createPostgresSchemas(dataSource);
   console.log('Running migrations...');
   await dataSource.runMigrations();
   console.log('Migrations ran successfully');
-}
-
-export async function createPostgresSchemas(dataSource: DataSource) {
-  await dataSource.query(`
-    CREATE SCHEMA IF NOT EXISTS auth;
-    CREATE SCHEMA IF NOT EXISTS workspace;
-    CREATE SCHEMA IF NOT EXISTS channel;
-    CREATE SCHEMA IF NOT EXISTS scheduler;
-    CREATE SCHEMA IF NOT EXISTS integration;
-  `);
 }

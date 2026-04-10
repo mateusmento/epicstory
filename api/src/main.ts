@@ -115,8 +115,9 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV !== 'production') setupSwagger(app);
 
-  const dataSource = app.get(DataSource);
-  runMigrations(dataSource);
+  if (process.env.NODE_ENV === 'production') {
+    runMigrations(app.get(DataSource));
+  }
 
   app.enableShutdownHooks();
   await app.listen(config.API_PORT, '0.0.0.0');
