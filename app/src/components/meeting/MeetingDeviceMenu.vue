@@ -13,9 +13,10 @@ import {
   MenuSubTrigger,
   MenuTrigger,
 } from "@/design-system";
+import { IconCameraOn, IconMicrophoneOn } from "@/components/icons";
 import { useMeetingMediaDevicesStore } from "@/domain/channels/composables/meeting-media-devices";
 import { storeToRefs } from "pinia";
-import { MoreVertical, RefreshCw, Settings2 } from "lucide-vue-next";
+import { Headphones, MoreVertical, RefreshCw, Settings2 } from "lucide-vue-next";
 import { onMounted } from "vue";
 
 withDefaults(
@@ -112,7 +113,10 @@ function pickSpeaker(v: string) {
     >
       <!-- Camera -->
       <MenuSub>
-        <MenuSubTrigger class="text-sm">Camera</MenuSubTrigger>
+        <MenuSubTrigger class="gap-2 text-sm">
+          <IconCameraOn class="h-4 w-4 shrink-0" aria-hidden="true" />
+          Camera
+        </MenuSubTrigger>
         <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem]">
           <template v-if="cameras.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No cameras found</MenuLabel>
@@ -122,12 +126,7 @@ function pickSpeaker(v: string) {
             :model-value="selectedCameraId ?? ''"
             @update:model-value="(v: string) => pickCamera(v)"
           >
-            <MenuRadioItem
-              v-for="d in cameras"
-              :key="d.deviceId"
-              :value="d.deviceId"
-              class="text-xs"
-            >
+            <MenuRadioItem v-for="d in cameras" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>
             </MenuRadioItem>
           </MenuRadioGroup>
@@ -141,7 +140,10 @@ function pickSpeaker(v: string) {
 
       <!-- Microphone -->
       <MenuSub>
-        <MenuSubTrigger class="text-sm">Microphone</MenuSubTrigger>
+        <MenuSubTrigger class="gap-2 text-sm">
+          <IconMicrophoneOn class="h-4 w-4 shrink-0" aria-hidden="true" />
+          Microphone
+        </MenuSubTrigger>
         <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem]">
           <template v-if="microphones.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No microphones found</MenuLabel>
@@ -151,12 +153,7 @@ function pickSpeaker(v: string) {
             :model-value="selectedMicId ?? ''"
             @update:model-value="(v: string) => pickMic(v)"
           >
-            <MenuRadioItem
-              v-for="d in microphones"
-              :key="d.deviceId"
-              :value="d.deviceId"
-              class="text-xs"
-            >
+            <MenuRadioItem v-for="d in microphones" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>
             </MenuRadioItem>
           </MenuRadioGroup>
@@ -170,7 +167,10 @@ function pickSpeaker(v: string) {
 
       <!-- Speaker -->
       <MenuSub v-if="supportsSpeakerSelection">
-        <MenuSubTrigger class="text-sm">Speaker</MenuSubTrigger>
+        <MenuSubTrigger class="gap-2 text-sm">
+          <Headphones class="h-4 w-4 shrink-0" aria-hidden="true" />
+          Speaker
+        </MenuSubTrigger>
         <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem]">
           <template v-if="speakers.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No speakers found</MenuLabel>
@@ -180,12 +180,7 @@ function pickSpeaker(v: string) {
             :model-value="selectedSpeakerId ?? ''"
             @update:model-value="(v: string) => pickSpeaker(v)"
           >
-            <MenuRadioItem
-              v-for="d in speakers"
-              :key="d.deviceId"
-              :value="d.deviceId"
-              class="text-xs"
-            >
+            <MenuRadioItem v-for="d in speakers" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>
             </MenuRadioItem>
           </MenuRadioGroup>

@@ -372,6 +372,29 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     }
   }
 
+  @SubscribeMessage('screen-share-toggled')
+  async screenShareToggled(
+    @MessageBody() { meetingId, remoteId, enabled }: any,
+  ) {
+    const { channelId } = await this.meetingService.findMeeting({ meetingId });
+    await this.meetingService.updateAttendee(meetingId, remoteId, {
+      isScreenSharing: enabled,
+    });
+    this.server
+      .to(meetingRoom(meetingId))
+      .emit('screen-share-toggled', { remoteId, enabled });
+    if (channelId) {
+      this.server
+        .to(channelMeetingRoom(channelId))
+        .emit('screen-share-toggled', {
+          meetingId,
+          channelId,
+          remoteId,
+          enabled,
+        });
+    }
+  }
+
   @SubscribeMessage('leave-meeting')
   async leaveMeeting(
     @MessageBody() { meetingId, remoteId }: any,

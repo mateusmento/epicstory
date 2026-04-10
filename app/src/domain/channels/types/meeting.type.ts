@@ -17,4 +17,5 @@ export interface IMeetingAttendee {
   user: User;
   isCameraOn: boolean;
   isMicrophoneOn: boolean;
+  isScreenSharing?: boolean;
 }

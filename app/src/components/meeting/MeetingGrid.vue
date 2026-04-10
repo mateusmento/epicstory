@@ -82,7 +82,7 @@ function nextPage() {
       >
         <div
           v-for="p in row"
-          :key="p.id"
+          :key="`${p.id}-${p.streamEpoch}`"
           class="shrink-0"
           :style="
             disableAspectRatio
@@ -91,6 +91,7 @@ function nextPage() {
           "
         >
           <MeetingTile
+            tile-role="grid"
             variant="grid"
             :class="disableAspectRatio ? 'w-full h-full rounded-2xl' : 'w-full aspect-video rounded-2xl'"
             :participant="p"

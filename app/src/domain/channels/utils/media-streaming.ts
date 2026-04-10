@@ -38,23 +38,28 @@ export interface PeerSession {
 export type PeerSessionOptions = {
   rtc: Peer;
   media: MediaStream;
-  onIncomingStream?: (remoteId: string, peerMedia: MediaStream) => void;
+  onIncomingStream?: (remoteId: string, peerMedia: MediaStream) => void | Promise<void>;
+  /** Fires after the remote media stream is available and {@link onIncomingStream} has settled. */
+  onMediaSessionReady?: (remoteId: string) => void;
 };
 
 export function createPeersSession(opts: PeerSessionOptions): PeerSession {
-  const { rtc, media, onIncomingStream } = opts;
+  const { rtc, media, onIncomingStream, onMediaSessionReady } = opts;
 
   const peers = {} as Record<string, MediaConnection>;
 
   rtc.on("call", async (call) => {
+    const peerId = call.peer;
     call.answer(media);
-    addPeer(call.peer, call);
+    addPeer(peerId, call);
     try {
       const stream = await resolveMediaStream(call);
-      onIncomingStream?.(call.peer, stream);
+      await onIncomingStream?.(peerId, stream);
+      onMediaSessionReady?.(peerId);
     } catch (error) {
       console.error("Incoming peer media failed", error);
-      disconnect(call.peer);
+      // After PeerJS replaces the MediaConnection, don't tear down the new one.
+      if (peers[peerId] === call) disconnect(peerId);
     }
   });
 
@@ -64,15 +69,16 @@ export function createPeersSession(opts: PeerSessionOptions): PeerSession {
     call === undefined && console.log("call is undefined");
     try {
       const stream = await resolveMediaStream(call);
-      onIncomingStream?.(call.peer, stream);
+      await onIncomingStream?.(call.peer, stream);
+      onMediaSessionReady?.(call.peer);
     } catch (error) {
       console.error("Incoming peer media failed", error);
-      disconnect(call.peer);
+      if (peers[remoteId] === call) disconnect(remoteId);
     }
   }
 
   function addPeer(remoteId: string, call: MediaConnection) {
-    if (remoteId in peers) return;
+    // Replace when PeerJS renegotiates (same peer, new MediaConnection after a follow-up offer).
     peers[remoteId] = call;
   }
 

@@ -23,7 +23,8 @@ const props = defineProps<{
       <div class="flex items-center justify-center gap-2 w-max min-w-full">
         <MeetingTile
           v-for="p in topDockPeers"
-          :key="p.id"
+          :key="`${p.id}-${p.streamEpoch}`"
+          tile-role="dock"
           variant="dock"
           class="shrink-0 w-56 aspect-video rounded-2xl border border-white/10"
           :participant="p"
@@ -40,6 +41,8 @@ const props = defineProps<{
     <div class="flex flex-1 min-h-0 gap-3">
       <div class="relative flex-1 min-h-0">
         <MeetingTile
+          :key="`${featured.id}-${featured.streamEpoch}`"
+          tile-role="featured"
           variant="featured"
           class="w-full h-full rounded-3xl"
           :participant="featured"
@@ -57,7 +60,8 @@ const props = defineProps<{
       >
         <MeetingTile
           v-for="p in rightDockPeers"
-          :key="p.id"
+          :key="`${p.id}-${p.streamEpoch}`"
+          tile-role="dock"
           variant="dock"
           class="w-full aspect-video rounded-2xl border border-white/10"
           :participant="p"

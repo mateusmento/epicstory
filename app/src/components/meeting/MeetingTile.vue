@@ -2,12 +2,20 @@
 import { IconCameraOff, IconMicrophoneOff } from "@/components/icons";
 import { cn } from "@/design-system/utils";
 import type { MeetingParticipant } from "@/domain/channels/composables/meeting-layout";
-import { Pin } from "lucide-vue-next";
+import {
+  isPresentationLikeVideoTrack,
+  meetingTileVisualStreams,
+  type MeetingTileRole,
+  partitionMeetingVideoTracks,
+} from "@/domain/channels/utils/meeting-screen-share";
+import { Monitor, Pin } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useMediaStreamVideo } from "./composables/useMediaStreamVideo";
 
 const props = defineProps<{
   participant: MeetingParticipant;
+  /** How this tile is used in the layout (drives screen vs camera vs PiP). */
+  tileRole: MeetingTileRole;
   speaking?: boolean;
   pinned?: boolean;
   variant?: "grid" | "dock" | "featured";
@@ -31,14 +39,47 @@ const avatarClass = computed(() => {
   return "w-16 h-16 text-2xl";
 });
 
+const visuals = computed(() =>
+  meetingTileVisualStreams(props.participant.stream, props.participant.isCameraOn, props.tileRole),
+);
+
+const mainVisualStream = computed(() => visuals.value.main);
+const pipVisualStream = computed(() => visuals.value.pip);
+
+const mainVideoEnabled = computed(() =>
+  (mainVisualStream.value?.getVideoTracks() ?? []).some((t) => t.readyState === "live"),
+);
+const pipVideoEnabled = computed(() =>
+  (pipVisualStream.value?.getVideoTracks() ?? []).some((t) => t.readyState === "live"),
+);
+
+const mainVideoPreserveAspect = computed(() => {
+  if (props.participant.isScreenSharing) return true;
+  const t = mainVisualStream.value?.getVideoTracks()[0];
+  return t ? isPresentationLikeVideoTrack(t) : false;
+});
+
+const hasLiveScreenTrack = computed(() => {
+  if (props.participant.isScreenSharing) return true;
+  const { screen } = partitionMeetingVideoTracks(props.participant.stream);
+  return !!screen && screen.readyState === "live";
+});
+
 const videoEl = ref<HTMLVideoElement | null>(null);
+const pipVideoEl = ref<HTMLVideoElement | null>(null);
+
 useMediaStreamVideo(
   videoEl,
-  computed(() => props.participant.stream),
-  computed(() => props.participant.isCameraOn),
-  computed(() =>
-    props.participant.isLocal ? null : (props.audioOutputDeviceId ?? null),
-  ),
+  mainVisualStream,
+  mainVideoEnabled,
+  computed(() => (props.participant.isLocal ? null : (props.audioOutputDeviceId ?? null))),
+);
+
+useMediaStreamVideo(
+  pipVideoEl,
+  pipVisualStream,
+  pipVideoEnabled,
+  computed(() => null),
 );
 
 function initial() {
@@ -60,16 +101,43 @@ function initial() {
     :title="title"
     @click="emit('click')"
   >
+    <!-- Featured + presentation: 16:9 frame inside the stage so letterboxing matches tile aspect ratio. -->
+    <div
+      v-if="mainVideoEnabled && mainVideoPreserveAspect && variant === 'featured'"
+      class="flex h-full w-full min-h-0 items-center justify-center"
+    >
+      <div
+        class="aspect-video h-auto max-h-full w-full max-w-full min-w-0 overflow-hidden rounded-3xl bg-black"
+      >
+        <video
+          class="h-full w-full object-contain"
+          autoplay
+          :muted="participant.isLocal"
+          playsinline
+          ref="videoEl"
+        />
+      </div>
+    </div>
     <video
-      v-if="participant.stream && participant.isCameraOn"
-      class="w-full h-full object-cover"
+      v-else-if="mainVideoEnabled"
+      class="w-full h-full"
+      :class="mainVideoPreserveAspect ? 'object-contain bg-black' : 'object-cover'"
       autoplay
       :muted="participant.isLocal"
       playsinline
       ref="videoEl"
     />
 
-    <div v-else class="w-full h-full flex items-center justify-center bg-gray-800">
+    <video
+      v-if="pipVideoEnabled"
+      class="absolute bottom-12 right-2 z-10 w-[22%] min-w-[72px] max-w-[200px] aspect-video rounded-lg border-2 border-white/20 shadow-lg object-cover bg-black"
+      autoplay
+      :muted="participant.isLocal"
+      playsinline
+      ref="pipVideoEl"
+    />
+
+    <div v-if="!mainVideoEnabled" class="w-full h-full flex items-center justify-center bg-gray-800">
       <img
         v-if="participant.user?.picture"
         :src="participant.user.picture"
@@ -109,6 +177,13 @@ function initial() {
         title="Camera off"
       >
         <IconCameraOff class="w-4 h-4" />
+      </div>
+      <div
+        v-if="hasLiveScreenTrack"
+        class="backdrop-blur-sm bg-black/40 rounded-md p-1 text-white/90"
+        title="Sharing screen"
+      >
+        <Monitor class="w-4 h-4" />
       </div>
       <div
         v-if="pinned"

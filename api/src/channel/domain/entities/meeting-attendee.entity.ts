@@ -31,6 +31,9 @@ export class MeetingAttendee {
   @Column({ default: true })
   isMicrophoneOn: boolean;
 
+  @Column({ default: false })
+  isScreenSharing: boolean;
+
   static of(data: {
     remoteId: string;
     userId: number;

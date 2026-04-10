@@ -1,5 +1,6 @@
 import { useAuth } from "@/domain/auth";
 import type { User } from "@/domain/user";
+import { compositeLocalMeetingMedia } from "@/domain/channels/utils/meeting-screen-share";
 import { computed } from "vue";
 import { useMeeting } from "./meeting";
 
@@ -10,6 +11,10 @@ export type MeetingParticipant = {
   isLocal: boolean;
   isCameraOn: boolean;
   isMicrophoneOn: boolean;
+  /** From signaling; remotes need this for presentation aspect (WebRTC hides displaySurface). */
+  isScreenSharing: boolean;
+  /** Bumps when a remote MediaStream’s tracks change (renegotiation / screen share). */
+  streamEpoch: number;
 };
 
 export function useMeetingLayout() {
@@ -21,11 +26,13 @@ export function useMeetingLayout() {
 
     list.push({
       id: "local",
-      stream: meeting.mycamera.value ?? null,
+      stream: compositeLocalMeetingMedia(meeting.mycamera.value, meeting.localScreenShareTrack.value),
       user: user.value ?? null,
       isLocal: true,
       isCameraOn: !!meeting.mycamera.value && !!meeting.isCameraOn.value,
       isMicrophoneOn: !!meeting.mycamera.value && !!meeting.isMicrophoneOn.value,
+      isScreenSharing: !!meeting.isScreenSharing.value,
+      streamEpoch: meeting.localMediaEpoch.value,
     });
 
     for (const a of meeting.attendees.value) {
@@ -36,6 +43,8 @@ export function useMeetingLayout() {
         isLocal: false,
         isCameraOn: !!a.isCameraOn,
         isMicrophoneOn: !!a.isMicrophoneOn,
+        isScreenSharing: !!a.isScreenSharing,
+        streamEpoch: a.streamEpoch ?? 0,
       });
     }
 

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { ExitIcon } from "@radix-icons/vue";
+import { Monitor } from "lucide-vue-next";
 import { IconCameraOff, IconCameraOn, IconHangupCall, IconMicrophoneOff, IconMicrophoneOn } from "../icons";
 import MeetingDeviceMenu from "./MeetingDeviceMenu.vue";
 
@@ -7,16 +8,18 @@ withDefaults(
   defineProps<{
     isCameraOn: boolean;
     isMicrophoneOn: boolean;
+    isScreenSharing?: boolean;
     showEnd?: boolean;
     /** Show ⋮ menu for camera / mic / speaker (in-call). */
     showDeviceMenu?: boolean;
   }>(),
-  { showDeviceMenu: true },
+  { showDeviceMenu: true, isScreenSharing: false },
 );
 
 const emit = defineEmits([
   "toggle-camera",
   "toggle-microphone",
+  "toggle-screen-share",
   "leave-meeting",
   "end-meeting",
   "apply-input-devices",
@@ -35,6 +38,17 @@ const controlBtnClass =
     <button type="button" :class="controlBtnClass" @click="emit('toggle-microphone')">
       <IconMicrophoneOn v-if="isMicrophoneOn" />
       <IconMicrophoneOff v-else />
+    </button>
+    <button
+      type="button"
+      :class="[
+        controlBtnClass,
+        isScreenSharing ? 'ring-2 ring-emerald-400/70 ring-offset-2 ring-offset-transparent' : '',
+      ]"
+      title="Share screen"
+      @click="emit('toggle-screen-share')"
+    >
+      <Monitor class="h-5 w-5" />
     </button>
     <MeetingDeviceMenu
       v-if="showDeviceMenu"

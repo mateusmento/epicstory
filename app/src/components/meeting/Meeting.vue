@@ -11,10 +11,13 @@ import MeetingSpeakerView from "./MeetingSpeakerView.vue";
 const {
   isCameraOn,
   isMicrophoneOn,
+  isScreenSharing,
   leaveMeeting,
   endMeeting,
   stopCamera,
   stopMicrophone,
+  startScreenShare,
+  stopScreenShare,
   currentMeetingChannelType,
   pinnedSpeakerId,
   togglePinSpeaker,
@@ -24,6 +27,11 @@ const {
   setGridPage,
   applySelectedInputDevices,
 } = useMeeting();
+
+function toggleScreenShare() {
+  if (isScreenSharing.value) stopScreenShare();
+  else void startScreenShare();
+}
 
 const { participants, featured, topDockPeers, rightDockPeers, isSpeaking } = useMeetingLayout();
 
@@ -106,9 +114,11 @@ onMounted(() => {
       <MeetingControls
         :isCameraOn="isCameraOn"
         :isMicrophoneOn="isMicrophoneOn"
+        :isScreenSharing="isScreenSharing"
         :showEnd="canEndMeeting"
         @toggle-camera="stopCamera"
         @toggle-microphone="stopMicrophone"
+        @toggle-screen-share="toggleScreenShare"
         @apply-input-devices="onMeetingInputDevicesChange"
         @leave-meeting="leaveMeeting"
         @end-meeting="endMeeting"

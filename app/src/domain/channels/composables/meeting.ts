@@ -6,7 +6,11 @@ import { ChannelApi } from "@/domain/channels/services";
 import { MeetingApi } from "@/domain/channels/services/meeting.api";
 import type { PeerSession } from "@/domain/channels/utils/media-streaming";
 import { createPeersSession, untilOpen } from "@/domain/channels/utils/media-streaming";
-import { replaceOutgoingTracksForPeers } from "@/domain/channels/utils/meeting-peer-replace-tracks";
+import {
+  replaceOutgoingTracksForPeers,
+  replaceOutgoingVideoTrackForPeers,
+} from "@/domain/channels/utils/meeting-peer-replace-tracks";
+import { compositeLocalMeetingMedia } from "@/domain/channels/utils/meeting-screen-share";
 import {
   createActiveSpeakerDetector,
   type ActiveSpeakerDetector,
@@ -26,6 +30,10 @@ export type MeetingStreamingAttendee = {
   user: User;
   isCameraOn: boolean;
   isMicrophoneOn: boolean;
+  /** From server + socket; used so remotes use presentation aspect (replaceTrack hides displaySurface). */
+  isScreenSharing: boolean;
+  /** Bumped when remote {@link MediaStream} tracks change so tiles refresh (Vue does not deep-watch streams). */
+  streamEpoch: number;
 };
 
 export function useMeeting() {
@@ -47,10 +55,15 @@ const useMeetingStore = defineStore("meeting", () => {
 
   const localRemoteId = ref<string | null>(null);
   const mycamera = ref<MediaStream | null>(null);
+  /** Outbound screen uses {@link replaceOutgoingVideoTrackForPeers}; kept off {@link mycamera} so new PeerJS calls stay single-video. */
+  const localScreenShareTrack = ref<MediaStreamTrack | null>(null);
+  /** Bumps when local composite media (e.g. screen share) changes so tiles remount. */
+  const localMediaEpoch = ref(0);
   const attendees = ref<MeetingStreamingAttendee[]>([]);
 
   const isCameraOn = ref(true);
   const isMicrophoneOn = ref(true);
+  const isScreenSharing = ref(false);
 
   // --- Layout mode (meeting grid) ---
   const layoutMode = ref<"speaker" | "grid">("speaker");
@@ -73,10 +86,20 @@ const useMeetingStore = defineStore("meeting", () => {
 
   const sources = computed(() => {
     const src: { id: SpeakerId; stream: MediaStream | null }[] = [];
-    src.push({ id: "local", stream: mycamera.value });
+    src.push({
+      id: "local",
+      stream: compositeLocalMeetingMedia(mycamera.value, localScreenShareTrack.value),
+    });
     for (const a of attendees.value) src.push({ id: a.remoteId, stream: a.camera });
     return src;
   });
+
+  function syncOutboundScreenVideoToAllPeers() {
+    if (!isScreenSharing.value || !session.value || !localScreenShareTrack.value) return;
+    const remoteIds = attendees.value.map((a) => a.remoteId);
+    if (remoteIds.length === 0) return;
+    replaceOutgoingVideoTrackForPeers(localScreenShareTrack.value, (id) => session.value?.getConnection(id), remoteIds);
+  }
 
   function setLayoutMode(mode: "speaker" | "grid") {
     layoutMode.value = mode;
@@ -208,17 +231,114 @@ const useMeetingStore = defineStore("meeting", () => {
       if (!stream.getTracks().includes(t)) t.stop();
     });
 
+    localMediaEpoch.value++;
     syncDetectorSources();
   }
 
-  function createAttendee(remoteId: string, camera: MediaStream, attendee: IMeetingAttendee) {
+  async function startScreenShare() {
+    if (!mycamera.value || !session.value || isScreenSharing.value) return;
+
+    let screenStream: MediaStream;
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+    } catch {
+      return;
+    }
+
+    const screenVideo = screenStream.getVideoTracks()[0];
+    if (!screenVideo) {
+      screenStream.getTracks().forEach((t) => t.stop());
+      return;
+    }
+
+    localScreenShareTrack.value = screenVideo;
+    isScreenSharing.value = true;
+
+    const remoteIds = attendees.value.map((a) => a.remoteId);
+    if (session.value && remoteIds.length > 0) {
+      replaceOutgoingVideoTrackForPeers(screenVideo, (id) => session.value?.getConnection(id), remoteIds);
+    }
+
+    screenVideo.addEventListener("ended", () => {
+      stopScreenShare();
+    });
+
+    pinSpeaker("local");
+    setLayoutMode("speaker");
+    localMediaEpoch.value++;
+    emitScreenShareToggled(true);
+    syncDetectorSources();
+  }
+
+  function stopScreenShare() {
+    const screenTrack = localScreenShareTrack.value;
+    if (!mycamera.value || !screenTrack) {
+      localScreenShareTrack.value = null;
+      if (isScreenSharing.value) emitScreenShareToggled(false);
+      isScreenSharing.value = false;
+      return;
+    }
+
+    const cameraVideo = mycamera.value.getVideoTracks()[0];
+    const remoteIds = attendees.value.map((a) => a.remoteId);
+    if (session.value && remoteIds.length > 0 && cameraVideo) {
+      replaceOutgoingVideoTrackForPeers(cameraVideo, (id) => session.value?.getConnection(id), remoteIds);
+    }
+
+    localScreenShareTrack.value = null;
+    isScreenSharing.value = false;
+    screenTrack.stop();
+    localMediaEpoch.value++;
+    emitScreenShareToggled(false);
+    syncDetectorSources();
+  }
+
+  function createAttendee(remoteId: string, camera: MediaStream, attendee: IMeetingAttendee): MeetingStreamingAttendee {
     return {
       remoteId,
       camera,
       user: attendee.user,
       isCameraOn: attendee.isCameraOn,
       isMicrophoneOn: attendee.isMicrophoneOn,
+      isScreenSharing: attendee.isScreenSharing ?? false,
+      streamEpoch: 0,
     };
+  }
+
+  function emitScreenShareToggled(enabled: boolean) {
+    const meetingId = currentMeeting.value?.id;
+    const remoteId = localRemoteId.value;
+    if (meetingId == null || remoteId == null) return;
+    sockets.websocket.emit("screen-share-toggled", { meetingId, remoteId, enabled });
+  }
+
+  function onScreenShareToggled({ remoteId, enabled }: { remoteId: string; enabled: boolean }) {
+    if (remoteId === localRemoteId.value) {
+      if (isScreenSharing.value !== enabled) {
+        isScreenSharing.value = enabled;
+        if (!enabled) {
+          localScreenShareTrack.value?.stop();
+          localScreenShareTrack.value = null;
+        }
+        localMediaEpoch.value++;
+      }
+      return;
+    }
+    attendees.value = attendees.value.map((a) =>
+      a.remoteId === remoteId ? { ...a, isScreenSharing: enabled, streamEpoch: a.streamEpoch + 1 } : a,
+    );
+  }
+
+  function bumpAttendeeStreamEpoch(remoteId: string) {
+    attendees.value = attendees.value.map((a) =>
+      a.remoteId === remoteId ? { ...a, streamEpoch: (a.streamEpoch ?? 0) + 1 } : a,
+    );
+  }
+
+  function attachRemoteStreamTrackListeners(remoteId: string, stream: MediaStream) {
+    const bump = () => bumpAttendeeStreamEpoch(remoteId);
+    stream.addEventListener("addtrack", bump);
+    stream.addEventListener("removetrack", bump);
   }
 
   async function connectMeeting(
@@ -267,10 +387,25 @@ const useMeetingStore = defineStore("meeting", () => {
     session.value = createPeersSession({
       rtc,
       media: camera,
-      async onIncomingStream(remoteId, camera) {
-        const [attendee] = await meetingApi.findAttendees({ remoteId, meetingId: meeting.id });
-        attendees.value.push(createAttendee(remoteId, camera, attendee));
+      async onIncomingStream(remoteId, peerStream) {
+        const [apiAttendee] = await meetingApi.findAttendees({ remoteId, meetingId: meeting.id });
+        const idx = attendees.value.findIndex((a) => a.remoteId === remoteId);
+        if (idx >= 0) {
+          const prev = attendees.value[idx];
+          attendees.value.splice(idx, 1, {
+            ...prev,
+            camera: peerStream,
+            streamEpoch: (prev.streamEpoch ?? 0) + 1,
+            isScreenSharing: apiAttendee.isScreenSharing ?? false,
+          });
+        } else {
+          attendees.value.push(createAttendee(remoteId, peerStream, apiAttendee));
+        }
+        attachRemoteStreamTrackListeners(remoteId, peerStream);
         syncDetectorSources();
+      },
+      onMediaSessionReady() {
+        syncOutboundScreenVideoToAllPeers();
       },
     });
 
@@ -291,11 +426,13 @@ const useMeetingStore = defineStore("meeting", () => {
     sockets.websocket.off("attendee-joined", attendeeJoined);
     sockets.websocket.off("camera-toggled", onCameraToggled);
     sockets.websocket.off("microphone-toggled", onMicrophoneToggled);
+    sockets.websocket.off("screen-share-toggled", onScreenShareToggled);
 
     sockets.websocket.on("attendee-left", attendeeLeft);
     sockets.websocket.on("attendee-joined", attendeeJoined);
     sockets.websocket.on("camera-toggled", onCameraToggled);
     sockets.websocket.on("microphone-toggled", onMicrophoneToggled);
+    sockets.websocket.on("screen-share-toggled", onScreenShareToggled);
     sockets.websocket.once("current-meeting-ended", onCurrentMeetingEnded);
 
     sockets.websocket.listeners("attendee-joined");
@@ -345,8 +482,8 @@ const useMeetingStore = defineStore("meeting", () => {
     });
   }
 
-  function attendeeJoined({ attendee }: { attendee: IMeetingAttendee }) {
-    session.value?.connect(attendee.remoteId);
+  async function attendeeJoined({ attendee }: { attendee: IMeetingAttendee }) {
+    await session.value?.connect(attendee.remoteId);
   }
 
   function attendeeLeft({ remoteId }: { remoteId: string }) {
@@ -438,6 +575,13 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   function removeCameras() {
+    if (isScreenSharing.value || localScreenShareTrack.value) {
+      emitScreenShareToggled(false);
+    }
+    localScreenShareTrack.value?.stop();
+    localScreenShareTrack.value = null;
+    localMediaEpoch.value = 0;
+    isScreenSharing.value = false;
     mycamera.value?.getTracks().forEach((track) => track.stop());
     mycamera.value = null;
     attendees.value = [];
@@ -487,9 +631,12 @@ const useMeetingStore = defineStore("meeting", () => {
     currentMeetingChannelType,
     subscribeMeetings,
     mycamera,
+    localScreenShareTrack,
+    localMediaEpoch,
     attendees,
     isCameraOn,
     isMicrophoneOn,
+    isScreenSharing,
     layoutMode,
     peersDock,
     topDockMax,
@@ -513,6 +660,8 @@ const useMeetingStore = defineStore("meeting", () => {
     endMeeting,
     stopCamera,
     stopMicrophone,
+    startScreenShare,
+    stopScreenShare,
     applySelectedInputDevices,
   };
 });
