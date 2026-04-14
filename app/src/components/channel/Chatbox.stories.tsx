@@ -49,6 +49,7 @@ export const Default: Story = {
     chatTitle: "Daiana",
     chatPicture: daianaPhoto,
     messageGroups: messageGroups.value,
+    updateMessage: async () => {},
     sendMessage: async (message) => {
       messageGroup.value.messages.push({
         id: (max(map(messageGroup.value.messages, "id")) ?? 0) + 1,

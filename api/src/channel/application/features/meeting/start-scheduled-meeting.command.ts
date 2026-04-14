@@ -1,7 +1,7 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import { IsDate, IsNumber, IsString } from 'class-validator';
-import { addMilliseconds, differenceInMilliseconds } from 'date-fns';
+import { addMilliseconds } from 'date-fns';
 import { CalendarEvent } from 'src/calendar/entities';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { MeetingRepository } from 'src/channel/infrastructure';

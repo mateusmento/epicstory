@@ -1,7 +1,18 @@
 <script lang="ts" setup>
-import { Button, ScrollArea, Separator } from "@/design-system";
-import type { IChannel, IMessageGroup } from "@/domain/channels";
-import { HashIcon, HeadphonesIcon } from "lucide-vue-next";
+import {
+  Button,
+  ButtonGroup,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+  ScrollArea,
+  Separator,
+} from "@/design-system";
+import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
+import type { IChannel, IMessage, IMessageGroup } from "@/domain/channels";
+import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
+import { ref } from "vue";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
@@ -11,16 +22,55 @@ const props = defineProps<{
   chatTitle?: string;
   chatPicture?: string;
   messageGroups: IMessageGroup[];
-  sendMessage: (message: { content: string; contentRich: any }) => Promise<void>;
+  sendMessage: (message: { content: string; contentRich: any }) => Promise<unknown>;
+  updateMessage: (messageId: number, body: { content: string; contentRich: any }) => Promise<unknown>;
   channelId: number;
   channel: IChannel;
 }>();
 
-const emit = defineEmits(["join-meeting", "more-details", "message-deleted"]);
+const emit = defineEmits([
+  "join-meeting",
+  "start-meeting",
+  "schedule-meeting",
+  "more-details",
+  "message-deleted",
+]);
+
+const quotedMessage = ref<IMessage | null>(null);
+const editingMessage = ref<IMessage | null>(null);
 
 async function onSendMessage(payload: { content: string; contentRich: any }) {
-  if (!payload.content) return;
-  await props.sendMessage(payload);
+  if (!payload.content?.trim()) return;
+  const rich = quotedMessage.value
+    ? mergeQuotedMessageIntoDoc(quotedMessage.value, payload.contentRich)
+    : payload.contentRich;
+  const plain = tiptapToPlainText(normalizeTiptapDoc(rich));
+  await props.sendMessage({ content: plain, contentRich: rich });
+  quotedMessage.value = null;
+}
+
+async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: any }) {
+  await props.updateMessage(payload.messageId, {
+    content: payload.content,
+    contentRich: payload.contentRich,
+  });
+  editingMessage.value = null;
+}
+
+function onCancelEdit() {
+  editingMessage.value = null;
+}
+
+function onQuote(m: IMessage | undefined) {
+  if (!m || "messageId" in m) return;
+  quotedMessage.value = m;
+  editingMessage.value = null;
+}
+
+function onStartEdit(m: IMessage | undefined) {
+  if (!m || "messageId" in m) return;
+  editingMessage.value = m;
+  quotedMessage.value = null;
 }
 
 function onMessageDeleted(messageId: number) {
@@ -34,15 +84,41 @@ function onMessageDeleted(messageId: number) {
       <HashIcon class="h-5 w-5 text-muted-foreground" stroke-width="2.5" />
       <div class="text-sm" @click="emit('more-details')">{{ chatTitle }}</div>
 
-      <Button
-        size="icon"
-        variant="outline"
-        @click="emit('join-meeting')"
-        class="p-1 ml-auto text-muted-foreground"
-        title="Join meeting"
-      >
-        <HeadphonesIcon class="w-4 h-4" />
-      </Button>
+      <ButtonGroup class="ml-auto shrink-0">
+        <Button
+          size="icon"
+          variant="outline"
+          @click="emit('join-meeting')"
+          class="p-1 text-muted-foreground"
+          title="Join meeting"
+        >
+          <HeadphonesIcon class="w-4 h-4" />
+        </Button>
+
+        <Menu type="dropdown-menu">
+          <MenuTrigger as-child>
+            <Button
+              size="icon"
+              variant="outline"
+              class="p-1 text-muted-foreground"
+              title="More meeting actions"
+              aria-label="More meeting actions"
+            >
+              <ChevronDownIcon class="w-4 h-4" />
+            </Button>
+          </MenuTrigger>
+          <MenuContent align="end">
+            <MenuItem class="text-xs" @click="emit('start-meeting')">
+              <HeadphonesIcon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
+              <div>Start meeting</div>
+            </MenuItem>
+            <MenuItem class="text-xs" @click="emit('schedule-meeting')">
+              <CalendarClockIcon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
+              <div>Schedule meeting</div>
+            </MenuItem>
+          </MenuContent>
+        </Menu>
+      </ButtonGroup>
     </div>
 
     <Separator />
@@ -84,6 +160,8 @@ function onMessageDeleted(messageId: number) {
               :message
               :meId
               @message-deleted="onMessageDeleted"
+              @quote="onQuote"
+              @start-edit="onStartEdit"
             />
           </MessageGroup>
         </div>
@@ -101,7 +179,12 @@ function onMessageDeleted(messageId: number) {
     <MessageWriter
       :mentionables="channel.peers"
       :me-id="meId"
+      :quoted-message="quotedMessage"
+      :editing-message="editingMessage"
       @send-message="onSendMessage"
+      @submit-edit="onSubmitEdit"
+      @clear-quote="quotedMessage = null"
+      @cancel-edit="onCancelEdit"
       class="m-4 mt-0 bg-red-transparent"
     />
   </div>

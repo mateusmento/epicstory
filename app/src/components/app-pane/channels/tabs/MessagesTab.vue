@@ -1,32 +1,27 @@
 <script setup lang="ts">
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuSeparator,
-  MenuTrigger,
-} from "@/design-system";
+import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
-import { useChannel, useChannelActions, useChannels } from "@/domain/channels";
-import { LogOutIcon, SquarePenIcon, Trash2Icon } from "lucide-vue-next";
+import { useChannel, useChannelActions, useChannels, useMeeting } from "@/domain/channels";
+import type { IChannel } from "@/domain/channels/types";
+import { useWorkspace } from "@/domain/workspace";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import CreateChannel from "../CreateChannel.vue";
 import ChannelDeleteDialog from "../ChannelDeleteDialog.vue";
 import ChannelRenameDialog from "../ChannelRenameDialog.vue";
+import ChannelListContextMenu from "../ChannelListContextMenu.vue";
 import InboxMessage from "../InboxMessage.vue";
 
 const props = defineProps<{
   class?: string;
 }>();
 
+const router = useRouter();
 const { channel: currentChannel } = useChannel();
 const { channels } = useChannels();
+const { workspace } = useWorkspace();
+const { joinChannelMeeting } = useMeeting();
 
 const channelActions = useChannelActions();
 
@@ -74,6 +69,18 @@ async function confirmDelete() {
     actionLoading.value = false;
   }
 }
+
+function onScheduleMeetingForChannel(channel: IChannel) {
+  router.push({
+    name: "schedule",
+    params: { workspaceId: String(workspace.value.id) },
+    query: { scheduleChannelId: String(channel.id) },
+  });
+}
+
+function onStartMeetingForChannel(channel: IChannel) {
+  joinChannelMeeting({ channelId: channel.id });
+}
 </script>
 
 <template>
@@ -96,31 +103,19 @@ async function confirmDelete() {
       @confirm="confirmDelete"
     />
 
-    <Menu v-for="channel of channels" :key="channel.id" type="context-menu">
-      <MenuTrigger>
-        <InboxMessage :channel="channel" :open="channel.id === currentChannel?.id" />
-      </MenuTrigger>
-      <MenuContent>
-        <MenuItem class="text-xs" @click="openRename(channel)" :disabled="channel.type === 'direct'">
-          <SquarePenIcon scale="1.2" />
-          <div>Rename</div>
-        </MenuItem>
-        <MenuItem class="text-xs" @click="leaveChannel(channel)" :disabled="actionLoading">
-          <LogOutIcon scale="1.2" />
-          <div>Leave channel</div>
-        </MenuItem>
-        <MenuSeparator />
-        <MenuItem
-          variant="destructive"
-          class="text-xs"
-          @click="openDelete(channel)"
-          :disabled="actionLoading"
-        >
-          <Trash2Icon name="fa-trash" scale="1.2" />
-          <div>Delete channel</div>
-        </MenuItem>
-      </MenuContent>
-    </Menu>
+    <ChannelListContextMenu
+      v-for="channel of channels"
+      :key="channel.id"
+      :channel="channel"
+      :action-loading="actionLoading"
+      @rename="openRename"
+      @leave="leaveChannel"
+      @delete="openDelete"
+      @schedule-meeting="onScheduleMeetingForChannel"
+      @start-meeting="onStartMeetingForChannel"
+    >
+      <InboxMessage :channel="channel" :open="channel.id === currentChannel?.id" />
+    </ChannelListContextMenu>
 
     <div class="w-fit mt-4 mx-auto text-xs text-secondary-foreground">You have no more messages</div>
 

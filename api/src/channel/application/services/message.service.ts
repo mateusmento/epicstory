@@ -14,6 +14,7 @@ import {
 import { create, groupBy, mapBy, patch } from 'src/core/objects';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
+import { MessageNotFound } from '../exceptions';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
 import { normalizeTiptapDoc, tiptapToPlainText } from '../utils/tiptap';
 
@@ -147,6 +148,68 @@ export class MessageService {
 
     return new MessageDto({
       ...message,
+      mentionedUsers,
+      displayContent,
+    });
+  }
+
+  async updateMessageBody(
+    channel: Channel,
+    messageId: number,
+    content: string,
+    contentRich: any | undefined,
+    viewerId: number,
+  ) {
+    const normalizedRich = contentRich
+      ? normalizeTiptapDoc(contentRich)
+      : undefined;
+    const plainContent = normalizedRich
+      ? tiptapToPlainText(normalizedRich)
+      : content;
+
+    await this.messageRepo.update(
+      { id: messageId },
+      {
+        content: plainContent,
+        contentRich: normalizedRich ?? null,
+        editedAt: new Date(),
+      },
+    );
+
+    const message = await this.messageRepo.findOne({
+      where: { id: messageId },
+      relations: { sender: true, allReactions: { user: true } },
+    });
+    if (!message) throw new MessageNotFound();
+
+    const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
+    const displayContent = renderMentions(plainContent, peerUsersMap);
+    const mentionedUsers = extractMentionIds(plainContent)
+      .map((id) => peerUsersMap.get(id))
+      .filter((user) => user);
+
+    const repliesCountRows = await this.messageRepo.findRepliesCount([
+      messageId,
+    ]);
+    const repliesCount = repliesCountRows[0]?.repliesCount ?? 0;
+    const repliersRaw = await this.replyRepo.findRepliers([messageId]);
+    const usersIds = uniq([
+      ...repliersRaw.map((r) => r.senderId),
+      ...message.allReactions.map((r) => r.userId),
+    ]);
+    const users = await this.userRepo.find({
+      where: { id: In(usersIds) },
+    });
+    const usersMap = mapBy(users, 'id');
+    const repliersMap = groupBy(repliersRaw, 'messageId');
+    const repliers = mapRepliers(repliersMap[messageId] ?? [], usersMap);
+    const reactions = mapReactions(message.allReactions, viewerId, usersMap);
+
+    return new MessageDto({
+      ...message,
+      repliesCount,
+      repliers,
+      reactions,
       mentionedUsers,
       displayContent,
     });

@@ -8,7 +8,7 @@ import {
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
-import { ChannelNotFound } from '../../exceptions';
+import { ChannelNotFound, IssuerIsNotChannelMember } from '../../exceptions';
 import { Inject } from '@nestjs/common';
 import type { MeetingGateway } from '../../gateways';
 
@@ -45,13 +45,18 @@ export class JoinChannelMeetingHandler
     const { issuerId, channelId, remoteId, isCameraOn, isMicrophoneOn } =
       command;
 
-    const channel = await this.channelRepo.findOneBy({ id: channelId });
+    const channel = await this.channelRepo.findOne({
+      where: { id: channelId },
+      relations: { peers: true },
+    });
     if (!channel) throw new ChannelNotFound();
 
     const { workspaceId } = channel;
 
     const member = await this.workspaceRepo.findMember(workspaceId, issuerId);
     if (!member) throw new ChannelNotFound();
+
+    if (!channel.hasMember(issuerId)) throw new IssuerIsNotChannelMember();
 
     let meeting = await this.meetingRepo.findOngoing(
       { channelId },

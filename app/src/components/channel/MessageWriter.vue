@@ -3,7 +3,7 @@ import { startRecording } from "@/core/screen-recording";
 import { Button } from "@/design-system/ui/button";
 import { Separator } from "@/design-system/ui/separator";
 import { Icon } from "@/design-system/icons";
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { EditorContent, useEditor, VueNodeViewRenderer } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -12,21 +12,42 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
 import { Bold, Italic, Strikethrough, List, ListOrdered, Link2 } from "lucide-vue-next";
 import { VueRenderer } from "@tiptap/vue-3";
-import { normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
+import { messageBodyPlainText, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
 import MentionList from "./MentionList.vue";
 import type { MentionSuggestionItem } from "./MentionList.vue";
 import type { User } from "@/domain/auth";
 import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
 
-const props = defineProps<{
-  mentionables?: User[];
-  meId?: number;
-  placeholder?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    mentionables?: User[];
+    meId?: number;
+    placeholder?: string;
+    editingMessage?: { id: number; content: string; contentRich?: any } | null;
+    quotedMessage?: { sender: { name: string }; content: string; contentRich?: any } | null;
+  }>(),
+  {
+    editingMessage: null,
+    quotedMessage: null,
+  },
+);
 
 const emit = defineEmits<{
   (e: "send-message", value: { content: string; contentRich: any }): void;
+  (e: "submit-edit", value: { messageId: number; content: string; contentRich: any }): void;
+  (e: "clear-quote"): void;
+  (e: "cancel-edit"): void;
 }>();
+
+const composerPlaceholder = computed(() =>
+  props.editingMessage ? "Edit message…" : (props.placeholder ?? "Send a message…"),
+);
+
+const quotedExcerpt = computed(() => {
+  if (!props.quotedMessage) return "";
+  const t = messageBodyPlainText(props.quotedMessage).replace(/\s+/g, " ").trim();
+  return t.length > 160 ? `${t.slice(0, 160)}…` : t;
+});
 
 const mentionablesForSuggestion = computed(() => {
   const list = props.mentionables ?? [];
@@ -117,7 +138,7 @@ const editor = useEditor({
       suggestion: createMentionSuggestion(),
     } as any),
     Placeholder.configure({
-      placeholder: props.placeholder ?? "Send a message…",
+      placeholder: () => composerPlaceholder.value,
     }),
   ],
   content: "",
@@ -140,6 +161,31 @@ onBeforeUnmount(() => {
   editor.value?.destroy();
 });
 
+watch(
+  () => props.editingMessage,
+  (m) => {
+    if (!editor.value) return;
+    if (!m) {
+      editor.value.commands.clearContent();
+      return;
+    }
+    const doc = m.contentRich
+      ? normalizeTiptapDoc(m.contentRich)
+      : {
+          type: "doc",
+          content: [
+            {
+              type: "paragraph",
+              content: m.content ? [{ type: "text", text: m.content }] : [],
+            },
+          ],
+        };
+    editor.value.commands.setContent(doc);
+    editor.value.commands.focus("end");
+  },
+  { flush: "post" },
+);
+
 function toggleLink() {
   if (!editor.value) return;
   const prev = editor.value.getAttributes("link").href as string | undefined;
@@ -161,8 +207,20 @@ function onSendMessage() {
   const doc = normalizeTiptapDoc(editor.value.getJSON());
   const plain = tiptapToPlainText(doc);
   if (!plain.trim()) return;
+  if (props.editingMessage) {
+    emit("submit-edit", {
+      messageId: props.editingMessage.id,
+      content: plain,
+      contentRich: doc,
+    });
+    return;
+  }
   emit("send-message", { content: plain, contentRich: doc });
   editor.value.commands.clearContent();
+}
+
+function onCancelEdit() {
+  emit("cancel-edit");
 }
 
 const isRecording = ref(false);
@@ -206,6 +264,19 @@ function formatTime(seconds: number) {
     class="flex:col-md p-3 border border-zinc-200 rounded-xl bg-white focus-within:outline outline-1 outline-zinc-300/60"
     @click="editor?.commands.focus()"
   >
+    <div
+      v-if="quotedMessage && !editingMessage"
+      class="flex:row-md flex:center-y gap-2 mb-2 pb-2 border-b border-zinc-200/80 text-xs text-muted-foreground"
+    >
+      <div class="flex-1 min-w-0">
+        <span class="font-medium text-foreground/80">{{ quotedMessage.sender.name }}</span>
+        <span class="text-muted-foreground/90"> {{ quotedExcerpt }}</span>
+      </div>
+      <Button type="button" variant="ghost" size="icon" class="h-7 w-7 shrink-0" @click.stop="emit('clear-quote')">
+        <span class="sr-only">Remove quote</span>
+        ×
+      </Button>
+    </div>
     <EditorContent v-if="editor" :editor="editor" />
 
     <div class="flex:row-md flex:center-y mt-2 text-secondary-foreground">
@@ -265,6 +336,17 @@ function formatTime(seconds: number) {
 
       <div class="flex-1"></div>
 
+      <Button
+        v-if="editingMessage"
+        type="button"
+        variant="ghost"
+        size="sm"
+        class="text-muted-foreground"
+        @click="onCancelEdit"
+      >
+        Cancel
+      </Button>
+
       <Button variant="ghost" size="icon" @click="onToggleRecording">
         <Icon v-if="!isRecording" name="bi-camera-video" class="w-6 h-6" />
         <template v-else>
@@ -281,7 +363,7 @@ function formatTime(seconds: number) {
         @click="onSendMessage"
       >
         <Icon name="io-paper-plane" />
-        Send
+        {{ editingMessage ? "Save" : "Send" }}
       </Button>
     </div>
   </div>

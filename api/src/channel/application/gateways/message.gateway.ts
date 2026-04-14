@@ -98,6 +98,14 @@ export class MessageGateway {
       });
   }
 
+  emitMessageUpdated(channelId: number, message: Message, editorUserId: number) {
+    if (!this.server) return;
+    this.server
+      .to(channelMessagingRoom(channelId))
+      .except(userRoom(editorUserId))
+      .emit('message-updated', { message, channelId });
+  }
+
   emitReplyDeleted(
     channelId: number,
     messageId: number,

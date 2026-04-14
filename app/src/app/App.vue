@@ -2,10 +2,12 @@
 import { UnauthorizedException } from "@/core/axios";
 import { TooltipProvider } from "@/design-system";
 import { Toaster } from "@/design-system/ui/sonner";
-import { Suspense, Teleport, onErrorCaptured } from "vue";
+import { onErrorCaptured } from "vue";
 import { RouterView, useRouter } from "vue-router";
+import { useWorkspace } from "@/domain/workspace";
 
 const router = useRouter();
+const { isFetchingWorkspace } = useWorkspace();
 
 onErrorCaptured((err) => {
   if (err instanceof UnauthorizedException) {
@@ -22,7 +24,13 @@ onErrorCaptured((err) => {
           <Teleport to="body">
             <Toaster position="top-center" :expand="true" :rich-colors="true" close-button />
           </Teleport>
-          <component :is="Component"></component>
+          <div v-if="isFetchingWorkspace" class="flex flex:center h-full py-4xl">
+            <div class="flex:col-4xl">
+              <h1 class="title text-foreground">Loading...</h1>
+              <div class="subtitle text-secondary-foreground">Please wait while we load the workspace.</div>
+            </div>
+          </div>
+          <component v-show="!isFetchingWorkspace" :is="Component"></component>
         </TooltipProvider>
       </template>
 

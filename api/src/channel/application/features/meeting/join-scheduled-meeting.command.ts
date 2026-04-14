@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsDate, IsString, IsUUID } from 'class-validator';
-import { addMilliseconds, differenceInMilliseconds, isFuture } from 'date-fns';
+import { UUID } from 'crypto';
+import { addMilliseconds, isFuture } from 'date-fns';
 import { CalendarEvent } from 'src/calendar/entities';
 import { assertCalendarMeetingAccess } from 'src/calendar/utils/assert-calendar-meeting-access';
 import { Meeting } from 'src/channel/domain';
@@ -13,7 +14,6 @@ import { DataSource } from 'typeorm';
 import { MeetingHasntStartedException } from '../../exceptions';
 import { JoinMeeting } from './join-meeting.command';
 import { StartMeeting } from './start-meeting.command';
-import { UUID } from 'crypto';
 
 /**
  * Scheduled meeting = calendar-backed meeting occurrence.

@@ -52,6 +52,12 @@ export class IssuerCanOnlyDeleteOwnMessages extends ForbiddenException {
   }
 }
 
+export class IssuerCanOnlyEditOwnMessages extends ForbiddenException {
+  constructor() {
+    super('Issuer can only edit own messages');
+  }
+}
+
 export class IssuerCanOnlyDeleteOwnReplies extends ForbiddenException {
   constructor() {
     super('Issuer can only delete own replies');

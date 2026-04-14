@@ -47,7 +47,7 @@ const editor = useEditor({
   editorProps: {
     attributes: {
       class:
-        "outline-none text-[calc(1rem-1px)] font-lato leading-relaxed [&_p]:my-1 [&_li>p]:my-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_a]:text-blue-600 [&_a]:underline",
+        "outline-none text-[calc(1rem-1px)] font-lato leading-relaxed [&_p]:my-1 [&_li>p]:my-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_a]:text-blue-600 [&_a]:underline [&_blockquote]:text-muted-foreground/90 [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/20 [&_blockquote]:pl-3 [&_blockquote]:py-0.5 [&_blockquote]:my-1 [&_blockquote]:bg-muted/30 [&_blockquote]:rounded-r-md",
       tabindex: "-1",
     },
     handleDOMEvents: {

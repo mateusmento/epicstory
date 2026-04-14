@@ -1,11 +1,12 @@
 <script setup lang="tsx">
+import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
 import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { IMessage, IMessageGroup, IReply } from "@/domain/channels";
 import { useChannel } from "@/domain/channels";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
 import { last } from "lodash";
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
@@ -19,7 +20,10 @@ const emit = defineEmits(["message-deleted", "close"]);
 const { replies, toggleReaction, toggleReplyReaction, fetchReplies, sendReply, deleteReply } =
   useMessageThread(message, { onMessageDeleted: () => emit("close"), name: "thread" });
 
-const { channel, deleteMessage } = useChannel();
+const { channel, deleteMessage, updateMessage } = useChannel();
+
+const quotedMessage = ref<IMessage | IReply | null>(null);
+const editingMessage = ref<IMessage | null>(null);
 
 function groupMessages(messages: IReply[]) {
   return messages.reduce((groups, message) => {
@@ -51,11 +55,42 @@ async function onMessageDeleted() {
   deleteMessage(message.value.id);
   emit("close");
 }
+
+async function onSendReply(payload: { content: string; contentRich: any }) {
+  const rich = quotedMessage.value
+    ? mergeQuotedMessageIntoDoc(quotedMessage.value, payload.contentRich)
+    : payload.contentRich;
+  const plain = tiptapToPlainText(normalizeTiptapDoc(rich));
+  await sendReply({ content: plain, contentRich: rich });
+  quotedMessage.value = null;
+}
+
+async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: any }) {
+  const updated = await updateMessage(payload.messageId, {
+    content: payload.content,
+    contentRich: payload.contentRich,
+  });
+  if (message.value.id === payload.messageId) {
+    Object.assign(message.value, updated);
+  }
+  editingMessage.value = null;
+}
+
+function onQuoteTarget(m: IMessage | IReply) {
+  quotedMessage.value = m;
+  editingMessage.value = null;
+}
+
+function onEditTarget(m: IMessage | IReply) {
+  if ("messageId" in m && m.messageId != null) return;
+  editingMessage.value = m;
+  quotedMessage.value = null;
+}
 </script>
 
 <template>
   <div class="flex:col max-w-[32rem] border-l border-l-zinc-300/60">
-    <div class="flex:row-xl flex:center-y justify-between h-14 p-4">
+    <div class="flex:row-xl flex:center-y justify-between h-10 p-4">
       <div class="text-base font-semibold">Thread</div>
 
       <Button variant="ghost" size="icon" @click="emit('close')">
@@ -73,6 +108,8 @@ async function onMessageDeleted() {
             :meId="meId"
             @reaction-toggled="toggleReaction($event)"
             @message-deleted="onMessageDeleted"
+            @quote="onQuoteTarget"
+            @edit="onEditTarget"
             hide-replies-count
           />
         </MessageGroup>
@@ -101,6 +138,8 @@ async function onMessageDeleted() {
               :meId="meId"
               @reaction-toggled="toggleReplyReaction(reply.id, $event)"
               @message-deleted="deleteReply(reply.id)"
+              @quote="onQuoteTarget"
+              @edit="onEditTarget"
             />
           </MessageGroup>
         </div>
@@ -110,7 +149,12 @@ async function onMessageDeleted() {
     <MessageWriter
       :mentionables="channel?.peers ?? []"
       :me-id="meId"
-      @send-message="sendReply"
+      :quoted-message="quotedMessage"
+      :editing-message="editingMessage"
+      @send-message="onSendReply"
+      @submit-edit="onSubmitEdit"
+      @clear-quote="quotedMessage = null"
+      @cancel-edit="editingMessage = null"
       class="m-4 mt-auto"
     />
   </div>

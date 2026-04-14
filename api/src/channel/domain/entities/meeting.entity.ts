@@ -1,4 +1,4 @@
-import { isFuture } from 'date-fns';
+import { isFuture, isPast } from 'date-fns';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import { create, patch } from 'src/core/objects';
 import { Workspace } from 'src/workspace/domain/entities';
@@ -126,5 +126,17 @@ export class Meeting {
 
   addAttendee(data: MeetingAttendee) {
     this.attendees.push(data);
+  }
+
+  isEmpty() {
+    return this.attendees.length === 0;
+  }
+
+  hasEnded() {
+    return (
+      this.endedAt &&
+      isPast(this.endedAt) &&
+      (!this.channel || this.channel.type !== 'meeting')
+    );
   }
 }

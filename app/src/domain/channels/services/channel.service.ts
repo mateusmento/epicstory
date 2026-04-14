@@ -130,6 +130,10 @@ export class ChannelApi {
     return this.axios.delete(`/messages/${messageId}`).then((res) => res.data);
   }
 
+  updateMessage(messageId: number, body: { content: string; contentRich?: any }) {
+    return this.axios.patch<IMessage>(`/messages/${messageId}`, body).then((res) => res.data);
+  }
+
   findReactions(messageId: number) {
     return this.axios.get<IReaction[]>(`/messages/${messageId}/reactions`).then((res) => res.data);
   }

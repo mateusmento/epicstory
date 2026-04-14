@@ -48,3 +48,29 @@ function walk(node: any, ctx?: { inListItem?: boolean }): string {
   if (type === "bulletList" || type === "orderedList") return children;
   return children;
 }
+
+export function messageBodyPlainText(message: { content: string; contentRich?: any }): string {
+  if (message.contentRich) return tiptapToPlainText(normalizeTiptapDoc(message.contentRich));
+  return message.content ?? "";
+}
+
+export function mergeQuotedMessageIntoDoc(quoted: { sender: { name: string }; content: string; contentRich?: any }, mainDoc: any) {
+  const excerpt = messageBodyPlainText(quoted).slice(0, 500);
+  const quoteNode = {
+    type: "blockquote",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          { type: "text", marks: [{ type: "bold" }], text: `${quoted.sender.name}: ` },
+          { type: "text", text: excerpt },
+        ],
+      },
+    ],
+  };
+  const main = normalizeTiptapDoc(mainDoc);
+  return {
+    type: "doc",
+    content: [quoteNode, ...(Array.isArray(main.content) ? main.content : [])],
+  };
+}

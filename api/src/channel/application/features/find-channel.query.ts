@@ -1,10 +1,10 @@
-import { NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { ChannelRepository } from 'src/channel/infrastructure';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
+import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { ChannelNotFound, IssuerIsNotChannelMember } from '../exceptions';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
 
 export class FindChannel {
@@ -37,7 +37,7 @@ export class FindChannelQuery implements IQueryHandler<FindChannel> {
       .where('c.id = :id', { id: channelId })
       .getOne();
 
-    if (!channel) throw new NotFoundException('Channel not found');
+    if (!channel) throw new ChannelNotFound();
 
     const issuerMember = await this.workspaceRepo.findMember(
       channel.workspaceId,
@@ -45,6 +45,8 @@ export class FindChannelQuery implements IQueryHandler<FindChannel> {
     );
 
     if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
+
+    if (!channel.hasMember(issuerId)) throw new IssuerIsNotChannelMember();
 
     if (channel.type === 'direct')
       channel.speakingTo = channel.peers.find((p) => p.id !== issuerId);

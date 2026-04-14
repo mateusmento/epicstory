@@ -26,7 +26,7 @@ import {
   startOfMonth,
 } from "date-fns";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import type { CalendarEventDto } from "@/domain/calendar/api/calendar-event.api";
 
 type ViewType = "month" | "week" | "day";
@@ -36,6 +36,7 @@ const { workspace, members, fetchWorkspaceMembers } = useWorkspace();
 const { channels, fetchChannels } = useChannels();
 
 const calendarEventApi = useDependency(CalendarEventApi);
+const route = useRoute();
 const router = useRouter();
 const meetingSocket = useMeetingSocket();
 
@@ -190,6 +191,18 @@ onMounted(async () => {
   if (workspace.value?.id) {
     fetchChannels();
     fetchWorkspaceMembers();
+  }
+  const scheduleCid = route.query.scheduleChannelId;
+  if (scheduleCid != null && scheduleCid !== "") {
+    const raw = Array.isArray(scheduleCid) ? scheduleCid[0] : scheduleCid;
+    const id = Number(raw);
+    if (!Number.isNaN(id)) {
+      itemType.value = "meeting";
+      openCreateDialog();
+      meetingChannelId.value = id;
+    }
+    const { scheduleChannelId: _sc, ...restQuery } = route.query;
+    router.replace({ path: route.path, query: restQuery });
   }
   document.addEventListener("mousemove", handleResizeMove);
   document.addEventListener("mouseup", handleResizeEnd);

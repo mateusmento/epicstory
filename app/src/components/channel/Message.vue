@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const message = defineModel<IMessage>("message", { required: true });
 
-const emit = defineEmits(["message-deleted"]);
+const emit = defineEmits(["message-deleted", "quote", "start-edit"]);
 
 const { toggleReaction } = useMessageThread(message, { name: "message" });
 
@@ -27,6 +27,7 @@ function onEmojiSelect(emoji: string) {
 function onMessageDeleted() {
   emit("message-deleted", message.value?.id);
 }
+
 </script>
 
 <template>
@@ -36,5 +37,7 @@ function onMessageDeleted() {
     @discussion-opened="toggleDiscussion"
     @reaction-toggled="onEmojiSelect"
     @message-deleted="onMessageDeleted"
+    @quote="emit('quote', $event)"
+    @edit="emit('start-edit', $event)"
   />
 </template>

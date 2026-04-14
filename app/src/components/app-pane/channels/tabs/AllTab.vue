@@ -1,16 +1,5 @@
 <script setup lang="ts">
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-  Menu,
-  MenuContent,
-  MenuItem,
-  MenuSeparator,
-  MenuTrigger,
-} from "@/design-system";
+import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/design-system";
 import { cn } from "@/design-system/utils";
 import { useDependency } from "@/core/dependency-injection";
 import type { Page } from "@/core/types";
@@ -25,16 +14,19 @@ import {
 import { ChannelApi } from "@/domain/channels/services";
 import type { IChannel } from "@/domain/channels/types";
 import { useWorkspace } from "@/domain/workspace";
-import { HashIcon, HeadphonesIcon, LogOutIcon, PlusIcon, SquarePenIcon, Trash2Icon } from "lucide-vue-next";
+import { HashIcon, HeadphonesIcon, PlusIcon } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import CreateChannel from "../CreateChannel.vue";
 import ChannelDeleteDialog from "../ChannelDeleteDialog.vue";
 import ChannelRenameDialog from "../ChannelRenameDialog.vue";
+import ChannelListContextMenu from "../ChannelListContextMenu.vue";
 
 const props = defineProps<{
   class?: string;
 }>();
 
+const router = useRouter();
 const { openChannel } = useChannel();
 const { joinMeeting, joinChannelMeeting } = useMeeting();
 const { workspace } = useWorkspace();
@@ -240,6 +232,18 @@ async function confirmDelete() {
     actionLoading.value = false;
   }
 }
+
+function onScheduleMeetingForChannel(channel: IChannel) {
+  router.push({
+    name: "schedule",
+    params: { workspaceId: String(workspace.value.id) },
+    query: { scheduleChannelId: String(channel.id) },
+  });
+}
+
+function onStartMeetingForChannel(channel: IChannel) {
+  joinChannelMeeting({ channelId: channel.id });
+}
 </script>
 
 <template>
@@ -282,64 +286,52 @@ async function confirmDelete() {
         </Dialog>
       </div>
 
-      <Menu v-for="channel of item.page?.content ?? []" :key="channel.id" type="context-menu">
-        <MenuTrigger>
-          <div class="flex:row-sm">
-            <div
-              class="flex:row-lg flex:center-y flex-1 p-2 rounded-lg hover:bg-secondary cursor-pointer"
-              @click="openChannel(channel)"
-            >
-              <img
-                v-if="channel.speakingTo?.picture"
-                :src="channel.speakingTo?.picture"
-                class="w-4 h-4 rounded-full"
-              />
-              <HeadphonesIcon
-                v-else-if="channel.type === 'meeting'"
-                class="h-4 w-4 text-muted-foreground"
-                stroke-width="2.5"
-              />
-              <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-              <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
-            </div>
-            <button
-              v-if="channel.type === 'meeting' || channel.meeting"
-              type="button"
-              class="p-2 rounded-lg hover:bg-secondary cursor-pointer shrink-0"
-              @mousedown.prevent
-              @touchstart.prevent
-              @click.stop="
-                channel.type === 'meeting'
-                  ? joinChannelMeeting({ channelId: channel.id })
-                  : channel.meeting && joinMeeting({ meetingId: channel.meeting.id })
-              "
-              title="Join meeting"
-            >
-              <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-            </button>
-          </div>
-        </MenuTrigger>
-        <MenuContent>
-          <MenuItem class="text-xs" @click="openRename(channel)" :disabled="channel.type === 'direct'">
-            <SquarePenIcon scale="1.2" />
-            <div>Rename</div>
-          </MenuItem>
-          <MenuItem class="text-xs" @click="leaveChannel(channel)" :disabled="actionLoading">
-            <LogOutIcon scale="1.2" />
-            <div>Leave channel</div>
-          </MenuItem>
-          <MenuSeparator />
-          <MenuItem
-            variant="destructive"
-            class="text-xs"
-            @click="openDelete(channel)"
-            :disabled="actionLoading"
+      <ChannelListContextMenu
+        v-for="channel of item.page?.content ?? []"
+        :key="channel.id"
+        :channel="channel"
+        :action-loading="actionLoading"
+        @rename="openRename"
+        @leave="leaveChannel"
+        @delete="openDelete"
+        @schedule-meeting="onScheduleMeetingForChannel"
+        @start-meeting="onStartMeetingForChannel"
+      >
+        <div class="flex:row-sm">
+          <div
+            class="flex:row-lg flex:center-y flex-1 p-2 rounded-lg hover:bg-secondary cursor-pointer"
+            @click="openChannel(channel)"
           >
-            <Trash2Icon name="fa-trash" scale="1.2" />
-            <div>Delete channel</div>
-          </MenuItem>
-        </MenuContent>
-      </Menu>
+            <img
+              v-if="channel.speakingTo?.picture"
+              :src="channel.speakingTo?.picture"
+              class="w-4 h-4 rounded-full"
+            />
+            <HeadphonesIcon
+              v-else-if="channel.type === 'meeting'"
+              class="h-4 w-4 text-muted-foreground"
+              stroke-width="2.5"
+            />
+            <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+            <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+          </div>
+          <button
+            v-if="channel.type === 'meeting' || channel.meeting"
+            type="button"
+            class="p-2 rounded-lg hover:bg-secondary cursor-pointer shrink-0"
+            @mousedown.prevent
+            @touchstart.prevent
+            @click.stop="
+              channel.type === 'meeting'
+                ? joinChannelMeeting({ channelId: channel.id })
+                : channel.meeting && joinMeeting({ meetingId: channel.meeting.id })
+            "
+            title="Join meeting"
+          >
+            <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+          </button>
+        </div>
+      </ChannelListContextMenu>
 
       <Button
         v-if="item.page?.hasNext"

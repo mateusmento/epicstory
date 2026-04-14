@@ -88,4 +88,11 @@ export class Channel {
       dmUserGreaterId: Math.max(user1.id, user2.id),
     });
   }
+
+  hasMember(userId: number | number[]) {
+    if (Array.isArray(userId)) {
+      return this.peers?.some((p) => userId.includes(p.id));
+    }
+    return this.peers?.some((p) => p.id === userId);
+  }
 }

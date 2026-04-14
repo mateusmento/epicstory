@@ -6,6 +6,7 @@ export interface IMessage {
   content: string;
   contentRich?: any;
   displayContent?: string;
+  editedAt?: string | null;
   mentionedUsers?: User[];
   sentAt: string;
   senderId: number;

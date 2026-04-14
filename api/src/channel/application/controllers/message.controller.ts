@@ -4,12 +4,13 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { DeleteMessage, SendMessage } from '../features';
+import { DeleteMessage, SendMessage, UpdateMessage } from '../features';
 import { MessageGateway } from '../gateways/message.gateway';
 import { MessageService } from '../services/message.service';
 import { ToggleMessageReaction } from '../features/toggle-message-reaction.command';
@@ -86,6 +87,30 @@ export class MessageController {
     );
 
     return { success: true, channelId, messageId, emoji, action, reactions };
+  }
+
+  @Patch()
+  async updateMessage(
+    @Param('messageId') messageId: number,
+    @Body() body: Pick<UpdateMessage, 'content' | 'contentRich'>,
+    @Auth() issuer: Issuer,
+  ) {
+    const message = await this.commandBus.execute(
+      new UpdateMessage({
+        messageId,
+        issuerId: issuer.id,
+        content: body.content,
+        contentRich: body.contentRich,
+      }),
+    );
+
+    this.messageGateway.emitMessageUpdated(
+      message.channelId,
+      message,
+      issuer.id,
+    );
+
+    return message;
   }
 
   @Delete()

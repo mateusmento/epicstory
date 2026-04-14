@@ -1,3 +1,4 @@
+import { Inject } from '@nestjs/common';
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsBoolean, IsString } from 'class-validator';
 import { Meeting, MeetingAttendee } from 'src/channel/domain';
@@ -7,10 +8,8 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
 import {
   MeetingHasEndedException,
-  MeetingHasntStartedException,
   MeetingNotFoundException,
 } from '../../exceptions';
-import { Inject } from '@nestjs/common';
 import type { MeetingGateway } from '../../gateways';
 import { StartMeeting } from './start-meeting.command';
 
@@ -59,11 +58,11 @@ export class JoinMeetingHandler implements ICommandHandler<JoinMeeting> {
 
     if (!member) throw new MeetingNotFoundException();
 
-    if (meeting.endedAt) {
-      // throw new MeetingHasEndedException();
+    if (meeting.hasEnded()) {
+      throw new MeetingHasEndedException();
     }
 
-    if (meeting.attendees.length === 0) {
+    if (meeting.isEmpty()) {
       this.commandBus.execute(new StartMeeting({ meetingId }));
     }
 

@@ -1,4 +1,3 @@
-<!-- Write me a error view that displays a message and a button to go back to the signin page. Use the design system to style the page. -->
 <script setup lang="ts">
 import { Button } from "@/design-system";
 import { useRouter } from "vue-router";

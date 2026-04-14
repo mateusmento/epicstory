@@ -53,6 +53,15 @@ export function useChannel() {
     }
   }
 
+  function onMessageUpdated({ message, channelId }: { message: IMessage; channelId: number }) {
+    if (store.channel && store.channel.id === channelId) {
+      const i = store.messages.findIndex((m) => m.id === message.id);
+      if (i >= 0) {
+        store.messages[i] = { ...store.messages[i], ...message };
+      }
+    }
+  }
+
   function joinChannel() {
     sockets.websocket?.emit("subscribe-messages", {
       workspaceId: workspace.value.id,
@@ -63,11 +72,15 @@ export function useChannel() {
 
     sockets.websocket.off("message-deleted", onMessageDeleted);
     sockets.websocket?.on("message-deleted", onMessageDeleted);
+
+    sockets.websocket.off("message-updated", onMessageUpdated);
+    sockets.websocket?.on("message-updated", onMessageUpdated);
   }
 
   function leaveChannel() {
     sockets.websocket.off("incoming-message", onReceiveMessage);
     sockets.websocket.off("message-deleted", onMessageDeleted);
+    sockets.websocket.off("message-updated", onMessageUpdated);
   }
 
   function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
@@ -135,6 +148,13 @@ export function useChannel() {
     store.messages = store.messages.filter((message) => message.id !== messageId);
   }
 
+  async function updateMessage(messageId: number, body: { content: string; contentRich: any }) {
+    const updated = await channelApi.updateMessage(messageId, body);
+    const i = store.messages.findIndex((m) => m.id === messageId);
+    if (i >= 0) store.messages[i] = { ...store.messages[i], ...updated };
+    return updated;
+  }
+
   return {
     ...storeToRefs(store),
     messageGroups,
@@ -151,6 +171,7 @@ export function useChannel() {
     addMember,
     removeMember,
     deleteMessage,
+    updateMessage,
   };
 }
 

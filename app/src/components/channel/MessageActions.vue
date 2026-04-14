@@ -2,6 +2,8 @@
 import { Button, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/design-system";
 import { IconReplies } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
+import { messageBodyPlainText } from "@/core/tiptap";
+import type { IMessage, IReply } from "@/domain/channels";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { computed, ref } from "vue";
 import EmojiPicker from "./EmojiPicker.vue";
@@ -9,15 +11,22 @@ import EmojiPicker from "./EmojiPicker.vue";
 const props = defineProps<{
   meId: number;
   senderId: number;
+  message: IMessage | IReply;
 }>();
 
 const emit = defineEmits<{
   (e: "message-deleted"): void;
   (e: "emoji-selected", emoji: string): void;
   (e: "toggle-discussion"): void;
+  (e: "quote"): void;
+  (e: "edit"): void;
 }>();
 
 const sender = computed(() => (props.senderId === props.meId ? "me" : "someoneElse"));
+
+const isReply = computed(() => "messageId" in props.message && props.message.messageId != null);
+
+const canEditHere = computed(() => sender.value === "me" && !isReply.value);
 
 const mostUsedEmojis = [
   "👍",
@@ -28,6 +37,15 @@ const mostUsedEmojis = [
 ];
 
 const messageActionsRef = ref<HTMLElement | null>(null);
+
+async function copyMessage() {
+  const text = messageBodyPlainText(props.message);
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // ignore
+  }
+}
 
 defineExpose({
   getWidth: () => messageActionsRef.value?.clientWidth,
@@ -60,13 +78,13 @@ defineExpose({
         </Button>
       </MenuTrigger>
       <MenuContent align="end" disabled-portal>
-        <MenuItem>
+        <MenuItem @click="copyMessage">
           <span>Copy message</span>
         </MenuItem>
-        <MenuItem>
+        <MenuItem v-if="canEditHere" @click="emit('edit')">
           <span>Edit message</span>
         </MenuItem>
-        <MenuItem>
+        <MenuItem @click="emit('quote')">
           <span>Quote message</span>
         </MenuItem>
         <template v-if="sender === 'me'">

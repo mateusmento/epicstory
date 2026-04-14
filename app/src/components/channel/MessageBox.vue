@@ -16,7 +16,7 @@ import { IconReplies } from "@/design-system/icons";
 import MentionedText from "./MentionedText.vue";
 import RichMessageContent from "./RichMessageContent.vue";
 
-defineProps<{
+const props = defineProps<{
   message: IMessage | IReply;
   meId: number;
   hideRepliesCount?: boolean;
@@ -26,6 +26,8 @@ const emit = defineEmits<{
   (e: "message-deleted"): void;
   (e: "discussion-opened"): void;
   (e: "reaction-toggled", emoji: string): void;
+  (e: "quote", message: IMessage | IReply): void;
+  (e: "edit", message: IMessage | IReply): void;
 }>();
 
 const messageActionsRef = ref<InstanceType<typeof MessageActions>>();
@@ -58,37 +60,52 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
       <HoverCardTrigger as-child>
         <div :class="styles.messageBox" ref="messageBoxRef">
           <RichMessageContent
-            v-if="message.contentRich"
-            :contentRich="message.contentRich"
-            :mentioned-users="message.mentionedUsers"
+            v-if="props.message.contentRich"
+            :contentRich="props.message.contentRich"
+            :mentioned-users="props.message.mentionedUsers"
           />
-          <MentionedText v-else :content="message.content" :mentioned-users="message.mentionedUsers" />
+          <MentionedText
+            v-else
+            :content="props.message.content"
+            :mentioned-users="props.message.mentionedUsers"
+          />
+          <div
+            v-if="'editedAt' in props.message && props.message.editedAt"
+            class="text-[0.65rem] text-muted-foreground/80 mt-0.5"
+          >
+            (edited)
+          </div>
         </div>
       </HoverCardTrigger>
       <HoverCardContent as-child side="top" align="start" :align-offset="alignOffset" :side-offset="-10">
         <MessageActions
-          :meId="meId"
-          :senderId="message.senderId"
+          :meId="props.meId"
+          :senderId="props.message.senderId"
+          :message="props.message"
           @message-deleted="emit('message-deleted')"
           @toggle-discussion="emit('discussion-opened')"
           @emoji-selected="emit('reaction-toggled', $event)"
+          @quote="emit('quote', props.message)"
+          @edit="emit('edit', props.message)"
           ref="messageActionsRef"
         />
       </HoverCardContent>
     </HoverCard>
 
     <div
-      v-if="(!hideRepliesCount && message.repliesCount > 0) || message.reactions.length > 0"
+      v-if="
+        (!props.hideRepliesCount && props.message.repliesCount > 0) || props.message.reactions.length > 0
+      "
       class="flex:row-2xl flex:center-y ml-lg mt-1 mb-1 z-10"
     >
       <Button
-        v-if="!hideRepliesCount && message.repliesCount > 0"
+        v-if="!props.hideRepliesCount && props.message.repliesCount > 0"
         variant="ghost"
         size="icon"
         @click="emit('discussion-opened')"
       >
         <img
-          v-for="replier in message.repliers"
+          v-for="replier in props.message.repliers"
           :key="replier.user.id"
           :src="replier.user.picture"
           class="w-6 h-6 -ml-2 first:ml-0 rounded-full"
@@ -96,13 +113,13 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
 
         <span class="flex:row-md flex:center-y ml-xl text-xs text-primary/40">
           <IconReplies class="w-5 h-5 text-primary/40" />
-          {{ message.repliesCount }} replies
+          {{ props.message.repliesCount }} replies
         </span>
       </Button>
 
-      <div v-if="message.reactions.length > 0" class="flex:row-md flex:center-y">
+      <div v-if="props.message.reactions.length > 0" class="flex:row-md flex:center-y">
         <Tooltip
-          v-for="reaction in message.reactions"
+          v-for="reaction in props.message.reactions"
           :key="reaction.emoji"
           :default-open="false"
           :ignore-non-keyboard-focus="true"

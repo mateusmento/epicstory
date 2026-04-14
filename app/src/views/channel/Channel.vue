@@ -4,11 +4,24 @@ import Meeting from "@/components/meeting/Meeting.vue";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { useAuth } from "@/domain/auth";
 import { useMeeting, useSyncedChannel } from "@/domain/channels";
+import { useWorkspace } from "@/domain/workspace";
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 
+const router = useRouter();
 const { user } = useAuth();
-const { channel, messageGroups, sendMessage, deleteMessage } = useSyncedChannel();
+const { workspace } = useWorkspace();
+const { channel, messageGroups, sendMessage, deleteMessage, updateMessage } = useSyncedChannel();
 const { currentMeeting, joinChannelMeeting } = useMeeting();
+
+function onScheduleMeetingForChannel() {
+  if (!channel.value) return;
+  router.push({
+    name: "schedule",
+    params: { workspaceId: String(workspace.value.id) },
+    query: { scheduleChannelId: String(channel.value.id) },
+  });
+}
 
 const emit = defineEmits<{
   (e: "message-deleted", messageId: number): void;
@@ -49,13 +62,12 @@ function onMessageDeleted(messageId: number) {
       :message-groups="messageGroups"
       :me-id="user.id"
       :channel-id="channel.id"
-      :send-message="
-        async (message) => {
-          await sendMessage(message);
-        }
-      "
+      :send-message="sendMessage"
+      :update-message="updateMessage"
       :channel="channel"
       @join-meeting="joinChannelMeeting({ channelId: channel.id })"
+      @start-meeting="joinChannelMeeting({ channelId: channel.id })"
+      @schedule-meeting="onScheduleMeetingForChannel"
       @more-details="viewContent('channel')"
       @message-deleted="onMessageDeleted"
       :key="2"

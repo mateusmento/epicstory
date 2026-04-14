@@ -28,6 +28,9 @@ export class Message {
   @CreateDateColumn()
   sentAt: Date;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  editedAt?: Date | null;
+
   @Column()
   senderId: number;
 
