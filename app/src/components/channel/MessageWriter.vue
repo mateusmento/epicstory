@@ -3,8 +3,16 @@ import { startRecording } from "@/core/screen-recording";
 import { Button } from "@/design-system/ui/button";
 import { Separator } from "@/design-system/ui/separator";
 import { Icon } from "@/design-system/icons";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { EditorContent, useEditor, VueNodeViewRenderer } from "@tiptap/vue-3";
+import { useWebSockets } from "@/core/websockets";
+import {
+  CHANNEL_TYPING_PULSE_MS,
+  clearChannelDraft,
+  loadChannelDraft,
+  saveChannelDraft,
+} from "@/domain/channels";
+import { debounce } from "lodash";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { EditorContent, useEditor, VueNodeViewRenderer, type Editor } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -22,6 +30,9 @@ const props = withDefaults(
   defineProps<{
     mentionables?: User[];
     meId?: number;
+    /** When set with workspaceId, enables typing signals + channel draft persistence */
+    channelId?: number;
+    workspaceId?: number;
     placeholder?: string;
     editingMessage?: { id: number; content: string; contentRich?: any } | null;
     quotedMessage?: { sender: { name: string }; content: string; contentRich?: any } | null;
@@ -31,6 +42,41 @@ const props = withDefaults(
     quotedMessage: null,
   },
 );
+
+const { websocket } = useWebSockets();
+
+const suppressTypingSignals = ref(true);
+const isEmittingTyping = ref(false);
+const pulseTimer = ref<ReturnType<typeof setInterval> | null>(null);
+
+function clearTypingPulse() {
+  if (pulseTimer.value) {
+    clearInterval(pulseTimer.value);
+    pulseTimer.value = null;
+  }
+}
+
+function emitTypingPulse() {
+  if (props.channelId == null || props.workspaceId == null) return;
+  websocket?.emit("channel-typing-pulse", {
+    channelId: props.channelId,
+    workspaceId: props.workspaceId,
+  });
+}
+
+function emitTypingStop() {
+  if (!isEmittingTyping.value) return;
+  if (props.channelId == null || props.workspaceId == null) return;
+  websocket?.emit("channel-typing-stop", {
+    channelId: props.channelId,
+    workspaceId: props.workspaceId,
+  });
+  isEmittingTyping.value = false;
+}
+
+function emitTypingStopForChannel(channelId: number, workspaceId: number) {
+  websocket?.emit("channel-typing-stop", { channelId, workspaceId });
+}
 
 const emit = defineEmits<{
   (e: "send-message", value: { content: string; contentRich: any }): void;
@@ -157,16 +203,106 @@ const editor = useEditor({
   },
 });
 
-onBeforeUnmount(() => {
-  editor.value?.destroy();
-});
+const saveDraftDebounced = debounce((ed: Editor) => {
+  if (props.workspaceId == null || props.channelId == null) return;
+  if (props.editingMessage) return;
+  const doc = normalizeTiptapDoc(ed.getJSON());
+  const plain = tiptapToPlainText(doc).trim();
+  if (!plain) {
+    clearChannelDraft(props.workspaceId, props.channelId);
+    return;
+  }
+  saveChannelDraft(props.workspaceId, props.channelId, doc as Record<string, unknown>);
+}, 400);
+
+function maybeStartTypingPulse(ed: Editor) {
+  if (suppressTypingSignals.value) return;
+  if (props.channelId == null || props.workspaceId == null) return;
+
+  const plain = tiptapToPlainText(normalizeTiptapDoc(ed.getJSON())).trim();
+  if (!plain) {
+    clearTypingPulse();
+    emitTypingStop();
+    return;
+  }
+  if (!ed.isFocused) {
+    clearTypingPulse();
+    emitTypingStop();
+    return;
+  }
+
+  if (!isEmittingTyping.value) {
+    isEmittingTyping.value = true;
+    emitTypingPulse();
+    clearTypingPulse();
+    pulseTimer.value = setInterval(() => {
+      const inner = editor.value;
+      if (!inner?.isFocused) {
+        clearTypingPulse();
+        emitTypingStop();
+        return;
+      }
+      const p = tiptapToPlainText(normalizeTiptapDoc(inner.getJSON())).trim();
+      if (!p) {
+        clearTypingPulse();
+        emitTypingStop();
+        return;
+      }
+      emitTypingPulse();
+    }, CHANNEL_TYPING_PULSE_MS);
+  }
+}
+
+function handleComposerUpdate(ed: Editor) {
+  saveDraftDebounced(ed);
+  maybeStartTypingPulse(ed);
+}
+
+function handleComposerBlur() {
+  clearTypingPulse();
+  emitTypingStop();
+}
+
+function flushDraftSync() {
+  const ed = editor.value;
+  if (!ed || props.workspaceId == null || props.channelId == null || props.editingMessage) return;
+  saveDraftDebounced.cancel();
+  const doc = normalizeTiptapDoc(ed.getJSON());
+  const plain = tiptapToPlainText(doc).trim();
+  if (!plain) clearChannelDraft(props.workspaceId, props.channelId);
+  else saveChannelDraft(props.workspaceId, props.channelId, doc as Record<string, unknown>);
+}
+
+watch(
+  editor,
+  (ed, prevEd) => {
+    if (prevEd) {
+      prevEd.off("update", onEditorUpdate);
+      prevEd.off("blur", onEditorBlur);
+    }
+    if (!ed) return;
+    ed.on("update", onEditorUpdate);
+    ed.on("blur", onEditorBlur);
+  },
+  { immediate: true },
+);
+
+function onEditorUpdate() {
+  const ed = editor.value;
+  if (!ed) return;
+  handleComposerUpdate(ed);
+}
+
+function onEditorBlur() {
+  handleComposerBlur();
+}
 
 watch(
   () => props.editingMessage,
-  (m) => {
+  (m, prev) => {
     if (!editor.value) return;
     if (!m) {
-      editor.value.commands.clearContent();
+      if (prev) editor.value.commands.clearContent();
       return;
     }
     const doc = m.contentRich
@@ -185,6 +321,55 @@ watch(
   },
   { flush: "post" },
 );
+
+watch(
+  [editor, () => props.channelId, () => props.workspaceId, () => props.editingMessage],
+  async (_curr, prev) => {
+    const ed = editor.value;
+    if (!ed) return;
+
+    if (props.editingMessage) {
+      suppressTypingSignals.value = false;
+      return;
+    }
+
+    const cid = props.channelId;
+    const ws = props.workspaceId;
+    if (cid == null || ws == null) return;
+
+    if (prev) {
+      const [, pCid, pWs] = prev;
+      if (pCid != null && pWs != null && pCid !== cid) {
+        emitTypingStopForChannel(pCid, pWs);
+        clearTypingPulse();
+        isEmittingTyping.value = false;
+        saveDraftDebounced.cancel();
+      }
+    }
+
+    suppressTypingSignals.value = true;
+    const draft = loadChannelDraft(ws, cid);
+    if (draft?.contentRich) {
+      ed.commands.setContent(normalizeTiptapDoc(draft.contentRich));
+    } else {
+      ed.commands.clearContent();
+    }
+    await nextTick();
+    suppressTypingSignals.value = false;
+  },
+  { flush: "post" },
+);
+
+onBeforeUnmount(() => {
+  saveDraftDebounced.cancel();
+  clearTypingPulse();
+  if (props.channelId != null && props.workspaceId != null) {
+    emitTypingStopForChannel(props.channelId, props.workspaceId);
+  }
+  isEmittingTyping.value = false;
+  flushDraftSync();
+  editor.value?.destroy();
+});
 
 function toggleLink() {
   if (!editor.value) return;
@@ -213,10 +398,24 @@ function onSendMessage() {
       content: plain,
       contentRich: doc,
     });
+    clearTypingPulse();
+    if (props.channelId != null && props.workspaceId != null) {
+      emitTypingStopForChannel(props.channelId, props.workspaceId);
+    }
+    isEmittingTyping.value = false;
     return;
   }
   emit("send-message", { content: plain, contentRich: doc });
   editor.value.commands.clearContent();
+  saveDraftDebounced.cancel();
+  if (props.workspaceId != null && props.channelId != null) {
+    clearChannelDraft(props.workspaceId, props.channelId);
+  }
+  clearTypingPulse();
+  if (props.channelId != null && props.workspaceId != null) {
+    emitTypingStopForChannel(props.channelId, props.workspaceId);
+  }
+  isEmittingTyping.value = false;
 }
 
 function onCancelEdit() {

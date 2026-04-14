@@ -9,6 +9,11 @@ import { useRoute, useRouter } from "vue-router";
 import { ChannelApi } from "../services";
 import type { IChannel, IMessage, IMessageGroup } from "../types";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
+import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
+
+/** Shared across all `useChannel()` callers */
+const typingActivity = ref(new Map<number, number>());
+let typingPruneTimer: ReturnType<typeof setInterval> | null = null;
 
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
@@ -62,6 +67,26 @@ export function useChannel() {
     }
   }
 
+  function onUserTyping({ channelId, userId }: { channelId: number; userId: number }) {
+    if (!store.channel || store.channel.id !== channelId) return;
+    const next = new Map(typingActivity.value);
+    next.set(userId, Date.now());
+    typingActivity.value = next;
+  }
+
+  function onUserTypingStopped({ channelId, userId }: { channelId: number; userId: number }) {
+    if (!store.channel || store.channel.id !== channelId) return;
+    const next = new Map(typingActivity.value);
+    next.delete(userId);
+    typingActivity.value = next;
+  }
+
+  function tickTypingPrune() {
+    const m = new Map(typingActivity.value);
+    pruneStaleTyping(m);
+    typingActivity.value = m;
+  }
+
   function joinChannel() {
     sockets.websocket?.emit("subscribe-messages", {
       workspaceId: workspace.value.id,
@@ -75,13 +100,42 @@ export function useChannel() {
 
     sockets.websocket.off("message-updated", onMessageUpdated);
     sockets.websocket?.on("message-updated", onMessageUpdated);
+
+    sockets.websocket.off("user-typing", onUserTyping);
+    sockets.websocket?.on("user-typing", onUserTyping);
+
+    sockets.websocket.off("user-typing-stopped", onUserTypingStopped);
+    sockets.websocket?.on("user-typing-stopped", onUserTypingStopped);
+
+    if (!typingPruneTimer) {
+      typingPruneTimer = setInterval(() => {
+        tickTypingPrune();
+      }, CHANNEL_TYPING_PRUNE_INTERVAL_MS);
+    }
   }
 
   function leaveChannel() {
     sockets.websocket.off("incoming-message", onReceiveMessage);
     sockets.websocket.off("message-deleted", onMessageDeleted);
     sockets.websocket.off("message-updated", onMessageUpdated);
+    sockets.websocket.off("user-typing", onUserTyping);
+    sockets.websocket.off("user-typing-stopped", onUserTypingStopped);
+
+    if (typingPruneTimer) {
+      clearInterval(typingPruneTimer);
+      typingPruneTimer = null;
+    }
+    typingActivity.value = new Map();
   }
+
+  const typingUserIds = computed(() => Array.from(typingActivity.value.keys()));
+
+  watch(
+    () => store.channel?.id,
+    () => {
+      typingActivity.value = new Map<number, number>();
+    },
+  );
 
   function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
     if (channelId && store.channel?.id === channelId) {
@@ -158,6 +212,7 @@ export function useChannel() {
   return {
     ...storeToRefs(store),
     messageGroups,
+    typingUserIds,
     openChannel,
     fetchChannel,
     fetchMessages,

@@ -98,7 +98,11 @@ export class MessageGateway {
       });
   }
 
-  emitMessageUpdated(channelId: number, message: Message, editorUserId: number) {
+  emitMessageUpdated(
+    channelId: number,
+    message: Message,
+    editorUserId: number,
+  ) {
     if (!this.server) return;
     this.server
       .to(channelMessagingRoom(channelId))
@@ -123,6 +127,71 @@ export class MessageGateway {
       });
   }
 
+  private async isUserInChannel(
+    channelId: number,
+    userId: number,
+    workspaceId?: number,
+  ): Promise<boolean> {
+    const channel = await this.channelRepo.findOne({
+      where: { id: channelId },
+      relations: { peers: true },
+    });
+    if (!channel) return false;
+    if (workspaceId != null && channel.workspaceId !== workspaceId) {
+      return false;
+    }
+    return (channel.peers ?? []).some((p) => Number(p.id) === userId);
+  }
+
+  @SubscribeMessage('channel-typing-pulse')
+  async channelTypingPulse(
+    @MessageBody() body: { channelId: number; workspaceId?: number },
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = (socket.request as any).user;
+    const userId = Number(user?.id);
+    const channelId = Number(body?.channelId);
+    const workspaceId =
+      body?.workspaceId != null ? Number(body.workspaceId) : undefined;
+    if (!Number.isFinite(userId) || !Number.isFinite(channelId))
+      return { ok: false };
+
+    const ok = await this.isUserInChannel(channelId, userId, workspaceId);
+    if (!ok) return { ok: false };
+
+    // Use the sender socket so delivery matches `socket.to(room)` semantics
+    // (notify everyone in the channel room except this socket). Avoids
+    // `server.to(room).except(userRoom)` edge cases with Redis adapter / room overlap.
+    socket
+      .to(channelMessagingRoom(channelId))
+      .emit('user-typing', { channelId, userId });
+
+    return { ok: true };
+  }
+
+  @SubscribeMessage('channel-typing-stop')
+  async channelTypingStop(
+    @MessageBody() body: { channelId: number; workspaceId?: number },
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const user = (socket.request as any).user;
+    const userId = Number(user?.id);
+    const channelId = Number(body?.channelId);
+    const workspaceId =
+      body?.workspaceId != null ? Number(body.workspaceId) : undefined;
+    if (!Number.isFinite(userId) || !Number.isFinite(channelId))
+      return { ok: false };
+
+    const ok = await this.isUserInChannel(channelId, userId, workspaceId);
+    if (!ok) return { ok: false };
+
+    socket
+      .to(channelMessagingRoom(channelId))
+      .emit('user-typing-stopped', { channelId, userId });
+
+    return { ok: true };
+  }
+
   @SubscribeMessage('subscribe-messages')
   async subscribeMessages(
     @MessageBody() { workspaceId }: any,
@@ -135,7 +204,7 @@ export class MessageGateway {
       .createQueryBuilder('channel')
       .innerJoin('channel.peers', 'peer')
       .where('peer.id = :userId', { userId })
-      .where('channel.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('channel.workspaceId = :workspaceId', { workspaceId })
       .getMany();
 
     socket.leave(userRoom(userId));

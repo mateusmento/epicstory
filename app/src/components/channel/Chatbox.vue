@@ -11,8 +11,10 @@ import {
 } from "@/design-system";
 import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
 import type { IChannel, IMessage, IMessageGroup } from "@/domain/channels";
+import { useChannel } from "@/domain/channels";
+import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
@@ -38,6 +40,24 @@ const emit = defineEmits([
 
 const quotedMessage = ref<IMessage | null>(null);
 const editingMessage = ref<IMessage | null>(null);
+
+const { workspace } = useWorkspace();
+const { typingUserIds } = useChannel();
+
+const typingPeerNames = computed(() => {
+  const ids = typingUserIds.value.filter((id) => id !== props.meId);
+  return ids
+    .map((id) => props.channel.peers.find((p) => p.id === id)?.name)
+    .filter((n): n is string => Boolean(n));
+});
+
+const typingBannerText = computed(() => {
+  const names = typingPeerNames.value;
+  if (names.length === 0) return "";
+  if (names.length === 1) return `${names[0]} is typing…`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`;
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} are typing…`;
+});
 
 async function onSendMessage(payload: { content: string; contentRich: any }) {
   if (!payload.content?.trim()) return;
@@ -167,16 +187,18 @@ function onMessageDeleted(messageId: number) {
         </div>
       </ScrollArea>
 
-      <div class="absolute bottom-0 left-0 right-0 mx-7 z-[10]">
+      <div v-if="typingPeerNames.length" class="absolute bottom-0 left-0 right-0 mx-7 z-[10]">
         <div
           class="px-2 py-1 border border-b-0 border-muted rounded-lg rounded-b-none text-xs bg-zinc-50 text-muted-foreground"
         >
-          {{ chatTitle }} is typing something...
+          {{ typingBannerText }}
         </div>
       </div>
     </div>
 
     <MessageWriter
+      :channel-id="channelId"
+      :workspace-id="workspace.id"
       :mentionables="channel.peers"
       :me-id="meId"
       :quoted-message="quotedMessage"
