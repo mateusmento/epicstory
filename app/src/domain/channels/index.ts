@@ -6,3 +6,4 @@ export * from "./services";
 export { useMeetingSocket } from "./composables/meeting-socket";
 export { useMeetingLayout } from "./composables/meeting-layout";
 export { useMeetingMediaDevicesStore } from "./composables/meeting-media-devices";
+export { useWorkspacePresence, useWorkspaceOnline } from "./composables/workspace-presence-handlers";

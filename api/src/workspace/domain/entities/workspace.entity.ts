@@ -18,6 +18,8 @@ export class Workspace {
   @Column()
   name: string;
 
+  onlineUsersSnapshot: number[];
+
   static create(data: { name: string }) {
     return create(Workspace, data);
   }

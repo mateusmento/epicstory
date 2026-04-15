@@ -7,6 +7,7 @@ import {
   useChannel,
   useMeeting,
   useMeetingSocket,
+  useWorkspaceOnline,
   type IncomingMeetingPayload,
   type MeetingEndedPayload,
 } from "@/domain/channels";
@@ -28,6 +29,7 @@ const { joinMeeting, joinChannelMeeting } = useMeeting();
 const { workspace } = useWorkspace();
 const channelApi = useDependency(ChannelApi);
 const meetingSocket = useMeetingSocket();
+const { isUserOnline } = useWorkspaceOnline();
 
 type ChannelPage = Page<IChannel>;
 
@@ -221,6 +223,11 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
               />
               <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
               <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+              <div
+                v-if="channel.type === 'direct' && channel.speakingTo && isUserOnline(channel.speakingTo.id)"
+                class="w-2 h-2 shrink-0 bg-green-400 rounded-full"
+                title="Online"
+              ></div>
             </div>
             <button
               v-if="channel.type === 'meeting' || channel.meeting"

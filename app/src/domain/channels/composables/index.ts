@@ -2,6 +2,8 @@ export * from "./channels";
 export * from "./channel";
 export * from "./channel-draft";
 export * from "./typing";
+export * from "./workspace-presence";
+export * from "./workspace-presence-handlers";
 export * from "./meeting";
 export * from "./meeting-media-devices";
 export * from "./live-meeting";

@@ -13,6 +13,7 @@ import ThreadDrawer from "@/components/channel/ThreadDrawer.vue";
 import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout";
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { NotFoundException, UnauthorizedException } from "@/core/axios";
+import { useWorkspacePresence } from "@/domain/channels";
 import { useNotificationIncomingAlerts, useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
 import { computed, ref, watch } from "vue";
@@ -39,6 +40,7 @@ const { fetchWorkspace } = useWorkspace();
 
 useNotifications({ manageConnection: true, limit: 100 });
 useNotificationIncomingAlerts();
+useWorkspacePresence();
 
 async function loadWorkspace() {
   try {

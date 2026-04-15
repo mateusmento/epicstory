@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
 import {
   Button,
   ButtonGroup,
@@ -9,16 +10,14 @@ import {
   ScrollArea,
   Separator,
 } from "@/design-system";
-import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
 import type { IChannel, IMessage, IMessageGroup } from "@/domain/channels";
-import { useChannel } from "@/domain/channels";
+import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
-
 const props = defineProps<{
   meId: number;
   chatTitle?: string;
@@ -43,6 +42,11 @@ const editingMessage = ref<IMessage | null>(null);
 
 const { workspace } = useWorkspace();
 const { typingUserIds } = useChannel();
+const { isUserOnline } = useWorkspaceOnline();
+
+const onlineUsers = computed(() =>
+  props.channel.peers.filter((p) => p.id !== props.meId && isUserOnline(p.id)),
+);
 
 const typingPeerNames = computed(() => {
   const ids = typingUserIds.value.filter((id) => id !== props.meId);
@@ -100,9 +104,33 @@ function onMessageDeleted(messageId: number) {
 
 <template>
   <div class="grid grid-rows-[auto_auto_1fr_auto] h-full">
-    <div class="flex:row-lg flex:center-y p-2 h-10">
-      <HashIcon class="h-5 w-5 text-muted-foreground" stroke-width="2.5" />
-      <div class="text-sm" @click="emit('more-details')">{{ chatTitle }}</div>
+    <div class="flex:row flex:center-y p-2 h-10">
+      <div class="flex:row-lg flex:center-y">
+        <HashIcon class="h-5 w-5 text-muted-foreground" stroke-width="2.5" />
+        <div class="text-sm" @click="emit('more-details')">{{ chatTitle }}</div>
+      </div>
+
+      <div v-if="onlineUsers.length" class="flex:row-lg flex:center-y gap-2 ml-6">
+        <div class="flex:row-lg flex:center-y -space-x-3">
+          <template v-for="user of onlineUsers.slice(0, 4)" :key="user.id">
+            <img v-if="user.picture" :src="user.picture" class="w-6 h-6 rounded-full" />
+            <div
+              v-else
+              class="w-6 h-6 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold text-sm font-lato"
+            >
+              {{ user.name.charAt(0).toUpperCase() }}
+            </div>
+          </template>
+          <div
+            v-if="onlineUsers.length > 4"
+            class="w-6 h-6 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold text-sm font-lato"
+          >
+            +{{ Math.max(Math.min(onlineUsers.length - 1, 99), 0) }}
+          </div>
+        </div>
+        <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+        <div class="text-xs text-muted-foreground">{{ onlineUsers.length }} online</div>
+      </div>
 
       <ButtonGroup class="ml-auto shrink-0">
         <Button
