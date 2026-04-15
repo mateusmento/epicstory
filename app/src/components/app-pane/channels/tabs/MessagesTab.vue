@@ -2,120 +2,27 @@
 import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
-import { useChannel, useChannelActions, useChannels, useMeeting } from "@/domain/channels";
-import type { IChannel } from "@/domain/channels/types";
-import { useWorkspace } from "@/domain/workspace";
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useChannel, useChannels } from "@/domain/channels";
 import CreateChannel from "../CreateChannel.vue";
-import ChannelDeleteDialog from "../ChannelDeleteDialog.vue";
-import ChannelRenameDialog from "../ChannelRenameDialog.vue";
-import ChannelListContextMenu from "../ChannelListContextMenu.vue";
+import ChannelContextMenu from "../ChannelContextMenu.vue";
+import ChannelContextMenuProvider from "../ChannelContextMenuProvider.vue";
 import InboxMessage from "../InboxMessage.vue";
 
 const props = defineProps<{
   class?: string;
 }>();
 
-const router = useRouter();
 const { channel: currentChannel } = useChannel();
 const { channels } = useChannels();
-const { workspace } = useWorkspace();
-const { joinChannelMeeting } = useMeeting();
-
-const channelActions = useChannelActions();
-
-const renamingChannel = ref<any | null>(null);
-const deletingChannel = ref<any | null>(null);
-const renameOpen = ref(false);
-const deleteOpen = ref(false);
-const actionLoading = ref(false);
-
-function openRename(channel: any) {
-  renamingChannel.value = channel;
-  renameOpen.value = true;
-}
-
-function openDelete(channel: any) {
-  deletingChannel.value = channel;
-  deleteOpen.value = true;
-}
-
-async function leaveChannel(channel: any) {
-  actionLoading.value = true;
-  try {
-    await channelActions.leaveChannel(channel);
-  } finally {
-    actionLoading.value = false;
-  }
-}
-
-async function confirmRename(nextName: string) {
-  if (!renamingChannel.value) return;
-  actionLoading.value = true;
-  try {
-    await channelActions.renameChannel(renamingChannel.value.id, nextName);
-  } finally {
-    actionLoading.value = false;
-  }
-}
-
-async function confirmDelete() {
-  if (!deletingChannel.value) return;
-  actionLoading.value = true;
-  try {
-    await channelActions.deleteChannel(deletingChannel.value);
-  } finally {
-    actionLoading.value = false;
-  }
-}
-
-function onScheduleMeetingForChannel(channel: IChannel) {
-  router.push({
-    name: "schedule",
-    params: { workspaceId: String(workspace.value.id) },
-    query: { scheduleChannelId: String(channel.id) },
-  });
-}
-
-function onStartMeetingForChannel(channel: IChannel) {
-  joinChannelMeeting({ channelId: channel.id });
-}
 </script>
 
 <template>
   <div value="messages" :class="cn('flex:col-md flex-1 m-2', props.class)">
-    <ChannelRenameDialog
-      :open="renameOpen"
-      :disabled="actionLoading"
-      :currentName="renamingChannel?.name ?? ''"
-      title="Rename channel"
-      placeholder="Channel name"
-      @update:open="renameOpen = $event"
-      @confirm="confirmRename"
-    />
-
-    <ChannelDeleteDialog
-      :open="deleteOpen"
-      :disabled="actionLoading"
-      :title="deletingChannel?.name ?? ''"
-      @update:open="deleteOpen = $event"
-      @confirm="confirmDelete"
-    />
-
-    <ChannelListContextMenu
-      v-for="channel of channels"
-      :key="channel.id"
-      :channel="channel"
-      :action-loading="actionLoading"
-      @rename="openRename"
-      @leave="leaveChannel"
-      @delete="openDelete"
-      @schedule-meeting="onScheduleMeetingForChannel"
-      @start-meeting="onStartMeetingForChannel"
-    >
-      <InboxMessage :channel="channel" :open="channel.id === currentChannel?.id" />
-    </ChannelListContextMenu>
+    <ChannelContextMenuProvider>
+      <ChannelContextMenu v-for="channel of channels" :key="channel.id" :channel="channel">
+        <InboxMessage :channel="channel" :open="channel.id === currentChannel?.id" />
+      </ChannelContextMenu>
+    </ChannelContextMenuProvider>
 
     <div class="w-fit mt-4 mx-auto text-xs text-secondary-foreground">You have no more messages</div>
 

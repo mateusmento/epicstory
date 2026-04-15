@@ -5,7 +5,6 @@ import { useDependency } from "@/core/dependency-injection";
 import type { Page } from "@/core/types";
 import {
   useChannel,
-  useChannelActions,
   useMeeting,
   useMeetingSocket,
   type IncomingMeetingPayload,
@@ -16,23 +15,19 @@ import type { IChannel } from "@/domain/channels/types";
 import { useWorkspace } from "@/domain/workspace";
 import { HashIcon, HeadphonesIcon, PlusIcon } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
-import { useRouter } from "vue-router";
 import CreateChannel from "../CreateChannel.vue";
-import ChannelDeleteDialog from "../ChannelDeleteDialog.vue";
-import ChannelRenameDialog from "../ChannelRenameDialog.vue";
-import ChannelListContextMenu from "../ChannelListContextMenu.vue";
+import ChannelContextMenu from "../ChannelContextMenu.vue";
+import ChannelContextMenuProvider from "../ChannelContextMenuProvider.vue";
 
 const props = defineProps<{
   class?: string;
 }>();
 
-const router = useRouter();
 const { openChannel } = useChannel();
 const { joinMeeting, joinChannelMeeting } = useMeeting();
 const { workspace } = useWorkspace();
 const channelApi = useDependency(ChannelApi);
 const meetingSocket = useMeetingSocket();
-const channelActions = useChannelActions();
 
 type ChannelPage = Page<IChannel>;
 
@@ -113,13 +108,9 @@ async function loadMoreDirect() {
 }
 
 function updateChannelMeeting(channelId: number, meeting: any | null) {
-  const patch = (page: ChannelPage | null) => {
-    const ch = page?.content.find((c) => c.id === channelId);
-    if (ch) ch.meeting = meeting;
-  };
-  patch(groupChannels.value);
-  patch(meetingChannels.value);
-  patch(directChannels.value);
+  const find = (page: ChannelPage | null) => page?.content.find((c) => c.id === channelId);
+  const channel = find(groupChannels.value) ?? find(meetingChannels.value) ?? find(directChannels.value);
+  if (channel) channel.meeting = meeting;
 }
 
 function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
@@ -187,162 +178,79 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
   createDialogOpen[item.createKey] = false;
   await fetchInitial();
 }
-
-const renamingChannel = ref<IChannel | null>(null);
-const deletingChannel = ref<IChannel | null>(null);
-const renameOpen = ref(false);
-const deleteOpen = ref(false);
-const actionLoading = ref(false);
-
-function openRename(channel: IChannel) {
-  renamingChannel.value = channel;
-  renameOpen.value = true;
-}
-
-function openDelete(channel: IChannel) {
-  deletingChannel.value = channel;
-  deleteOpen.value = true;
-}
-
-async function leaveChannel(channel: IChannel) {
-  actionLoading.value = true;
-  try {
-    await channelActions.leaveChannel(channel, { refresh: fetchInitial });
-  } finally {
-    actionLoading.value = false;
-  }
-}
-
-async function confirmRename(nextName: string) {
-  if (!renamingChannel.value) return;
-  actionLoading.value = true;
-  try {
-    await channelActions.renameChannel(renamingChannel.value.id, nextName, { refresh: fetchInitial });
-  } finally {
-    actionLoading.value = false;
-  }
-}
-
-async function confirmDelete() {
-  if (!deletingChannel.value) return;
-  actionLoading.value = true;
-  try {
-    await channelActions.deleteChannel(deletingChannel.value, { refresh: fetchInitial });
-  } finally {
-    actionLoading.value = false;
-  }
-}
-
-function onScheduleMeetingForChannel(channel: IChannel) {
-  router.push({
-    name: "schedule",
-    params: { workspaceId: String(workspace.value.id) },
-    query: { scheduleChannelId: String(channel.id) },
-  });
-}
-
-function onStartMeetingForChannel(channel: IChannel) {
-  joinChannelMeeting({ channelId: channel.id });
-}
 </script>
 
 <template>
   <div :class="cn('flex:col-md m-2 flex-1', props.class)">
-    <ChannelRenameDialog
-      :open="renameOpen"
-      :disabled="actionLoading"
-      :currentName="renamingChannel?.name ?? ''"
-      title="Rename channel"
-      placeholder="Channel name"
-      @update:open="renameOpen = $event"
-      @confirm="confirmRename"
-    />
-
-    <ChannelDeleteDialog
-      :open="deleteOpen"
-      :disabled="actionLoading"
-      :title="deletingChannel?.name ?? ''"
-      @update:open="deleteOpen = $event"
-      @confirm="confirmDelete"
-    />
-
-    <template v-for="item in items" :key="item.title">
-      <div class="mt-2 ml-2 flex items-center justify-between gap-2">
-        <div class="text-xs text-secondary-foreground">{{ item.title }}</div>
-        <Dialog v-model:open="createDialogOpen[item.createKey]">
-          <DialogTrigger as-child>
-            <Button size="icon" variant="ghost" class="h-6 w-6" :title="item.createTitle">
-              <PlusIcon class="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogTitle>{{ item.createTitle }}</DialogTitle>
-            <CreateChannel
-              :initialType="item.createKey"
-              :showTypeSelector="false"
-              @created="onChannelCreated(item)"
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <ChannelListContextMenu
-        v-for="channel of item.page?.content ?? []"
-        :key="channel.id"
-        :channel="channel"
-        :action-loading="actionLoading"
-        @rename="openRename"
-        @leave="leaveChannel"
-        @delete="openDelete"
-        @schedule-meeting="onScheduleMeetingForChannel"
-        @start-meeting="onStartMeetingForChannel"
-      >
-        <div class="flex:row-sm">
-          <div
-            class="flex:row-lg flex:center-y flex-1 p-2 rounded-lg hover:bg-secondary cursor-pointer"
-            @click="openChannel(channel)"
-          >
-            <img
-              v-if="channel.speakingTo?.picture"
-              :src="channel.speakingTo?.picture"
-              class="w-4 h-4 rounded-full"
-            />
-            <HeadphonesIcon
-              v-else-if="channel.type === 'meeting'"
-              class="h-4 w-4 text-muted-foreground"
-              stroke-width="2.5"
-            />
-            <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-            <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
-          </div>
-          <button
-            v-if="channel.type === 'meeting' || channel.meeting"
-            type="button"
-            class="p-2 rounded-lg hover:bg-secondary cursor-pointer shrink-0"
-            @mousedown.prevent
-            @touchstart.prevent
-            @click.stop="
-              channel.type === 'meeting'
-                ? joinChannelMeeting({ channelId: channel.id })
-                : channel.meeting && joinMeeting({ meetingId: channel.meeting.id })
-            "
-            title="Join meeting"
-          >
-            <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-          </button>
+    <ChannelContextMenuProvider :refresh="fetchInitial">
+      <template v-for="item in items" :key="item.title">
+        <div class="mt-2 ml-2 flex items-center justify-between gap-2">
+          <div class="text-xs text-secondary-foreground">{{ item.title }}</div>
+          <Dialog v-model:open="createDialogOpen[item.createKey]">
+            <DialogTrigger as-child>
+              <Button size="icon" variant="ghost" class="h-6 w-6" :title="item.createTitle">
+                <PlusIcon class="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogTitle>{{ item.createTitle }}</DialogTitle>
+              <CreateChannel
+                :initialType="item.createKey"
+                :showTypeSelector="false"
+                @created="onChannelCreated(item)"
+              />
+            </DialogContent>
+          </Dialog>
         </div>
-      </ChannelListContextMenu>
 
-      <Button
-        v-if="item.page?.hasNext"
-        size="icon"
-        variant="ghost"
-        class="w-fit ml-2 text-xs text-muted-foreground"
-        :disabled="item.loading"
-        @click="item.onLoadMore"
-      >
-        Load more
-      </Button>
-    </template>
+        <ChannelContextMenu v-for="channel of item.page?.content ?? []" :key="channel.id" :channel="channel">
+          <div class="flex:row-sm">
+            <div
+              class="flex:row-lg flex:center-y flex-1 p-2 rounded-lg hover:bg-secondary cursor-pointer"
+              @click="openChannel(channel)"
+            >
+              <img
+                v-if="channel.speakingTo?.picture"
+                :src="channel.speakingTo?.picture"
+                class="w-4 h-4 rounded-full"
+              />
+              <HeadphonesIcon
+                v-else-if="channel.type === 'meeting'"
+                class="h-4 w-4 text-muted-foreground"
+                stroke-width="2.5"
+              />
+              <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+              <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+            </div>
+            <button
+              v-if="channel.type === 'meeting' || channel.meeting"
+              type="button"
+              class="p-2 rounded-lg hover:bg-secondary cursor-pointer shrink-0"
+              @mousedown.prevent
+              @touchstart.prevent
+              @click.stop="
+                channel.type === 'meeting'
+                  ? joinChannelMeeting({ channelId: channel.id })
+                  : channel.meeting && joinMeeting({ meetingId: channel.meeting.id })
+              "
+              title="Join meeting"
+            >
+              <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+            </button>
+          </div>
+        </ChannelContextMenu>
+
+        <Button
+          v-if="item.page?.hasNext"
+          size="icon"
+          variant="ghost"
+          class="w-fit ml-2 text-xs text-muted-foreground"
+          :disabled="item.loading"
+          @click="item.onLoadMore"
+        >
+          Load more
+        </Button>
+      </template>
+    </ChannelContextMenuProvider>
   </div>
 </template>
