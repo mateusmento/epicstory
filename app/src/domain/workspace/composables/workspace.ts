@@ -12,7 +12,6 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     mergeDefaults: true,
   });
 
-  const isFetchingWorkspace = ref(false);
   const members = ref<WorkspaceMember[]>([]);
   const teams = ref<Team[]>([]);
 
@@ -26,7 +25,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     total: 0,
   });
 
-  return { workspace, isFetchingWorkspace, members, projects, projectsPage, teams };
+  return { workspace, members, projects, projectsPage, teams };
 });
 
 export function useWorkspace() {
@@ -42,12 +41,7 @@ export function useWorkspace() {
   });
 
   async function fetchWorkspace(workspaceId: number) {
-    store.isFetchingWorkspace = true;
-    try {
-      store.workspace = await workspaceApi.findWorkspace(workspaceId);
-    } finally {
-      store.isFetchingWorkspace = false;
-    }
+    store.workspace = await workspaceApi.findWorkspace(workspaceId);
   }
 
   async function fetchWorkspaceMembers() {
