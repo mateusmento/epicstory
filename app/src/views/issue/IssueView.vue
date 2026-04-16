@@ -12,21 +12,31 @@ import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
 import { getLocalTimeZone, parseAbsolute, type DateValue } from "@internationalized/date";
 import Link from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
-import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import {
+  createPlaceholderExtension,
+  createRichTextExtensions,
+  EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
+} from "@epicstory/tiptap/vue";
+import {
   Bold,
+  Code,
   Italic,
   Link2,
   List,
   ListOrdered,
   Redo2,
+  Strikethrough,
   Underline as UnderlineIcon,
   Undo2,
 } from "lucide-vue-next";
 import { computed, onMounted, reactive, ref, watch } from "vue";
+
+void StarterKit;
+void Underline;
+void Link;
 
 const props = defineProps<{
   workspaceId: string;
@@ -90,26 +100,13 @@ const dueDateValue = computed<DateValue | undefined>(() => {
 
 const editor = useEditor({
   extensions: [
-    StarterKit.configure({
-      // Avoid duplicate extension warnings when we include Link/Underline explicitly.
-      link: false,
-      underline: false,
-    }),
-    Underline,
-    Link.configure({
-      openOnClick: false,
-      autolink: true,
-      linkOnPaste: true,
-    }),
-    Placeholder.configure({
-      placeholder: "Write a description…",
-    }),
+    ...createRichTextExtensions({ linkOpenOnClick: false }),
+    createPlaceholderExtension("Write a description…"),
   ],
   content: "",
   editorProps: {
     attributes: {
-      class:
-        "min-h-28 outline-none text-sm leading-relaxed focus:outline-none [&_p]:my-2 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:text-secondary-foreground",
+      class: EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
     },
     handleKeyDown: (_, event) => {
       if (event.key === "Escape") {
@@ -362,6 +359,16 @@ watch(
                   variant="ghost"
                   size="icon"
                   class="h-8 w-8"
+                  :class="editor?.isActive('strike') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleStrike().run()"
+                >
+                  <Strikethrough class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
                   :class="editor?.isActive('underline') ? 'bg-zinc-100' : ''"
                   :disabled="!editor"
                   @click="editor?.chain().focus().toggleUnderline().run()"
@@ -388,6 +395,16 @@ watch(
                   @click="editor?.chain().focus().toggleOrderedList().run()"
                 >
                   <ListOrdered class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  :class="editor?.isActive('codeBlock') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleCodeBlock().run()"
+                >
+                  <Code class="h-4 w-4" />
                 </Button>
                 <div class="w-px h-6 bg-zinc-200 mx-1" />
                 <Button

@@ -54,6 +54,8 @@ async function buildApi() {
       "docker",
       [
         "build",
+        "-f",
+        "api/Dockerfile",
         "-t",
         `${name}:${version}`,
         "--build-arg",
@@ -61,7 +63,7 @@ async function buildApi() {
         ".",
       ],
       {
-        cwd: path.resolve(__dirname, "../api"),
+        cwd: path.resolve(__dirname, ".."),
       },
     );
 
@@ -92,6 +94,8 @@ async function buildApp() {
       "docker",
       [
         "build",
+        "-f",
+        "app/Dockerfile",
         "-t",
         `${name}:${version}`,
         "--build-arg",
@@ -101,7 +105,7 @@ async function buildApp() {
         ".",
       ],
       {
-        cwd: path.resolve(__dirname, "../app"),
+        cwd: path.resolve(__dirname, ".."),
       },
     );
 

@@ -9,6 +9,7 @@
   "scripts": {
     "format": "terraform fmt --recursive ./deploy/ && git ls-files -z -- \"*.ts\" \"*.js\" \"*.vue\" \"*.yml\" \"*.yaml\" \"*.json\" \".prettierrc\" \"*.code-workspace\" | xargs -0 prettier --ignore-path .gitignore --write",
     "npmrc": "npmrc-replace-env",
+    "build:tiptap": "pnpm --filter @epicstory/tiptap build",
     "build": "node scripts/build.js",
     "kb": "node scripts/deploy.js",
     "epic": "node epic"

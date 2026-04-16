@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
+import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import {
   Button,
   ButtonGroup,

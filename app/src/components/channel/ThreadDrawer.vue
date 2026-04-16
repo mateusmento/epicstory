@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
+import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { IMessage, IMessageGroup, IReply } from "@/domain/channels";

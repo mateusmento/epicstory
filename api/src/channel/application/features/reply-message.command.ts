@@ -7,8 +7,12 @@ import {
 import { patch } from 'src/core/objects';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
+import {
+  extractMentionIdsFromDoc,
+  normalizeTiptapDoc,
+  tiptapToPlainText,
+} from '@epicstory/tiptap';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
-import { normalizeTiptapDoc, tiptapToPlainText } from '../utils/tiptap';
 
 export class ReplyMessage {
   messageId: number;
@@ -71,7 +75,9 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     reply.setReactions(senderId);
 
     const peerUsersMap = new Map(message.channel.peers.map((u) => [u.id, u]));
-    const mentionIds = extractMentionIds(plainContent);
+    const mentionIds = normalizedRich
+      ? extractMentionIdsFromDoc(normalizedRich)
+      : extractMentionIds(plainContent);
     const finalMentionIds = mentionIds.filter(
       (id) => id !== senderId && peerUsersMap.has(id),
     );

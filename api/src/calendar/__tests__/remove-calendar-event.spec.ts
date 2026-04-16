@@ -65,9 +65,10 @@ describe('RemoveCalendarEvent', () => {
       new CreateCalendarEvent({
         issuerId: u.id,
         workspaceId: ws.id,
+        title: 'E',
         startsAt: new Date(Date.now() + 60_000),
         endsAt: new Date(Date.now() + 120_000),
-        payload: { title: 'E' },
+        payload: {},
         participantIds: [u.id],
       }),
     );

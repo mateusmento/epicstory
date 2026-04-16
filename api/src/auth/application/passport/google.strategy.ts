@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import type { ExecutionContext } from '@nestjs/common';
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
+import type { Observable } from 'rxjs';
 import { Profile, Strategy, StrategyOptions } from 'passport-google-oauth20';
 import { AppConfig } from 'src/core/app.config';
 
@@ -12,7 +14,9 @@ export class GoogleAuthGuard extends AuthGuard('google') {
     });
   }
 
-  canActivate(context: any) {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
     const response = context.switchToHttp().getResponse();
 

@@ -15,8 +15,12 @@ import { create, groupBy, mapBy, patch } from 'src/core/objects';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { MessageNotFound } from '../exceptions';
+import {
+  extractMentionIdsFromDoc,
+  normalizeTiptapDoc,
+  tiptapToPlainText,
+} from '@epicstory/tiptap';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
-import { normalizeTiptapDoc, tiptapToPlainText } from '../utils/tiptap';
 
 export type MessageReactionsGroup = {
   emoji: string;
@@ -91,7 +95,10 @@ export class MessageService {
       const repliers = mapRepliers(repliersMap[message.id] ?? [], usersMap);
       const reactions = mapReactions(message.allReactions, senderId, usersMap);
       const displayContent = renderMentions(message.content, peerUsersMap);
-      const mentionedUsers = extractMentionIds(message.content)
+      const mentionIds = message.contentRich
+        ? extractMentionIdsFromDoc(message.contentRich)
+        : extractMentionIds(message.content);
+      const mentionedUsers = mentionIds
         .map((id) => peerUsersMap.get(id))
         .filter((user) => user);
 
@@ -142,7 +149,10 @@ export class MessageService {
 
     const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
     const displayContent = renderMentions(plainContent, peerUsersMap);
-    const mentionedUsers = extractMentionIds(plainContent)
+    const mentionIds = normalizedRich
+      ? extractMentionIdsFromDoc(normalizedRich)
+      : extractMentionIds(plainContent);
+    const mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
 
@@ -171,7 +181,7 @@ export class MessageService {
       { id: messageId },
       {
         content: plainContent,
-        contentRich: normalizedRich ?? null,
+        contentRich: (normalizedRich ?? null) as any,
         editedAt: new Date(),
       },
     );
@@ -184,7 +194,10 @@ export class MessageService {
 
     const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
     const displayContent = renderMentions(plainContent, peerUsersMap);
-    const mentionedUsers = extractMentionIds(plainContent)
+    const mentionIds = normalizedRich
+      ? extractMentionIdsFromDoc(normalizedRich)
+      : extractMentionIds(plainContent);
+    const mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
 
@@ -232,7 +245,9 @@ export class MessageService {
 
     for (const reply of replies) {
       reply.setReactions(senderId);
-      const mentionIds = extractMentionIds(reply.content);
+      const mentionIds = reply.contentRich
+        ? extractMentionIdsFromDoc(reply.contentRich)
+        : extractMentionIds(reply.content);
       (reply as any).mentionedUsers = mentionIds
         .map((id) => peerUsersMap.get(id))
         .filter(Boolean);

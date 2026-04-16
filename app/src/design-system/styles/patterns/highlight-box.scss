@@ -1,3 +1,5 @@
+@use "../variables.scss" as *;
+
 .highlight-box {
   background: radial-gradient(circle at top left, #6e6eff 0, transparent 20%),
     linear-gradient(90deg, $blue 80%, #5c5cff 100%);

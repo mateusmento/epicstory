@@ -1,4 +1,5 @@
 @use "sass:list";
+@use "../variables.scss" as *;
 
 @each $size_name, $size in $sizes_no_auto {
   .g-#{$size_name} {

@@ -12,19 +12,27 @@ import {
 } from "@/domain/channels";
 import { debounce } from "lodash";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import { EditorContent, useEditor, VueNodeViewRenderer, type Editor } from "@tiptap/vue-3";
+import Link from "@tiptap/extension-link";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
-import Link from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
-import Mention from "@tiptap/extension-mention";
-import { Bold, Italic, Strikethrough, List, ListOrdered, Link2 } from "lucide-vue-next";
+import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
 import { VueRenderer } from "@tiptap/vue-3";
-import { messageBodyPlainText, normalizeTiptapDoc, tiptapToPlainText } from "@/core/tiptap";
+import {
+  createMentionExtensionWithNodeView,
+  createPlaceholderExtension,
+  createRichTextExtensions,
+  EPIC_STORY_COMPOSER_EDITOR_CLASS,
+} from "@epicstory/tiptap/vue";
+import { messageBodyPlainText, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
+import { Bold, Code, Italic, Strikethrough, List, ListOrdered, Link2 } from "lucide-vue-next";
 import MentionList from "./MentionList.vue";
 import type { MentionSuggestionItem } from "./MentionList.vue";
 import type { User } from "@/domain/auth";
 import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
+
+void StarterKit;
+void Underline;
+void Link;
 
 const props = withDefaults(
   defineProps<{
@@ -103,12 +111,6 @@ const mentionablesForSuggestion = computed(() => {
 
 const mentionablesById = computed(() => new Map((props.mentionables ?? []).map((u) => [u.id, u])));
 
-const MentionWithHover = Mention.extend({
-  addNodeView() {
-    return VueNodeViewRenderer(TiptapMentionNodeView);
-  },
-});
-
 function createMentionSuggestion() {
   let renderer: VueRenderer | null = null;
   let popup: HTMLDivElement | null = null;
@@ -165,33 +167,24 @@ function createMentionSuggestion() {
 
 const editor = useEditor({
   extensions: [
-    StarterKit,
-    Underline,
-    Link.configure({
-      openOnClick: false,
-      autolink: true,
-      linkOnPaste: true,
-    }),
-    MentionWithHover.configure({
+    ...createRichTextExtensions({ linkOpenOnClick: false }),
+    createMentionExtensionWithNodeView(TiptapMentionNodeView, {
       HTMLAttributes: {
         class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
       },
-      renderText({ node }: any) {
+      renderText({ node }: { node: { attrs: { label?: unknown; id?: unknown } } }) {
         return `@${node.attrs.label ?? node.attrs.id}`;
       },
       // Used by `TiptapMentionNodeView.vue` via `props.extension.options.userById`
       userById: (id: number) => mentionablesById.value.get(id),
       suggestion: createMentionSuggestion(),
     } as any),
-    Placeholder.configure({
-      placeholder: () => composerPlaceholder.value,
-    }),
+    createPlaceholderExtension(() => composerPlaceholder.value),
   ],
   content: "",
   editorProps: {
     attributes: {
-      class:
-        "min-h-[3rem] outline-none text-sm leading-relaxed focus:outline-none [&_p]:my-1 [&_li>p]:my-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_a]:text-blue-600 [&_a]:underline",
+      class: EPIC_STORY_COMPOSER_EDITOR_CLASS,
     },
     handleKeyDown: (_, event) => {
       if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
@@ -471,7 +464,13 @@ function formatTime(seconds: number) {
         <span class="font-medium text-foreground/80">{{ quotedMessage.sender.name }}</span>
         <span class="text-muted-foreground/90"> {{ quotedExcerpt }}</span>
       </div>
-      <Button type="button" variant="ghost" size="icon" class="h-7 w-7 shrink-0" @click.stop="emit('clear-quote')">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        class="h-7 w-7 shrink-0"
+        @click.stop="emit('clear-quote')"
+      >
         <span class="sr-only">Remove quote</span>
         ×
       </Button>
@@ -519,6 +518,14 @@ function formatTime(seconds: number) {
         @click="editor?.chain().focus().toggleOrderedList().run()"
       >
         <ListOrdered class="w-5 h-5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        :class="editor?.isActive('codeBlock') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleCodeBlock().run()"
+      >
+        <Code class="w-5 h-5" />
       </Button>
       <Separator orientation="vertical" class="h-8 bg-zinc-300" />
       <Button

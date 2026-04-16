@@ -6,6 +6,7 @@
   "packageManager": "pnpm@9.0.1",
   "scripts": {
     "dev": "vite",
+    "prebuild": "pnpm -C ../packages/tiptap run build",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
@@ -19,6 +20,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@epicstory/tiptap": "workspace:*",
     "@formkit/drag-and-drop": "^0.2.2",
     "@internationalized/date": "^3.5.5",
     "@radix-icons/vue": "^1.0.0",

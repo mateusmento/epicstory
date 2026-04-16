@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       host: true,
       open: true,
+      allowedHosts: ["epicstory.io"],
       ...(useProxyHmr
         ? {
             hmr: {
@@ -29,6 +30,15 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),
+      },
+    },
+    // Avoid Dart Sass "legacy-js-api" deprecation (Vite’s default still used it until modern API).
+    // See https://sass-lang.com/d/legacy-js-api
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+        },
       },
     },
   };

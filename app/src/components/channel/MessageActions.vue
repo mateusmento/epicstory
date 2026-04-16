@@ -2,7 +2,7 @@
 import { Button, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/design-system";
 import { IconReplies } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
-import { messageBodyPlainText } from "@/core/tiptap";
+import { messageBodyPlainText } from "@epicstory/tiptap";
 import type { IMessage, IReply } from "@/domain/channels";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { computed, ref } from "vue";

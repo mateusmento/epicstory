@@ -1,0 +1,52 @@
+{
+  "name": "@epicstory/tiptap",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared TipTap document utilities and Vue editor helpers",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./vue": {
+      "types": "./dist/vue/index.d.ts",
+      "import": "./dist/vue/index.mjs",
+      "require": "./dist/vue/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@tiptap/core": "^3.16.0",
+    "@tiptap/extension-link": "^3.16.0",
+    "@tiptap/extension-mention": "^3.16.0",
+    "@tiptap/extension-placeholder": "^3.16.0",
+    "@tiptap/extension-underline": "^3.16.0",
+    "@tiptap/starter-kit": "^3.16.0",
+    "@tiptap/vue-3": "^3.16.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@tiptap/core": "^3.16.0",
+    "@tiptap/extension-link": "^3.16.0",
+    "@tiptap/extension-mention": "^3.19.0",
+    "@tiptap/extension-placeholder": "^3.16.0",
+    "@tiptap/extension-underline": "^3.16.0",
+    "@tiptap/starter-kit": "^3.16.0",
+    "@tiptap/vue-3": "^3.16.0",
+    "tsup": "^8.5.1",
+    "typescript": "~5.4.0",
+    "vitest": "^1.6.0",
+    "vue": "^3.5.0"
+  }
+}

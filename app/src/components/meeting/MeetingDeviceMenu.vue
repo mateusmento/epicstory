@@ -18,6 +18,7 @@ import { useMeetingMediaDevicesStore } from "@/domain/channels/composables/meeti
 import { storeToRefs } from "pinia";
 import { Headphones, MoreVertical, RefreshCw, Settings2 } from "lucide-vue-next";
 import { onMounted } from "vue";
+import type { AcceptableValue } from "reka-ui";
 
 withDefaults(
   defineProps<{
@@ -66,18 +67,18 @@ function onRefreshSelect(e: Event) {
   void onRefreshDevices();
 }
 
-function pickCamera(v: string) {
-  setSelectedCameraId(v || null);
+function pickCamera(v: AcceptableValue) {
+  setSelectedCameraId(v != null && v !== "" ? String(v) : null);
   emit("input-devices-change");
 }
 
-function pickMic(v: string) {
-  setSelectedMicId(v || null);
+function pickMic(v: AcceptableValue) {
+  setSelectedMicId(v != null && v !== "" ? String(v) : null);
   emit("input-devices-change");
 }
 
-function pickSpeaker(v: string) {
-  setSelectedSpeakerId(v || null);
+function pickSpeaker(v: AcceptableValue) {
+  setSelectedSpeakerId(v != null && v !== "" ? String(v) : null);
 }
 </script>
 
@@ -124,7 +125,7 @@ function pickSpeaker(v: string) {
           <MenuRadioGroup
             v-else
             :model-value="selectedCameraId ?? ''"
-            @update:model-value="(v: string) => pickCamera(v)"
+            @update:model-value="pickCamera"
           >
             <MenuRadioItem v-for="d in cameras" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>
@@ -151,7 +152,7 @@ function pickSpeaker(v: string) {
           <MenuRadioGroup
             v-else
             :model-value="selectedMicId ?? ''"
-            @update:model-value="(v: string) => pickMic(v)"
+            @update:model-value="pickMic"
           >
             <MenuRadioItem v-for="d in microphones" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>
@@ -178,7 +179,7 @@ function pickSpeaker(v: string) {
           <MenuRadioGroup
             v-else
             :model-value="selectedSpeakerId ?? ''"
-            @update:model-value="(v: string) => pickSpeaker(v)"
+            @update:model-value="pickSpeaker"
           >
             <MenuRadioItem v-for="d in speakers" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>

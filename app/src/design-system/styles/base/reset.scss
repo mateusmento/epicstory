@@ -1,3 +1,5 @@
+@use "../variables.scss" as *;
+
 @mixin border-reset() {
   border: 1px solid #{$grey-blue};
 }

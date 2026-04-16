@@ -2,21 +2,25 @@
 import { FormControl, FormField, FormItem, FormLabel, Input } from "@/design-system";
 import { omit, pick } from "lodash";
 import uniqid from "uniqid";
-import { computed, type InputHTMLAttributes } from "vue";
+import { computed } from "vue";
 
 defineOptions({
   inheritAttrs: false,
 });
 
-interface Props extends /* @vue-ignore */ InputHTMLAttributes {
+/** Native `<input>` attributes (`type`, `placeholder`, …) use fallthrough `$attrs`. */
+type Props = {
   label?: string;
   name: string;
   classes?: { input?: string };
-}
+};
 
 const props = defineProps<Props>();
 
-const fieldId = computed(() => uniqid(props.name ? props.name + "-" : ""));
+const fieldId = computed((): string => {
+  const name = props.name.length > 0 ? props.name : "";
+  return uniqid(name ? `${name}-` : "");
+});
 </script>
 
 <template>

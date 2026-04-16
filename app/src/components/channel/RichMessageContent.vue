@@ -1,13 +1,21 @@
 <script lang="ts" setup>
-import { EditorContent, useEditor, VueNodeViewRenderer } from "@tiptap/vue-3";
+import Link from "@tiptap/extension-link";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
-import Link from "@tiptap/extension-link";
-import Mention from "@tiptap/extension-mention";
-import { computed, onBeforeUnmount, watch } from "vue";
-import { normalizeTiptapDoc } from "@/core/tiptap";
+import { EditorContent, useEditor } from "@tiptap/vue-3";
+import {
+  createMentionExtensionWithNodeView,
+  createRichTextExtensions,
+  EPIC_STORY_READONLY_MESSAGE_CLASS,
+} from "@epicstory/tiptap/vue";
+import { normalizeTiptapDoc } from "@epicstory/tiptap";
 import type { User } from "@/domain/auth";
 import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
+import { computed, onBeforeUnmount, watch } from "vue";
+
+void StarterKit;
+void Underline;
+void Link;
 
 const props = defineProps<{
   contentRich: any;
@@ -16,46 +24,30 @@ const props = defineProps<{
 
 const usersById = computed(() => new Map((props.mentionedUsers ?? []).map((u) => [u.id, u])));
 
-const MentionWithHover = Mention.extend({
-  addNodeView() {
-    return VueNodeViewRenderer(TiptapMentionNodeView);
-  },
-});
-
 const editor = useEditor({
   editable: false,
   extensions: [
-    StarterKit,
-    Underline,
-    Link.configure({
-      openOnClick: true,
-      autolink: true,
-      linkOnPaste: true,
-    }),
-    MentionWithHover.configure({
+    ...createRichTextExtensions({ linkOpenOnClick: true }),
+    createMentionExtensionWithNodeView(TiptapMentionNodeView, {
       HTMLAttributes: {
         class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
       },
       renderText({ node }: any) {
         return `@${node.attrs.label ?? node.attrs.id}`;
       },
-      // Used by `TiptapMentionNodeView.vue` via `props.extension.options.userById`
       userById: (id: number) => usersById.value.get(id),
     } as any),
   ],
   content: normalizeTiptapDoc(props.contentRich),
   editorProps: {
     attributes: {
-      class:
-        "outline-none text-[calc(1rem-1px)] font-lato leading-relaxed [&_p]:my-1 [&_li>p]:my-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_a]:text-blue-600 [&_a]:underline [&_blockquote]:text-muted-foreground/90 [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/20 [&_blockquote]:pl-3 [&_blockquote]:py-0.5 [&_blockquote]:my-1 [&_blockquote]:bg-muted/30 [&_blockquote]:rounded-r-md",
+      class: EPIC_STORY_READONLY_MESSAGE_CLASS,
       tabindex: "-1",
     },
     handleDOMEvents: {
       mousedown: (_view, event) => {
         const target = event.target as HTMLElement | null;
-        // allow normal link clicks
         if (target?.closest("a")) return false;
-        // block ProseMirror focus/selection => prevents caret/trailingBreak showing up
         return true;
       },
     },

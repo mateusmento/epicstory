@@ -1,9 +1,12 @@
-<script setup lang="ts" generic="T extends AcceptableValue = string">
+<script
+  setup
+  lang="ts"
+  generic="T extends string | number | boolean | Record<string, any> = string | number | boolean | Record<string, any>"
+>
 import { type HTMLAttributes, computed } from "vue";
 import type { ComboboxItemEmits, ComboboxItemProps } from "radix-vue";
 import { ComboboxItem, useForwardPropsEmits } from "radix-vue";
 import { cn } from "@/design-system/utils";
-import type { AcceptableValue } from "reka-ui";
 
 const props = defineProps<ComboboxItemProps<T> & { class?: HTMLAttributes["class"] }>();
 const emits = defineEmits<ComboboxItemEmits<T>>();
