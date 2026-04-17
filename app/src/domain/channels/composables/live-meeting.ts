@@ -33,11 +33,11 @@ export function useLiveMeeting() {
 
   function onMeetingSessionChanged() {
     console.log("meeting session changed");
-    void refreshLiveScheduledMeeting();
+    refreshLiveScheduledMeeting();
   }
 
   function onSocketConnected() {
-    void refreshLiveScheduledMeeting();
+    refreshLiveScheduledMeeting();
   }
 
   onUnmounted(() => {

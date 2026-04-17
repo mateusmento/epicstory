@@ -54,7 +54,7 @@ const { refreshDevices, deviceLabel, setSelectedCameraId, setSelectedMicId, setS
   deviceStore;
 
 onMounted(() => {
-  void refreshDevices();
+  refreshDevices();
 });
 
 async function onRefreshDevices() {
@@ -64,7 +64,7 @@ async function onRefreshDevices() {
 /** Keep dropdown open when refreshing device lists (reka-ui MenuItem `select`). */
 function onRefreshSelect(e: Event) {
   e.preventDefault();
-  void onRefreshDevices();
+  onRefreshDevices();
 }
 
 function pickCamera(v: AcceptableValue) {

@@ -1,7 +1,4 @@
 <script lang="ts" setup>
-import Link from "@tiptap/extension-link";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import {
@@ -14,10 +11,6 @@ import type { User } from "@/domain/auth";
 import TiptapCodeBlockCardNodeView from "./TiptapCodeBlockCardNodeView.vue";
 import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
 import { computed, onBeforeUnmount, watch } from "vue";
-
-void StarterKit;
-void Underline;
-void Link;
 
 const props = defineProps<{
   contentRich: any;

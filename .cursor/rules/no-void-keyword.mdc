@@ -1,0 +1,38 @@
+---
+description: Disallow void operator; disallow void before bindings (e.g. void StarterKit); allow void only as TS type
+alwaysApply: true
+---
+
+# No `void` operator (JavaScript / TypeScript)
+
+## Do not use
+
+1. **No-op statements `void <identifier>;`** where `<identifier>` is an **import, variable, or other binding** you only “reference” to silence unused-import / unused-variable lint (e.g. `void StarterKit; void Underline; void Link;` after importing TipTap extensions). **Remove the unused imports** or fix the real issue; do not use `void` as a fake use.
+2. **The unary `void` operator** on any other expression when it only discards a value: function calls (`void save()`), `void 0`, etc. Prefer explicit handling (await, `.catch`, block body).
+
+3. **Do not** define names spelled `void` (variables, functions, types you control) where the language allows a workaround.
+
+## Allowed
+
+- **TypeScript type** `void` in type positions only: `function f(): void`, `Promise<void>`, `(): void`, etc. (not the `void` operator).
+
+## Examples
+
+```typescript
+// ❌ BAD — void before defined identifiers (fake “use” of imports)
+import StarterKit from "@tiptap/starter-kit";
+void StarterKit;
+
+// ✅ GOOD — delete unused imports; compose extensions where they are actually used
+```
+
+```typescript
+// ❌ BAD — void operator to discard side effects / promises
+void saveDraft();
+void 0;
+
+// ✅ GOOD
+saveDraft().catch(logError);
+```
+
+Vue `<script>` blocks follow the same rules.

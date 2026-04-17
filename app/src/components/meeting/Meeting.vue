@@ -30,7 +30,7 @@ const {
 
 function toggleScreenShare() {
   if (isScreenSharing.value) stopScreenShare();
-  else void startScreenShare();
+  else startScreenShare();
 }
 
 const { participants, featured, topDockPeers, rightDockPeers, isSpeaking } = useMeetingLayout();
@@ -45,7 +45,7 @@ async function onMeetingInputDevicesChange() {
 }
 
 onMounted(() => {
-  void mediaDevices.refreshDevices();
+  mediaDevices.refreshDevices();
 });
 </script>
 

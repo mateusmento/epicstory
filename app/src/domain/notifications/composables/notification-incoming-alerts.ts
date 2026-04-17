@@ -50,7 +50,7 @@ export function useNotificationIncomingAlerts() {
   }
 
   const unregister = registerNotificationIncomingListener((n) => {
-    void handleIncoming(n);
+    handleIncoming(n);
   });
 
   onUnmounted(unregister);

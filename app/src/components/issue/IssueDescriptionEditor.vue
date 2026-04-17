@@ -4,9 +4,6 @@ import TiptapCodeBlockCardNodeView from "@/components/channel/TiptapCodeBlockCar
 import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import { IssueApi } from "@/domain/issues";
 import { Button } from "@/design-system";
-import Link from "@tiptap/extension-link";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import {
   createPlaceholderExtension,
@@ -30,10 +27,6 @@ import {
   Undo2,
 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
-
-void StarterKit;
-void Underline;
-void Link;
 
 const props = defineProps<{
   description: string;

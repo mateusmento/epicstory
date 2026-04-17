@@ -47,7 +47,7 @@ export function useMediaStreamVideo(
   function applySinkId(el: HTMLVideoElement) {
     const sink = sinkRef.value;
     if (!sink || typeof el.setSinkId !== "function") return;
-    void el.setSinkId(sink).catch(() => {});
+    el.setSinkId(sink).catch(() => {});
   }
 
   function observe(el: HTMLVideoElement) {

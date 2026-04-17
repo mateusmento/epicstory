@@ -25,9 +25,9 @@ export function replaceOutgoingTracksForPeers(
     for (const sender of pc.getSenders()) {
       const t = sender.track;
       if (t?.kind === "video" && videoTrack && !isDisplayCaptureVideoTrack(t)) {
-        void sender.replaceTrack(videoTrack);
+        sender.replaceTrack(videoTrack);
       } else if (t?.kind === "audio" && audioTrack) {
-        void sender.replaceTrack(audioTrack);
+        sender.replaceTrack(audioTrack);
       }
     }
   }
@@ -48,7 +48,7 @@ export function replaceOutgoingVideoTrackForPeers(
     if (!pc || pc.signalingState === "closed") continue;
     for (const sender of pc.getSenders()) {
       if (sender.track?.kind === "video") {
-        void sender.replaceTrack(videoTrack);
+        sender.replaceTrack(videoTrack);
         break;
       }
     }

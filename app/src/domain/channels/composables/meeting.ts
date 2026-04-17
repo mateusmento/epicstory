@@ -153,7 +153,7 @@ const useMeetingStore = defineStore("meeting", () => {
   function syncDetectorSources() {
     setupDetector();
     detector.value?.setSources(sources.value);
-    void detector.value?.resume();
+    detector.value?.resume();
   }
 
   function teardownDetector() {
@@ -623,7 +623,7 @@ const useMeetingStore = defineStore("meeting", () => {
     () => {
       if (!detector.value) return;
       detector.value.setSources(sources.value);
-      void detector.value.resume();
+      detector.value.resume();
     },
     { deep: false },
   );

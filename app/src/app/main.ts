@@ -1,5 +1,15 @@
 import "reflect-metadata";
-/** Side-effect: merges `insertTable`, `toggleTaskList`, `setImage`, etc. into `@tiptap/core` command types for `vue-tsc`. */
+/**
+ * Side-effect: merges extension commands into `@tiptap/core` (`ChainedCommands`, `CanCommands`) for `vue-tsc`.
+ * TipTap extensions augment types via `declare module '@tiptap/core'`; those files must be part of the program.
+ * `@tiptap/starter-kit` pulls in bold/italic/strike/code/code-block/undo-redo command typings (matches `createRichTextExtensions`).
+ * Link + underline are registered separately in the shared helper (StarterKit disables them there).
+ */
+import "@tiptap/starter-kit";
+import "@tiptap/extension-link";
+import "@tiptap/extension-underline";
+import "@tiptap/extension-code-block-lowlight";
+import "@tiptap/extensions/undo-redo";
 import "@tiptap/extension-table";
 import "@tiptap/extension-list";
 import "@tiptap/extension-image";

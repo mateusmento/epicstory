@@ -46,7 +46,7 @@ export const useMeetingMediaDevicesStore = defineStore("meetingMediaDevices", ()
     if (deviceWatcherAttached || typeof navigator === "undefined" || !navigator.mediaDevices) return;
     deviceWatcherAttached = true;
     navigator.mediaDevices.addEventListener("devicechange", () => {
-      void refreshDevices();
+      refreshDevices();
     });
   }
 

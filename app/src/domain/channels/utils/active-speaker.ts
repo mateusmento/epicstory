@@ -146,7 +146,7 @@ export function createActiveSpeakerDetector(
       // Best-effort cleanup (node may already be disconnected).
     }
     try {
-      void s.audioContext.close();
+      s.audioContext.close();
     } catch {
       // Best-effort cleanup (context may already be closed).
     }
