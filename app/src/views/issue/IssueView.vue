@@ -1,9 +1,13 @@
 <script lang="ts" setup>
-import { IssueLabelTags, issueStatusDotClass, IssueStatusDropdown } from "@/components/issue";
+import {
+  IssueDescriptionEditor,
+  IssueLabelTags,
+  issueStatusDotClass,
+  IssueStatusDropdown,
+} from "@/components/issue";
 import { UserSelect } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
-import { IssueApi } from "@/domain/issues";
-import { Button, Combobox, Input } from "@/design-system";
+import { Button, Input } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import SubIssuesSection from "./SubIssuesSection.vue";
 import { useIssue } from "@/domain/issues/composables/issue";
@@ -11,38 +15,7 @@ import { ProjectApi, type Project } from "@/domain/project";
 import type { User } from "@/domain/user";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
-import Link from "@tiptap/extension-link";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
-import { EditorContent, useEditor } from "@tiptap/vue-3";
-import { epicStoryLowlight } from "@/core/epic-story-lowlight";
-import TiptapCodeBlockCardNodeView from "@/components/channel/TiptapCodeBlockCardNodeView.vue";
-import {
-  createPlaceholderExtension,
-  createRichTextExtensions,
-  mediaExtensions,
-  EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
-} from "@epicstory/tiptap/vue";
-import {
-  Bold,
-  Braces,
-  Code,
-  Italic,
-  Link2,
-  List,
-  ListChecks,
-  ListOrdered,
-  Redo2,
-  Strikethrough,
-  Table2,
-  Underline as UnderlineIcon,
-  Undo2,
-} from "lucide-vue-next";
-import { computed, onMounted, reactive, ref, watch } from "vue";
-
-void StarterKit;
-void Underline;
-void Link;
+import { onMounted, reactive, ref, watch } from "vue";
 
 const props = defineProps<{
   workspaceId: string;
@@ -53,7 +26,6 @@ const props = defineProps<{
 const { issue, fetchIssue, updateIssue, addAssignee, addLabel, removeLabel } = useIssue();
 
 const projectApi = useDependency(ProjectApi);
-const issueApi = useDependency(IssueApi);
 const project = ref<Project | null>(null);
 
 const isSaving = ref(false);
@@ -63,7 +35,6 @@ const selectedUser = ref<User | undefined>();
 const titleEl = ref<HTMLInputElement | null>(null);
 
 const isEditingTitle = ref(false);
-const isEditingDescription = ref(false);
 
 const form = reactive({
   title: "",
@@ -77,43 +48,6 @@ watch(
   },
   { immediate: true },
 );
-
-const editor = useEditor({
-  extensions: [
-    ...createRichTextExtensions({
-      linkOpenOnClick: false,
-      lowlight: epicStoryLowlight,
-      codeBlockNodeView: TiptapCodeBlockCardNodeView,
-    }),
-    ...mediaExtensions({
-      uploadFile: (file: File) => issueApi.uploadAttachment(+props.issueId, file).then((a) => a.url),
-      allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
-    }),
-    createPlaceholderExtension("Write a description…"),
-  ],
-  content: "",
-  editorProps: {
-    attributes: {
-      class: EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
-    },
-    handleKeyDown: (_, event) => {
-      if (event.key === "Escape") {
-        cancelEditDescription();
-        return true;
-      }
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-        finishEditDescription();
-        return true;
-      }
-      return false;
-    },
-  },
-});
-
-const descriptionIsHtml = computed(() => {
-  const d = issue.value?.description ?? "";
-  return /<\/?[a-z][\s\S]*>/i.test(d);
-});
 
 async function savePatch(data: Parameters<typeof updateIssue>[0]) {
   if (!issue.value) return;
@@ -159,43 +93,9 @@ function finishEditTitle() {
   saveMainFields();
 }
 
-function startEditDescription() {
+function onSaveDescription(html: string) {
   if (!issue.value) return;
-  isEditingDescription.value = true;
-  queueMicrotask(() => editor.value?.commands.focus("end"));
-}
-
-function cancelEditDescription() {
-  if (!issue.value) return;
-  isEditingDescription.value = false;
-  editor.value?.commands.setContent(issue.value.description ?? "", { emitUpdate: false });
-}
-
-function finishEditDescription() {
-  if (!issue.value) return;
-  isEditingDescription.value = false;
-  const instance = editor.value;
-  if (!instance) return;
-  const html = instance.getHTML();
   if (html !== issue.value.description) savePatch({ description: html });
-}
-
-watch(isEditingDescription, (editing) => {
-  if (!editing) return;
-  editor.value?.commands.setContent(issue.value?.description ?? "", { emitUpdate: false });
-});
-
-function toggleLink() {
-  const instance = editor.value;
-  if (!instance) return;
-  const previous = instance.getAttributes("link")?.href as string | undefined;
-  const url = window.prompt("Enter link URL", previous ?? "");
-  if (url === null) return;
-  if (url.trim() === "") {
-    instance.chain().focus().extendMarkRange("link").unsetLink().run();
-    return;
-  }
-  instance.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
 }
 
 onMounted(() => {
@@ -262,184 +162,14 @@ watch(
           </div>
         </div>
 
-        <div class="flex:col-sm min-h-0">
-          <div class="flex:row-md flex:center-y">
-            <div class="text-sm text-secondary-foreground">Description</div>
-            <div class="flex-1" />
-            <div class="text-xs text-secondary-foreground">Double-click to edit</div>
-          </div>
-
-          <div v-if="!isEditingDescription" class="min-h-0">
-            <div
-              class="cursor-text rounded-xl p-3 -mx-3 hover:bg-zinc-50"
-              @dblclick="startEditDescription"
-              title="Double-click to edit"
-            >
-              <div v-if="issue?.description" class="text-sm text-foreground leading-relaxed">
-                <div
-                  v-if="descriptionIsHtml"
-                  class="[&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700"
-                  v-html="issue.description"
-                />
-                <div v-else class="whitespace-pre-wrap">{{ issue.description }}</div>
-              </div>
-              <div v-else class="text-sm text-secondary-foreground">Add a description…</div>
-            </div>
-          </div>
-
-          <div v-else class="p-3 border border-zinc-200 rounded-xl bg-white">
-            <div class="flex:row-md flex:center-y mb-2">
-              <div class="flex:row-md flex:center-y">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :class="editor?.isActive('bold') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleBold().run()"
-                >
-                  <Bold class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :class="editor?.isActive('italic') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleItalic().run()"
-                >
-                  <Italic class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :class="editor?.isActive('strike') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleStrike().run()"
-                >
-                  <Strikethrough class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :class="editor?.isActive('underline') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleUnderline().run()"
-                >
-                  <UnderlineIcon class="h-4 w-4" />
-                </Button>
-                <div class="w-px h-6 bg-zinc-200 mx-1" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :class="editor?.isActive('bulletList') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleBulletList().run()"
-                >
-                  <List class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :class="editor?.isActive('orderedList') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleOrderedList().run()"
-                >
-                  <ListOrdered class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  title="Task list"
-                  :class="editor?.isActive('taskList') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleTaskList().run()"
-                >
-                  <ListChecks class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  title="Insert table"
-                  :disabled="!editor"
-                  @click="
-                    editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-                  "
-                >
-                  <Table2 class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  title="Inline code"
-                  :class="editor?.isActive('code') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleCode().run()"
-                >
-                  <Braces class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  title="Code block"
-                  :class="editor?.isActive('codeBlock') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="editor?.chain().focus().toggleCodeBlock().run()"
-                >
-                  <Code class="h-4 w-4" />
-                </Button>
-                <div class="w-px h-6 bg-zinc-200 mx-1" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :class="editor?.isActive('link') ? 'bg-zinc-100' : ''"
-                  :disabled="!editor"
-                  @click="toggleLink"
-                >
-                  <Link2 class="h-4 w-4" />
-                </Button>
-                <div class="w-px h-6 bg-zinc-200 mx-1" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :disabled="!editor || !editor.can().undo()"
-                  @click="editor?.chain().focus().undo().run()"
-                >
-                  <Undo2 class="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-8 w-8"
-                  :disabled="!editor || !editor.can().redo()"
-                  @click="editor?.chain().focus().redo().run()"
-                >
-                  <Redo2 class="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div class="flex-1" />
-
-              <div class="text-xs text-secondary-foreground mr-2">Ctrl+Enter to save • Esc to cancel</div>
-              <Button variant="outline" size="xs" :disabled="isSaving" @click="cancelEditDescription"
-                >Cancel</Button
-              >
-              <Button size="xs" :disabled="isSaving" @click="finishEditDescription">Done</Button>
-            </div>
-
-            <EditorContent :editor="editor" />
-          </div>
-        </div>
+        <IssueDescriptionEditor
+          :key="props.issueId"
+          :description="issue?.description ?? ''"
+          :issue-id="+props.issueId"
+          :disabled="!issue"
+          :is-saving="isSaving"
+          @save-description="onSaveDescription"
+        />
 
         <SubIssuesSection
           v-if="issue"
