@@ -2,7 +2,7 @@ export type ProjectFilterField = "dueDate" | "status" | "priority" | "labels" | 
 
 export type ProjectFilterOperator = "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "contains" | "notContains";
 
-export type ProjectFilterValue = string | number | null | undefined | number[] | { ids: number[] }; // reserved for future expansion
+export type ProjectFilterValue = string | number | Date | null | undefined | number[] | { ids: number[] };
 
 export type ProjectFilter = {
   field: ProjectFilterField;

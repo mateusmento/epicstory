@@ -12,8 +12,13 @@ import {
   MenuTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { IssueDueDateMenu, IssueLabelsDropdown, IssueStatusMenu } from "@/components/issue";
-import { formatDate, isThisYear, isToday } from "date-fns";
+import {
+  IssueDueDateMenu,
+  IssueLabelsDropdown,
+  IssueStatusDropdown,
+  IssueStatusMenu,
+} from "@/components/issue";
+import { formatDate, isDate, isThisYear, isToday } from "date-fns";
 import { computed, ref, watch } from "vue";
 import {
   FIELD_ALLOWED_OPERATORS,
@@ -23,7 +28,9 @@ import {
   type ProjectFilterOperator,
 } from "@/domain/project";
 import { IssuePickerMenu } from "@/components/issue";
+import { parseDate } from "@/domain/issues/api/issue.api";
 import { useIssues } from "@/domain/issues";
+import { isEmpty } from "lodash";
 
 defineEmits<{
   (e: "remove"): void;
@@ -80,16 +87,17 @@ const titlePreview = computed(() => {
   return v ? v : "Any";
 });
 
+const dueDateFilterValue = computed(() => {
+  const { value } = modelValue.value;
+  if (isEmpty(value)) return undefined;
+  if (isDate(value)) return value;
+  return parseDate(String(value)) ?? undefined;
+});
+
 const dueDatePreview = computed(() => {
-  const v = modelValue.value.value;
-  if (!v) return "Any";
-  try {
-    const d = new Date(String(v));
-    if (Number.isNaN(d.getTime())) return "Any";
-    return formatDueDate(d);
-  } catch {
-    return "Any";
-  }
+  const d = dueDateFilterValue.value;
+  if (!d) return "Any";
+  return formatDueDate(d);
 });
 
 const statusPreview = computed(() => {
@@ -161,14 +169,18 @@ const parentPreview = computed(() => {
     </template>
 
     <template v-else-if="modelValue.field === 'status'">
-      <Menu>
+      <IssueStatusDropdown :value="(modelValue.value as string) ?? null" @select="setValue($event)">
+        <Button variant="outline" size="badge" class="text-muted-foreground">{{ statusPreview }}</Button>
+      </IssueStatusDropdown>
+
+      <!-- <Menu>
         <MenuTrigger as-child>
           <Button variant="outline" size="badge" class="text-muted-foreground">{{ statusPreview }}</Button>
         </MenuTrigger>
         <MenuContent as-child align="start" side="bottom">
           <IssueStatusMenu :value="(modelValue.value as any) ?? null" @select="setValue($event)" />
         </MenuContent>
-      </Menu>
+      </Menu> -->
     </template>
 
     <template v-else-if="modelValue.field === 'dueDate'">
@@ -177,7 +189,7 @@ const parentPreview = computed(() => {
           <Button variant="outline" size="badge" class="text-muted-foreground">{{ dueDatePreview }}</Button>
         </MenuTrigger>
         <MenuContent class="p-0" align="start" side="bottom">
-          <IssueDueDateMenu :due-date="(modelValue.value as any) ?? null" @change="setValue($event)" />
+          <IssueDueDateMenu :due-date="dueDateFilterValue" @change="setValue" />
         </MenuContent>
       </Menu>
     </template>

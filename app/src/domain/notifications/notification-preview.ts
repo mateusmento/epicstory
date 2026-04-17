@@ -12,11 +12,7 @@ function channelLabel(channel: IChannel, opts?: { thread?: boolean }): string {
   return "#" + channel.name;
 }
 
-function messageChannelLabel(payload: {
-  channel: IChannel;
-  message?: string;
-  reply?: unknown;
-}): string {
+function messageChannelLabel(payload: { channel: IChannel; message?: string; reply?: unknown }): string {
   const thread = Boolean(payload.message && payload.reply);
   return channelLabel(payload.channel, { thread });
 }
@@ -74,8 +70,7 @@ export function getNotificationToastDescription(notification: Notification): str
     case "issue_due_date":
       return (p.description as string) || undefined;
     case "issue_assigned": {
-      const issue = p.issue as { title?: string } | undefined;
-      return issue?.title;
+      return p.title as string | undefined;
     }
     case "calendar_meeting_reminder":
       return formatCalendarOccurrenceSubtitle(p.occurrenceAt);

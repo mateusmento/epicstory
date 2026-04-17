@@ -11,20 +11,17 @@ const props = defineProps<{ item: BacklogItem }>();
 
 const emit = defineEmits<{
   (e: "openIssue", issue: Issue): void;
-  (e: "labels-change", issue: Issue, labels: number[]): void;
+  (e: "add-label", id: number): void;
+  (e: "remove-label", id: number): void;
 }>();
 
 type ColumnStatus = "todo" | "doing" | "done";
 
 const { isDragging } = useDraggingById();
 
-function formatDueDate(date: string | null | undefined) {
+function formatDueDate(date: Date | null | undefined) {
   if (!date) return null;
-  try {
-    return formatDistanceToNow(new Date(date), { addSuffix: true });
-  } catch {
-    return null;
-  }
+  return formatDistanceToNow(date, { addSuffix: true });
 }
 
 function issuePriorityBadge(priority: number | null | undefined) {
@@ -42,10 +39,6 @@ function statusBadge(status: ColumnStatus) {
 
 function openIssue(issue: Issue) {
   emit("openIssue", issue);
-}
-
-function onLabelsChange(issue: Issue, labels: number[]) {
-  emit("labels-change", issue, labels);
 }
 </script>
 
@@ -128,7 +121,8 @@ function onLabelsChange(issue: Issue, labels: number[]) {
         <IssueLabelTags
           :disabled="!item.issue"
           :model-value="(item.issue?.labels ?? []).map((l) => l.id)"
-          @update:model-value="onLabelsChange(item.issue, $event)"
+          @add-label="emit('add-label', $event)"
+          @remove-label="emit('remove-label', $event)"
         />
       </div>
     </div>

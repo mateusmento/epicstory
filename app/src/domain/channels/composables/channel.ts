@@ -162,10 +162,18 @@ export function useChannel() {
     meetingSocket.offMeetingEnded(onMeetingEnded);
   }
 
-  async function sendMessage({ content, contentRich }: { content: string; contentRich: any }) {
+  async function sendMessage({
+    content,
+    contentRich,
+    quotedMessageId,
+  }: {
+    content: string;
+    contentRich: any;
+    quotedMessageId?: number | null;
+  }) {
     if (!store.channel) return;
     if (!content) return;
-    const message = await channelApi.sendMessage(store.channel.id, content, contentRich);
+    const message = await channelApi.sendMessage(store.channel.id, content, contentRich, quotedMessageId);
     addMessage(message);
     return message;
   }

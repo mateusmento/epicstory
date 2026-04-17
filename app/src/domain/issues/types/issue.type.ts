@@ -10,7 +10,7 @@ export type Issue = {
   createdById: number;
   createdAt: string;
   status: string;
-  dueDate: string;
+  dueDate: Date | null;
   assignees: User[];
   priority: number;
   labels: Label[];

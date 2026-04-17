@@ -47,10 +47,10 @@ function formatTime(date: string) {
       <Tooltip>
         <TooltipTrigger as-child>
           <div class="w-full min-w-0 text-sm text-foreground font-lato truncate">
-            EP-{{ payload.issue.id }} {{ payload.issue.title }}
+            EP-{{ payload.issueId }} {{ payload.title }}
           </div>
         </TooltipTrigger>
-        <TooltipContent> EP-{{ payload.issue.id }} {{ payload.issue.title }} </TooltipContent>
+        <TooltipContent> EP-{{ payload.issueId }} {{ payload.title }} </TooltipContent>
       </Tooltip>
     </div>
   </div>

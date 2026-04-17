@@ -95,4 +95,36 @@ describe("mergeQuotedMessageIntoDoc", () => {
     expect(tiptapToPlainText(out)).toContain("Ada");
     expect(tiptapToPlainText(out)).toContain("quoted plain");
   });
+
+  it("embeds rich blocks from contentRich (e.g. code blocks)", () => {
+    const main = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "reply" }],
+        },
+      ],
+    };
+    const out = mergeQuotedMessageIntoDoc(
+      {
+        sender: { name: "Bob" },
+        content: "",
+        contentRich: {
+          type: "doc",
+          content: [
+            {
+              type: "codeBlock",
+              content: [{ type: "text", text: "console.log(1)" }],
+            },
+          ],
+        },
+      },
+      main,
+    ) as { content: { type: string; content?: { type: string }[] }[] };
+    expect(out.content[0].type).toBe("blockquote");
+    const inner = out.content[0].content ?? [];
+    expect(inner.some((n) => n.type === "codeBlock")).toBe(true);
+    expect(tiptapToPlainText(out)).toContain("console.log(1)");
+  });
 });

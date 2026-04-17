@@ -120,23 +120,6 @@ watch(
   },
   { immediate: true },
 );
-
-function onLabelsChange(issue: Issue, labels: number[]) {
-  const prev = new Set((issue.labels ?? []).map((l) => l.id));
-  const next = new Set(labels);
-
-  for (const id of next) {
-    if (!prev.has(id)) {
-      addLabel(issue.id, id);
-    }
-  }
-
-  for (const id of prev) {
-    if (!next.has(id)) {
-      removeLabel(issue.id, id);
-    }
-  }
-}
 </script>
 
 <template>
@@ -165,7 +148,12 @@ function onLabelsChange(issue: Issue, labels: number[]) {
               :source="todo"
               :itemId="item.id"
             >
-              <IssueCard :item="item" @open-issue="openIssue" @labels-change="onLabelsChange" />
+              <IssueCard
+                :item="item"
+                @open-issue="openIssue"
+                @add-label="addLabel(item.issue.id, $event)"
+                @remove-label="removeLabel(item.issue.id, $event)"
+              />
             </BoardItem>
           </TransitionGroup>
 
@@ -201,7 +189,12 @@ function onLabelsChange(issue: Issue, labels: number[]) {
               :source="doing"
               :itemId="item.id"
             >
-              <IssueCard :item="item" @open-issue="openIssue" @labels-change="onLabelsChange" />
+              <IssueCard
+                :item="item"
+                @open-issue="openIssue"
+                @add-label="addLabel(item.issue.id, $event)"
+                @remove-label="removeLabel(item.issue.id, $event)"
+              />
             </BoardItem>
           </TransitionGroup>
 
@@ -237,7 +230,12 @@ function onLabelsChange(issue: Issue, labels: number[]) {
               :source="done"
               :itemId="item.id"
             >
-              <IssueCard :item="item" @open-issue="openIssue" @labels-change="onLabelsChange" />
+              <IssueCard
+                :item="item"
+                @open-issue="openIssue"
+                @add-label="addLabel(item.issue.id, $event)"
+                @remove-label="removeLabel(item.issue.id, $event)"
+              />
             </BoardItem>
           </TransitionGroup>
 

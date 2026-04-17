@@ -1,5 +1,12 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import {
   MessageReplyRepository,
   MessageRepository,
@@ -7,6 +14,7 @@ import {
 import { patch } from 'src/core/objects';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
+import { MessageService } from '../services/message.service';
 import {
   extractMentionIdsFromDoc,
   normalizeTiptapDoc,
@@ -26,6 +34,11 @@ export class ReplyMessage {
   @IsObject()
   contentRich?: any;
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  quotedMessageId?: number;
+
   constructor(data: Partial<ReplyMessage> = {}) {
     patch(this, data);
   }
@@ -36,10 +49,17 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
   constructor(
     private messageReplyRepo: MessageReplyRepository,
     private messageRepo: MessageRepository,
+    private messageService: MessageService,
     private commandBus: CommandBus,
   ) {}
 
-  async execute({ senderId, content, contentRich, messageId }: ReplyMessage) {
+  async execute({
+    senderId,
+    content,
+    contentRich,
+    messageId,
+    quotedMessageId,
+  }: ReplyMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
       relations: { channel: { peers: true } },
@@ -58,6 +78,11 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       ? tiptapToPlainText(normalizedRich)
       : content;
 
+    const resolvedQuote = await this.messageService.resolveQuotedMessageId(
+      quotedMessageId,
+      message.channelId,
+    );
+
     const { id: replyId } = await this.messageReplyRepo.save({
       content: plainContent,
       contentRich: normalizedRich,
@@ -65,6 +90,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       messageId,
       senderId,
       sentAt: new Date(),
+      quotedMessageId: resolvedQuote,
     });
 
     const reply = await this.messageReplyRepo.findOne({
@@ -88,6 +114,21 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
 
     (reply as any).mentionedUsers = mentionedUsers;
     (reply as any).displayContent = displayContent;
+
+    if (resolvedQuote) {
+      const q = await this.messageRepo.findOne({
+        where: { id: resolvedQuote },
+        relations: { sender: true },
+      });
+      (reply as any).quotedMessage = q
+        ? {
+            id: q.id,
+            sender: q.sender,
+            content: q.content,
+            contentRich: q.contentRich,
+          }
+        : undefined;
+    }
 
     if (finalMentionIds.length > 0) {
       await this.commandBus.execute(

@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -42,6 +43,14 @@ export class Message {
 
   @ManyToOne(() => Channel, { onDelete: 'CASCADE' })
   channel: Channel;
+
+  /** Optional reference to another top-level message quoted in this one (same channel). */
+  @Column({ type: 'int', nullable: true })
+  quotedMessageId: number | null;
+
+  @ManyToOne(() => Message, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'quoted_message_id' })
+  quotedMessageRef?: Message | null;
 
   @Exclude()
   @OneToMany(() => MessageReaction, (reaction) => reaction.message)

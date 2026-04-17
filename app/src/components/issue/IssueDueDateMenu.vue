@@ -1,31 +1,23 @@
 <script setup lang="ts">
 import { Button, Calendar } from "@/design-system";
-import { getLocalTimeZone, parseAbsolute, type DateValue } from "@internationalized/date";
 import { formatDate, isThisYear, isToday } from "date-fns";
 import { CalendarIcon } from "lucide-vue-next";
 import { computed } from "vue";
 
 const props = defineProps<{
-  dueDate: string | null | undefined;
+  dueDate: Date | null | undefined;
   disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: "change", dueDate: string | null): void;
+  (e: "change", dueDate: Date | null): void;
 }>();
 
-const value = computed<DateValue | undefined>(() => {
-  if (!props.dueDate) return;
-  try {
-    return parseAbsolute(props.dueDate, getLocalTimeZone());
-  } catch {
-    return undefined;
-  }
-});
+const value = computed(() => props.dueDate ?? undefined);
 
-function onChange(next: DateValue | undefined) {
+function onChange(next: Date | undefined) {
   if (!next) return;
-  emit("change", next.toDate(getLocalTimeZone()).toISOString());
+  emit("change", next);
 }
 
 function formatDueDate(date: Date) {
@@ -40,7 +32,7 @@ function formatDueDate(date: Date) {
     <div class="flex items-center justify-between mb-2">
       <div class="flex:row-sm items-center text-xs text-muted-foreground">
         <CalendarIcon class="mr-2 h-3 w-3" />
-        {{ value ? formatDueDate(value.toDate(getLocalTimeZone())) : "No due date" }}
+        {{ value ? formatDueDate(value) : "No due date" }}
       </div>
 
       <Button

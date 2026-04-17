@@ -1,6 +1,5 @@
-import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { Upload } from '@aws-sdk/lib-storage';
 import {
+  BadRequestException,
   Body,
   Controller,
   Patch,
@@ -11,78 +10,19 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Request } from 'express';
-import { StorageEngine } from 'multer';
-import * as sharp from 'sharp';
+import { userPictureUploadMulterOptions } from 'src/core/multer/user-picture-upload-options';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { UserPictureUploadService } from '../services/user-picture-upload.service';
 import { ChangePassword } from '../features/change-password.command';
 import { UpdateUserPicture } from '../features/update-user-picture.command';
 import { UpdateUser } from '../features/update-user.command';
 
-class S3StorageEngine implements StorageEngine {
-  private s3: S3Client;
-
-  constructor() {
-    this.s3 =
-      process.env.NODE_ENV === 'production'
-        ? new S3Client({
-            region: process.env.AWS_REGION,
-            credentials: {
-              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-            },
-          })
-        : new S3Client();
-  }
-
-  async _handleFile(
-    req: Request,
-    file: Express.Multer.File,
-    callback: (error?: any, info?: Partial<Express.Multer.File>) => void,
-  ) {
-    const imageProcessing = sharp().resize(120, 120);
-    const finalImage = file.stream.pipe(imageProcessing);
-
-    const upload = new Upload({
-      client: this.s3,
-      params: {
-        Bucket: process.env.AWS_BUCKET,
-        Key: file.originalname,
-        ContentType: file.mimetype,
-        Body: finalImage,
-      },
-    });
-
-    try {
-      const { Location } = await upload.done();
-      callback(null, { ...file, path: Location });
-    } catch (err) {
-      callback(err, null);
-    }
-  }
-
-  async _removeFile(
-    req: Request,
-    file: Express.Multer.File,
-    callback: (error: Error | null) => void,
-  ) {
-    try {
-      await this.s3.send(
-        new DeleteObjectCommand({
-          Bucket: process.env.AWS_BUCKET,
-          Key: file.originalname,
-        }),
-      );
-      callback(null);
-    } catch (err) {
-      callback(err);
-    }
-  }
-}
-
 @Controller('/users')
 export class UserController {
-  constructor(private commandBus: CommandBus) {}
+  constructor(
+    private commandBus: CommandBus,
+    private userPictureUpload: UserPictureUploadService,
+  ) {}
 
   @Patch()
   @UseGuards(JwtAuthGuard)
@@ -92,17 +32,21 @@ export class UserController {
 
   @Put('/picture')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(
-    FileInterceptor('picture', { storage: new S3StorageEngine() }),
-  )
-  updatePicture(
-    @UploadedFile()
-    file: Express.Multer.File,
+  @UseInterceptors(FileInterceptor('picture', userPictureUploadMulterOptions))
+  async updatePicture(
+    @UploadedFile() file: Express.Multer.File,
     @Body() command: UpdateUserPicture,
     @Auth() issuer: Issuer,
   ) {
+    if (!file || file.size === 0) {
+      throw new BadRequestException('Missing file');
+    }
+    const pictureUrl = await this.userPictureUpload.uploadFromMulterFile(
+      issuer.id,
+      file,
+    );
     return this.commandBus.execute(
-      new UpdateUserPicture({ userId: issuer.id, picture: file.path }),
+      new UpdateUserPicture({ userId: issuer.id, picture: pictureUrl }),
     );
   }
 

@@ -5,7 +5,7 @@ import { IssueApi, type FindIssuesQuery, type UpdateIssueData } from "../api";
 import type { Issue } from "../types";
 import type { Page } from "@/core/types";
 
-const useIssueStore = defineStore("issue", () => {
+const useIssueStore = defineStore("issues", () => {
   const issues = ref<Issue[]>([]);
   return { issues };
 });

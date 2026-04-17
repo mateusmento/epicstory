@@ -11,6 +11,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: number[]): void;
+  (e: "add-label", id: number): void;
+  (e: "remove-label", id: number): void;
 }>();
 
 function onUpdateModelValue(value: number[]) {
@@ -35,6 +37,8 @@ const selectedLabels = computed(() => {
         :disabled="disabled"
         :model-value="modelValue"
         @update:model-value="onUpdateModelValue"
+        @add-label="emit('add-label', $event)"
+        @remove-label="emit('remove-label', $event)"
       />
     </MenuContent>
   </Menu>

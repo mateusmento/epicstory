@@ -3,7 +3,9 @@ import { startRecording } from "@/core/screen-recording";
 import { Button } from "@/design-system/ui/button";
 import { Separator } from "@/design-system/ui/separator";
 import { Icon } from "@/design-system/icons";
+import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
+import { ChannelApi } from "@/domain/channels/services/channel.service";
 import {
   CHANNEL_TYPING_PULSE_MS,
   clearChannelDraft,
@@ -17,17 +19,32 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
 import { VueRenderer } from "@tiptap/vue-3";
+import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import {
   createMentionExtensionWithNodeView,
   createPlaceholderExtension,
   createRichTextExtensions,
+  mediaExtensions,
   EPIC_STORY_COMPOSER_EDITOR_CLASS,
 } from "@epicstory/tiptap/vue";
 import { messageBodyPlainText, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
-import { Bold, Code, Italic, Strikethrough, List, ListOrdered, Link2 } from "lucide-vue-next";
+import {
+  Bold,
+  Braces,
+  Code,
+  Italic,
+  List,
+  ListChecks,
+  ListOrdered,
+  Link2,
+  Table2,
+  Strikethrough,
+} from "lucide-vue-next";
 import MentionList from "./MentionList.vue";
 import type { MentionSuggestionItem } from "./MentionList.vue";
+import { quoteRefMessageId, type IMessage, type IReply } from "@/domain/channels";
 import type { User } from "@/domain/auth";
+import TiptapCodeBlockCardNodeView from "./TiptapCodeBlockCardNodeView.vue";
 import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
 
 void StarterKit;
@@ -43,7 +60,7 @@ const props = withDefaults(
     workspaceId?: number;
     placeholder?: string;
     editingMessage?: { id: number; content: string; contentRich?: any } | null;
-    quotedMessage?: { sender: { name: string }; content: string; contentRich?: any } | null;
+    quotedMessage?: (IMessage | IReply) | null;
   }>(),
   {
     editingMessage: null,
@@ -52,6 +69,7 @@ const props = withDefaults(
 );
 
 const { websocket } = useWebSockets();
+const channelApi = useDependency(ChannelApi);
 
 const suppressTypingSignals = ref(true);
 const isEmittingTyping = ref(false);
@@ -87,7 +105,7 @@ function emitTypingStopForChannel(channelId: number, workspaceId: number) {
 }
 
 const emit = defineEmits<{
-  (e: "send-message", value: { content: string; contentRich: any }): void;
+  (e: "send-message", value: { content: string; contentRich: any; quotedMessageId?: number }): void;
   (e: "submit-edit", value: { messageId: number; content: string; contentRich: any }): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
@@ -167,7 +185,17 @@ function createMentionSuggestion() {
 
 const editor = useEditor({
   extensions: [
-    ...createRichTextExtensions({ linkOpenOnClick: false }),
+    ...createRichTextExtensions({
+      linkOpenOnClick: false,
+      lowlight: epicStoryLowlight,
+      codeBlockNodeView: TiptapCodeBlockCardNodeView,
+    }),
+    ...(props.channelId != null
+      ? mediaExtensions({
+          uploadFile: (file: File) => channelApi.uploadAttachment(props.channelId!, file).then((a) => a.url),
+          allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
+        })
+      : []),
     createMentionExtensionWithNodeView(TiptapMentionNodeView, {
       HTMLAttributes: {
         class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
@@ -398,7 +426,11 @@ function onSendMessage() {
     isEmittingTyping.value = false;
     return;
   }
-  emit("send-message", { content: plain, contentRich: doc });
+  emit("send-message", {
+    content: plain,
+    contentRich: doc,
+    ...(props.quotedMessage ? { quotedMessageId: quoteRefMessageId(props.quotedMessage) } : {}),
+  });
   editor.value.commands.clearContent();
   saveDraftDebounced.cancel();
   if (props.workspaceId != null && props.channelId != null) {
@@ -506,6 +538,15 @@ function formatTime(seconds: number) {
       <Button
         variant="ghost"
         size="icon"
+        title="Inline code"
+        :class="editor?.isActive('code') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleCode().run()"
+      >
+        <Braces class="w-5 h-5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
         :class="editor?.isActive('bulletList') ? 'bg-secondary' : ''"
         @click="editor?.chain().focus().toggleBulletList().run()"
       >
@@ -518,6 +559,23 @@ function formatTime(seconds: number) {
         @click="editor?.chain().focus().toggleOrderedList().run()"
       >
         <ListOrdered class="w-5 h-5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        title="Task list"
+        :class="editor?.isActive('taskList') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleTaskList().run()"
+      >
+        <ListChecks class="w-5 h-5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        title="Insert table"
+        @click="editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()"
+      >
+        <Table2 class="w-5 h-5" />
       </Button>
       <Button
         variant="ghost"

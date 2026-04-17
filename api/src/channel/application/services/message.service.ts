@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { uniq } from 'lodash';
 import { User, UserRepository } from 'src/auth';
 import { Channel, Message, MessageReaction } from 'src/channel/domain';
@@ -29,9 +29,18 @@ export type MessageReactionsGroup = {
   reactedByMe: boolean;
 };
 
+export type QuotedMessagePreview = {
+  id: number;
+  sender: User;
+  content: string;
+  contentRich?: any;
+};
+
 export class MessageDto extends Message {
   mentionedUsers?: User[];
   displayContent?: string;
+  /** Hydrated preview of `quotedMessageId` for clients. */
+  quotedMessage?: QuotedMessagePreview;
 
   repliesCount: number;
   repliers: { user: User; repliesCount: number }[];
@@ -90,6 +99,20 @@ export class MessageService {
 
     const peerUsersMap = mapBy(channel?.peers ?? [], 'id');
 
+    const quoteIds = uniq(
+      messages
+        .map((m) => m.quotedMessageId)
+        .filter((id): id is number => id != null),
+    );
+    const quotedRows =
+      quoteIds.length > 0
+        ? await this.messageRepo.find({
+            where: { id: In(quoteIds) },
+            relations: { sender: true },
+          })
+        : [];
+    const quotedById = mapBy(quotedRows, 'id');
+
     return messages.map((message) => {
       const repliesCount = repliesCountMap.get(message.id)?.repliesCount ?? 0;
       const repliers = mapRepliers(repliersMap[message.id] ?? [], usersMap);
@@ -102,6 +125,10 @@ export class MessageService {
         .map((id) => peerUsersMap.get(id))
         .filter((user) => user);
 
+      const quotedSrc = message.quotedMessageId
+        ? quotedById.get(message.quotedMessageId)
+        : undefined;
+
       return new MessageDto({
         ...message,
         repliesCount,
@@ -109,6 +136,7 @@ export class MessageService {
         reactions,
         displayContent,
         mentionedUsers,
+        quotedMessage: this.toQuotedPreview(quotedSrc),
       });
     });
   }
@@ -118,8 +146,14 @@ export class MessageService {
     senderId: number,
     content: string,
     contentRich?: any,
+    quotedMessageId?: number | null,
   ) {
     const channelId = channel.id;
+
+    const resolvedQuote = await this.resolveQuotedMessageId(
+      quotedMessageId,
+      channelId,
+    );
 
     const normalizedRich = contentRich
       ? normalizeTiptapDoc(contentRich)
@@ -135,6 +169,7 @@ export class MessageService {
         content: plainContent,
         contentRich: normalizedRich,
         sentAt: new Date(),
+        quotedMessageId: resolvedQuote,
       }),
     );
 
@@ -156,11 +191,56 @@ export class MessageService {
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
 
+    let quotedPreview: QuotedMessagePreview | undefined;
+    if (resolvedQuote) {
+      const q = await this.messageRepo.findOne({
+        where: { id: resolvedQuote },
+        relations: { sender: true },
+      });
+      quotedPreview = this.toQuotedPreview(q);
+    }
+
     return new MessageDto({
       ...message,
       mentionedUsers,
       displayContent,
+      quotedMessage: quotedPreview,
     });
+  }
+
+  /**
+   * Validates that a quoted message exists and belongs to the same channel.
+   * Used by {@link createMessage} and reply creation.
+   */
+  async resolveQuotedMessageId(
+    quotedMessageId: number | null | undefined,
+    channelId: number,
+  ): Promise<number | null> {
+    if (quotedMessageId == null) return null;
+    const target = await this.messageRepo.findOne({
+      where: { id: quotedMessageId },
+    });
+    if (!target) {
+      throw new BadRequestException('Quoted message not found');
+    }
+    if (target.channelId !== channelId) {
+      throw new BadRequestException(
+        'Quoted message must belong to this channel',
+      );
+    }
+    return quotedMessageId;
+  }
+
+  private toQuotedPreview(
+    m?: Message | null,
+  ): QuotedMessagePreview | undefined {
+    if (!m?.sender) return undefined;
+    return {
+      id: m.id,
+      sender: m.sender,
+      content: m.content,
+      contentRich: m.contentRich,
+    };
   }
 
   async updateMessageBody(
@@ -243,6 +323,20 @@ export class MessageService {
       order: { sentAt: 'asc' },
     });
 
+    const replyQuoteIds = uniq(
+      replies
+        .map((r) => r.quotedMessageId)
+        .filter((id): id is number => id != null),
+    );
+    const replyQuotedRows =
+      replyQuoteIds.length > 0
+        ? await this.messageRepo.find({
+            where: { id: In(replyQuoteIds) },
+            relations: { sender: true },
+          })
+        : [];
+    const replyQuotedById = mapBy(replyQuotedRows, 'id');
+
     for (const reply of replies) {
       reply.setReactions(senderId);
       const mentionIds = reply.contentRich
@@ -255,6 +349,10 @@ export class MessageService {
         reply.content,
         peerUsersMap,
       );
+      const qSrc = reply.quotedMessageId
+        ? replyQuotedById.get(reply.quotedMessageId)
+        : undefined;
+      (reply as any).quotedMessage = this.toQuotedPreview(qSrc);
     }
 
     return replies;

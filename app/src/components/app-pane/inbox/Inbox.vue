@@ -46,13 +46,13 @@ async function openNotification(notification: Notification) {
 
   if (notification.type === "issue_assigned") {
     const payload = notification.payload as IssueAssignedNotificationPayload;
-    if (workspaceId && payload?.issue?.projectId && payload?.issue?.id) {
+    if (workspaceId && payload?.projectId && payload?.issueId) {
       router.push({
         name: "project-issue",
         params: {
           workspaceId,
-          projectId: String(payload.issue.projectId),
-          issueId: String(payload.issue.id),
+          projectId: String(payload.projectId),
+          issueId: String(payload.issueId),
         },
       });
     }

@@ -1,11 +1,21 @@
 import type { User } from "@/domain/auth";
 import type { IChannel } from "./channel.type";
 
+/** Server-hydrated preview of the message referenced by `quotedMessageId`. */
+export type IQuotedMessagePreview = {
+  id: number;
+  sender: User;
+  content: string;
+  contentRich?: any;
+};
+
 export interface IMessage {
   id: number;
   content: string;
   contentRich?: any;
   displayContent?: string;
+  quotedMessageId?: number | null;
+  quotedMessage?: IQuotedMessagePreview;
   editedAt?: string | null;
   mentionedUsers?: User[];
   sentAt: string;
@@ -46,6 +56,8 @@ export interface IReply {
   content: string;
   contentRich?: any;
   displayContent?: string;
+  quotedMessageId?: number | null;
+  quotedMessage?: IQuotedMessagePreview;
   mentionedUsers?: User[];
   sentAt: string;
   senderId: number;

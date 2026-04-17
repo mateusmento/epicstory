@@ -1,6 +1,5 @@
-import type { IChannel, IMessage, IReply } from "@/domain/channels";
 import type { User } from "@/domain/auth";
-import type { Issue } from "@/domain/issues/types/issue.type";
+import type { IChannel, IMessage, IReply } from "@/domain/channels";
 
 export type MentionNotificationPayload = {
   type: "mention";
@@ -35,7 +34,10 @@ export type IssueDueDateNotificationPayload = {
 
 export type IssueAssignedNotificationPayload = {
   type: "issue_assigned";
-  issue: Issue;
+  title: string;
+  description: string;
+  issueId: number;
+  projectId: number;
   issuer: User;
 };
 

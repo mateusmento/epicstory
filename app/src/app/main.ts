@@ -1,4 +1,9 @@
 import "reflect-metadata";
+/** Side-effect: merges `insertTable`, `toggleTaskList`, `setImage`, etc. into `@tiptap/core` command types for `vue-tsc`. */
+import "@tiptap/extension-table";
+import "@tiptap/extension-list";
+import "@tiptap/extension-image";
+import "highlight.js/styles/github-dark.css";
 import "@/design-system/styles/main.css";
 import "@/design-system/styles/main.scss";
 

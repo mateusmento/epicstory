@@ -2,6 +2,7 @@ import { useStorage } from "@vueuse/core";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
 import { createDefaultFilter, type ProjectFilter } from "../types/project-filters.types";
+import { isDate, isValid } from "date-fns";
 
 export function useProjectFilters(projectId: MaybeRefOrGetter<number>) {
   const filtersMap = useStorage<Record<number, ProjectFilter[]>>(`backlog.filters`, [], localStorage, {
@@ -43,9 +44,10 @@ export function useProjectFilters(projectId: MaybeRefOrGetter<number>) {
 }
 
 function hasValue(f: ProjectFilter) {
-  const v: any = f.value;
+  const v: ProjectFilter["value"] = f.value;
   if (f.field === "labels") return Array.isArray(v) && v.length > 0;
   if (v === null || v === undefined) return false;
+  if (isDate(v)) return isValid(v);
   if (typeof v === "string") return v.trim().length > 0;
   if (typeof v === "number") return Number.isFinite(v);
   return true;

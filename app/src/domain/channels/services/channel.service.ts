@@ -28,6 +28,14 @@ export type CreateMeetingChannel = {
   members?: number[];
 };
 
+export type UploadedAttachment = {
+  id: number;
+  url: string;
+  mimeType: string;
+  originalFilename: string;
+  byteSize: number;
+};
+
 @injectable()
 export class ChannelApi {
   constructor(@InjectAxios() private axios: Axios) {}
@@ -114,9 +122,13 @@ export class ChannelApi {
     return this.axios.get<IMessage[]>(`/channels/${channelId}/messages`).then((res) => res.data);
   }
 
-  sendMessage(channelId: number, content: string, contentRich?: any) {
+  sendMessage(channelId: number, content: string, contentRich?: any, quotedMessageId?: number | null) {
     return this.axios
-      .post<IMessage>(`channels/${channelId}/messages`, { content, contentRich })
+      .post<IMessage>(`channels/${channelId}/messages`, {
+        content,
+        contentRich,
+        ...(quotedMessageId != null ? { quotedMessageId } : {}),
+      })
       .then((res) => res.data);
   }
 
@@ -146,9 +158,13 @@ export class ChannelApi {
     return this.axios.get<IReply[]>(`/messages/${messageId}/replies`).then((res) => res.data);
   }
 
-  replyMessage(messageId: number, content: string, contentRich?: any) {
+  replyMessage(messageId: number, content: string, contentRich?: any, quotedMessageId?: number | null) {
     return this.axios
-      .post<IReply>(`/messages/${messageId}/replies`, { content, contentRich })
+      .post<IReply>(`/messages/${messageId}/replies`, {
+        content,
+        contentRich,
+        ...(quotedMessageId != null ? { quotedMessageId } : {}),
+      })
       .then((res) => res.data);
   }
 
@@ -162,5 +178,15 @@ export class ChannelApi {
 
   toggleReplyReaction(replyId: number, emoji: string) {
     return this.axios.post(`/replies/${replyId}/reactions`, { emoji }).then((res) => res.data);
+  }
+
+  uploadAttachment(channelId: number, file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    return this.axios
+      .post<UploadedAttachment>(`/channels/${channelId}/attachments`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((res) => res.data);
   }
 }

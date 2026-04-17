@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -7,12 +8,19 @@ import {
   Param,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { attachmentUploadMulterOptions } from 'src/core/multer/attachment-upload-options';
 import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { IssueRepository } from 'src/project/infrastructure/repositories';
+import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
   UpdateIssue,
   RemoveIssue,
@@ -28,6 +36,9 @@ export class IssueController {
   constructor(
     private commandBus: CommandBus,
     private queryBus: QueryBus,
+    private issues: IssueRepository,
+    private attachments: AttachmentService,
+    private workspaces: WorkspaceRepository,
   ) {}
 
   @Get(':id')
@@ -104,5 +115,41 @@ export class IssueController {
     return this.commandBus.execute(
       new RemoveLabel({ issueId, labelId, issuer }),
     );
+  }
+
+  @Get(':id/attachments')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async listIssueAttachments(
+    @Param('id') issueId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    const issue = await this.issues.findOne({ where: { id: issueId } });
+    if (!issue) throw new ForbiddenException('Issue not found');
+    await this.workspaces.requiresMembership(issue.workspaceId, issuer.id);
+    return this.attachments.listForIssue(issue.workspaceId, issueId);
+  }
+
+  @Post(':id/attachments')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file', attachmentUploadMulterOptions))
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async uploadIssueAttachment(
+    @Param('id') issueId: number,
+    @UploadedFile() file: Express.Multer.File,
+    @Auth() issuer: Issuer,
+  ) {
+    const issue = await this.issues.findOne({ where: { id: issueId } });
+    if (!issue) throw new ForbiddenException('Issue not found');
+    await this.workspaces.requiresMembership(issue.workspaceId, issuer.id);
+    if (!file || file.size === 0) {
+      throw new BadRequestException('Missing file');
+    }
+    return this.attachments.createFromUpload({
+      workspaceId: issue.workspaceId,
+      issueId,
+      uploadedById: issuer.id,
+      file,
+    });
   }
 }

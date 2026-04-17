@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IssueLabelTags } from "@/components/issue";
+import { IssueLabelTags, issueStatusDotClass, IssueStatusDropdown } from "@/components/issue";
 import { UserSelect } from "@/components/user";
 import {
   Button,
@@ -14,7 +14,6 @@ import {
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import type { Issue } from "@/domain/issues";
-import { parseAbsolute } from "@internationalized/date";
 import { computed } from "vue";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
@@ -32,20 +31,9 @@ const props = defineProps<{
 
 const ctx = useBacklogRowContext();
 
-const {
-  workspaceId,
-  gridColsClass,
-  editing,
-  openIssue,
-  startEdit,
-  cancelEdit,
-  saveEdit,
-  updateIssueStatus,
-  statusDotClass,
-  onLabelsChange,
-} = ctx;
+const { gridColsClass, editing, openIssue, startEdit, cancelEdit, saveEdit } = ctx;
 
-const { updateIssue, addAssignee } = useBacklog();
+const { updateIssue, addAssignee, addLabel, removeLabel } = useBacklog();
 
 const isEditing = computed(() => editing.id === props.issue.id);
 
@@ -60,6 +48,18 @@ const editableModel = computed({
     if (!v) cancelEdit();
   },
 });
+
+function updateStatus(status: string) {
+  updateIssue(props.issue.id, { status });
+}
+
+function updatePriority(priority: number) {
+  updateIssue(props.issue.id, { priority });
+}
+
+function updateDueDate(dueDate: Date | null | undefined) {
+  updateIssue(props.issue.id, { dueDate: dueDate ?? null });
+}
 </script>
 
 <template>
@@ -77,20 +77,17 @@ const editableModel = computed({
     </div>
 
     <!-- Status + key -->
-    <Menu type="dropdown-menu">
-      <MenuTrigger class="flex items-center gap-2 min-w-0">
+    <IssueStatusDropdown :value="issue.status" :issue-id="issue.id">
+      <div class="flex items-center gap-2 min-w-0">
         <button
           type="button"
           class="w-2.5 h-2.5 rounded-full ring-1 ring-border"
-          :class="statusDotClass(issue.status)"
+          :class="issueStatusDotClass(issue.status)"
           :title="issue.status"
         />
         <span class="text-xs text-muted-foreground tabular-nums shrink-0"> EP-{{ issue.id }} </span>
-      </MenuTrigger>
-      <MenuContent as-child align="start" side="bottom">
-        <IssueStatusMenu :value="issue.status" @select="updateIssueStatus(issue, $event)" />
-      </MenuContent>
-    </Menu>
+      </div>
+    </IssueStatusDropdown>
 
     <!-- Title -->
     <div class="min-w-0 flex:row-lg flex:center-y">
@@ -158,14 +155,15 @@ const editableModel = computed({
         <IssueLabelTags
           :disabled="!issue"
           :model-value="(issue?.labels ?? []).map((l) => l.id)"
-          @update:model-value="onLabelsChange(issue, $event)"
+          @add-label="addLabel(issue.id, $event)"
+          @remove-label="removeLabel(issue.id, $event)"
         />
       </div>
     </div>
 
     <!-- Priority -->
     <div class="justify-self-start">
-      <PriorityToggler :value="issue.priority" @update:value="updateIssue(issue.id, { priority: $event })" />
+      <PriorityToggler :value="issue.priority" @update:value="updatePriority" />
     </div>
 
     <!-- Assignees -->
@@ -199,10 +197,8 @@ const editableModel = computed({
     <div class="justify-self-start">
       <DueDatePicker
         size="badge"
-        :modelValue="issue.dueDate ? parseAbsolute(issue.dueDate, 'America/Sao_Paulo') : undefined"
-        @update:model-value="
-          updateIssue(issue.id, { dueDate: $event?.toDate('America/Sao_Paulo').toString() })
-        "
+        :model-value="issue.dueDate ?? undefined"
+        @update:model-value="updateDueDate"
       />
     </div>
 

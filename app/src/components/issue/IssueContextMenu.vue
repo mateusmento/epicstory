@@ -19,7 +19,7 @@ import IssueDeleteDialog from "./IssueDeleteDialog.vue";
 import IssueDueDateMenu from "./IssueDueDateMenu.vue";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 import IssueRenameDialog from "./IssueRenameDialog.vue";
-import IssueStatusMenu from "./IssueStatusMenu.vue";
+import IssueStatusMenu from "./status/IssueStatusMenu.vue";
 
 const props = defineProps<{
   issue: Issue;

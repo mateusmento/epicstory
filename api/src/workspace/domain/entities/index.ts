@@ -1,3 +1,4 @@
+export * from './attachment.entity';
 export * from './team.entity';
 export * from './team-member.entity';
 export * from './workspace-member-invite.entity';

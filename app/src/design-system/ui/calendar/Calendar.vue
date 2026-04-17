@@ -1,11 +1,6 @@
 <script lang="ts" setup>
 import { type HTMLAttributes, computed } from "vue";
-import {
-  CalendarRoot,
-  type CalendarRootEmits,
-  type CalendarRootProps,
-  useForwardPropsEmits,
-} from "radix-vue";
+import { CalendarRoot, type CalendarRootProps } from "radix-vue";
 import {
   CalendarCell,
   CalendarCellTrigger,
@@ -20,22 +15,56 @@ import {
   CalendarPrevButton,
 } from ".";
 import { cn } from "@/design-system/utils";
+import { fromDate, getLocalTimeZone, type DateValue } from "@internationalized/date";
 
-const props = defineProps<CalendarRootProps & { class?: HTMLAttributes["class"] }>();
+type CalendarProps = Omit<CalendarRootProps, "modelValue" | "defaultValue"> & {
+  modelValue?: Date;
+  defaultValue?: Date;
+  class?: HTMLAttributes["class"];
+};
 
-const emits = defineEmits<CalendarRootEmits>();
+const props = defineProps<CalendarProps>();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
+const emit = defineEmits<{
+  "update:modelValue": [value: Date | undefined];
+  "update:placeholder": [value: DateValue];
+}>();
 
-  return delegated;
+const radixModelValue = computed<DateValue | undefined>({
+  get() {
+    if (props.modelValue == null) return undefined;
+    return fromDate(props.modelValue, getLocalTimeZone());
+  },
+  set(value) {
+    if (value == null) {
+      emit("update:modelValue", undefined);
+      return;
+    }
+    emit("update:modelValue", value.toDate(getLocalTimeZone()));
+  },
 });
 
-const forwarded = useForwardPropsEmits(delegatedProps, emits);
+const calendarBindings = computed(() => {
+  const p = props as CalendarProps;
+  const rest = { ...p } as Record<string, unknown>;
+  delete rest.modelValue;
+  delete rest.defaultValue;
+  delete rest.class;
+  return {
+    ...rest,
+    ...(p.defaultValue != null ? { defaultValue: fromDate(p.defaultValue, getLocalTimeZone()) } : {}),
+  };
+});
 </script>
 
 <template>
-  <CalendarRoot v-slot="{ grid, weekDays }" :class="cn('p-3', props.class)" v-bind="forwarded">
+  <CalendarRoot
+    v-slot="{ grid, weekDays }"
+    :class="cn('p-3', props.class)"
+    v-bind="calendarBindings"
+    v-model="radixModelValue"
+    @update:placeholder="emit('update:placeholder', $event)"
+  >
     <CalendarHeader>
       <CalendarPrevButton />
       <CalendarHeading />

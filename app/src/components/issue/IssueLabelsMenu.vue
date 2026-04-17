@@ -15,6 +15,11 @@ const props = withDefaults(
   },
 );
 
+const emit = defineEmits<{
+  (e: "add-label", id: number): void;
+  (e: "remove-label", id: number): void;
+}>();
+
 const modelValue = defineModel<number[]>({ default: [] });
 
 const open = ref(false);
@@ -57,8 +62,13 @@ const filteredLabels = computed(() => {
 
 function toggle(id: number) {
   const set = new Set(modelValue.value ?? []);
-  if (set.has(id)) set.delete(id);
-  else set.add(id);
+  if (set.has(id)) {
+    set.delete(id);
+    emit("remove-label", id);
+  } else {
+    set.add(id);
+    emit("add-label", id);
+  }
   modelValue.value = Array.from(set);
 }
 

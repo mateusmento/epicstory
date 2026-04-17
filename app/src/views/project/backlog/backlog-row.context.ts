@@ -15,11 +15,6 @@ export type BacklogRowContext = {
   startEdit(issue: Issue): void;
   cancelEdit(): void;
   saveEdit(): void;
-
-  updateIssueStatus(issue: Issue, status: string): void;
-  statusDotClass(status: string): string;
-
-  onLabelsChange(issue: Issue, nextIds: number[]): void | Promise<void>;
 };
 
 const KEY: InjectionKey<BacklogRowContext> = Symbol("BacklogRowContext");

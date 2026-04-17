@@ -16,6 +16,11 @@ const props = withDefaults(
   },
 );
 
+const emit = defineEmits<{
+  (e: "add-label", id: number): void;
+  (e: "remove-label", id: number): void;
+}>();
+
 const modelValue = defineModel<number[]>({ default: [] });
 
 const open = ref(false);
@@ -49,6 +54,8 @@ const selectedLabels = computed(() => {
     :key="label.id"
     :disabled="disabled"
     v-model="modelValue"
+    @add-label="emit('add-label', $event)"
+    @remove-label="emit('remove-label', $event)"
   >
     <button class="flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs bg-white" title="Label">
       <span class="h-2 w-2 rounded-full ring-1 ring-border" :style="{ backgroundColor: label.color }" />
@@ -56,7 +63,12 @@ const selectedLabels = computed(() => {
     </button>
   </IssueLabelsDropdown>
 
-  <IssueLabelsDropdown :disabled="disabled" v-model="modelValue">
+  <IssueLabelsDropdown
+    :disabled="disabled"
+    v-model="modelValue"
+    @add-label="emit('add-label', $event)"
+    @remove-label="emit('remove-label', $event)"
+  >
     <button
       class="flex items-center gap-2 rounded-full border p-1 text-xs bg-white"
       title="Label"

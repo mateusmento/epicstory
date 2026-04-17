@@ -94,6 +94,18 @@ export class AppConfig {
   @IsNotEmpty()
   EMAIL_SMTP_PASSWORD: string;
 
+  @IsNotEmpty()
+  AWS_REGION: string;
+
+  @IsNotEmpty()
+  AWS_ACCESS_KEY_ID: string;
+
+  @IsNotEmpty()
+  AWS_SECRET_ACCESS_KEY: string;
+
+  @IsNotEmpty()
+  AWS_BUCKET: string;
+
   // ---- Integrations (Linear) ----
 
   @IsOptional()

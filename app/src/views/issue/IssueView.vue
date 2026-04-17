@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { IssueLabelTags } from "@/components/issue";
+import { IssueLabelTags, issueStatusDotClass, IssueStatusDropdown } from "@/components/issue";
 import { UserSelect } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
+import { IssueApi } from "@/domain/issues";
 import { Button, Combobox, Input } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import SubIssuesSection from "./SubIssuesSection.vue";
@@ -10,25 +11,30 @@ import { ProjectApi, type Project } from "@/domain/project";
 import type { User } from "@/domain/user";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
-import { getLocalTimeZone, parseAbsolute, type DateValue } from "@internationalized/date";
 import Link from "@tiptap/extension-link";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
+import { epicStoryLowlight } from "@/core/epic-story-lowlight";
+import TiptapCodeBlockCardNodeView from "@/components/channel/TiptapCodeBlockCardNodeView.vue";
 import {
   createPlaceholderExtension,
   createRichTextExtensions,
+  mediaExtensions,
   EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
 } from "@epicstory/tiptap/vue";
 import {
   Bold,
+  Braces,
   Code,
   Italic,
   Link2,
   List,
+  ListChecks,
   ListOrdered,
   Redo2,
   Strikethrough,
+  Table2,
   Underline as UnderlineIcon,
   Undo2,
 } from "lucide-vue-next";
@@ -47,6 +53,7 @@ const props = defineProps<{
 const { issue, fetchIssue, updateIssue, addAssignee, addLabel, removeLabel } = useIssue();
 
 const projectApi = useDependency(ProjectApi);
+const issueApi = useDependency(IssueApi);
 const project = ref<Project | null>(null);
 
 const isSaving = ref(false);
@@ -71,36 +78,17 @@ watch(
   { immediate: true },
 );
 
-const statusOptions = [
-  { value: "todo", label: "Todo" },
-  { value: "doing", label: "Doing" },
-  { value: "done", label: "Done" },
-];
-
-const selectedStatus = computed({
-  get() {
-    const current = issue.value?.status ?? "todo";
-    return statusOptions.find((s) => s.value === current) ?? statusOptions[0];
-  },
-  set(next) {
-    if (!next || !issue.value) return;
-    if (next.value === issue.value.status) return;
-    savePatch({ status: next.value });
-  },
-});
-
-const dueDateValue = computed<DateValue | undefined>(() => {
-  if (!issue.value?.dueDate) return;
-  try {
-    return parseAbsolute(issue.value.dueDate, getLocalTimeZone());
-  } catch {
-    return undefined;
-  }
-});
-
 const editor = useEditor({
   extensions: [
-    ...createRichTextExtensions({ linkOpenOnClick: false }),
+    ...createRichTextExtensions({
+      linkOpenOnClick: false,
+      lowlight: epicStoryLowlight,
+      codeBlockNodeView: TiptapCodeBlockCardNodeView,
+    }),
+    ...mediaExtensions({
+      uploadFile: (file: File) => issueApi.uploadAttachment(+props.issueId, file).then((a) => a.url),
+      allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
+    }),
     createPlaceholderExtension("Write a description…"),
   ],
   content: "",
@@ -137,26 +125,6 @@ async function savePatch(data: Parameters<typeof updateIssue>[0]) {
     saveError.value = e?.message ?? "Failed to save changes";
   } finally {
     isSaving.value = false;
-  }
-}
-
-async function onLabelsChange(nextIds: number[]) {
-  if (!issue.value) return;
-  const prev = new Set((issue.value.labels ?? []).map((l) => l.id));
-  const next = new Set(nextIds);
-
-  // Add new labels
-  for (const id of next) {
-    if (!prev.has(id)) {
-      await addLabel(id);
-    }
-  }
-
-  // Remove missing labels
-  for (const id of prev) {
-    if (!next.has(id)) {
-      await removeLabel(id);
-    }
   }
 }
 
@@ -228,19 +196,6 @@ function toggleLink() {
     return;
   }
   instance.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
-}
-
-function onDueDateChange(next?: DateValue) {
-  if (!issue.value) return;
-  if (!next) {
-    savePatch({ dueDate: null });
-    return;
-  }
-  savePatch({ dueDate: next.toDate(getLocalTimeZone()).toISOString() });
-}
-
-function clearDueDate() {
-  savePatch({ dueDate: null });
 }
 
 onMounted(() => {
@@ -400,6 +355,41 @@ watch(
                   variant="ghost"
                   size="icon"
                   class="h-8 w-8"
+                  title="Task list"
+                  :class="editor?.isActive('taskList') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleTaskList().run()"
+                >
+                  <ListChecks class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  title="Insert table"
+                  :disabled="!editor"
+                  @click="
+                    editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+                  "
+                >
+                  <Table2 class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  title="Inline code"
+                  :class="editor?.isActive('code') ? 'bg-zinc-100' : ''"
+                  :disabled="!editor"
+                  @click="editor?.chain().focus().toggleCode().run()"
+                >
+                  <Braces class="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-8 w-8"
+                  title="Code block"
                   :class="editor?.isActive('codeBlock') ? 'bg-zinc-100' : ''"
                   :disabled="!editor"
                   @click="editor?.chain().focus().toggleCodeBlock().run()"
@@ -469,15 +459,20 @@ watch(
 
           <div class="flex:col-sm">
             <div class="text-xs text-secondary-foreground">Status</div>
-            <Combobox
-              v-model="selectedStatus"
-              :options="statusOptions"
-              size="xs"
-              track-by="value"
-              label-by="label"
-              :disabled="!issue"
-              trigger-placeholder="Select status..."
-            />
+
+            <IssueStatusDropdown :value="issue?.status ?? 'todo'" @select="savePatch({ status: $event })">
+              <div class="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  class="w-2.5 h-2.5 rounded-full ring-1 ring-border"
+                  :class="issue?.status && issueStatusDotClass(issue.status)"
+                  :title="issue?.status"
+                />
+                <span class="text-xs text-muted-foreground tabular-nums shrink-0 capitalize">
+                  {{ issue?.status }}
+                </span>
+              </div>
+            </IssueStatusDropdown>
           </div>
 
           <!-- Row: Assignees + Project -->
@@ -542,17 +537,17 @@ watch(
                   size="xs"
                   class="text-xs"
                   :disabled="isSaving"
-                  @click="clearDueDate"
+                  @click="savePatch({ dueDate: null })"
                 >
                   Clear
                 </Button>
               </div>
               <div class="min-w-0">
                 <DueDatePicker
-                  :model-value="dueDateValue"
+                  :model-value="issue?.dueDate ?? undefined"
                   size="badge"
                   :disabled="!issue"
-                  @update:model-value="onDueDateChange"
+                  @update:model-value="savePatch({ dueDate: $event })"
                 />
               </div>
             </div>
@@ -565,7 +560,8 @@ watch(
               <IssueLabelTags
                 :disabled="!issue"
                 :model-value="(issue?.labels ?? []).map((l) => l.id)"
-                @update:model-value="onLabelsChange"
+                @add-label="addLabel"
+                @remove-label="removeLabel"
               />
             </div>
           </div>

@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import {
   Button,
   ButtonGroup,
@@ -10,7 +9,7 @@ import {
   ScrollArea,
   Separator,
 } from "@/design-system";
-import type { IChannel, IMessage, IMessageGroup } from "@/domain/channels";
+import { quoteRefMessageId, type IChannel, type IMessage, type IMessageGroup } from "@/domain/channels";
 import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
@@ -18,12 +17,13 @@ import { computed, ref } from "vue";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
+
 const props = defineProps<{
   meId: number;
   chatTitle?: string;
   chatPicture?: string;
   messageGroups: IMessageGroup[];
-  sendMessage: (message: { content: string; contentRich: any }) => Promise<unknown>;
+  sendMessage: (message: { content: string; contentRich: any; quotedMessageId?: number }) => Promise<unknown>;
   updateMessage: (messageId: number, body: { content: string; contentRich: any }) => Promise<unknown>;
   channelId: number;
   channel: IChannel;
@@ -63,13 +63,14 @@ const typingBannerText = computed(() => {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} are typing…`;
 });
 
-async function onSendMessage(payload: { content: string; contentRich: any }) {
+async function onSendMessage(payload: { content: string; contentRich: any; quotedMessageId?: number }) {
   if (!payload.content?.trim()) return;
-  const rich = quotedMessage.value
-    ? mergeQuotedMessageIntoDoc(quotedMessage.value, payload.contentRich)
-    : payload.contentRich;
-  const plain = tiptapToPlainText(normalizeTiptapDoc(rich));
-  await props.sendMessage({ content: plain, contentRich: rich });
+  await props.sendMessage({
+    content: payload.content,
+    contentRich: payload.contentRich,
+    quotedMessageId:
+      payload.quotedMessageId ?? (quotedMessage.value ? quoteRefMessageId(quotedMessage.value) : undefined),
+  });
   quotedMessage.value = null;
 }
 
@@ -225,6 +226,7 @@ function onMessageDeleted(messageId: number) {
     </div>
 
     <MessageWriter
+      :key="channelId"
       :channel-id="channelId"
       :workspace-id="workspace.id"
       :mentionables="channel.peers"

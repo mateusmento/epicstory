@@ -4,6 +4,7 @@ import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -45,6 +46,14 @@ export class MessageReply {
 
   @ManyToOne(() => Message, { onDelete: 'CASCADE' })
   message: Message;
+
+  /** Optional reference to a channel message whose body is quoted (same channel as this reply). */
+  @Column({ type: 'int', nullable: true })
+  quotedMessageId: number | null;
+
+  @ManyToOne(() => Message, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'quoted_message_id' })
+  quotedMessageRef?: Message | null;
 
   @Exclude()
   @OneToMany(() => MessageReplyReaction, (reaction) => reaction.messageReply)

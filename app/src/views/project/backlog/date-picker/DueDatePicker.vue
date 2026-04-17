@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { type DateValue, getLocalTimeZone } from "@internationalized/date";
 import { Calendar as CalendarIcon } from "lucide-vue-next";
-import { Calendar } from "@/design-system/ui/calendar";
+import { Calendar } from "@/design-system";
 import { Button, type ButtonVariants } from "@/design-system/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/design-system/ui/popover";
 import { cn } from "@/design-system/utils";
@@ -11,7 +10,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     variant?: ButtonVariants["variant"];
     size?: ButtonVariants["size"];
@@ -23,7 +22,7 @@ const props = withDefaults(
   },
 );
 
-const value = defineModel<DateValue>();
+const value = defineModel<Date>();
 
 function formatDueDate(date: Date) {
   if (isToday(date)) return "Today";
@@ -42,7 +41,7 @@ function formatDueDate(date: Date) {
         :class="cn(!value && 'text-muted-foreground')"
       >
         <CalendarIcon class="mr-2 h-4 w-4" />
-        {{ value ? formatDueDate(value.toDate(getLocalTimeZone())) : "No due date" }}
+        {{ value ? formatDueDate(value) : "No due date" }}
       </Button>
     </PopoverTrigger>
     <PopoverContent v-if="!disabled" class="w-auto p-0">

@@ -67,7 +67,10 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
           type: 'issue_assigned',
           workspaceId: issue.workspaceId,
           payload: {
-            issue: updated,
+            issueId: updated.id,
+            projectId: updated.projectId,
+            title: updated.title,
+            description: updated.description,
             issuer: issuerUser ?? issuer,
           },
         }),

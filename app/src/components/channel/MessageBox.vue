@@ -9,11 +9,11 @@ import {
   TooltipTrigger,
 } from "@/design-system";
 import { cn } from "@/design-system/utils";
-import { ref, watch } from "vue";
 import type { IMessage, IReply } from "@/domain/channels";
-import MessageActions from "./MessageActions.vue";
-import { IconReplies } from "@/design-system/icons";
+import { messageBodyPlainText } from "@epicstory/tiptap";
+import { computed, ref, watch } from "vue";
 import MentionedText from "./MentionedText.vue";
+import MessageActions from "./MessageActions.vue";
 import RichMessageContent from "./RichMessageContent.vue";
 
 const props = defineProps<{
@@ -52,10 +52,24 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
   if (messageBoxEl.clientWidth < messageActionsWidth) alignOffset.value = defaultMargin;
   else alignOffset.value = messageBoxEl.clientWidth - messageActionsWidth - defaultMargin;
 });
+
+const quotedExcerpt = computed(() => {
+  const q = props.message.quotedMessage;
+  if (!q) return "";
+  const t = messageBodyPlainText(q).replace(/\s+/g, " ").trim();
+  return t.length > 220 ? `${t.slice(0, 220)}…` : t;
+});
 </script>
 
 <template>
-  <div class="flex:col">
+  <div class="flex:col my-2">
+    <div
+      v-if="props.message.quotedMessage"
+      class="mb-1 ml-0 pl-2 border-zinc-300 rounded-md bg-zinc-100 py-1.5 text-xs text-muted-foreground"
+    >
+      <span class="font-medium text-foreground/85">{{ props.message.quotedMessage.sender.name }}</span>
+      <p class="mt-0.5 line-clamp-4 whitespace-pre-wrap">{{ quotedExcerpt }}</p>
+    </div>
     <HoverCard :open-delay="100" :close-delay="0">
       <HoverCardTrigger as-child>
         <div :class="styles.messageBox" ref="messageBoxRef">
@@ -93,15 +107,14 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
     </HoverCard>
 
     <div
-      v-if="
-        (!props.hideRepliesCount && props.message.repliesCount > 0) || props.message.reactions.length > 0
-      "
+      v-if="(!props.hideRepliesCount && props.message.repliesCount > 0) || props.message.reactions.length > 0"
       class="flex:row-2xl flex:center-y ml-lg mt-1 mb-1 z-10"
     >
       <Button
         v-if="!props.hideRepliesCount && props.message.repliesCount > 0"
         variant="ghost"
         size="icon"
+        class="flex:row-md flex:center-y"
         @click="emit('discussion-opened')"
       >
         <img
@@ -110,11 +123,7 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
           :src="replier.user.picture"
           class="w-6 h-6 -ml-2 first:ml-0 rounded-full"
         />
-
-        <span class="flex:row-md flex:center-y ml-xl text-xs text-primary/40">
-          <IconReplies class="w-5 h-5 text-primary/40" />
-          {{ props.message.repliesCount }} replies
-        </span>
+        <span class="text-xs text-primary/40"> {{ props.message.repliesCount }} replies </span>
       </Button>
 
       <div v-if="props.message.reactions.length > 0" class="flex:row-md flex:center-y">

@@ -1,5 +1,5 @@
 <script lang="tsx" setup>
-import { IssueContextMenu } from "@/components/issue";
+import { IssueContextMenu, issueStatusDotClass } from "@/components/issue";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
@@ -28,7 +28,7 @@ import { useProjectFilters } from "@/domain/project";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
-const { backlogItems, fetchBacklogItems, moveBacklogItem, updateIssue, addLabel, removeLabel } = useBacklog();
+const { backlogItems, fetchBacklogItems, moveBacklogItem, updateIssue } = useBacklog();
 const { filters: activeFilters } = useProjectFilters(+props.projectId);
 
 const orderBy = useStorage("backlog.orderBy", "manual");
@@ -135,16 +135,6 @@ function saveEdit() {
   closeIssueEdit();
 }
 
-function updateIssueStatus(issue: Issue, status: string) {
-  updateIssue(issue.id, { status });
-}
-
-function issueStatusDotClass(status: string) {
-  if (status === "doing") return "bg-blue-500";
-  if (status === "done") return "bg-emerald-500";
-  return "bg-zinc-300";
-}
-
 const router = useRouter();
 
 function openIssue(issue: Issue) {
@@ -231,26 +221,6 @@ const groupedItems = computed<IssueGroup[]>(() => {
   ];
 });
 
-async function onLabelsChange(issue: Issue, nextIds: number[]) {
-  if (!issue) return;
-  const prev = new Set((issue.labels ?? []).map((l) => l.id));
-  const next = new Set(nextIds);
-
-  // Add new labels
-  for (const id of next) {
-    if (!prev.has(id)) {
-      await addLabel(issue.id, id);
-    }
-  }
-
-  // Remove missing labels
-  for (const id of prev) {
-    if (!next.has(id)) {
-      await removeLabel(issue.id, id);
-    }
-  }
-}
-
 provideBacklogRowContext({
   workspaceId: +props.workspaceId,
   gridColsClass: GRID_COLS,
@@ -259,9 +229,6 @@ provideBacklogRowContext({
   startEdit: openIssueEdit,
   cancelEdit: closeIssueEdit,
   saveEdit,
-  updateIssueStatus,
-  statusDotClass: issueStatusDotClass,
-  onLabelsChange,
 });
 </script>
 
@@ -373,7 +340,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
                   <span
                     v-if="group.kind === 'status'"
                     class="w-2 h-2 rounded-full ring-1 ring-border"
-                    :class="issueStatusDotClass(group.key as string)"
+                    :class="issueStatusDotClass(group.key.toString())"
                   />
                   <span v-else-if="group.kind === 'priority'" class="opacity-60 scale-75 origin-left">
                     <UrgentIcon v-if="group.key === 4" />

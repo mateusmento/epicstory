@@ -8,6 +8,7 @@ import * as passport from './application/passport';
 import { User } from './domain/entities/user.entity';
 import * as repositories from './infrastructure/repositories';
 import { UserRepository } from './infrastructure/repositories/user.repository';
+import { UserPictureUploadService } from './application/services/user-picture-upload.service';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { UserRepository } from './infrastructure/repositories/user.repository';
   ],
   controllers: Object.values(controllers),
   providers: [
+    UserPictureUploadService,
     ...Object.values(repositories),
     ...Object.values(features),
     ...Object.values(passport),

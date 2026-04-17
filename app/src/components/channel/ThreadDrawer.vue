@@ -1,9 +1,9 @@
 <script setup lang="tsx">
-import { mergeQuotedMessageIntoDoc, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { IMessage, IMessageGroup, IReply } from "@/domain/channels";
 import { useChannel } from "@/domain/channels";
+import { useWorkspace } from "@/domain/workspace";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
 import { last } from "lodash";
 import { computed, onMounted, ref } from "vue";
@@ -21,6 +21,7 @@ const { replies, toggleReaction, toggleReplyReaction, fetchReplies, sendReply, d
   useMessageThread(message, { onMessageDeleted: () => emit("close"), name: "thread" });
 
 const { channel, deleteMessage, updateMessage } = useChannel();
+const { workspace } = useWorkspace();
 
 const quotedMessage = ref<IMessage | IReply | null>(null);
 const editingMessage = ref<IMessage | null>(null);
@@ -56,12 +57,12 @@ async function onMessageDeleted() {
   emit("close");
 }
 
-async function onSendReply(payload: { content: string; contentRich: any }) {
-  const rich = quotedMessage.value
-    ? mergeQuotedMessageIntoDoc(quotedMessage.value, payload.contentRich)
-    : payload.contentRich;
-  const plain = tiptapToPlainText(normalizeTiptapDoc(rich));
-  await sendReply({ content: plain, contentRich: rich });
+async function onSendReply(payload: { content: string; contentRich: any; quotedMessageId?: number }) {
+  await sendReply({
+    content: payload.content,
+    contentRich: payload.contentRich,
+    quotedMessageId: payload.quotedMessageId,
+  });
   quotedMessage.value = null;
 }
 
@@ -147,6 +148,8 @@ function onEditTarget(m: IMessage | IReply) {
     </ScrollArea>
 
     <MessageWriter
+      :channel-id="channel?.id"
+      :workspace-id="workspace?.id"
       :mentionables="channel?.peers ?? []"
       :me-id="meId"
       :quoted-message="quotedMessage"

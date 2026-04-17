@@ -23,14 +23,20 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:dev": "SKIP_TSUP_DTS=1 tsup && tsc --emitDeclarationOnly",
+    "build:types": "tsc --emitDeclarationOnly",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "peerDependencies": {
     "@tiptap/core": "^3.16.0",
+    "@tiptap/extension-file-handler": "^3.16.0",
+    "@tiptap/extension-image": "^3.16.0",
     "@tiptap/extension-link": "^3.16.0",
+    "@tiptap/extension-list": "^3.16.0",
     "@tiptap/extension-mention": "^3.16.0",
     "@tiptap/extension-placeholder": "^3.16.0",
+    "@tiptap/extension-table": "^3.16.0",
     "@tiptap/extension-underline": "^3.16.0",
     "@tiptap/starter-kit": "^3.16.0",
     "@tiptap/vue-3": "^3.16.0",
@@ -48,5 +54,16 @@
     "typescript": "~5.4.0",
     "vitest": "^1.6.0",
     "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "@tiptap/extension-code-block-lowlight": "^3.22.3",
+    "@tiptap/extension-file-handler": "^3.22.3",
+    "@tiptap/extension-image": "^3.22.3",
+    "@tiptap/extension-list": "^3.22.3",
+    "@tiptap/extension-table": "^3.22.3",
+    "@tiptap/extension-table-cell": "^3.22.3",
+    "@tiptap/extension-table-header": "^3.22.3",
+    "@tiptap/extension-table-row": "^3.22.3",
+    "lowlight": "^3.3.0"
   }
 }

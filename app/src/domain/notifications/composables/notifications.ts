@@ -1,11 +1,11 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
+import { storeToRefs } from "pinia";
+import { computed, onUnmounted, watch } from "vue";
 import { NotificationApi } from "../api";
 import { useNotificationFeedStore } from "../notification-feed.store";
 import type { Notification } from "../types/notification.types";
-import { storeToRefs } from "pinia";
-import { computed, onUnmounted, watch } from "vue";
 
 type IncomingListener = (notification: Notification) => void;
 

@@ -1,3 +1,4 @@
+export * from './channel-attachment.controller';
 export * from './channel.controller';
 export * from './meeting.controller';
 export * from './message.controller';

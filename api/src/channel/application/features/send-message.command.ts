@@ -1,5 +1,12 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import {
   ChannelRepository,
   MessageRepository,
@@ -23,6 +30,11 @@ export class SendMessage {
   @IsObject()
   contentRich?: any;
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  quotedMessageId?: number;
+
   constructor(data: Partial<SendMessage>) {
     patch(this, data);
   }
@@ -38,7 +50,13 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     private commandBus: CommandBus,
   ) {}
 
-  async execute({ channelId, senderId, content, contentRich }: SendMessage) {
+  async execute({
+    channelId,
+    senderId,
+    content,
+    contentRich,
+    quotedMessageId,
+  }: SendMessage) {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },
@@ -65,6 +83,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       senderId,
       content,
       contentRich,
+      quotedMessageId,
     );
 
     const mentionIds = message.mentionedUsers

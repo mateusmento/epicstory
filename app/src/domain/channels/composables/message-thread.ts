@@ -110,12 +110,21 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     }
   }
 
-  async function sendReply(payload: { content: string; contentRich: any }) {
+  async function sendReply(payload: {
+    content: string;
+    contentRich: any;
+    quotedMessageId?: number;
+  }) {
     if (!payload.content.trim()) return;
     if (!me.value) return;
 
     try {
-      const reply = await channelApi.replyMessage(message.value?.id, payload.content, payload.contentRich);
+      const reply = await channelApi.replyMessage(
+        message.value?.id,
+        payload.content,
+        payload.contentRich,
+        payload.quotedMessageId,
+      );
       console.log("adding reply after sending it", options.name, reply);
       addReply(reply);
     } catch (error) {
