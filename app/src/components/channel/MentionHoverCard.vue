@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { UserAvatar } from "@/components/user";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/design-system";
 import type { User } from "@/domain/auth";
 
@@ -26,18 +27,12 @@ const props = withDefaults(
 
     <HoverCardContent :class="props.contentClass">
       <div v-if="props.user" class="flex:row-md items-center">
-        <img
-          v-if="props.user.picture"
-          :src="props.user.picture"
-          :alt="props.user.name"
-          class="w-10 h-10 rounded-full flex-shrink-0"
+        <UserAvatar
+          :name="props.user.name"
+          :picture="props.user.picture"
+          size="lg"
+          class="flex-shrink-0"
         />
-        <div
-          v-else
-          class="w-10 h-10 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold"
-        >
-          {{ props.user.name.charAt(0).toUpperCase() }}
-        </div>
         <div class="flex:col min-w-0">
           <div class="text-sm font-semibold text-foreground truncate">
             {{ props.user.name }}

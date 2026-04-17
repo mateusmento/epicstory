@@ -14,6 +14,7 @@ import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
 import { computed, ref } from "vue";
+import { UserAvatar } from "@/components/user";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
@@ -114,13 +115,7 @@ function onMessageDeleted(messageId: number) {
       <div v-if="onlineUsers.length" class="flex:row-lg flex:center-y gap-2 ml-6">
         <div class="flex:row-lg flex:center-y -space-x-3">
           <template v-for="user of onlineUsers.slice(0, 4)" :key="user.id">
-            <img v-if="user.picture" :src="user.picture" class="w-6 h-6 rounded-full" />
-            <div
-              v-else
-              class="w-6 h-6 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold text-sm font-lato"
-            >
-              {{ user.name.charAt(0).toUpperCase() }}
-            </div>
+            <UserAvatar :name="user.name" :picture="user.picture" size="md" variant="mentionRow" />
           </template>
           <div
             v-if="onlineUsers.length > 4"
@@ -177,11 +172,13 @@ function onMessageDeleted(messageId: number) {
         <div class="flex:col-xl !flex justify-end p-4 min-h-full pb-14">
           <div class="flex:col-3xl p-xl mb-2xl">
             <div class="flex:row-xl flex:center-y gap-2">
-              <img
+              <UserAvatar
                 v-for="member of channel.peers"
                 :key="member.id"
-                :src="member.picture"
-                class="w-18 h-18 -ml-10 first:ml-0 rounded-full"
+                :name="member.name"
+                :picture="member.picture"
+                size="tileXl"
+                class="-ml-10 first:ml-0"
               />
             </div>
             <div class="text-xl text-accent-foreground font-lato">

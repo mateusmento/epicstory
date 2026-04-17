@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import { Button, MenuInput, MenuItem, MenuSeparator, ScrollArea } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useUsers, type User } from "@/domain/user";
@@ -45,7 +46,7 @@ async function fetchMoreUsers() {
 
     <div v-else class="max-h-44 overflow-auto">
       <MenuItem v-for="user in sortedAssignees" :key="user.id" class="flex:row-md flex:center-y text-sm">
-        <img :src="user.picture" class="h-5 w-5 rounded-full" :title="user.name" />
+        <UserAvatar :name="user.name" :picture="user.picture" size="sm" :title="user.name" />
         <div class="flex-1 truncate">{{ user.name }}</div>
         <Button
           type="button"
@@ -75,7 +76,7 @@ async function fetchMoreUsers() {
             !disabled && emit('add', user);
           "
         >
-          <img :src="user.picture" class="w-5 h-5 rounded-full" :title="user.name" />
+          <UserAvatar :name="user.name" :picture="user.picture" size="sm" :title="user.name" />
           <div class="flex-1 truncate">{{ user.name }}</div>
         </MenuItem>
         <div v-if="isFetchingMoreUsers" class="ml-2 my-2 text-xs text-muted-foreground">Loading…</div>

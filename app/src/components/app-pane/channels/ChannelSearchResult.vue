@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import { ScrollArea, Separator } from "@/design-system";
 import type { ISearchChannelsAndUsersItem } from "@/domain/channels/types";
 import type { Page } from "@/core/types";
@@ -53,10 +54,12 @@ const shouldShowPeopleHeader = (items: ISearchChannelsAndUsersItem[], index: num
           @touchstart.prevent
           @click="emit('select-channel', item.channel.id)"
         >
-          <img
-            v-if="item.channel.speakingTo?.picture"
-            :src="item.channel.speakingTo.picture"
-            class="h-5 w-5 shrink-0 rounded-full"
+          <UserAvatar
+            v-if="item.channel.speakingTo"
+            :name="item.channel.speakingTo.name"
+            :picture="item.channel.speakingTo.picture"
+            size="sm"
+            class="shrink-0"
           />
           <HashIcon v-else class="h-5 w-5 shrink-0 text-muted-foreground" stroke-width="2.5" />
           <span class="truncate font-medium">
@@ -73,8 +76,12 @@ const shouldShowPeopleHeader = (items: ISearchChannelsAndUsersItem[], index: num
           @click="emit('select-user', item.user.email)"
         >
           <div class="flex items-center gap-2 min-w-0">
-            <img v-if="item.user.picture" :src="item.user.picture" class="h-8 w-8 shrink-0 rounded-full" />
-            <div v-else class="h-8 w-8 shrink-0 rounded-full bg-muted" />
+            <UserAvatar
+              :name="item.user.name"
+              :picture="item.user.picture"
+              size="base"
+              class="shrink-0"
+            />
             <span class="truncate font-medium">{{ item.user.name }}</span>
           </div>
           <span class="truncate text-[11px] text-secondary-foreground sm:ml-auto">

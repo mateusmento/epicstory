@@ -1,4 +1,5 @@
 <script lang="tsx" setup>
+import { UserAvatar } from "@/components/user";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import type { IssueAssignedNotificationPayload } from "@/domain/notifications/types/notification.types";
 import { formatDistanceToNow } from "date-fns";
@@ -16,18 +17,12 @@ function formatTime(date: string) {
 
 <template>
   <div class="flex:row-md">
-    <img
-      v-if="payload.issuer.picture"
-      :src="payload.issuer.picture"
-      :alt="payload.issuer.name"
-      class="w-11 h-11 rounded-full flex-shrink-0"
+    <UserAvatar
+      :name="payload.issuer.name"
+      :picture="payload.issuer.picture"
+      size="xl"
+      class="flex-shrink-0"
     />
-    <div
-      v-else
-      class="w-11 h-11 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold"
-    >
-      {{ payload.issuer.name.charAt(0).toUpperCase() }}
-    </div>
 
     <div class="flex:col-md flex-1 min-w-0">
       <div class="flex:row-md items-baseline">

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { UserAvatar } from "@/components/user";
 import { Button, Menu, MenuContent, MenuGroup, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
@@ -40,7 +41,7 @@ function removeMember(memberId: number) {
         class="flex:row-lg flex:center-y hover:bg-secondary/40 cursor-pointer p-1 [&>:last-child]:mr-1 rounded-md"
       >
         <div class="relative">
-          <img :src="member.picture" class="w-8 h-8 rounded-full" />
+          <UserAvatar :name="member.name" :picture="member.picture" size="base" />
           <div v-if="member.online" class="p-0.5 bg-white rounded-full absolute -bottom-0.5 -right-0.5">
             <div class="w-2 h-2 bg-green-400 rounded-full"></div>
           </div>

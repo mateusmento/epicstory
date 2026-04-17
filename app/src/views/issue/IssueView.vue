@@ -5,7 +5,7 @@ import {
   issueStatusDotClass,
   IssueStatusDropdown,
 } from "@/components/issue";
-import { UserSelect } from "@/components/user";
+import { UserAvatar, UserSelect } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Input } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -218,12 +218,14 @@ watch(
               <div class="text-xs text-secondary-foreground">Assignees</div>
               <div class="flex:row flex:center-y min-w-0">
                 <div class="flex:row flex:center-y min-w-0">
-                  <img
+                  <UserAvatar
                     v-for="assignee of issue?.assignees ?? []"
                     :key="assignee.id"
-                    :src="assignee.picture"
-                    class="w-7 h-7 rounded-full border-2 border-white [&:not(:first-child)]:-ml-3"
+                    :name="assignee.name"
+                    :picture="assignee.picture"
+                    size="mdLg"
                     :title="assignee.name"
+                    class="border-2 border-white [&:not(:first-child)]:-ml-3"
                   />
                 </div>
 

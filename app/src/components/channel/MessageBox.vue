@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import {
   Button,
   HoverCard,
@@ -117,11 +118,13 @@ const quotedExcerpt = computed(() => {
         class="flex:row-md flex:center-y"
         @click="emit('discussion-opened')"
       >
-        <img
+        <UserAvatar
           v-for="replier in props.message.repliers"
           :key="replier.user.id"
-          :src="replier.user.picture"
-          class="w-6 h-6 -ml-2 first:ml-0 rounded-full"
+          :name="replier.user.name"
+          :picture="replier.user.picture"
+          size="md"
+          class="-ml-2 first:ml-0"
         />
         <span class="text-xs text-primary/40"> {{ props.message.repliesCount }} replies </span>
       </Button>

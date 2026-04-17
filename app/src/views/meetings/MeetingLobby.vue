@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -220,7 +221,7 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
             :key="p.id"
             class="flex items-center gap-2 rounded-full border px-2 py-1"
           >
-            <img v-if="p.picture" :src="p.picture" class="w-5 h-5 rounded-full" />
+            <UserAvatar :name="p.name" :picture="p.picture" size="sm" class="flex-shrink-0" />
             <div class="text-xs">{{ p.name }}</div>
           </div>
           <div v-if="participants.length === 0" class="text-xs text-muted-foreground">No participants</div>
@@ -233,7 +234,12 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
             :key="a.remoteId"
             class="flex items-center gap-2 rounded-full border px-2 py-1"
           >
-            <img v-if="a.user?.picture" :src="a.user.picture" class="w-5 h-5 rounded-full" />
+            <UserAvatar
+              :name="a.user?.name ?? 'Unknown'"
+              :picture="a.user?.picture"
+              size="sm"
+              class="flex-shrink-0"
+            />
             <div class="text-xs">{{ a.user?.name ?? "Unknown" }}</div>
           </div>
           <div v-if="joined.length === 0" class="text-xs text-muted-foreground">Nobody joined yet</div>

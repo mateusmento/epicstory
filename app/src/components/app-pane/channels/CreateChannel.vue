@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UserSelect } from "@/components/user";
+import { UserAvatar, UserSelect } from "@/components/user";
 import {
   Button,
   DialogClose,
@@ -153,7 +153,7 @@ async function onCreateChannel(event: any) {
               :key="member.id"
               class="inline-flex items-center gap-2 rounded-md border bg-secondary/40 px-2 py-1"
             >
-              <img :src="member.picture" class="h-5 w-5 rounded-full" />
+              <UserAvatar :name="member.name" :picture="member.picture" size="sm" class="flex-shrink-0" />
               <div class="text-xs font-medium text-foreground">{{ member.name }}</div>
               <Button
                 type="button"
@@ -194,7 +194,7 @@ async function onCreateChannel(event: any) {
               :key="member.id"
               class="inline-flex items-center gap-2 rounded-md border bg-secondary/40 px-2 py-1"
             >
-              <img :src="member.picture" class="h-5 w-5 rounded-full" />
+              <UserAvatar :name="member.name" :picture="member.picture" size="sm" class="flex-shrink-0" />
               <div class="text-xs font-medium text-foreground">{{ member.name }}</div>
               <Button
                 type="button"

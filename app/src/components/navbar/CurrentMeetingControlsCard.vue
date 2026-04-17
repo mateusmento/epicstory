@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
@@ -58,14 +59,13 @@ async function joinIncomingMeeting() {
       <div class="flow-root">
         <div class="flex flex:center flex-wrap gap-2 place-content-center content-center">
           <template v-for="(p, i) in people" :key="i">
-            <img v-if="p.picture" :src="p.picture" class="rounded-full w-14 h-14" :title="p.name" />
-            <div
-              v-else
-              class="flex flex:center w-14 h-14 rounded-full text-lg font-semibold font-dmSans text-gray-700 bg-gray-300"
+            <UserAvatar
+              :name="p.name ?? ''"
+              :picture="p.picture"
+              size="3xl"
+              variant="meetingNavbar"
               :title="p.name"
-            >
-              {{ p.name?.slice(0, 2)?.toUpperCase() || "?" }}
-            </div>
+            />
           </template>
           <div
             v-if="candidates.length > 4"

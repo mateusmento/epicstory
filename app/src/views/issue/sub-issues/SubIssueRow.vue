@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
@@ -68,12 +69,14 @@ const assigneesOverflow = computed(() =>
       </div>
 
       <div class="flex items-center">
-        <img
+        <UserAvatar
           v-for="assignee of assigneesPreview"
           :key="assignee.id"
-          :src="assignee.picture"
-          class="w-6 h-6 rounded-full border-2 border-white"
+          :name="assignee.name"
+          :picture="assignee.picture"
+          size="md"
           :title="assignee.name"
+          class="border-2 border-white"
         />
         <div
           v-if="assigneesOverflow > 0"

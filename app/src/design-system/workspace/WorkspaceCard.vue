@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { UserAvatar } from "@/components/user";
 import { computed } from "vue";
 
 const props = withDefaults(
@@ -7,7 +8,7 @@ const props = withDefaults(
     ownerName: string;
     projectsCount: number;
     topMembersCount?: number;
-    topMembers: { photo: string }[];
+    topMembers: { photo: string; name?: string }[];
     membersCount: number;
   }>(),
   {
@@ -31,11 +32,12 @@ const members = computed(() => props.topMembers.slice(0, props.topMembersCount))
     <div class="flex:row-md flex:center-y">
       Members
       <div class="flex:row">
-        <img
+        <UserAvatar
           v-for="(member, i) of members"
           :key="member.photo"
-          :src="member.photo"
-          class="w-8 h-8"
+          :name="member.name ?? 'Member'"
+          :picture="member.photo"
+          size="base"
           :class="{ 'ml-[-1rem]': i !== 0 }"
         />
         <div

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import { Button } from "@/design-system";
 import type { PropType } from "vue";
 
@@ -17,17 +18,15 @@ const emit = defineEmits<{
 <template>
   <div class="rounded-xl border bg-white p-2 flex:row-md flex:center-y gap-2">
     <div class="flex -space-x-2">
-      <div
+      <UserAvatar
         v-for="p in people.slice(0, 4)"
         :key="p.id"
-        class="w-6 h-6 rounded-full border-2 border-white overflow-hidden bg-gray-200 flex items-center justify-center"
+        :name="p.name"
+        :picture="p.picture"
+        size="md"
+        variant="liveJoin"
         :title="p.name"
-      >
-        <img v-if="p.picture" :src="p.picture" class="w-full h-full object-cover" />
-        <div v-else class="text-[10px] font-semibold text-gray-700">
-          {{ p.name?.charAt(0)?.toUpperCase() || "?" }}
-        </div>
-      </div>
+      />
     </div>
 
     <div class="min-w-0 flex-1">

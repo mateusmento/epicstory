@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar, type UserAvatarSize } from "@/components/user";
 import { IconCameraOff, IconMicrophoneOff } from "@/components/icons";
 import { cn } from "@/design-system/utils";
 import type { MeetingParticipant } from "@/domain/channels/composables/meeting-layout";
@@ -33,10 +34,10 @@ const displayName = computed(
   () => props.participant.user?.name ?? (props.participant.isLocal ? "You" : "Unknown"),
 );
 
-const avatarClass = computed(() => {
-  if (props.variant === "dock") return "w-10 h-10 text-lg";
-  if (props.variant === "featured") return "w-32 h-32 text-2xl";
-  return "w-16 h-16 text-2xl";
+const meetingAvatarSize = computed<UserAvatarSize>(() => {
+  if (props.variant === "dock") return "lg";
+  if (props.variant === "featured") return "tileXl";
+  return "tile";
 });
 
 const visuals = computed(() =>
@@ -82,10 +83,6 @@ useMediaStreamVideo(
   computed(() => null),
 );
 
-function initial() {
-  const n = props.participant.user?.name?.trim?.();
-  return n?.charAt(0)?.toUpperCase?.() || "?";
-}
 </script>
 
 <template>
@@ -138,20 +135,13 @@ function initial() {
     />
 
     <div v-if="!mainVideoEnabled" class="w-full h-full flex items-center justify-center bg-gray-800">
-      <img
-        v-if="participant.user?.picture"
-        :src="participant.user.picture"
-        :alt="displayName"
-        class="rounded-full object-cover"
-        :class="avatarClass"
+      <UserAvatar
+        :name="participant.user?.name ?? displayName"
+        :picture="participant.user?.picture"
+        :size="meetingAvatarSize"
+        variant="meetingDark"
+        :title="displayName"
       />
-      <div
-        v-else
-        class="rounded-full bg-gray-600 flex items-center justify-center text-white font-semibold"
-        :class="avatarClass"
-      >
-        {{ initial() }}
-      </div>
     </div>
 
     <!-- Bottom nameplate -->

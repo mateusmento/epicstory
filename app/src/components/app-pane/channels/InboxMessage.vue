@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import { useChannel, type IChannel } from "@/domain/channels";
 import { formatDate, isToday } from "date-fns";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 
 const props = defineProps<{
   channel: IChannel;
@@ -9,10 +10,6 @@ const props = defineProps<{
 }>();
 
 const { openChannel } = useChannel();
-
-const image = computed(() =>
-  props.channel.type === "direct" ? props.channel.speakingTo.picture : "/images/hashtag.svg",
-);
 
 function onOpenChannel() {
   openChannel(props.channel);
@@ -35,18 +32,25 @@ const isHoveringImage = ref(false);
     @pointerleave="isHoveringImage = false"
   >
     <div class="w-10 h-10 flex flex:center">
+      <UserAvatar
+        v-if="channel.speakingTo"
+        :name="channel.speakingTo.name"
+        :picture="channel.speakingTo.picture"
+        size="lg"
+        class="flex-shrink-0"
+      />
       <img
-        :src="image"
-        class="rounded-full"
-        :class="{ 'w-10 h-10': channel.type === 'direct', 'w-8 h-8': channel.type === 'group' }"
-        key="img"
+        v-else
+        src="/images/hashtag.svg"
+        alt=""
+        class="w-8 h-8 rounded-full"
       />
     </div>
 
     <div class="flex:col flex-1 h-full overflow-hidden">
       <div class="flex:row-auto flex:center-y">
         <div class="text-sm text-foreground">
-          {{ channel.type === "direct" ? channel.speakingTo.name : channel.name }}
+          {{ channel.speakingTo ? channel.speakingTo.name : channel.name }}
         </div>
         <div class="text-xs text-secondary-foreground">
           {{ channel.lastMessage ? formatMessageDate(channel.lastMessage.sentAt) : "" }}

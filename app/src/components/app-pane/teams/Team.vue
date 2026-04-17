@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { UserSelect } from "@/components/user";
+import { UserAvatar, UserSelect } from "@/components/user";
 import {
   Button,
   Collapsible,
@@ -79,7 +79,7 @@ const selectedUser = ref<User>();
         content="team"
         class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
       >
-        <img :src="member.user.picture" class="w-10 h-10 rounded-full" />
+        <UserAvatar :name="member.user.name" :picture="member.user.picture" size="lg" class="flex-shrink-0" />
 
         <div class="flex:col flex:center-y">
           <div class="text-sm text-foreground">{{ member.user.name }}</div>

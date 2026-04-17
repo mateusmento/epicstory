@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import UserAvatar from "./UserAvatar.vue";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 
@@ -7,7 +8,12 @@ const { user } = useAuth();
 
 <template>
   <div class="flex:row-sm flex:center-y p-xl rounded-md cursor-pointer hover:bg-secondary">
-    <img :src="user?.picture" class="w-10 h-10 mr-lg rounded-full" />
+    <UserAvatar
+      :name="user?.name ?? ''"
+      :picture="user?.picture"
+      size="lg"
+      class="mr-lg flex-shrink-0"
+    />
 
     <div class="flex:col-sm flex-1 min-w-0">
       <div class="whitespace-nowrap text-ellipsis overflow-hidden">

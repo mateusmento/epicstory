@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { UserAvatar } from "@/components/user";
 import type { User } from "@/domain/user";
 import { formatDate, isToday } from "date-fns";
 
@@ -16,7 +17,7 @@ function formatMessageDate(date: string) {
 
 <template>
   <div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
-    <img :src="sender?.picture" class="w-12 h-12 rounded-full" />
+    <UserAvatar :name="sender.name" :picture="sender.picture" size="2xl" class="flex-shrink-0" />
     <div class="flex:col">
       <div class="flex:row-lg items-baseline ml-5">
         <div class="font-dmSans font-medium text-lg" :class="{ 'order-0': sender.id === meId }">

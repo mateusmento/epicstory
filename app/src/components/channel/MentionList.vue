@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { UserAvatar } from "@/components/user";
 import { useWorkspaceOnline } from "@/domain/channels";
 import { ref, watch } from "vue";
 
@@ -58,12 +59,7 @@ defineExpose({ onKeyDown });
       :class="{ 'bg-secondary': index === selectedIndex }"
       @mousedown.prevent="command(item)"
     >
-      <div
-        class="w-5 h-5 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold font-lato text-xs overflow-hidden"
-      >
-        <img v-if="item.picture" :src="item.picture" :alt="item.label" class="object-cover" />
-        <template v-else>{{ item.label.charAt(0).toUpperCase() }}</template>
-      </div>
+      <UserAvatar :name="item.label" :picture="item.picture" size="sm" variant="mentionRow" class="flex-shrink-0" />
       <div class="text-sm text-foreground font-lato min-w-0 truncate">
         {{ item.label }}
       </div>

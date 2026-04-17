@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDraggingById } from "@/components/board/useDraggingById";
 import { IssueContextMenu, IssueLabelTags } from "@/components/issue";
+import { UserAvatar } from "@/components/user";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { type BacklogItem } from "@/domain/backlog";
@@ -103,12 +104,14 @@ function openIssue(issue: Issue) {
         v-if="item.issue.assignees?.length || item.issue.labels?.length"
         class="flex:row-md flex-wrap mt-3"
       >
-        <img
+        <UserAvatar
           v-for="(assignee, i) in item.issue.assignees.slice(0, 5)"
           :key="assignee.id"
-          :src="assignee.picture"
-          :class="cn('w-6 h-6 rounded-full border-2 border-white object-cover', i > 0 && '-ml-4')"
+          :name="assignee.name"
+          :picture="assignee.picture"
+          size="md"
           :title="assignee.name"
+          :class="cn('border-2 border-white', i > 0 && '-ml-4')"
         />
         <div
           v-if="item.issue.assignees.length > 5"

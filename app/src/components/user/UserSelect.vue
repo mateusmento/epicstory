@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import UserAvatar from "./UserAvatar.vue";
 import { Combobox } from "@/design-system";
 import { useAuth } from "@/domain/auth";
 import { useUsers, type User } from "@/domain/user";
@@ -37,7 +38,7 @@ const filteredUsers = computed(() => {
 
     <template #option="{ option }">
       <div class="flex:row-auto flex:center-y">
-        <img :src="option.picture" class="w-4 h-4 rounded-full mr-2" />
+        <UserAvatar :name="option.name" :picture="option.picture" size="xs" class="mr-2 flex-shrink-0" />
         <div class="text-sm font-medium">{{ option.name }}</div>
       </div>
     </template>

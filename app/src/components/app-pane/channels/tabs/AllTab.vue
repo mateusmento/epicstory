@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { UserAvatar } from "@/components/user";
 import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/design-system";
 import { cn } from "@/design-system/utils";
 import { useDependency } from "@/core/dependency-injection";
@@ -211,10 +212,12 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
               class="flex:row-lg flex:center-y flex-1 p-2 rounded-lg hover:bg-secondary cursor-pointer"
               @click="openChannel(channel)"
             >
-              <img
-                v-if="channel.speakingTo?.picture"
-                :src="channel.speakingTo?.picture"
-                class="w-4 h-4 rounded-full"
+              <UserAvatar
+                v-if="channel.speakingTo"
+                :name="channel.speakingTo.name"
+                :picture="channel.speakingTo.picture"
+                size="xs"
+                class="shrink-0"
               />
               <HeadphonesIcon
                 v-else-if="channel.type === 'meeting'"

@@ -12,6 +12,7 @@ import {
   TooltipTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
+import { UserAvatar } from "@/components/user";
 import { cn } from "@/design-system/utils";
 import type { Issue } from "@/domain/issues";
 import { computed } from "vue";
@@ -171,11 +172,14 @@ function updateDueDate(dueDate: Date | null | undefined) {
       <template #trigger>
         <div class="flex items-center justify-start">
           <div class="flex items-center">
-            <img
+            <UserAvatar
               v-for="(assignee, i) of issue.assignees"
               :key="assignee.id"
-              :src="assignee.picture"
-              class="cursor-pointer w-5 h-5 rounded-full border border-background"
+              :name="assignee.name"
+              :picture="assignee.picture"
+              size="sm"
+              :title="assignee.name"
+              class="cursor-pointer border border-background"
               :class="cn(i > 0 && 'ml-[-0.45rem]')"
             />
           </div>

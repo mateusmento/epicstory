@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { IssueAssigneesMenu, IssueLabelTags } from "@/components/issue";
+import { UserAvatar } from "@/components/user";
 import {
   Button,
   DialogClose,
@@ -211,11 +212,12 @@ async function onCreateIssue() {
           <MenuTrigger as-child>
             <Button type="button" variant="outline" size="badge" class="flex items-center gap-2">
               <div v-if="selectedAssignees.length > 0" class="flex:row flex:center-y">
-                <img
+                <UserAvatar
                   v-for="(assignee, i) in selectedAssignees"
                   :key="assignee.id"
-                  :src="assignee.picture"
-                  class="w-4 h-4 rounded-full"
+                  :name="assignee.name"
+                  :picture="assignee.picture"
+                  size="xs"
                   :class="cn(i > 0 && 'ml-[-0.45rem]')"
                 />
               </div>
