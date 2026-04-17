@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useWorkspaceOnline } from "@/domain/channels";
 import { ref, watch } from "vue";
 
 export type MentionSuggestionItem = {
@@ -20,6 +21,8 @@ watch(
     selectedIndex.value = 0;
   },
 );
+
+const { isUserOnline } = useWorkspaceOnline();
 
 function onKeyDown({ event }: { event: KeyboardEvent }): boolean {
   if (event.key === "ArrowDown") {
@@ -56,16 +59,15 @@ defineExpose({ onKeyDown });
       @mousedown.prevent="command(item)"
     >
       <div
-        class="w-7 h-7 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold text-xs overflow-hidden"
+        class="w-5 h-5 rounded-full flex-shrink-0 bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold font-lato text-xs overflow-hidden"
       >
-        <img v-if="item.picture" :src="item.picture" :alt="item.label" class="w-7 h-7 object-cover" />
+        <img v-if="item.picture" :src="item.picture" :alt="item.label" class="object-cover" />
         <template v-else>{{ item.label.charAt(0).toUpperCase() }}</template>
       </div>
-
-      <div class="flex-1 min-w-0">
-        <div class="text-sm text-foreground font-lato truncate">{{ item.label }}</div>
-        <div class="text-xs text-secondary-foreground font-dmSans">ID: {{ item.id }}</div>
+      <div class="text-sm text-foreground font-lato min-w-0 truncate">
+        {{ item.label }}
       </div>
+      <div v-if="isUserOnline(item.id)" class="w-2 h-2 shrink-0 bg-green-400 rounded-full"></div>
     </button>
   </div>
 </template>
