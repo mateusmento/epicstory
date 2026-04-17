@@ -122,11 +122,7 @@ function pickSpeaker(v: AcceptableValue) {
           <template v-if="cameras.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No cameras found</MenuLabel>
           </template>
-          <MenuRadioGroup
-            v-else
-            :model-value="selectedCameraId ?? ''"
-            @update:model-value="pickCamera"
-          >
+          <MenuRadioGroup v-else :model-value="selectedCameraId ?? ''" @update:model-value="pickCamera">
             <MenuRadioItem v-for="d in cameras" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>
             </MenuRadioItem>
@@ -149,11 +145,7 @@ function pickSpeaker(v: AcceptableValue) {
           <template v-if="microphones.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No microphones found</MenuLabel>
           </template>
-          <MenuRadioGroup
-            v-else
-            :model-value="selectedMicId ?? ''"
-            @update:model-value="pickMic"
-          >
+          <MenuRadioGroup v-else :model-value="selectedMicId ?? ''" @update:model-value="pickMic">
             <MenuRadioItem v-for="d in microphones" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>
             </MenuRadioItem>
@@ -176,11 +168,7 @@ function pickSpeaker(v: AcceptableValue) {
           <template v-if="speakers.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No speakers found</MenuLabel>
           </template>
-          <MenuRadioGroup
-            v-else
-            :model-value="selectedSpeakerId ?? ''"
-            @update:model-value="pickSpeaker"
-          >
+          <MenuRadioGroup v-else :model-value="selectedSpeakerId ?? ''" @update:model-value="pickSpeaker">
             <MenuRadioItem v-for="d in speakers" :key="d.deviceId" :value="d.deviceId" class="text-xs">
               <span class="truncate" :title="deviceLabel(d)">{{ deviceLabel(d) }}</span>
             </MenuRadioItem>

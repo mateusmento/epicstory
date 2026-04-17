@@ -16,10 +16,7 @@ const when = (() => {
 })();
 
 const startsIn = computed(() =>
-  resolveCalendarReminderStartsInLabel(
-    props.payload.notifyMinutesBefore,
-    props.payload.occurrenceAt,
-  ),
+  resolveCalendarReminderStartsInLabel(props.payload.notifyMinutesBefore, props.payload.occurrenceAt),
 );
 </script>
 
@@ -30,9 +27,7 @@ const startsIn = computed(() =>
     </div>
 
     <div class="flex:col min-w-0 flex-1">
-      <div class="text-sm font-medium truncate">
-        {{ payload.title }} is about to start {{ startsIn }}
-      </div>
+      <div class="text-sm font-medium truncate">{{ payload.title }} is about to start {{ startsIn }}</div>
       <div class="text-xs text-secondary-foreground truncate">
         <span v-if="when">Starts {{ when.toLocaleString() }}</span>
         <span v-else>Start time unavailable</span>

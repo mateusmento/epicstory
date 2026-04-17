@@ -27,7 +27,6 @@ function onEmojiSelect(emoji: string) {
 function onMessageDeleted() {
   emit("message-deleted", message.value?.id);
 }
-
 </script>
 
 <template>

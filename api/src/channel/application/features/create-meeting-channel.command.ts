@@ -84,4 +84,3 @@ export class CreateMeetingChannelCommand
     return this.channelRepo.save(channel);
   }
 }
-

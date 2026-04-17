@@ -70,7 +70,10 @@ export class CreateDirectOrMultiDirectChannelCommand
     if (uniquePeers.length === 1) {
       // Direct channel (issuer + one peer), dedupe when possible.
       const peerId = uniquePeers[0];
-      const existing = await this.channelRepo.findDirectChannel(peerId, issuer.id);
+      const existing = await this.channelRepo.findDirectChannel(
+        peerId,
+        issuer.id,
+      );
       if (existing && existing.workspaceId === workspaceId) {
         const hydrated = await this.channelRepo.findChannel(existing.id, {
           peers: true,
@@ -119,4 +122,3 @@ export class CreateDirectOrMultiDirectChannelCommand
     return created;
   }
 }
-

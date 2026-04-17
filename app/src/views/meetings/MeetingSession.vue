@@ -6,6 +6,10 @@ const { currentMeeting } = useMeeting();
 </script>
 
 <template>
-  <Meeting v-if="currentMeeting" v-show="currentMeeting" :meetingId="currentMeeting.id" :key="currentMeeting.id" />
+  <Meeting
+    v-if="currentMeeting"
+    v-show="currentMeeting"
+    :meetingId="currentMeeting.id"
+    :key="currentMeeting.id"
+  />
 </template>
-

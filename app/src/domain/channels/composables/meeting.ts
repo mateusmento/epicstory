@@ -98,7 +98,11 @@ const useMeetingStore = defineStore("meeting", () => {
     if (!isScreenSharing.value || !session.value || !localScreenShareTrack.value) return;
     const remoteIds = attendees.value.map((a) => a.remoteId);
     if (remoteIds.length === 0) return;
-    replaceOutgoingVideoTrackForPeers(localScreenShareTrack.value, (id) => session.value?.getConnection(id), remoteIds);
+    replaceOutgoingVideoTrackForPeers(
+      localScreenShareTrack.value,
+      (id) => session.value?.getConnection(id),
+      remoteIds,
+    );
   }
 
   function setLayoutMode(mode: "speaker" | "grid") {
@@ -201,12 +205,7 @@ const useMeetingStore = defineStore("meeting", () => {
 
     const remoteIds = attendees.value.map((a) => a.remoteId);
     if (session.value && remoteIds.length > 0) {
-      replaceOutgoingTracksForPeers(
-        newVideo,
-        newAudio,
-        (id) => session.value?.getConnection(id),
-        remoteIds,
-      );
+      replaceOutgoingTracksForPeers(newVideo, newAudio, (id) => session.value?.getConnection(id), remoteIds);
     }
 
     for (const t of [...stream.getVideoTracks()]) {
@@ -293,7 +292,11 @@ const useMeetingStore = defineStore("meeting", () => {
     syncDetectorSources();
   }
 
-  function createAttendee(remoteId: string, camera: MediaStream, attendee: IMeetingAttendee): MeetingStreamingAttendee {
+  function createAttendee(
+    remoteId: string,
+    camera: MediaStream,
+    attendee: IMeetingAttendee,
+  ): MeetingStreamingAttendee {
     return {
       remoteId,
       camera,

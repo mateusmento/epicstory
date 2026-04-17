@@ -33,12 +33,7 @@ export function isDisplayCaptureVideoTrack(track: MediaStreamTrack): boolean {
 export function isPresentationLikeVideoTrack(track: MediaStreamTrack): boolean {
   if (isDisplayCaptureVideoTrack(track)) return true;
   const l = (track.label || "").toLowerCase();
-  return (
-    l.includes("screen") ||
-    l.includes("display") ||
-    l.includes("window") ||
-    l.includes("monitor")
-  );
+  return l.includes("screen") || l.includes("display") || l.includes("window") || l.includes("monitor");
 }
 
 export function partitionMeetingVideoTracks(stream: MediaStream | null | undefined): {
@@ -52,7 +47,7 @@ export function partitionMeetingVideoTracks(stream: MediaStream | null | undefin
   const videos = stream.getVideoTracks();
   const screen = videos.find(isDisplayCaptureVideoTrack) ?? null;
   const camera =
-    videos.find((t) => !isDisplayCaptureVideoTrack(t)) ?? (screen ? null : videos[0] ?? null) ?? null;
+    videos.find((t) => !isDisplayCaptureVideoTrack(t)) ?? (screen ? null : (videos[0] ?? null)) ?? null;
   return { camera, screen, audio: stream.getAudioTracks() };
 }
 

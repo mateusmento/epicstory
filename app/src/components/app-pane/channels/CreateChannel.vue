@@ -80,9 +80,7 @@ async function onCreateChannel(event: any) {
 <template>
   <Form @submit="onCreateChannel" class="flex:col-lg mt-4">
     <div class="flex:col-md">
-      <div v-if="props.showTypeSelector" class="text-sm font-medium text-foreground">
-        Channel type
-      </div>
+      <div v-if="props.showTypeSelector" class="text-sm font-medium text-foreground">Channel type</div>
 
       <RadioGroup
         v-if="props.showTypeSelector"
@@ -92,21 +90,27 @@ async function onCreateChannel(event: any) {
       >
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-          :class="channelType === 'direct' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'"
+          :class="
+            channelType === 'direct' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'
+          "
         >
           <RadioGroupItem value="direct" class="sr-only" />
           Direct
         </Label>
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-          :class="channelType === 'group' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'"
+          :class="
+            channelType === 'group' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'
+          "
         >
           <RadioGroupItem value="group" class="sr-only" />
           Group
         </Label>
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-          :class="channelType === 'meeting' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'"
+          :class="
+            channelType === 'meeting' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'
+          "
         >
           <RadioGroupItem value="meeting" class="sr-only" />
           Meeting
@@ -120,9 +124,7 @@ async function onCreateChannel(event: any) {
         <template v-else-if="channelType === 'meeting'">
           Create a persistent meeting room channel that people can join anytime.
         </template>
-        <template v-else>
-          Create a channel with a name and optionally invite members.
-        </template>
+        <template v-else> Create a channel with a name and optionally invite members. </template>
       </div>
     </div>
 
@@ -219,7 +221,9 @@ async function onCreateChannel(event: any) {
       <DialogClose as-child>
         <Button type="button" variant="outline">Cancel</Button>
       </DialogClose>
-      <Button type="submit" size="xs" :disabled="channelType === 'direct' && members.length < 1">Create</Button>
+      <Button type="submit" size="xs" :disabled="channelType === 'direct' && members.length < 1"
+        >Create</Button
+      >
     </DialogFooter>
   </Form>
 </template>

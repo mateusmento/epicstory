@@ -9,7 +9,11 @@ import {
 } from 'src/scheduling/types';
 import { DataSource } from 'typeorm';
 import { CalendarEvent } from '../entities';
-import { addMilliseconds, addMinutes, differenceInMilliseconds } from 'date-fns';
+import {
+  addMilliseconds,
+  addMinutes,
+  differenceInMilliseconds,
+} from 'date-fns';
 
 @Injectable()
 export class CalendarEventReminderReaction {

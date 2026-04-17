@@ -11,4 +11,3 @@ services:
     volumes:
       - ./Caddyfile.docker:/etc/caddy/Caddyfile:ro
       - ./certs:/certs:ro
-

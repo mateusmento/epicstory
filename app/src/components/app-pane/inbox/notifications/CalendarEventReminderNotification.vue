@@ -16,10 +16,7 @@ const when = (() => {
 })();
 
 const startsIn = computed(() =>
-  resolveCalendarReminderStartsInLabel(
-    props.payload.notifyMinutesBefore,
-    props.payload.occurrenceAt,
-  ),
+  resolveCalendarReminderStartsInLabel(props.payload.notifyMinutesBefore, props.payload.occurrenceAt),
 );
 </script>
 

@@ -50,7 +50,9 @@ function walk(node: TiptapJSONNode, ctx?: WalkCtx): string {
   }
 
   if (type === "tableCell" || type === "tableHeader") {
-    return (node.content ?? []).map((c) => walk(c, { ...ctx, inTableCell: true })).join("");
+    return (node.content ?? [])
+      .map((c) => walk(c, { ...ctx, inTableCell: true }))
+      .join("");
   }
 
   if (type === "image") {
@@ -71,9 +73,7 @@ function walk(node: TiptapJSONNode, ctx?: WalkCtx): string {
   const children = (node.content ?? []).map((c) => walk(c, ctx)).join("");
 
   if (
-    (type === "paragraph" ||
-      type === "heading" ||
-      type === "blockquote") &&
+    (type === "paragraph" || type === "heading" || type === "blockquote") &&
     (ctx?.inListItem || ctx?.inTableCell)
   ) {
     return children;

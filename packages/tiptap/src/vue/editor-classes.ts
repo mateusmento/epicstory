@@ -7,7 +7,8 @@ const EPIC_STORY_TABLE_CLASSES =
   "[&_.tableWrapper]:my-2 [&_.tableWrapper]:overflow-x-auto [&_table]:w-full [&_table]:min-w-[12rem] [&_table]:border-collapse [&_table]:text-sm " +
   "[&_td]:border [&_td]:border-zinc-200/90 [&_td]:align-top [&_td]:p-2 [&_th]:border [&_th]:border-zinc-200/90 [&_th]:align-top [&_th]:p-2 [&_th]:bg-muted/40";
 
-const EPIC_STORY_IMAGE_CLASSES = "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:my-2";
+const EPIC_STORY_IMAGE_CLASSES =
+  "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-md [&_img]:my-2";
 
 /** Channel / issue composer surface (editable). */
 export const EPIC_STORY_COMPOSER_EDITOR_CLASS =

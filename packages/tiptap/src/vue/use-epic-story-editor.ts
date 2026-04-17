@@ -7,6 +7,8 @@ export type EpicStoryRichTextEditorOptions = NonNullable<
 /**
  * Thin wrapper over `useEditor` for a consistent import path; callers supply full `extensions` (core + mention + placeholder, etc.).
  */
-export function useEpicStoryRichTextEditor(options: EpicStoryRichTextEditorOptions) {
+export function useEpicStoryRichTextEditor(
+  options: EpicStoryRichTextEditorOptions,
+) {
   return useEditor(options);
 }

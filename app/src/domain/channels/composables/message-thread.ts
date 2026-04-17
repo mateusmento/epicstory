@@ -110,11 +110,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     }
   }
 
-  async function sendReply(payload: {
-    content: string;
-    contentRich: any;
-    quotedMessageId?: number;
-  }) {
+  async function sendReply(payload: { content: string; contentRich: any; quotedMessageId?: number }) {
     if (!payload.content.trim()) return;
     if (!me.value) return;
 

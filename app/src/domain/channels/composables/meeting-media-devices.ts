@@ -120,9 +120,7 @@ export const useMeetingMediaDevicesStore = defineStore("meetingMediaDevices", ()
 
   function streamConstraints(): MediaStreamConstraints {
     return {
-      video: selectedCameraId.value
-        ? { deviceId: { exact: selectedCameraId.value } }
-        : true,
+      video: selectedCameraId.value ? { deviceId: { exact: selectedCameraId.value } } : true,
       audio: selectedMicId.value ? { deviceId: { exact: selectedMicId.value } } : true,
     };
   }

@@ -41,12 +41,7 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
     private messageService: MessageService,
   ) {}
 
-  async execute({
-    messageId,
-    issuerId,
-    content,
-    contentRich,
-  }: UpdateMessage) {
+  async execute({ messageId, issuerId, content, contentRich }: UpdateMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
     });
@@ -67,7 +62,9 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
     );
     if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
 
-    const isChannelMember = (channel.peers ?? []).some((p) => p.id === issuerId);
+    const isChannelMember = (channel.peers ?? []).some(
+      (p) => p.id === issuerId,
+    );
     if (!isChannelMember) throw new IssuerIsNotChannelMember();
 
     return this.messageService.updateMessageBody(

@@ -1,7 +1,13 @@
 <script
   setup
   lang="ts"
-  generic="T extends string | number | boolean | Record<string, any> = string | number | boolean | Record<string, any>"
+  generic="
+    T extends string | number | boolean | Record<string, any> =
+      | string
+      | number
+      | boolean
+      | Record<string, any>
+  "
 >
 import { type HTMLAttributes, computed } from "vue";
 import type { ComboboxItemEmits, ComboboxItemProps } from "radix-vue";
