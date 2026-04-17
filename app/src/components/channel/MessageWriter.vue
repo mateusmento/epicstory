@@ -14,11 +14,7 @@ import {
 } from "@/domain/channels";
 import { debounce } from "lodash";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import Link from "@tiptap/extension-link";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
-import { VueRenderer } from "@tiptap/vue-3";
 import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import {
   createMentionExtensionWithNodeView,
@@ -44,12 +40,9 @@ import MentionList from "./MentionList.vue";
 import type { MentionSuggestionItem } from "./MentionList.vue";
 import { quoteRefMessageId, type IMessage, type IReply } from "@/domain/channels";
 import type { User } from "@/domain/auth";
+import { createVueFloatingSuggestion } from "@/core/tiptap";
 import TiptapCodeBlockCardNodeView from "./TiptapCodeBlockCardNodeView.vue";
 import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
-
-void StarterKit;
-void Underline;
-void Link;
 
 const props = withDefaults(
   defineProps<{
@@ -129,59 +122,21 @@ const mentionablesForSuggestion = computed(() => {
 
 const mentionablesById = computed(() => new Map((props.mentionables ?? []).map((u) => [u.id, u])));
 
-function createMentionSuggestion() {
-  let renderer: VueRenderer | null = null;
-  let popup: HTMLDivElement | null = null;
-
-  function positionAt(clientRect?: DOMRect | null) {
-    if (!popup || !clientRect) return;
-    popup.style.left = `${clientRect.left}px`;
-    popup.style.top = `${clientRect.bottom + 8}px`;
-  }
-
-  return {
-    items: ({ query }: { query: string }): MentionSuggestionItem[] => {
-      const q = (query ?? "").trim().toLowerCase();
-      return mentionablesForSuggestion.value
-        .filter((u) => (q ? u.name.toLowerCase().includes(q) || String(u.id).startsWith(q) : true))
-        .slice(0, 8)
-        .map((u) => ({ id: u.id, label: u.name, picture: u.picture }));
-    },
-    render: () => {
-      return {
-        onStart: (props: any) => {
-          renderer = new VueRenderer(MentionList, {
-            props: { items: props.items, command: props.command },
-            editor: props.editor,
-          });
-
-          popup = document.createElement("div");
-          popup.style.position = "fixed";
-          if (renderer.element) popup.appendChild(renderer.element);
-          document.body.appendChild(popup);
-          positionAt(props.clientRect?.());
-        },
-        onUpdate: (props: any) => {
-          renderer?.updateProps({ items: props.items, command: props.command });
-          positionAt(props.clientRect?.());
-        },
-        onKeyDown: (props: any) => {
-          if (props.event.key === "Escape") {
-            props.command(null);
-            return true;
-          }
-          return renderer?.ref?.onKeyDown?.(props) ?? false;
-        },
-        onExit: () => {
-          renderer?.destroy();
-          renderer = null;
-          popup?.remove();
-          popup = null;
-        },
-      };
-    },
-  };
-}
+const mentionSuggestion = createVueFloatingSuggestion({
+  items: ({ query }): MentionSuggestionItem[] => {
+    const q = (query ?? "").trim().toLowerCase();
+    return mentionablesForSuggestion.value
+      .filter((u) => (q ? u.name.toLowerCase().includes(q) || String(u.id).startsWith(q) : true))
+      .slice(0, 8)
+      .map((u) => ({ id: u.id, label: u.name, picture: u.picture }));
+  },
+  listComponent: MentionList,
+  mapProps: ({ items, command, editor }) => ({ items, command, editor }),
+  placement: "bottom-start",
+  mainAxisOffset: 8,
+  zIndex: 80,
+  className: "outline-none",
+});
 
 const editor = useEditor({
   extensions: [
@@ -205,7 +160,7 @@ const editor = useEditor({
       },
       // Used by `TiptapMentionNodeView.vue` via `props.extension.options.userById`
       userById: (id: number) => mentionablesById.value.get(id),
-      suggestion: createMentionSuggestion(),
+      suggestion: mentionSuggestion,
     } as any),
     createPlaceholderExtension(() => composerPlaceholder.value),
   ],

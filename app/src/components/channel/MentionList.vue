@@ -42,7 +42,9 @@ defineExpose({ onKeyDown });
 </script>
 
 <template>
-  <div class="z-50 rounded-lg border bg-white shadow-lg overflow-hidden w-80">
+  <div
+    class="rounded-lg border border-border bg-popover text-popover-foreground shadow-md overflow-hidden w-80"
+  >
     <div class="px-3 py-2 text-xs text-secondary-foreground border-b font-dmSans">Mention a person</div>
 
     <button

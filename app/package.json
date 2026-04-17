@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@epicstory/tiptap": "workspace:*",
+    "@floating-ui/dom": "^1.7.6",
     "@formkit/drag-and-drop": "^0.2.2",
     "@internationalized/date": "^3.5.5",
     "@radix-icons/vue": "^1.0.0",
