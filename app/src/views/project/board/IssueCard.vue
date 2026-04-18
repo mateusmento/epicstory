@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useDraggingById } from "@/components/board/useDraggingById";
 import { IssueContextMenu, IssueLabelTags } from "@/components/issue";
-import { UserAvatar } from "@/components/user";
+import { UserAvatarStack } from "@/components/user";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { type BacklogItem } from "@/domain/backlog";
@@ -102,26 +102,20 @@ function openIssue(issue: Issue) {
 
       <div
         v-if="item.issue.assignees?.length || item.issue.labels?.length"
-        class="flex:row-md flex-wrap mt-3"
+        class="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2"
       >
-        <UserAvatar
-          v-for="(assignee, i) in item.issue.assignees.slice(0, 5)"
-          :key="assignee.id"
-          :name="assignee.name"
-          :picture="assignee.picture"
+        <UserAvatarStack
+          v-if="item.issue.assignees?.length"
+          :users="item.issue.assignees"
           size="md"
-          :title="assignee.name"
-          :class="cn('border-2 border-white', i > 0 && '-ml-4')"
+          :min="1"
+          :overlap-px="10"
+          avatar-class="border-2 border-white"
+          class="min-w-0 flex-1 basis-32"
         />
-        <div
-          v-if="item.issue.assignees.length > 5"
-          class="w-6 h-6 rounded-full bg-secondary text-secondary-foreground border-2 border-white -ml-4 flex items-center justify-center text-[10px]"
-          :title="`+${item.issue.assignees.length - 5} more`"
-        >
-          +{{ item.issue.assignees.length - 5 }}
-        </div>
 
         <IssueLabelTags
+          class="shrink-0"
           :disabled="!item.issue"
           :model-value="(item.issue?.labels ?? []).map((l) => l.id)"
           @add-label="emit('add-label', $event)"

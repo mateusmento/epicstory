@@ -14,7 +14,7 @@ import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
 import { computed, ref } from "vue";
-import { UserAvatar } from "@/components/user";
+import { UserAvatar, UserAvatarStack } from "@/components/user";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
@@ -106,26 +106,23 @@ function onMessageDeleted(messageId: number) {
 
 <template>
   <div class="grid grid-rows-[auto_auto_1fr_auto] h-full">
-    <div class="flex:row flex:center-y p-2 h-10">
-      <div class="flex:row-lg flex:center-y">
+    <div class="flex h-10 min-w-0 items-center gap-2 p-2">
+      <div class="flex shrink-0 items-center gap-2">
         <HashIcon class="h-5 w-5 text-muted-foreground" stroke-width="2.5" />
         <div class="text-sm" @click="emit('more-details')">{{ chatTitle }}</div>
       </div>
 
-      <div v-if="onlineUsers.length" class="flex:row-lg flex:center-y gap-2 ml-6">
-        <div class="flex:row-lg flex:center-y -space-x-3">
-          <template v-for="user of onlineUsers.slice(0, 4)" :key="user.id">
-            <UserAvatar :name="user.name" :picture="user.picture" size="md" variant="mentionRow" />
-          </template>
-          <div
-            v-if="onlineUsers.length > 4"
-            class="w-6 h-6 rounded-full bg-zinc-300 flex items-center justify-center text-zinc-600 font-semibold text-sm font-lato"
-          >
-            +{{ Math.max(Math.min(onlineUsers.length - 1, 99), 0) }}
-          </div>
-        </div>
-        <div class="w-2 h-2 bg-green-400 rounded-full"></div>
-        <div class="text-xs text-muted-foreground">{{ onlineUsers.length }} online</div>
+      <div v-if="onlineUsers.length" class="flex min-w-0 flex-1 items-center gap-2">
+        <UserAvatarStack
+          :users="onlineUsers"
+          size="md"
+          variant="mentionRow"
+          :min="1"
+          :overlap-px="12"
+          class="min-w-0 flex-1"
+        />
+        <div class="h-2 w-2 shrink-0 rounded-full bg-green-400"></div>
+        <div class="shrink-0 text-xs text-muted-foreground">{{ onlineUsers.length }} online</div>
       </div>
 
       <ButtonGroup class="ml-auto shrink-0">

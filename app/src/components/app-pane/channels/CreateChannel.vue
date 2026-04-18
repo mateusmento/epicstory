@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { UserAvatar, UserSelect } from "@/components/user";
+import { IssueAssigneesDropdown } from "@/components/issue";
+import { UserAvatar, UserAvatarStack, UserSelect } from "@/components/user";
 import {
   Button,
   DialogClose,
@@ -13,7 +14,7 @@ import {
 import { useChannels } from "@/domain/channels";
 import { type User } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
-import { Trash2Icon } from "lucide-vue-next";
+import { ChevronsUpDown, Trash2Icon } from "lucide-vue-next";
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -40,13 +41,6 @@ const { createChannel } = useChannels();
 
 const members = ref<User[]>([]);
 const selectedUser = ref<User>();
-
-watch(selectedUser, () => {
-  if (selectedUser.value) {
-    addMember(selectedUser.value);
-    selectedUser.value = undefined;
-  }
-});
 
 function addMember(user: User) {
   if (members.value.some((m) => m.id === user.id)) return;
@@ -172,7 +166,19 @@ async function onCreateChannel(event: any) {
 
       <div class="flex:col-md">
         <div class="text-sm font-medium text-foreground">Add people</div>
-        <UserSelect v-model="selectedUser" exclude="me" />
+        <!-- <UserSelect v-model="selectedUser" exclude="me" /> -->
+        <IssueAssigneesDropdown
+          :assignees="members"
+          :disabled="false"
+          @add="addMember"
+          @remove="removeMember($event.id)"
+        >
+          <Button variant="ghost" size="icon">
+            <UserAvatarStack :users="members" size="sm" />
+            <div class="text-xs font-medium text-foreground">No members added yet.</div>
+            <ChevronsUpDown class="ml-auto h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </IssueAssigneesDropdown>
       </div>
     </template>
 

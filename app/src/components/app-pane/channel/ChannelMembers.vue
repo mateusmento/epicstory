@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { IssueAssigneesDropdown } from "@/components/issue";
 import { UserAvatar } from "@/components/user";
 import { Button, Menu, MenuContent, MenuGroup, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -11,12 +12,16 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "add"): void;
-  (e: "remove", memberId: number): void;
+  (e: "add", userId: number): void;
+  (e: "remove", userId: number): void;
 }>();
 
-function removeMember(memberId: number) {
-  emit("remove", memberId);
+function removeMember(user: User) {
+  emit("remove", user.id);
+}
+
+function addMember(user: User) {
+  emit("add", user.id);
 }
 </script>
 
@@ -29,9 +34,11 @@ function removeMember(memberId: number) {
         <div class="text-secondary-foreground/70 text-sm ml-xl">{{ members.length }}</div>
       </h1>
 
-      <Button variant="ghost" size="icon" @click="emit('add')">
-        <Icon name="hi-plus" class="text-secondary-foreground w-4 h-4" />
-      </Button>
+      <IssueAssigneesDropdown :assignees="members" :disabled="false" @add="addMember" @remove="removeMember">
+        <Button variant="ghost" size="icon">
+          <Icon name="hi-plus" class="text-secondary-foreground w-4 h-4" />
+        </Button>
+      </IssueAssigneesDropdown>
     </div>
 
     <div class="flex:col-md">
@@ -78,7 +85,7 @@ function removeMember(memberId: number) {
           </MenuTrigger>
           <MenuContent side="bottom" align="end">
             <MenuGroup>
-              <MenuItem @click="removeMember(member.id)" variant="destructive">
+              <MenuItem @click="removeMember(member)" variant="destructive">
                 <Trash2Icon class="mr-2 h-4 w-4" />
                 <span class="whitespace-nowrap">Remove from channel</span>
               </MenuItem>

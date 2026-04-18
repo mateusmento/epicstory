@@ -1,18 +1,18 @@
 <script lang="ts" setup>
 import {
+  IssueAssigneesDropdown,
   IssueDescriptionEditor,
   IssueLabelTags,
   issueStatusDotClass,
   IssueStatusDropdown,
 } from "@/components/issue";
-import { UserAvatar, UserSelect } from "@/components/user";
+import { UserAvatarStack } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
-import { Button, Input } from "@/design-system";
+import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import SubIssuesSection from "./SubIssuesSection.vue";
 import { useIssue } from "@/domain/issues/composables/issue";
 import { ProjectApi, type Project } from "@/domain/project";
-import type { User } from "@/domain/user";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
 import { onMounted, reactive, ref, watch } from "vue";
@@ -23,7 +23,7 @@ const props = defineProps<{
   issueId: string;
 }>();
 
-const { issue, fetchIssue, updateIssue, addAssignee, addLabel, removeLabel } = useIssue();
+const { issue, fetchIssue, updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useIssue();
 
 const projectApi = useDependency(ProjectApi);
 const project = ref<Project | null>(null);
@@ -31,7 +31,6 @@ const project = ref<Project | null>(null);
 const isSaving = ref(false);
 const saveError = ref<string | null>(null);
 
-const selectedUser = ref<User | undefined>();
 const titleEl = ref<HTMLInputElement | null>(null);
 
 const isEditingTitle = ref(false);
@@ -209,41 +208,47 @@ watch(
           <div class="grid grid-cols-2 gap-4">
             <div class="flex:col-sm min-w-0">
               <div class="text-xs text-secondary-foreground">Project</div>
-              <div class="text-sm font-medium text-foreground truncate">
-                {{ project?.name ?? `#${props.projectId}` }}
-              </div>
+              <Tooltip>
+                <TooltipTrigger>
+                  <div class="text-sm font-medium text-foreground truncate">
+                    {{ project?.name ?? `#${props.projectId}` }}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {{ project?.name ?? `#${props.projectId}` }}
+                </TooltipContent>
+              </Tooltip>
             </div>
 
             <div class="flex:col-sm min-w-0">
               <div class="text-xs text-secondary-foreground">Assignees</div>
-              <div class="flex:row flex:center-y min-w-0">
-                <div class="flex:row flex:center-y min-w-0">
-                  <UserAvatar
-                    v-for="assignee of issue?.assignees ?? []"
-                    :key="assignee.id"
-                    :name="assignee.name"
-                    :picture="assignee.picture"
+              <IssueAssigneesDropdown
+                :assignees="issue?.assignees ?? []"
+                :disabled="!issue"
+                @add="(u) => addAssignee(u.id)"
+                @remove="(u) => removeAssignee(u.id)"
+                #default="{ assignees }"
+              >
+                <div class="flex min-w-0 w-full items-center cursor-pointer">
+                  <UserAvatarStack
+                    v-if="assignees.length"
+                    :users="assignees"
                     size="mdLg"
-                    :title="assignee.name"
-                    class="border-2 border-white [&:not(:first-child)]:-ml-3"
+                    :min="1"
+                    :overlap-px="12"
+                    avatar-class="border-2 border-white"
                   />
-                </div>
 
-                <UserSelect
-                  v-model="selectedUser"
-                  @update:model-value="
-                    if ($event && !(issue?.assignees ?? []).some((a) => a.id === $event.id))
-                      addAssignee($event.id);
-                    selectedUser = undefined;
-                  "
-                >
-                  <template #trigger>
-                    <Button variant="ghost" size="icon" :disabled="!issue" class="ml-2 h-8 w-8">
-                      <Icon name="fa-user-plus" class="w-4 h-4" />
-                    </Button>
-                  </template>
-                </UserSelect>
-              </div>
+                  <Button
+                    v-if="assignees.length === 0"
+                    variant="ghost"
+                    size="icon"
+                    class="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <Icon name="fa-user-plus" class="h-4 w-4 shrink-0" />
+                  </Button>
+                </div>
+              </IssueAssigneesDropdown>
             </div>
           </div>
 

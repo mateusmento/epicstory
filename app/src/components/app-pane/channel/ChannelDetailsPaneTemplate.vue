@@ -1,10 +1,9 @@
 <script lang="tsx" setup>
 import IconClose from "@/components/icons/IconClose.vue";
-import { UserSelect } from "@/components/user";
-import { Button, Dialog, DialogContent, DialogHeader, Form, Separator } from "@/design-system";
+import { Button, Separator } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
-import { ref, type FunctionalComponent as FC } from "vue";
+import { type FunctionalComponent as FC } from "vue";
 import ChannelMembers from "./ChannelMembers.vue";
 
 defineProps<{
@@ -13,7 +12,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: "add-member", userId: number): void;
-  (e: "remove-member", memberId: number): void;
+  (e: "remove-member", userId: number): void;
   (e: "close"): void;
 }>();
 
@@ -21,12 +20,8 @@ function addMember(userId: number) {
   emit("add-member", userId);
 }
 
-const showDialog = ref(false);
-
-const selectedUser = ref<User>();
-
-function removeMember(memberId: number) {
-  emit("remove-member", memberId);
+function removeMember(userId: number) {
+  emit("remove-member", userId);
 }
 </script>
 
@@ -62,18 +57,6 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 
     <Separator />
 
-    <ChannelMembers class="p-xl" :members @add="showDialog = true" @remove="removeMember" />
-
-    <Dialog v-model:open="showDialog">
-      <DialogContent>
-        <DialogHeader>Add Channel Member</DialogHeader>
-        <Form @submit="selectedUser && addMember(selectedUser.id)" class="flex:col-lg mt-xl">
-          <UserSelect v-model="selectedUser" class="flex-1" />
-          <Button type="submit" class="h-auto">Add</Button>
-
-          <ChannelMembers :members />
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <ChannelMembers class="p-xl" :members @add="addMember" @remove="removeMember" />
   </aside>
 </template>

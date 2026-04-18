@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UserAvatar } from "@/components/user";
+import { UserAvatarStack } from "@/components/user";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
@@ -20,11 +20,6 @@ const emit = defineEmits<{
 const labelsPreview = computed(() => (props.sub.labels ?? []).slice(0, 2));
 const labelsOverflow = computed(() =>
   Math.max(0, (props.sub.labels?.length ?? 0) - labelsPreview.value.length),
-);
-
-const assigneesPreview = computed(() => (props.sub.assignees ?? []).slice(0, 1));
-const assigneesOverflow = computed(() =>
-  Math.max(0, (props.sub.assignees?.length ?? 0) - assigneesPreview.value.length),
 );
 </script>
 
@@ -54,7 +49,7 @@ const assigneesOverflow = computed(() =>
     </div>
 
     <!-- Right meta (Linear-like) -->
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex min-w-0 items-center gap-2">
       <div class="flex items-center gap-1.5">
         <span
           v-for="l in labelsPreview"
@@ -68,23 +63,15 @@ const assigneesOverflow = computed(() =>
         <span v-if="labelsOverflow > 0" class="text-[11px] text-muted-foreground">+{{ labelsOverflow }}</span>
       </div>
 
-      <div class="flex items-center">
-        <UserAvatar
-          v-for="assignee of assigneesPreview"
-          :key="assignee.id"
-          :name="assignee.name"
-          :picture="assignee.picture"
+      <div class="flex min-w-0 items-center">
+        <UserAvatarStack
+          :users="sub.assignees ?? []"
           size="md"
-          :title="assignee.name"
-          class="border-2 border-white"
+          :min="1"
+          :overlap-px="8"
+          avatar-class="border-2 border-white"
+          class="min-w-0"
         />
-        <div
-          v-if="assigneesOverflow > 0"
-          class="ml-[-0.35rem] w-6 h-6 rounded-full border-2 border-white bg-zinc-100 text-[10px] text-muted-foreground grid place-items-center"
-          :title="`${sub.assignees?.length ?? 0} assignees`"
-        >
-          +{{ assigneesOverflow }}
-        </div>
       </div>
 
       <Menu>

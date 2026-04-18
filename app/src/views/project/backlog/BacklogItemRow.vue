@@ -1,26 +1,20 @@
 <script setup lang="ts">
-import { IssueLabelTags, issueStatusDotClass, IssueStatusDropdown } from "@/components/issue";
-import { UserSelect } from "@/components/user";
 import {
-  Button,
-  ContentEditable,
-  Menu,
-  MenuContent,
-  MenuTrigger,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/design-system";
+  IssueAssigneesDropdown,
+  IssueLabelTags,
+  issueStatusDotClass,
+  IssueStatusDropdown,
+} from "@/components/issue";
+import { UserAvatarStack } from "@/components/user";
+import { Button, ContentEditable, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { UserAvatar } from "@/components/user";
 import { cn } from "@/design-system/utils";
+import { useBacklog } from "@/domain/backlog";
 import type { Issue } from "@/domain/issues";
 import { computed } from "vue";
+import { useBacklogRowContext } from "./backlog-row.context";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
-import { useBacklogRowContext } from "./backlog-row.context";
-import { IssueStatusMenu } from "@/components/issue";
-import { useBacklog } from "@/domain/backlog";
 
 const props = defineProps<{
   itemId: number;
@@ -34,7 +28,7 @@ const ctx = useBacklogRowContext();
 
 const { gridColsClass, editing, openIssue, startEdit, cancelEdit, saveEdit } = ctx;
 
-const { updateIssue, addAssignee, addLabel, removeLabel } = useBacklog();
+const { updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useBacklog();
 
 const isEditing = computed(() => editing.id === props.issue.id);
 
@@ -49,10 +43,6 @@ const editableModel = computed({
     if (!v) cancelEdit();
   },
 });
-
-function updateStatus(status: string) {
-  updateIssue(props.issue.id, { status });
-}
 
 function updatePriority(priority: number) {
   updateIssue(props.issue.id, { priority });
@@ -168,34 +158,36 @@ function updateDueDate(dueDate: Date | null | undefined) {
     </div>
 
     <!-- Assignees -->
-    <UserSelect @update:model-value="$event && addAssignee(issue.id, $event.id)">
-      <template #trigger>
-        <div class="flex items-center justify-start">
-          <div class="flex items-center">
-            <UserAvatar
-              v-for="(assignee, i) of issue.assignees"
-              :key="assignee.id"
-              :name="assignee.name"
-              :picture="assignee.picture"
-              size="sm"
-              :title="assignee.name"
-              class="cursor-pointer border border-background"
-              :class="cn(i > 0 && 'ml-[-0.45rem]')"
-            />
-          </div>
-          <div
-            v-if="issue.assignees.length === 0"
-            class="ml-1 flex flex:center w-fit p-0.5 cursor-pointer border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
-            title="Add assignee"
-          >
-            <Icon
-              name="fa-user-plus"
-              class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
-            />
-          </div>
+    <IssueAssigneesDropdown
+      :assignees="issue.assignees"
+      @add="(u) => addAssignee(issue.id, u.id)"
+      @remove="(u) => removeAssignee(issue.id, u.id)"
+      #default="{ assignees }"
+    >
+      <div class="flex w-full min-w-0 cursor-pointer items-center justify-start">
+        <div class="flex w-full min-w-0 max-w-full items-center">
+          <UserAvatarStack
+            v-if="assignees.length"
+            :users="assignees"
+            size="sm"
+            :min="1"
+            :overlap-px="10"
+            avatar-class="cursor-pointer border border-background"
+            class="min-w-0 w-full"
+          />
         </div>
-      </template>
-    </UserSelect>
+        <div
+          v-if="assignees.length === 0"
+          class="ml-1 flex flex:center w-fit p-0.5 border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
+          title="Add assignee"
+        >
+          <Icon
+            name="fa-user-plus"
+            class="w-4 h-4 text-secondary-foreground/70 group-hover/assignee:text-secondary-foreground"
+          />
+        </div>
+      </div>
+    </IssueAssigneesDropdown>
 
     <!-- Due date -->
     <div class="justify-self-start">
