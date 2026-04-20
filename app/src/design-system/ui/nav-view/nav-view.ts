@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, inject, provide, reactive } from "vue";
+import { computed, inject, provide, reactive, type InjectionKey } from "vue";
 
 type NavViewContext = {
   content?: string;
@@ -7,6 +7,8 @@ type NavViewContext = {
   onTrigger?: (content: string) => void;
   onChange?: (content: string) => void;
 };
+
+const NAV_VIEW_CONTEXT_KEY: InjectionKey<NavViewContext> = Symbol("nav-view-context");
 
 const useNavViewStore = defineStore("nav-view", () => {
   const views = reactive<Record<string, NavViewContext>>({});
@@ -31,11 +33,11 @@ export function useNavView({ view, initialContent, onChange, onTrigger }: NavVie
       onTrigger,
     };
 
-  provide("nav-view", store.views[view]);
+  provide(NAV_VIEW_CONTEXT_KEY, store.views[view]);
 }
 
 export function useNavViewContent() {
-  const navView = inject<NavViewContext>("nav-view");
+  const navView = inject(NAV_VIEW_CONTEXT_KEY);
   if (!navView) throw new Error("NavView is not provided.");
   return navView;
 }
