@@ -96,49 +96,47 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
 
 <template>
   <div class="w-full h-full flex:col">
-    <div class="flex:row flex:center-y px-4 py-1.5 h-10">
-      <div class="flex:row flex:center-y flex-1">
-        <Breadcrumb class="mr-4">
-          <BreadcrumbList>
-            <BreadcrumbItem>Project</BreadcrumbItem>
+    <div class="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-1.5 h-10">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>Project</BreadcrumbItem>
 
+          <BreadcrumbSeparator />
+
+          <BreadcrumbItem>
+            <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`">
+              {{ project?.name }}
+            </RouterLink>
+          </BreadcrumbItem>
+
+          <template v-if="route.name === 'project-board'">
             <BreadcrumbSeparator />
 
             <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`">
-                {{ project?.name }}
+              <RouterLink :to="`/${workspaceId}/project/${projectId}/board`"> Board </RouterLink>
+            </BreadcrumbItem>
+          </template>
+
+          <template v-else-if="route.name === 'project-backlog'">
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`"> Backlog </RouterLink>
+            </BreadcrumbItem>
+          </template>
+
+          <template v-if="route.name === 'project-issue'">
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <RouterLink
+                :to="`/${workspaceId}/project/${projectId}/issue/${issueId}`"
+                class="truncate max-w-60"
+              >
+                {{ issue?.title }}
               </RouterLink>
             </BreadcrumbItem>
-
-            <template v-if="route.name === 'project-board'">
-              <BreadcrumbSeparator />
-
-              <BreadcrumbItem>
-                <RouterLink :to="`/${workspaceId}/project/${projectId}/board`"> Board </RouterLink>
-              </BreadcrumbItem>
-            </template>
-
-            <template v-else-if="route.name === 'project-backlog'">
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`"> Backlog </RouterLink>
-              </BreadcrumbItem>
-            </template>
-
-            <template v-if="route.name === 'project-issue'">
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <RouterLink
-                  :to="`/${workspaceId}/project/${projectId}/issue/${issueId}`"
-                  class="truncate max-w-60"
-                >
-                  {{ issue?.title }}
-                </RouterLink>
-              </BreadcrumbItem>
-            </template>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
+          </template>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <Dialog>
         <DialogTrigger as-child>
