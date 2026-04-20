@@ -6,7 +6,7 @@ import type { HTMLAttributes } from "vue";
 import { nextTick, onMounted, ref } from "vue";
 
 const props = defineProps<{
-  placeholder: string;
+  placeholder?: string;
   class?: HTMLAttributes["class"];
   autoFocus?: boolean;
 }>();

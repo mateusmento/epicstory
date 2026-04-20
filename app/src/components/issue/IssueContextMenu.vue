@@ -11,13 +11,12 @@ import {
 } from "@/design-system";
 import { useBacklog } from "@/domain/backlog";
 import type { Issue } from "@/domain/issues";
-import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { closeAllContextMenusExcept, registerContextMenu } from "./context-menu-registry";
-import IssuePickerMenu from "./IssuePickerMenu.vue";
+import { computed, ref } from "vue";
 import IssueAssigneesMenu from "./IssueAssigneesMenu.vue";
 import IssueDeleteDialog from "./IssueDeleteDialog.vue";
 import IssueDueDateMenu from "./IssueDueDateMenu.vue";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
+import IssuePickerMenu from "./IssuePickerMenu.vue";
 import IssueRenameDialog from "./IssueRenameDialog.vue";
 import IssueStatusMenu from "./status/IssueStatusMenu.vue";
 
@@ -28,10 +27,6 @@ const props = defineProps<{
 
 const renameOpen = ref(false);
 const deleteOpen = ref(false);
-const open = ref(false);
-
-const menuId = getCurrentInstance()?.uid ?? Math.floor(Math.random() * 1_000_000_000);
-
 const labelIds = computed(() => (props.issue?.labels ?? []).map((l) => l.id));
 
 const { addLabel, removeLabel, updateIssue, addAssignee, removeAssignee, removeIssue, markAsSubIssueOf } =
@@ -53,28 +48,10 @@ async function onLabelsUpdate(nextIds: number[]) {
     }
   }
 }
-
-watch(
-  open,
-  (isOpen) => {
-    if (isOpen) closeAllContextMenusExcept(menuId);
-  },
-  { immediate: true },
-);
-
-let unregister: (() => void) | undefined;
-onMounted(() => {
-  unregister = registerContextMenu(menuId, () => {
-    open.value = false;
-  });
-});
-onBeforeUnmount(() => {
-  unregister?.();
-});
 </script>
 
 <template>
-  <Menu type="context-menu" v-model:open="open">
+  <Menu type="context-menu">
     <MenuTrigger as-child>
       <slot />
     </MenuTrigger>
