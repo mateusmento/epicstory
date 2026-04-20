@@ -2,6 +2,43 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Debug App (Chrome)",
+      "url": "https://epicstory.io/",
+      "webRoot": "${workspaceFolder}/app",
+      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/app/node_modules/**"
+      ]
+    },
+    {
+      "type": "msedge",
+      "request": "launch",
+      "name": "Debug App (Edge)",
+      "url": "https://epicstory.io/",
+      "webRoot": "${workspaceFolder}/app",
+      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/app/node_modules/**"
+      ]
+    },
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Attach to Chrome (start Chrome with --remote-debugging-port=9222)",
+      "port": 9222,
+      "url": "https://epicstory.io/",
+      "webRoot": "${workspaceFolder}/app",
+      "sourceMaps": true,
+      "skipFiles": [
+        "<node_internals>/**",
+        "${workspaceFolder}/app/node_modules/**"
+      ]
+    },
+    {
       "type": "node",
       "request": "attach",
       "name": "Attach to API (Docker)",
