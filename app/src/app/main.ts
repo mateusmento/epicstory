@@ -13,7 +13,7 @@ import "@tiptap/extensions/undo-redo";
 import "@tiptap/extension-table";
 import "@tiptap/extension-list";
 import "@tiptap/extension-image";
-import "highlight.js/styles/github-dark.css";
+import "highlight.js/styles/github.css";
 import "@/design-system/styles/main.css";
 import "@/design-system/styles/main.scss";
 

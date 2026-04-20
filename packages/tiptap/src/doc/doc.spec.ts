@@ -19,6 +19,23 @@ describe("normalizeTiptapDoc", () => {
     const out = normalizeTiptapDoc(doc) as { content: unknown[] };
     expect(out.content).toHaveLength(1);
   });
+
+  it("strips trailing newlines from codeBlock text", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "codeBlock",
+          attrs: { language: "ts" },
+          content: [{ type: "text", text: "const x = 1;\n\n" }],
+        },
+      ],
+    };
+    const out = normalizeTiptapDoc(doc) as {
+      content: { type: string; content: { type: string; text: string }[] }[];
+    };
+    expect(out.content[0].content[0].text).toBe("const x = 1;");
+  });
 });
 
 describe("tiptapToPlainText", () => {

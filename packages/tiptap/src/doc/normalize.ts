@@ -1,5 +1,6 @@
 /**
  * Drops empty trailing paragraphs (including paragraph-with-only-hardBreaks) from a doc JSON.
+ * Trims trailing newline(s) inside code blocks so `pre`/`whitespace-pre` does not show an extra empty line.
  */
 export function normalizeTiptapDoc(doc: unknown): any {
   if (!doc || typeof doc !== "object") return doc;
@@ -24,5 +25,29 @@ export function normalizeTiptapDoc(doc: unknown): any {
   ) {
     next.content.pop();
   }
-  return next;
+  return trimCodeBlocksInTree(next);
+}
+
+function trimCodeBlockTextNodes(content: unknown[]): unknown[] {
+  if (content.length === 0) return content;
+  const lastIdx = content.length - 1;
+  const last = content[lastIdx] as { type?: string; text?: string };
+  if (last?.type !== "text" || typeof last.text !== "string") return content;
+  const trimmed = last.text.replace(/\n+$/u, "");
+  if (trimmed === last.text) return content;
+  const copy = [...content];
+  copy[lastIdx] = { ...last, text: trimmed };
+  return copy;
+}
+
+function trimCodeBlocksInTree(node: unknown): unknown {
+  if (!node || typeof node !== "object") return node;
+  const o = node as { type?: string; content?: unknown[] };
+  if (o.type === "codeBlock" && Array.isArray(o.content)) {
+    return { ...o, content: trimCodeBlockTextNodes(o.content) };
+  }
+  if (Array.isArray(o.content)) {
+    return { ...o, content: o.content.map(trimCodeBlocksInTree) };
+  }
+  return node;
 }
