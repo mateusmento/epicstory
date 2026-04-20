@@ -16,7 +16,6 @@ import { create } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import {
   CreateIssue,
-  FindBacklogItems,
   FindIssues,
   FindProject,
   RemoveProject,
@@ -33,15 +32,6 @@ export class ProjectController {
   @UseGuards(JwtAuthGuard)
   findProject(@Param('id') projectId: number) {
     return this.queryBus.execute(new FindProject({ projectId }));
-  }
-
-  @Post(':id/backlog-items')
-  @UseGuards(JwtAuthGuard)
-  findProjectBacklogItems(
-    @Param('id') projectId: number,
-    @Body() query: FindBacklogItems,
-  ) {
-    return this.queryBus.execute(new FindBacklogItems({ ...query, projectId }));
   }
 
   @Get(':id/issues')
