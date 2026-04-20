@@ -8,13 +8,17 @@ const isDetailsPaneOpen = defineModel<boolean>("isDetailsPaneOpen", { required: 
 
 <template>
   <div class="h-full">
-    <div class="flex w-full h-full">
-      <Navbar>
+    <div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] w-full h-full">
+      <Navbar class="col-start-1 row-start-1 -row-end-1">
         <slot name="navbar" :isAppPaneOpen="isAppPaneOpen" />
       </Navbar>
 
+      <section class="col-start-2 row-start-1">
+        <slot name="topbar" />
+      </section>
+
       <main
-        class="flex flex-1 min-w-0 bg-white mt-2 rounded-tl-lg overflow-hidden border border-zinc-300/60 shadow-md shadow-zinc-300/60"
+        class="col-start-2 row-start-2 flex flex-1 min-w-0 bg-white rounded-tl-lg overflow-hidden border border-zinc-300/60 shadow-md shadow-zinc-300/60"
       >
         <DrawerPane view="app-pane" v-model:open="isAppPaneOpen">
           <slot name="app-pane" />

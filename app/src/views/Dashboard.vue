@@ -69,6 +69,10 @@ watch(workspaceId, loadWorkspace);
       <NavbarContent content="settings" :as="SettingsNavbar" />
     </template>
 
+    <template #topbar>
+      <div class="my-2"></div>
+    </template>
+
     <template #app-pane>
       <DrawerPaneContent content="inbox" :as="Inbox" />
       <DrawerPaneContent content="issues" :as="Issues" />
