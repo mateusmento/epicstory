@@ -4,10 +4,11 @@ import BoardItem from "@/components/board/BoardItem.vue";
 import { cn } from "@/design-system/utils";
 import { useBacklog, type BacklogItem } from "@/domain/backlog";
 import type { Issue } from "@/domain/issues";
+import { useProjectFilters } from "@/domain/project";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import IssueCard from "./IssueCard.vue";
-import { useProjectFilters } from "@/domain/project";
+import { ScrollArea } from "@/design-system";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
@@ -120,57 +121,63 @@ watch(
   },
   { immediate: true },
 );
+
+const BOARD_COLUMN_CLASSES = "flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl bg-background/60";
+
+const BOARD_COLUMN_INNER = "!flex flex:col-md flex-1 min-h-0 m-2 rounded-lg";
 </script>
 
 <template>
-  <div class="flex:col-xl w-full h-full px-6 py-6 overflow-hidden">
-    <div class="flex:row-xl flex-1 min-h-0 overflow-x-auto">
+  <div class="flex:col-xl w-full h-full p-2">
+    <div class="flex:row gap-lg flex-1 min-h-0">
       <!-- TODO column -->
       <BoardColumn
         group="project-board"
         v-model="todo"
-        class="flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl border border-border bg-background/60"
+        :class="BOARD_COLUMN_CLASSES"
         @drop="onColumnDrop('todo', $event)"
       >
-        <div class="flex:row-md flex:center-y justify-between px-4 pt-4">
+        <div class="flex:row-md flex:center-y justify-between p-4 pb-0">
           <div class="text-sm font-semibold text-foreground">To do</div>
           <div class="text-xs text-secondary-foreground bg-secondary px-2 py-1 rounded-full">
             {{ counts.todo }}
           </div>
         </div>
 
-        <div :class="cn('flex:col-md flex-1 min-h-0 m-3 p-3 rounded-lg overflow-y-auto', 'bg-secondary/30')">
-          <TransitionGroup name="board-column">
-            <BoardItem
-              v-for="item in todo"
-              :key="item.id"
-              group="project-board"
-              :source="todo"
-              :itemId="item.id"
-            >
-              <IssueCard
-                :item="item"
-                @open-issue="openIssue"
-                @add-label="addLabel(item.issue.id, $event)"
-                @remove-label="removeLabel(item.issue.id, $event)"
-              />
-            </BoardItem>
-          </TransitionGroup>
+        <ScrollArea>
+          <div :class="cn(BOARD_COLUMN_INNER)">
+            <TransitionGroup name="board-column">
+              <BoardItem
+                v-for="item in todo"
+                :key="item.id"
+                group="project-board"
+                :source="todo"
+                :itemId="item.id"
+              >
+                <IssueCard
+                  :item="item"
+                  @open-issue="openIssue"
+                  @add-label="addLabel(item.issue.id, $event)"
+                  @remove-label="removeLabel(item.issue.id, $event)"
+                />
+              </BoardItem>
+            </TransitionGroup>
 
-          <div
-            v-if="todo.length === 0"
-            class="flex items-center justify-center h-24 text-sm text-secondary-foreground"
-          >
-            No issues
+            <div
+              v-if="todo.length === 0"
+              class="flex items-center justify-center h-24 text-sm text-secondary-foreground"
+            >
+              No issues
+            </div>
           </div>
-        </div>
+        </ScrollArea>
       </BoardColumn>
 
       <!-- DOING column -->
       <BoardColumn
         group="project-board"
         v-model="doing"
-        class="flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl border border-border bg-background/60"
+        :class="BOARD_COLUMN_CLASSES"
         @drop="onColumnDrop('doing', $event)"
       >
         <div class="flex:row-md flex:center-y justify-between px-4 pt-4">
@@ -180,38 +187,40 @@ watch(
           </div>
         </div>
 
-        <div :class="cn('flex:col-md flex-1 min-h-0 m-3 p-3 rounded-lg overflow-y-auto', 'bg-blue-500/10')">
-          <TransitionGroup name="board-column">
-            <BoardItem
-              v-for="item in doing"
-              :key="item.id"
-              group="project-board"
-              :source="doing"
-              :itemId="item.id"
-            >
-              <IssueCard
-                :item="item"
-                @open-issue="openIssue"
-                @add-label="addLabel(item.issue.id, $event)"
-                @remove-label="removeLabel(item.issue.id, $event)"
-              />
-            </BoardItem>
-          </TransitionGroup>
+        <ScrollArea>
+          <div :class="cn(BOARD_COLUMN_INNER)">
+            <TransitionGroup name="board-column">
+              <BoardItem
+                v-for="item in doing"
+                :key="item.id"
+                group="project-board"
+                :source="doing"
+                :itemId="item.id"
+              >
+                <IssueCard
+                  :item="item"
+                  @open-issue="openIssue"
+                  @add-label="addLabel(item.issue.id, $event)"
+                  @remove-label="removeLabel(item.issue.id, $event)"
+                />
+              </BoardItem>
+            </TransitionGroup>
 
-          <div
-            v-if="doing.length === 0"
-            class="flex items-center justify-center h-24 text-sm text-secondary-foreground"
-          >
-            No issues
+            <div
+              v-if="doing.length === 0"
+              class="flex items-center justify-center h-24 text-sm text-secondary-foreground"
+            >
+              No issues
+            </div>
           </div>
-        </div>
+        </ScrollArea>
       </BoardColumn>
 
       <!-- DONE column -->
       <BoardColumn
         group="project-board"
         v-model="done"
-        class="flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl border border-border bg-background/60"
+        :class="BOARD_COLUMN_CLASSES"
         @drop="onColumnDrop('done', $event)"
       >
         <div class="flex:row-md flex:center-y justify-between px-4 pt-4">
@@ -221,31 +230,33 @@ watch(
           </div>
         </div>
 
-        <div :class="cn('flex:col-md flex-1 min-h-0 m-3 p-3 rounded-lg overflow-y-auto', 'bg-green-500/10')">
-          <TransitionGroup name="board-column">
-            <BoardItem
-              v-for="item in done"
-              :key="item.id"
-              group="project-board"
-              :source="done"
-              :itemId="item.id"
-            >
-              <IssueCard
-                :item="item"
-                @open-issue="openIssue"
-                @add-label="addLabel(item.issue.id, $event)"
-                @remove-label="removeLabel(item.issue.id, $event)"
-              />
-            </BoardItem>
-          </TransitionGroup>
+        <ScrollArea>
+          <div :class="cn(BOARD_COLUMN_INNER)">
+            <TransitionGroup name="board-column">
+              <BoardItem
+                v-for="item in done"
+                :key="item.id"
+                group="project-board"
+                :source="done"
+                :itemId="item.id"
+              >
+                <IssueCard
+                  :item="item"
+                  @open-issue="openIssue"
+                  @add-label="addLabel(item.issue.id, $event)"
+                  @remove-label="removeLabel(item.issue.id, $event)"
+                />
+              </BoardItem>
+            </TransitionGroup>
 
-          <div
-            v-if="done.length === 0"
-            class="flex items-center justify-center h-24 text-sm text-secondary-foreground"
-          >
-            No issues
+            <div
+              v-if="done.length === 0"
+              class="flex items-center justify-center h-24 text-sm text-secondary-foreground"
+            >
+              No issues
+            </div>
           </div>
-        </div>
+        </ScrollArea>
       </BoardColumn>
     </div>
   </div>
