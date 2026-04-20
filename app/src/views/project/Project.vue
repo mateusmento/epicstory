@@ -138,18 +138,6 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
             </template>
           </BreadcrumbList>
         </Breadcrumb>
-
-        <Dialog>
-          <DialogTrigger as-child>
-            <Button variant="outline" size="icon">
-              <SquarePen class="w-4 h-4" />
-              <span class="ml-1 text-xs">New issue</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent as-child>
-            <NewIssueModal :project-id="+projectId" />
-          </DialogContent>
-        </Dialog>
       </div>
 
       <Dialog>
@@ -202,7 +190,19 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
         </DialogContent>
       </Dialog>
 
-      <div class="flex-1"></div>
+      <div class="flex:row flex:center-y justify-end flex-1">
+        <Dialog>
+          <DialogTrigger as-child>
+            <Button variant="outline" size="icon">
+              <SquarePen class="w-4 h-4" />
+              <span class="ml-1 text-xs">New issue</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent as-child>
+            <NewIssueModal :project-id="+projectId" />
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
 
     <Separator />
