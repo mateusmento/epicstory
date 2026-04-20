@@ -112,20 +112,22 @@ function onMessageDeleted(messageId: number) {
         <div class="text-sm" @click="emit('more-details')">{{ chatTitle }}</div>
       </div>
 
-      <div v-if="onlineUsers.length" class="flex min-w-0 flex-1 items-center gap-2">
+      <div class="flex-1"></div>
+
+      <div v-if="onlineUsers.length" class="flex min-w-0 items-center gap-2">
         <UserAvatarStack
           :users="onlineUsers"
           size="md"
           variant="mentionRow"
           :min="1"
-          :overlap-px="12"
-          class="min-w-0 flex-1"
+          :overlap-px="8"
+          class="min-w-0 w-20 justify-end"
         />
         <div class="h-2 w-2 shrink-0 rounded-full bg-green-400"></div>
         <div class="shrink-0 text-xs text-muted-foreground">{{ onlineUsers.length }} online</div>
       </div>
 
-      <ButtonGroup class="ml-auto shrink-0">
+      <ButtonGroup class="ml-xl shrink-0">
         <Button
           size="icon"
           variant="outline"
@@ -183,7 +185,14 @@ function onMessageDeleted(messageId: number) {
               <template v-for="(member, i) of channel.peers" :key="member.id">
                 <template v-if="i > 0 && i < channel.peers.length - 1">, </template>
                 <template v-else-if="i > 0"> and </template>
-                <span class="bg-[#c7f9ff] p-1 rounded-lg text-[#008194] font-bold">
+                <span
+                  class="inline-flex items-center"
+                  :class="
+                    member.id === meId
+                      ? 'px-0.5 rounded-sm bg-mentionHighlight text-mentionHighlight-foreground font-medium'
+                      : 'px-0.5 rounded-sm bg-mention-chip text-mention font-medium'
+                  "
+                >
                   @{{ member.name }}
                 </span> </template
               >.

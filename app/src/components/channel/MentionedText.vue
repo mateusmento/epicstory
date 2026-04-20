@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { User } from "@/domain/auth";
+import { useAuth } from "@/domain/auth";
 import { computed } from "vue";
 import MentionHoverCard from "./MentionHoverCard.vue";
 
@@ -8,9 +9,17 @@ type Segment = { type: "text"; value: string } | { type: "mention"; id: number; 
 const props = defineProps<{
   content: string;
   mentionedUsers?: User[];
+  /** Current user id from channel context (preferred over auth store for “mention me” styling). */
+  meId: number;
 }>();
 
+const { user: currentUser } = useAuth();
+
 const usersById = computed(() => new Map((props.mentionedUsers ?? []).map((u) => [u.id, u])));
+
+function isMentionSelf(mentionUserId: number) {
+  return props.meId === mentionUserId || currentUser.value?.id === mentionUserId;
+}
 
 const segments = computed<Segment[]>(() => {
   const text = props.content ?? "";
@@ -46,7 +55,12 @@ const segments = computed<Segment[]>(() => {
       <span v-if="seg.type === 'text'">{{ seg.value }}</span>
       <MentionHoverCard v-else :user="seg.user" :raw="seg.raw">
         <span
-          class="inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold cursor-pointer"
+          class="inline-flex items-center cursor-pointer"
+          :class="
+            isMentionSelf(seg.id)
+              ? 'px-0.5 rounded-sm bg-mentionHighlight text-mentionHighlight-foreground font-medium'
+              : 'px-0.5 rounded-sm bg-mention-chip text-mention font-medium'
+          "
         >
           @{{ seg.user?.name ?? seg.id }}
         </span>

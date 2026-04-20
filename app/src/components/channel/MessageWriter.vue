@@ -13,7 +13,7 @@ import {
   saveChannelDraft,
 } from "@/domain/channels";
 import { debounce } from "lodash";
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
 import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import {
@@ -138,6 +138,14 @@ const mentionSuggestion = createVueFloatingSuggestion({
   className: "outline-none",
 });
 
+const mentionContext = reactive<{ meId: number | undefined }>({ meId: props.meId });
+watch(
+  () => props.meId,
+  (v) => {
+    mentionContext.meId = v;
+  },
+);
+
 const editor = useEditor({
   extensions: [
     ...createRichTextExtensions({
@@ -153,13 +161,15 @@ const editor = useEditor({
       : []),
     createMentionExtensionWithNodeView(TiptapMentionNodeView, {
       HTMLAttributes: {
-        class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
+        class:
+          "mention-chip inline-flex items-center px-0.5 rounded-sm bg-mention-chip text-mention font-medium",
       },
       renderText({ node }: { node: { attrs: { label?: unknown; id?: unknown } } }) {
         return `@${node.attrs.label ?? node.attrs.id}`;
       },
       // Used by `TiptapMentionNodeView.vue` via `props.extension.options.userById`
       userById: (id: number) => mentionablesById.value.get(id),
+      mentionContext,
       suggestion: mentionSuggestion,
     } as any),
     createPlaceholderExtension(() => composerPlaceholder.value),
@@ -440,12 +450,12 @@ function formatTime(seconds: number) {
 
 <template>
   <div
-    class="flex:col-md p-3 border border-zinc-200 rounded-xl bg-white focus-within:outline outline-1 outline-zinc-300/60"
+    class="flex:col-md flex min-h-0 max-h-[50vh] flex-col overflow-hidden p-3 border border-zinc-200 rounded-xl bg-white focus-within:outline outline-1 outline-zinc-300/60"
     @click="editor?.commands.focus()"
   >
     <div
       v-if="quotedMessage && !editingMessage"
-      class="flex:row-md flex:center-y gap-2 mb-2 pb-2 border-b border-zinc-200/80 text-xs text-muted-foreground"
+      class="flex:row-md flex:center-y shrink-0 gap-2 mb-2 pb-2 border-b border-zinc-200/80 text-xs text-muted-foreground"
     >
       <div class="flex-1 min-w-0">
         <span class="font-medium text-foreground/80">{{ quotedMessage.sender.name }}</span>
@@ -462,9 +472,11 @@ function formatTime(seconds: number) {
         ×
       </Button>
     </div>
-    <EditorContent v-if="editor" :editor="editor" />
+    <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-0.5">
+      <EditorContent v-if="editor" :editor="editor" />
+    </div>
 
-    <div class="flex:row-md flex:center-y mt-2 text-secondary-foreground">
+    <div class="flex:row-md flex:center-y mt-2 shrink-0 text-secondary-foreground">
       <Button
         variant="ghost"
         size="icon"

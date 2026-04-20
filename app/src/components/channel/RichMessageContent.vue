@@ -10,14 +10,23 @@ import { normalizeTiptapDoc } from "@epicstory/tiptap";
 import type { User } from "@/domain/auth";
 import TiptapCodeBlockCardNodeView from "./TiptapCodeBlockCardNodeView.vue";
 import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
-import { computed, onBeforeUnmount, watch } from "vue";
+import { computed, onBeforeUnmount, reactive, watch } from "vue";
 
 const props = defineProps<{
   contentRich: any;
   mentionedUsers?: User[];
+  meId: number;
 }>();
 
 const usersById = computed(() => new Map((props.mentionedUsers ?? []).map((u) => [u.id, u])));
+
+const mentionContext = reactive({ meId: props.meId });
+watch(
+  () => props.meId,
+  (v) => {
+    mentionContext.meId = v;
+  },
+);
 
 const editor = useEditor({
   editable: false,
@@ -29,12 +38,14 @@ const editor = useEditor({
     }),
     createMentionExtensionWithNodeView(TiptapMentionNodeView, {
       HTMLAttributes: {
-        class: "mention-chip inline-flex items-center px-1 rounded-md bg-[#c7f9ff] text-[#008194] font-bold",
+        class:
+          "mention-chip inline-flex items-center px-0.5 rounded-sm bg-mention-chip text-mention font-medium",
       },
       renderText({ node }: any) {
         return `@${node.attrs.label ?? node.attrs.id}`;
       },
       userById: (id: number) => usersById.value.get(id),
+      mentionContext,
     } as any),
   ],
   content: normalizeTiptapDoc(props.contentRich),

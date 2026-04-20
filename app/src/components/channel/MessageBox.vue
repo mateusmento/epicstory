@@ -78,11 +78,13 @@ const quotedExcerpt = computed(() => {
             v-if="props.message.contentRich"
             :contentRich="props.message.contentRich"
             :mentioned-users="props.message.mentionedUsers"
+            :me-id="props.meId"
           />
           <MentionedText
             v-else
             :content="props.message.content"
             :mentioned-users="props.message.mentionedUsers"
+            :me-id="props.meId"
           />
           <div
             v-if="'editedAt' in props.message && props.message.editedAt"

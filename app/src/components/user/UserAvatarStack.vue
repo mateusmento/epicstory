@@ -95,7 +95,7 @@ const overflowBadgeStyle = computed(() => ({
 </script>
 
 <template>
-  <div ref="containerEl" class="flex w-full min-h-0 min-w-0 items-center overflow-hidden self-stretch">
+  <div ref="containerEl" class="flex min-h-0 min-w-0 items-center overflow-hidden self-stretch">
     <template v-if="showStack">
       <UserAvatar
         v-for="(u, i) in visibleUsers"
