@@ -110,7 +110,8 @@ const composerPlaceholder = computed(() =>
 
 const quotedExcerpt = computed(() => {
   if (!props.quotedMessage) return "";
-  const t = messageBodyPlainText(props.quotedMessage).replace(/\s+/g, " ").trim();
+  const raw = props.quotedMessage.displayContent ?? messageBodyPlainText(props.quotedMessage);
+  const t = raw.replace(/\s+/g, " ").trim();
   return t.length > 160 ? `${t.slice(0, 160)}…` : t;
 });
 

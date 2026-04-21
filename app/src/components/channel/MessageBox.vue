@@ -57,7 +57,8 @@ watch([messageBoxRef, messageActionsRef], ([messageBoxEl, messageActionsEl]) => 
 const quotedExcerpt = computed(() => {
   const q = props.message.quotedMessage;
   if (!q) return "";
-  const t = messageBodyPlainText(q).replace(/\s+/g, " ").trim();
+  const raw = q.displayContent ?? messageBodyPlainText(q);
+  const t = raw.replace(/\s+/g, " ").trim();
   return t.length > 220 ? `${t.slice(0, 220)}…` : t;
 });
 </script>

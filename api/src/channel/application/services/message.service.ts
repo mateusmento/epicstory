@@ -34,6 +34,7 @@ export type QuotedMessagePreview = {
   sender: User;
   content: string;
   contentRich?: any;
+  displayContent: string;
 };
 
 export class MessageDto extends Message {
@@ -136,7 +137,7 @@ export class MessageService {
         reactions,
         displayContent,
         mentionedUsers,
-        quotedMessage: this.toQuotedPreview(quotedSrc),
+        quotedMessage: this.buildQuotedPreview(quotedSrc, peerUsersMap),
       });
     });
   }
@@ -197,7 +198,7 @@ export class MessageService {
         where: { id: resolvedQuote },
         relations: { sender: true },
       });
-      quotedPreview = this.toQuotedPreview(q);
+      quotedPreview = this.buildQuotedPreview(q, peerUsersMap);
     }
 
     return new MessageDto({
@@ -231,8 +232,9 @@ export class MessageService {
     return quotedMessageId;
   }
 
-  private toQuotedPreview(
-    m?: Message | null,
+  buildQuotedPreview(
+    m: Message | null | undefined,
+    peerUsersMap: Map<number, User>,
   ): QuotedMessagePreview | undefined {
     if (!m?.sender) return undefined;
     return {
@@ -240,6 +242,7 @@ export class MessageService {
       sender: m.sender,
       content: m.content,
       contentRich: m.contentRich,
+      displayContent: renderMentions(m.content, peerUsersMap),
     };
   }
 
@@ -352,7 +355,10 @@ export class MessageService {
       const qSrc = reply.quotedMessageId
         ? replyQuotedById.get(reply.quotedMessageId)
         : undefined;
-      (reply as any).quotedMessage = this.toQuotedPreview(qSrc);
+      (reply as any).quotedMessage = this.buildQuotedPreview(
+        qSrc,
+        peerUsersMap,
+      );
     }
 
     return replies;

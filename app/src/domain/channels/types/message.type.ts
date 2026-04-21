@@ -7,6 +7,7 @@ export type IQuotedMessagePreview = {
   sender: User;
   content: string;
   contentRich?: any;
+  displayContent?: string;
 };
 
 export interface IMessage {
