@@ -77,4 +77,7 @@ export {
   FaTrash,
   BiPencilSquare,
   BiTelephone,
+  FaQuoteRight,
+  FaCopy,
+  FaEdit,
 } from "oh-vue-icons/icons";

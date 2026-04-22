@@ -20,6 +20,7 @@ import {
   List,
   ListChecks,
   ListOrdered,
+  Quote,
   Redo2,
   Strikethrough,
   Table2,
@@ -136,7 +137,7 @@ function toggleLink() {
         <div v-if="description" class="text-sm text-foreground leading-relaxed">
           <div
             v-if="descriptionIsHtml"
-            class="[&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700"
+            class="[&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700 [&_.epic-blockquote]:flex [&_.epic-blockquote]:flex-row [&_.epic-blockquote]:gap-3 [&_.epic-blockquote]:items-stretch [&_.epic-blockquote]:border-0 [&_.epic-blockquote]:my-2 [&_.epic-blockquote]:mx-0 [&_.epic-blockquote]:p-0 [&_.epic-blockquote]:rounded-md [&_.epic-blockquote]:text-muted-foreground [&_.epic-blockquote-rail]:w-1.5 [&_.epic-blockquote-rail]:shrink-0 [&_.epic-blockquote-rail]:self-stretch [&_.epic-blockquote-rail]:min-h-[1.25rem] [&_.epic-blockquote-rail]:rounded-full [&_.epic-blockquote-rail]:bg-zinc-200 [&_.epic-blockquote-rail]:select-none [&_.epic-blockquote-body]:min-w-0 [&_.epic-blockquote-body]:flex-1 [&_blockquote:not(.epic-blockquote)]:border-l-4 [&_blockquote:not(.epic-blockquote)]:border-zinc-200 [&_blockquote:not(.epic-blockquote)]:pl-3 [&_blockquote:not(.epic-blockquote)]:pr-2 [&_blockquote:not(.epic-blockquote)]:py-1.5 [&_blockquote:not(.epic-blockquote)]:my-2 [&_blockquote:not(.epic-blockquote)]:rounded-md [&_blockquote:not(.epic-blockquote)]:text-muted-foreground [&_.epic-inline-code]:font-mono [&_.epic-inline-code]:text-[0.8125rem] [&_.epic-inline-code]:bg-zinc-100 [&_.epic-inline-code]:text-zinc-900 [&_.epic-inline-code]:rounded [&_.epic-inline-code]:border [&_.epic-inline-code]:border-zinc-200/90 [&_.epic-inline-code]:px-1 [&_.epic-inline-code]:py-px [&_p>code]:font-mono [&_p>code]:text-[0.8125rem] [&_p>code]:bg-zinc-100 [&_p>code]:text-zinc-900 [&_p>code]:rounded [&_p>code]:border [&_p>code]:border-zinc-200/90 [&_p>code]:px-1 [&_p>code]:py-px"
             v-html="description"
           />
           <div v-else class="whitespace-pre-wrap">{{ description }}</div>
@@ -177,6 +178,17 @@ function toggleLink() {
             @click="editor?.chain().focus().toggleStrike().run()"
           >
             <Strikethrough class="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="h-8 w-8"
+            title="Quote"
+            :class="editor?.isActive('blockquote') ? 'bg-zinc-100' : ''"
+            :disabled="!editor"
+            @click="editor?.chain().focus().toggleBlockquote().run()"
+          >
+            <Quote class="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"

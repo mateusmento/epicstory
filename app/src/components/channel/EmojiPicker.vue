@@ -2,9 +2,9 @@
 import { Button, type ButtonVariants, ScrollArea } from "@/design-system";
 import { Popover, PopoverContent, PopoverTrigger } from "@/design-system/ui/popover";
 import { SmilePlusIcon } from "lucide-vue-next";
-import { PopoverPortal } from "radix-vue";
 import type { HTMLAttributes } from "vue";
 import { ref } from "vue";
+import { emojis } from "./emojis";
 
 const props = defineProps<{
   variant?: ButtonVariants["variant"];
@@ -12,114 +12,14 @@ const props = defineProps<{
   class?: HTMLAttributes["class"];
 }>();
 
+// Destructure props to avoid reserved keyword issues
+const { variant, size, class: className } = props;
+
 const emit = defineEmits<{
   select: [emoji: string];
 }>();
 
 const isOpen = ref(false);
-
-// Destructure props to avoid reserved keyword issues
-const { variant, size, class: className } = props;
-
-// Common emoji reactions - organized by category
-const emojis = [
-  // Thumbs and gestures
-  "👍",
-  "👎",
-  "👏",
-  "🙏",
-  "🤝",
-  "💪",
-  "🙌",
-  // Hearts and love
-  "❤️",
-  "🧡",
-  "💛",
-  "💚",
-  "💙",
-  "💜",
-  "🖤",
-  "🤍",
-  "❤️‍🔥",
-  "💔",
-  // Happy faces
-  "😊",
-  "😍",
-  "🥳",
-  "😎",
-  "😇",
-  "🤠",
-  "😏",
-  // Laughing
-  "😂",
-  "🤣",
-  "😆",
-  "😄",
-  "😃",
-  // Surprised
-  "😮",
-  "😲",
-  "🤯",
-  "😱",
-  "👀",
-  // Thinking
-  "🤔",
-  "🧐",
-  "🤓",
-  // Sad
-  "😢",
-  "😭",
-  "😥",
-  "😓",
-  "😰",
-  "😨",
-  // Angry
-  "😠",
-  "😡",
-  "🤬",
-  "😤",
-  // Other expressions
-  "😴",
-  "🤤",
-  "😪",
-  "😵",
-  "😵‍💫",
-  "🤐",
-  "🤫",
-  "🤭",
-  "🤥",
-  "😬",
-  "🙄",
-  "😒",
-  "😶",
-  "😶‍🌫️",
-  "🤗",
-  "🥴",
-  // Sick
-  "😷",
-  "🤒",
-  "🤕",
-  "🤢",
-  "🤮",
-  "🤧",
-  // Temperature
-  "🥵",
-  "🥶",
-  // Fire and celebration
-  "🔥",
-  "🎉",
-  "✨",
-  "💯",
-  // Characters
-  "🤡",
-  "👻",
-  "👽",
-  "🤖",
-  "💀",
-  "☠️",
-  "👾",
-  "👿",
-];
 
 function handleEmojiSelect(emoji: string) {
   emit("select", emoji);

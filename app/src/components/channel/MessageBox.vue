@@ -15,6 +15,7 @@ import { messageBodyPlainText } from "@epicstory/tiptap";
 import { computed, ref, watch } from "vue";
 import MentionedText from "./MentionedText.vue";
 import MessageActions from "./MessageActions.vue";
+import MessageContextMenu from "./MessageContextMenu.vue";
 import RichMessageContent from "./RichMessageContent.vue";
 
 const props = defineProps<{
@@ -64,35 +65,49 @@ const quotedExcerpt = computed(() => {
 </script>
 
 <template>
-  <div class="flex:col my-2">
+  <div class="flex:col">
     <div
       v-if="props.message.quotedMessage"
-      class="mb-1 ml-0 pl-2 border-zinc-300 rounded-md bg-zinc-100 py-1.5 text-xs text-muted-foreground"
+      class="flex flex-row gap-3 items-stretch border-0 my-1 ml-3 rounded-md text-muted-foreground/90"
     >
-      <span class="font-medium text-foreground/85">{{ props.message.quotedMessage.sender.name }}</span>
-      <p class="mt-0.5 line-clamp-4 whitespace-pre-wrap">{{ quotedExcerpt }}</p>
+      <div class="w-1.5 shrink-0 self-stretch min-h-[1.25rem] rounded-full bg-zinc-200 select-none"></div>
+      <div class="min-w-0 flex-1 text-sm py-1">
+        <span class="font-medium">{{ props.message.quotedMessage.sender.name }}</span>
+        <p class="line-clamp-4 whitespace-pre-wrap">{{ quotedExcerpt }}</p>
+      </div>
     </div>
     <HoverCard :open-delay="100" :close-delay="0">
       <HoverCardTrigger as-child>
         <div :class="styles.messageBox" ref="messageBoxRef">
-          <RichMessageContent
-            v-if="props.message.contentRich"
-            :contentRich="props.message.contentRich"
-            :mentioned-users="props.message.mentionedUsers"
-            :me-id="props.meId"
-          />
-          <MentionedText
-            v-else
-            :content="props.message.content"
-            :mentioned-users="props.message.mentionedUsers"
-            :me-id="props.meId"
-          />
-          <div
-            v-if="'editedAt' in props.message && props.message.editedAt"
-            class="text-[0.65rem] text-muted-foreground/80 mt-0.5"
+          <MessageContextMenu
+            :meId="props.meId"
+            :senderId="props.message.senderId"
+            :message="props.message"
+            @message-deleted="emit('message-deleted')"
+            @toggle-discussion="emit('discussion-opened')"
+            @emoji-selected="emit('reaction-toggled', $event)"
+            @quote="emit('quote', props.message)"
+            @edit="emit('edit', props.message)"
           >
-            (edited)
-          </div>
+            <RichMessageContent
+              v-if="props.message.contentRich"
+              :contentRich="props.message.contentRich"
+              :mentioned-users="props.message.mentionedUsers"
+              :me-id="props.meId"
+            />
+            <MentionedText
+              v-else
+              :content="props.message.content"
+              :mentioned-users="props.message.mentionedUsers"
+              :me-id="props.meId"
+            />
+            <div
+              v-if="'editedAt' in props.message && props.message.editedAt"
+              class="text-[0.65rem] text-muted-foreground/80 mb-0.5"
+            >
+              (edited)
+            </div>
+          </MessageContextMenu>
         </div>
       </HoverCardTrigger>
       <HoverCardContent as-child side="top" align="start" :align-offset="alignOffset" :side-offset="-10">
@@ -171,7 +186,7 @@ const styles = {
   messageBox: cn(
     [
       "group",
-      "min-w-40 w-full px-3 py-1.5",
+      "min-w-40 w-full px-3 py-0.5",
       "text-[calc(1rem-1px)] font-lato",
       "rounded-xl",
       "border border-transparent",

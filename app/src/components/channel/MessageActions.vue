@@ -1,12 +1,13 @@
 <script lang="ts" setup>
 import { Button, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/design-system";
-import { IconReplies } from "@/design-system/icons";
+import { Icon, IconReplies } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { messageBodyPlainText } from "@epicstory/tiptap";
 import type { IMessage, IReply } from "@/domain/channels";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { computed, ref } from "vue";
 import EmojiPicker from "./EmojiPicker.vue";
+import { CopyIcon, SquarePen, Trash2Icon } from "lucide-vue-next";
 
 const props = defineProps<{
   meId: number;
@@ -79,17 +80,21 @@ defineExpose({
       </MenuTrigger>
       <MenuContent align="end" disabled-portal>
         <MenuItem @click="copyMessage">
+          <CopyIcon class="w-5 h-5 text-muted-foreground" />
           <span>Copy message</span>
         </MenuItem>
         <MenuItem v-if="canEditHere" @click="emit('edit')">
+          <SquarePen class="h-5 w-5 text-muted-foreground" />
           <span>Edit message</span>
         </MenuItem>
         <MenuItem @click="emit('quote')">
+          <Icon name="fa-quote-right" class="w-5 h-5 text-muted-foreground" />
           <span>Quote message</span>
         </MenuItem>
         <template v-if="sender === 'me'">
           <MenuSeparator />
           <MenuItem @click="emit('message-deleted')" variant="destructive">
+            <Trash2Icon name="fa-trash" class="w-5 h-5" />
             <span>Delete message</span>
           </MenuItem>
         </template>

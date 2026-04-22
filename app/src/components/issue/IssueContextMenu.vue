@@ -19,6 +19,7 @@ import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 import IssuePickerMenu from "./IssuePickerMenu.vue";
 import IssueRenameDialog from "./IssueRenameDialog.vue";
 import IssueStatusMenu from "./status/IssueStatusMenu.vue";
+import { CalendarClock, GitBranch, Kanban, SquarePen, Tags, Trash2Icon, User } from "lucide-vue-next";
 
 const props = defineProps<{
   issue: Issue;
@@ -56,16 +57,22 @@ async function onLabelsUpdate(nextIds: number[]) {
       <slot />
     </MenuTrigger>
 
-    <MenuContent class="w-64">
+    <MenuContent class="w-64 font-dmSans">
       <MenuSub>
-        <MenuSubTrigger :disabled="disabled">Status</MenuSubTrigger>
+        <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
+          <Kanban class="size-4 text-muted-foreground" />
+          <span>Status</span>
+        </MenuSubTrigger>
         <MenuSubContent as-child>
           <IssueStatusMenu :value="issue.status" @select="updateIssue(issue.id, { status: $event })" />
         </MenuSubContent>
       </MenuSub>
 
       <MenuSub>
-        <MenuSubTrigger :disabled="disabled">Assignee</MenuSubTrigger>
+        <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
+          <User class="size-4 text-muted-foreground" />
+          <span>Assignee</span>
+        </MenuSubTrigger>
         <MenuSubContent as-child>
           <IssueAssigneesMenu
             :assignees="issue.assignees ?? []"
@@ -77,7 +84,10 @@ async function onLabelsUpdate(nextIds: number[]) {
       </MenuSub>
 
       <MenuSub>
-        <MenuSubTrigger :disabled="disabled">Labels</MenuSubTrigger>
+        <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
+          <Tags class="size-4 text-muted-foreground" />
+          <span>Labels</span>
+        </MenuSubTrigger>
         <MenuSubContent as-child>
           <IssueLabelsMenu
             :disabled="disabled"
@@ -88,8 +98,9 @@ async function onLabelsUpdate(nextIds: number[]) {
       </MenuSub>
 
       <MenuSub>
-        <MenuSubTrigger :disabled="disabled">
-          {{ issue.dueDate ? "Change due date" : "Set due date" }}
+        <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
+          <CalendarClock class="size-4 text-muted-foreground" />
+          <span>{{ issue.dueDate ? "Change due date" : "Set due date" }}</span>
         </MenuSubTrigger>
         <MenuSubContent class="p-0">
           <IssueDueDateMenu
@@ -100,10 +111,16 @@ async function onLabelsUpdate(nextIds: number[]) {
         </MenuSubContent>
       </MenuSub>
 
-      <MenuItem :disabled="disabled" @click="renameOpen = true">Rename</MenuItem>
+      <MenuItem :disabled="disabled" @click="renameOpen = true">
+        <SquarePen class="text-muted-foreground" />
+        <span>Rename</span>
+      </MenuItem>
 
       <MenuSub>
-        <MenuSubTrigger :disabled="disabled"> Mark as sub-issue of… </MenuSubTrigger>
+        <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
+          <GitBranch class="size-4 text-muted-foreground" />
+          <span>Mark as sub-issue of…</span>
+        </MenuSubTrigger>
         <MenuSubContent class="w-96">
           <IssuePickerMenu
             :issue="issue.parentIssue"
@@ -117,7 +134,10 @@ async function onLabelsUpdate(nextIds: number[]) {
 
       <MenuSeparator />
 
-      <MenuItem :disabled="disabled" variant="destructive" @click="deleteOpen = true">Delete</MenuItem>
+      <MenuItem :disabled="disabled" variant="destructive" @click="deleteOpen = true">
+        <Trash2Icon />
+        <span>Delete</span>
+      </MenuItem>
     </MenuContent>
   </Menu>
 

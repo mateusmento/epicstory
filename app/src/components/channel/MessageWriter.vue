@@ -1,46 +1,48 @@
 <script lang="ts" setup>
+import { useDependency } from "@/core/dependency-injection";
+import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import { startRecording } from "@/core/screen-recording";
+import { createVueFloatingSuggestion } from "@/core/tiptap";
+import { useWebSockets } from "@/core/websockets";
+import { Icon } from "@/design-system/icons";
 import { Button } from "@/design-system/ui/button";
 import { Separator } from "@/design-system/ui/separator";
-import { Icon } from "@/design-system/icons";
-import { useDependency } from "@/core/dependency-injection";
-import { useWebSockets } from "@/core/websockets";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
+import type { User } from "@/domain/auth";
 import {
   CHANNEL_TYPING_PULSE_MS,
   clearChannelDraft,
   loadChannelDraft,
+  quoteRefMessageId,
   saveChannelDraft,
+  type IMessage,
+  type IReply,
 } from "@/domain/channels";
-import { debounce } from "lodash";
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
-import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
-import { epicStoryLowlight } from "@/core/epic-story-lowlight";
+import { ChannelApi } from "@/domain/channels/services/channel.service";
+import { messageBodyPlainText, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import {
   createMentionExtensionWithNodeView,
   createPlaceholderExtension,
   createRichTextExtensions,
-  mediaExtensions,
   EPIC_STORY_COMPOSER_EDITOR_CLASS,
+  mediaExtensions,
 } from "@epicstory/tiptap/vue";
-import { messageBodyPlainText, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
+import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
+import { debounce } from "lodash";
 import {
   Bold,
   Braces,
   Code,
   Italic,
+  Link2,
   List,
   ListChecks,
   ListOrdered,
-  Link2,
-  Table2,
   Strikethrough,
+  Table2,
 } from "lucide-vue-next";
-import MentionList from "./MentionList.vue";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import type { MentionSuggestionItem } from "./MentionList.vue";
-import { quoteRefMessageId, type IMessage, type IReply } from "@/domain/channels";
-import type { User } from "@/domain/auth";
-import { createVueFloatingSuggestion } from "@/core/tiptap";
+import MentionList from "./MentionList.vue";
 import TiptapCodeBlockCardNodeView from "./TiptapCodeBlockCardNodeView.vue";
 import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
 
@@ -194,7 +196,7 @@ const saveDraftDebounced = debounce((ed: Editor) => {
   if (props.workspaceId == null || props.channelId == null) return;
   if (props.editingMessage) return;
   const doc = normalizeTiptapDoc(ed.getJSON());
-  const plain = tiptapToPlainText(doc).trim();
+  const plain = tiptapToPlainText(doc, { stripFormatting: true }).trim();
   if (!plain) {
     clearChannelDraft(props.workspaceId, props.channelId);
     return;
@@ -206,7 +208,9 @@ function maybeStartTypingPulse(ed: Editor) {
   if (suppressTypingSignals.value) return;
   if (props.channelId == null || props.workspaceId == null) return;
 
-  const plain = tiptapToPlainText(normalizeTiptapDoc(ed.getJSON())).trim();
+  const plain = tiptapToPlainText(normalizeTiptapDoc(ed.getJSON()), {
+    stripFormatting: true,
+  }).trim();
   if (!plain) {
     clearTypingPulse();
     emitTypingStop();
@@ -229,7 +233,9 @@ function maybeStartTypingPulse(ed: Editor) {
         emitTypingStop();
         return;
       }
-      const p = tiptapToPlainText(normalizeTiptapDoc(inner.getJSON())).trim();
+      const p = tiptapToPlainText(normalizeTiptapDoc(inner.getJSON()), {
+        stripFormatting: true,
+      }).trim();
       if (!p) {
         clearTypingPulse();
         emitTypingStop();
@@ -255,7 +261,7 @@ function flushDraftSync() {
   if (!ed || props.workspaceId == null || props.channelId == null || props.editingMessage) return;
   saveDraftDebounced.cancel();
   const doc = normalizeTiptapDoc(ed.getJSON());
-  const plain = tiptapToPlainText(doc).trim();
+  const plain = tiptapToPlainText(doc, { stripFormatting: true }).trim();
   if (!plain) clearChannelDraft(props.workspaceId, props.channelId);
   else saveChannelDraft(props.workspaceId, props.channelId, doc as Record<string, unknown>);
 }
@@ -377,7 +383,7 @@ function onSendMessage() {
   if (!editor.value) return;
   if (editor.value.isEmpty) return;
   const doc = normalizeTiptapDoc(editor.value.getJSON());
-  const plain = tiptapToPlainText(doc);
+  const plain = tiptapToPlainText(doc, { stripFormatting: true });
   if (!plain.trim()) return;
   if (props.editingMessage) {
     emit("submit-edit", {
@@ -501,6 +507,15 @@ function formatTime(seconds: number) {
         @click="editor?.chain().focus().toggleStrike().run()"
       >
         <Strikethrough class="w-5 h-5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        title="Quote"
+        :class="editor?.isActive('blockquote') ? 'bg-secondary' : ''"
+        @click="editor?.chain().focus().toggleBlockquote().run()"
+      >
+        <Icon name="fa-quote-right" class="w-5 h-5" />
       </Button>
       <Separator orientation="vertical" class="h-8 bg-zinc-300" />
       <Button

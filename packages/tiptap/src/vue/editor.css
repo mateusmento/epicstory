@@ -1,0 +1,337 @@
+/**
+ * TipTap editor surfaces — Tailwind via `@apply` (not Sass `@extend`).
+ * @see ./editor-classes.ts for class names on `editorProps.attributes.class`.
+ * Pulled in from the app via `@import` in `main.css` before `@tailwind` (valid CSS import order).
+ *
+ * Descendant rules use normal CSS selectors so `@apply` only sees plain utilities
+ * (Tailwind does not support every arbitrary variant inside `@apply`).
+ *
+ * Do not `@apply font-mono` here: when this file is imported before `@tailwind`, Tailwind has not
+ * registered default utilities yet. Use the same stack as Tailwind’s `font-mono` via `font-family` below.
+ */
+
+/* ========== Composer ========== */
+/* ProseMirror adds `ProseMirror-focused` on the same node (contenteditable root). Browsers often
+   draw a strong focus outline there; MessageWriter already uses focus-within on the shell. */
+.epic-story-composer-editor.ProseMirror {
+  @apply min-h-[3rem] text-sm leading-relaxed shadow-none ring-0;
+  outline: none;
+  outline-offset: 0;
+  border-width: 0;
+}
+
+.epic-story-composer-editor.ProseMirror:focus,
+.epic-story-composer-editor.ProseMirror:focus-visible,
+.epic-story-composer-editor.ProseMirror.ProseMirror-focused {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+}
+
+.epic-story-composer-editor p {
+  @apply my-1;
+}
+
+.epic-story-composer-editor li > p {
+  @apply my-0;
+}
+
+.epic-story-composer-editor ul {
+  @apply list-disc ml-5;
+}
+
+.epic-story-composer-editor ol {
+  @apply list-decimal ml-5;
+}
+
+.epic-story-composer-editor a {
+  @apply text-blue-600 underline;
+}
+
+.epic-story-composer-editor .epic-blockquote {
+  @apply flex flex-row gap-3 items-stretch border-0 my-2 mx-0 p-0 rounded-md text-muted-foreground/90;
+}
+
+.epic-story-composer-editor .epic-blockquote-rail {
+  @apply w-1.5 shrink-0 self-stretch min-h-[1.25rem] rounded-full bg-zinc-200 select-none;
+}
+
+.epic-story-composer-editor .epic-blockquote-body {
+  @apply min-w-0 flex-1;
+}
+
+.epic-story-composer-editor blockquote:not(.epic-blockquote) {
+  @apply border-l-4 border-zinc-200 pl-3 pr-2 py-1.5 my-1 rounded-md text-muted-foreground/90;
+}
+
+.epic-story-composer-editor .epic-inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] bg-zinc-100 text-zinc-900 rounded border border-zinc-200/90 px-1 py-px;
+}
+
+.epic-story-composer-editor p > code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] bg-zinc-100 text-zinc-900 rounded border border-zinc-200/90 px-1 py-px;
+}
+
+.epic-story-composer-editor pre:not(.epic-code-card-pre) {
+  @apply my-2 rounded-md bg-zinc-100 p-3 overflow-x-auto text-left;
+}
+
+.epic-story-composer-editor pre:not(.epic-code-card-pre) code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] text-foreground;
+}
+
+.epic-story-composer-editor pre:not(.epic-code-card-pre) code.hljs {
+  @apply bg-transparent;
+}
+
+.epic-story-composer-editor ul[data-type="taskList"] {
+  @apply list-none ml-0 pl-0 my-1;
+}
+
+.epic-story-composer-editor li[data-type="taskItem"] {
+  @apply flex gap-2 items-start my-0.5;
+}
+
+.epic-story-composer-editor li[data-type="taskItem"] label {
+  @apply shrink-0 pt-0.5;
+}
+
+.epic-story-composer-editor .tableWrapper {
+  @apply my-2 overflow-x-auto;
+}
+
+.epic-story-composer-editor table {
+  @apply w-full min-w-[12rem] border-collapse text-sm;
+}
+
+.epic-story-composer-editor td {
+  @apply border border-zinc-200/90 align-top p-2;
+}
+
+.epic-story-composer-editor th {
+  @apply border border-zinc-200/90 align-top p-2 bg-muted/40;
+}
+
+.epic-story-composer-editor img {
+  @apply max-w-full h-auto rounded-md my-2;
+}
+
+/* ========== Read-only message ========== */
+.epic-story-readonly-message {
+  @apply outline-none text-[calc(1rem-1px)] font-lato leading-relaxed;
+}
+
+.epic-story-readonly-message p {
+  @apply my-1;
+}
+
+.epic-story-readonly-message li > p {
+  @apply my-0;
+}
+
+.epic-story-readonly-message ul {
+  @apply list-disc ml-5;
+}
+
+.epic-story-readonly-message ol {
+  @apply list-decimal ml-5;
+}
+
+.epic-story-readonly-message a {
+  @apply text-blue-600 underline;
+}
+
+.epic-story-readonly-message .epic-blockquote {
+  @apply flex flex-row gap-3 items-stretch border-0 my-1 mx-0 p-0 rounded-md text-muted-foreground/90;
+}
+
+.epic-story-readonly-message .epic-blockquote-rail {
+  @apply w-1.5 shrink-0 self-stretch min-h-[1.25rem] rounded-full bg-zinc-200 select-none;
+}
+
+.epic-story-readonly-message .epic-blockquote-body {
+  @apply min-w-0 flex-1;
+}
+
+.epic-story-readonly-message blockquote:not(.epic-blockquote) {
+  @apply border-l-4 border-zinc-200 pl-3 pr-2 py-1.5 my-1 rounded-md text-muted-foreground/90;
+}
+
+.epic-story-readonly-message .epic-inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] bg-zinc-100 text-zinc-900 rounded border border-zinc-200/90 px-1 py-px;
+}
+
+.epic-story-readonly-message p > code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] bg-zinc-100 text-zinc-900 rounded border border-zinc-200/90 px-1 py-px;
+}
+
+.epic-story-readonly-message pre:not(.epic-code-card-pre) {
+  @apply my-2 rounded-md bg-muted p-3 overflow-x-auto text-left;
+}
+
+.epic-story-readonly-message pre:not(.epic-code-card-pre) code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] text-foreground;
+}
+
+.epic-story-readonly-message pre:not(.epic-code-card-pre) code.hljs {
+  @apply bg-transparent;
+}
+
+.epic-story-readonly-message ul[data-type="taskList"] {
+  @apply list-none ml-0 pl-0 my-1;
+}
+
+.epic-story-readonly-message li[data-type="taskItem"] {
+  @apply flex gap-2 items-start my-0.5;
+}
+
+.epic-story-readonly-message li[data-type="taskItem"] label {
+  @apply shrink-0 pt-0.5;
+}
+
+.epic-story-readonly-message .tableWrapper {
+  @apply my-2 overflow-x-auto;
+}
+
+.epic-story-readonly-message table {
+  @apply w-full min-w-[12rem] border-collapse text-sm;
+}
+
+.epic-story-readonly-message td {
+  @apply border border-zinc-200/90 align-top p-2;
+}
+
+.epic-story-readonly-message th {
+  @apply border border-zinc-200/90 align-top p-2 bg-muted/40;
+}
+
+.epic-story-readonly-message img {
+  @apply max-w-full h-auto rounded-md my-2;
+}
+
+/* ========== Issue description editor ========== */
+.epic-story-issue-description-editor.ProseMirror {
+  @apply min-h-28 text-sm leading-relaxed shadow-none ring-0;
+  outline: none;
+  outline-offset: 0;
+  border-width: 0;
+}
+
+.ProseMirror,
+.epic-story-issue-description-editor.ProseMirror:focus,
+.epic-story-issue-description-editor.ProseMirror:focus-visible,
+.epic-story-issue-description-editor.ProseMirror.ProseMirror-focused {
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+}
+
+.epic-story-issue-description-editor p {
+  @apply my-2;
+}
+
+.epic-story-issue-description-editor ul {
+  @apply list-disc ml-5;
+}
+
+.epic-story-issue-description-editor ol {
+  @apply list-decimal ml-5;
+}
+
+.epic-story-issue-description-editor a {
+  @apply text-blue-600 underline;
+}
+
+.epic-story-issue-description-editor .epic-blockquote {
+  @apply flex flex-row gap-3 items-stretch border-0 my-1 mx-0 p-0 rounded-md text-secondary-foreground;
+}
+
+.epic-story-issue-description-editor .epic-blockquote-rail {
+  @apply w-1.5 shrink-0 self-stretch min-h-[1.25rem] rounded-full bg-zinc-200 select-none;
+}
+
+.epic-story-issue-description-editor .epic-blockquote-body {
+  @apply min-w-0 flex-1;
+}
+
+.epic-story-issue-description-editor blockquote:not(.epic-blockquote) {
+  @apply border-l-4 border-zinc-200 pl-3 pr-2 py-1.5 my-1 rounded-md text-secondary-foreground;
+}
+
+.epic-story-issue-description-editor .epic-inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] bg-zinc-100 text-zinc-900 rounded border border-zinc-200/90 px-1 py-px;
+}
+
+.epic-story-issue-description-editor p > code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] bg-zinc-100 text-zinc-900 rounded border border-zinc-200/90 px-1 py-px;
+}
+
+.epic-story-issue-description-editor pre:not(.epic-code-card-pre) {
+  @apply my-2 rounded-md bg-zinc-100 p-3 overflow-x-auto text-left;
+}
+
+.epic-story-issue-description-editor pre:not(.epic-code-card-pre) code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  @apply text-[0.8125rem] text-foreground;
+}
+
+.epic-story-issue-description-editor pre:not(.epic-code-card-pre) code.hljs {
+  @apply bg-transparent;
+}
+
+.epic-story-issue-description-editor ul[data-type="taskList"] {
+  @apply list-none ml-0 pl-0 my-1;
+}
+
+.epic-story-issue-description-editor li[data-type="taskItem"] {
+  @apply flex gap-2 items-start my-0.5;
+}
+
+.epic-story-issue-description-editor li[data-type="taskItem"] label {
+  @apply shrink-0 pt-0.5;
+}
+
+.epic-story-issue-description-editor .tableWrapper {
+  @apply my-2 overflow-x-auto;
+}
+
+.epic-story-issue-description-editor table {
+  @apply w-full min-w-[12rem] border-collapse text-sm;
+}
+
+.epic-story-issue-description-editor td {
+  @apply border border-zinc-200/90 align-top p-2;
+}
+
+.epic-story-issue-description-editor th {
+  @apply border border-zinc-200/90 align-top p-2 bg-muted/40;
+}
+
+.epic-story-issue-description-editor img {
+  @apply max-w-full h-auto rounded-md my-2;
+}

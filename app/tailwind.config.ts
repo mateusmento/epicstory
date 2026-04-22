@@ -13,6 +13,7 @@ export default {
     "./components/**/*.{ts,tsx,vue}",
     "./app/**/*.{ts,tsx,vue}",
     "./src/**/*.{ts,tsx,vue}",
+    "../packages/tiptap/src/**/*.css",
   ],
 
   theme: {

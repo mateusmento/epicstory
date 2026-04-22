@@ -259,6 +259,7 @@ export function groupMessages(messages: IMessage[]) {
 export function useSyncedChannel() {
   const context = useChannel();
   const {
+    messages,
     fetchChannel,
     fetchMessages,
     fetchMembers,
@@ -272,6 +273,7 @@ export function useSyncedChannel() {
   const channelId = computed(() => +route.params.channelId);
 
   onMounted(async () => {
+    messages.value = [];
     await fetchChannel(channelId.value);
     joinChannel();
     fetchMessages();
@@ -284,8 +286,9 @@ export function useSyncedChannel() {
     unsubscribeMeetings();
   });
 
-  watch(channelId, async (channelId) => {
-    await fetchChannel(channelId);
+  watch(channelId, async (id) => {
+    messages.value = [];
+    await fetchChannel(id);
     joinChannel();
     fetchMessages();
     fetchMembers();

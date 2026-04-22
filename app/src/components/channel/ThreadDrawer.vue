@@ -6,7 +6,7 @@ import { useChannel } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
 import { last } from "lodash";
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
@@ -25,6 +25,33 @@ const { workspace } = useWorkspace();
 
 const quotedMessage = ref<IMessage | IReply | null>(null);
 const editingMessage = ref<IMessage | null>(null);
+const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
+const prevReplyCount = ref(-1);
+
+watch(
+  () => message.value.id,
+  () => {
+    prevReplyCount.value = -1;
+  },
+);
+
+watch(
+  () => replies.value.length,
+  (n) => {
+    const prev = prevReplyCount.value;
+    if (prev < 0) {
+      prevReplyCount.value = n;
+      if (n > 0) nextTick(() => scrollAreaRef.value?.scrollToBottom());
+      return;
+    }
+    if (n > prev) {
+      prevReplyCount.value = n;
+      nextTick(() => scrollAreaRef.value?.scrollToBottom());
+    } else {
+      prevReplyCount.value = n;
+    }
+  },
+);
 
 function groupMessages(messages: IReply[]) {
   return messages.reduce((groups, message) => {
@@ -63,6 +90,7 @@ async function onSendReply(payload: { content: string; contentRich: any; quotedM
     contentRich: payload.contentRich,
     quotedMessageId: payload.quotedMessageId,
   });
+  scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
 }
 
@@ -101,7 +129,7 @@ function onEditTarget(m: IMessage | IReply) {
 
     <Separator />
 
-    <ScrollArea class="flex-1 min-h-0" bottom>
+    <ScrollArea class="flex-1 min-h-0" ref="scrollAreaRef">
       <div class="flex:col-2xl !flex p-4 min-w-96 min-h-full bg-white">
         <MessageGroup :sender="message.sender" :meId="meId" :sentAt="message.sentAt">
           <MessageBox

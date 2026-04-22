@@ -13,7 +13,7 @@ import { quoteRefMessageId, type IChannel, type IMessage, type IMessageGroup } f
 import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
-import { computed, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { UserAvatar, UserAvatarStack } from "@/components/user";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
@@ -40,6 +40,7 @@ const emit = defineEmits([
 
 const quotedMessage = ref<IMessage | null>(null);
 const editingMessage = ref<IMessage | null>(null);
+const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 
 const { workspace } = useWorkspace();
 const { typingUserIds } = useChannel();
@@ -64,6 +65,38 @@ const typingBannerText = computed(() => {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} are typing…`;
 });
 
+function totalMessages(groups: IMessageGroup[]) {
+  return groups.reduce((n, g) => n + g.messages.length, 0);
+}
+
+/** Tracks list size so we only scroll on append/load, not on in-place edits (height-only changes). */
+const prevMessageTotal = ref(-1);
+
+watch(
+  () => props.channelId,
+  () => {
+    prevMessageTotal.value = -1;
+  },
+);
+
+watch(
+  () => totalMessages(props.messageGroups),
+  (totalMessages) => {
+    const prev = prevMessageTotal.value;
+    if (prev < 0) {
+      prevMessageTotal.value = totalMessages;
+      if (totalMessages > 0) nextTick(() => scrollAreaRef.value?.scrollToBottom());
+      return;
+    }
+    if (totalMessages > prev) {
+      prevMessageTotal.value = totalMessages;
+      nextTick(() => scrollAreaRef.value?.scrollToBottom());
+    } else {
+      prevMessageTotal.value = totalMessages;
+    }
+  },
+);
+
 async function onSendMessage(payload: { content: string; contentRich: any; quotedMessageId?: number }) {
   if (!payload.content?.trim()) return;
   await props.sendMessage({
@@ -72,6 +105,7 @@ async function onSendMessage(payload: { content: string; contentRich: any; quote
     quotedMessageId:
       payload.quotedMessageId ?? (quotedMessage.value ? quoteRefMessageId(quotedMessage.value) : undefined),
   });
+  scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
 }
 
@@ -102,6 +136,10 @@ function onStartEdit(m: IMessage | undefined) {
 function onMessageDeleted(messageId: number) {
   emit("message-deleted", messageId);
 }
+
+defineExpose({
+  scrollMessagesToBottom: () => scrollAreaRef.value?.scrollToBottom(),
+});
 </script>
 
 <template>
@@ -167,7 +205,7 @@ function onMessageDeleted(messageId: number) {
     <Separator />
 
     <div class="relative min-h-0">
-      <ScrollArea class="min-h-0 h-full" bottom>
+      <ScrollArea class="min-h-0 h-full" ref="scrollAreaRef">
         <div class="flex:col-xl !flex justify-end p-4 min-h-full pb-14">
           <div class="flex:col-3xl p-xl mb-2xl">
             <div class="flex:row-xl flex:center-y gap-2">

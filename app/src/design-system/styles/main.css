@@ -1,4 +1,7 @@
 @import url(./fonts.css);
+/* `@import` must come before `@tailwind` (CSS rule). A trailing import was ignored by Vite, so TipTap
+   `editor.css` never reached the bundle. Same PostCSS run still expands `@apply` in the imported file. */
+@import "../../../../packages/tiptap/src/vue/editor.css";
 
 @tailwind base;
 @tailwind components;

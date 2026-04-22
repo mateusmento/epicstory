@@ -160,7 +160,7 @@ export class MessageService {
       ? normalizeTiptapDoc(contentRich)
       : undefined;
     const plainContent = normalizedRich
-      ? tiptapToPlainText(normalizedRich)
+      ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
       : content;
 
     let message = await this.messageRepo.save(
@@ -257,7 +257,7 @@ export class MessageService {
       ? normalizeTiptapDoc(contentRich)
       : undefined;
     const plainContent = normalizedRich
-      ? tiptapToPlainText(normalizedRich)
+      ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
       : content;
 
     await this.messageRepo.update(

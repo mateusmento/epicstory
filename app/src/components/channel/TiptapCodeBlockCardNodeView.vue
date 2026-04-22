@@ -385,7 +385,7 @@ onUnmounted(teardownCollapseFloat);
     <div class="epic-code-card-viewport w-full min-h-0 min-w-0 rounded-b-lg">
       <div class="epic-code-card-scroll w-full min-h-0 min-w-0" :class="codeScrollLayerClass">
         <div
-          class="epic-code-card-pre m-0 flex w-full min-w-0 border-0 border-t border-zinc-200/80 bg-[#f8f8f8] text-left rounded-b-lg"
+          class="epic-code-card-pre m-0 flex w-full min-w-0 border-0 border-t border-zinc-200/80 bg-[#f8f8f8] text-left rounded-b-lg overflow-hidden"
           :class="[showPeekChrome ? 'epic-code-card-pre--peek' : '']"
         >
           <div
@@ -405,7 +405,7 @@ onUnmounted(teardownCollapseFloat);
               type="button"
               variant="secondary"
               size="sm"
-              class="pointer-events-auto gap-1 border-zinc-200/90 shadow-sm rounded-lg font-inter text-xs"
+              class="pointer-events-auto gap-1 border border-zinc-200/90 shadow-sm rounded-lg font-inter text-xs"
               aria-expanded="false"
               :aria-label="expandPeekLabel"
               @mousedown="onToggleMouseDown"
@@ -428,7 +428,7 @@ onUnmounted(teardownCollapseFloat);
           type="button"
           variant="secondary"
           size="sm"
-          class="pointer-events-auto gap-1 border-zinc-200/90 shadow-sm rounded-lg backdrop-blur-[2px] font-inter text-xs"
+          class="pointer-events-auto gap-1 border border-zinc-200/90 shadow-sm rounded-lg backdrop-blur-[2px] font-inter text-xs"
           aria-expanded="true"
           :aria-label="toggleAriaLabel"
           @mousedown="onToggleMouseDown"

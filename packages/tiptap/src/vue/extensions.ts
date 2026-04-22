@@ -11,6 +11,8 @@ import { TableKit } from "@tiptap/extension-table";
 import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
 import { VueNodeViewRenderer } from "@tiptap/vue-3";
+import { EpicBlockquote } from "./epic-blockquote";
+import { EpicInlineCode } from "./epic-inline-code";
 import type { createLowlight } from "lowlight";
 import type { Component } from "vue";
 
@@ -157,7 +159,13 @@ export function createRichTextExtensions(
       link: false,
       underline: false,
       ...(useHl ? { codeBlock: false } : {}),
+      blockquote: false,
+      code: false,
     }),
+    EpicInlineCode.configure({
+      HTMLAttributes: { class: "epic-inline-code" },
+    }),
+    EpicBlockquote,
     Underline,
     Link.configure({
       openOnClick: options.linkOpenOnClick,

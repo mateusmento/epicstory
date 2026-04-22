@@ -218,15 +218,15 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
       <ProjectFiltersBar :project-id="+projectId" />
 
       <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y">
-        <div class="text-xs">Group by:</div>
         <Menu>
           <MenuTrigger as-child>
-            <Button variant="outline" size="badge" class="flex:row-md flex:center-y">
-              {{ GROUP_BY_OPTIONS[groupBy ?? "none"] }}
+            <Button variant="outline" size="badge" class="flex:row-sm flex:center-y h-fit">
+              <div class="text-xs">{{ GROUP_BY_OPTIONS[groupBy ?? "none"] }}</div>
               <Icon name="oi-chevron-down" class="text-muted-foreground" />
             </Button>
           </MenuTrigger>
           <MenuContent align="end" class="w-56">
+            <div class="p-1 text-xs text-muted-foreground">Group by:</div>
             <MenuRadioGroup v-model="groupBy">
               <MenuRadioItem v-for="(label, option) in GROUP_BY_OPTIONS" :key="option" :value="option">
                 {{ label }}

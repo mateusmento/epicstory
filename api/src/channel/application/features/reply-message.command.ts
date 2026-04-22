@@ -75,7 +75,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       ? normalizeTiptapDoc(contentRich)
       : undefined;
     const plainContent = normalizedRich
-      ? tiptapToPlainText(normalizedRich)
+      ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
       : content;
 
     const resolvedQuote = await this.messageService.resolveQuotedMessageId(

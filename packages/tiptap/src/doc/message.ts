@@ -41,6 +41,7 @@ export function messageBodyPlainText(message: {
   if (message.contentRich) {
     return tiptapToPlainText(
       normalizeTiptapDoc(message.contentRich) as TiptapJSONNode,
+      { stripFormatting: true },
     );
   }
   return message.content ?? "";

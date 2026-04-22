@@ -68,6 +68,146 @@ describe("tiptapToPlainText", () => {
     };
     expect(tiptapToPlainText(doc)).toBe("a\nb");
   });
+
+  it("wraps inline code in backticks", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "x " },
+            { type: "text", text: "y", marks: [{ type: "code" }] },
+          ],
+        },
+      ],
+    };
+    expect(tiptapToPlainText(doc)).toBe("x `y`");
+  });
+
+  it("drops empty inline code placeholders (zero-width) in plain text", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "\u200b",
+              marks: [{ type: "code" }],
+            },
+          ],
+        },
+      ],
+    };
+    expect(tiptapToPlainText(doc)).toBe("");
+  });
+
+  it("prefixes blockquote lines for plain text", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "blockquote",
+          content: [
+            {
+              type: "paragraph",
+              content: [{ type: "text", text: "quoted" }],
+            },
+          ],
+        },
+      ],
+    };
+    expect(tiptapToPlainText(doc)).toBe("> quoted");
+  });
+
+  it("stripFormatting removes inline code backticks", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "x " },
+            { type: "text", text: "y", marks: [{ type: "code" }] },
+          ],
+        },
+      ],
+    };
+    expect(tiptapToPlainText(doc, { stripFormatting: true })).toBe("x y");
+  });
+
+  it("stripFormatting removes blockquote line prefixes", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "blockquote",
+          content: [
+            {
+              type: "paragraph",
+              content: [{ type: "text", text: "quoted" }],
+            },
+          ],
+        },
+      ],
+    };
+    expect(tiptapToPlainText(doc, { stripFormatting: true })).toBe("quoted");
+  });
+
+  it("stripFormatting omits code block language line", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "codeBlock",
+          attrs: { language: "ts" },
+          content: [{ type: "text", text: "const x = 1;" }],
+        },
+      ],
+    };
+    expect(tiptapToPlainText(doc, { stripFormatting: true })).toBe("const x = 1;");
+  });
+
+  it("stripFormatting uses image URL without bracket wrapper", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "image",
+              attrs: { src: "https://ex/img.png" },
+            },
+          ],
+        },
+      ],
+    };
+    expect(tiptapToPlainText(doc, { stripFormatting: true })).toContain(
+      "https://ex/img.png",
+    );
+    expect(tiptapToPlainText(doc, { stripFormatting: true })).not.toContain(
+      "[image:",
+    );
+  });
+
+  it("default plain text wraps image src in bracket label", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "image", attrs: { src: "https://ex/img.png" } },
+          ],
+        },
+      ],
+    };
+    expect(tiptapToPlainText(doc)).toContain("[image:");
+    expect(tiptapToPlainText(doc)).toContain("https://ex/img.png");
+  });
 });
 
 describe("extractMentionIdsFromDoc", () => {
