@@ -39,6 +39,7 @@ import {
   ListOrdered,
   Strikethrough,
   Table2,
+  TextQuote,
 } from "lucide-vue-next";
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import type { MentionSuggestionItem } from "./MentionList.vue";
@@ -464,7 +465,8 @@ function formatTime(seconds: number) {
       v-if="quotedMessage && !editingMessage"
       class="flex:row-md flex:center-y shrink-0 gap-2 mb-2 pb-2 border-b border-zinc-200/80 text-xs text-muted-foreground"
     >
-      <div class="flex-1 min-w-0">
+      <Icon name="fa-quote-right" class="size-4 self-start" />
+      <div class="flex:col-md flex-1 min-w-0">
         <span class="font-medium text-foreground/80">{{ quotedMessage.sender.name }}</span>
         <span class="text-muted-foreground/90"> {{ quotedExcerpt }}</span>
       </div>
@@ -476,7 +478,7 @@ function formatTime(seconds: number) {
         @click.stop="emit('clear-quote')"
       >
         <span class="sr-only">Remove quote</span>
-        ×
+        <Icon name="io-close" class="size-4" />
       </Button>
     </div>
     <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-0.5">
@@ -515,7 +517,8 @@ function formatTime(seconds: number) {
         :class="editor?.isActive('blockquote') ? 'bg-secondary' : ''"
         @click="editor?.chain().focus().toggleBlockquote().run()"
       >
-        <Icon name="fa-quote-right" class="w-5 h-5" />
+        <TextQuote class="w-5 h-5" />
+        <!-- <Icon name="fa-quote-right" class="w-5 h-5" /> -->
       </Button>
       <Separator orientation="vertical" class="h-8 bg-zinc-300" />
       <Button

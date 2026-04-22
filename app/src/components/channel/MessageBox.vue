@@ -17,6 +17,7 @@ import MentionedText from "./MentionedText.vue";
 import MessageActions from "./MessageActions.vue";
 import MessageContextMenu from "./MessageContextMenu.vue";
 import RichMessageContent from "./RichMessageContent.vue";
+import { Icon } from "@/design-system/icons";
 
 const props = defineProps<{
   message: IMessage | IReply;
@@ -68,11 +69,11 @@ const quotedExcerpt = computed(() => {
   <div class="flex:col">
     <div
       v-if="props.message.quotedMessage"
-      class="flex flex-row gap-3 items-stretch border-0 my-1 ml-3 rounded-md text-muted-foreground/90"
+      class="flex flex-row gap-2 items-stretch border-0 my-2 ml-3 rounded-md text-muted-foreground/90"
     >
-      <div class="w-1.5 shrink-0 self-stretch min-h-[1.25rem] rounded-full bg-zinc-200 select-none"></div>
-      <div class="min-w-0 flex-1 text-sm py-1">
-        <span class="font-medium">{{ props.message.quotedMessage.sender.name }}</span>
+      <Icon name="fa-quote-right" class="size-4 self-start mt-0.5" />
+      <div class="min-w-0 flex-1 text-sm">
+        <span class="font-medium text-foreground/80">{{ props.message.quotedMessage.sender.name }}</span>
         <p class="line-clamp-4 whitespace-pre-wrap">{{ quotedExcerpt }}</p>
       </div>
     </div>

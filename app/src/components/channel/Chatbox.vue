@@ -188,14 +188,14 @@ defineExpose({
               <ChevronDownIcon class="w-4 h-4" />
             </Button>
           </MenuTrigger>
-          <MenuContent align="end">
-            <MenuItem class="text-xs" @click="emit('start-meeting')">
-              <HeadphonesIcon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
-              <div>Start meeting</div>
+          <MenuContent align="end" class="text-xs font-dmSans">
+            <MenuItem @click="emit('start-meeting')">
+              <HeadphonesIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
+              <span>Start meeting</span>
             </MenuItem>
-            <MenuItem class="text-xs" @click="emit('schedule-meeting')">
-              <CalendarClockIcon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
-              <div>Schedule meeting</div>
+            <MenuItem @click="emit('schedule-meeting')">
+              <CalendarClockIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
+              <span>Schedule meeting</span>
             </MenuItem>
           </MenuContent>
         </Menu>

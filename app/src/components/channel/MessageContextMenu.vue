@@ -80,7 +80,7 @@ defineExpose({
 
       <MenuSub>
         <MenuSubTrigger class="flex:row-md text-sm">
-          <SmilePlusIcon class="size-4 text-primary/40" />
+          <SmilePlusIcon class="size-4 text-muted-foreground" />
           <span>React with emoji</span>
         </MenuSubTrigger>
         <MenuSubContent class="bg-white z-[80] shadow-sm border border-secondary rounded-lg">
@@ -105,7 +105,7 @@ defineExpose({
       </MenuSub>
 
       <MenuItem @click="emit('toggle-discussion')">
-        <IconReplies class="text-primary/40" />
+        <IconReplies class="text-muted-foreground" />
         <span>Reply message</span>
       </MenuItem>
 
