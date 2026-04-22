@@ -4,8 +4,9 @@ import { computed, inject, provide, reactive, type InjectionKey } from "vue";
 type NavViewContext = {
   content?: string;
   props: any;
-  onTrigger?: (content: string) => void;
-  onChange?: (content: string) => void;
+  onTrigger?: (content: string, props: any) => void;
+  onChange?: (content: string, props: any) => void;
+  onToggle?: (content: string, props: any) => void;
 };
 
 const NAV_VIEW_CONTEXT_KEY: InjectionKey<NavViewContext> = Symbol("nav-view-context");
@@ -18,8 +19,8 @@ const useNavViewStore = defineStore("nav-view", () => {
 type NavViewOptions = {
   view: string;
   initialContent?: string;
-  onTrigger?: (content: string) => void;
-  onChange?: (content: string) => void;
+  onTrigger?: (content: string, props: any) => void;
+  onChange?: (content: string, props: any) => void;
 };
 
 export function useNavView({ view, initialContent, onChange, onTrigger }: NavViewOptions) {
@@ -47,8 +48,8 @@ export function useNavTrigger(view: string) {
 
   function viewContent(value: string, props?: any) {
     const context = store.views[view];
-    context.onTrigger?.(value);
-    if (value !== context.content) context.onChange?.(value);
+    context.onTrigger?.(value, props);
+    if (value !== context.content) context.onChange?.(value, props);
     context.content = value;
     if (props) context.props = props;
   }

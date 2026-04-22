@@ -31,7 +31,7 @@ function availableFields() {
       @remove="removeFilter(f.field)"
     />
 
-    <Menu>
+    <Menu v-if="filters.length > 0">
       <MenuTrigger as-child>
         <Button variant="outline" size="badge" class="flex:row-sm flex:center-y" title="Add filter">
           <PlusIcon class="size-4" />
