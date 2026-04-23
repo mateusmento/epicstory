@@ -4,7 +4,7 @@ import type { IChannel, IMessage, IReply } from "@/domain/channels";
 export type MentionNotificationPayload = {
   type: "mention";
   channel: IChannel;
-  message: string;
+  message: IMessage;
   sender: User;
   reply?: IReply;
 };
@@ -42,7 +42,7 @@ export type IssueAssignedNotificationPayload = {
 };
 
 export type CalendarMeetingReminderNotificationPayload = {
-  type?: "calendar_meeting_reminder";
+  type: "calendar_meeting_reminder";
   calendarEventId: string;
   occurrenceAt: string;
   meetingId: number;
@@ -61,7 +61,7 @@ export type CalendarMeetingReminderNotificationPayload = {
 };
 
 export type CalendarEventReminderNotificationPayload = {
-  type?: "calendar_event_reminder";
+  type: "calendar_event_reminder";
   calendarEventId: string;
   occurrenceAt: string;
   channelId?: number | null;
@@ -86,7 +86,37 @@ export type NotificationPayload =
   | CalendarMeetingReminderNotificationPayload
   | CalendarEventReminderNotificationPayload;
 
-export type Notification = {
+export type NotificationWithPayload =
+  | {
+      type: "mention";
+      payload: MentionNotificationPayload;
+    }
+  | {
+      type: "reply";
+      payload: ReplyNotificationPayload;
+    }
+  | {
+      type: "direct_message";
+      payload: DirectMessageNotificationPayload;
+    }
+  | {
+      type: "issue_due_date";
+      payload: IssueDueDateNotificationPayload;
+    }
+  | {
+      type: "issue_assigned";
+      payload: IssueAssignedNotificationPayload;
+    }
+  | {
+      type: "calendar_meeting_reminder";
+      payload: CalendarMeetingReminderNotificationPayload;
+    }
+  | {
+      type: "calendar_event_reminder";
+      payload: CalendarEventReminderNotificationPayload;
+    };
+
+export type Notification = NotificationWithPayload & {
   id: string;
   type: string;
   userId: number;

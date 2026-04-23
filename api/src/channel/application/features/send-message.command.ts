@@ -93,7 +93,9 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     if (channel.type === 'direct' || channel.type === 'multi-direct') {
       await this.commandBus.execute(
         new SendNotification({
-          userIds: peerIds.filter((id) => id !== senderId),
+          userIds: peerIds.filter(
+            (id) => ![senderId, ...mentionIds].includes(id),
+          ),
           type: 'direct_message',
           workspaceId: channel.workspaceId,
           payload: {
@@ -113,8 +115,8 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
           workspaceId: channel.workspaceId,
           payload: {
             channel,
+            message,
             sender: message.sender,
-            message: message.displayContent,
             mentionedUsers: message.mentionedUsers,
           },
         }),
