@@ -22,27 +22,27 @@ const { actionLoading, openRename, openDelete, leaveChannel, scheduleMeeting, st
     <MenuTrigger>
       <slot />
     </MenuTrigger>
-    <MenuContent>
-      <MenuItem class="text-xs" @click="openRename(channel)" :disabled="channel.type === 'direct'">
-        <SquarePenIcon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
+    <MenuContent class="text-sm font-dmSans">
+      <MenuItem @click="openRename(channel)" :disabled="channel.type === 'direct'">
+        <SquarePenIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
         <div>Rename</div>
       </MenuItem>
-      <MenuItem class="text-xs" @click="leaveChannel(channel)" :disabled="actionLoading">
-        <LogOutIcon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
+      <MenuItem @click="leaveChannel(channel)" :disabled="actionLoading">
+        <LogOutIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
         <div>Leave channel</div>
       </MenuItem>
       <MenuSeparator />
-      <MenuItem class="text-xs" @click="scheduleMeeting(channel)">
-        <CalendarClockIcon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
+      <MenuItem @click="scheduleMeeting(channel)">
+        <CalendarClockIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
         <div>Schedule meeting</div>
       </MenuItem>
-      <MenuItem class="text-xs" @click="startMeeting(channel)">
-        <HeadphonesIcon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
+      <MenuItem @click="startMeeting(channel)">
+        <HeadphonesIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
         <div>Start meeting</div>
       </MenuItem>
       <MenuSeparator />
-      <MenuItem variant="destructive" class="text-xs" @click="openDelete(channel)" :disabled="actionLoading">
-        <Trash2Icon class="h-3.5 w-3.5 shrink-0" stroke-width="2.5" />
+      <MenuItem variant="destructive" @click="openDelete(channel)" :disabled="actionLoading">
+        <Trash2Icon class="size-3.5 shrink-0" stroke-width="2.5" />
         <div>Delete channel</div>
       </MenuItem>
     </MenuContent>

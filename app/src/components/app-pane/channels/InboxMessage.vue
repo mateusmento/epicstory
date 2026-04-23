@@ -39,12 +39,7 @@ const isHoveringImage = ref(false);
         size="lg"
         class="flex-shrink-0"
       />
-      <img
-        v-else
-        src="/images/hashtag.svg"
-        alt=""
-        class="w-8 h-8 rounded-full"
-      />
+      <img v-else src="/images/hashtag.svg" alt="" class="w-8 h-8 rounded-full" />
     </div>
 
     <div class="flex:col flex-1 h-full overflow-hidden">

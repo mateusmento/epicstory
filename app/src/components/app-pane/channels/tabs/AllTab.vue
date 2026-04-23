@@ -209,14 +209,14 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
         <ChannelContextMenu v-for="channel of item.page?.content ?? []" :key="channel.id" :channel="channel">
           <div class="flex:row-sm">
             <div
-              class="flex:row-lg flex:center-y flex-1 p-2 rounded-lg hover:bg-secondary cursor-pointer"
+              class="flex:row-lg flex:center-y flex-1 p-1.5 rounded-lg hover:bg-secondary cursor-pointer"
               @click="openChannel(channel)"
             >
               <UserAvatar
                 v-if="channel.speakingTo"
                 :name="channel.speakingTo.name"
                 :picture="channel.speakingTo.picture"
-                size="xs"
+                size="sm"
                 class="shrink-0"
               />
               <HeadphonesIcon

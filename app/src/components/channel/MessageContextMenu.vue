@@ -15,7 +15,14 @@ import {
 import { Icon, IconReplies } from "@/design-system/icons";
 import type { IMessage, IReply } from "@/domain/channels";
 import { messageBodyPlainText } from "@epicstory/tiptap";
-import { CopyIcon, SmilePlusIcon, SquarePen, Trash2Icon } from "lucide-vue-next";
+import {
+  CopyIcon,
+  MessageSquareShare,
+  MessageSquareShareIcon,
+  SmilePlusIcon,
+  SquarePen,
+  Trash2Icon,
+} from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { emojis } from "./emojis";
 
@@ -117,6 +124,12 @@ defineExpose({
         <SquarePen class="text-muted-foreground" />
         <span>Edit message</span>
       </MenuItem>
+
+      <MenuItem @click="emit('quote')">
+        <MessageSquareShareIcon class="text-muted-foreground" />
+        <span>Forward message</span>
+      </MenuItem>
+
       <MenuItem @click="emit('quote')">
         <Icon name="fa-quote-right" class="text-muted-foreground" />
         <span>Quote message</span>

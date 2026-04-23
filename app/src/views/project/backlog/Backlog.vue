@@ -247,20 +247,23 @@ type Emits = {
 const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots }) => {
   return (
     <div
-      class={cn("text-sm text-secondary-foreground select-none cursor-pointer flex:row-md flex:center-y", {
+      class={cn("text-xs text-secondary-foreground select-none cursor-pointer flex:row-md flex:center-y", {
         "font-medium": show,
       })}
     >
-      {slots.default?.() ?? label}
+      <span>{slots.default?.() ?? label}</span>
       <div class="group">
         <div class={cn("group-hover:hidden", { "opacity-0": !show })}>
-          <Icon name={`hi-arrow-sm-${order === "asc" ? "down" : "up"}`} />
+          <Icon
+            name={`hi-arrow-sm-${order === "asc" ? "down" : "up"}`}
+            class="size-4 text-muted-foreground"
+          />
         </div>
         <div
           class={cn("hidden group-hover:block", { "opacity-0": !show })}
           onClick={withModifiers(() => emit("reset"), ["stop"])}
         >
-          <Icon name="io-close" />
+          <Icon name="io-close" class="size-4 text-muted-foreground" />
         </div>
       </div>
     </div>
@@ -272,7 +275,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
   <div class="w-full h-full min-h-0 bg-white">
     <div class="flex flex-col w-full h-full min-h-0 bg-white overflow-hidden">
       <!-- Header -->
-      <div class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b pl-3 pr-6 py-2">
+      <div class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b pl-3 pr-6 py-1.5">
         <div class="flex items-center justify-between gap-4">
           <div class="grid gap-x-4 items-center flex-1 min-w-0" :class="GRID_COLS">
             <div />

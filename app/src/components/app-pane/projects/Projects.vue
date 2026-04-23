@@ -14,7 +14,7 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
-import { SquarePen, Trash2Icon } from "lucide-vue-next";
+import { NotebookTextIcon, NotepadTextIcon, SquarePen, Trash2Icon } from "lucide-vue-next";
 import { onMounted, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
@@ -83,7 +83,7 @@ watch(workspace, () =>
     <Separator />
 
     <ScrollArea @reached-bottom="fetchMoreProjects()" class="flex-1 min-h-0">
-      <div class="!flex flex-col gap-1 p-2 min-h-0">
+      <div class="!flex flex-col gap-1 p-2 min-h-0 font-inter">
         <RouterLink
           v-for="project of projects"
           :key="project.id"
@@ -91,7 +91,8 @@ watch(workspace, () =>
           class="flex:row-2xl flex:center-y py-2 px-3 rounded-lg hover:bg-secondary cursor-pointer"
           :class="{ 'bg-secondary': +route.params.projectId === project.id }"
         >
-          <div class="flex:row-auto flex:center-y flex-1">
+          <div class="flex:row-md flex:center-y flex-1">
+            <NotepadTextIcon class="size-4 text-muted-foreground" />
             <div class="text-sm text-foreground flex-1 truncate">{{ project.name }}</div>
             <div class="text-xs text-secondary-foreground">{{ project.issueCount }} issues</div>
           </div>

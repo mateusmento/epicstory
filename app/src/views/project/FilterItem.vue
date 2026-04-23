@@ -1,25 +1,26 @@
 <script setup lang="ts">
 import {
-  ButtonGroup,
+  IssueDueDateMenu,
+  IssueLabelsDropdown,
+  IssuePickerMenu,
+  issueStatusDotClass,
+  IssueStatusDropdown,
+} from "@/components/issue";
+import {
   Button,
+  ButtonGroup,
   Menu,
   MenuContent,
-  MenuItem,
   MenuInput,
+  MenuItem,
   MenuRadioGroup,
   MenuRadioItem,
   MenuSeparator,
   MenuTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import {
-  IssueDueDateMenu,
-  IssueLabelsDropdown,
-  IssueStatusDropdown,
-  IssueStatusMenu,
-} from "@/components/issue";
-import { formatDate, isDate, isThisYear, isToday } from "date-fns";
-import { computed, ref, watch } from "vue";
+import { useIssues } from "@/domain/issues";
+import { parseDate } from "@/domain/issues/api/issue.api";
 import {
   FIELD_ALLOWED_OPERATORS,
   FILTER_FIELDS,
@@ -27,10 +28,9 @@ import {
   type ProjectFilter,
   type ProjectFilterOperator,
 } from "@/domain/project";
-import { IssuePickerMenu } from "@/components/issue";
-import { parseDate } from "@/domain/issues/api/issue.api";
-import { useIssues } from "@/domain/issues";
+import { formatDate, isDate, isThisYear, isToday } from "date-fns";
 import { isEmpty } from "lodash";
+import { computed, ref, watch } from "vue";
 
 defineEmits<{
   (e: "remove"): void;
@@ -170,17 +170,14 @@ const parentPreview = computed(() => {
 
     <template v-else-if="modelValue.field === 'status'">
       <IssueStatusDropdown :value="(modelValue.value as string) ?? null" @select="setValue($event)">
-        <Button variant="outline" size="badge" class="text-muted-foreground">{{ statusPreview }}</Button>
+        <Button variant="outline" size="badge" class="flex:row-md flex:center-y text-muted-foreground">
+          <span
+            class="w-2 h-2 rounded-full ring-1 ring-border"
+            :class="issueStatusDotClass(modelValue.value as string)"
+          />
+          {{ statusPreview }}
+        </Button>
       </IssueStatusDropdown>
-
-      <!-- <Menu>
-        <MenuTrigger as-child>
-          <Button variant="outline" size="badge" class="text-muted-foreground">{{ statusPreview }}</Button>
-        </MenuTrigger>
-        <MenuContent as-child align="start" side="bottom">
-          <IssueStatusMenu :value="(modelValue.value as any) ?? null" @select="setValue($event)" />
-        </MenuContent>
-      </Menu> -->
     </template>
 
     <template v-else-if="modelValue.field === 'dueDate'">

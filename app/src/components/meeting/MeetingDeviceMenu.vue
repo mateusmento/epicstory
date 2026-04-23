@@ -110,7 +110,7 @@ function pickSpeaker(v: AcceptableValue) {
       :side="contentSide"
       :align="contentAlign"
       :side-offset="8"
-      class="w-56 max-h-[min(70vh,24rem)] overflow-y-auto"
+      class="w-56 max-h-[min(70vh,24rem)] overflow-y-auto font-dmSans"
     >
       <!-- Camera -->
       <MenuSub>
@@ -118,7 +118,7 @@ function pickSpeaker(v: AcceptableValue) {
           <IconCameraOn class="h-4 w-4 shrink-0" aria-hidden="true" />
           Camera
         </MenuSubTrigger>
-        <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem]">
+        <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem] font-inter">
           <template v-if="cameras.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No cameras found</MenuLabel>
           </template>
@@ -128,7 +128,7 @@ function pickSpeaker(v: AcceptableValue) {
             </MenuRadioItem>
           </MenuRadioGroup>
           <MenuSeparator />
-          <MenuItem class="gap-2 text-xs" @select="onRefreshSelect">
+          <MenuItem class="gap-2 text-sm font-dmSans" @select="onRefreshSelect">
             <RefreshCw class="h-3.5 w-3.5 shrink-0" />
             Refresh device list
           </MenuItem>
@@ -141,7 +141,7 @@ function pickSpeaker(v: AcceptableValue) {
           <IconMicrophoneOn class="h-4 w-4 shrink-0" aria-hidden="true" />
           Microphone
         </MenuSubTrigger>
-        <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem]">
+        <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem] font-inter">
           <template v-if="microphones.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No microphones found</MenuLabel>
           </template>
@@ -151,7 +151,7 @@ function pickSpeaker(v: AcceptableValue) {
             </MenuRadioItem>
           </MenuRadioGroup>
           <MenuSeparator />
-          <MenuItem class="gap-2 text-xs" @select="onRefreshSelect">
+          <MenuItem class="gap-2 text-sm font-dmSans" @select="onRefreshSelect">
             <RefreshCw class="h-3.5 w-3.5 shrink-0" />
             Refresh device list
           </MenuItem>
@@ -164,7 +164,7 @@ function pickSpeaker(v: AcceptableValue) {
           <Headphones class="h-4 w-4 shrink-0" aria-hidden="true" />
           Speaker
         </MenuSubTrigger>
-        <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem]">
+        <MenuSubContent class="max-h-60 overflow-y-auto min-w-[12rem] font-inter">
           <template v-if="speakers.length === 0">
             <MenuLabel class="px-2 py-1.5 text-xs text-muted-foreground">No speakers found</MenuLabel>
           </template>
@@ -174,7 +174,7 @@ function pickSpeaker(v: AcceptableValue) {
             </MenuRadioItem>
           </MenuRadioGroup>
           <MenuSeparator />
-          <MenuItem class="gap-2 text-xs" @select="onRefreshSelect">
+          <MenuItem class="gap-2 text-sm font-dmSans" @select="onRefreshSelect">
             <RefreshCw class="h-3.5 w-3.5 shrink-0" />
             Refresh device list
           </MenuItem>
