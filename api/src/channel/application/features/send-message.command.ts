@@ -1,5 +1,6 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import {
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -35,6 +36,11 @@ export class SendMessage {
   @Min(1)
   quotedMessageId?: number;
 
+  /** Set only from scheduled-message job delivery; not accepted from public HTTP body. */
+  @IsOptional()
+  @IsBoolean()
+  markAsScheduled?: boolean;
+
   constructor(data: Partial<SendMessage>) {
     patch(this, data);
   }
@@ -56,6 +62,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     content,
     contentRich,
     quotedMessageId,
+    markAsScheduled,
   }: SendMessage) {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
@@ -84,6 +91,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       content,
       contentRich,
       quotedMessageId,
+      { isScheduled: markAsScheduled === true },
     );
 
     const mentionIds = message.mentionedUsers

@@ -4,6 +4,11 @@ import { injectable } from "tsyringe";
 import type { Page } from "@/core/types";
 import type { ChannelGroupsPage, IChannel, ISearchChannelsAndUsersItem } from "../types/channel.type";
 import type { IMessage, IReaction, IReply } from "../types";
+import type {
+  ICreateScheduledMessageBody,
+  IScheduledMessage,
+  IUpdateScheduledMessageBody,
+} from "../types/scheduled-message.type";
 import type { User } from "@/domain/auth";
 
 export type CreateDirectChannel = {
@@ -129,6 +134,30 @@ export class ChannelApi {
         contentRich,
         ...(quotedMessageId != null ? { quotedMessageId } : {}),
       })
+      .then((res) => res.data);
+  }
+
+  getScheduledMessages(channelId: number) {
+    return this.axios
+      .get<IScheduledMessage[]>(`/channels/${channelId}/scheduled-messages`)
+      .then((res) => res.data);
+  }
+
+  postScheduledMessage(channelId: number, body: ICreateScheduledMessageBody) {
+    return this.axios
+      .post<IScheduledMessage>(`/channels/${channelId}/scheduled-messages`, body)
+      .then((res) => res.data);
+  }
+
+  patchScheduledMessage(channelId: number, scheduledMessageId: string, body: IUpdateScheduledMessageBody) {
+    return this.axios
+      .patch<IScheduledMessage>(`/channels/${channelId}/scheduled-messages/${scheduledMessageId}`, body)
+      .then((res) => res.data);
+  }
+
+  deleteScheduledMessage(channelId: number, scheduledMessageId: string) {
+    return this.axios
+      .delete<{ success: boolean }>(`/channels/${channelId}/scheduled-messages/${scheduledMessageId}`)
       .then((res) => res.data);
   }
 

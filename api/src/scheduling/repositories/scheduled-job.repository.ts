@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { addMilliseconds } from 'date-fns';
 import { Repository } from 'typeorm';
+import { ScheduledJobTypes } from '../constants';
 import { ScheduledJob } from '../entities';
 import type { ScheduledJobType } from '../types/payload';
 
@@ -265,6 +266,39 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
         calendarEventId,
       })
       .execute();
+  }
+
+  /**
+   * Active scheduled message jobs for a channel (not yet fully processed; recurring remain listed).
+   */
+  async findScheduledMessagesByChannel(args: {
+    channelId: number;
+    workspaceId: number;
+  }): Promise<ScheduledJob[]> {
+    const { channelId, workspaceId } = args;
+    return this.createQueryBuilder('job')
+      .where('job.type = :type', { type: ScheduledJobTypes.scheduled_message })
+      .andWhere('job.workspaceId = :workspaceId', { workspaceId })
+      .andWhere(`(job.payload->>'channelId')::int = :channelId`, { channelId })
+      .andWhere('job.processed = :processed', { processed: false })
+      .orderBy('job.dueAt', 'ASC')
+      .addOrderBy('job.id', 'ASC')
+      .getMany();
+  }
+
+  async findScheduledMessageByIdForWorkspace(args: {
+    id: string;
+    workspaceId: number;
+  }): Promise<ScheduledJob | null> {
+    return this.createQueryBuilder('job')
+      .where('job.id = :id', { id: args.id })
+      .andWhere('job.workspaceId = :workspaceId', {
+        workspaceId: args.workspaceId,
+      })
+      .andWhere('job.type = :type', {
+        type: ScheduledJobTypes.scheduled_message,
+      })
+      .getOne();
   }
 
   /**

@@ -34,6 +34,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
+    channelId: 1,
     members: [
       { id: 1, name: "Sean", picture: sean, email: "sean@gmail.com", role: "admin" },
       { id: 1, name: "Daiana", picture: daiana, email: "daiana@gmail.com", role: "member" },

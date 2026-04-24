@@ -23,7 +23,7 @@ const { filters, removeFilter, updateFilter } = useProjectFilters(+props.project
       @remove="removeFilter(f.field)"
     />
 
-    <ProjectFilterDropdown :project-id>
+    <ProjectFilterDropdown v-if="filters.length > 0" :project-id>
       <Button variant="outline" size="badge" class="flex:row-sm flex:center-y" title="Add filter">
         <PlusIcon class="size-4" />
       </Button>

@@ -7,6 +7,7 @@ import { defineStore, storeToRefs } from "pinia";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChannelApi } from "../services";
+import type { ICreateScheduledMessageBody } from "../types/scheduled-message.type";
 import type { IChannel, IMessage, IMessageGroup } from "../types";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
@@ -178,6 +179,11 @@ export function useChannel() {
     return message;
   }
 
+  async function sendScheduledMessage(body: ICreateScheduledMessageBody) {
+    if (!store.channel) return;
+    return channelApi.postScheduledMessage(store.channel.id, body);
+  }
+
   function sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: string) {
     return channelApi.sendDirectMessage(workspaceId, senderId, peers, content);
   }
@@ -229,6 +235,7 @@ export function useChannel() {
     subscribeMeetings,
     unsubscribeMeetings,
     sendMessage,
+    sendScheduledMessage,
     sendDirectMessage,
     fetchMembers,
     addMember,

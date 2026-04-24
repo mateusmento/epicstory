@@ -25,12 +25,17 @@ export class MessageGateway {
     private channelRepo: ChannelRepository,
   ) {}
 
-  emitIncomingMessage(message: Message) {
+  /**
+   * @param options.includeSender — Set when the client did not already receive the message over HTTP
+   * (e.g. scheduled job delivery). Default behavior excludes the sender like an optimistic send + fan-out.
+   */
+  emitIncomingMessage(message: Message, options?: { includeSender?: boolean }) {
     if (!this.server) return;
-    this.server
-      .to(channelMessagingRoom(message.channelId))
-      .except(userRoom(message.senderId))
-      .emit('incoming-message', { message, channelId: message.channelId });
+    const room = this.server.to(channelMessagingRoom(message.channelId));
+    const target = options?.includeSender
+      ? room
+      : room.except(userRoom(message.senderId));
+    target.emit('incoming-message', { message, channelId: message.channelId });
   }
 
   emitIncomingReply(reply: MessageReply) {

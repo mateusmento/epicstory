@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { SchedulingModule } from 'src/scheduling/scheduling.module';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import * as controllers from './application/controllers';
 import * as features from './application/features';
@@ -17,6 +18,7 @@ import * as repositories from './infrastructure/repositories';
     AuthModule,
     WorkspaceModule,
     NotificationsModule,
+    SchedulingModule,
   ],
   controllers: Object.values(controllers),
   providers: [

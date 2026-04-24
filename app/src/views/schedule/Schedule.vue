@@ -2,7 +2,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system";
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
 import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";

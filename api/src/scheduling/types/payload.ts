@@ -1,10 +1,14 @@
 import {
   IsBoolean,
   IsDate,
+  IsInt,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
+  IsString,
   IsUUID,
+  Min,
 } from 'class-validator';
 import { UUID } from 'crypto';
 import { patch } from 'src/core/objects';
@@ -21,7 +25,8 @@ export type ScheduledJobPayload =
   | MeetingReminderPayload
   | MeetingStartPayload
   | CalendarEventReminderPayload
-  | DueIssueReminderPayload;
+  | DueIssueReminderPayload
+  | ScheduledMessagePayload;
 
 export class MeetingReminderPayload {
   type: 'meeting_reminder';
@@ -93,6 +98,36 @@ export class DueIssueReminderPayload {
   }
 }
 
+export class ScheduledMessagePayload {
+  type: 'scheduled_message';
+
+  @IsInt()
+  @Min(1)
+  channelId: number;
+
+  @IsInt()
+  @Min(1)
+  senderId: number;
+
+  @IsNotEmpty()
+  @IsString()
+  content: string;
+
+  @IsOptional()
+  @IsObject()
+  contentRich?: any;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  quotedMessageId?: number;
+
+  constructor(data: Partial<ScheduledMessagePayload>) {
+    patch(this, data);
+    this.type = 'scheduled_message';
+  }
+}
+
 export function buildScheduledJobPayload(
   type: ScheduledJobType,
   payload: Record<string, unknown> = {},
@@ -106,6 +141,8 @@ export function buildScheduledJobPayload(
       return new CalendarEventReminderPayload(payload);
     case 'due_issue_reminder':
       return new DueIssueReminderPayload(payload);
+    case 'scheduled_message':
+      return new ScheduledMessagePayload(payload);
     default:
       throw new Error(`Invalid scheduled job type: ${type}`);
   }

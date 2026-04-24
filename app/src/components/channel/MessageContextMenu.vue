@@ -44,7 +44,9 @@ const sender = computed(() => (props.senderId === props.meId ? "me" : "someoneEl
 
 const isReply = computed(() => "messageId" in props.message && props.message.messageId != null);
 
-const canEditHere = computed(() => sender.value === "me" && !isReply.value);
+const isScheduled = computed(() => "isScheduled" in props.message && props.message.isScheduled);
+
+const canEditHere = computed(() => sender.value === "me" && !isReply.value && !isScheduled.value);
 
 const mostUsedEmojis = ["👍", "🙌", "❤️", "🔥", "🎉"];
 

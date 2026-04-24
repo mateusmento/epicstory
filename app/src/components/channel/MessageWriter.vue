@@ -1,12 +1,19 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
-import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import { startRecording } from "@/core/screen-recording";
-import { createVueFloatingSuggestion } from "@/core/tiptap";
 import { useWebSockets } from "@/core/websockets";
 import { Icon } from "@/design-system/icons";
-import { Button } from "@/design-system/ui/button";
-import { Separator } from "@/design-system/ui/separator";
+import {
+  Button,
+  ButtonGroup,
+  ButtonGroupSeparator,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+  Separator,
+} from "@/design-system";
 import type { User } from "@/domain/auth";
 import {
   CHANNEL_TYPING_PULSE_MS,
@@ -16,16 +23,11 @@ import {
   saveChannelDraft,
   type IMessage,
   type IReply,
+  type IScheduledMessageRecurrence,
 } from "@/domain/channels";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import { messageBodyPlainText, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
-import {
-  createMentionExtensionWithNodeView,
-  createPlaceholderExtension,
-  createRichTextExtensions,
-  EPIC_STORY_COMPOSER_EDITOR_CLASS,
-  mediaExtensions,
-} from "@epicstory/tiptap/vue";
+import { EPIC_STORY_COMPOSER_EDITOR_CLASS } from "@epicstory/tiptap/vue";
 import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
 import { debounce } from "lodash";
 import {
@@ -40,12 +42,17 @@ import {
   Strikethrough,
   Table2,
   TextQuote,
+  ChevronDown,
+  CalendarIcon,
 } from "lucide-vue-next";
-import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
-import type { MentionSuggestionItem } from "./MentionList.vue";
-import MentionList from "./MentionList.vue";
-import TiptapCodeBlockCardNodeView from "./TiptapCodeBlockCardNodeView.vue";
-import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, toRef, watch } from "vue";
+import { createChannelMessageExtensions } from "./channel-message-editor-extensions";
+import {
+  formatScheduleSummary,
+  type ResolvedSchedule,
+  resolveSchedulePreset,
+} from "./message-schedule/schedule-builders";
+import ScheduleMessageCustomDialog from "./message-schedule/ScheduleMessageCustomDialog.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -102,6 +109,16 @@ function emitTypingStopForChannel(channelId: number, workspaceId: number) {
 
 const emit = defineEmits<{
   (e: "send-message", value: { content: string; contentRich: any; quotedMessageId?: number }): void;
+  (
+    e: "send-scheduled-message",
+    value: {
+      content: string;
+      contentRich: any;
+      quotedMessageId?: number;
+      dueAt: string;
+      recurrence: IScheduledMessageRecurrence;
+    },
+  ): void;
   (e: "submit-edit", value: { messageId: number; content: string; contentRich: any }): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
@@ -126,22 +143,6 @@ const mentionablesForSuggestion = computed(() => {
 
 const mentionablesById = computed(() => new Map((props.mentionables ?? []).map((u) => [u.id, u])));
 
-const mentionSuggestion = createVueFloatingSuggestion({
-  items: ({ query }): MentionSuggestionItem[] => {
-    const q = (query ?? "").trim().toLowerCase();
-    return mentionablesForSuggestion.value
-      .filter((u) => (q ? u.name.toLowerCase().includes(q) || String(u.id).startsWith(q) : true))
-      .slice(0, 8)
-      .map((u) => ({ id: u.id, label: u.name, picture: u.picture }));
-  },
-  listComponent: MentionList,
-  mapProps: ({ items, command, editor }) => ({ items, command, editor }),
-  placement: "bottom-start",
-  mainAxisOffset: 8,
-  zIndex: 80,
-  className: "outline-none",
-});
-
 const mentionContext = reactive<{ meId: number | undefined }>({ meId: props.meId });
 watch(
   () => props.meId,
@@ -150,34 +151,17 @@ watch(
   },
 );
 
+const channelIdRef = toRef(props, "channelId");
+
 const editor = useEditor({
-  extensions: [
-    ...createRichTextExtensions({
-      linkOpenOnClick: false,
-      lowlight: epicStoryLowlight,
-      codeBlockNodeView: TiptapCodeBlockCardNodeView,
-    }),
-    ...(props.channelId != null
-      ? mediaExtensions({
-          uploadFile: (file: File) => channelApi.uploadAttachment(props.channelId!, file).then((a) => a.url),
-          allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
-        })
-      : []),
-    createMentionExtensionWithNodeView(TiptapMentionNodeView, {
-      HTMLAttributes: {
-        class:
-          "mention-chip inline-flex items-center px-0.5 rounded-sm bg-mention-chip text-mention font-medium",
-      },
-      renderText({ node }: { node: { attrs: { label?: unknown; id?: unknown } } }) {
-        return `@${node.attrs.label ?? node.attrs.id}`;
-      },
-      // Used by `TiptapMentionNodeView.vue` via `props.extension.options.userById`
-      userById: (id: number) => mentionablesById.value.get(id),
-      mentionContext,
-      suggestion: mentionSuggestion,
-    } as any),
-    createPlaceholderExtension(() => composerPlaceholder.value),
-  ],
+  extensions: createChannelMessageExtensions({
+    channelApi,
+    channelId: channelIdRef,
+    getPlaceholder: () => composerPlaceholder.value,
+    mentionContext,
+    mentionablesById,
+    mentionablesForSuggestion,
+  }),
   content: "",
   editorProps: {
     attributes: {
@@ -191,6 +175,43 @@ const editor = useEditor({
       return false;
     },
   },
+});
+
+const customScheduleOpen = ref(false);
+const activeSchedule = ref<ResolvedSchedule | null>(null);
+
+const scheduleSummary = computed(() =>
+  activeSchedule.value ? formatScheduleSummary(activeSchedule.value) : "",
+);
+
+function applyPreset(preset: Parameters<typeof resolveSchedulePreset>[0]) {
+  activeSchedule.value = resolveSchedulePreset(preset);
+}
+
+function onCustomScheduleConfirm(s: ResolvedSchedule) {
+  activeSchedule.value = s;
+  customScheduleOpen.value = false;
+}
+
+function openCustomScheduleDialog() {
+  customScheduleOpen.value = true;
+}
+
+function clearActiveSchedule() {
+  activeSchedule.value = null;
+}
+
+function focusComposerEnd() {
+  const ed = editor.value;
+  if (ed) ed.chain().focus("end").run();
+}
+
+/** Return focus to the composer when the (non-modal) custom schedule layer closes. */
+watch(customScheduleOpen, (open) => {
+  if (open) return;
+  nextTick().then(() => {
+    focusComposerEnd();
+  });
 });
 
 const saveDraftDebounced = debounce((ed: Editor) => {
@@ -338,6 +359,7 @@ watch(
         clearTypingPulse();
         isEmittingTyping.value = false;
         saveDraftDebounced.cancel();
+        activeSchedule.value = null;
       }
     }
 
@@ -352,6 +374,13 @@ watch(
     suppressTypingSignals.value = false;
   },
   { flush: "post" },
+);
+
+watch(
+  () => props.editingMessage,
+  (m) => {
+    if (m) activeSchedule.value = null;
+  },
 );
 
 onBeforeUnmount(() => {
@@ -399,11 +428,23 @@ function onSendMessage() {
     isEmittingTyping.value = false;
     return;
   }
-  emit("send-message", {
-    content: plain,
-    contentRich: doc,
-    ...(props.quotedMessage ? { quotedMessageId: quoteRefMessageId(props.quotedMessage) } : {}),
-  });
+  if (activeSchedule.value && props.channelId != null) {
+    const sch = activeSchedule.value;
+    emit("send-scheduled-message", {
+      content: plain,
+      contentRich: doc,
+      ...(props.quotedMessage ? { quotedMessageId: quoteRefMessageId(props.quotedMessage) } : {}),
+      dueAt: sch.dueAt.toISOString(),
+      recurrence: sch.recurrence,
+    });
+    activeSchedule.value = null;
+  } else {
+    emit("send-message", {
+      content: plain,
+      contentRich: doc,
+      ...(props.quotedMessage ? { quotedMessageId: quoteRefMessageId(props.quotedMessage) } : {}),
+    });
+  }
   editor.value.commands.clearContent();
   saveDraftDebounced.cancel();
   if (props.workspaceId != null && props.channelId != null) {
@@ -481,7 +522,7 @@ function formatTime(seconds: number) {
         <Icon name="io-close" class="size-4" />
       </Button>
     </div>
-    <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-0.5">
+    <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-0.5 font-lato">
       <EditorContent v-if="editor" :editor="editor" />
     </div>
 
@@ -584,7 +625,24 @@ function formatTime(seconds: number) {
         <Icon name="oi-mention" class="w-5 h-5" />
       </Button>
 
-      <div class="flex-1"></div>
+      <div class="flex-1 min-w-0">
+        <div
+          v-if="!editingMessage && scheduleSummary"
+          class="flex:row items-center gap-1 text-xs text-muted-foreground min-w-0"
+        >
+          <span class="truncate max-w-[14rem]">{{ scheduleSummary }}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            class="h-6 w-6 shrink-0"
+            @click.stop="clearActiveSchedule"
+          >
+            <span class="sr-only">Clear schedule</span>
+            <Icon name="io-close" class="size-3" />
+          </Button>
+        </div>
+      </div>
 
       <Button
         v-if="editingMessage"
@@ -605,16 +663,85 @@ function formatTime(seconds: number) {
         </template>
       </Button>
 
+      <template v-if="!editingMessage && channelId != null">
+        <ButtonGroup>
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+            @click="onSendMessage"
+          >
+            <Icon name="io-paper-plane" />
+            {{ activeSchedule ? "Schedule" : "Send" }}
+          </Button>
+          <ButtonGroupSeparator
+            class="!m-0 !w-px !min-w-px shrink-0 self-stretch border-0 bg-white/70"
+            orientation="vertical"
+          />
+          <Menu type="dropdown-menu">
+            <MenuTrigger as-child>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                class="shrink-0 border-0 bg-[#3A66FF] px-1.5 text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+                aria-label="Schedule options"
+              >
+                <ChevronDown class="w-4 h-4" />
+              </Button>
+            </MenuTrigger>
+            <MenuContent align="end" class="min-w-[12rem] font-dmSans">
+              <MenuItem @click="applyPreset('in10s')">
+                <CalendarIcon class="size-4 text-muted-foreground" />
+                <span>In 10 seconds</span>
+              </MenuItem>
+              <MenuItem @click="applyPreset('in1m')">
+                <CalendarIcon class="size-4 text-muted-foreground" />
+                <span>In 1 minute</span>
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem @click="applyPreset('in2h')">
+                <CalendarIcon class="size-4 text-muted-foreground" />
+                <span>In 2 hours</span>
+              </MenuItem>
+              <MenuItem @click="applyPreset('tomorrow9')">
+                <CalendarIcon class="size-4 text-muted-foreground" />
+                <span>Tomorrow at 9 AM</span>
+              </MenuItem>
+              <MenuItem @click="applyPreset('in2days9')">
+                <CalendarIcon class="size-4 text-muted-foreground" />
+                <span>In 2 days at 9 AM</span>
+              </MenuItem>
+              <MenuItem @click="applyPreset('nextMonday9')">
+                <CalendarIcon class="size-4 text-muted-foreground" />
+                <span>Next Monday at 9 AM</span>
+              </MenuItem>
+              <MenuItem @click="applyPreset('nextWeek9')">
+                <CalendarIcon class="size-4 text-muted-foreground" />
+                <span>Next week at 9 AM</span>
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem @click="openCustomScheduleDialog">
+                <CalendarIcon class="size-4 text-muted-foreground" />
+                <span>Custom schedule…</span>
+              </MenuItem>
+            </MenuContent>
+          </Menu>
+        </ButtonGroup>
+      </template>
       <Button
-        legacy
-        legacy-variant="primary"
-        legacy-size="sm"
-        class="flex:row-lg flex:center-y text-sm bg-[#3A66FF]"
+        v-else
+        type="button"
+        variant="default"
+        size="sm"
+        class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
         @click="onSendMessage"
       >
         <Icon name="io-paper-plane" />
         {{ editingMessage ? "Save" : "Send" }}
       </Button>
     </div>
+    <ScheduleMessageCustomDialog v-model:open="customScheduleOpen" @confirm="onCustomScheduleConfirm" />
   </div>
 </template>

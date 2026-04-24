@@ -6,11 +6,12 @@ const emit = defineEmits<{
   (e: "close"): void;
 }>();
 
-const { members, addMember, removeMember } = useChannel();
+const { members, addMember, removeMember, channel } = useChannel();
 </script>
 
 <template>
   <ChannelDetailsPaneTemplate
+    :channel-id="channel?.id"
     :members
     @add-member="addMember"
     @remove-member="removeMember"

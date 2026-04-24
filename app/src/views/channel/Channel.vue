@@ -11,7 +11,8 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const { user } = useAuth();
 const { workspace } = useWorkspace();
-const { channel, messageGroups, sendMessage, deleteMessage, updateMessage } = useSyncedChannel();
+const { channel, messageGroups, sendMessage, sendScheduledMessage, deleteMessage, updateMessage } =
+  useSyncedChannel();
 const { currentMeeting, joinChannelMeeting } = useMeeting();
 
 function onScheduleMeetingForChannel() {
@@ -63,6 +64,7 @@ function onMessageDeleted(messageId: number) {
       :me-id="user.id"
       :channel-id="channel.id"
       :send-message="sendMessage"
+      :send-scheduled-message="sendScheduledMessage"
       :update-message="updateMessage"
       :channel="channel"
       @join-meeting="joinChannelMeeting({ channelId: channel.id })"

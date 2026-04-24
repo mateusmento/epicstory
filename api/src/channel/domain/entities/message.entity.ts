@@ -32,6 +32,9 @@ export class Message {
   @Column({ type: 'timestamptz', nullable: true })
   editedAt?: Date | null;
 
+  @Column({ default: false })
+  isScheduled: boolean;
+
   @Column()
   senderId: number;
 

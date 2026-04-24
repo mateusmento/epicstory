@@ -37,7 +37,13 @@ export class ChannelMessageController {
     @Auth() issuer: Issuer,
   ) {
     const message = await this.commandBus.execute(
-      new SendMessage({ ...command, channelId, senderId: issuer.id }),
+      new SendMessage({
+        channelId,
+        senderId: issuer.id,
+        content: command.content,
+        contentRich: command.contentRich,
+        quotedMessageId: command.quotedMessageId,
+      }),
     );
 
     this.messageGateway.emitIncomingMessage(message);

@@ -12,6 +12,7 @@ import {
   IssuerCanOnlyEditOwnMessages,
   IssuerIsNotChannelMember,
   MessageNotFound,
+  ScheduledMessageCannotBeEdited,
 } from '../exceptions';
 import { MessageService } from '../services/message.service';
 
@@ -48,6 +49,9 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
     if (!message) throw new MessageNotFound();
     if (message.senderId !== issuerId) {
       throw new IssuerCanOnlyEditOwnMessages();
+    }
+    if (message.isScheduled) {
+      throw new ScheduledMessageCannotBeEdited();
     }
 
     const channel = await this.channelRepo.findOne({

@@ -18,6 +18,7 @@ export interface IMessage {
   quotedMessageId?: number | null;
   quotedMessage?: IQuotedMessagePreview;
   editedAt?: string | null;
+  isScheduled?: boolean;
   mentionedUsers?: User[];
   sentAt: string;
   senderId: number;
@@ -60,6 +61,7 @@ export interface IReply {
   quotedMessageId?: number | null;
   quotedMessage?: IQuotedMessagePreview;
   mentionedUsers?: User[];
+  isScheduled?: boolean;
   sentAt: string;
   senderId: number;
   sender: User;

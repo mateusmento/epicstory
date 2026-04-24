@@ -103,7 +103,13 @@ const quotedExcerpt = computed(() => {
               :me-id="props.meId"
             />
             <div
-              v-if="'editedAt' in props.message && props.message.editedAt"
+              v-if="'isScheduled' in props.message && props.message.isScheduled"
+              class="text-[0.65rem] text-muted-foreground/80 mb-0.5"
+            >
+              (Scheduled)
+            </div>
+            <div
+              v-else-if="'editedAt' in props.message && props.message.editedAt"
               class="text-[0.65rem] text-muted-foreground/80 mb-0.5"
             >
               (edited)

@@ -27,3 +27,7 @@ export * from './send-message.command';
 export * from './toggle-message-reaction.command';
 export * from './toggle-reply-reaction.command';
 export * from './update-message.command';
+export * from './schedule-channel-message.command';
+export * from './update-scheduled-channel-message.command';
+export * from './delete-scheduled-channel-message.command';
+export * from './list-scheduled-channel-messages.query';

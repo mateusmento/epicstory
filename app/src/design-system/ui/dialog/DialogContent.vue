@@ -1,25 +1,16 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from "vue";
-import {
-  DialogClose,
-  DialogContent,
-  type DialogContentEmits,
-  type DialogContentProps,
-  DialogOverlay,
-  DialogPortal,
-  useForwardPropsEmits,
-} from "radix-vue";
-import { Cross2Icon } from "@radix-icons/vue";
+import type { DialogContentEmits, DialogContentProps } from "reka-ui";
+import type { HTMLAttributes } from "vue";
+import { reactiveOmit } from "@vueuse/core";
+import { X } from "lucide-vue-next";
+import { DialogClose, DialogContent, DialogOverlay, DialogPortal, useForwardPropsEmits } from "reka-ui";
 import { cn } from "@/design-system/utils";
+import { Cross2Icon } from "@radix-icons/vue";
 
 const props = defineProps<DialogContentProps & { class?: HTMLAttributes["class"] }>();
 const emits = defineEmits<DialogContentEmits>();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, "class");
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
@@ -43,7 +34,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       <DialogClose
         class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
       >
-        <Cross2Icon class="w-4 h-4" />
+        <X class="w-4 h-4" />
         <span class="sr-only">Close</span>
       </DialogClose>
     </DialogContent>

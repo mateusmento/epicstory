@@ -11,6 +11,7 @@ import {
 } from "@/design-system";
 import { quoteRefMessageId, type IChannel, type IMessage, type IMessageGroup } from "@/domain/channels";
 import { useChannel, useWorkspaceOnline } from "@/domain/channels";
+import type { ICreateScheduledMessageBody } from "@/domain/channels/types/scheduled-message.type";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
 import { computed, nextTick, ref, watch } from "vue";
@@ -25,6 +26,7 @@ const props = defineProps<{
   chatPicture?: string;
   messageGroups: IMessageGroup[];
   sendMessage: (message: { content: string; contentRich: any; quotedMessageId?: number }) => Promise<unknown>;
+  sendScheduledMessage?: (body: ICreateScheduledMessageBody) => Promise<unknown>;
   updateMessage: (messageId: number, body: { content: string; contentRich: any }) => Promise<unknown>;
   channelId: number;
   channel: IChannel;
@@ -105,6 +107,22 @@ async function onSendMessage(payload: { content: string; contentRich: any; quote
     quotedMessageId:
       payload.quotedMessageId ?? (quotedMessage.value ? quoteRefMessageId(quotedMessage.value) : undefined),
   });
+  scrollAreaRef.value?.scrollToBottom();
+  quotedMessage.value = null;
+}
+
+async function onSendScheduledMessage(payload: ICreateScheduledMessageBody) {
+  if (!payload.content?.trim()) return;
+  const send = props.sendScheduledMessage;
+  if (send) {
+    await send({
+      content: payload.content,
+      contentRich: payload.contentRich,
+      quotedMessageId: payload.quotedMessageId,
+      dueAt: payload.dueAt,
+      recurrence: payload.recurrence,
+    });
+  }
   scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
 }
@@ -275,6 +293,7 @@ defineExpose({
       :quoted-message="quotedMessage"
       :editing-message="editingMessage"
       @send-message="onSendMessage"
+      @send-scheduled-message="onSendScheduledMessage"
       @submit-edit="onSubmitEdit"
       @clear-quote="quotedMessage = null"
       @cancel-edit="onCancelEdit"

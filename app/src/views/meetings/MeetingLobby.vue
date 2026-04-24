@@ -108,10 +108,6 @@ function toggleMic() {
 async function join() {
   const meeting = await (() => {
     if (occurrenceAt.value && calendarEventId.value) {
-      console.log({
-        calendarEventId: calendarEventId.value,
-        occurrenceAt: occurrenceAt.value,
-      });
       return joinScheduledMeeting({
         calendarEventId: calendarEventId.value,
         occurrenceAt: occurrenceAt.value,

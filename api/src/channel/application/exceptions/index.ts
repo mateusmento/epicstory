@@ -75,3 +75,9 @@ export class SenderIsNotChannelMember extends BadRequestException {
     super('Sender is not a channel member');
   }
 }
+
+export class ScheduledMessageCannotBeEdited extends BadRequestException {
+  constructor() {
+    super('Scheduled delivery messages cannot be edited');
+  }
+}

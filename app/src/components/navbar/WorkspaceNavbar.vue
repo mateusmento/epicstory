@@ -17,7 +17,15 @@ import { useAuth } from "@/domain/auth";
 import { useLiveMeeting, useMeeting } from "@/domain/channels";
 import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
-import { ArrowLeft, ArrowRight, LogOutIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BoxIcon,
+  LogOutIcon,
+  MonitorCogIcon,
+  SettingsIcon,
+  UserIcon,
+} from "lucide-vue-next";
 import { computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { useRouter } from "vue-router";
@@ -123,7 +131,7 @@ async function onJoinLiveScheduledMeeting() {
         <Icon name="bi-chevron-expand" class="ml-auto" />
       </NavListItem>
       <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y">
-        <Icon name="hi-clipboard-list" />
+        <MonitorCogIcon class="size-4" stroke-width="2.5" />
         Projects
       </NavListItem>
       <NavListItem view="app-pane" content="teams" class="flex:row-md flex:center-y">

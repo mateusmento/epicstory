@@ -148,6 +148,7 @@ export class MessageService {
     content: string,
     contentRich?: any,
     quotedMessageId?: number | null,
+    options?: { isScheduled?: boolean },
   ) {
     const channelId = channel.id;
 
@@ -171,6 +172,7 @@ export class MessageService {
         contentRich: normalizedRich,
         sentAt: new Date(),
         quotedMessageId: resolvedQuote,
+        isScheduled: options?.isScheduled === true,
       }),
     );
 

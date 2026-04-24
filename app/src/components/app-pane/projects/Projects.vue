@@ -14,7 +14,14 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspace } from "@/domain/workspace";
-import { NotebookTextIcon, NotepadTextIcon, SquarePen, Trash2Icon } from "lucide-vue-next";
+import {
+  BoxIcon,
+  MonitorCogIcon,
+  NotebookTextIcon,
+  NotepadTextIcon,
+  SquarePen,
+  Trash2Icon,
+} from "lucide-vue-next";
 import { onMounted, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
@@ -55,7 +62,7 @@ watch(workspace, () =>
     <Collapsible as-child>
       <div class="flex:row-auto flex:center-y px-4 py-1.5 h-10">
         <h1 class="flex:row-md flex:center-y">
-          <Icon name="hi-clipboard-list" />
+          <MonitorCogIcon class="size-4 text-muted-foreground" stroke-width="2.5" />
           <div class="font-medium text-sm">Projects</div>
         </h1>
 
@@ -92,7 +99,9 @@ watch(workspace, () =>
           :class="{ 'bg-secondary': +route.params.projectId === project.id }"
         >
           <div class="flex:row-md flex:center-y flex-1">
-            <NotepadTextIcon class="size-4 text-muted-foreground" />
+            <BoxIcon class="size-4 text-muted-foreground" stroke-width="2" />
+
+            <!-- <NotepadTextIcon class="size-4 text-muted-foreground" /> -->
             <div class="text-sm text-foreground flex-1 truncate">{{ project.name }}</div>
             <div class="text-xs text-secondary-foreground">{{ project.issueCount }} issues</div>
           </div>
