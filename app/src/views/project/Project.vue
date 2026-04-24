@@ -233,8 +233,8 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
             Board
           </RouterLink>
         </ToggleGroupItem>
-        <ToggleGroupItem value="backlog" variant="outline" size="sm" as-child>
-          <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`" class="flex:row-md flex:center-y">
+        <ToggleGroupItem value="timeline" variant="outline" size="sm" as-child>
+          <RouterLink :to="`/${workspaceId}/project/${projectId}/timeline`" class="flex:row-md flex:center-y">
             <SquareChartGanttIcon class="size-4 text-muted-foreground" />
             Timeline
           </RouterLink>
