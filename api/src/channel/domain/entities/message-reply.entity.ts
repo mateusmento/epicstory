@@ -47,13 +47,13 @@ export class MessageReply {
   @ManyToOne(() => Message, { onDelete: 'CASCADE' })
   message: Message;
 
-  /** Optional reference to a channel message whose body is quoted (same channel as this reply). */
+  /** Optional reference to another reply in this thread (same `message` / thread root). */
   @Column({ type: 'int', nullable: true })
-  quotedMessageId: number | null;
+  quotedReplyId: number | null;
 
-  @ManyToOne(() => Message, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'quoted_message_id' })
-  quotedMessageRef?: Message | null;
+  @ManyToOne(() => MessageReply, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'quoted_reply_id' })
+  quotedReplyRef?: MessageReply | null;
 
   @Exclude()
   @OneToMany(() => MessageReplyReaction, (reaction) => reaction.messageReply)

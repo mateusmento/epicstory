@@ -9,11 +9,15 @@ import { computed, ref } from "vue";
 import EmojiPicker from "./EmojiPicker.vue";
 import { CopyIcon, SquarePen, Trash2Icon } from "lucide-vue-next";
 
-const props = defineProps<{
-  meId: number;
-  senderId: number;
-  message: IMessage | IReply;
-}>();
+const props = withDefaults(
+  defineProps<{
+    meId: number;
+    senderId: number;
+    message: IMessage | IReply;
+    allowQuote?: boolean;
+  }>(),
+  { allowQuote: true },
+);
 
 const emit = defineEmits<{
   (e: "message-deleted"): void;
@@ -88,7 +92,7 @@ defineExpose({
           <SquarePen class="h-5 w-5 text-muted-foreground" />
           <span>Edit message</span>
         </MenuItem>
-        <MenuItem @click="emit('quote')">
+        <MenuItem v-if="props.allowQuote" @click="emit('quote')">
           <Icon name="fa-quote-right" class="w-5 h-5 text-muted-foreground" />
           <span>Quote message</span>
         </MenuItem>

@@ -3,10 +3,10 @@ import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { IMessage, IMessageGroup, IReply } from "@/domain/channels";
 import { useChannel } from "@/domain/channels";
-import { useWorkspace } from "@/domain/workspace";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
+import { useWorkspace } from "@/domain/workspace";
 import { last } from "lodash";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageWriter from "./MessageWriter.vue";
@@ -23,7 +23,8 @@ const { replies, toggleReaction, toggleReplyReaction, fetchReplies, sendReply, d
 const { channel, deleteMessage, updateMessage } = useChannel();
 const { workspace } = useWorkspace();
 
-const quotedMessage = ref<IMessage | IReply | null>(null);
+/** In-thread composer only quotes other replies (not the thread root). */
+const quotedMessage = ref<IReply | null>(null);
 const editingMessage = ref<IMessage | null>(null);
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 const prevReplyCount = ref(-1);
@@ -33,6 +34,12 @@ watch(
   () => {
     prevReplyCount.value = -1;
   },
+);
+
+watch(
+  () => message.value.id,
+  () => fetchReplies(),
+  { immediate: true },
 );
 
 watch(
@@ -75,20 +82,21 @@ const replyGroups = computed(() => {
   return groupMessages(replies.value);
 });
 
-onMounted(() => {
-  fetchReplies();
-});
-
 async function onMessageDeleted() {
   deleteMessage(message.value.id);
   emit("close");
 }
 
-async function onSendReply(payload: { content: string; contentRich: any; quotedMessageId?: number }) {
+async function onSendReply(payload: {
+  content: string;
+  contentRich: any;
+  quotedMessageId?: number;
+  quotedReplyId?: number;
+}) {
   await sendReply({
     content: payload.content,
     contentRich: payload.contentRich,
-    quotedMessageId: payload.quotedMessageId,
+    quotedReplyId: payload.quotedReplyId,
   });
   scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
@@ -106,6 +114,7 @@ async function onSubmitEdit(payload: { messageId: number; content: string; conte
 }
 
 function onQuoteTarget(m: IMessage | IReply) {
+  if (!("messageId" in m) || m.messageId == null) return;
   quotedMessage.value = m;
   editingMessage.value = null;
 }
@@ -135,6 +144,7 @@ function onEditTarget(m: IMessage | IReply) {
           <MessageBox
             :message="message"
             :meId="meId"
+            :allow-quote="false"
             @reaction-toggled="toggleReaction($event)"
             @message-deleted="onMessageDeleted"
             @quote="onQuoteTarget"

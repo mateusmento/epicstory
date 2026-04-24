@@ -26,11 +26,15 @@ import {
 import { computed, ref } from "vue";
 import { emojis } from "./emojis";
 
-const props = defineProps<{
-  meId: number;
-  senderId: number;
-  message: IMessage | IReply;
-}>();
+const props = withDefaults(
+  defineProps<{
+    meId: number;
+    senderId: number;
+    message: IMessage | IReply;
+    allowQuote?: boolean;
+  }>(),
+  { allowQuote: true },
+);
 
 const emit = defineEmits<{
   (e: "message-deleted"): void;
@@ -127,12 +131,12 @@ defineExpose({
         <span>Edit message</span>
       </MenuItem>
 
-      <MenuItem @click="emit('quote')">
+      <MenuItem v-if="props.allowQuote" @click="emit('quote')">
         <MessageSquareShareIcon class="text-muted-foreground" />
         <span>Forward message</span>
       </MenuItem>
 
-      <MenuItem @click="emit('quote')">
+      <MenuItem v-if="props.allowQuote" @click="emit('quote')">
         <Icon name="fa-quote-right" class="text-muted-foreground" />
         <span>Quote message</span>
       </MenuItem>

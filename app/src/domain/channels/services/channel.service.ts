@@ -187,12 +187,17 @@ export class ChannelApi {
     return this.axios.get<IReply[]>(`/messages/${messageId}/replies`).then((res) => res.data);
   }
 
-  replyMessage(messageId: number, content: string, contentRich?: any, quotedMessageId?: number | null) {
+  replyMessage(
+    messageId: number,
+    content: string,
+    contentRich?: any,
+    quotedReplyId?: number | null,
+  ) {
     return this.axios
       .post<IReply>(`/messages/${messageId}/replies`, {
         content,
         contentRich,
-        ...(quotedMessageId != null ? { quotedMessageId } : {}),
+        ...(quotedReplyId != null ? { quotedReplyId } : {}),
       })
       .then((res) => res.data);
   }

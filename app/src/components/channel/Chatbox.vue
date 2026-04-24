@@ -9,7 +9,7 @@ import {
   ScrollArea,
   Separator,
 } from "@/design-system";
-import { quoteRefMessageId, type IChannel, type IMessage, type IMessageGroup } from "@/domain/channels";
+import { channelComposerQuotedMessageId, type IChannel, type IMessage, type IMessageGroup } from "@/domain/channels";
 import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import type { ICreateScheduledMessageBody } from "@/domain/channels/types/scheduled-message.type";
 import { useWorkspace } from "@/domain/workspace";
@@ -105,7 +105,8 @@ async function onSendMessage(payload: { content: string; contentRich: any; quote
     content: payload.content,
     contentRich: payload.contentRich,
     quotedMessageId:
-      payload.quotedMessageId ?? (quotedMessage.value ? quoteRefMessageId(quotedMessage.value) : undefined),
+      payload.quotedMessageId ??
+      (quotedMessage.value ? channelComposerQuotedMessageId(quotedMessage.value) : undefined),
   });
   scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;

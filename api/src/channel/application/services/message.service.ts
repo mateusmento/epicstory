@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { uniq } from 'lodash';
 import { User, UserRepository } from 'src/auth';
 import { Channel, Message, MessageReaction } from 'src/channel/domain';
-import { MessageReplyReaction } from 'src/channel/domain/entities';
+import { MessageReply, MessageReplyReaction } from 'src/channel/domain/entities';
 import { mapReactions, mapRepliers } from 'src/channel/domain/utils';
 import {
   ChannelRepository,
@@ -234,6 +234,31 @@ export class MessageService {
     return quotedMessageId;
   }
 
+  /**
+   * Validates a quoted thread reply: same channel and same thread (`message` root) as the new reply.
+   */
+  async resolveQuotedReplyId(
+    quotedReplyId: number | null | undefined,
+    threadMessageId: number,
+    channelId: number,
+  ): Promise<number | null> {
+    if (quotedReplyId == null) return null;
+    const target = await this.replyRepo.findOne({
+      where: { id: quotedReplyId },
+      relations: { message: true },
+    });
+    if (!target) {
+      throw new BadRequestException('Quoted reply not found');
+    }
+    if (target.channelId !== channelId) {
+      throw new BadRequestException('Quoted reply must belong to this channel');
+    }
+    if (target.messageId !== threadMessageId) {
+      throw new BadRequestException('Quoted reply must belong to this thread');
+    }
+    return quotedReplyId;
+  }
+
   buildQuotedPreview(
     m: Message | null | undefined,
     peerUsersMap: Map<number, User>,
@@ -245,6 +270,20 @@ export class MessageService {
       content: m.content,
       contentRich: m.contentRich,
       displayContent: renderMentions(m.content, peerUsersMap),
+    };
+  }
+
+  buildQuotedPreviewFromReply(
+    r: MessageReply | null | undefined,
+    peerUsersMap: Map<number, User>,
+  ): QuotedMessagePreview | undefined {
+    if (!r?.sender) return undefined;
+    return {
+      id: r.id,
+      sender: r.sender,
+      content: r.content,
+      contentRich: r.contentRich,
+      displayContent: renderMentions(r.content, peerUsersMap),
     };
   }
 
@@ -330,12 +369,12 @@ export class MessageService {
 
     const replyQuoteIds = uniq(
       replies
-        .map((r) => r.quotedMessageId)
+        .map((r) => r.quotedReplyId)
         .filter((id): id is number => id != null),
     );
     const replyQuotedRows =
       replyQuoteIds.length > 0
-        ? await this.messageRepo.find({
+        ? await this.replyRepo.find({
             where: { id: In(replyQuoteIds) },
             relations: { sender: true },
           })
@@ -354,10 +393,10 @@ export class MessageService {
         reply.content,
         peerUsersMap,
       );
-      const qSrc = reply.quotedMessageId
-        ? replyQuotedById.get(reply.quotedMessageId)
+      const qSrc = reply.quotedReplyId
+        ? replyQuotedById.get(reply.quotedReplyId)
         : undefined;
-      (reply as any).quotedMessage = this.buildQuotedPreview(
+      (reply as any).quotedMessage = this.buildQuotedPreviewFromReply(
         qSrc,
         peerUsersMap,
       );

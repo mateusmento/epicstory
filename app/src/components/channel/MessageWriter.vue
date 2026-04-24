@@ -19,7 +19,7 @@ import {
   CHANNEL_TYPING_PULSE_MS,
   clearChannelDraft,
   loadChannelDraft,
-  quoteRefMessageId,
+  composerQuoteRef,
   saveChannelDraft,
   type IMessage,
   type IReply,
@@ -108,7 +108,15 @@ function emitTypingStopForChannel(channelId: number, workspaceId: number) {
 }
 
 const emit = defineEmits<{
-  (e: "send-message", value: { content: string; contentRich: any; quotedMessageId?: number }): void;
+  (
+    e: "send-message",
+    value: {
+      content: string;
+      contentRich: any;
+      quotedMessageId?: number;
+      quotedReplyId?: number;
+    },
+  ): void;
   (
     e: "send-scheduled-message",
     value: {
@@ -430,10 +438,15 @@ function onSendMessage() {
   }
   if (activeSchedule.value && props.channelId != null) {
     const sch = activeSchedule.value;
+    const q = props.quotedMessage;
+    const scheduledQuote =
+      q && (!("messageId" in q) || q.messageId == null)
+        ? { quotedMessageId: q.id }
+        : {};
     emit("send-scheduled-message", {
       content: plain,
       contentRich: doc,
-      ...(props.quotedMessage ? { quotedMessageId: quoteRefMessageId(props.quotedMessage) } : {}),
+      ...scheduledQuote,
       dueAt: sch.dueAt.toISOString(),
       recurrence: sch.recurrence,
     });
@@ -442,7 +455,7 @@ function onSendMessage() {
     emit("send-message", {
       content: plain,
       contentRich: doc,
-      ...(props.quotedMessage ? { quotedMessageId: quoteRefMessageId(props.quotedMessage) } : {}),
+      ...(props.quotedMessage ? composerQuoteRef(props.quotedMessage) : {}),
     });
   }
   editor.value.commands.clearContent();

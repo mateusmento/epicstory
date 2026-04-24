@@ -19,11 +19,16 @@ import MessageContextMenu from "./MessageContextMenu.vue";
 import RichMessageContent from "./RichMessageContent.vue";
 import { Icon } from "@/design-system/icons";
 
-const props = defineProps<{
-  message: IMessage | IReply;
-  meId: number;
-  hideRepliesCount?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    message: IMessage | IReply;
+    meId: number;
+    hideRepliesCount?: boolean;
+    /** Thread root should not be quotable as a reply-to-reply reference. */
+    allowQuote?: boolean;
+  }>(),
+  { allowQuote: true },
+);
 
 const emit = defineEmits<{
   (e: "message-deleted"): void;
@@ -84,6 +89,7 @@ const quotedExcerpt = computed(() => {
             :meId="props.meId"
             :senderId="props.message.senderId"
             :message="props.message"
+            :allow-quote="props.allowQuote"
             @message-deleted="emit('message-deleted')"
             @toggle-discussion="emit('discussion-opened')"
             @emoji-selected="emit('reaction-toggled', $event)"
@@ -122,6 +128,7 @@ const quotedExcerpt = computed(() => {
           :meId="props.meId"
           :senderId="props.message.senderId"
           :message="props.message"
+          :allow-quote="props.allowQuote"
           @message-deleted="emit('message-deleted')"
           @toggle-discussion="emit('discussion-opened')"
           @emoji-selected="emit('reaction-toggled', $event)"

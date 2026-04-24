@@ -37,7 +37,7 @@ export class ReplyMessage {
   @IsOptional()
   @IsInt()
   @Min(1)
-  quotedMessageId?: number;
+  quotedReplyId?: number;
 
   constructor(data: Partial<ReplyMessage> = {}) {
     patch(this, data);
@@ -58,7 +58,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     content,
     contentRich,
     messageId,
-    quotedMessageId,
+    quotedReplyId,
   }: ReplyMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
@@ -78,8 +78,9 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
       : content;
 
-    const resolvedQuote = await this.messageService.resolveQuotedMessageId(
-      quotedMessageId,
+    const resolvedQuote = await this.messageService.resolveQuotedReplyId(
+      quotedReplyId,
+      messageId,
       message.channelId,
     );
 
@@ -90,7 +91,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       messageId,
       senderId,
       sentAt: new Date(),
-      quotedMessageId: resolvedQuote,
+      quotedReplyId: resolvedQuote,
     });
 
     const reply = await this.messageReplyRepo.findOne({
@@ -116,11 +117,11 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     (reply as any).displayContent = displayContent;
 
     if (resolvedQuote) {
-      const q = await this.messageRepo.findOne({
+      const q = await this.messageReplyRepo.findOne({
         where: { id: resolvedQuote },
         relations: { sender: true },
       });
-      (reply as any).quotedMessage = this.messageService.buildQuotedPreview(
+      (reply as any).quotedMessage = this.messageService.buildQuotedPreviewFromReply(
         q,
         peerUsersMap,
       );

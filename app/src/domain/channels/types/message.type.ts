@@ -1,7 +1,7 @@
 import type { User } from "@/domain/auth";
 import type { IChannel } from "./channel.type";
 
-/** Server-hydrated preview of the message referenced by `quotedMessageId`. */
+/** Server-hydrated quote body; `id` is `messages.id` or a thread `message_replies.id`. */
 export type IQuotedMessagePreview = {
   id: number;
   sender: User;
@@ -58,7 +58,9 @@ export interface IReply {
   content: string;
   contentRich?: any;
   displayContent?: string;
-  quotedMessageId?: number | null;
+  /** `message_replies.id` of the quoted reply in the same thread. */
+  quotedReplyId?: number | null;
+  /** Hydrated body of the quoted reply (or thread root, same shape for UI). */
   quotedMessage?: IQuotedMessagePreview;
   mentionedUsers?: User[];
   isScheduled?: boolean;
