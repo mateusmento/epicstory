@@ -90,32 +90,28 @@ function focusNewInput() {
       "
     />
 
-    <div v-show="!isCollapsed" class="mt-2">
-      <div class="rounded-xl border bg-white overflow-hidden">
-        <SubIssuesCreateRow
-          v-model="newTitle"
-          input-id="new-sub-issue"
-          :disabled="disabled"
-          :is-creating="isCreating"
-          @create="createSubIssue"
-        />
+    <div v-show="!isCollapsed" class="flex:col-md mt-2 rounded-xl bg-white">
+      <SubIssuesCreateRow
+        v-model="newTitle"
+        input-id="new-sub-issue"
+        :disabled="disabled"
+        :is-creating="isCreating"
+        @create="createSubIssue"
+      />
 
-        <!-- List -->
-        <div class="divide-y">
-          <SubIssueRow
-            v-for="sub in subIssues"
-            :key="sub.id"
-            :sub="sub"
-            :disabled="disabled"
-            @open="openSubIssue"
-            @toggle-done="toggleDone"
-            @remove="removeSubIssue"
-          />
+      <!-- List -->
+      <SubIssueRow
+        v-for="sub in subIssues"
+        :key="sub.id"
+        :sub="sub"
+        :disabled="disabled"
+        @open="openSubIssue"
+        @toggle-done="toggleDone"
+        @remove="removeSubIssue"
+      />
 
-          <div v-if="subIssues.length === 0" class="px-3 py-4 text-sm text-muted-foreground">
-            No sub-issues yet
-          </div>
-        </div>
+      <div v-if="subIssues.length === 0" class="px-3 py-4 text-sm text-muted-foreground">
+        No sub-issues yet
       </div>
     </div>
   </div>

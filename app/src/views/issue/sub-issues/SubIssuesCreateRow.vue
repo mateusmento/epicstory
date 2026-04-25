@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Input } from "@/design-system";
+import { Button, Input } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 
 const title = defineModel<string>({ default: "" });
@@ -16,16 +16,17 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="flex items-center gap-2 px-3 py-2 border-b">
-    <button
-      type="button"
-      class="w-4 h-4 rounded-full ring-1 ring-border bg-white grid place-items-center text-muted-foreground"
+  <div class="flex items-center gap-2 px-2">
+    <Button
+      size="icon"
+      variant="outline"
+      class="size-5 rounded-full text-muted-foreground"
       title="Create sub-issue"
       :disabled="disabled"
       @click="emit('create')"
     >
       <Icon name="hi-plus" class="w-3 h-3" />
-    </button>
+    </Button>
 
     <Input
       :id="inputId ?? 'new-sub-issue'"
@@ -36,8 +37,5 @@ const emit = defineEmits<{
       :disabled="disabled || isCreating"
       @keydown.enter.prevent="emit('create')"
     />
-
-    <div class="flex-1" />
-    <div class="text-xs text-muted-foreground" v-if="isCreating">Adding…</div>
   </div>
 </template>

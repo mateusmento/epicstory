@@ -61,6 +61,12 @@ async function savePatch(data: Parameters<typeof updateIssue>[0]) {
   }
 }
 
+watch(
+  () => props.issueId,
+  () => refreshIssue(),
+  { immediate: true },
+);
+
 async function refreshIssue() {
   await fetchIssue(+props.issueId);
 }
