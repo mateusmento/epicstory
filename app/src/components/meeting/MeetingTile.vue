@@ -82,7 +82,6 @@ useMediaStreamVideo(
   pipVideoEnabled,
   computed(() => null),
 );
-
 </script>
 
 <template>

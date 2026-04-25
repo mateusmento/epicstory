@@ -23,12 +23,7 @@ function formatMessageDate(date: string) {
 
 <template>
   <div class="grid grid-cols-[auto_1fr_auto] grid-rows-[auto_1fr] gap-x-2">
-    <UserAvatar
-      :name="senderName"
-      :picture="senderPicture"
-      size="base"
-      class="row-start-1 col-span-1"
-    />
+    <UserAvatar :name="senderName" :picture="senderPicture" size="base" class="row-start-1 col-span-1" />
     <div class="row-start-1 col-start-2 text-base font-medium font-dmSans text-foreground">
       {{ senderName }}
     </div>

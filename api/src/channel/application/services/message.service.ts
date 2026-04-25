@@ -2,7 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { uniq } from 'lodash';
 import { User, UserRepository } from 'src/auth';
 import { Channel, Message, MessageReaction } from 'src/channel/domain';
-import { MessageReply, MessageReplyReaction } from 'src/channel/domain/entities';
+import {
+  MessageReply,
+  MessageReplyReaction,
+} from 'src/channel/domain/entities';
 import { mapReactions, mapRepliers } from 'src/channel/domain/utils';
 import {
   ChannelRepository,

@@ -76,12 +76,7 @@ const shouldShowPeopleHeader = (items: ISearchChannelsAndUsersItem[], index: num
           @click="emit('select-user', item.user.email)"
         >
           <div class="flex items-center gap-2 min-w-0">
-            <UserAvatar
-              :name="item.user.name"
-              :picture="item.user.picture"
-              size="base"
-              class="shrink-0"
-            />
+            <UserAvatar :name="item.user.name" :picture="item.user.picture" size="base" class="shrink-0" />
             <span class="truncate font-medium">{{ item.user.name }}</span>
           </div>
           <span class="truncate text-[11px] text-secondary-foreground sm:ml-auto">

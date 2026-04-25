@@ -8,12 +8,7 @@ const { user } = useAuth();
 
 <template>
   <div class="flex:row-sm flex:center-y p-xl rounded-md cursor-pointer hover:bg-secondary">
-    <UserAvatar
-      :name="user?.name ?? ''"
-      :picture="user?.picture"
-      size="lg"
-      class="mr-lg flex-shrink-0"
-    />
+    <UserAvatar :name="user?.name ?? ''" :picture="user?.picture" size="lg" class="mr-lg flex-shrink-0" />
 
     <div class="flex:col-sm flex-1 min-w-0">
       <div class="whitespace-nowrap text-ellipsis overflow-hidden">

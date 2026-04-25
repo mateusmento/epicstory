@@ -167,7 +167,9 @@ describe("tiptapToPlainText", () => {
         },
       ],
     };
-    expect(tiptapToPlainText(doc, { stripFormatting: true })).toBe("const x = 1;");
+    expect(tiptapToPlainText(doc, { stripFormatting: true })).toBe(
+      "const x = 1;",
+    );
   });
 
   it("stripFormatting uses image URL without bracket wrapper", () => {
@@ -199,9 +201,7 @@ describe("tiptapToPlainText", () => {
       content: [
         {
           type: "paragraph",
-          content: [
-            { type: "image", attrs: { src: "https://ex/img.png" } },
-          ],
+          content: [{ type: "image", attrs: { src: "https://ex/img.png" } }],
         },
       ],
     };

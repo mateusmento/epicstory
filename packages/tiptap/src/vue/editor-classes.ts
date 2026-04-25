@@ -6,4 +6,5 @@ export const EPIC_STORY_COMPOSER_EDITOR_CLASS = "epic-story-composer-editor";
 
 export const EPIC_STORY_READONLY_MESSAGE_CLASS = "epic-story-readonly-message";
 
-export const EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS = "epic-story-issue-description-editor";
+export const EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS =
+  "epic-story-issue-description-editor";

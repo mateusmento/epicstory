@@ -9,7 +9,12 @@ import {
   ScrollArea,
   Separator,
 } from "@/design-system";
-import { channelComposerQuotedMessageId, type IChannel, type IMessage, type IMessageGroup } from "@/domain/channels";
+import {
+  channelComposerQuotedMessageId,
+  type IChannel,
+  type IMessage,
+  type IMessageGroup,
+} from "@/domain/channels";
 import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import type { ICreateScheduledMessageBody } from "@/domain/channels/types/scheduled-message.type";
 import { useWorkspace } from "@/domain/workspace";

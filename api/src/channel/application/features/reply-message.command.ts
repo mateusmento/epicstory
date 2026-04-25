@@ -121,10 +121,8 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
         where: { id: resolvedQuote },
         relations: { sender: true },
       });
-      (reply as any).quotedMessage = this.messageService.buildQuotedPreviewFromReply(
-        q,
-        peerUsersMap,
-      );
+      (reply as any).quotedMessage =
+        this.messageService.buildQuotedPreviewFromReply(q, peerUsersMap);
     }
 
     if (finalMentionIds.length > 0) {

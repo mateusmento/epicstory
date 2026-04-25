@@ -439,10 +439,7 @@ function onSendMessage() {
   if (activeSchedule.value && props.channelId != null) {
     const sch = activeSchedule.value;
     const q = props.quotedMessage;
-    const scheduledQuote =
-      q && (!("messageId" in q) || q.messageId == null)
-        ? { quotedMessageId: q.id }
-        : {};
+    const scheduledQuote = q && (!("messageId" in q) || q.messageId == null) ? { quotedMessageId: q.id } : {};
     emit("send-scheduled-message", {
       content: plain,
       contentRich: doc,

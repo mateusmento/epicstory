@@ -59,7 +59,13 @@ defineExpose({ onKeyDown });
       :class="{ 'bg-secondary': index === selectedIndex }"
       @mousedown.prevent="command(item)"
     >
-      <UserAvatar :name="item.label" :picture="item.picture" size="sm" variant="mentionRow" class="flex-shrink-0" />
+      <UserAvatar
+        :name="item.label"
+        :picture="item.picture"
+        size="sm"
+        variant="mentionRow"
+        class="flex-shrink-0"
+      />
       <div class="text-sm text-foreground font-lato min-w-0 truncate">
         {{ item.label }}
       </div>

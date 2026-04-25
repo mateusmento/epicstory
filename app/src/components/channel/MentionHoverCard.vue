@@ -27,12 +27,7 @@ const props = withDefaults(
 
     <HoverCardContent :class="props.contentClass">
       <div v-if="props.user" class="flex:row-md items-center">
-        <UserAvatar
-          :name="props.user.name"
-          :picture="props.user.picture"
-          size="lg"
-          class="flex-shrink-0"
-        />
+        <UserAvatar :name="props.user.name" :picture="props.user.picture" size="lg" class="flex-shrink-0" />
         <div class="flex:col min-w-0">
           <div class="text-sm font-semibold text-foreground truncate">
             {{ props.user.name }}
