@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import {
-  IssueAssigneesDropdown,
   IssueDescriptionEditor,
   IssueLabelTags,
   issueStatusDotClass,
   IssueStatusDropdown,
 } from "@/components/issue";
+import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { UserAvatarStack } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
@@ -15,6 +15,7 @@ import { useIssue } from "@/domain/issues/composables/issue";
 import { ProjectApi, type Project } from "@/domain/project";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
+import type { User } from "@/domain/user";
 import { onMounted, reactive, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -24,6 +25,15 @@ const props = defineProps<{
 }>();
 
 const { issue, fetchIssue, updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useIssue();
+
+const assigneeUsers = ref<User[]>([]);
+watch(
+  () => issue.value?.assignees,
+  (a) => {
+    assigneeUsers.value = a ? [...a] : [];
+  },
+  { immediate: true, deep: true },
+);
 
 const projectApi = useDependency(ProjectApi);
 const project = ref<Project | null>(null);
@@ -228,17 +238,19 @@ watch(
 
             <div class="flex:col-sm min-w-0">
               <div class="text-xs text-secondary-foreground">Assignees</div>
-              <IssueAssigneesDropdown
-                :assignees="issue?.assignees ?? []"
+              <WorkspaceMemberDropdown
+                v-model:users="assigneeUsers"
+                selected-label="Assignees"
+                search-placeholder="Search assignees…"
                 :disabled="!issue"
                 @add="(u) => addAssignee(u.id)"
                 @remove="(u) => removeAssignee(u.id)"
-                #default="{ assignees }"
+                #default="{ users }"
               >
                 <div class="flex min-w-0 w-full items-center cursor-pointer">
                   <UserAvatarStack
-                    v-if="assignees.length"
-                    :users="assignees"
+                    v-if="users.length"
+                    :users="users"
                     size="mdLg"
                     :min="1"
                     :overlap-px="12"
@@ -246,7 +258,7 @@ watch(
                   />
 
                   <Button
-                    v-if="assignees.length === 0"
+                    v-if="users.length === 0"
                     variant="ghost"
                     size="icon"
                     class="flex items-center gap-2 text-sm text-muted-foreground"
@@ -254,7 +266,7 @@ watch(
                     <Icon name="fa-user-plus" class="h-4 w-4 shrink-0" />
                   </Button>
                 </div>
-              </IssueAssigneesDropdown>
+              </WorkspaceMemberDropdown>
             </div>
           </div>
 

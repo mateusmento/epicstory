@@ -46,7 +46,7 @@ export class FindCalendarEventsHandler
     const qb = this.calendarEventRepository
       .createQueryBuilder('event')
       .where('event.workspaceId = :workspaceId', { workspaceId })
-      .leftJoin('event.participants', 'participant')
+      .leftJoinAndSelect('event.participants', 'participant')
       .andWhere('(event.createdById = :userId OR participant.id = :userId)', {
         userId: issuerId,
       });

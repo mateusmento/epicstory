@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { IssueAssigneesMenu, IssueLabelTags } from "@/components/issue";
+import { IssueLabelTags } from "@/components/issue";
+import { WorkspaceMemberMenu } from "@/components/workspace-members";
 import { UserAvatar } from "@/components/user";
 import {
   Button,
@@ -13,6 +14,7 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
+import { useAuth } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
 import type { Label } from "@/domain/labels";
 import { useLabels } from "@/domain/labels";
@@ -25,6 +27,7 @@ const props = defineProps<{
 }>();
 
 const { backlogItems, createBacklogItem, updateIssue, addAssignee, addLabel } = useBacklog();
+const { user: authUser } = useAuth();
 const { workspace } = useWorkspace();
 const { labelsById } = useLabels();
 
@@ -50,15 +53,6 @@ const selectedLabels = computed(() => {
 const afterOf = computed(() => {
   return backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined;
 });
-
-function addSelectedAssignee(assignee: User) {
-  if (selectedAssignees.value.some((a) => a.id === assignee.id)) return;
-  selectedAssignees.value.push(assignee);
-}
-
-function removeSelectedAssignee(assignee: User) {
-  selectedAssignees.value = selectedAssignees.value.filter((a) => a.id !== assignee.id);
-}
 
 function statusDotClass(s: string) {
   if (s === "doing") return "bg-blue-500";
@@ -226,12 +220,12 @@ async function onCreateIssue() {
             </Button>
           </MenuTrigger>
           <MenuContent as-child>
-            <IssueAssigneesMenu
-              :assignees="selectedAssignees"
-              @add="addSelectedAssignee"
-              @remove="removeSelectedAssignee"
-            >
-            </IssueAssigneesMenu>
+            <WorkspaceMemberMenu
+              v-model:users="selectedAssignees"
+              selected-label="Assignees"
+              search-placeholder="Search assignees…"
+              :exclude-user-ids="authUser ? [authUser.id] : []"
+            />
           </MenuContent>
         </Menu>
 

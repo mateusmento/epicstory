@@ -5,6 +5,7 @@ import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { AddWorkspaceMemberPrerequisite } from 'src/workspace/domain/values/add-workspace-member-prerequisite.value';
 import { FindOptionsRelations, In, Like, Repository } from 'typeorm';
+import { Page } from 'src/core/page';
 
 @Injectable()
 export class WorkspaceRepository extends Repository<Workspace> {
@@ -64,6 +65,65 @@ export class WorkspaceRepository extends Repository<Workspace> {
       },
       relations,
     });
+  }
+
+  /**
+   * Paginated search for workspace members by optional single-term `q` (name OR email)
+   * or by `name` and `email` (AND) when `q` is absent — aligned with `FindUsers` patterns.
+   */
+  async findMembersPage({
+    workspaceId,
+    q,
+    name,
+    email,
+    userIds,
+    page = 0,
+    count = 20,
+  }: {
+    workspaceId: number;
+    q?: string;
+    name?: string;
+    email?: string;
+    userIds?: number[];
+    page?: number;
+    count?: number;
+  }): Promise<Page<WorkspaceMember>> {
+    const qb = this.workspaceMemberRepo
+      .createQueryBuilder('m')
+      .leftJoinAndSelect('m.user', 'user')
+      .where('m.workspaceId = :workspaceId', { workspaceId });
+
+    if (userIds?.length) {
+      qb.andWhere('m.userId IN (:...userIds)', { userIds });
+    }
+
+    const qTrim = q?.trim();
+    if (qTrim) {
+      const pattern = `%${qTrim}%`;
+      qb.andWhere('(user.name ILIKE :q OR user.email ILIKE :q)', {
+        q: pattern,
+      });
+    } else {
+      if (name?.trim()) {
+        qb.andWhere('user.name ILIKE :n', { n: `%${name.trim()}%` });
+      }
+      if (email?.trim()) {
+        qb.andWhere('user.email ILIKE :e', { e: `%${email.trim()}%` });
+      }
+    }
+
+    const total = await qb.getCount();
+    const content = await qb
+      .orderBy('user.name', 'ASC')
+      .addOrderBy('m.id', 'ASC')
+      .skip(page * count)
+      .take(count)
+      .getMany();
+
+    return Page.fromResult(content, total, {
+      page,
+      count,
+    }) as Page<WorkspaceMember>;
   }
 
   memberExists(workspaceId: number, userId: number) {

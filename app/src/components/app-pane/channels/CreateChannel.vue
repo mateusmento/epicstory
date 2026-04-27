@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { IssueAssigneesDropdown } from "@/components/issue";
-import { UserAvatar, UserAvatarStack, UserSelect } from "@/components/user";
+import { UserAvatar, UserAvatarStack } from "@/components/user";
+import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import {
   Button,
   DialogClose,
@@ -11,6 +11,7 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@/design-system";
+import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";
 import { type User } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
@@ -34,23 +35,13 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const { user: authUser } = useAuth();
 const { workspace } = useWorkspace();
 
 const channelType = ref<"group" | "meeting" | "direct">(props.initialType);
 const { createChannel } = useChannels();
 
 const members = ref<User[]>([]);
-const selectedUser = ref<User>();
-
-function addMember(user: User) {
-  if (members.value.some((m) => m.id === user.id)) return;
-  members.value.push({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    picture: user.picture,
-  });
-}
 
 function removeMember(userId: number) {
   members.value = members.value.filter((member) => member.id !== userId);
@@ -166,19 +157,16 @@ async function onCreateChannel(event: any) {
 
       <div class="flex:col-md">
         <div class="text-sm font-medium text-foreground">Add people</div>
-        <!-- <UserSelect v-model="selectedUser" exclude="me" /> -->
-        <IssueAssigneesDropdown
-          :assignees="members"
-          :disabled="false"
-          @add="addMember"
-          @remove="removeMember($event.id)"
+        <WorkspaceMemberDropdown
+          v-model:users="members"
+          :exclude-user-ids="authUser ? [authUser.id] : []"
         >
-          <Button variant="ghost" size="icon">
-            <UserAvatarStack :users="members" size="sm" />
-            <div class="text-xs font-medium text-foreground">No members added yet.</div>
+          <Button variant="ghost" class="h-auto w-full min-w-0 flex items-center justify-start gap-2 px-2">
+            <UserAvatarStack v-if="members.length" :users="members" size="sm" />
+            <div v-else class="text-xs text-muted-foreground">Choose workspace members</div>
             <ChevronsUpDown class="ml-auto h-4 w-4 shrink-0 opacity-50" />
           </Button>
-        </IssueAssigneesDropdown>
+        </WorkspaceMemberDropdown>
       </div>
     </template>
 
@@ -219,7 +207,16 @@ async function onCreateChannel(event: any) {
 
       <div class="flex:col-md">
         <div class="text-sm font-medium text-foreground">Add people</div>
-        <UserSelect v-model="selectedUser" exclude="me" />
+        <WorkspaceMemberDropdown
+          v-model:users="members"
+          :exclude-user-ids="authUser ? [authUser.id] : []"
+        >
+          <Button variant="ghost" class="h-auto w-full min-w-0 flex items-center justify-start gap-2 px-2">
+            <UserAvatarStack v-if="members.length" :users="members" size="sm" />
+            <div v-else class="text-xs text-muted-foreground">Choose workspace members</div>
+            <ChevronsUpDown class="ml-auto h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </WorkspaceMemberDropdown>
       </div>
     </template>
 

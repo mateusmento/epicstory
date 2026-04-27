@@ -2,13 +2,16 @@ import {
   Body,
   ConflictException,
   Controller,
+  DefaultValuePipe,
   Delete,
   ForbiddenException,
   Get,
   NotFoundException,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
@@ -71,8 +74,24 @@ export class WorkspaceController {
 
   @Get(':id/members')
   @UseGuards(JwtAuthGuard)
-  findMembers(@Param('id') workspaceId: number) {
-    return this.queryBus.execute(new FindWorkspaceMembers({ workspaceId }));
+  findMembers(
+    @Param('id', ParseIntPipe) workspaceId: number,
+    @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+    @Query('count', new DefaultValuePipe(100), ParseIntPipe) count: number,
+    @Query('q') q?: string,
+    @Query('name') name?: string,
+    @Query('username') username?: string,
+  ) {
+    return this.queryBus.execute(
+      new FindWorkspaceMembers({
+        workspaceId,
+        page,
+        count,
+        q: q === '' ? undefined : q,
+        name: name === '' ? undefined : name,
+        email: username === '' ? undefined : username,
+      }),
+    );
   }
 
   @Post(':id/members')

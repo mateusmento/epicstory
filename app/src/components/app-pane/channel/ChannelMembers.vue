@@ -1,13 +1,14 @@
 <script lang="ts" setup>
-import { IssueAssigneesDropdown } from "@/components/issue";
 import { UserAvatar } from "@/components/user";
+import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { Button, Menu, MenuContent, MenuGroup, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { Trash2Icon } from "lucide-vue-next";
+import { ref, watch } from "vue";
 
-defineProps<{
+const props = defineProps<{
   members: (User & { role?: string; online?: boolean })[];
 }>();
 
@@ -23,6 +24,15 @@ function removeMember(user: User) {
 function addMember(user: User) {
   emit("add", user.id);
 }
+
+const memberUsers = ref<User[]>([]);
+watch(
+  () => props.members,
+  (m) => {
+    memberUsers.value = m ? [...m] : [];
+  },
+  { immediate: true, deep: true },
+);
 </script>
 
 <template>
@@ -34,11 +44,15 @@ function addMember(user: User) {
         <div class="text-secondary-foreground/70 text-sm ml-xl">{{ members.length }}</div>
       </h1>
 
-      <IssueAssigneesDropdown :assignees="members" :disabled="false" @add="addMember" @remove="removeMember">
+      <WorkspaceMemberDropdown
+        v-model:users="memberUsers"
+        @add="addMember"
+        @remove="removeMember"
+      >
         <Button variant="ghost" size="icon">
           <Icon name="hi-plus" class="text-secondary-foreground w-4 h-4" />
         </Button>
-      </IssueAssigneesDropdown>
+      </WorkspaceMemberDropdown>
     </div>
 
     <div class="flex:col-md">

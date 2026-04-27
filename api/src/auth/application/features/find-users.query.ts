@@ -67,8 +67,6 @@ export class FindUsersQuery implements IQueryHandler<FindUsers> {
 
     const result = Page.fromResult(users, total, { page, count });
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     if (!result.hasNext) {
       const users = Array.from(
         { length: count - result.content.length },

@@ -4,9 +4,12 @@ import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-syste
 import { Icon } from "@/design-system/icons";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system";
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
+import { UserAvatar } from "@/components/user";
+import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";
 import { CalendarEventApi } from "@/domain/calendar";
+import type { User } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
 import { useMeetingSocket } from "@/domain/channels/composables/meeting-socket";
 import { getLocalTimeZone, parseDate, toCalendarDate, today as todayFn } from "@internationalized/date";
@@ -58,7 +61,7 @@ const itemType = ref<ItemType>("event");
 const meetingChannelId = ref<number | null>(null);
 const meetingIsPublic = ref(true);
 const meetingNotifyMinutesBefore = ref(1);
-const meetingParticipantIds = ref<number[]>([]);
+const meetingParticipantUsers = ref<User[]>([]);
 type RecurrenceFrequency = "once" | "daily" | "weekly";
 const meetingRecurrenceFrequency = ref<RecurrenceFrequency>("weekly");
 const meetingRecurrenceInterval = ref(1);
@@ -121,13 +124,6 @@ const monthWeekdayLabels = computed(() => {
   const base = dateFnsStartOfWeek(new Date(), { weekStartsOn: WEEK_STARTS_ON });
   return Array.from({ length: 7 }, (_, i) => format(addDays(base, i), "EEE"));
 });
-
-function toggleParticipant(userId: number, enabled: boolean) {
-  const set = new Set(meetingParticipantIds.value);
-  if (enabled) set.add(userId);
-  else set.delete(userId);
-  meetingParticipantIds.value = Array.from(set.values());
-}
 
 function toggleWeekday(day: number, enabled: boolean) {
   const set = new Set(meetingRecurrenceByWeekday.value);
@@ -361,14 +357,18 @@ function handleTimeSlotClick(date: Date, hour: number, event?: MouseEvent) {
   openCreateDialog(dateValue, startTimeStr, endTimeStr);
 }
 
-function handleEventClick(event: CalendarEventDto) {
+function goToMeetingLobby(event: CalendarEventDto) {
+  router.push({
+    name: "meeting-lobby",
+    params: { workspaceId: workspace.value.id, calendarEventId: event.id },
+    query: { occurrenceAt: new Date(event.startsAt).toISOString() },
+  });
+}
+
+/** Opens the create/edit dialog with the correct type and all form fields (edit: populated from the calendar item). */
+function openEditCalendarDialog(event: CalendarEventDto) {
   if (event.type === "meeting") {
-    const calendarEventId = event.id;
-    router.push({
-      name: "meeting-lobby",
-      params: { workspaceId: workspace.value.id, calendarEventId },
-      query: { occurrenceAt: new Date(event.startsAt).toISOString() },
-    });
+    openEditMeetingFromCalendar(event);
     return;
   }
   editingEvent.value = event;
@@ -413,6 +413,9 @@ function openEditMeetingFromCalendar(event: CalendarEventDto) {
   meetingChannelId.value = ((event.payload as any)?.channelId ?? null) as any;
   meetingIsPublic.value = Boolean(event.isPublic ?? true);
   meetingNotifyMinutesBefore.value = Number(event.notifyMinutesBefore ?? 1);
+  meetingParticipantUsers.value = (event.participants ?? [])
+    .map((p) => members.value.find((m) => m.user.id === p.id)?.user)
+    .filter((u): u is User => u != null);
 
   const rec = event.recurrence ?? (event.payload as any)?.recurrence;
   if (rec?.frequency === "once") {
@@ -449,7 +452,7 @@ function openCreateDialog(date?: DateValue, startTime?: string, endTime?: string
   meetingChannelId.value = null;
   meetingIsPublic.value = true;
   meetingNotifyMinutesBefore.value = 1;
-  meetingParticipantIds.value = [];
+  meetingParticipantUsers.value = [];
   meetingRecurrenceFrequency.value = "weekly";
   meetingRecurrenceInterval.value = 1;
   meetingRecurrenceByWeekday.value = [new Date().getDay()];
@@ -506,6 +509,8 @@ async function saveEvent() {
           payload,
           startsAt,
           endsAt,
+          isPublic: meetingIsPublic.value,
+          notifyMinutesBefore: meetingNotifyMinutesBefore.value,
           recurrence,
         });
       } else {
@@ -521,7 +526,9 @@ async function saveEvent() {
           isPublic: meetingIsPublic.value,
           notifyMinutesBefore: meetingNotifyMinutesBefore.value,
           recurrence,
-          participantIds: channelId ? undefined : meetingParticipantIds.value,
+          participantIds: channelId
+            ? undefined
+            : meetingParticipantUsers.value.map((u) => u.id),
         });
       }
 
@@ -602,6 +609,11 @@ async function removeCalendarItem(event: CalendarEventDto) {
   await fetchEvents();
 }
 
+function removeMeetingParticipant(userId: number) {
+  if (editingEvent.value) return;
+  meetingParticipantUsers.value = meetingParticipantUsers.value.filter((p) => p.id !== userId);
+}
+
 function closeDialog() {
   showEventDialog.value = false;
   editingEvent.value = null;
@@ -613,6 +625,13 @@ function closeDialog() {
   eventRecurrenceFrequency.value = "once";
   eventRecurrenceInterval.value = 1;
   eventRecurrenceByWeekday.value = [new Date().getDay()];
+  meetingChannelId.value = null;
+  meetingIsPublic.value = true;
+  meetingNotifyMinutesBefore.value = 1;
+  meetingParticipantUsers.value = [];
+  meetingRecurrenceFrequency.value = "weekly";
+  meetingRecurrenceInterval.value = 1;
+  meetingRecurrenceByWeekday.value = [new Date().getDay()];
 }
 
 // Resize handlers
@@ -803,7 +822,7 @@ const dayHours = computed(() => {
                   >
                     <MenuTrigger as-child>
                       <div
-                        @click.stop="handleEventClick(event)"
+                        @click.stop="openEditCalendarDialog(event)"
                         class="px-2 py-1 rounded bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
                         title="Open event"
                       >
@@ -814,16 +833,16 @@ const dayHours = computed(() => {
                     </MenuTrigger>
                     <MenuContent class="w-40" disabled-portal>
                       <template v-if="event.type === 'meeting'">
-                        <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
+                        <MenuItem v-if="event.payload?.meetingId" @click="goToMeetingLobby(event)"
                           >Open lobby</MenuItem
                         >
-                        <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
+                        <MenuItem v-else @click="openEditCalendarDialog(event)">Edit</MenuItem>
                         <MenuItem variant="destructive" @click="removeCalendarItem(event)">
                           Cancel series
                         </MenuItem>
                       </template>
                       <template v-else>
-                        <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
+                        <MenuItem @click="openEditCalendarDialog(event)">Edit</MenuItem>
                         <MenuItem variant="destructive" @click="removeCalendarItem(event)">Remove</MenuItem>
                       </template>
                     </MenuContent>
@@ -886,7 +905,7 @@ const dayHours = computed(() => {
               >
                 <MenuTrigger as-child>
                   <div
-                    @click.stop="handleEventClick(event)"
+                    @click.stop="openEditCalendarDialog(event)"
                     class="absolute left-0 right-0 p-1 m-1 rounded bg-blue-500 text-white text-xs cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
                     :style="{
                       top: `${getEventTopOffset(event)}px`,
@@ -936,16 +955,16 @@ const dayHours = computed(() => {
                 </MenuTrigger>
                 <MenuContent class="w-40" disabled-portal>
                   <template v-if="event.type === 'meeting'">
-                    <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
+                    <MenuItem v-if="event.payload?.meetingId" @click="goToMeetingLobby(event)"
                       >Open lobby</MenuItem
                     >
-                    <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
+                    <MenuItem v-else @click="openEditCalendarDialog(event)">Edit</MenuItem>
                     <MenuItem variant="destructive" @click="removeCalendarItem(event)">
                       Cancel series
                     </MenuItem>
                   </template>
                   <template v-else>
-                    <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
+                    <MenuItem @click="openEditCalendarDialog(event)">Edit</MenuItem>
                     <MenuItem variant="destructive" @click="removeCalendarItem(event)">Remove</MenuItem>
                   </template>
                 </MenuContent>
@@ -1004,7 +1023,7 @@ const dayHours = computed(() => {
               >
                 <MenuTrigger as-child>
                   <div
-                    @click.stop="handleEventClick(event)"
+                    @click.stop="openEditCalendarDialog(event)"
                     class="absolute left-0 right-0 p-2 m-1 rounded bg-blue-500 text-white cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
                     :style="{
                       top: `${getEventTopOffset(event)}px`,
@@ -1054,16 +1073,16 @@ const dayHours = computed(() => {
                 </MenuTrigger>
                 <MenuContent class="w-40" disabled-portal>
                   <template v-if="event.type === 'meeting'">
-                    <MenuItem v-if="event.payload?.meetingId" @click="handleEventClick(event)"
+                    <MenuItem v-if="event.payload?.meetingId" @click="goToMeetingLobby(event)"
                       >Open lobby</MenuItem
                     >
-                    <MenuItem v-else @click="openEditMeetingFromCalendar(event)">Edit</MenuItem>
+                    <MenuItem v-else @click="openEditCalendarDialog(event)">Edit</MenuItem>
                     <MenuItem variant="destructive" @click="removeCalendarItem(event)">
                       Cancel series
                     </MenuItem>
                   </template>
                   <template v-else>
-                    <MenuItem @click="handleEventClick(event)">Edit</MenuItem>
+                    <MenuItem @click="openEditCalendarDialog(event)">Edit</MenuItem>
                     <MenuItem variant="destructive" @click="removeCalendarItem(event)">Remove</MenuItem>
                   </template>
                 </MenuContent>
@@ -1167,17 +1186,21 @@ const dayHours = computed(() => {
               </div>
             </div>
 
-            <!-- Meeting settings -->
-            <div
-              v-if="itemType === 'meeting' && !editingEvent"
-              class="mt-2.5 rounded-md border bg-zinc-50 p-2.5"
-            >
+            <!-- Meeting settings (create + edit: show all fields; channel/participants are fixed on the server when editing) -->
+            <div v-if="itemType === 'meeting'" class="mt-2.5 rounded-md border bg-zinc-50 p-2.5">
+              <p
+                v-if="editingEvent"
+                class="mb-2 text-xs text-muted-foreground"
+              >
+                Channel and participant list are set when the meeting was created; other fields below can be updated.
+              </p>
               <div class="grid grid-cols-2 gap-2">
                 <label class="text-xs text-muted-foreground">
                   Channel (optional)
                   <select
                     v-model.number="meetingChannelId"
                     class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm"
+                    :disabled="Boolean(editingEvent)"
                   >
                     <option :value="null">No channel</option>
                     <option v-for="c in channels" :key="c.id" :value="c.id">
@@ -1199,7 +1222,11 @@ const dayHours = computed(() => {
 
               <div class="mt-2 flex items-center justify-between">
                 <label class="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input v-model="meetingIsPublic" type="checkbox" class="h-4 w-4" />
+                  <input
+                    v-model="meetingIsPublic"
+                    type="checkbox"
+                    class="h-4 w-4"
+                  />
                   Public (workspace members with link can join)
                 </label>
               </div>
@@ -1246,19 +1273,52 @@ const dayHours = computed(() => {
                 </div>
               </div>
 
-              <div v-if="!meetingChannelId" class="mt-2">
-                <div class="text-xs text-muted-foreground mb-1">Participants (notified)</div>
-                <div class="max-h-40 overflow-auto rounded-md border bg-white p-2">
-                  <label v-for="m in members" :key="m.user.id" class="flex items-center gap-2 text-sm py-1">
-                    <input
-                      type="checkbox"
-                      :checked="meetingParticipantIds.includes(m.user.id)"
-                      @change="toggleParticipant(m.user.id, ($event.target as HTMLInputElement).checked)"
-                    />
-                    <span class="truncate">{{ m.user.name }}</span>
-                    <span class="ml-auto text-xs text-muted-foreground truncate">{{ m.user.email }}</span>
-                  </label>
-                </div>
+              <div v-if="!meetingChannelId" class="mt-2 space-y-2">
+                <div class="text-xs text-muted-foreground">Participants (notified)</div>
+                <ul
+                  v-if="meetingParticipantUsers.length"
+                  class="flex max-h-32 flex-col gap-1.5 overflow-y-auto rounded-md border bg-white p-2"
+                >
+                  <li
+                    v-for="p in meetingParticipantUsers"
+                    :key="p.id"
+                    class="flex items-center gap-2 text-sm"
+                  >
+                    <UserAvatar :name="p.name" :picture="p.picture" size="sm" />
+                    <div class="min-w-0 flex-1">
+                      <div class="font-medium leading-tight truncate">{{ p.name }}</div>
+                      <div v-if="p.email" class="text-xs text-muted-foreground leading-tight truncate">
+                        {{ p.email }}
+                      </div>
+                    </div>
+                    <Button
+                      v-if="!editingEvent"
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      title="Remove"
+                      @click="removeMeetingParticipant(p.id)"
+                    >
+                      <Icon name="io-close" class="h-4 w-4" />
+                    </Button>
+                  </li>
+                </ul>
+                <WorkspaceMemberDropdown
+                  v-model:users="meetingParticipantUsers"
+                  :disabled="Boolean(editingEvent)"
+                  :exclude-user-ids="user ? [user.id] : []"
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    class="w-full sm:w-auto"
+                    :disabled="Boolean(editingEvent)"
+                  >
+                    <Icon name="bi-people-fill" class="mr-1.5 h-4 w-4" />
+                    Add participants
+                  </Button>
+                </WorkspaceMemberDropdown>
               </div>
               <div v-else class="mt-2 text-xs text-muted-foreground">
                 Participants are derived from channel members.

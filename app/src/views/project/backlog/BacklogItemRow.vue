@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import {
-  IssueAssigneesDropdown,
   IssueLabelTags,
   issueStatusDotClass,
   IssueStatusDropdown,
 } from "@/components/issue";
+import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { UserAvatarStack } from "@/components/user";
 import { Button, ContentEditable, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
 import type { Issue } from "@/domain/issues";
-import { computed } from "vue";
+import type { User } from "@/domain/user";
+import { computed, ref, watch } from "vue";
 import { useBacklogRowContext } from "./backlog-row.context";
 import { DueDatePicker } from "./date-picker";
 import { PriorityToggler } from "./priority-toggler";
@@ -29,6 +30,15 @@ const ctx = useBacklogRowContext();
 const { gridColsClass, editing, openIssue, startEdit, cancelEdit, saveEdit } = ctx;
 
 const { updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useBacklog();
+
+const assigneeUsers = ref<User[]>([]);
+watch(
+  () => props.issue?.assignees,
+  (a) => {
+    assigneeUsers.value = a ? [...a] : [];
+  },
+  { immediate: true, deep: true },
+);
 
 const isEditing = computed(() => editing.id === props.issue.id);
 
@@ -158,17 +168,19 @@ function updateDueDate(dueDate: Date | null | undefined) {
     </div>
 
     <!-- Assignees -->
-    <IssueAssigneesDropdown
-      :assignees="issue.assignees"
+    <WorkspaceMemberDropdown
+      v-model:users="assigneeUsers"
+      selected-label="Assignees"
+      search-placeholder="Search assignees…"
       @add="(u) => addAssignee(issue.id, u.id)"
       @remove="(u) => removeAssignee(issue.id, u.id)"
-      #default="{ assignees }"
+      #default="{ users }"
     >
       <div class="flex w-full min-w-0 cursor-pointer items-center justify-start">
         <div class="flex w-full min-w-0 max-w-full items-center">
           <UserAvatarStack
-            v-if="assignees.length"
-            :users="assignees"
+            v-if="users.length"
+            :users="users"
             size="sm"
             :min="1"
             :overlap-px="10"
@@ -177,7 +189,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
           />
         </div>
         <div
-          v-if="assignees.length === 0"
+          v-if="users.length === 0"
           class="ml-1 flex flex:center w-fit p-0.5 border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
           title="Add assignee"
         >
@@ -187,7 +199,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
           />
         </div>
       </div>
-    </IssueAssigneesDropdown>
+    </WorkspaceMemberDropdown>
 
     <!-- Due date -->
     <div class="justify-self-start">

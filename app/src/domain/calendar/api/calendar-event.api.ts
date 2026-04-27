@@ -22,6 +22,8 @@ export type CalendarEventDto = {
   notifyMinutesBefore: number;
   recurrence: CalendarEventRecurrence;
   payload: Record<string, any>;
+  /** Present when the list endpoint loads participants (e.g. meeting invitees). */
+  participants?: { id: number }[];
 };
 
 export type CreateCalendarEventData = {

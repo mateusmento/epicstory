@@ -24,16 +24,26 @@ export class WorkspaceApi {
     return this.axios.post<Workspace>("/workspaces", { name }).then((res) => res.data);
   }
 
-  findMembers(workspaceId: number) {
-    return this.axios.get<WorkspaceMember[]>(`workspaces/${workspaceId}/members`).then((res) => res.data);
+  findMembers(
+    workspaceId: number,
+    query?: { page?: number; count?: number; q?: string; name?: string; username?: string },
+  ) {
+    return this.axios
+      .get<Page<WorkspaceMember>>(`workspaces/${workspaceId}/members`, { params: query })
+      .then((res) => res.data);
   }
 
   addMember(workspaceId: number, data: { userId: number }) {
     return this.axios.post(`workspaces/${workspaceId}/members`, data).then((res) => res.data);
   }
 
-  sendMemberInvite(workspaceId: number, data: { email: string; userId: number }) {
-    return this.axios.post(`workspaces/${workspaceId}/member-invites`, data).then((res) => res.data);
+  sendMemberInvite(
+    workspaceId: number,
+    data: { invites: { email: string; userId?: number }[] },
+  ) {
+    return this.axios
+      .post(`workspaces/${workspaceId}/member-invites`, data)
+      .then((res) => res.data);
   }
 
   removeMember(workspaceId: number, memberId: number) {

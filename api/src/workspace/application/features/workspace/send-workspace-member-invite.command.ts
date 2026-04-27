@@ -1,6 +1,15 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { add } from 'date-fns';
 import * as nodemailer from 'nodemailer';
 import { UserRepository } from 'src/auth';
@@ -13,16 +22,28 @@ import {
   WorkspaceMemberInviteRepository,
   WorkspaceRepository,
 } from 'src/workspace/infrastructure/repositories';
+
+export class SendWorkspaceMemberInviteItem {
+  @IsNotEmpty()
+  @IsString()
+  email: string;
+
+  @IsNumber()
+  @IsOptional()
+  userId?: number;
+}
+
 export class SendWorkspaceMemberInvite {
   issuer: Issuer;
   workspaceId: number;
 
-  @IsNumber()
-  userId: number;
-  @IsNotEmpty()
-  email: string;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => SendWorkspaceMemberInviteItem)
+  invites: SendWorkspaceMemberInviteItem[];
 
-  constructor(data: Partial<SendWorkspaceMemberInvite>) {
+  constructor(data: Partial<SendWorkspaceMemberInvite> = {}) {
     patch(this, data);
   }
 }
@@ -38,72 +59,72 @@ export class SendWorkspaceMemberInviteCommand
     private userRepo: UserRepository,
   ) {}
 
-  async execute({
-    issuer,
-    userId,
-    email,
-    workspaceId,
-  }: SendWorkspaceMemberInvite) {
+  async execute({ issuer, workspaceId, invites }: SendWorkspaceMemberInvite) {
     const workspace = await this.workspaceRepo.findOneBy({
       id: workspaceId,
     });
 
     if (!workspace) throw new NotFoundException('Workspace not found');
 
-    const user = await this.userRepo.findOneBy({ email });
+    for (const { email, userId: bodyUserId } of invites) {
+      const user = await this.userRepo.findOneBy({ email });
 
-    if (user) {
-      const member = await this.workspaceRepo.findMember(workspaceId, user.id);
-      if (member) throw new WorkspaceMemberAlreadyExists();
-    }
+      if (user) {
+        const member = await this.workspaceRepo.findMember(
+          workspaceId,
+          user.id,
+        );
+        if (member) throw new WorkspaceMemberAlreadyExists();
+      }
 
-    const invite = await this.inviteRepo.save(
-      WorkspaceMemberInvite.create({
-        workspaceId,
-        email,
-        userId: userId ?? user?.id,
-        status: 'sent',
-        expiresAt: add(new Date(), { days: 15 }),
-      }),
-    );
+      const invite = await this.inviteRepo.save(
+        WorkspaceMemberInvite.create({
+          workspaceId,
+          email,
+          userId: bodyUserId ?? user?.id,
+          status: 'sent',
+          expiresAt: add(new Date(), { days: 15 }),
+        }),
+      );
 
-    const transporter = nodemailer.createTransport({
-      host: this.config.EMAIL_SMTP_URL,
-      port: 465,
-      secure: true,
-      auth: {
-        user: this.config.EMAIL_SMTP_USER,
-        pass: this.config.EMAIL_SMTP_PASSWORD,
-      },
-    });
-
-    try {
-      const inviteUrl = `${this.config.APP_URL}/workspace-member-invite/${invite.id}`;
-      const expirationDate = invite.expiresAt.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+      const transporter = nodemailer.createTransport({
+        host: this.config.EMAIL_SMTP_URL,
+        port: 465,
+        secure: true,
+        auth: {
+          user: this.config.EMAIL_SMTP_USER,
+          pass: this.config.EMAIL_SMTP_PASSWORD,
+        },
       });
 
-      const html = this.getInviteEmailHtml({
-        inviterName: issuer.name,
-        workspaceName: workspace.name,
-        inviteUrl,
-        expirationDate,
-        recipientEmail: email,
-      });
+      try {
+        const inviteUrl = `${this.config.APP_URL}/workspace-member-invite/${invite.id}`;
+        const expirationDate = invite.expiresAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
 
-      const result = await transporter.sendMail({
-        to: email,
-        from: this.config.DEFAULT_SENDER_EMAIL_ADDRESS,
-        subject: `${issuer.name} invites you to join ${workspace.name} on Epicstory`,
-        html,
-        text: `${issuer.name} has invited you to join the workspace "${workspace.name}" on Epicstory.\n\nAccept the invitation: ${inviteUrl}\n\nThis invitation expires on ${expirationDate}.`,
-      });
+        const html = this.getInviteEmailHtml({
+          inviterName: issuer.name,
+          workspaceName: workspace.name,
+          inviteUrl,
+          expirationDate,
+          recipientEmail: email,
+        });
 
-      console.log(result);
-    } catch (err) {
-      console.log(err);
+        const result = await transporter.sendMail({
+          to: email,
+          from: this.config.DEFAULT_SENDER_EMAIL_ADDRESS,
+          subject: `${issuer.name} invites you to join ${workspace.name} on Epicstory`,
+          html,
+          text: `${issuer.name} has invited you to join the workspace "${workspace.name}" on Epicstory.\n\nAccept the invitation: ${inviteUrl}\n\nThis invitation expires on ${expirationDate}.`,
+        });
+
+        console.log(result);
+      } catch (err) {
+        console.log(err);
+      }
     }
   }
 

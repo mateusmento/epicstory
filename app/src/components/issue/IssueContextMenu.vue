@@ -10,16 +10,17 @@ import {
   MenuTrigger,
 } from "@/design-system";
 import { useBacklog } from "@/domain/backlog";
+import type { User } from "@/domain/user";
 import type { Issue } from "@/domain/issues";
-import { computed, ref } from "vue";
-import IssueAssigneesMenu from "./IssueAssigneesMenu.vue";
+import { computed, ref, watch } from "vue";
+import { WorkspaceMemberMenu } from "@/components/workspace-members";
 import IssueDeleteDialog from "./IssueDeleteDialog.vue";
 import IssueDueDateMenu from "./IssueDueDateMenu.vue";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 import IssuePickerMenu from "./IssuePickerMenu.vue";
 import IssueRenameDialog from "./IssueRenameDialog.vue";
 import IssueStatusMenu from "./status/IssueStatusMenu.vue";
-import { CalendarClock, GitBranch, Kanban, SquarePen, Tags, Trash2Icon, User } from "lucide-vue-next";
+import { CalendarClock, GitBranch, Kanban, SquarePen, Tags, Trash2Icon, UserIcon } from "lucide-vue-next";
 
 const props = defineProps<{
   issue: Issue;
@@ -32,6 +33,15 @@ const labelIds = computed(() => (props.issue?.labels ?? []).map((l) => l.id));
 
 const { addLabel, removeLabel, updateIssue, addAssignee, removeAssignee, removeIssue, markAsSubIssueOf } =
   useBacklog();
+
+const assigneeUsers = ref<User[]>([]);
+watch(
+  () => props.issue?.assignees,
+  (a) => {
+    assigneeUsers.value = a ? [...a] : [];
+  },
+  { immediate: true, deep: true },
+);
 
 async function onLabelsUpdate(nextIds: number[]) {
   const prev = new Set(labelIds.value);
@@ -70,12 +80,14 @@ async function onLabelsUpdate(nextIds: number[]) {
 
       <MenuSub>
         <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
-          <User class="size-4 text-muted-foreground" />
+          <UserIcon class="size-4 text-muted-foreground" />
           <span>Assignee</span>
         </MenuSubTrigger>
         <MenuSubContent as-child>
-          <IssueAssigneesMenu
-            :assignees="issue.assignees ?? []"
+          <WorkspaceMemberMenu
+            v-model:users="assigneeUsers"
+            selected-label="Assignees"
+            search-placeholder="Search assignees…"
             :disabled="disabled"
             @add="addAssignee(issue.id, $event.id)"
             @remove="removeAssignee(issue.id, $event.id)"

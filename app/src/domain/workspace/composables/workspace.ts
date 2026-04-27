@@ -45,7 +45,8 @@ export function useWorkspace() {
   }
 
   async function fetchWorkspaceMembers() {
-    store.members = await workspaceApi.findMembers(workspaceId.value);
+    const page = await workspaceApi.findMembers(workspaceId.value, { page: 0, count: 1000 });
+    store.members = page.content;
   }
 
   async function addWorkspaceMember(userId: number) {
@@ -53,8 +54,10 @@ export function useWorkspace() {
     store.members.push(member);
   }
 
-  async function sendWorkspaceMemberInvite(email: string, userId: number) {
-    await workspaceApi.sendMemberInvite(workspaceId.value, { email, userId });
+  async function sendWorkspaceMemberInvite(
+    invites: { email: string; userId?: number }[],
+  ) {
+    await workspaceApi.sendMemberInvite(workspaceId.value, { invites });
   }
 
   async function fetchProjects(pageQuery?: PageQuery) {
