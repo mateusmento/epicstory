@@ -12,7 +12,7 @@
 
 /* ========== Composer ========== */
 /* ProseMirror adds `ProseMirror-focused` on the same node (contenteditable root). Browsers often
-   draw a strong focus outline there; MessageWriter already uses focus-within on the shell. */
+   draw a strong focus outline there; MessageComposer already uses focus-within on the shell. */
 .epic-story-composer-editor.ProseMirror {
   @apply min-h-[3rem] text-sm leading-relaxed shadow-none ring-0;
   outline: none;

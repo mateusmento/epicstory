@@ -2,7 +2,10 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsDate, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
-import { IssueRepository } from 'src/project/infrastructure/repositories';
+import {
+  IssueActivityRepository,
+  IssueRepository,
+} from 'src/project/infrastructure/repositories';
 import { ScheduledJobTypes } from 'src/scheduling/constants';
 import { ScheduledJob } from 'src/scheduling/entities';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
@@ -52,6 +55,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
     private workspaceRepo: WorkspaceRepository,
     private scheduledJobRepo: ScheduledJobRepository,
     private projectGateway: ProjectGateway,
+    private issueActivities: IssueActivityRepository,
   ) {}
 
   @Transactional()
@@ -64,6 +68,15 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
       throw new IssuerUserIsNotWorkspaceMember();
 
     const previousScheduledEventId = issue.scheduledEventId;
+
+    const prevSnapshot = {
+      title: issue.title,
+      description: issue.description,
+      status: issue.status,
+      priority: issue.priority,
+      dueDate: issue.dueDate,
+      parentIssueId: issue.parentIssueId ?? null,
+    };
 
     const { dueDate } = data;
 
@@ -120,6 +133,103 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
 
     patch(issue, data);
     const savedIssue = await this.issueRepo.save(issue);
+
+    const actorId = issuer.id;
+    if (data.title !== undefined && savedIssue.title !== prevSnapshot.title) {
+      await this.issueActivities.save(
+        this.issueActivities.create({
+          issueId,
+          actorId,
+          type: 'title_changed',
+          messageId: null,
+          attachmentId: null,
+          payload: { previousTitle: prevSnapshot.title },
+        }),
+      );
+    }
+    if (
+      data.description !== undefined &&
+      savedIssue.description !== prevSnapshot.description
+    ) {
+      await this.issueActivities.save(
+        this.issueActivities.create({
+          issueId,
+          actorId,
+          type: 'description_changed',
+          messageId: null,
+          attachmentId: null,
+          payload: {
+            changeKind: savedIssue.description === '' ? 'cleared' : 'edited',
+          },
+        }),
+      );
+    }
+    if (
+      data.status !== undefined &&
+      savedIssue.status !== prevSnapshot.status
+    ) {
+      await this.issueActivities.save(
+        this.issueActivities.create({
+          issueId,
+          actorId,
+          type: 'status_changed',
+          messageId: null,
+          attachmentId: null,
+          payload: { previousStatus: prevSnapshot.status },
+        }),
+      );
+    }
+    if (
+      data.priority !== undefined &&
+      savedIssue.priority !== prevSnapshot.priority
+    ) {
+      await this.issueActivities.save(
+        this.issueActivities.create({
+          issueId,
+          actorId,
+          type: 'priority_changed',
+          messageId: null,
+          attachmentId: null,
+          payload: { previousPriority: prevSnapshot.priority },
+        }),
+      );
+    }
+    if (data.dueDate !== undefined) {
+      const pt = prevSnapshot.dueDate?.getTime() ?? null;
+      const nt = savedIssue.dueDate?.getTime() ?? null;
+      if (pt !== nt) {
+        await this.issueActivities.save(
+          this.issueActivities.create({
+            issueId,
+            actorId,
+            type: 'due_date_changed',
+            messageId: null,
+            attachmentId: null,
+            payload: {
+              previousDueDate:
+                prevSnapshot.dueDate != null
+                  ? prevSnapshot.dueDate.toISOString()
+                  : null,
+            },
+          }),
+        );
+      }
+    }
+    if (
+      data.parentIssueId !== undefined &&
+      (savedIssue.parentIssueId ?? null) !== prevSnapshot.parentIssueId
+    ) {
+      await this.issueActivities.save(
+        this.issueActivities.create({
+          issueId,
+          actorId,
+          type: 'parent_changed',
+          messageId: null,
+          attachmentId: null,
+          payload: { previousParentIssueId: prevSnapshot.parentIssueId },
+        }),
+      );
+    }
 
     // Load the issue with all relations for WebSocket emission
     const loadedIssue = await this.issueRepo.findOne({

@@ -3,6 +3,7 @@ import type { Page, PageQuery } from "@/core/types";
 import type { Axios } from "axios";
 import { isValid } from "date-fns";
 import { injectable } from "tsyringe";
+import type { IssueFeed } from "../types/issue-feed.type";
 import type { Issue } from "../types";
 
 /** JSON wire shape from the API before `dueDate` is parsed to `Date`. */
@@ -130,5 +131,33 @@ export class IssueApi {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((res) => res.data);
+  }
+
+  fetchIssueFeed(issueId: number, limit?: number) {
+    return this.axios
+      .get<IssueFeed>(`/issues/${issueId}/feed`, {
+        params: limit != null ? { limit } : undefined,
+      })
+      .then((res) => res.data);
+  }
+
+  listIssueAttachments(issueId: number) {
+    return this.axios.get<UploadedAttachment[]>(`/issues/${issueId}/attachments`).then((res) => res.data);
+  }
+
+  /** Top-level comment on the issue timeline — writes `issue_activities` + `Message`. */
+  postIssueComment(
+    issueId: number,
+    body: { content: string; contentRich?: Record<string, unknown>; attachmentIds?: number[] },
+  ) {
+    return this.axios.post(`/issues/${issueId}/comments`, body).then((res) => res.data);
+  }
+
+  replyToIssueComment(
+    issueId: number,
+    parentMessageId: number,
+    body: { content: string; contentRich?: Record<string, unknown>; attachmentIds?: number[] },
+  ) {
+    return this.axios.post(`/issues/${issueId}/comments/${parentMessageId}/replies`, body).then((res) => res.data);
   }
 }

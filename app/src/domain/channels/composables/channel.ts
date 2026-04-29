@@ -167,14 +167,22 @@ export function useChannel() {
     content,
     contentRich,
     quotedMessageId,
+    attachmentIds,
   }: {
     content: string;
     contentRich: any;
     quotedMessageId?: number | null;
+    attachmentIds?: number[];
   }) {
     if (!store.channel) return;
     if (!content) return;
-    const message = await channelApi.sendMessage(store.channel.id, content, contentRich, quotedMessageId);
+    const message = await channelApi.sendMessage(
+      store.channel.id,
+      content,
+      contentRich,
+      quotedMessageId,
+      attachmentIds,
+    );
     addMessage(message);
     return message;
   }

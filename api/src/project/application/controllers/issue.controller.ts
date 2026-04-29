@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -28,8 +29,11 @@ import {
   RemoveAssignee,
   AddLabel,
   RemoveLabel,
+  CreateIssueComment,
+  ReplyToIssueComment,
 } from '../features';
 import { FindIssue } from '../features/issue/find-issue.query';
+import { FindIssueFeed } from '../features/issue/find-issue-feed.query';
 
 @Controller('issues')
 export class IssueController {
@@ -45,6 +49,89 @@ export class IssueController {
   @UseGuards(JwtAuthGuard)
   findIssue(@Param('id') issueId: number) {
     return this.queryBus.execute(new FindIssue({ issueId }));
+  }
+
+  @Get(':id/feed')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  findIssueFeed(
+    @Param('id') issueId: number,
+    @Query('limit') limit: string | undefined,
+    @Auth() issuer,
+  ) {
+    const parsed = limit ? Number(limit) : undefined;
+    return this.queryBus.execute(
+      new FindIssueFeed({
+        issueId,
+        issuer,
+        limit:
+          parsed !== undefined && Number.isFinite(parsed)
+            ? Math.floor(parsed)
+            : undefined,
+      }),
+    );
+  }
+
+  @Post(':id/comments/:parentMessageId/replies')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  replyToIssueComment(
+    @Param('id') issueId: number,
+    @Param('parentMessageId') parentMessageId: number,
+    @Body()
+    body: {
+      content: string;
+      contentRich?: Record<string, unknown>;
+      attachmentIds?: number[];
+    },
+    @Auth() issuer,
+  ) {
+    if (
+      typeof body.content !== 'string' ||
+      body.content.trim().length === 0
+    ) {
+      throw new BadRequestException('Content is required');
+    }
+    return this.commandBus.execute(
+      new ReplyToIssueComment({
+        issueId,
+        parentMessageId,
+        issuer,
+        content: body.content,
+        contentRich: body.contentRich,
+        attachmentIds: body.attachmentIds,
+      }),
+    );
+  }
+
+  @Post(':id/comments')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  createIssueComment(
+    @Param('id') issueId: number,
+    @Body()
+    body: {
+      content: string;
+      contentRich?: Record<string, unknown>;
+      attachmentIds?: number[];
+    },
+    @Auth() issuer,
+  ) {
+    if (
+      typeof body.content !== 'string' ||
+      body.content.trim().length === 0
+    ) {
+      throw new BadRequestException('Content is required');
+    }
+    return this.commandBus.execute(
+      new CreateIssueComment({
+        issueId,
+        issuer,
+        content: body.content,
+        contentRich: body.contentRich,
+        attachmentIds: body.attachmentIds,
+      }),
+    );
   }
 
   @Patch(':id')
@@ -127,7 +214,12 @@ export class IssueController {
     const issue = await this.issues.findOne({ where: { id: issueId } });
     if (!issue) throw new ForbiddenException('Issue not found');
     await this.workspaces.requiresMembership(issue.workspaceId, issuer.id);
-    return this.attachments.listForIssue(issue.workspaceId, issueId);
+    return this.attachments.listForIssue(
+      issue.workspaceId,
+      issueId,
+      100,
+      issue.commentChannelId ?? null,
+    );
   }
 
   @Post(':id/attachments')

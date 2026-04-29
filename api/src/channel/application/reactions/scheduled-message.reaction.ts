@@ -23,6 +23,7 @@ export class ScheduledMessageReaction {
     const p = job.payload;
     if (p.type !== 'scheduled_message') return;
 
+    /** Attachment linking is intentionally omitted for scheduled delivery (staging TTL). */
     const message = await this.commandBus.execute(
       new SendMessage({
         channelId: p.channelId,

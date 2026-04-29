@@ -5,6 +5,7 @@ import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
 import {
+  IssueActivityRepository,
   IssueRepository,
   LabelRepository,
 } from 'src/project/infrastructure/repositories';
@@ -30,6 +31,7 @@ export class AddLabelCommand implements ICommandHandler<AddLabel> {
     private issueRepo: IssueRepository,
     private labelRepo: LabelRepository,
     private workspaceRepo: WorkspaceRepository,
+    private issueActivities: IssueActivityRepository,
   ) {}
 
   async execute({ issuer, issueId, labelId }: AddLabel) {
@@ -50,6 +52,17 @@ export class AddLabelCommand implements ICommandHandler<AddLabel> {
        VALUES ($1, $2)
        ON CONFLICT DO NOTHING`,
       [issueId, labelId],
+    );
+
+    await this.issueActivities.save(
+      this.issueActivities.create({
+        issueId,
+        actorId: issuer.id,
+        type: 'labels_changed',
+        messageId: null,
+        attachmentId: null,
+        payload: { addedLabelIds: [labelId], removedLabelIds: [] },
+      }),
     );
 
     const updated = await this.issueRepo.findOne({

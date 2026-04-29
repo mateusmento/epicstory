@@ -23,14 +23,19 @@ import { computed, nextTick, ref, watch } from "vue";
 import { UserAvatar, UserAvatarStack } from "@/components/user";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
-import MessageWriter from "./MessageWriter.vue";
+import MessageComposer from "./MessageComposer.vue";
 
 const props = defineProps<{
   meId: number;
   chatTitle?: string;
   chatPicture?: string;
   messageGroups: IMessageGroup[];
-  sendMessage: (message: { content: string; contentRich: any; quotedMessageId?: number }) => Promise<unknown>;
+  sendMessage: (message: {
+    content: string;
+    contentRich: any;
+    quotedMessageId?: number;
+    attachmentIds?: number[];
+  }) => Promise<unknown>;
   sendScheduledMessage?: (body: ICreateScheduledMessageBody) => Promise<unknown>;
   updateMessage: (messageId: number, body: { content: string; contentRich: any }) => Promise<unknown>;
   channelId: number;
@@ -47,6 +52,18 @@ const emit = defineEmits([
 
 const quotedMessage = ref<IMessage | null>(null);
 const editingMessage = ref<IMessage | null>(null);
+
+/** Clear reply-to when that message is removed (local delete, websocket, or channel switch). */
+const channelMessageIds = computed(() => {
+  return new Set(props.messageGroups.flatMap((mg) => mg.messages).map((m) => m.id));
+});
+
+watch([channelMessageIds, quotedMessage], ([ids, q]) => {
+  if (!q) return;
+  if (!ids.has(q.id)) {
+    quotedMessage.value = null;
+  }
+});
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 
 const { workspace } = useWorkspace();
@@ -104,7 +121,12 @@ watch(
   },
 );
 
-async function onSendMessage(payload: { content: string; contentRich: any; quotedMessageId?: number }) {
+async function onSendMessage(payload: {
+  content: string;
+  contentRich: any;
+  quotedMessageId?: number;
+  attachmentIds?: number[];
+}) {
   if (!payload.content?.trim()) return;
   await props.sendMessage({
     content: payload.content,
@@ -112,6 +134,7 @@ async function onSendMessage(payload: { content: string; contentRich: any; quote
     quotedMessageId:
       payload.quotedMessageId ??
       (quotedMessage.value ? channelComposerQuotedMessageId(quotedMessage.value) : undefined),
+    attachmentIds: payload.attachmentIds,
   });
   scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
@@ -290,7 +313,7 @@ defineExpose({
       </div>
     </div>
 
-    <MessageWriter
+    <MessageComposer
       :key="channelId"
       :channel-id="channelId"
       :workspace-id="workspace.id"

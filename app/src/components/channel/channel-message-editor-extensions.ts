@@ -6,7 +6,6 @@ import {
   createMentionExtensionWithNodeView,
   createPlaceholderExtension,
   createRichTextExtensions,
-  mediaExtensions,
 } from "@epicstory/tiptap/vue";
 import type { ComputedRef, Ref } from "vue";
 import type { MentionSuggestionItem } from "./MentionList.vue";
@@ -33,8 +32,8 @@ export function buildMentionSuggestion(mentionablesForSuggestion: ComputedRef<Us
 }
 
 /**
- * Shared TipTap extensions for channel message bodies (composer + scheduled-message editor).
- * Pass `channelId` ref when the editor should support image upload for that channel.
+ * Channel message TipTap bodies: text + mentions + code blocks.
+ * Files are staged out-of-band (see composer attachment strip), not embedded in JSON.
  */
 export function createChannelMessageExtensions(args: {
   channelApi: ChannelApi;
@@ -50,19 +49,9 @@ export function createChannelMessageExtensions(args: {
       linkOpenOnClick: false,
       lowlight: epicStoryLowlight,
       codeBlockNodeView: TiptapCodeBlockCardNodeView,
+      images: false,
     }),
   ];
-  if (args.channelId) {
-    const id = args.channelId.value;
-    if (id != null) {
-      base.push(
-        ...mediaExtensions({
-          uploadFile: (file: File) => args.channelApi.uploadAttachment(id, file).then((a) => a.url),
-          allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
-        }),
-      );
-    }
-  }
   base.push(
     createMentionExtensionWithNodeView(TiptapMentionNodeView, {
       HTMLAttributes: {

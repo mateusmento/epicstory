@@ -1,0 +1,155 @@
+import { NotFoundException } from '@nestjs/common';
+import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { uniq } from 'lodash';
+import {
+  MessageDto,
+  MessageService,
+} from 'src/channel/application/services/message.service';
+import { Issuer } from 'src/core/auth';
+import { patch } from 'src/core/objects';
+import {
+  IssueActivityRepository,
+  IssueRepository,
+} from 'src/project/infrastructure/repositories';
+import { parseStoredIssueActivityPayload } from 'src/project/domain/utils/issue-activity-payload-parse';
+import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import type {
+  IssueActivityPayload,
+  IssueActivityType,
+} from 'src/project/domain/types/issue-activity-payload.types';
+import { IsOptional, Max, Min, IsNumber } from 'class-validator';
+import { MessageReply } from 'src/channel/domain/entities';
+
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
+/** Last K replies per comment card preview (aligned with Section D.1 plan). */
+const REPLY_PREVIEW_LIMIT = 5;
+
+export type IssueFeedActivityItemDto = {
+  activityId: number;
+  issueId: number;
+  type: IssueActivityType;
+  actorId: number | null;
+  createdAt: Date;
+  messageId: number | null;
+  attachmentId: number | null;
+  payload: IssueActivityPayload | null;
+  /** Populated when `type === comment_created` — same shape as channel `MessageDto`. */
+  message: unknown | null;
+  replyPreviews: unknown[];
+  repliesTotal?: number;
+  /** True when more replies exist than `replyPreviews` (pagination / “show more”). */
+  hasMoreOlder?: boolean;
+};
+
+export type IssueFeedDto = {
+  commentChannelId: number | null;
+  items: IssueFeedActivityItemDto[];
+};
+
+export class FindIssueFeed {
+  issuer: Issuer;
+  issueId: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(MAX_LIMIT)
+  limit?: number;
+
+  constructor(data: Partial<FindIssueFeed> = {}) {
+    patch(this, data);
+  }
+}
+
+@QueryHandler(FindIssueFeed)
+export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
+  constructor(
+    private issueRepo: IssueRepository,
+    private workspaceRepo: WorkspaceRepository,
+    private activities: IssueActivityRepository,
+    private messages: MessageService,
+  ) {}
+
+  async execute({
+    issueId,
+    issuer,
+    limit,
+  }: FindIssueFeed): Promise<IssueFeedDto> {
+    const issue = await this.issueRepo.findOne({ where: { id: issueId } });
+    if (!issue) throw new NotFoundException('Issue not found');
+
+    if (
+      !(await this.workspaceRepo.memberExists(issue.workspaceId, issuer.id))
+    ) {
+      throw new IssuerUserIsNotWorkspaceMember();
+    }
+
+    const take = Math.min(limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+
+    const rows = await this.activities.find({
+      where: { issueId },
+      order: { createdAt: 'ASC' },
+      take,
+    });
+
+    const commentIds = uniq(
+      rows
+        .filter((r) => r.type === 'comment_created' && r.messageId != null)
+        .map((r) => r.messageId!),
+    );
+
+    const messagesById =
+      issue.commentChannelId != null && commentIds.length > 0
+        ? await this.messages.findMessagesByIdsForChannel(
+            issue.commentChannelId,
+            commentIds,
+            issuer.id,
+          )
+        : new Map<number, MessageDto>();
+
+    const { repliesByParentId } =
+      issue.commentChannelId != null && commentIds.length > 0
+        ? await this.messages.findReplyPreviewsForMessageIds(
+            commentIds,
+            REPLY_PREVIEW_LIMIT,
+            issuer.id,
+          )
+        : { repliesByParentId: new Map<number, MessageReply[]>() };
+
+    const items: IssueFeedActivityItemDto[] = rows.map((a) => {
+      const dto = a.messageId ? messagesById.get(a.messageId) : undefined;
+      const replyPreviews = a.messageId
+        ? (repliesByParentId.get(a.messageId) ?? [])
+        : [];
+      const repliesTotal = dto?.repliesCount ?? 0;
+      const hasMoreOlder =
+        a.messageId != null ? repliesTotal > replyPreviews.length : undefined;
+
+      return {
+        activityId: a.id,
+        issueId: a.issueId,
+        type: a.type,
+        actorId: a.actorId,
+        createdAt: a.createdAt,
+        messageId: a.messageId,
+        attachmentId: a.attachmentId,
+        payload:
+          parseStoredIssueActivityPayload(
+            a.type,
+            (a.payload as Record<string, unknown> | null) ?? null,
+          ) ?? null,
+        message: dto ?? null,
+        replyPreviews: replyPreviews,
+        repliesTotal: a.messageId != null ? repliesTotal : undefined,
+        hasMoreOlder: a.messageId != null ? hasMoreOlder : undefined,
+      };
+    });
+
+    return {
+      commentChannelId: issue.commentChannelId ?? null,
+      items,
+    };
+  }
+}

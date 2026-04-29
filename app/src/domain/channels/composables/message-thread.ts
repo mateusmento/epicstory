@@ -110,7 +110,12 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     }
   }
 
-  async function sendReply(payload: { content: string; contentRich: any; quotedReplyId?: number }) {
+  async function sendReply(payload: {
+    content: string;
+    contentRich: any;
+    quotedReplyId?: number;
+    attachmentIds?: number[];
+  }) {
     if (!payload.content.trim()) return;
     if (!me.value) return;
 
@@ -120,6 +125,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
         payload.content,
         payload.contentRich,
         payload.quotedReplyId,
+        payload.attachmentIds,
       );
       console.log("adding reply after sending it", options.name, reply);
       addReply(reply);

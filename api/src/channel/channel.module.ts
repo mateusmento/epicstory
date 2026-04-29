@@ -9,6 +9,7 @@ import * as features from './application/features';
 import * as gateways from './application/gateways';
 import * as reactions from './application/reactions';
 import * as services from './application/services';
+import { MessageService } from './application/services/message.service';
 import * as entities from './domain/entities';
 import * as repositories from './infrastructure/repositories';
 
@@ -29,6 +30,10 @@ import * as repositories from './infrastructure/repositories';
     ...Object.values(gateways),
     { provide: 'MeetingGateway', useExisting: gateways.MeetingGateway },
   ].flat(),
-  exports: [...Object.values(repositories), gateways.MeetingGateway],
+  exports: [
+    ...Object.values(repositories),
+    gateways.MeetingGateway,
+    MessageService,
+  ],
 })
 export class ChannelModule {}

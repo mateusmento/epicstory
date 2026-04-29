@@ -4,9 +4,11 @@ import { AuthModule } from 'src/auth';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { SchedulingModule } from 'src/scheduling/scheduling.module';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
+import { ChannelModule } from 'src/channel/channel.module';
 import * as controllers from './application/controllers';
 import * as features from './application/features';
 import * as gateways from './application/gateways';
+import * as projectReactions from './application/reactions';
 import * as entities from './domain/entities';
 import * as services from './domain/services';
 import * as repositories from './infrastructure/repositories';
@@ -18,6 +20,7 @@ import * as repositories from './infrastructure/repositories';
     WorkspaceModule,
     NotificationsModule,
     SchedulingModule,
+    ChannelModule,
   ],
   controllers: [...Object.values(controllers)],
   providers: [
@@ -25,6 +28,7 @@ import * as repositories from './infrastructure/repositories';
     ...Object.values(repositories),
     ...Object.values(features),
     ...Object.values(gateways),
+    ...Object.values(projectReactions),
   ],
   exports: [],
 })

@@ -1,4 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ChannelRepository,
   MessageReactionRepository,
@@ -6,6 +7,10 @@ import {
   MessageReplyRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
+import {
+  ChannelMessageDeletedEvent,
+  type ChannelMessageDeletedPayload,
+} from '../contracts/channel-message-deleted.event';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -36,6 +41,7 @@ export class DeleteMessageCommand implements ICommandHandler<DeleteMessage> {
     private messageReplyReactionRepo: MessageReplyReactionRepository,
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   @Transactional()
@@ -57,10 +63,13 @@ export class DeleteMessageCommand implements ICommandHandler<DeleteMessage> {
     );
     if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
 
-    const isChannelMember = (channel.peers ?? []).some(
-      (p) => p.id === issuerId,
-    );
-    if (!isChannelMember) throw new IssuerIsNotChannelMember();
+    const isWorkspaceOpen = channel.type === 'workspace_open';
+    if (!isWorkspaceOpen) {
+      const isChannelMember = (channel.peers ?? []).some(
+        (p) => p.id === issuerId,
+      );
+      if (!isChannelMember) throw new IssuerIsNotChannelMember();
+    }
 
     if (message.senderId !== issuerId)
       throw new IssuerCanOnlyDeleteOwnMessages();
@@ -95,6 +104,13 @@ export class DeleteMessageCommand implements ICommandHandler<DeleteMessage> {
     }
 
     await this.messageRepo.delete({ id: messageId });
+
+    const payload: ChannelMessageDeletedPayload = {
+      messageId,
+      channelId: channel.id,
+      channelType: channel.type,
+    };
+    this.eventEmitter.emit(ChannelMessageDeletedEvent, payload);
 
     return { success: true, messageId, channelId: channel.id };
   }

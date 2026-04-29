@@ -25,9 +25,16 @@ import {
   type IReply,
   type IScheduledMessageRecurrence,
 } from "@/domain/channels";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
-import { messageBodyPlainText, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
+import { ChannelApi, type UploadedAttachment } from "@/domain/channels/services/channel.service";
+import ChannelAttachmentStrip from "./ChannelAttachmentStrip.vue";
+import {
+  messageBodyPlainText,
+  normalizeTiptapDoc,
+  stripImageNodesFromDoc,
+  tiptapToPlainText,
+} from "@epicstory/tiptap";
 import { EPIC_STORY_COMPOSER_EDITOR_CLASS } from "@epicstory/tiptap/vue";
+import type { JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
 import { debounce } from "lodash";
 import {
@@ -39,6 +46,7 @@ import {
   List,
   ListChecks,
   ListOrdered,
+  Paperclip,
   Strikethrough,
   Table2,
   TextQuote,
@@ -115,6 +123,7 @@ const emit = defineEmits<{
       contentRich: any;
       quotedMessageId?: number;
       quotedReplyId?: number;
+      attachmentIds?: number[];
     },
   ): void;
   (
@@ -161,6 +170,51 @@ watch(
 
 const channelIdRef = toRef(props, "channelId");
 
+/** Staged uploads (linked on send, not embedded in TipTap JSON). */
+const pendingAttachments = ref<UploadedAttachment[]>([]);
+const stagingFileInputRef = ref<HTMLInputElement | null>(null);
+
+function collectFilesFromClipboard(event: ClipboardEvent): File[] {
+  const out: File[] = [];
+  const seen = new Set<string>();
+  const add = (f: File | null) => {
+    if (!f || f.size === 0) return;
+    const key = `${f.name}:${f.size}:${f.lastModified}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(f);
+  };
+  const cd = event.clipboardData;
+  if (!cd) return out;
+  if (cd.files?.length) {
+    for (const f of Array.from(cd.files)) add(f);
+  }
+  const items = cd.items;
+  if (items?.length) {
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.kind !== "file") continue;
+      add(it.getAsFile());
+    }
+  }
+  return out;
+}
+
+async function uploadStagingFiles(fileList: File[]) {
+  if (!fileList.length || props.channelId == null) return;
+  const channelId = props.channelId;
+  const next = [...pendingAttachments.value];
+  for (const file of fileList) {
+    try {
+      const a = await channelApi.uploadAttachment(channelId, file);
+      next.push(a);
+    } catch {
+      /* keep composing */
+    }
+  }
+  pendingAttachments.value = next;
+}
+
 const editor = useEditor({
   extensions: createChannelMessageExtensions({
     channelApi,
@@ -181,6 +235,15 @@ const editor = useEditor({
         return true;
       }
       return false;
+    },
+    handlePaste: (_view, event) => {
+      const files = collectFilesFromClipboard(event);
+      if (files.length === 0 || props.channelId == null) return false;
+      event.preventDefault();
+      uploadStagingFiles(files).catch(() => {
+        /* upload failed */
+      });
+      return true;
     },
   },
 });
@@ -276,6 +339,12 @@ function maybeStartTypingPulse(ed: Editor) {
   }
 }
 
+const scheduleAttachmentHint = computed(() =>
+  activeSchedule.value && pendingAttachments.value.length > 0
+    ? "Attachments are not sent in scheduled messages. Clear the schedule or send now to include them."
+    : null,
+);
+
 function handleComposerUpdate(ed: Editor) {
   saveDraftDebounced(ed);
   maybeStartTypingPulse(ed);
@@ -368,6 +437,7 @@ watch(
         isEmittingTyping.value = false;
         saveDraftDebounced.cancel();
         activeSchedule.value = null;
+        pendingAttachments.value = [];
       }
     }
 
@@ -387,7 +457,10 @@ watch(
 watch(
   () => props.editingMessage,
   (m) => {
-    if (m) activeSchedule.value = null;
+    if (m) {
+      activeSchedule.value = null;
+      pendingAttachments.value = [];
+    }
   },
 );
 
@@ -417,10 +490,28 @@ function insertAtMention() {
   editor.value?.chain().focus().insertContent("@").run();
 }
 
+function openStagingFilePicker() {
+  stagingFileInputRef.value?.click();
+}
+
+async function onStagingFilesSelected(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const files = input.files;
+  input.value = "";
+  if (!files?.length) return;
+  await uploadStagingFiles(Array.from(files));
+}
+
+function removeStagingAttachment(id: number) {
+  pendingAttachments.value = pendingAttachments.value.filter((a) => a.id !== id);
+}
+
 function onSendMessage() {
   if (!editor.value) return;
   if (editor.value.isEmpty) return;
-  const doc = normalizeTiptapDoc(editor.value.getJSON());
+  const raw = editor.value.getJSON() as JSONContent;
+  const stripped = stripImageNodesFromDoc(raw) as JSONContent;
+  const doc = normalizeTiptapDoc(stripped);
   const plain = tiptapToPlainText(doc, { stripFormatting: true });
   if (!plain.trim()) return;
   if (props.editingMessage) {
@@ -436,8 +527,11 @@ function onSendMessage() {
     isEmittingTyping.value = false;
     return;
   }
-  if (activeSchedule.value && props.channelId != null) {
-    const sch = activeSchedule.value;
+  const scheduling = !!(activeSchedule.value && props.channelId != null);
+  const attachmentIds = scheduling ? [] : pendingAttachments.value.map((a) => a.id);
+
+  if (scheduling) {
+    const sch = activeSchedule.value!;
     const q = props.quotedMessage;
     const scheduledQuote = q && (!("messageId" in q) || q.messageId == null) ? { quotedMessageId: q.id } : {};
     emit("send-scheduled-message", {
@@ -453,8 +547,10 @@ function onSendMessage() {
       content: plain,
       contentRich: doc,
       ...(props.quotedMessage ? composerQuoteRef(props.quotedMessage) : {}),
+      ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     });
   }
+  pendingAttachments.value = [];
   editor.value.commands.clearContent();
   saveDraftDebounced.cancel();
   if (props.workspaceId != null && props.channelId != null) {
@@ -532,8 +628,22 @@ function formatTime(seconds: number) {
         <Icon name="io-close" class="size-4" />
       </Button>
     </div>
-    <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-0.5 font-lato">
+    <div class="min-h-0 flex-auto overflow-y-auto overflow-x-hidden py-0.5 font-lato">
       <EditorContent v-if="editor" :editor="editor" />
+    </div>
+    <input ref="stagingFileInputRef" type="file" class="sr-only" multiple @change="onStagingFilesSelected" />
+    <div
+      v-if="pendingAttachments.length || scheduleAttachmentHint"
+      class="shrink-0 border-t border-zinc-200/80 pt-2"
+      @click.stop
+    >
+      <ChannelAttachmentStrip
+        :files="pendingAttachments"
+        :disabled="!!activeSchedule"
+        :removable="true"
+        :hint="scheduleAttachmentHint"
+        @remove="removeStagingAttachment"
+      />
     </div>
 
     <div class="flex:row-md flex:center-y mt-2 shrink-0 text-secondary-foreground">
@@ -674,6 +784,17 @@ function formatTime(seconds: number) {
       </Button>
 
       <template v-if="!editingMessage && channelId != null">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          title="Attach files"
+          class="shrink-0 mr-0.5"
+          aria-label="Attach files"
+          @click.stop="openStagingFilePicker()"
+        >
+          <Paperclip class="size-5" />
+        </Button>
         <ButtonGroup>
           <Button
             type="button"

@@ -9,7 +9,7 @@ import { last } from "lodash";
 import { computed, nextTick, ref, watch } from "vue";
 import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
-import MessageWriter from "./MessageWriter.vue";
+import MessageComposer from "./MessageComposer.vue";
 
 defineProps<{ meId: number }>();
 
@@ -26,6 +26,13 @@ const { workspace } = useWorkspace();
 /** In-thread composer only quotes other replies (not the thread root). */
 const quotedMessage = ref<IReply | null>(null);
 const editingMessage = ref<IMessage | null>(null);
+
+watch([replies, quotedMessage], ([list, q]) => {
+  if (!q) return;
+  if (!list.some((r) => r.id === q.id)) {
+    quotedMessage.value = null;
+  }
+});
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 const prevReplyCount = ref(-1);
 
@@ -92,11 +99,13 @@ async function onSendReply(payload: {
   contentRich: any;
   quotedMessageId?: number;
   quotedReplyId?: number;
+  attachmentIds?: number[];
 }) {
   await sendReply({
     content: payload.content,
     contentRich: payload.contentRich,
     quotedReplyId: payload.quotedReplyId,
+    attachmentIds: payload.attachmentIds,
   });
   scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
@@ -185,7 +194,7 @@ function onEditTarget(m: IMessage | IReply) {
       </div>
     </ScrollArea>
 
-    <MessageWriter
+    <MessageComposer
       :channel-id="channel?.id"
       :workspace-id="workspace?.id"
       :mentionables="channel?.peers ?? []"

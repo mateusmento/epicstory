@@ -1,5 +1,7 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsInt,
   IsNotEmpty,
@@ -13,11 +15,13 @@ import {
   MessageRepository,
 } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
-import { SendNotification } from 'src/notifications/features/send-notification.command';
+import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
+import { dispatchNotificationsForNewChannelMessage } from '../utils/dispatch-channel-message-notifications';
+import { Transactional } from 'typeorm-transactional';
 
 export class SendMessage {
   channelId: number;
@@ -41,6 +45,14 @@ export class SendMessage {
   @IsBoolean()
   markAsScheduled?: boolean;
 
+  /** Staged uploads to bind to this message after send. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  attachmentIds?: number[];
+
   constructor(data: Partial<SendMessage>) {
     patch(this, data);
   }
@@ -54,8 +66,10 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     private messageRepo: MessageRepository,
     private messageService: MessageService,
     private commandBus: CommandBus,
+    private attachmentService: AttachmentService,
   ) {}
 
+  @Transactional()
   async execute({
     channelId,
     senderId,
@@ -63,6 +77,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     contentRich,
     quotedMessageId,
     markAsScheduled,
+    attachmentIds,
   }: SendMessage) {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
@@ -81,7 +96,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     }
 
     const peerIds = channel.peers.map((peer) => peer.id);
-    if (!peerIds.includes(senderId)) {
+    if (channel.type !== 'workspace_open' && !peerIds.includes(senderId)) {
       throw new SenderIsNotChannelMember();
     }
 
@@ -94,42 +109,25 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       { isScheduled: markAsScheduled === true },
     );
 
-    const mentionIds = message.mentionedUsers
-      .filter((user) => user.id !== senderId)
-      .map((user) => user.id);
+    await this.attachmentService.linkStagingToMessage({
+      workspaceId: channel.workspaceId,
+      channelId: channel.id,
+      uploadedById: senderId,
+      messageId: message.id,
+      attachmentIds,
+    });
 
-    if (channel.type === 'direct' || channel.type === 'multi-direct') {
-      await this.commandBus.execute(
-        new SendNotification({
-          userIds: peerIds.filter(
-            (id) => ![senderId, ...mentionIds].includes(id),
-          ),
-          type: 'direct_message',
-          workspaceId: channel.workspaceId,
-          payload: {
-            message,
-            channel,
-            sender: message.sender,
-          },
-        }),
-      );
-    }
+    message.attachments = await this.attachmentService.listAnchoredForMessage(
+      channel.workspaceId,
+      message.id,
+    );
 
-    if (mentionIds.length > 0) {
-      await this.commandBus.execute(
-        new SendNotification({
-          type: 'mention',
-          userIds: mentionIds,
-          workspaceId: channel.workspaceId,
-          payload: {
-            channel,
-            message,
-            sender: message.sender,
-            mentionedUsers: message.mentionedUsers,
-          },
-        }),
-      );
-    }
+    await dispatchNotificationsForNewChannelMessage(
+      this.commandBus,
+      channel,
+      message,
+      senderId,
+    );
 
     return message;
   }

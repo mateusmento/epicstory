@@ -5,6 +5,7 @@ import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
 import {
+  IssueActivityRepository,
   IssueRepository,
   LabelRepository,
 } from 'src/project/infrastructure/repositories';
@@ -31,6 +32,7 @@ export class RemoveLabelCommand implements ICommandHandler<RemoveLabel> {
     private issueRepo: IssueRepository,
     private labelRepo: LabelRepository,
     private workspaceRepo: WorkspaceRepository,
+    private issueActivities: IssueActivityRepository,
   ) {}
 
   async execute({ issuer, issueId, labelId }: RemoveLabel) {
@@ -49,6 +51,17 @@ export class RemoveLabelCommand implements ICommandHandler<RemoveLabel> {
       `DELETE FROM "${PROJECT_SCHEMA}"."issue_label"
        WHERE "issue_id" = $1 AND "label_id" = $2`,
       [issueId, labelId],
+    );
+
+    await this.issueActivities.save(
+      this.issueActivities.create({
+        issueId,
+        actorId: issuer.id,
+        type: 'labels_changed',
+        messageId: null,
+        attachmentId: null,
+        payload: { addedLabelIds: [], removedLabelIds: [labelId] },
+      }),
     );
 
     const updated = await this.issueRepo.findOne({

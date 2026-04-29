@@ -72,6 +72,7 @@ export class ScheduleChannelMessageCommand
     const peerIds = channel.peers.map((p) => p.id);
     if (!peerIds.includes(cmd.senderId)) throw new SenderIsNotChannelMember();
 
+    /** Rich text only; staged file attachments are not supported (see app MessageComposer guard). */
     const payload = new ScheduledMessagePayload({
       channelId: cmd.channelId,
       senderId: cmd.senderId,

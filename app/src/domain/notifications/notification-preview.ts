@@ -1,5 +1,9 @@
 import { resolveCalendarReminderStartsInLabel } from "@/domain/notifications/event-starts-in";
-import type { Notification } from "@/domain/notifications/types/notification.types";
+import type {
+  MessageReactionNotificationPayload,
+  Notification,
+  ReplyReactionNotificationPayload,
+} from "@/domain/notifications/types/notification.types";
 
 function formatCalendarOccurrenceSubtitle(occurrenceAt: unknown): string | undefined {
   if (occurrenceAt == null || occurrenceAt === "") return undefined;
@@ -9,6 +13,14 @@ function formatCalendarOccurrenceSubtitle(occurrenceAt: unknown): string | undef
 }
 
 export function getNotificationToastTitle(notification: Notification): string {
+  if (notification.type === "message_reaction") {
+    const p = notification.payload as MessageReactionNotificationPayload;
+    return `${p.reactor?.name ?? "Someone"} reacted ${p.emoji}`;
+  }
+  if (notification.type === "reply_reaction") {
+    const p = notification.payload as ReplyReactionNotificationPayload;
+    return `${p.reactor?.name ?? "Someone"} reacted to your reply ${p.emoji}`;
+  }
   const p = notification.payload;
   switch (p.type) {
     case "mention":
@@ -37,6 +49,13 @@ export function getNotificationToastTitle(notification: Notification): string {
 }
 
 export function getNotificationToastDescription(notification: Notification): string | undefined {
+  if (notification.type === "message_reaction" || notification.type === "reply_reaction") {
+    const p = notification.payload as MessageReactionNotificationPayload | ReplyReactionNotificationPayload;
+    const excerpt = p.messageExcerpt?.trim();
+    if (excerpt) return `${p.emoji ?? ""} ${excerpt}`.trim();
+    const place = p.channelName?.trim();
+    return place ? `${p.emoji ?? ""} · ${place}`.trim() : undefined;
+  }
   const p = notification.payload;
 
   switch (p.type) {

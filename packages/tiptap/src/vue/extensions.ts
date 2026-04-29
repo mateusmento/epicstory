@@ -65,15 +65,58 @@ export function tableExtensions(options?: {
   ];
 }
 
+/** @deprecated Prefer returning `{ src, attachmentId? }` so send can pass `attachmentIds`. */
+export type MediaUploadResult =
+  | string
+  | { src: string; attachmentId?: number | null };
+
 export type MediaExtensionsOptions = {
-  /** Returns a public URL for the uploaded file (e.g. S3 `Location`). */
-  uploadFile: (file: File) => Promise<string>;
+  /**
+   * Returns a public URL (legacy string) or `{ src, attachmentId }` for staged channel/issue uploads.
+   */
+  uploadFile: (file: File) => Promise<MediaUploadResult>;
   /** When set, only these MIME types are accepted for paste/drop. */
   allowedMimeTypes?: string[];
 };
 
+async function resolveMediaUpload(
+  uploadFile: (file: File) => Promise<MediaUploadResult>,
+  file: File,
+): Promise<{ src: string; attachmentId?: number }> {
+  const r = await uploadFile(file);
+  if (typeof r === "string") {
+    return { src: r };
+  }
+  const out: { src: string; attachmentId?: number } = { src: r.src };
+  if (typeof r.attachmentId === "number" && Number.isFinite(r.attachmentId)) {
+    out.attachmentId = r.attachmentId;
+  }
+  return out;
+}
+
 function imageExtension(): AnyExtension {
-  return Image.configure({
+  return Image.extend({
+    addAttributes() {
+      return {
+        ...(this.parent?.() as Record<string, unknown>),
+        attachmentId: {
+          default: null as number | null,
+          parseHTML: (element: HTMLElement) => {
+            const raw = element.getAttribute("data-attachment-id");
+            if (raw == null || raw === "") return null;
+            const n = parseInt(raw, 10);
+            return Number.isFinite(n) ? n : null;
+          },
+          renderHTML: (attributes: { attachmentId?: number | null }) => {
+            if (attributes.attachmentId == null) return {};
+            return {
+              "data-attachment-id": String(attributes.attachmentId),
+            };
+          },
+        },
+      };
+    },
+  }).configure({
     allowBase64: false,
     HTMLAttributes: { class: "max-w-full h-auto rounded-md" },
   });
@@ -90,19 +133,27 @@ export function mediaExtensions(
       onPaste: (editor, files) => {
         (async () => {
           for (const file of files) {
-            const src = await uploadFile(file);
-            editor.chain().focus().setImage({ src }).run();
+            const { src, attachmentId } = await resolveMediaUpload(uploadFile, file);
+            const attrs =
+              attachmentId != null ? { src, attachmentId } : { src };
+            editor.chain().focus().setImage(attrs as never).run();
           }
         })();
       },
       onDrop: (editor, files, pos) => {
         (async () => {
           for (const file of files) {
-            const src = await uploadFile(file);
+            const { src, attachmentId } = await resolveMediaUpload(uploadFile, file);
             editor
               .chain()
               .focus()
-              .insertContentAt(pos, { type: "image", attrs: { src } })
+              .insertContentAt(pos, {
+                type: "image",
+                attrs:
+                  attachmentId != null
+                    ? { src, attachmentId }
+                    : { src },
+              } as never)
               .run();
           }
         })();

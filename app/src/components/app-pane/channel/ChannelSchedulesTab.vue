@@ -56,7 +56,7 @@ async function onEditSaved() {
 
 async function remove(m: IScheduledMessage) {
   if (props.channelId == null) return;
-  if (m.senderId !== user?.id) return;
+  if (m.senderId !== user.value?.id) return;
   if (!window.confirm("Delete this scheduled message?")) return;
   try {
     await channelApi.deleteScheduledMessage(props.channelId, m.id);

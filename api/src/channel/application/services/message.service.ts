@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { uniq } from 'lodash';
 import { User, UserRepository } from 'src/auth';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Channel, Message, MessageReaction } from 'src/channel/domain';
 import {
   MessageReply,
@@ -15,12 +16,15 @@ import {
   MessageRepository,
 } from 'src/channel/infrastructure';
 import { create, groupBy, mapBy, patch } from 'src/core/objects';
+import type { CreatedAttachmentDto } from 'src/workspace/application/services/attachment.service';
+import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { MessageNotFound } from '../exceptions';
 import {
   extractMentionIdsFromDoc,
   normalizeTiptapDoc,
+  stripImageNodesFromDoc,
   tiptapToPlainText,
 } from '@epicstory/tiptap';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
@@ -46,6 +50,9 @@ export class MessageDto extends Message {
   /** Hydrated preview of `quotedMessageId` for clients. */
   quotedMessage?: QuotedMessagePreview;
 
+  /** Linked files (not embedded in `contentRich`; shown below the body in the client). */
+  attachments?: CreatedAttachmentDto[];
+
   repliesCount: number;
   repliers: { user: User; repliesCount: number }[];
   reactions: MessageReactionsGroup[];
@@ -68,7 +75,32 @@ export class MessageService {
     private messageReplyReactionRepo: MessageReplyReactionRepository,
     private channelRepo: ChannelRepository,
     private userRepo: UserRepository,
+    private workspaceRepo: WorkspaceRepository,
+    private attachmentService: AttachmentService,
   ) {}
+
+  /**
+   * Mention map for display + validation: peers for normal channels,
+   * workspace membership for `workspace_open`.
+   */
+  async resolveMentionUsersMap(
+    channel: Channel | null | undefined,
+    candidateUserIds: number[],
+  ): Promise<Map<number, User>> {
+    const ids = uniq(candidateUserIds.filter(Boolean));
+    if (!channel || ids.length === 0) {
+      return new Map();
+    }
+    if (channel.type === 'workspace_open') {
+      const workspaceId = channel.workspaceId;
+      const members = await this.workspaceRepo.findMembers(
+        { workspaceId, userIds: ids },
+        { user: true },
+      );
+      return new Map<number, User>(members.map((u) => [u.userId, u.user]));
+    }
+    return new Map((channel.peers ?? []).map((u) => [u.id, u]));
+  }
 
   async findMessages(channelId: number, senderId: number) {
     const channel = await this.channelRepo.findOne({
@@ -81,6 +113,17 @@ export class MessageService {
       order: { sentAt: 'asc' },
     });
 
+    return this.enrichMessagesForPreview(messages, channel, senderId);
+  }
+
+  /**
+   * Channel message list enrichment (quotes, reactions, replies meta, mentions).
+   */
+  private async enrichMessagesForPreview(
+    messages: Message[],
+    channel: Channel | null | undefined,
+    senderId: number,
+  ): Promise<MessageDto[]> {
     if (messages.length === 0) return [];
 
     const messageIds = messages.map((m) => m.id);
@@ -101,7 +144,17 @@ export class MessageService {
     const repliesCountMap = mapBy(repliesCount, 'messageId');
     const repliersMap = groupBy(repliers, 'messageId');
 
-    const peerUsersMap = mapBy(channel?.peers ?? [], 'id');
+    const allMentionIds = uniq(
+      messages.flatMap((message) =>
+        message.contentRich
+          ? extractMentionIdsFromDoc(message.contentRich)
+          : extractMentionIds(message.content),
+      ),
+    );
+    const peerUsersMap = await this.resolveMentionUsersMap(
+      channel ?? undefined,
+      allMentionIds,
+    );
 
     const quoteIds = uniq(
       messages
@@ -117,9 +170,16 @@ export class MessageService {
         : [];
     const quotedById = mapBy(quotedRows, 'id');
 
+    const attachmentsByMessageId = channel
+      ? await this.attachmentService.listAnchoredForMessages(
+          channel.workspaceId,
+          messageIds,
+        )
+      : new Map<number, CreatedAttachmentDto[]>();
+
     return messages.map((message) => {
-      const repliesCount = repliesCountMap.get(message.id)?.repliesCount ?? 0;
-      const repliers = mapRepliers(repliersMap[message.id] ?? [], usersMap);
+      const rc = repliesCountMap.get(message.id)?.repliesCount ?? 0;
+      const reps = mapRepliers(repliersMap[message.id] ?? [], usersMap);
       const reactions = mapReactions(message.allReactions, senderId, usersMap);
       const displayContent = renderMentions(message.content, peerUsersMap);
       const mentionIds = message.contentRich
@@ -135,16 +195,153 @@ export class MessageService {
 
       return new MessageDto({
         ...message,
-        repliesCount,
-        repliers,
+        repliesCount: rc,
+        repliers: reps,
         reactions,
         displayContent,
         mentionedUsers,
         quotedMessage: this.buildQuotedPreview(quotedSrc, peerUsersMap),
+        attachments: attachmentsByMessageId.get(message.id) ?? [],
       });
     });
   }
 
+  /**
+   * Load and enrich selected parent messages scoped to `channelId` (same DTO shape as list).
+   */
+  async findMessagesByIdsForChannel(
+    channelId: number,
+    messageIds: number[],
+    senderId: number,
+  ): Promise<Map<number, MessageDto>> {
+    const ids = uniq(messageIds.filter(Boolean));
+    if (ids.length === 0) {
+      return new Map();
+    }
+    const channel = await this.channelRepo.findOne({
+      where: { id: channelId },
+      relations: { peers: true },
+    });
+    const messages = await this.messageRepo.find({
+      where: { channelId, id: In(ids) },
+      relations: { sender: true, allReactions: true },
+      order: { sentAt: 'asc' },
+    });
+    const dtos = await this.enrichMessagesForPreview(
+      messages,
+      channel,
+      senderId,
+    );
+    return mapBy(dtos, 'id');
+  }
+
+  /** Thread preview replies (already ordered per thread), with same presentation as {@link findReplies}. */
+  async enrichRepliesForPreview(
+    replies: MessageReply[],
+    channel: Channel | null | undefined,
+    senderId: number,
+  ): Promise<void> {
+    if (replies.length === 0) return;
+    const mentionIds = uniq(
+      replies.flatMap((r) =>
+        r.contentRich
+          ? extractMentionIdsFromDoc(r.contentRich)
+          : extractMentionIds(r.content),
+      ),
+    );
+    const peerUsersMap = await this.resolveMentionUsersMap(
+      channel ?? undefined,
+      mentionIds,
+    );
+    const replyQuoteIds = uniq(
+      replies
+        .map((r) => r.quotedReplyId)
+        .filter((id): id is number => id != null),
+    );
+    const replyQuotedRows =
+      replyQuoteIds.length > 0
+        ? await this.replyRepo.find({
+            where: { id: In(replyQuoteIds) },
+            relations: { sender: true },
+          })
+        : [];
+    const replyQuotedById = mapBy(replyQuotedRows, 'id');
+
+    const replyIds = replies.map((r) => r.id);
+    const attByReplyId =
+      channel?.workspaceId != null
+        ? await this.attachmentService.listAnchoredForReplies(
+            channel.workspaceId,
+            replyIds,
+          )
+        : new Map<number, CreatedAttachmentDto[]>();
+
+    for (const reply of replies) {
+      reply.setReactions(senderId);
+      const mIds = reply.contentRich
+        ? extractMentionIdsFromDoc(reply.contentRich)
+        : extractMentionIds(reply.content);
+      (reply as any).mentionedUsers = mIds
+        .map((id) => peerUsersMap.get(id))
+        .filter(Boolean);
+      (reply as any).displayContent = renderMentions(
+        reply.content,
+        peerUsersMap,
+      );
+      const qSrc = reply.quotedReplyId
+        ? replyQuotedById.get(reply.quotedReplyId)
+        : undefined;
+      (reply as any).quotedMessage = this.buildQuotedPreviewFromReply(
+        qSrc,
+        peerUsersMap,
+      );
+      (reply as any).attachments = attByReplyId.get(reply.id) ?? [];
+    }
+  }
+
+  /**
+   * Last K replies per parent for issue feed previews.
+   */
+  async findReplyPreviewsForMessageIds(
+    messageIds: number[],
+    previewLimit: number,
+    senderId: number,
+  ): Promise<{
+    repliesByParentId: Map<number, MessageReply[]>;
+    channel: Channel | null;
+  }> {
+    const parentIds = uniq(messageIds);
+    if (!parentIds.length) {
+      return { repliesByParentId: new Map(), channel: null };
+    }
+
+    const anyMsg = await this.messageRepo.findOne({
+      where: { id: parentIds[0] },
+      relations: { channel: { peers: true } },
+    });
+
+    const channel = anyMsg?.channel ?? null;
+
+    const replies =
+      previewLimit <= 0
+        ? []
+        : await this.replyRepo.findLatestRepliesForParents(
+            parentIds,
+            previewLimit,
+          );
+
+    await this.enrichRepliesForPreview(replies, channel, senderId);
+
+    const repliesByParentId = groupBy(replies, 'messageId');
+    return {
+      repliesByParentId: new Map(
+        parentIds.map((id) => [id, repliesByParentId[id] ?? []]),
+      ),
+      channel,
+    };
+  }
+
+  @Transactional()
   async createMessage(
     channel: Channel,
     senderId: number,
@@ -161,7 +358,7 @@ export class MessageService {
     );
 
     const normalizedRich = contentRich
-      ? normalizeTiptapDoc(contentRich)
+      ? (stripImageNodesFromDoc(normalizeTiptapDoc(contentRich)) as object)
       : undefined;
     const plainContent = normalizedRich
       ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
@@ -188,11 +385,11 @@ export class MessageService {
       },
     });
 
-    const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
-    const displayContent = renderMentions(plainContent, peerUsersMap);
     const mentionIds = normalizedRich
       ? extractMentionIdsFromDoc(normalizedRich)
       : extractMentionIds(plainContent);
+    const peerUsersMap = await this.resolveMentionUsersMap(channel, mentionIds);
+    const displayContent = renderMentions(plainContent, peerUsersMap);
     const mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
@@ -211,6 +408,7 @@ export class MessageService {
       mentionedUsers,
       displayContent,
       quotedMessage: quotedPreview,
+      attachments: [],
     });
   }
 
@@ -298,7 +496,7 @@ export class MessageService {
     viewerId: number,
   ) {
     const normalizedRich = contentRich
-      ? normalizeTiptapDoc(contentRich)
+      ? (stripImageNodesFromDoc(normalizeTiptapDoc(contentRich)) as object)
       : undefined;
     const plainContent = normalizedRich
       ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
@@ -319,11 +517,11 @@ export class MessageService {
     });
     if (!message) throw new MessageNotFound();
 
-    const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
-    const displayContent = renderMentions(plainContent, peerUsersMap);
     const mentionIds = normalizedRich
       ? extractMentionIdsFromDoc(normalizedRich)
       : extractMentionIds(plainContent);
+    const peerUsersMap = await this.resolveMentionUsersMap(channel, mentionIds);
+    const displayContent = renderMentions(plainContent, peerUsersMap);
     const mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
@@ -345,6 +543,11 @@ export class MessageService {
     const repliers = mapRepliers(repliersMap[messageId] ?? [], usersMap);
     const reactions = mapReactions(message.allReactions, viewerId, usersMap);
 
+    const attachments = await this.attachmentService.listAnchoredForMessage(
+      channel.workspaceId,
+      messageId,
+    );
+
     return new MessageDto({
       ...message,
       repliesCount,
@@ -352,6 +555,7 @@ export class MessageService {
       reactions,
       mentionedUsers,
       displayContent,
+      attachments,
     });
   }
 
@@ -360,9 +564,6 @@ export class MessageService {
       where: { id: messageId },
       relations: { channel: { peers: true } },
     });
-    const peerUsersMap = new Map(
-      (message?.channel?.peers ?? []).map((u) => [u.id, u]),
-    );
 
     const replies = await this.replyRepo.find({
       where: { messageId },
@@ -370,41 +571,11 @@ export class MessageService {
       order: { sentAt: 'asc' },
     });
 
-    const replyQuoteIds = uniq(
-      replies
-        .map((r) => r.quotedReplyId)
-        .filter((id): id is number => id != null),
+    await this.enrichRepliesForPreview(
+      replies,
+      message?.channel ?? null,
+      senderId,
     );
-    const replyQuotedRows =
-      replyQuoteIds.length > 0
-        ? await this.replyRepo.find({
-            where: { id: In(replyQuoteIds) },
-            relations: { sender: true },
-          })
-        : [];
-    const replyQuotedById = mapBy(replyQuotedRows, 'id');
-
-    for (const reply of replies) {
-      reply.setReactions(senderId);
-      const mentionIds = reply.contentRich
-        ? extractMentionIdsFromDoc(reply.contentRich)
-        : extractMentionIds(reply.content);
-      (reply as any).mentionedUsers = mentionIds
-        .map((id) => peerUsersMap.get(id))
-        .filter(Boolean);
-      (reply as any).displayContent = renderMentions(
-        reply.content,
-        peerUsersMap,
-      );
-      const qSrc = reply.quotedReplyId
-        ? replyQuotedById.get(reply.quotedReplyId)
-        : undefined;
-      (reply as any).quotedMessage = this.buildQuotedPreviewFromReply(
-        qSrc,
-        peerUsersMap,
-      );
-    }
-
     return replies;
   }
 
@@ -424,6 +595,91 @@ export class MessageService {
     });
 
     return mapReactions(reactions, senderId);
+  }
+
+  /**
+   * Plain label for notifications — avoids empty names on DMs / unnamed channels
+   * and never uses raw numeric channel ids in user-facing copy.
+   */
+  getChannelLabelForNotification(
+    channel: Channel,
+    recipientUserId?: number | null,
+  ): string {
+    const name = channel.name?.trim();
+    if (name) return name;
+    const peers = channel.peers ?? [];
+    if (channel.type === 'direct' || channel.type === 'multi-direct') {
+      const labels = peers
+        .filter((p) => recipientUserId == null || p.id !== recipientUserId)
+        .map((p) => p.name)
+        .filter(Boolean);
+      if (labels.length) return labels.join(', ');
+      if (peers.length)
+        return peers
+          .map((p) => p.name)
+          .filter(Boolean)
+          .join(', ');
+    }
+    if (channel.type === 'meeting') return 'Meeting';
+    if (channel.type === 'workspace_open') return 'Team';
+    return 'Chat';
+  }
+
+  private plainTextBodyFromStoredContent(
+    content: string,
+    contentRich?: any | null,
+  ): string {
+    if (contentRich) {
+      const normalized = normalizeTiptapDoc(contentRich);
+      const stripped = stripImageNodesFromDoc(normalized) as object;
+      return tiptapToPlainText(stripped, { stripFormatting: true });
+    }
+    return content ?? '';
+  }
+
+  private static truncateNotificationExcerpt(text: string, max = 220): string {
+    const t = text.replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    if (t.length <= max) return t;
+    return `${t.slice(0, max - 1)}…`;
+  }
+
+  async buildMessageExcerptForNotification(
+    message: Message,
+    channel: Channel | null | undefined,
+  ): Promise<string> {
+    const plain = this.plainTextBodyFromStoredContent(
+      message.content,
+      message.contentRich,
+    );
+    const mentionIds = message.contentRich
+      ? extractMentionIdsFromDoc(message.contentRich)
+      : extractMentionIds(plain);
+    const peerUsersMap = await this.resolveMentionUsersMap(
+      channel ?? undefined,
+      mentionIds,
+    );
+    const display = renderMentions(plain, peerUsersMap);
+    return MessageService.truncateNotificationExcerpt(display);
+  }
+
+  async buildReplyExcerptForNotification(
+    reply: MessageReply,
+    channel: Channel | null | undefined,
+  ): Promise<string> {
+    const plain = this.plainTextBodyFromStoredContent(
+      reply.content,
+      reply.contentRich,
+    );
+    const mentionIds = reply.contentRich
+      ? extractMentionIdsFromDoc(reply.contentRich)
+      : extractMentionIds(plain);
+    const peerUsersMap = await this.resolveMentionUsersMap(
+      channel ?? undefined,
+      mentionIds,
+    );
+    const display = renderMentions(plain, peerUsersMap);
+    return MessageService.truncateNotificationExcerpt(display);
   }
 
   @Transactional()

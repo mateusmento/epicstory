@@ -1,3 +1,4 @@
+export { collectImageAttachmentIdsFromDoc } from "../doc/collect-image-attachment-ids";
 export {
   EPIC_STORY_COMPOSER_EDITOR_CLASS,
   EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,

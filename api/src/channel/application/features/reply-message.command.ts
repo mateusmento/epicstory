@@ -1,5 +1,7 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -11,16 +13,20 @@ import {
   MessageReplyRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
+import { uniq } from 'lodash';
 import { patch } from 'src/core/objects';
+import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
 import {
   extractMentionIdsFromDoc,
   normalizeTiptapDoc,
+  stripImageNodesFromDoc,
   tiptapToPlainText,
 } from '@epicstory/tiptap';
 import { extractMentionIds, renderMentions } from '../utils/mentions';
+import { Transactional } from 'typeorm-transactional';
 
 export class ReplyMessage {
   messageId: number;
@@ -39,6 +45,19 @@ export class ReplyMessage {
   @Min(1)
   quotedReplyId?: number;
 
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  attachmentIds?: number[];
+
+  /** When replying in an issue comment thread, staged rows may be tagged with this issue. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  matchedIssueId?: number;
+
   constructor(data: Partial<ReplyMessage> = {}) {
     patch(this, data);
   }
@@ -51,14 +70,18 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     private messageRepo: MessageRepository,
     private messageService: MessageService,
     private commandBus: CommandBus,
+    private attachmentService: AttachmentService,
   ) {}
 
+  @Transactional()
   async execute({
     senderId,
     content,
     contentRich,
     messageId,
     quotedReplyId,
+    attachmentIds,
+    matchedIssueId,
   }: ReplyMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
@@ -67,12 +90,15 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     if (!message) throw new MessageNotFound();
 
     const peerIds = message.channel.peers.map((peer) => peer.id);
-    if (!peerIds.includes(senderId)) {
+    if (
+      message.channel.type !== 'workspace_open' &&
+      !peerIds.includes(senderId)
+    ) {
       throw new SenderIsNotChannelMember();
     }
 
     const normalizedRich = contentRich
-      ? normalizeTiptapDoc(contentRich)
+      ? (stripImageNodesFromDoc(normalizeTiptapDoc(contentRich)) as object)
       : undefined;
     const plainContent = normalizedRich
       ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
@@ -94,6 +120,15 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       quotedReplyId: resolvedQuote,
     });
 
+    await this.attachmentService.linkStagingToReply({
+      workspaceId: message.channel.workspaceId,
+      channelId: message.channelId,
+      uploadedById: senderId,
+      messageReplyId: replyId,
+      attachmentIds,
+      ...(matchedIssueId != null ? { matchedIssueId } : {}),
+    });
+
     const reply = await this.messageReplyRepo.findOne({
       where: { id: replyId },
       relations: { sender: true, allReactions: { user: true } },
@@ -101,11 +136,14 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
 
     reply.setReactions(senderId);
 
-    const peerUsersMap = new Map(message.channel.peers.map((u) => [u.id, u]));
-    const mentionIds = normalizedRich
+    const extractedMentionIds = normalizedRich
       ? extractMentionIdsFromDoc(normalizedRich)
       : extractMentionIds(plainContent);
-    const finalMentionIds = mentionIds.filter(
+    const peerUsersMap = await this.messageService.resolveMentionUsersMap(
+      message.channel,
+      uniq(extractedMentionIds),
+    );
+    const finalMentionIds = extractedMentionIds.filter(
       (id) => id !== senderId && peerUsersMap.has(id),
     );
     const mentionedUsers = finalMentionIds
@@ -162,6 +200,11 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
         }),
       );
     }
+
+    (reply as any).attachments = await this.attachmentService.listAnchoredForReply(
+      message.channel.workspaceId,
+      reply.id,
+    );
 
     return reply;
   }

@@ -10,6 +10,20 @@ const props = defineProps<{
   createdAt: string;
 }>();
 
+const messageSnippet = computed(() => {
+  const m = props.payload.message;
+  if (m != null && typeof m === "object" && "displayContent" in m) {
+    const d = (m as { displayContent?: string }).displayContent;
+    if (typeof d === "string") {
+      return d;
+    }
+  }
+  if (typeof m === "string") {
+    return m;
+  }
+  return "";
+});
+
 const channelName = computed(() => {
   if (props.payload.message && props.payload.reply) {
     return "thread";
@@ -49,7 +63,7 @@ function formatTime(date: string) {
       <div class="flex:col flex-1 min-w-0">
         <div class="text-foreground font-lato">{{ payload.sender.name }}</div>
         <div class="w-full min-w-0 text-sm text-secondary-foreground font-lato truncate">
-          {{ (payload.message as { displayContent?: string })?.displayContent ?? payload.message }}
+          {{ messageSnippet }}
         </div>
       </div>
     </div>

@@ -47,10 +47,14 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
 
     if (teamId) query = query.andWhere('c.teamId = :teamId', { teamId });
 
-    query = query.orderBy(
-      'CASE WHEN msg.id is null THEN c.createdAt ELSE msg.sentAt END',
-      'DESC',
-    );
+    query = query
+      .andWhere('c.type <> :workspaceOpenType', {
+        workspaceOpenType: 'workspace_open',
+      })
+      .orderBy(
+        'CASE WHEN msg.id is null THEN c.createdAt ELSE msg.sentAt END',
+        'DESC',
+      );
 
     const channels = await query.getMany();
     enrichChannelsForListView(channels, issuer.id);

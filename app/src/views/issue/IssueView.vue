@@ -11,6 +11,9 @@ import { useDependency } from "@/core/dependency-injection";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import SubIssuesSection from "./SubIssuesSection.vue";
+import IssueActivitySection from "./IssueActivitySection.vue";
+import IssueAttachmentsStrip from "@/components/issue/IssueAttachmentsStrip.vue";
+import { useAuth } from "@/domain/auth";
 import { useIssue } from "@/domain/issues/composables/issue";
 import { ProjectApi, type Project } from "@/domain/project";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
@@ -23,6 +26,8 @@ const props = defineProps<{
   projectId: string;
   issueId: string;
 }>();
+
+const { user } = useAuth();
 
 const { issue, fetchIssue, updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useIssue();
 
@@ -127,7 +132,7 @@ watch(
 </script>
 
 <template>
-  <div class="flex:col-lg mx-auto py-8 px-6 w-full h-full max-w-5xl">
+  <div class="flex:col-lg mx-auto max-w-5xl w-full px-6 py-8">
     <div class="flex:row-xl flex:center-y">
       <div class="flex:col-sm">
         <div class="text-xs text-secondary-foreground">
@@ -149,9 +154,9 @@ watch(
 
     <div v-if="saveError" class="text-sm text-red-600">{{ saveError }}</div>
 
-    <div class="grid grid-cols-[1fr_280px] gap-6 flex-1 min-h-0">
+    <div class="grid grid-cols-[1fr_280px] items-start gap-6">
       <!-- Main -->
-      <div class="flex:col-lg min-h-0">
+      <div class="flex:col-lg">
         <div class="flex:col-sm">
           <div v-if="!isEditingTitle" class="select-none">
             <div
@@ -195,10 +200,20 @@ watch(
           :disabled="!issue"
           @changed="refreshIssue"
         />
+
+        <IssueAttachmentsStrip v-if="issue" :issue-id="issue.id" class="mt-8" />
+
+        <IssueActivitySection
+          v-if="issue && user"
+          :issue-id="issue.id"
+          :comment-channel-id="issue.commentChannelId ?? null"
+          :workspace-id="issue.workspaceId"
+          :me-id="user.id"
+        />
       </div>
 
       <!-- Sidebar -->
-      <div class="flex:col-xl min-h-0">
+      <div class="flex:col-xl">
         <div class="flex:col-xl p-4 border rounded-xl bg-white shadow-sm">
           <div class="text-sm font-medium text-foreground">Details</div>
 
@@ -320,6 +335,13 @@ watch(
               />
             </div>
           </div>
+
+          <IssueAttachmentsStrip
+            v-if="issue"
+            :issue-id="issue.id"
+            compact
+            class="mt-2 border-t border-border pt-4"
+          />
         </div>
       </div>
     </div>

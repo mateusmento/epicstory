@@ -77,6 +77,31 @@ export type CalendarEventReminderNotificationPayload = {
   eventPayload?: Record<string, unknown>;
 };
 
+/** Payload for inbox / websocket when someone reacts to your channel message. */
+export type MessageReactionNotificationPayload = {
+  type?: "message_reaction";
+  messageId: number;
+  channelId: number;
+  emoji: string;
+  reactorUserId: number;
+  channelName?: string;
+  reactor?: User;
+  /** Resolved plain excerpt (mentions expanded, truncated). */
+  messageExcerpt?: string;
+};
+
+/** Payload when someone reacts to your thread reply. */
+export type ReplyReactionNotificationPayload = {
+  type?: "reply_reaction";
+  replyId: number;
+  channelId: number;
+  emoji: string;
+  reactorUserId: number;
+  channelName?: string;
+  reactor?: User;
+  messageExcerpt?: string;
+};
+
 export type NotificationPayload =
   | MentionNotificationPayload
   | ReplyNotificationPayload
@@ -84,7 +109,9 @@ export type NotificationPayload =
   | IssueDueDateNotificationPayload
   | IssueAssignedNotificationPayload
   | CalendarMeetingReminderNotificationPayload
-  | CalendarEventReminderNotificationPayload;
+  | CalendarEventReminderNotificationPayload
+  | MessageReactionNotificationPayload
+  | ReplyReactionNotificationPayload;
 
 export type NotificationWithPayload =
   | {
@@ -114,6 +141,14 @@ export type NotificationWithPayload =
   | {
       type: "calendar_event_reminder";
       payload: CalendarEventReminderNotificationPayload;
+    }
+  | {
+      type: "message_reaction";
+      payload: MessageReactionNotificationPayload;
+    }
+  | {
+      type: "reply_reaction";
+      payload: ReplyReactionNotificationPayload;
     };
 
 export type Notification = NotificationWithPayload & {

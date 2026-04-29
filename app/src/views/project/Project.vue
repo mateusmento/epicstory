@@ -108,7 +108,7 @@ type GroupBy = keyof typeof GROUP_BY_OPTIONS;
 </script>
 
 <template>
-  <div class="w-full h-full flex:col">
+  <div class="flex:col h-full min-h-0 w-full">
     <div class="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-1.5 h-10">
       <Breadcrumb>
         <BreadcrumbList>

@@ -6,3 +6,5 @@ export {
 } from "./doc/plain-text";
 export { extractMentionIdsFromDoc } from "./doc/mentions-doc";
 export { messageBodyPlainText, mergeQuotedMessageIntoDoc } from "./doc/message";
+export { collectImageAttachmentIdsFromDoc } from "./doc/collect-image-attachment-ids";
+export { stripImageNodesFromDoc } from "./doc/strip-image-nodes";

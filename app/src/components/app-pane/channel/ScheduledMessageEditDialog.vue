@@ -57,7 +57,7 @@ const { user: authUser } = useAuth();
 const channelApi = useDependency(ChannelApi);
 const scheduleDialogOpen = ref(false);
 const scheduleOverride = ref<ResolvedSchedule | null>(null);
-const meId = computed(() => authUser?.id);
+const meId = computed(() => authUser.value?.id);
 const mentionContext = reactive<{ meId: number | undefined }>({ meId: undefined });
 watch(
   meId,

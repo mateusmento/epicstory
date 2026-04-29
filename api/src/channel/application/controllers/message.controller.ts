@@ -43,6 +43,7 @@ export class ChannelMessageController {
         content: command.content,
         contentRich: command.contentRich,
         quotedMessageId: command.quotedMessageId,
+        attachmentIds: command.attachmentIds,
       }),
     );
 

@@ -120,5 +120,5 @@ function dayLabel(dow: number) {
 }
 
 export function clearSchedule() {
-  // hook for future side effects; MessageWriter clears `activeSchedule` directly
+  // hook for future side effects; MessageComposer clears `activeSchedule` directly
 }

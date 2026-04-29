@@ -4,7 +4,10 @@ import { IsNumber } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
-import { IssueRepository } from 'src/project/infrastructure/repositories';
+import {
+  IssueActivityRepository,
+  IssueRepository,
+} from 'src/project/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
@@ -26,6 +29,7 @@ export class RemoveAssigneeCommand implements ICommandHandler<RemoveAssignee> {
   constructor(
     private issueRepo: IssueRepository,
     private workspaceRepo: WorkspaceRepository,
+    private issueActivities: IssueActivityRepository,
   ) {}
 
   async execute({ issuer, issueId, userId }: RemoveAssignee) {
@@ -38,6 +42,17 @@ export class RemoveAssigneeCommand implements ICommandHandler<RemoveAssignee> {
     await this.issueRepo.query(
       `DELETE FROM "${PROJECT_SCHEMA}"."issue_assignee" WHERE "issue_id" = $1 AND "user_id" = $2`,
       [issueId, userId],
+    );
+
+    await this.issueActivities.save(
+      this.issueActivities.create({
+        issueId,
+        actorId: issuer.id,
+        type: 'assignees_changed',
+        messageId: null,
+        attachmentId: null,
+        payload: { addedUserIds: [], removedUserIds: [userId] },
+      }),
     );
 
     const updated = await this.issueRepo.findOne({

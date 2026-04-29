@@ -11,10 +11,13 @@ import type {
   IssueAssignedNotificationPayload,
   CalendarMeetingReminderNotificationPayload,
   CalendarEventReminderNotificationPayload,
+  MessageReactionNotificationPayload,
+  ReplyReactionNotificationPayload,
 } from "@/domain/notifications/types/notification.types";
 import MentionNotification from "./notifications/MentionNotification.vue";
 import ReplyNotification from "./notifications/ReplyNotification.vue";
 import MessageNotification from "./notifications/MessageNotification.vue";
+import MessageReactionNotification from "./notifications/MessageReactionNotification.vue";
 import DueDateNotification from "./notifications/DueDateNotification.vue";
 import IssueAssignedNotification from "./notifications/IssueAssignedNotification.vue";
 import CalendarMeetingReminderNotification from "./notifications/CalendarMeetingReminderNotification.vue";
@@ -40,6 +43,16 @@ async function openNotification(notification: Notification) {
       | ReplyNotificationPayload;
     if (payload?.channel?.id && workspaceId) {
       router.push({ name: "channel", params: { workspaceId, channelId: String(payload.channel.id) } });
+    }
+    return;
+  }
+
+  if (notification.type === "message_reaction" || notification.type === "reply_reaction") {
+    const payload = notification.payload as
+      | MessageReactionNotificationPayload
+      | ReplyReactionNotificationPayload;
+    if (payload?.channelId && workspaceId) {
+      router.push({ name: "channel", params: { workspaceId, channelId: String(payload.channelId) } });
     }
     return;
   }
@@ -100,6 +113,11 @@ async function openNotification(notification: Notification) {
     }
     return;
   }
+}
+
+function notificationTypeLabel(n: Notification): string {
+  const t = (n as { type?: unknown }).type;
+  return typeof t === "string" ? t : "unknown";
 }
 </script>
 
@@ -164,8 +182,20 @@ async function openNotification(notification: Notification) {
             :payload="notification.payload as CalendarEventReminderNotificationPayload"
             :createdAt="notification.createdAt"
           />
+          <MessageReactionNotification
+            v-else-if="notification.type === 'message_reaction'"
+            kind="message_reaction"
+            :payload="notification.payload as MessageReactionNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
+          <MessageReactionNotification
+            v-else-if="notification.type === 'reply_reaction'"
+            kind="reply_reaction"
+            :payload="notification.payload as ReplyReactionNotificationPayload"
+            :createdAt="notification.createdAt"
+          />
           <div v-else class="text-sm text-secondary-foreground">
-            Unknown notification type: {{ notification.type }}
+            Unknown notification type: {{ notificationTypeLabel(notification) }}
           </div>
         </div>
       </div>

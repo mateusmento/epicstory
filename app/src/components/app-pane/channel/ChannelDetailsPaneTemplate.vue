@@ -1,13 +1,17 @@
 <script lang="tsx" setup>
+import ChannelAttachmentStrip from "@/components/channel/ChannelAttachmentStrip.vue";
 import IconClose from "@/components/icons/IconClose.vue";
 import { Button, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
+import { useDependency } from "@/core/dependency-injection";
+import type { UploadedAttachment } from "@/domain/channels/services/channel.service";
+import { ChannelApi } from "@/domain/channels/services/channel.service";
 import type { User } from "@/domain/auth";
-import { type FunctionalComponent as FC } from "vue";
+import { type FunctionalComponent as FC, ref, watch } from "vue";
 import ChannelMembers from "./ChannelMembers.vue";
 import ChannelSchedulesTab from "./ChannelSchedulesTab.vue";
 
-defineProps<{
+const props = defineProps<{
   members: (User & { role?: string; online?: boolean })[];
   channelId?: number;
 }>();
@@ -17,6 +21,32 @@ const emit = defineEmits<{
   (e: "remove-member", userId: number): void;
   (e: "close"): void;
 }>();
+
+const channelApi = useDependency(ChannelApi);
+const channelFiles = ref<UploadedAttachment[]>([]);
+const channelFilesLoading = ref(false);
+const channelFilesError = ref<string | null>(null);
+
+watch(
+  () => props.channelId,
+  async (id) => {
+    if (id == null) {
+      channelFiles.value = [];
+      return;
+    }
+    channelFilesLoading.value = true;
+    channelFilesError.value = null;
+    try {
+      channelFiles.value = await channelApi.listChannelAttachments(id);
+    } catch {
+      channelFiles.value = [];
+      channelFilesError.value = "Could not load files";
+    } finally {
+      channelFilesLoading.value = false;
+    }
+  },
+  { immediate: true },
+);
 
 function addMember(userId: number) {
   emit("add-member", userId);
@@ -72,8 +102,18 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
         >
           <ChannelMembers :members @add="addMember" @remove="removeMember" />
         </TabsContent>
-        <TabsContent value="files" class="min-h-0 flex-1 p-xl mt-0 data-[state=inactive]:hidden">
-          <p class="text-sm text-muted-foreground">No files yet.</p>
+        <TabsContent
+          value="files"
+          class="min-h-0 flex-1 overflow-y-auto p-xl mt-0 data-[state=inactive]:hidden"
+        >
+          <div v-if="channelFilesError" class="text-sm text-red-600">{{ channelFilesError }}</div>
+          <p v-else-if="channelFilesLoading" class="text-sm text-muted-foreground">Loading files…</p>
+          <p v-else-if="channelFiles.length === 0" class="text-sm text-muted-foreground">
+            No files linked in messages yet.
+          </p>
+          <div v-else class="max-h-[min(70vh,36rem)] overflow-y-auto overscroll-contain pr-1">
+            <ChannelAttachmentStrip :files="channelFiles" />
+          </div>
         </TabsContent>
         <TabsContent value="schedules" class="min-h-0 flex-1 flex flex-col mt-0 data-[state=inactive]:hidden">
           <ChannelSchedulesTab :channel-id="channelId" :members="members" />

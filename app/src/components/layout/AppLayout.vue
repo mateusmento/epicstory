@@ -18,14 +18,14 @@ const isDetailsPaneOpen = defineModel<boolean>("isDetailsPaneOpen", { required: 
       </section>
 
       <main
-        class="col-start-2 row-start-2 flex flex-1 min-w-0 bg-white rounded-tl-lg overflow-hidden border border-zinc-300/60 shadow-md shadow-zinc-300/60"
+        class="col-start-2 row-start-2 flex min-h-0 flex-1 min-w-0 overflow-hidden bg-white rounded-tl-lg border border-zinc-300/60 shadow-md shadow-zinc-300/60"
       >
         <DrawerPane view="app-pane" v-model:open="isAppPaneOpen">
           <slot name="app-pane" />
         </DrawerPane>
 
-        <!-- Main Content -->
-        <section class="flex-1 min-w-0">
+        <!-- Main Content: min-h-0 lets this flex item shrink so nested routes can use overflow-auto -->
+        <section class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <slot name="main-content" />
         </section>
 

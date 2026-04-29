@@ -10,6 +10,15 @@ export type IQuotedMessagePreview = {
   displayContent?: string;
 };
 
+/** Server-linked files; rendered below the text body, not inside `contentRich`. */
+export type MessageAttachmentDto = {
+  id: number;
+  url: string;
+  mimeType: string;
+  originalFilename: string;
+  byteSize: number;
+};
+
 export interface IMessage {
   id: number;
   content: string;
@@ -29,6 +38,7 @@ export interface IMessage {
   repliesCount: number;
   repliers: { user: User; repliesCount: number }[];
   reactions: IAggregatedReaction[];
+  attachments?: MessageAttachmentDto[];
 }
 
 export type IMessageGroup<M extends IMessage | IReply = IMessage> = {
@@ -75,6 +85,7 @@ export interface IReply {
   repliesCount: number;
   repliers: { user: User; repliesCount: number }[];
   reactions: IAggregatedReaction[];
+  attachments?: MessageAttachmentDto[];
 }
 
 export interface IReplyReaction {

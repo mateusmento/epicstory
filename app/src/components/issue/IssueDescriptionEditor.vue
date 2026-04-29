@@ -52,7 +52,11 @@ const editor = useEditor({
       codeBlockNodeView: TiptapCodeBlockCardNodeView,
     }),
     ...mediaExtensions({
-      uploadFile: (file: File) => issueApi.uploadAttachment(props.issueId, file).then((a) => a.url),
+      uploadFile: (file: File) =>
+        issueApi.uploadAttachment(props.issueId, file).then((a) => ({
+          src: a.url,
+          attachmentId: a.id,
+        })),
       allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
     }),
     createPlaceholderExtension("Write a description…"),

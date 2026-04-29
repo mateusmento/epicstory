@@ -3,7 +3,7 @@ import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { Page } from "@/core/types";
 import type { ChannelGroupsPage, IChannel, ISearchChannelsAndUsersItem } from "../types/channel.type";
-import type { IMessage, IReaction, IReply } from "../types";
+import type { IAggregatedReaction, IMessage, IReaction, IReply } from "../types";
 import type {
   ICreateScheduledMessageBody,
   IScheduledMessage,
@@ -31,6 +31,11 @@ export type CreateMeetingChannel = {
   type: "meeting";
   name: string;
   members?: number[];
+};
+
+export type ToggleReactionResponse = {
+  success?: boolean;
+  reactions: IAggregatedReaction[];
 };
 
 export type UploadedAttachment = {
@@ -127,12 +132,19 @@ export class ChannelApi {
     return this.axios.get<IMessage[]>(`/channels/${channelId}/messages`).then((res) => res.data);
   }
 
-  sendMessage(channelId: number, content: string, contentRich?: any, quotedMessageId?: number | null) {
+  sendMessage(
+    channelId: number,
+    content: string,
+    contentRich?: any,
+    quotedMessageId?: number | null,
+    attachmentIds?: number[],
+  ) {
     return this.axios
       .post<IMessage>(`channels/${channelId}/messages`, {
         content,
         contentRich,
         ...(quotedMessageId != null ? { quotedMessageId } : {}),
+        ...(attachmentIds != null && attachmentIds.length > 0 ? { attachmentIds } : {}),
       })
       .then((res) => res.data);
   }
@@ -180,19 +192,28 @@ export class ChannelApi {
   }
 
   toggleMessageReaction(messageId: number, emoji: string) {
-    return this.axios.post(`/messages/${messageId}/reactions`, { emoji }).then((res) => res.data);
+    return this.axios
+      .post<ToggleReactionResponse>(`/messages/${messageId}/reactions`, { emoji })
+      .then((res) => res.data);
   }
 
   findReplies(messageId: number) {
     return this.axios.get<IReply[]>(`/messages/${messageId}/replies`).then((res) => res.data);
   }
 
-  replyMessage(messageId: number, content: string, contentRich?: any, quotedReplyId?: number | null) {
+  replyMessage(
+    messageId: number,
+    content: string,
+    contentRich?: any,
+    quotedReplyId?: number | null,
+    attachmentIds?: number[],
+  ) {
     return this.axios
       .post<IReply>(`/messages/${messageId}/replies`, {
         content,
         contentRich,
         ...(quotedReplyId != null ? { quotedReplyId } : {}),
+        ...(attachmentIds != null && attachmentIds.length > 0 ? { attachmentIds } : {}),
       })
       .then((res) => res.data);
   }
@@ -201,12 +222,19 @@ export class ChannelApi {
     return this.axios.delete(`/replies/${replyId}`).then((res) => res.data);
   }
 
+  /** Files linked to messages/replies in this channel (newest first). */
+  listChannelAttachments(channelId: number) {
+    return this.axios.get<UploadedAttachment[]>(`/channels/${channelId}/attachments`).then((res) => res.data);
+  }
+
   findReplyReactions(replyId: number) {
     return this.axios.get<IReaction[]>(`/replies/${replyId}/reactions`).then((res) => res.data);
   }
 
   toggleReplyReaction(replyId: number, emoji: string) {
-    return this.axios.post(`/replies/${replyId}/reactions`, { emoji }).then((res) => res.data);
+    return this.axios
+      .post<ToggleReactionResponse>(`/replies/${replyId}/reactions`, { emoji })
+      .then((res) => res.data);
   }
 
   uploadAttachment(channelId: number, file: File) {

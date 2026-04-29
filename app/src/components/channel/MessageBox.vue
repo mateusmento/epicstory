@@ -17,6 +17,7 @@ import MentionedText from "./MentionedText.vue";
 import MessageActions from "./MessageActions.vue";
 import MessageContextMenu from "./MessageContextMenu.vue";
 import RichMessageContent from "./RichMessageContent.vue";
+import ChannelAttachmentStrip from "./ChannelAttachmentStrip.vue";
 import { Icon } from "@/design-system/icons";
 
 const props = withDefaults(
@@ -68,6 +69,15 @@ const quotedExcerpt = computed(() => {
   const t = raw.replace(/\s+/g, " ").trim();
   return t.length > 220 ? `${t.slice(0, 220)}…` : t;
 });
+
+function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
+  return cn(
+    "border py-0.5 px-2 pr-3 rounded-full text-sm font-lato transition-colors",
+    reaction.reactedByMe || reaction.reactedBy.some((u) => u.id === props.meId)
+      ? "border-primary/50 bg-primary/10 text-primary font-medium"
+      : "border-[#686870] bg-white text-[#686870]",
+  );
+}
 </script>
 
 <template>
@@ -107,6 +117,10 @@ const quotedExcerpt = computed(() => {
               :content="props.message.content"
               :mentioned-users="props.message.mentionedUsers"
               :me-id="props.meId"
+            />
+            <ChannelAttachmentStrip
+              v-if="(props.message.attachments?.length ?? 0) > 0"
+              :files="props.message.attachments ?? []"
             />
             <div
               v-if="'isScheduled' in props.message && props.message.isScheduled"
@@ -173,7 +187,7 @@ const quotedExcerpt = computed(() => {
               variant="outline"
               size="icon"
               @click="emit('reaction-toggled', reaction.emoji)"
-              class="border py-0.5 px-2 pr-3 rounded-full border-color-[#686870] bg-white text-sm font-lato text-[#686870]"
+              :class="reactionPillClass(reaction)"
             >
               {{ reaction.emoji }} {{ reaction.reactedBy.length }}
             </Button>
@@ -181,11 +195,14 @@ const quotedExcerpt = computed(() => {
           <TooltipContent>
             <div class="flex:col flex:center-x max-w-32">
               <div class="text-2xl">{{ reaction.emoji }}</div>
-              <p class="text-center">
+              <p class="text-center text-xs">
                 Reacted by
-                <span v-for="user in reaction.reactedBy" :key="user.id">
-                  {{ user.name }}<span v-if="!reaction.reactedBy.slice(-1).includes(user)">, </span>
-                </span>
+                {{
+                  reaction.reactedBy
+                    .map((u) => u.name)
+                    .filter(Boolean)
+                    .join(", ")
+                }}
               </p>
             </div>
           </TooltipContent>

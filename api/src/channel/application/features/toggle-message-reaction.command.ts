@@ -1,5 +1,7 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { UserRepository } from 'src/auth';
 import { patch } from 'src/core/objects';
+import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageService } from '../services/message.service';
 import {
   ChannelRepository,
@@ -33,11 +35,14 @@ export class ToggleMessageReactionCommand
     private messageService: MessageService,
     private messageRepo: MessageRepository,
     private channelRepo: ChannelRepository,
+    private userRepo: UserRepository,
+    private commandBus: CommandBus,
   ) {}
 
   async execute({ messageId, emoji, issuerId }: ToggleMessageReaction) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
+      relations: { sender: true },
     });
 
     if (!message) {
@@ -51,8 +56,12 @@ export class ToggleMessageReactionCommand
 
     if (!channel) throw new ChannelNotFound();
 
-    if (!channel.peers.some((p) => p.id === issuerId))
+    if (
+      channel.type !== 'workspace_open' &&
+      !channel.peers.some((p) => p.id === issuerId)
+    ) {
       throw new IssuerIsNotChannelMember();
+    }
 
     const result = await this.messageService.toggleMessageReaction(
       messageId,
@@ -64,6 +73,53 @@ export class ToggleMessageReactionCommand
       messageId,
       issuerId,
     );
+
+    if (
+      result.action === 'added' &&
+      message.senderId != null &&
+      message.senderId !== issuerId
+    ) {
+      const reactor = await this.userRepo.findOne({ where: { id: issuerId } });
+      const reactorDto = reactor
+        ? {
+            id: reactor.id,
+            name: reactor.name,
+            email: reactor.email,
+            picture: reactor.picture ?? '',
+          }
+        : {
+            id: issuerId,
+            name: 'Someone',
+            email: '',
+            picture: '',
+          };
+      const channelLabel = this.messageService.getChannelLabelForNotification(
+        channel,
+        message.senderId,
+      );
+      const messageExcerpt =
+        await this.messageService.buildMessageExcerptForNotification(
+          message,
+          channel,
+        );
+      await this.commandBus.execute(
+        new SendNotification({
+          userIds: [message.senderId],
+          type: 'message_reaction',
+          workspaceId: channel.workspaceId,
+          payload: {
+            type: 'message_reaction',
+            messageId,
+            channelId: channel.id,
+            channelName: channelLabel,
+            emoji,
+            reactorUserId: issuerId,
+            reactor: reactorDto,
+            messageExcerpt,
+          },
+        }),
+      );
+    }
 
     return {
       success: true,

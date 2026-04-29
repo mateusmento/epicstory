@@ -6,7 +6,10 @@ import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { PROJECT_SCHEMA } from 'src/project/constants';
-import { IssueRepository } from 'src/project/infrastructure/repositories';
+import {
+  IssueActivityRepository,
+  IssueRepository,
+} from 'src/project/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
@@ -30,6 +33,7 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
     private workspaceRepo: WorkspaceRepository,
     private userRepo: UserRepository,
     private commandBus: CommandBus,
+    private issueActivities: IssueActivityRepository,
   ) {}
 
   async execute({ issuer, issueId, userId }: AddAssignee) {
@@ -51,6 +55,17 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
        VALUES ($1, $2)
        ON CONFLICT DO NOTHING`,
       [issueId, userId],
+    );
+
+    await this.issueActivities.save(
+      this.issueActivities.create({
+        issueId,
+        actorId: issuer.id,
+        type: 'assignees_changed',
+        messageId: null,
+        attachmentId: null,
+        payload: { addedUserIds: [userId], removedUserIds: [] },
+      }),
     );
 
     const updated = await this.issueRepo.findOne({

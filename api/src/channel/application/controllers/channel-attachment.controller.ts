@@ -40,7 +40,10 @@ export class ChannelAttachmentController {
       issuer.id,
     );
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
-    if (!channel.peers?.some((p) => p.id === issuer.id)) {
+    if (
+      channel.type !== 'workspace_open' &&
+      !channel.peers?.some((p) => p.id === issuer.id)
+    ) {
       throw new IssuerIsNotChannelMember();
     }
     return this.attachments.listForChannel(channel.workspaceId, channelId);
@@ -65,7 +68,10 @@ export class ChannelAttachmentController {
       issuer.id,
     );
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
-    if (!channel.peers?.some((p) => p.id === issuer.id)) {
+    if (
+      channel.type !== 'workspace_open' &&
+      !channel.peers?.some((p) => p.id === issuer.id)
+    ) {
       throw new IssuerIsNotChannelMember();
     }
     if (!file || file.size === 0) {
