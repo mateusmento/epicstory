@@ -60,7 +60,11 @@ export class RemoveLabelCommand implements ICommandHandler<RemoveLabel> {
         type: 'labels_changed',
         messageId: null,
         attachmentId: null,
-        payload: { addedLabelIds: [], removedLabelIds: [labelId] },
+        payload: {
+          addedLabelIds: [],
+          removedLabelIds: [labelId],
+          removedLabelNames: [label.name],
+        },
       }),
     );
 

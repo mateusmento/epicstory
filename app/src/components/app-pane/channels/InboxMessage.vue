@@ -43,11 +43,11 @@ const isHoveringImage = ref(false);
     </div>
 
     <div class="flex:col flex-1 h-full overflow-hidden">
-      <div class="flex:row-auto flex:center-y">
-        <div class="text-sm text-foreground">
-          {{ channel.speakingTo ? channel.speakingTo.name : channel.name }}
+      <div class="flex:row-auto gap-1 flex:center-y">
+        <div class="text-sm text-foreground line-clamp-1">
+          {{ channel.name }}
         </div>
-        <div class="text-xs text-secondary-foreground">
+        <div class="text-xs text-secondary-foreground whitespace-nowrap">
           {{ channel.lastMessage ? formatMessageDate(channel.lastMessage.sentAt) : "" }}
         </div>
       </div>

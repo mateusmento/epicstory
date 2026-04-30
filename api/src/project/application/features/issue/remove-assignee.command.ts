@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNumber } from 'class-validator';
+import { UserRepository } from 'src/auth';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
@@ -29,6 +30,7 @@ export class RemoveAssigneeCommand implements ICommandHandler<RemoveAssignee> {
   constructor(
     private issueRepo: IssueRepository,
     private workspaceRepo: WorkspaceRepository,
+    private userRepo: UserRepository,
     private issueActivities: IssueActivityRepository,
   ) {}
 
@@ -38,6 +40,8 @@ export class RemoveAssigneeCommand implements ICommandHandler<RemoveAssignee> {
 
     if (!(await this.workspaceRepo.memberExists(issue.workspaceId, issuer.id)))
       throw new IssuerUserIsNotWorkspaceMember();
+
+    const user = await this.userRepo.findOne({ where: { id: userId } });
 
     await this.issueRepo.query(
       `DELETE FROM "${PROJECT_SCHEMA}"."issue_assignee" WHERE "issue_id" = $1 AND "user_id" = $2`,
@@ -51,7 +55,11 @@ export class RemoveAssigneeCommand implements ICommandHandler<RemoveAssignee> {
         type: 'assignees_changed',
         messageId: null,
         attachmentId: null,
-        payload: { addedUserIds: [], removedUserIds: [userId] },
+        payload: {
+          addedUserIds: [],
+          removedUserIds: [userId],
+          ...(user ? { removedUserNames: [user.name] } : {}),
+        },
       }),
     );
 

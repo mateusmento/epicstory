@@ -15,6 +15,18 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
 import { ProjectGateway } from '../../gateways/project.gateway';
 
+const DESCRIPTION_ACTIVITY_EXCERPT_MAX = 280;
+
+function excerptFromDescription(
+  raw: string | null | undefined,
+  max = DESCRIPTION_ACTIVITY_EXCERPT_MAX,
+): string | undefined {
+  if (raw == null) return undefined;
+  const t = raw.trim().replace(/\s+/g, ' ');
+  if (!t) return undefined;
+  return t.length > max ? `${t.slice(0, max)}…` : t;
+}
+
 export class UpdateIssue {
   issueId: number;
   issuer: Issuer;
@@ -143,7 +155,10 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
           type: 'title_changed',
           messageId: null,
           attachmentId: null,
-          payload: { previousTitle: prevSnapshot.title },
+          payload: {
+            previousTitle: prevSnapshot.title,
+            newTitle: savedIssue.title,
+          },
         }),
       );
     }
@@ -160,6 +175,9 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
           attachmentId: null,
           payload: {
             changeKind: savedIssue.description === '' ? 'cleared' : 'edited',
+            ...(savedIssue.description
+              ? { excerpt: excerptFromDescription(savedIssue.description) }
+              : {}),
           },
         }),
       );
@@ -175,7 +193,10 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
           type: 'status_changed',
           messageId: null,
           attachmentId: null,
-          payload: { previousStatus: prevSnapshot.status },
+          payload: {
+            previousStatus: prevSnapshot.status,
+            newStatus: savedIssue.status,
+          },
         }),
       );
     }
@@ -190,7 +211,10 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
           type: 'priority_changed',
           messageId: null,
           attachmentId: null,
-          payload: { previousPriority: prevSnapshot.priority },
+          payload: {
+            previousPriority: prevSnapshot.priority,
+            newPriority: savedIssue.priority,
+          },
         }),
       );
     }
@@ -210,6 +234,10 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
                 prevSnapshot.dueDate != null
                   ? prevSnapshot.dueDate.toISOString()
                   : null,
+              newDueDate:
+                savedIssue.dueDate != null
+                  ? savedIssue.dueDate.toISOString()
+                  : null,
             },
           }),
         );
@@ -226,7 +254,10 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
           type: 'parent_changed',
           messageId: null,
           attachmentId: null,
-          payload: { previousParentIssueId: prevSnapshot.parentIssueId },
+          payload: {
+            previousParentIssueId: prevSnapshot.parentIssueId,
+            newParentIssueId: savedIssue.parentIssueId ?? null,
+          },
         }),
       );
     }

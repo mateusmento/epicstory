@@ -206,7 +206,7 @@ watch(
         <IssueActivitySection
           v-if="issue && user"
           :issue-id="issue.id"
-          :comment-channel-id="issue.commentChannelId ?? null"
+          :comment-channel-id="issue.commentChannelId"
           :workspace-id="issue.workspaceId"
           :me-id="user.id"
         />

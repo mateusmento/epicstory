@@ -61,7 +61,11 @@ export class AddLabelCommand implements ICommandHandler<AddLabel> {
         type: 'labels_changed',
         messageId: null,
         attachmentId: null,
-        payload: { addedLabelIds: [labelId], removedLabelIds: [] },
+        payload: {
+          addedLabelIds: [labelId],
+          removedLabelIds: [],
+          addedLabelNames: [label.name],
+        },
       }),
     );
 

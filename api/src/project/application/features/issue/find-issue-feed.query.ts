@@ -1,6 +1,8 @@
 import { NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { uniq } from 'lodash';
+import { UserRepository } from 'src/auth';
+import { In } from 'typeorm';
 import {
   MessageDto,
   MessageService,
@@ -26,11 +28,19 @@ const MAX_LIMIT = 100;
 /** Last K replies per comment card preview (aligned with Section D.1 plan). */
 const REPLY_PREVIEW_LIMIT = 5;
 
+export type IssueFeedActorDto = {
+  id: number;
+  name: string;
+  picture: string | null;
+};
+
 export type IssueFeedActivityItemDto = {
   activityId: number;
   issueId: number;
   type: IssueActivityType;
   actorId: number | null;
+  /** Hydrated from `users` — not all actors are comment-channel peers. */
+  actor: IssueFeedActorDto | null;
   createdAt: Date;
   messageId: number | null;
   attachmentId: number | null;
@@ -70,6 +80,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
     private workspaceRepo: WorkspaceRepository,
     private activities: IssueActivityRepository,
     private messages: MessageService,
+    private userRepo: UserRepository,
   ) {}
 
   async execute({
@@ -118,6 +129,15 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
           )
         : { repliesByParentId: new Map<number, MessageReply[]>() };
 
+    const actorIds = uniq(
+      rows.map((r) => r.actorId).filter((id): id is number => id != null),
+    );
+    const actorRows =
+      actorIds.length > 0
+        ? await this.userRepo.find({ where: { id: In(actorIds) } })
+        : [];
+    const actorById = new Map(actorRows.map((u) => [u.id, u]));
+
     const items: IssueFeedActivityItemDto[] = rows.map((a) => {
       const dto = a.messageId ? messagesById.get(a.messageId) : undefined;
       const replyPreviews = a.messageId
@@ -127,11 +147,22 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
       const hasMoreOlder =
         a.messageId != null ? repliesTotal > replyPreviews.length : undefined;
 
+      const actorUser =
+        a.actorId != null ? actorById.get(a.actorId) : undefined;
+
       return {
         activityId: a.id,
         issueId: a.issueId,
         type: a.type,
         actorId: a.actorId,
+        actor:
+          actorUser != null
+            ? {
+                id: actorUser.id,
+                name: actorUser.name,
+                picture: actorUser.picture?.trim() ? actorUser.picture : null,
+              }
+            : null,
         createdAt: a.createdAt,
         messageId: a.messageId,
         attachmentId: a.attachmentId,

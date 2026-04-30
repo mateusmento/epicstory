@@ -64,7 +64,11 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
         type: 'assignees_changed',
         messageId: null,
         attachmentId: null,
-        payload: { addedUserIds: [userId], removedUserIds: [] },
+        payload: {
+          addedUserIds: [userId],
+          removedUserIds: [],
+          addedUserNames: [user.name],
+        },
       }),
     );
 

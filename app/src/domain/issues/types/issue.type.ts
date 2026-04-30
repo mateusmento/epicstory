@@ -15,7 +15,7 @@ export type Issue = {
   priority: number;
   labels: Label[];
   parentIssueId?: number | null;
-  commentChannelId?: number | null;
+  commentChannelId: number;
   parentIssue?: Issue | null;
   subIssues?: Issue[];
 };

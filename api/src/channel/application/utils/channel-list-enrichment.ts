@@ -1,5 +1,6 @@
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { extractMentionIds, renderMentions } from './mentions';
+import { User } from 'src/auth/domain/entities/user.entity';
 
 /**
  * Sidebar / list payloads: speakingTo for DMs, lastMessage mention rendering.
@@ -10,8 +11,10 @@ export function enrichChannelsForListView(
   viewerUserId: number,
 ): void {
   for (const channel of channels) {
+    channel.name = resolveChannelName(channel, viewerUserId);
+
     if (channel.type === 'direct')
-      channel.speakingTo = channel.peers.find((p) => p.id !== viewerUserId);
+      channel.speakingTo = resolveDirectPeer(channel, viewerUserId);
 
     if (!channel.lastMessage?.content) continue;
 
@@ -26,4 +29,26 @@ export function enrichChannelsForListView(
       peerUsersMap,
     );
   }
+}
+
+function resolveChannelName(channel: Channel, viewerUserId: number): string {
+  if (channel.type === 'direct') {
+    const directPeer = resolveDirectPeer(channel, viewerUserId);
+    return directPeer.name;
+  }
+  if (channel.type === 'multi-direct') {
+    return resolveChannelNameForMultiDirect(channel);
+  }
+  return channel.name ?? '';
+}
+
+function resolveDirectPeer(channel: Channel, viewerUserId: number): User {
+  return channel.peers.find((p) => p.id !== viewerUserId)!;
+}
+
+function resolveChannelNameForMultiDirect(channel: Channel): string {
+  const peerNames = channel.peers.map((p) => p.name).sort();
+  const lastOne = peerNames.pop();
+  if (peerNames.length === 0) return lastOne ?? '';
+  return [...peerNames, `and ${lastOne}`].join(', ');
 }

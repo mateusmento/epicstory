@@ -1,3 +1,5 @@
+import type { IMessage, IReply } from "@/domain/channels";
+
 /** Mirrors `IssueFeedActivityItemDto` from the API (subset used by the UI). */
 export type IssueFeedActivityType =
   | "issue_created"
@@ -18,12 +20,14 @@ export type IssueFeedItem = {
   issueId: number;
   type: IssueFeedActivityType;
   actorId: number | null;
+  /** Present when API hydrates users (actors may not be comment-channel peers). */
+  actor?: { id: number; name: string; picture: string | null } | null;
   createdAt: string;
   messageId: number | null;
   attachmentId: number | null;
   payload: Record<string, unknown> | null;
-  message: object | null;
-  replyPreviews: object[];
+  message: IMessage | null;
+  replyPreviews: IReply[];
   repliesTotal?: number;
   hasMoreOlder?: boolean;
 };

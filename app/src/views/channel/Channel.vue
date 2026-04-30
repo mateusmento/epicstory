@@ -28,11 +28,6 @@ const emit = defineEmits<{
   (e: "message-deleted", messageId: number): void;
 }>();
 
-const title = computed(() => {
-  if (!channel.value) return "";
-  return channel.value?.type === "direct" ? channel.value?.speakingTo.name : channel.value?.name;
-});
-
 const picture = computed(() => {
   if (!channel.value) return "";
   return channel.value?.type === "direct" ? channel.value?.speakingTo.picture : "/images/hashtag.svg";
@@ -58,7 +53,7 @@ function onMessageDeleted(messageId: number) {
       v-if="user"
       v-show="!currentMeeting || currentMeeting.channelId !== channel.id"
       class="flex-1"
-      :chat-title="title"
+      :chat-title="channel.name"
       :chat-picture="picture"
       :message-groups="messageGroups"
       :me-id="user.id"
