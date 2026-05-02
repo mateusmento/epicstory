@@ -24,6 +24,7 @@ import { UserAvatar, UserAvatarStack } from "@/components/user";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageComposer from "./MessageComposer.vue";
+import { enumerateNames } from "@/utils";
 
 const props = defineProps<{
   meId: number;
@@ -82,11 +83,10 @@ const typingPeerNames = computed(() => {
 });
 
 const typingBannerText = computed(() => {
-  const names = typingPeerNames.value;
-  if (names.length === 0) return "";
-  if (names.length === 1) return `${names[0]} is typing…`;
-  if (names.length === 2) return `${names[0]} and ${names[1]} are typing…`;
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} are typing…`;
+  const names = enumerateNames(typingPeerNames.value);
+  if (typingPeerNames.value.length > 1) return `${names} are typing…`;
+  if (typingPeerNames.value.length === 1) return `${names} is typing…`;
+  return "";
 });
 
 function totalMessages(groups: IMessageGroup[]) {
