@@ -244,6 +244,49 @@ export function createRichTextExtensions(
   return extensions;
 }
 
+/** Same prose schema as {@link createRichTextExtensions} but plain {@link CodeBlockLowlight} for `@tiptap/html` {@link generateHTML}. */
+export type CreateRichTextHtmlExtensionsOptions = CreateRichTextExtensionsBase & {
+  lowlight: LowlightInstance;
+};
+
+export function createRichTextHtmlExtensions(
+  options: CreateRichTextHtmlExtensionsOptions,
+): AnyExtension[] {
+  const taskLists = options.taskLists !== false;
+  const tables = options.tables !== false;
+  const images = options.images !== false;
+  const extensions: AnyExtension[] = [
+    StarterKit.configure({
+      link: false,
+      underline: false,
+      codeBlock: false,
+      blockquote: false,
+      code: false,
+    }),
+    EpicInlineCode.configure({
+      HTMLAttributes: { class: "epic-inline-code" },
+    }),
+    EpicBlockquote,
+    Underline,
+    Link.configure({
+      openOnClick: options.linkOpenOnClick,
+      autolink: true,
+      linkOnPaste: true,
+    }),
+    CodeBlockLowlight.configure({ lowlight: options.lowlight }),
+  ];
+  if (taskLists) {
+    extensions.push(...taskListExtensions());
+  }
+  if (tables) {
+    extensions.push(...tableExtensions());
+  }
+  if (images) {
+    extensions.push(imageExtension());
+  }
+  return extensions;
+}
+
 export function createPlaceholderExtension(
   placeholder: string | (() => string),
 ): AnyExtension {

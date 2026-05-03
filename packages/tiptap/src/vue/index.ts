@@ -1,18 +1,21 @@
 export { collectImageAttachmentIdsFromDoc } from "../doc/collect-image-attachment-ids";
 export {
-  EPIC_STORY_COMPOSER_EDITOR_CLASS,
-  EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
-  EPIC_STORY_READONLY_MESSAGE_CLASS,
+  EPICSTORY_RICH_TEXT,
+  EPICSTORY_RICH_TEXT_EDITABLE,
+  EPICSTORY_RICH_TEXT_ISSUE,
+  EPICSTORY_RICH_TEXT_PREVIEW,
 } from "./editor-classes";
 export {
   codeBlockLowlightCardExtension,
   createMentionExtensionWithNodeView,
   createPlaceholderExtension,
   createRichTextExtensions,
+  createRichTextHtmlExtensions,
   mediaExtensions,
   tableExtensions,
   taskListExtensions,
   type CreateRichTextExtensionsOptions,
+  type CreateRichTextHtmlExtensionsOptions,
   type LowlightInstance,
   type MediaExtensionsOptions,
 } from "./extensions";

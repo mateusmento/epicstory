@@ -6,6 +6,7 @@ import {
   ScheduledMessagePayload,
   ScheduledJobWithPayload,
 } from 'src/scheduling/types/payload';
+import type { RichTextDocument } from '@epicstory/tiptap';
 import { SendMessage } from '../features/send-message.command';
 import { MessageGateway } from '../gateways/message.gateway';
 
@@ -28,8 +29,7 @@ export class ScheduledMessageReaction {
       new SendMessage({
         channelId: p.channelId,
         senderId: p.senderId,
-        content: p.content,
-        contentRich: p.contentRich,
+        content: p.content as RichTextDocument,
         quotedMessageId: p.quotedMessageId,
         markAsScheduled: true,
       }),

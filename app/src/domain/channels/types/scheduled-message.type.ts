@@ -1,3 +1,5 @@
+import type { RichTextDocument } from "@epicstory/tiptap";
+
 /** Mirrors API `ScheduledMessageDto` and `ScheduledJobRecurrence` JSON. */
 export type IScheduledMessageRecurrence =
   | { frequency: "once" }
@@ -19,8 +21,7 @@ export interface IScheduledMessage {
   id: string;
   channelId: number;
   senderId: number;
-  content: string;
-  contentRich?: any;
+  content: RichTextDocument;
   quotedMessageId?: number;
   dueAt: string;
   recurrence: IScheduledMessageRecurrence;
@@ -32,16 +33,14 @@ export interface IScheduledMessage {
 }
 
 export type ICreateScheduledMessageBody = {
-  content: string;
-  contentRich?: any;
+  content: RichTextDocument;
   quotedMessageId?: number;
   dueAt: string;
   recurrence: IScheduledMessageRecurrence;
 };
 
 export type IUpdateScheduledMessageBody = {
-  content?: string;
-  contentRich?: any;
+  content?: RichTextDocument;
   quotedMessageId?: number;
   dueAt?: string;
   recurrence?: IScheduledMessageRecurrence;

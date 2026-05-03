@@ -1,12 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import {
-  IsInt,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsInt, IsObject, IsOptional, Min } from 'class-validator';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { ScheduledMessagePayload } from 'src/scheduling/types/payload';
@@ -20,6 +13,7 @@ import {
 } from '../dtos/scheduled-message.dto';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import type { RichTextDocument } from '@epicstory/tiptap';
 
 export class UpdateScheduledChannelMessage {
   scheduledMessageId: string;
@@ -27,13 +21,8 @@ export class UpdateScheduledChannelMessage {
   issuerId: number;
 
   @IsOptional()
-  @IsNotEmpty()
-  @IsString()
-  content?: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content?: RichTextDocument;
 
   @IsOptional()
   @IsInt()
@@ -103,9 +92,8 @@ export class UpdateScheduledChannelMessageCommand
 
     const nextPayload = new ScheduledMessagePayload({
       ...payload,
-      content: cmd.content ?? payload.content,
-      contentRich:
-        cmd.contentRich !== undefined ? cmd.contentRich : payload.contentRich,
+      content:
+        cmd.content !== undefined ? cmd.content : payload.content,
       quotedMessageId:
         cmd.quotedMessageId !== undefined
           ? (cmd.quotedMessageId ?? undefined)

@@ -3,15 +3,18 @@ export function channelComposerDraftKey(workspaceId: number, channelId: number) 
 }
 
 export type ChannelComposerDraft = {
-  contentRich: Record<string, unknown>;
+  content: Record<string, unknown>;
 };
 
 export function loadChannelDraft(workspaceId: number, channelId: number): ChannelComposerDraft | null {
   try {
     const raw = localStorage.getItem(channelComposerDraftKey(workspaceId, channelId));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as ChannelComposerDraft;
-    if (parsed?.contentRich && typeof parsed.contentRich === "object") return parsed;
+    const parsed = JSON.parse(raw) as ChannelComposerDraft & { contentRich?: Record<string, unknown> };
+    if (parsed?.content && typeof parsed.content === "object") return parsed;
+    if (parsed?.contentRich && typeof parsed.contentRich === "object") {
+      return { content: parsed.contentRich };
+    }
   } catch {
     /* ignore */
   }
@@ -21,10 +24,10 @@ export function loadChannelDraft(workspaceId: number, channelId: number): Channe
 export function saveChannelDraft(
   workspaceId: number,
   channelId: number,
-  contentRich: Record<string, unknown>,
+  content: Record<string, unknown>,
 ) {
   try {
-    const payload: ChannelComposerDraft = { contentRich };
+    const payload: ChannelComposerDraft = { content };
     localStorage.setItem(channelComposerDraftKey(workspaceId, channelId), JSON.stringify(payload));
   } catch {
     /* ignore quota / private mode */

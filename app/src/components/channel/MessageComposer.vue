@@ -32,10 +32,9 @@ import {
   normalizeTiptapDoc,
   stripImageNodesFromDoc,
   tiptapToPlainText,
+  type RichTextDocument,
 } from "@epicstory/tiptap";
-import { EPIC_STORY_COMPOSER_EDITOR_CLASS } from "@epicstory/tiptap/vue";
-import type { JSONContent } from "@tiptap/core";
-import { EditorContent, useEditor, type Editor } from "@tiptap/vue-3";
+import type { Editor, JSONContent } from "@tiptap/core";
 import { debounce } from "lodash";
 import {
   Bold,
@@ -53,8 +52,9 @@ import {
   ChevronDown,
   CalendarIcon,
 } from "lucide-vue-next";
-import { computed, nextTick, onBeforeUnmount, reactive, ref, toRef, watch } from "vue";
-import { createChannelMessageExtensions } from "./channel-message-editor-extensions";
+import type { Ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import RichTextContentEditable from "@/components/rich-text/RichTextContentEditable.vue";
 import {
   formatScheduleSummary,
   type ResolvedSchedule,
@@ -70,7 +70,7 @@ const props = withDefaults(
     channelId?: number;
     workspaceId?: number;
     placeholder?: string;
-    editingMessage?: { id: number; content: string; contentRich?: any } | null;
+    editingMessage?: { id: number; content: RichTextDocument } | null;
     quotedMessage?: (IMessage | IReply) | null;
   }>(),
   {
@@ -119,8 +119,7 @@ const emit = defineEmits<{
   (
     e: "send-message",
     value: {
-      content: string;
-      contentRich: any;
+      content: RichTextDocument;
       quotedMessageId?: number;
       quotedReplyId?: number;
       attachmentIds?: number[];
@@ -129,14 +128,13 @@ const emit = defineEmits<{
   (
     e: "send-scheduled-message",
     value: {
-      content: string;
-      contentRich: any;
+      content: RichTextDocument;
       quotedMessageId?: number;
       dueAt: string;
       recurrence: IScheduledMessageRecurrence;
     },
   ): void;
-  (e: "submit-edit", value: { messageId: number; content: string; contentRich: any }): void;
+  (e: "submit-edit", value: { messageId: number; content: RichTextDocument }): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
 }>();
@@ -147,28 +145,12 @@ const composerPlaceholder = computed(() =>
 
 const quotedExcerpt = computed(() => {
   if (!props.quotedMessage) return "";
-  const raw = props.quotedMessage.displayContent ?? messageBodyPlainText(props.quotedMessage);
+  const raw =
+    props.quotedMessage.displayContent ??
+    messageBodyPlainText({ content: props.quotedMessage.content });
   const t = raw.replace(/\s+/g, " ").trim();
   return t.length > 160 ? `${t.slice(0, 160)}…` : t;
 });
-
-const mentionablesForSuggestion = computed(() => {
-  const list = props.mentionables ?? [];
-  const meId = props.meId;
-  return list.filter((u) => (meId ? u.id !== meId : true));
-});
-
-const mentionablesById = computed(() => new Map((props.mentionables ?? []).map((u) => [u.id, u])));
-
-const mentionContext = reactive<{ meId: number | undefined }>({ meId: props.meId });
-watch(
-  () => props.meId,
-  (v) => {
-    mentionContext.meId = v;
-  },
-);
-
-const channelIdRef = toRef(props, "channelId");
 
 /** Staged uploads (linked on send, not embedded in TipTap JSON). */
 const pendingAttachments = ref<UploadedAttachment[]>([]);
@@ -215,37 +197,30 @@ async function uploadStagingFiles(fileList: File[]) {
   pendingAttachments.value = next;
 }
 
-const editor = useEditor({
-  extensions: createChannelMessageExtensions({
-    channelApi,
-    channelId: channelIdRef,
-    getPlaceholder: () => composerPlaceholder.value,
-    mentionContext,
-    mentionablesById,
-    mentionablesForSuggestion,
-  }),
-  content: "",
-  editorProps: {
-    attributes: {
-      class: EPIC_STORY_COMPOSER_EDITOR_CLASS,
-    },
-    handleKeyDown: (_, event) => {
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-        onSendMessage();
-        return true;
-      }
-      return false;
-    },
-    handlePaste: (_view, event) => {
-      const files = collectFilesFromClipboard(event);
-      if (files.length === 0 || props.channelId == null) return false;
-      event.preventDefault();
-      uploadStagingFiles(files).catch(() => {
-        /* upload failed */
-      });
+const composerSurfaceRef = ref<InstanceType<typeof RichTextContentEditable> | null>(null);
+
+const composerEditorProps = computed(() => ({
+  handleKeyDown: (_: unknown, event: KeyboardEvent) => {
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      onSendMessage();
       return true;
-    },
+    }
+    return false;
   },
+  handlePaste: (_view: unknown, event: ClipboardEvent) => {
+    const files = collectFilesFromClipboard(event);
+    if (files.length === 0 || props.channelId == null) return false;
+    event.preventDefault();
+    uploadStagingFiles(files).catch(() => {
+      /* upload failed */
+    });
+    return true;
+  },
+}));
+
+const editor = computed(() => {
+  const exposed = composerSurfaceRef.value?.editor as Ref<Editor | undefined> | undefined;
+  return exposed?.value ?? null;
 });
 
 const customScheduleOpen = ref(false);
@@ -397,17 +372,7 @@ watch(
       if (prev) editor.value.commands.clearContent();
       return;
     }
-    const doc = m.contentRich
-      ? normalizeTiptapDoc(m.contentRich)
-      : {
-          type: "doc",
-          content: [
-            {
-              type: "paragraph",
-              content: m.content ? [{ type: "text", text: m.content }] : [],
-            },
-          ],
-        };
+    const doc = normalizeTiptapDoc(m.content);
     editor.value.commands.setContent(doc);
     editor.value.commands.focus("end");
   },
@@ -443,8 +408,8 @@ watch(
 
     suppressTypingSignals.value = true;
     const draft = loadChannelDraft(ws, cid);
-    if (draft?.contentRich) {
-      ed.commands.setContent(normalizeTiptapDoc(draft.contentRich));
+    if (draft?.content) {
+      ed.commands.setContent(normalizeTiptapDoc(draft.content));
     } else {
       ed.commands.clearContent();
     }
@@ -472,7 +437,6 @@ onBeforeUnmount(() => {
   }
   isEmittingTyping.value = false;
   flushDraftSync();
-  editor.value?.destroy();
 });
 
 function toggleLink() {
@@ -517,8 +481,7 @@ function onSendMessage() {
   if (props.editingMessage) {
     emit("submit-edit", {
       messageId: props.editingMessage.id,
-      content: plain,
-      contentRich: doc,
+      content: doc as RichTextDocument,
     });
     clearTypingPulse();
     if (props.channelId != null && props.workspaceId != null) {
@@ -535,8 +498,7 @@ function onSendMessage() {
     const q = props.quotedMessage;
     const scheduledQuote = q && (!("messageId" in q) || q.messageId == null) ? { quotedMessageId: q.id } : {};
     emit("send-scheduled-message", {
-      content: plain,
-      contentRich: doc,
+      content: doc as RichTextDocument,
       ...scheduledQuote,
       dueAt: sch.dueAt.toISOString(),
       recurrence: sch.recurrence,
@@ -544,8 +506,7 @@ function onSendMessage() {
     activeSchedule.value = null;
   } else {
     emit("send-message", {
-      content: plain,
-      contentRich: doc,
+      content: doc as RichTextDocument,
       ...(props.quotedMessage ? composerQuoteRef(props.quotedMessage) : {}),
       ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     });
@@ -601,12 +562,19 @@ function formatTime(seconds: number) {
     return `${remainingSeconds}s`;
   }
 }
+
+/** Focus shell only — never blur/re-anchor an existing ProseMirror selection (fixes code-block node views). */
+function focusComposerFromShell(ev: MouseEvent) {
+  const t = ev.target;
+  if (t instanceof Node && editor.value?.view.dom.contains(t)) return;
+  editor.value?.commands.focus();
+}
 </script>
 
 <template>
   <div
     class="flex:col-md flex min-h-0 max-h-[50vh] flex-col overflow-hidden p-3 border border-zinc-200 rounded-xl bg-white focus-within:outline outline-1 outline-zinc-300/60"
-    @click="editor?.commands.focus()"
+    @click="focusComposerFromShell"
   >
     <div
       v-if="quotedMessage && !editingMessage"
@@ -629,7 +597,15 @@ function formatTime(seconds: number) {
       </Button>
     </div>
     <div class="min-h-0 flex-auto overflow-y-auto overflow-x-hidden py-0.5 font-lato">
-      <EditorContent v-if="editor" :editor="editor" />
+      <RichTextContentEditable
+        ref="composerSurfaceRef"
+        variant="channel"
+        class="min-h-[4rem]"
+        :placeholder="composerPlaceholder"
+        :mentionables="mentionables ?? []"
+        :me-id="meId"
+        :extra-editor-props="composerEditorProps"
+      />
     </div>
     <input ref="stagingFileInputRef" type="file" class="sr-only" multiple @change="onStagingFilesSelected" />
     <div

@@ -3,10 +3,8 @@ import {
   ArrayMaxSize,
   IsArray,
   IsInt,
-  IsNotEmpty,
   IsObject,
   IsOptional,
-  IsString,
   Min,
 } from 'class-validator';
 import {
@@ -24,21 +22,17 @@ import {
   normalizeTiptapDoc,
   stripImageNodesFromDoc,
   tiptapToPlainText,
+  type RichTextDocument,
 } from '@epicstory/tiptap';
-import { extractMentionIds, renderMentions } from '../utils/mentions';
+import { renderMentions } from '../utils/mentions';
 import { Transactional } from 'typeorm-transactional';
 
 export class ReplyMessage {
   messageId: number;
   senderId: number;
 
-  @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content: RichTextDocument;
 
   @IsOptional()
   @IsInt()
@@ -77,7 +71,6 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
   async execute({
     senderId,
     content,
-    contentRich,
     messageId,
     quotedReplyId,
     attachmentIds,
@@ -97,12 +90,12 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       throw new SenderIsNotChannelMember();
     }
 
-    const normalizedRich = contentRich
-      ? (stripImageNodesFromDoc(normalizeTiptapDoc(contentRich)) as object)
-      : undefined;
-    const plainContent = normalizedRich
-      ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
-      : content;
+    const normalizedDoc = stripImageNodesFromDoc(
+      normalizeTiptapDoc(content),
+    ) as RichTextDocument;
+    const plainContent = tiptapToPlainText(normalizedDoc as object, {
+      stripFormatting: true,
+    });
 
     const resolvedQuote = await this.messageService.resolveQuotedReplyId(
       quotedReplyId,
@@ -111,8 +104,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     );
 
     const { id: replyId } = await this.messageReplyRepo.save({
-      content: plainContent,
-      contentRich: normalizedRich,
+      content: normalizedDoc,
       channelId: message.channelId,
       messageId,
       senderId,
@@ -136,9 +128,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
 
     reply.setReactions(senderId);
 
-    const extractedMentionIds = normalizedRich
-      ? extractMentionIdsFromDoc(normalizedRich)
-      : extractMentionIds(plainContent);
+    const extractedMentionIds = extractMentionIdsFromDoc(normalizedDoc);
     const peerUsersMap = await this.messageService.resolveMentionUsersMap(
       message.channel,
       uniq(extractedMentionIds),
@@ -180,7 +170,6 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       );
     }
 
-    // If the original sender is mentioned, don't also send a reply notification.
     const shouldSendReplyNotification =
       message.senderId !== senderId &&
       !finalMentionIds.includes(message.senderId);

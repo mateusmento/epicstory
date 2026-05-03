@@ -20,6 +20,8 @@ import type { ICreateScheduledMessageBody } from "@/domain/channels/types/schedu
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
 import { computed, nextTick, ref, watch } from "vue";
+import type { RichTextDocument } from "@epicstory/tiptap";
+import { messageBodyPlainText } from "@epicstory/tiptap";
 import { UserAvatar, UserAvatarStack } from "@/components/user";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
@@ -32,13 +34,12 @@ const props = defineProps<{
   chatPicture?: string;
   messageGroups: IMessageGroup[];
   sendMessage: (message: {
-    content: string;
-    contentRich: any;
+    content: RichTextDocument;
     quotedMessageId?: number;
     attachmentIds?: number[];
   }) => Promise<unknown>;
   sendScheduledMessage?: (body: ICreateScheduledMessageBody) => Promise<unknown>;
-  updateMessage: (messageId: number, body: { content: string; contentRich: any }) => Promise<unknown>;
+  updateMessage: (messageId: number, body: { content: RichTextDocument }) => Promise<unknown>;
   channelId: number;
   channel: IChannel;
 }>();
@@ -122,15 +123,13 @@ watch(
 );
 
 async function onSendMessage(payload: {
-  content: string;
-  contentRich: any;
+  content: RichTextDocument;
   quotedMessageId?: number;
   attachmentIds?: number[];
 }) {
-  if (!payload.content?.trim()) return;
+  if (!messageBodyPlainText({ content: payload.content }).trim()) return;
   await props.sendMessage({
     content: payload.content,
-    contentRich: payload.contentRich,
     quotedMessageId:
       payload.quotedMessageId ??
       (quotedMessage.value ? channelComposerQuotedMessageId(quotedMessage.value) : undefined),
@@ -141,12 +140,11 @@ async function onSendMessage(payload: {
 }
 
 async function onSendScheduledMessage(payload: ICreateScheduledMessageBody) {
-  if (!payload.content?.trim()) return;
+  if (!messageBodyPlainText({ content: payload.content }).trim()) return;
   const send = props.sendScheduledMessage;
   if (send) {
     await send({
       content: payload.content,
-      contentRich: payload.contentRich,
       quotedMessageId: payload.quotedMessageId,
       dueAt: payload.dueAt,
       recurrence: payload.recurrence,
@@ -156,10 +154,9 @@ async function onSendScheduledMessage(payload: ICreateScheduledMessageBody) {
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: any }) {
+async function onSubmitEdit(payload: { messageId: number; content: RichTextDocument }) {
   await props.updateMessage(payload.messageId, {
     content: payload.content,
-    contentRich: payload.contentRich,
   });
   editingMessage.value = null;
 }

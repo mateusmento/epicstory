@@ -5,6 +5,8 @@ import { ChannelApi } from "@/domain/channels/services/channel.service";
 import { onMounted, onUnmounted, ref } from "vue";
 import type { Ref } from "vue";
 import type { IAggregatedReaction, IMessage, IReply } from "../types";
+import type { RichTextDocument } from "@epicstory/tiptap";
+import { messageBodyPlainText } from "@epicstory/tiptap";
 
 type UseMessageThreadOptions = {
   onMessageDeleted?: () => void;
@@ -111,19 +113,17 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   }
 
   async function sendReply(payload: {
-    content: string;
-    contentRich: any;
+    content: RichTextDocument;
     quotedReplyId?: number;
     attachmentIds?: number[];
   }) {
-    if (!payload.content.trim()) return;
+    if (!messageBodyPlainText({ content: payload.content }).trim()) return;
     if (!me.value) return;
 
     try {
       const reply = await channelApi.replyMessage(
         message.value?.id,
         payload.content,
-        payload.contentRich,
         payload.quotedReplyId,
         payload.attachmentIds,
       );

@@ -80,15 +80,15 @@ export class IssueController {
     @Param('parentMessageId') parentMessageId: number,
     @Body()
     body: {
-      content: string;
-      contentRich?: Record<string, unknown>;
+      content: Record<string, unknown>;
       attachmentIds?: number[];
     },
     @Auth() issuer,
   ) {
     if (
-      typeof body.content !== 'string' ||
-      body.content.trim().length === 0
+      body.content == null ||
+      typeof body.content !== 'object' ||
+      Array.isArray(body.content)
     ) {
       throw new BadRequestException('Content is required');
     }
@@ -97,8 +97,7 @@ export class IssueController {
         issueId,
         parentMessageId,
         issuer,
-        content: body.content,
-        contentRich: body.contentRich,
+        content: body.content as any,
         attachmentIds: body.attachmentIds,
       }),
     );
@@ -111,15 +110,15 @@ export class IssueController {
     @Param('id') issueId: number,
     @Body()
     body: {
-      content: string;
-      contentRich?: Record<string, unknown>;
+      content: Record<string, unknown>;
       attachmentIds?: number[];
     },
     @Auth() issuer,
   ) {
     if (
-      typeof body.content !== 'string' ||
-      body.content.trim().length === 0
+      body.content == null ||
+      typeof body.content !== 'object' ||
+      Array.isArray(body.content)
     ) {
       throw new BadRequestException('Content is required');
     }
@@ -127,8 +126,7 @@ export class IssueController {
       new CreateIssueComment({
         issueId,
         issuer,
-        content: body.content,
-        contentRich: body.contentRich,
+        content: body.content as any,
         attachmentIds: body.attachmentIds,
       }),
     );

@@ -1,16 +1,12 @@
 <script lang="ts" setup>
-import { useDependency } from "@/core/dependency-injection";
-import TiptapCodeBlockCardNodeView from "@/components/channel/TiptapCodeBlockCardNodeView.vue";
-import { epicStoryLowlight } from "@/core/epic-story-lowlight";
-import { IssueApi } from "@/domain/issues";
+import RichTextPreview from "@/components/rich-text/RichTextPreview.vue";
+import RichTextContentEditable from "@/components/rich-text/RichTextContentEditable.vue";
 import { Button } from "@/design-system";
-import { EditorContent, useEditor } from "@tiptap/vue-3";
 import {
-  createPlaceholderExtension,
-  createRichTextExtensions,
-  mediaExtensions,
-  EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
-} from "@epicstory/tiptap/vue";
+  messageBodyPlainText,
+  normalizeTiptapDoc,
+  type RichTextDocument,
+} from "@epicstory/tiptap";
 import {
   Bold,
   Braces,
@@ -27,63 +23,60 @@ import {
   Underline as UnderlineIcon,
   Undo2,
 } from "lucide-vue-next";
-import { computed, ref, watch } from "vue";
+import type { Editor } from "@tiptap/core";
+import { type Ref, computed, ref, watch } from "vue";
 
 const props = defineProps<{
-  description: string;
+  description: RichTextDocument;
   issueId: number;
   disabled?: boolean;
   isSaving?: boolean;
 }>();
 
 const emit = defineEmits<{
-  saveDescription: [html: string];
+  saveDescription: [doc: RichTextDocument];
 }>();
 
 const isEditingDescription = ref(false);
 
-const issueApi = useDependency(IssueApi);
+const descriptionSurfaceRef = ref<InstanceType<typeof RichTextContentEditable> | null>(null);
 
-const editor = useEditor({
-  extensions: [
-    ...createRichTextExtensions({
-      linkOpenOnClick: false,
-      lowlight: epicStoryLowlight,
-      codeBlockNodeView: TiptapCodeBlockCardNodeView,
-    }),
-    ...mediaExtensions({
-      uploadFile: (file: File) =>
-        issueApi.uploadAttachment(props.issueId, file).then((a) => ({
-          src: a.url,
-          attachmentId: a.id,
-        })),
-      allowedMimeTypes: ["image/png", "image/jpeg", "image/gif", "image/webp"],
-    }),
-    createPlaceholderExtension("Write a description…"),
-  ],
-  content: "",
-  editorProps: {
-    attributes: {
-      class: EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
-    },
-    handleKeyDown: (_, event) => {
-      if (event.key === "Escape") {
-        cancelEditDescription();
-        return true;
-      }
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-        finishEditDescription();
-        return true;
-      }
-      return false;
-    },
+const editor = computed(() => {
+  const exposed = descriptionSurfaceRef.value?.editor as Ref<Editor | undefined> | undefined;
+  return exposed?.value ?? null;
+});
+
+const hasDescription = computed(() =>
+  messageBodyPlainText({ content: props.description }).trim(),
+);
+
+function cancelEditDescription() {
+  if (props.disabled) return;
+  editor.value?.commands.setContent(normalizeTiptapDoc(props.description), { emitUpdate: false });
+  isEditingDescription.value = false;
+}
+
+function finishEditDescription() {
+  if (props.disabled) return;
+  const instance = editor.value;
+  if (!instance) return;
+  emit("saveDescription", normalizeTiptapDoc(instance.getJSON()) as RichTextDocument);
+  isEditingDescription.value = false;
+}
+
+const issueShortcutEditorProps = computed(() => ({
+  handleKeyDown: (_view: unknown, event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      cancelEditDescription();
+      return true;
+    }
+    if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+      finishEditDescription();
+      return true;
+    }
+    return false;
   },
-});
-
-const descriptionIsHtml = computed(() => {
-  const d = props.description ?? "";
-  return /<\/?[a-z][\s\S]*>/i.test(d);
-});
+}));
 
 function startEditDescription() {
   if (props.disabled) return;
@@ -91,24 +84,18 @@ function startEditDescription() {
   queueMicrotask(() => editor.value?.commands.focus("end"));
 }
 
-function cancelEditDescription() {
-  if (props.disabled) return;
-  isEditingDescription.value = false;
-  editor.value?.commands.setContent(props.description ?? "", { emitUpdate: false });
-}
-
-function finishEditDescription() {
-  if (props.disabled) return;
-  isEditingDescription.value = false;
-  const instance = editor.value;
-  if (!instance) return;
-  emit("saveDescription", instance.getHTML());
-}
-
 watch(isEditingDescription, (editing) => {
   if (!editing) return;
-  editor.value?.commands.setContent(props.description ?? "", { emitUpdate: false });
+  editor.value?.commands.setContent(normalizeTiptapDoc(props.description), { emitUpdate: false });
 });
+
+watch(
+  () => props.description,
+  (next) => {
+    if (isEditingDescription.value) return;
+    editor.value?.commands.setContent(normalizeTiptapDoc(next), { emitUpdate: false });
+  },
+);
 
 function toggleLink() {
   const instance = editor.value;
@@ -138,13 +125,8 @@ function toggleLink() {
         @dblclick="startEditDescription"
         title="Double-click to edit"
       >
-        <div v-if="description" class="text-sm text-foreground leading-relaxed">
-          <div
-            v-if="descriptionIsHtml"
-            class="[&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700 [&_.epic-blockquote]:flex [&_.epic-blockquote]:flex-row [&_.epic-blockquote]:gap-3 [&_.epic-blockquote]:items-stretch [&_.epic-blockquote]:border-0 [&_.epic-blockquote]:my-2 [&_.epic-blockquote]:mx-0 [&_.epic-blockquote]:p-0 [&_.epic-blockquote]:rounded-md [&_.epic-blockquote]:text-muted-foreground [&_.epic-blockquote-rail]:w-1.5 [&_.epic-blockquote-rail]:shrink-0 [&_.epic-blockquote-rail]:self-stretch [&_.epic-blockquote-rail]:min-h-[1.25rem] [&_.epic-blockquote-rail]:rounded-full [&_.epic-blockquote-rail]:bg-zinc-200 [&_.epic-blockquote-rail]:select-none [&_.epic-blockquote-body]:min-w-0 [&_.epic-blockquote-body]:flex-1 [&_blockquote:not(.epic-blockquote)]:border-l-4 [&_blockquote:not(.epic-blockquote)]:border-zinc-200 [&_blockquote:not(.epic-blockquote)]:pl-3 [&_blockquote:not(.epic-blockquote)]:pr-2 [&_blockquote:not(.epic-blockquote)]:py-1.5 [&_blockquote:not(.epic-blockquote)]:my-2 [&_blockquote:not(.epic-blockquote)]:rounded-md [&_blockquote:not(.epic-blockquote)]:text-muted-foreground [&_.epic-inline-code]:font-mono [&_.epic-inline-code]:text-[0.8125rem] [&_.epic-inline-code]:bg-zinc-100 [&_.epic-inline-code]:text-zinc-900 [&_.epic-inline-code]:rounded [&_.epic-inline-code]:border [&_.epic-inline-code]:border-zinc-200/90 [&_.epic-inline-code]:px-1 [&_.epic-inline-code]:py-px [&_p>code]:font-mono [&_p>code]:text-[0.8125rem] [&_p>code]:bg-zinc-100 [&_p>code]:text-zinc-900 [&_p>code]:rounded [&_p>code]:border [&_p>code]:border-zinc-200/90 [&_p>code]:px-1 [&_p>code]:py-px"
-            v-html="description"
-          />
-          <div v-else class="whitespace-pre-wrap">{{ description }}</div>
+        <div v-if="hasDescription" class="text-sm text-foreground leading-relaxed">
+          <RichTextPreview :content="description" />
         </div>
         <div v-else class="text-sm text-secondary-foreground">Add a description…</div>
       </div>
@@ -301,7 +283,15 @@ function toggleLink() {
         </div>
       </div>
 
-      <EditorContent :editor="editor" />
+      <RichTextContentEditable
+        ref="descriptionSurfaceRef"
+        variant="issue"
+        :issue-id="issueId"
+        placeholder="Write a description…"
+        :document="description"
+        :sync-document="false"
+        :extra-editor-props="issueShortcutEditorProps"
+      />
 
       <div class="flex:row-md flex:center-y justify-end">
         <div class="text-xs text-secondary-foreground mr-2">Ctrl+Enter to save • Esc to cancel</div>

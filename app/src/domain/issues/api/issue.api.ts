@@ -3,6 +3,7 @@ import type { Page, PageQuery } from "@/core/types";
 import type { Axios } from "axios";
 import { isValid } from "date-fns";
 import { injectable } from "tsyringe";
+import type { RichTextDocument } from "@epicstory/tiptap";
 import type { IssueFeed } from "../types/issue-feed.type";
 import type { Issue } from "../types";
 
@@ -39,7 +40,7 @@ function mapPageIssues(page: Page<IssueWire>): Page<Issue> {
 
 export type UpdateIssueData = {
   title?: string;
-  description?: string;
+  description?: RichTextDocument;
   status?: string;
   dueDate?: Date | null;
   priority?: number | null;
@@ -83,7 +84,7 @@ export class IssueApi {
     return this.axios.get<IssueWire>(`/issues/${issueId}`).then((res) => issueFromApiResponse(res.data));
   }
 
-  createIssue(projectId: number, data: { title: string; description?: string; parentIssueId?: number }) {
+  createIssue(projectId: number, data: { title: string; description?: RichTextDocument; parentIssueId?: number }) {
     return this.axios
       .post<IssueWire>(`/projects/${projectId}/issues`, data)
       .then((res) => issueFromApiResponse(res.data));
@@ -148,7 +149,7 @@ export class IssueApi {
   /** Top-level comment on the issue timeline — writes `issue_activities` + `Message`. */
   postIssueComment(
     issueId: number,
-    body: { content: string; contentRich?: Record<string, unknown>; attachmentIds?: number[] },
+    body: { content: RichTextDocument; attachmentIds?: number[] },
   ) {
     return this.axios.post(`/issues/${issueId}/comments`, body).then((res) => res.data);
   }
@@ -156,7 +157,7 @@ export class IssueApi {
   replyToIssueComment(
     issueId: number,
     parentMessageId: number,
-    body: { content: string; contentRich?: Record<string, unknown>; attachmentIds?: number[] },
+    body: { content: RichTextDocument; attachmentIds?: number[] },
   ) {
     return this.axios.post(`/issues/${issueId}/comments/${parentMessageId}/replies`, body).then((res) => res.data);
   }

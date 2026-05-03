@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { createChannelMessageExtensions } from "@/components/channel/channel-message-editor-extensions";
+import RichTextContentEditable from "@/components/rich-text/RichTextContentEditable.vue";
 import { useDependency } from "@/core/dependency-injection";
 import { useAuth } from "@/domain/auth";
 import {
@@ -20,8 +20,6 @@ import {
   type ResolvedSchedule,
 } from "@/components/channel/message-schedule/schedule-builders";
 import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
-import { EPIC_STORY_COMPOSER_EDITOR_CLASS } from "@epicstory/tiptap/vue";
-import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { format } from "date-fns";
 import {
   Bold,
@@ -36,7 +34,9 @@ import {
   Table2,
   TextQuote,
 } from "lucide-vue-next";
-import { computed, reactive, ref, toRef, watch } from "vue";
+import type { Editor } from "@tiptap/core";
+import type { Ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -57,63 +57,32 @@ const { user: authUser } = useAuth();
 const channelApi = useDependency(ChannelApi);
 const scheduleDialogOpen = ref(false);
 const scheduleOverride = ref<ResolvedSchedule | null>(null);
-const meId = computed(() => authUser.value?.id);
-const mentionContext = reactive<{ meId: number | undefined }>({ meId: undefined });
-watch(
-  meId,
-  (id) => {
-    mentionContext.meId = id;
-  },
-  { immediate: true },
-);
-const mentionablesById = computed(() => new Map((props.mentionables ?? []).map((u) => [u.id, u])));
-const mentionablesForSuggestion = computed(() => {
-  const m = meId.value;
-  return (props.mentionables ?? []).filter((u) => (m != null ? u.id !== m : true));
-});
-const channelIdRef = toRef(props, "channelId");
 
-const editor = useEditor({
-  extensions: createChannelMessageExtensions({
-    channelApi,
-    channelId: channelIdRef,
-    getPlaceholder: () => "Message…",
-    mentionContext,
-    mentionablesById,
-    mentionablesForSuggestion,
-  }) as any,
-  content: "",
-  editorProps: {
-    attributes: { class: EPIC_STORY_COMPOSER_EDITOR_CLASS },
-  },
+const scheduleEditorSurfaceRef = ref<InstanceType<typeof RichTextContentEditable> | null>(null);
+
+const editor = computed(() => {
+  const exposed = scheduleEditorSurfaceRef.value?.editor as Ref<Editor | undefined> | undefined;
+  return exposed?.value ?? null;
 });
+
+const meId = computed(() => authUser.value?.id);
+
+const seedDocument = computed(() =>
+  props.open ? normalizeTiptapDoc(props.scheduled.content) : null,
+);
+
+watch(
+  () => props.open,
+  (op) => {
+    if (op) scheduleOverride.value = null;
+  },
+);
 
 const displaySchedule = computed(() => {
   if (scheduleOverride.value) return formatScheduleSummary(scheduleOverride.value);
   const m = props.scheduled;
   return `${format(new Date(m.dueAt), "PPp")} · ${m.recurrence.frequency}`;
 });
-
-watch(
-  () => [props.open, props.scheduled] as const,
-  ([op]) => {
-    if (!op || !editor.value) return;
-    scheduleOverride.value = null;
-    const doc = props.scheduled.contentRich
-      ? normalizeTiptapDoc(props.scheduled.contentRich)
-      : {
-          type: "doc",
-          content: [
-            {
-              type: "paragraph",
-              content: props.scheduled.content ? [{ type: "text", text: props.scheduled.content }] : [],
-            },
-          ],
-        };
-    editor.value.commands.setContent(doc);
-  },
-  { immediate: true },
-);
 
 function onSchedulePicked(s: ResolvedSchedule) {
   scheduleOverride.value = s;
@@ -142,8 +111,7 @@ async function save() {
   if (!plain.trim()) return;
   const sch = scheduleOverride.value;
   await channelApi.patchScheduledMessage(props.channelId, props.scheduled.id, {
-    content: plain,
-    contentRich: doc,
+    content: doc,
     ...(sch ? { dueAt: sch.dueAt.toISOString(), recurrence: sch.recurrence } : {}),
   });
   emit("saved");
@@ -165,7 +133,17 @@ async function save() {
       </p>
       <div class="flex:col border rounded-md overflow-hidden min-h-0 max-h-72">
         <ScrollArea class="min-h-0 max-h-48">
-          <EditorContent v-if="editor" :editor="editor" class="p-2" />
+          <RichTextContentEditable
+            v-if="open"
+            ref="scheduleEditorSurfaceRef"
+            variant="channel"
+            placeholder="Message…"
+            :mentionables="mentionables ?? []"
+            :me-id="meId"
+            :document="seedDocument"
+            :sync-document="true"
+            class="p-2"
+          />
         </ScrollArea>
         <div class="flex:row flex-wrap items-center gap-0.5 border-t p-1 text-secondary-foreground">
           <Button

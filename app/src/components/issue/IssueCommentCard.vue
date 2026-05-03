@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import ChannelAttachmentStrip from "@/components/channel/ChannelAttachmentStrip.vue";
-import { emojis } from "@/components/channel/emojis";
-import MentionedText from "@/components/channel/MentionedText.vue";
-import RichMessageContent from "@/components/channel/RichMessageContent.vue";
+import RichTextPreview from "@/components/rich-text/RichTextPreview.vue";
 import { UserAvatar } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import {
@@ -70,8 +68,6 @@ function timeLabel(sentAt: string) {
     return sentAt;
   }
 }
-
-const rmMeId = () => props.meId ?? 0;
 
 function reactedByMe(reaction: IAggregatedReaction) {
   return reaction.reactedByMe || reaction.reactedBy.some((u) => u.id === props.meId);
@@ -142,18 +138,7 @@ const rootClass = computed(() =>
         <div
           class="prose prose-sm max-w-none leading-relaxed text-zinc-800 [&_a]:text-[#4F46E5] [&_a]:no-underline hover:[&_a]:underline [&_.ProseMirror]:outline-none"
         >
-          <RichMessageContent
-            v-if="message.contentRich"
-            :content-rich="message.contentRich"
-            :mentioned-users="message.mentionedUsers"
-            :me-id="rmMeId()"
-          />
-          <MentionedText
-            v-else
-            :content="message.content"
-            :mentioned-users="message.mentionedUsers"
-            :me-id="rmMeId()"
-          />
+          <RichTextPreview :content="message.content" />
         </div>
         <ChannelAttachmentStrip
           v-if="(message.attachments?.length ?? 0) > 0"

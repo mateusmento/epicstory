@@ -12,6 +12,7 @@ import type { User } from "@/domain/auth";
 import { formatDistanceToNow } from "date-fns";
 import { computed, reactive, ref, watch } from "vue";
 import { cn } from "@/design-system/utils";
+import type { RichTextDocument } from "@epicstory/tiptap";
 
 const props = defineProps<{
   issueId: number;
@@ -120,13 +121,11 @@ async function reloadAfterComment() {
 }
 
 async function onPostIssueComment(payload: {
-  content: string;
-  contentRich: unknown;
+  content: RichTextDocument;
   attachmentIds?: number[];
 }) {
   await issueApi.postIssueComment(props.issueId, {
     content: payload.content,
-    contentRich: payload.contentRich as Record<string, unknown> | undefined,
     ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
       ? { attachmentIds: payload.attachmentIds }
       : {}),
@@ -136,11 +135,10 @@ async function onPostIssueComment(payload: {
 
 async function onReplyInThread(
   parentMessageId: number,
-  payload: { content: string; contentRich: unknown; attachmentIds?: number[] },
+  payload: { content: RichTextDocument; attachmentIds?: number[] },
 ) {
   await issueApi.replyToIssueComment(props.issueId, parentMessageId, {
     content: payload.content,
-    contentRich: payload.contentRich as Record<string, unknown> | undefined,
     ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
       ? { attachmentIds: payload.attachmentIds }
       : {}),

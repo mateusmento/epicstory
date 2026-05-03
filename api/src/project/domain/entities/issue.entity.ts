@@ -1,3 +1,4 @@
+import type { RichTextDocument } from '@epicstory/tiptap';
 import { User } from 'src/auth';
 import { patch } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
@@ -23,8 +24,8 @@ export class Issue {
   @Column({ default: '' })
   title: string;
 
-  @Column({ default: '' })
-  description: string;
+  @Column({ type: 'jsonb' })
+  description: RichTextDocument;
 
   @Column()
   workspaceId: number;

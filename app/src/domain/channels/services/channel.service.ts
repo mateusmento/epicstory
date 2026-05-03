@@ -134,15 +134,13 @@ export class ChannelApi {
 
   sendMessage(
     channelId: number,
-    content: string,
-    contentRich?: any,
+    content: Record<string, unknown>,
     quotedMessageId?: number | null,
     attachmentIds?: number[],
   ) {
     return this.axios
       .post<IMessage>(`channels/${channelId}/messages`, {
         content,
-        contentRich,
         ...(quotedMessageId != null ? { quotedMessageId } : {}),
         ...(attachmentIds != null && attachmentIds.length > 0 ? { attachmentIds } : {}),
       })
@@ -173,7 +171,12 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: string) {
+  sendDirectMessage(
+    workspaceId: number,
+    senderId: number,
+    peers: number[],
+    content: Record<string, unknown>,
+  ) {
     return this.axios
       .post<IMessage>(`workspaces/${workspaceId}/channels/direct/message`, { senderId, peers, content })
       .then((res) => res.data);
@@ -183,7 +186,7 @@ export class ChannelApi {
     return this.axios.delete(`/messages/${messageId}`).then((res) => res.data);
   }
 
-  updateMessage(messageId: number, body: { content: string; contentRich?: any }) {
+  updateMessage(messageId: number, body: { content: Record<string, unknown> }) {
     return this.axios.patch<IMessage>(`/messages/${messageId}`, body).then((res) => res.data);
   }
 
@@ -203,15 +206,13 @@ export class ChannelApi {
 
   replyMessage(
     messageId: number,
-    content: string,
-    contentRich?: any,
+    content: Record<string, unknown>,
     quotedReplyId?: number | null,
     attachmentIds?: number[],
   ) {
     return this.axios
       .post<IReply>(`/messages/${messageId}/replies`, {
         content,
-        contentRich,
         ...(quotedReplyId != null ? { quotedReplyId } : {}),
         ...(attachmentIds != null && attachmentIds.length > 0 ? { attachmentIds } : {}),
       })

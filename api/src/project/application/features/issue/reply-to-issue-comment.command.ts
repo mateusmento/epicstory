@@ -8,10 +8,8 @@ import {
   ArrayMaxSize,
   IsArray,
   IsInt,
-  IsNotEmpty,
   IsObject,
   IsOptional,
-  IsString,
   Min,
 } from 'class-validator';
 import { ReplyMessage } from 'src/channel/application/features';
@@ -22,19 +20,15 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
+import type { RichTextDocument } from '@epicstory/tiptap';
 
 export class ReplyToIssueComment {
   issuer!: Issuer;
   issueId!: number;
   parentMessageId!: number;
 
-  @IsNotEmpty()
-  @IsString()
-  content!: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: Record<string, unknown>;
+  content!: RichTextDocument;
 
   @IsOptional()
   @IsArray()
@@ -65,7 +59,6 @@ export class ReplyToIssueCommentCommand
     issueId,
     parentMessageId,
     content,
-    contentRich,
     attachmentIds,
   }: ReplyToIssueComment) {
     const issue = await this.issueRepo.findOne({ where: { id: issueId } });
@@ -97,7 +90,6 @@ export class ReplyToIssueCommentCommand
         messageId: parentMessageId,
         senderId: issuer.id,
         content,
-        contentRich: contentRich as object | undefined,
         quotedReplyId: undefined,
         attachmentIds,
         matchedIssueId: issue.id,

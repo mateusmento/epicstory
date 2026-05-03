@@ -1,12 +1,5 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsNumber,
-  IsObject,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsArray, IsNumber, IsObject, IsOptional } from 'class-validator';
 import { UserRepository } from 'src/auth';
 import { Channel } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
@@ -15,6 +8,7 @@ import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { WorkspaceNotFound } from 'src/workspace/application/features';
 import { SendMessage } from './send-message.command';
+import type { RichTextDocument } from '@epicstory/tiptap';
 
 export class SendDirectMessage {
   senderId: number;
@@ -24,13 +18,8 @@ export class SendDirectMessage {
   @IsOptional()
   peers: number[];
 
-  @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content: RichTextDocument;
 
   @IsNumber()
   workspaceId: number;
@@ -56,7 +45,6 @@ export class SendDirectMessageCommand
     peers,
     workspaceId,
     content,
-    contentRich,
   }: SendDirectMessage) {
     const workspace = await this.workspaceRepo.findOneBy({ id: workspaceId });
     if (!workspace) {
@@ -96,7 +84,6 @@ export class SendDirectMessageCommand
         channelId: channel.id,
         senderId,
         content,
-        contentRich,
       }),
     );
   }

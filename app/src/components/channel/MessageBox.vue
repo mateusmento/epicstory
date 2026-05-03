@@ -13,10 +13,9 @@ import { cn } from "@/design-system/utils";
 import type { IMessage, IReply } from "@/domain/channels";
 import { messageBodyPlainText } from "@epicstory/tiptap";
 import { computed, ref, watch } from "vue";
-import MentionedText from "./MentionedText.vue";
+import RichTextPreview from "@/components/rich-text/RichTextPreview.vue";
 import MessageActions from "./MessageActions.vue";
 import MessageContextMenu from "./MessageContextMenu.vue";
-import RichMessageContent from "./RichMessageContent.vue";
 import ChannelAttachmentStrip from "./ChannelAttachmentStrip.vue";
 import { Icon } from "@/design-system/icons";
 
@@ -106,18 +105,7 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
             @quote="emit('quote', props.message)"
             @edit="emit('edit', props.message)"
           >
-            <RichMessageContent
-              v-if="props.message.contentRich"
-              :contentRich="props.message.contentRich"
-              :mentioned-users="props.message.mentionedUsers"
-              :me-id="props.meId"
-            />
-            <MentionedText
-              v-else
-              :content="props.message.content"
-              :mentioned-users="props.message.mentionedUsers"
-              :me-id="props.meId"
-            />
+            <RichTextPreview :content="props.message.content" />
             <ChannelAttachmentStrip
               v-if="(props.message.attachments?.length ?? 0) > 0"
               :files="props.message.attachments ?? []"

@@ -11,6 +11,8 @@ import type { ICreateScheduledMessageBody } from "../types/scheduled-message.typ
 import type { IChannel, IMessage, IMessageGroup } from "../types";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
+import { messageBodyPlainText } from "@epicstory/tiptap";
+import type { RichTextDocument } from "@epicstory/tiptap";
 
 /** Shared across all `useChannel()` callers */
 const typingActivity = ref(new Map<number, number>());
@@ -165,21 +167,19 @@ export function useChannel() {
 
   async function sendMessage({
     content,
-    contentRich,
     quotedMessageId,
     attachmentIds,
   }: {
-    content: string;
-    contentRich: any;
+    content: RichTextDocument;
     quotedMessageId?: number | null;
     attachmentIds?: number[];
   }) {
     if (!store.channel) return;
-    if (!content) return;
+    const plain = messageBodyPlainText({ content });
+    if (!plain.trim()) return;
     const message = await channelApi.sendMessage(
       store.channel.id,
       content,
-      contentRich,
       quotedMessageId,
       attachmentIds,
     );
@@ -192,7 +192,12 @@ export function useChannel() {
     return channelApi.postScheduledMessage(store.channel.id, body);
   }
 
-  function sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: string) {
+  function sendDirectMessage(
+    workspaceId: number,
+    senderId: number,
+    peers: number[],
+    content: RichTextDocument,
+  ) {
     return channelApi.sendDirectMessage(workspaceId, senderId, peers, content);
   }
 
@@ -224,7 +229,7 @@ export function useChannel() {
     store.messages = store.messages.filter((message) => message.id !== messageId);
   }
 
-  async function updateMessage(messageId: number, body: { content: string; contentRich: any }) {
+  async function updateMessage(messageId: number, body: { content: RichTextDocument }) {
     const updated = await channelApi.updateMessage(messageId, body);
     const i = store.messages.findIndex((m) => m.id === messageId);
     if (i >= 0) store.messages[i] = { ...store.messages[i], ...updated };

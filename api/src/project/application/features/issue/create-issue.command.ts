@@ -1,6 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsObject, IsOptional } from 'class-validator';
+import {
+  EMPTY_RICH_TEXT_DOCUMENT,
+  type RichTextDocument,
+} from '@epicstory/tiptap';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -18,9 +22,9 @@ export class CreateIssue {
   issuer: Issuer;
   @IsNotEmpty()
   title: string;
-  @IsString()
   @IsOptional()
-  description?: string;
+  @IsObject()
+  description?: RichTextDocument;
   @IsNumber()
   projectId: number;
 
@@ -73,6 +77,7 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
     const issue = await this.issueRepo.save(
       Issue.create({
         ...data,
+        description: data.description ?? EMPTY_RICH_TEXT_DOCUMENT,
         workspaceId,
         parentIssueId,
         createdById: issuer.id,

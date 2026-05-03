@@ -6,7 +6,7 @@ import {
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsObject } from 'class-validator';
 import {
   ChannelNotFound,
   IssuerCanOnlyEditOwnMessages,
@@ -15,18 +15,14 @@ import {
   ScheduledMessageCannotBeEdited,
 } from '../exceptions';
 import { MessageService } from '../services/message.service';
+import type { RichTextDocument } from '@epicstory/tiptap';
 
 export class UpdateMessage {
   messageId: number;
   issuerId: number;
 
-  @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content: RichTextDocument;
 
   constructor(data: Partial<UpdateMessage>) {
     patch(this, data);
@@ -42,7 +38,7 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
     private messageService: MessageService,
   ) {}
 
-  async execute({ messageId, issuerId, content, contentRich }: UpdateMessage) {
+  async execute({ messageId, issuerId, content }: UpdateMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
     });
@@ -75,7 +71,6 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
       channel,
       messageId,
       content,
-      contentRich,
       issuerId,
     );
   }

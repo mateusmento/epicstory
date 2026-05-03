@@ -9,6 +9,7 @@ import {
   ProjectRepository,
 } from 'src/project/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
+import { legacyPlainTextToRichTextDocument } from '@epicstory/tiptap';
 import { CreateIssue } from '../issue/create-issue.command';
 
 export class CreateBacklogItem {
@@ -64,7 +65,16 @@ export class CreateBacklogItemCommand
     );
 
     const issue = await this.commandBus.execute(
-      new CreateIssue({ issuer, projectId, title, description, parentIssueId }),
+      new CreateIssue({
+        issuer,
+        projectId,
+        title,
+        description:
+          description != null && description !== ''
+            ? legacyPlainTextToRichTextDocument(description)
+            : undefined,
+        parentIssueId,
+      }),
     );
 
     const backlogItem = await this.backlogItemRepo.save({

@@ -1,3 +1,4 @@
+import type { RichTextDocument } from "@epicstory/tiptap";
 import type { User } from "@/domain/auth";
 import type { IChannel } from "./channel.type";
 
@@ -5,12 +6,11 @@ import type { IChannel } from "./channel.type";
 export type IQuotedMessagePreview = {
   id: number;
   sender: User;
-  content: string;
-  contentRich?: any;
+  content: RichTextDocument;
   displayContent?: string;
 };
 
-/** Server-linked files; rendered below the text body, not inside `contentRich`. */
+/** Server-linked files; rendered below the text body, not inside `content`. */
 export type MessageAttachmentDto = {
   id: number;
   url: string;
@@ -21,8 +21,7 @@ export type MessageAttachmentDto = {
 
 export interface IMessage {
   id: number;
-  content: string;
-  contentRich?: any;
+  content: RichTextDocument;
   displayContent?: string;
   quotedMessageId?: number | null;
   quotedMessage?: IQuotedMessagePreview;
@@ -65,8 +64,7 @@ export interface IMessageReaction {
 
 export interface IReply {
   id: number;
-  content: string;
-  contentRich?: any;
+  content: RichTextDocument;
   displayContent?: string;
   /** `message_replies.id` of the quoted reply in the same thread. */
   quotedReplyId?: number | null;

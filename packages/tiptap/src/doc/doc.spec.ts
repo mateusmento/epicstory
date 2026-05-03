@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { extractMentionIdsFromDoc } from "./mentions-doc";
+import { legacyPlainTextToRichTextDocument } from "./legacy-plain";
 import { mergeQuotedMessageIntoDoc } from "./message";
 import { normalizeTiptapDoc } from "./normalize";
 import { tiptapToPlainText } from "./plain-text";
@@ -243,8 +244,7 @@ describe("mergeQuotedMessageIntoDoc", () => {
     const out = mergeQuotedMessageIntoDoc(
       {
         sender: { name: "Ada" },
-        content: "quoted plain",
-        contentRich: undefined,
+        content: legacyPlainTextToRichTextDocument("quoted plain"),
       },
       main,
     ) as { content: { type: string }[] };
@@ -253,7 +253,7 @@ describe("mergeQuotedMessageIntoDoc", () => {
     expect(tiptapToPlainText(out)).toContain("quoted plain");
   });
 
-  it("embeds rich blocks from contentRich (e.g. code blocks)", () => {
+  it("embeds rich blocks from quoted content (e.g. code blocks)", () => {
     const main = {
       type: "doc",
       content: [
@@ -266,8 +266,7 @@ describe("mergeQuotedMessageIntoDoc", () => {
     const out = mergeQuotedMessageIntoDoc(
       {
         sender: { name: "Bob" },
-        content: "",
-        contentRich: {
+        content: {
           type: "doc",
           content: [
             {

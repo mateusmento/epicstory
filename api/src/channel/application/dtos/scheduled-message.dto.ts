@@ -9,8 +9,7 @@ export class ScheduledMessageDto {
   id: UUID;
   channelId: number;
   senderId: number;
-  content: string;
-  contentRich?: any;
+  content: Record<string, unknown>;
   quotedMessageId?: number;
 
   dueAt: Date;
@@ -46,8 +45,7 @@ export function toScheduledMessageDto(job: ScheduledJob): ScheduledMessageDto {
   dto.id = job.id;
   dto.channelId = p.channelId;
   dto.senderId = p.senderId;
-  dto.content = p.content;
-  dto.contentRich = p.contentRich;
+  dto.content = p.content as Record<string, unknown>;
   dto.quotedMessageId = p.quotedMessageId;
   dto.dueAt = job.dueAt;
   dto.recurrence = job.recurrence;

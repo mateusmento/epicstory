@@ -6,7 +6,6 @@ import {
   IsNumber,
   IsObject,
   IsOptional,
-  IsString,
   IsUUID,
   Min,
 } from 'class-validator';
@@ -109,13 +108,8 @@ export class ScheduledMessagePayload {
   @Min(1)
   senderId: number;
 
-  @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content: Record<string, unknown>;
 
   @IsOptional()
   @IsInt()

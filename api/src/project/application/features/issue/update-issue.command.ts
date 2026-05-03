@@ -1,5 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsDate, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsDate, IsNotEmpty, IsNumber, IsObject, IsOptional } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import {
@@ -14,15 +14,24 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
 import { ProjectGateway } from '../../gateways/project.gateway';
+import {
+  isRichTextEqual,
+  normalizeTiptapDoc,
+  tiptapToPlainText,
+  type RichTextDocument,
+} from '@epicstory/tiptap';
 
 const DESCRIPTION_ACTIVITY_EXCERPT_MAX = 280;
 
 function excerptFromDescription(
-  raw: string | null | undefined,
+  doc: RichTextDocument | null | undefined,
   max = DESCRIPTION_ACTIVITY_EXCERPT_MAX,
 ): string | undefined {
-  if (raw == null) return undefined;
-  const t = raw.trim().replace(/\s+/g, ' ');
+  if (doc == null) return undefined;
+  const plain = tiptapToPlainText(normalizeTiptapDoc(doc) as object, {
+    stripFormatting: true,
+  });
+  const t = plain.trim().replace(/\s+/g, ' ');
   if (!t) return undefined;
   return t.length > max ? `${t.slice(0, max)}…` : t;
 }
@@ -35,9 +44,9 @@ export class UpdateIssue {
   @IsOptional()
   title?: string;
 
-  @IsNotEmpty()
   @IsOptional()
-  description?: string;
+  @IsObject()
+  description?: RichTextDocument;
 
   @IsNotEmpty()
   @IsOptional()
@@ -164,8 +173,9 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
     }
     if (
       data.description !== undefined &&
-      savedIssue.description !== prevSnapshot.description
+      !isRichTextEqual(savedIssue.description, prevSnapshot.description)
     ) {
+      const excerpt = excerptFromDescription(savedIssue.description);
       await this.issueActivities.save(
         this.issueActivities.create({
           issueId,
@@ -174,10 +184,8 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
           messageId: null,
           attachmentId: null,
           payload: {
-            changeKind: savedIssue.description === '' ? 'cleared' : 'edited',
-            ...(savedIssue.description
-              ? { excerpt: excerptFromDescription(savedIssue.description) }
-              : {}),
+            changeKind: excerpt ? 'edited' : 'cleared',
+            ...(excerpt ? { excerpt } : {}),
           },
         }),
       );

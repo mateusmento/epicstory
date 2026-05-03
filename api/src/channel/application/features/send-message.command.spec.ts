@@ -10,6 +10,7 @@ import {
   truncateTables,
 } from 'src/core/testing/database';
 import { DataSource } from 'typeorm';
+import { legacyPlainTextToRichTextDocument } from '@epicstory/tiptap';
 import { SendDirectMessage } from './send-direct-message.command';
 import { Workspace } from 'src/workspace/domain/entities';
 import { WorkspaceMember } from 'src/workspace/domain/entities/workspace-member.entity';
@@ -162,7 +163,7 @@ describe('SendMessageCommand', () => {
         workspaceId: workspace.id,
         senderId: user1.id,
         peers: [user2.id, user3.id],
-        content: 'Hello, world!',
+        content: legacyPlainTextToRichTextDocument('Hello, world!'),
       }),
     );
 
@@ -183,7 +184,7 @@ describe('SendMessageCommand', () => {
         workspaceId: workspace.id,
         senderId: user1.id,
         peers: [user4.id],
-        content: 'Hello, world!',
+        content: legacyPlainTextToRichTextDocument('Hello, world!'),
       }),
     );
 

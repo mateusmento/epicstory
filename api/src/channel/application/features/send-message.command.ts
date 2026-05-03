@@ -4,10 +4,8 @@ import {
   IsArray,
   IsBoolean,
   IsInt,
-  IsNotEmpty,
   IsObject,
   IsOptional,
-  IsString,
   Min,
 } from 'class-validator';
 import {
@@ -22,18 +20,14 @@ import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
 import { dispatchNotificationsForNewChannelMessage } from '../utils/dispatch-channel-message-notifications';
 import { Transactional } from 'typeorm-transactional';
+import type { RichTextDocument } from '@epicstory/tiptap';
 
 export class SendMessage {
   channelId: number;
   senderId: number;
 
-  @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content: RichTextDocument;
 
   @IsOptional()
   @IsInt()
@@ -74,7 +68,6 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     channelId,
     senderId,
     content,
-    contentRich,
     quotedMessageId,
     markAsScheduled,
     attachmentIds,
@@ -104,7 +97,6 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       channel,
       senderId,
       content,
-      contentRich,
       quotedMessageId,
       { isScheduled: markAsScheduled === true },
     );

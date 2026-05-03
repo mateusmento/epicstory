@@ -16,7 +16,6 @@ import {
   IsInt,
   IsObject,
   IsOptional,
-  IsString,
   Min,
 } from 'class-validator';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
@@ -28,12 +27,8 @@ import { ScheduleChannelMessage } from '../features/schedule-channel-message.com
 import { UpdateScheduledChannelMessage } from '../features/update-scheduled-channel-message.command';
 
 class CreateScheduledMessageBody {
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content: Record<string, unknown>;
 
   @IsOptional()
   @IsInt()
@@ -50,12 +45,8 @@ class CreateScheduledMessageBody {
 
 class UpdateScheduledMessageBody {
   @IsOptional()
-  @IsString()
-  content?: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content?: Record<string, unknown>;
 
   @IsOptional()
   @IsInt()
@@ -101,8 +92,7 @@ export class ChannelScheduledMessageController {
       new ScheduleChannelMessage({
         channelId: +channelId,
         senderId: issuer.id,
-        content: body.content,
-        contentRich: body.contentRich,
+        content: body.content as any,
         quotedMessageId: body.quotedMessageId,
         dueAt: body.dueAt,
         recurrence: body.recurrence,
@@ -122,8 +112,7 @@ export class ChannelScheduledMessageController {
         scheduledMessageId,
         channelId: +channelId,
         issuerId: issuer.id,
-        content: body.content,
-        contentRich: body.contentRich,
+        content: body.content as any,
         quotedMessageId: body.quotedMessageId,
         dueAt: body.dueAt,
         recurrence: body.recurrence,

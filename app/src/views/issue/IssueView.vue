@@ -16,6 +16,7 @@ import IssueAttachmentsStrip from "@/components/issue/IssueAttachmentsStrip.vue"
 import { useAuth } from "@/domain/auth";
 import { useIssue } from "@/domain/issues/composables/issue";
 import { ProjectApi, type Project } from "@/domain/project";
+import { EMPTY_RICH_TEXT_DOCUMENT, isRichTextEqual, type RichTextDocument } from "@epicstory/tiptap";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
 import type { User } from "@/domain/user";
@@ -113,9 +114,9 @@ function finishEditTitle() {
   saveMainFields();
 }
 
-function onSaveDescription(html: string) {
+function onSaveDescription(doc: RichTextDocument) {
   if (!issue.value) return;
-  if (html !== issue.value.description) savePatch({ description: html });
+  if (!isRichTextEqual(doc, issue.value.description)) savePatch({ description: doc });
 }
 
 onMounted(() => {
@@ -184,7 +185,7 @@ watch(
 
         <IssueDescriptionEditor
           :key="props.issueId"
-          :description="issue?.description ?? ''"
+          :description="issue?.description ?? EMPTY_RICH_TEXT_DOCUMENT"
           :issue-id="+props.issueId"
           :disabled="!issue"
           :is-saving="isSaving"

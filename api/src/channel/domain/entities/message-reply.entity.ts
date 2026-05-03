@@ -1,3 +1,4 @@
+import type { RichTextDocument } from '@epicstory/tiptap';
 import { Exclude } from 'class-transformer';
 import { User } from 'src/auth';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
@@ -23,11 +24,8 @@ export class MessageReply {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  content: string;
-
-  @Column({ type: 'jsonb', nullable: true })
-  contentRich?: any;
+  @Column({ type: 'jsonb' })
+  content: RichTextDocument;
 
   @Column({ default: () => 'now()' })
   sentAt: Date;

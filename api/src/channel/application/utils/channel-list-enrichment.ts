@@ -1,6 +1,10 @@
 import { Channel } from 'src/channel/domain/entities/channel.entity';
-import { extractMentionIds, renderMentions } from './mentions';
+import { renderMentions } from './mentions';
 import { User } from 'src/auth/domain/entities/user.entity';
+import {
+  extractMentionIdsFromDoc,
+  messageBodyPlainText,
+} from '@epicstory/tiptap';
 
 /**
  * Sidebar / list payloads: speakingTo for DMs, lastMessage mention rendering.
@@ -16,16 +20,21 @@ export function enrichChannelsForListView(
     if (channel.type === 'direct')
       channel.speakingTo = resolveDirectPeer(channel, viewerUserId);
 
-    if (!channel.lastMessage?.content) continue;
+    if (!channel.lastMessage) continue;
+
+    const plain = messageBodyPlainText({
+      content: channel.lastMessage.content,
+    });
+    if (!plain.trim()) continue;
 
     const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
-    const mentionIds = extractMentionIds(channel.lastMessage.content);
+    const mentionIds = extractMentionIdsFromDoc(channel.lastMessage.content);
 
     (channel.lastMessage as any).mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter(Boolean);
     (channel.lastMessage as any).displayContent = renderMentions(
-      channel.lastMessage.content,
+      plain,
       peerUsersMap,
     );
   }

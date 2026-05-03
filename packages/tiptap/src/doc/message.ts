@@ -1,6 +1,7 @@
 import type { TiptapJSONNode } from "./types";
 import { normalizeTiptapDoc } from "./normalize";
 import { tiptapToPlainText } from "./plain-text";
+import { legacyPlainTextToRichTextDocument } from "./legacy-plain";
 
 /** Max top-level blocks copied from the quoted rich doc (avoids huge payloads). */
 const QUOTE_RICH_MAX_BLOCKS = 24;
@@ -9,15 +10,9 @@ function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-/**
- * Top-level blocks from the quoted message's rich doc, or a single paragraph fallback.
- */
-function quotedBodyBlocks(quoted: {
-  content: string;
-  contentRich?: unknown;
-}): TiptapJSONNode[] {
-  if (quoted.contentRich) {
-    const norm = normalizeTiptapDoc(quoted.contentRich) as {
+function quotedBodyBlocks(quoted: { content: unknown }): TiptapJSONNode[] {
+  if (quoted.content && typeof quoted.content === "object") {
+    const norm = normalizeTiptapDoc(quoted.content) as {
       content?: TiptapJSONNode[];
     };
     const blocks = Array.isArray(norm.content)
@@ -26,37 +21,36 @@ function quotedBodyBlocks(quoted: {
     if (blocks.length > 0) return blocks;
   }
   const excerpt = messageBodyPlainText(quoted).slice(0, 500);
-  return [
-    {
-      type: "paragraph",
-      content: excerpt ? [{ type: "text", text: excerpt }] : [],
-    },
-  ];
+  if (!excerpt) {
+    return [{ type: "paragraph", content: [] }];
+  }
+  const fallback = legacyPlainTextToRichTextDocument(excerpt) as {
+    content?: TiptapJSONNode[];
+  };
+  return Array.isArray(fallback.content) && fallback.content.length > 0
+    ? fallback.content
+    : [{ type: "paragraph", content: [{ type: "text", text: excerpt }] }];
 }
 
-export function messageBodyPlainText(message: {
-  content: string;
-  contentRich?: unknown;
-}): string {
-  if (message.contentRich) {
-    return tiptapToPlainText(
-      normalizeTiptapDoc(message.contentRich) as TiptapJSONNode,
-      { stripFormatting: true },
-    );
+export function messageBodyPlainText(message: { content: unknown }): string {
+  if (!message.content || typeof message.content !== "object") {
+    return "";
   }
-  return message.content ?? "";
+  return tiptapToPlainText(
+    normalizeTiptapDoc(message.content) as TiptapJSONNode,
+    { stripFormatting: true },
+  );
 }
 
 /**
  * @deprecated Prefer persisting `quotedMessageId` on the message/reply and rendering
- * the referenced message in the UI. Kept for reading legacy messages that embedded a
- * synthetic blockquote in `contentRich`.
+ * the referenced message in the UI. Kept for reading legacy payloads that embedded a
+ * synthetic blockquote in the prose doc.
  */
 export function mergeQuotedMessageIntoDoc(
   quoted: {
     sender: { name: string };
-    content: string;
-    contentRich?: unknown;
+    content: unknown;
   },
   mainDoc: unknown,
 ): unknown {

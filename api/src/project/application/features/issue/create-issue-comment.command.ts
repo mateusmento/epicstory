@@ -8,10 +8,8 @@ import {
   ArrayMaxSize,
   IsArray,
   IsInt,
-  IsNotEmpty,
   IsObject,
   IsOptional,
-  IsString,
   Min,
 } from 'class-validator';
 import { dispatchNotificationsForNewChannelMessage } from 'src/channel/application/utils/dispatch-channel-message-notifications';
@@ -27,18 +25,14 @@ import {
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
+import type { RichTextDocument } from '@epicstory/tiptap';
 
 export class CreateIssueComment {
   issuer: Issuer;
   issueId: number;
 
-  @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: Record<string, unknown>;
+  content: RichTextDocument;
 
   @IsOptional()
   @IsArray()
@@ -71,7 +65,6 @@ export class CreateIssueCommentCommand
     issuer,
     issueId,
     content,
-    contentRich,
     attachmentIds,
   }: CreateIssueComment) {
     const issue = await this.issueRepo.findOne({ where: { id: issueId } });
@@ -100,7 +93,6 @@ export class CreateIssueCommentCommand
       channel,
       issuer.id,
       content,
-      contentRich as object | undefined,
       null,
     );
 

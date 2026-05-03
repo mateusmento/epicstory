@@ -1,10 +1,14 @@
 /**
- * Class names for TipTap `editorProps.attributes.class`.
- * Styles live in `./editor.css` using Tailwind `@apply`. Import `@epicstory/tiptap/vue/editor.css` in the app (see `main.ts`).
+ * Unified rich-text root class (composer, preview HTML wrapper, issue editor).
+ * Styles live in `./editor.css` using Tailwind `@apply`. Import `@epicstory/tiptap/vue/editor.css` in the app.
  */
-export const EPIC_STORY_COMPOSER_EDITOR_CLASS = "epic-story-composer-editor";
+export const EPICSTORY_RICH_TEXT = "epicstory-rich-text";
 
-export const EPIC_STORY_READONLY_MESSAGE_CLASS = "epic-story-readonly-message";
+/** Editable ProseMirror surface (channel composer). */
+export const EPICSTORY_RICH_TEXT_EDITABLE = `${EPICSTORY_RICH_TEXT} epicstory-rich-text--editable`;
 
-export const EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS =
-  "epic-story-issue-description-editor";
+/** Issue description editor (extra spacing / min-height via `--issue` in CSS). */
+export const EPICSTORY_RICH_TEXT_ISSUE = `${EPICSTORY_RICH_TEXT_EDITABLE} epicstory-rich-text--issue`;
+
+/** Read-only HTML preview (`generateHTML` + `v-html`). */
+export const EPICSTORY_RICH_TEXT_PREVIEW = `${EPICSTORY_RICH_TEXT} epicstory-rich-text--preview`;

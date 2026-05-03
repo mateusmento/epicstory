@@ -1,12 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import {
-  IsInt,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsInt, IsObject, IsOptional, Min } from 'class-validator';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { ScheduledJobTypes } from 'src/scheduling/constants';
@@ -19,18 +12,14 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { toScheduledMessageDto } from '../dtos/scheduled-message.dto';
 import type { ScheduledMessageDto } from '../dtos/scheduled-message.dto';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
+import type { RichTextDocument } from '@epicstory/tiptap';
 
 export class ScheduleChannelMessage {
   channelId: number;
   senderId: number;
 
-  @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: any;
+  content: RichTextDocument;
 
   @IsOptional()
   @IsInt()
@@ -77,7 +66,6 @@ export class ScheduleChannelMessageCommand
       channelId: cmd.channelId,
       senderId: cmd.senderId,
       content: cmd.content,
-      contentRich: cmd.contentRich,
       quotedMessageId: cmd.quotedMessageId,
     });
 

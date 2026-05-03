@@ -385,7 +385,7 @@ onUnmounted(teardownCollapseFloat);
     <div class="epic-code-card-viewport w-full min-h-0 min-w-0 rounded-b-lg">
       <div class="epic-code-card-scroll w-full min-h-0 min-w-0" :class="codeScrollLayerClass">
         <div
-          class="epic-code-card-pre m-0 flex w-full min-w-0 border-0 border-t border-zinc-200/80 bg-[#f8f8f8] text-left rounded-b-lg overflow-hidden"
+          class="epic-code-card-pre relative m-0 flex w-full min-w-0 border-0 border-t border-zinc-200/80 bg-[#f8f8f8] text-left rounded-b-lg overflow-hidden"
           :class="[showPeekChrome ? 'epic-code-card-pre--peek' : '']"
         >
           <div
@@ -396,7 +396,12 @@ onUnmounted(teardownCollapseFloat);
               {{ num }}
             </div>
           </div>
-          <NodeViewContent as="code" :class="`${codeClass} w-full min-w-0 whitespace-pre py-3 pr-3`" />
+          <!-- `pre > code` matches CodeBlock semantics; plain `code` in a flex row broke caret/newlines with ProseMirror. -->
+          <pre
+            class="m-0 min-h-0 min-w-0 flex-1 border-0 bg-transparent py-3 pr-3 font-inherit text-left whitespace-pre outline-none [&:focus-visible]:outline-none"
+          >
+            <NodeViewContent as="code" :class="`${codeClass} block min-w-0 w-full`" />
+          </pre>
           <div
             v-if="showPeekChrome"
             class="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center bg-gradient-to-t from-[#f8f8f8] from-35% via-[#f8f8f8]/85 to-transparent px-2 pb-2 pt-8"

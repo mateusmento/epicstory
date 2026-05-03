@@ -7,6 +7,7 @@ import { useMessageThread } from "@/domain/channels/composables/message-thread";
 import { useWorkspace } from "@/domain/workspace";
 import { last } from "lodash";
 import { computed, nextTick, ref, watch } from "vue";
+import type { RichTextDocument } from "@epicstory/tiptap";
 import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
 import MessageComposer from "./MessageComposer.vue";
@@ -95,15 +96,13 @@ async function onMessageDeleted() {
 }
 
 async function onSendReply(payload: {
-  content: string;
-  contentRich: any;
+  content: RichTextDocument;
   quotedMessageId?: number;
   quotedReplyId?: number;
   attachmentIds?: number[];
 }) {
   await sendReply({
     content: payload.content,
-    contentRich: payload.contentRich,
     quotedReplyId: payload.quotedReplyId,
     attachmentIds: payload.attachmentIds,
   });
@@ -111,10 +110,9 @@ async function onSendReply(payload: {
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: any }) {
+async function onSubmitEdit(payload: { messageId: number; content: RichTextDocument }) {
   const updated = await updateMessage(payload.messageId, {
     content: payload.content,
-    contentRich: payload.contentRich,
   });
   if (message.value.id === payload.messageId) {
     Object.assign(message.value, updated);

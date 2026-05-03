@@ -41,7 +41,6 @@ export class ChannelMessageController {
         channelId,
         senderId: issuer.id,
         content: command.content,
-        contentRich: command.contentRich,
         quotedMessageId: command.quotedMessageId,
         attachmentIds: command.attachmentIds,
       }),
@@ -99,7 +98,7 @@ export class MessageController {
   @Patch()
   async updateMessage(
     @Param('messageId') messageId: number,
-    @Body() body: Pick<UpdateMessage, 'content' | 'contentRich'>,
+    @Body() body: Pick<UpdateMessage, 'content'>,
     @Auth() issuer: Issuer,
   ) {
     const message = await this.commandBus.execute(
@@ -107,7 +106,6 @@ export class MessageController {
         messageId,
         issuerId: issuer.id,
         content: body.content,
-        contentRich: body.contentRich,
       }),
     );
 

@@ -1,10 +1,11 @@
 import type { User } from "@/domain/auth";
 import type { Label } from "@/domain/labels";
+import type { RichTextDocument } from "@epicstory/tiptap";
 
 export type Issue = {
   id: number;
   title: string;
-  description: string;
+  description: RichTextDocument;
   workspaceId: number;
   projectId: number;
   createdById: number;
