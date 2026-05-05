@@ -201,10 +201,11 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       );
     }
 
-    (reply as any).attachments = await this.attachmentService.listAnchoredForReply(
-      message.channel.workspaceId,
-      reply.id,
-    );
+    (reply as any).attachments =
+      await this.attachmentService.listAnchoredForReply(
+        message.channel.workspaceId,
+        reply.id,
+      );
 
     return reply;
   }

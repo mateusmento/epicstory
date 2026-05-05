@@ -118,7 +118,3 @@ export function formatScheduleSummary(s: ResolvedSchedule): string {
 function dayLabel(dow: number) {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][dow] ?? String(dow);
 }
-
-export function clearSchedule() {
-  // hook for future side effects; MessageComposer clears `activeSchedule` directly
-}

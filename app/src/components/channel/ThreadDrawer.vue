@@ -1,15 +1,12 @@
 <script setup lang="tsx">
+import { MessageBox, MessageComposer } from "@/components/messages";
 import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import type { IMessage, IMessageGroup, IReply } from "@/domain/channels";
-import { useChannel } from "@/domain/channels";
+import type { IMessage, IReply } from "@/domain/channels";
+import { groupMessages, useChannel } from "@/domain/channels";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
-import { useWorkspace } from "@/domain/workspace";
-import { last } from "lodash";
 import { computed, nextTick, ref, watch } from "vue";
-import MessageBox from "./MessageBox.vue";
 import MessageGroup from "./MessageGroup.vue";
-import MessageComposer from "./MessageComposer.vue";
 
 defineProps<{ meId: number }>();
 
@@ -17,11 +14,12 @@ const message = defineModel<IMessage>("message", { required: true });
 
 const emit = defineEmits(["message-deleted", "close"]);
 
-const { replies, toggleReaction, toggleReplyReaction, fetchReplies, sendReply, deleteReply } =
-  useMessageThread(message, { onMessageDeleted: () => emit("close"), name: "thread" });
-
 const { channel, deleteMessage, updateMessage } = useChannel();
-const { workspace } = useWorkspace();
+
+const { replies, toggleReaction, toggleReplyReaction, fetchReplies, sendReply, deleteReply } =
+  useMessageThread(message, { onMessageDeleted: () => emit("close") });
+
+const replyGroups = computed(() => groupMessages(replies.value));
 
 /** In-thread composer only quotes other replies (not the thread root). */
 const quotedMessage = ref<IReply | null>(null);
@@ -66,28 +64,6 @@ watch(
     }
   },
 );
-
-function groupMessages(messages: IReply[]) {
-  return messages.reduce((groups, message) => {
-    const lastGroup = last(groups);
-    if (lastGroup && message.senderId === lastGroup.senderId) {
-      lastGroup.messages.push(message);
-    } else {
-      groups.push({
-        id: message.id,
-        senderId: message.senderId,
-        sender: message.sender,
-        sentAt: message.sentAt,
-        messages: [message],
-      });
-    }
-    return groups;
-  }, [] as IMessageGroup<IReply>[]);
-}
-
-const replyGroups = computed(() => {
-  return groupMessages(replies.value);
-});
 
 async function onMessageDeleted() {
   deleteMessage(message.value.id);
@@ -195,8 +171,7 @@ function onEditTarget(m: IMessage | IReply) {
     </ScrollArea>
 
     <MessageComposer
-      :channel-id="channel?.id"
-      :workspace-id="workspace?.id"
+      :channel-id="message.channelId"
       :mentionables="channel?.peers ?? []"
       :me-id="meId"
       :quoted-message="quotedMessage"

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { createChannelMessageExtensions } from "@/components/channel/channel-message-editor-extensions";
+import { createChannelMessageExtensions } from "@/components/messages/channel-message-editor-extensions";
 import { useDependency } from "@/core/dependency-injection";
 import { useAuth } from "@/domain/auth";
 import {
@@ -14,11 +14,8 @@ import {
 import type { User } from "@/domain/auth";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import type { IScheduledMessage } from "@/domain/channels/types/scheduled-message.type";
-import ScheduleMessageCustomDialog from "@/components/channel/message-schedule/ScheduleMessageCustomDialog.vue";
-import {
-  formatScheduleSummary,
-  type ResolvedSchedule,
-} from "@/components/channel/message-schedule/schedule-builders";
+import ScheduleMessageCustomDialog from "@/components/messages/ScheduleMessageCustomDialog.vue";
+import { formatScheduleSummary, type ResolvedSchedule } from "@/components/messages/schedule-builders";
 import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import { EPIC_STORY_COMPOSER_EDITOR_CLASS } from "@epicstory/tiptap/vue";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
@@ -71,12 +68,9 @@ const mentionablesForSuggestion = computed(() => {
   const m = meId.value;
   return (props.mentionables ?? []).filter((u) => (m != null ? u.id !== m : true));
 });
-const channelIdRef = toRef(props, "channelId");
 
 const editor = useEditor({
   extensions: createChannelMessageExtensions({
-    channelApi,
-    channelId: channelIdRef,
     getPlaceholder: () => "Message…",
     mentionContext,
     mentionablesById,

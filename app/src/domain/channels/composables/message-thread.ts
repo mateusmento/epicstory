@@ -8,7 +8,6 @@ import type { IAggregatedReaction, IMessage, IReply } from "../types";
 
 type UseMessageThreadOptions = {
   onMessageDeleted?: () => void;
-  name?: string;
   ignoreIncomingReplies?: boolean;
 };
 
@@ -53,7 +52,6 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
 
   async function onIncomingReply({ reply, messageId }: { reply: IReply; messageId: number }) {
     if (messageId === message.value?.id) {
-      console.log("adding reply after receiving it", options.name, reply);
       addReply(reply);
 
       // Fetch reactions for the new reply to prevent race conditions
@@ -127,7 +125,6 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
         payload.quotedReplyId,
         payload.attachmentIds,
       );
-      console.log("adding reply after sending it", options.name, reply);
       addReply(reply);
     } catch (error) {
       console.error("Failed to send reply:", error);

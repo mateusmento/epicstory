@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
-import TiptapCodeBlockCardNodeView from "@/components/channel/TiptapCodeBlockCardNodeView.vue";
+import { TiptapCodeBlockCardNodeView } from "@/components/rich-text";
 import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import { IssueApi } from "@/domain/issues";
 import { Button } from "@/design-system";

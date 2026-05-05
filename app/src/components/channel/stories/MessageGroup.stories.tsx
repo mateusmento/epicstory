@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { messageGroup } from "./message-groups.data";
-import MessageBox from "./MessageBox.vue";
-import MessageGroup from "./MessageGroup.vue";
+import { MessageBox } from "../../messages";
+import MessageGroup from "../MessageGroup.vue";
 
 const meta = {
   title: "Design System/Channel/MessageGroup",

@@ -1,6 +1,6 @@
 export * from "./channels";
 export * from "./channel";
-export * from "./channel-draft";
+export * from "./draft";
 export * from "./typing";
 export * from "./workspace-presence";
 export * from "./workspace-presence-handlers";
