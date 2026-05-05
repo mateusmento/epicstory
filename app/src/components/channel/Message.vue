@@ -2,7 +2,7 @@
 import { useNavTrigger } from "@/design-system";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
 import type { IMessage } from "@/domain/channels/types";
-import MessageBox from "./MessageBox.vue";
+import MessageBox from "../messages/MessageBox.vue";
 
 const props = defineProps<{
   meId: number;
@@ -12,7 +12,7 @@ const message = defineModel<IMessage>("message", { required: true });
 
 const emit = defineEmits(["message-deleted", "quote", "start-edit"]);
 
-const { toggleReaction } = useMessageThread(message, { name: "message" });
+const { toggleReaction } = useMessageThread(message);
 
 const { viewContent } = useNavTrigger("details-pane");
 

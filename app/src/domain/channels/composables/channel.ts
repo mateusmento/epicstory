@@ -8,7 +8,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChannelApi } from "../services";
 import type { ICreateScheduledMessageBody } from "../types/scheduled-message.type";
-import type { IChannel, IMessage, IMessageGroup } from "../types";
+import type { IChannel, IMessage, IMessageGroup, IReply } from "../types";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
 
@@ -253,7 +253,7 @@ export function useChannel() {
   };
 }
 
-export function groupMessages(messages: IMessage[]) {
+export function groupMessages<M extends IMessage | IReply>(messages: M[]) {
   return messages.reduce((groups, message) => {
     const lastGroup = last(groups);
     if (lastGroup && message.senderId === lastGroup.senderId) {
@@ -268,7 +268,7 @@ export function groupMessages(messages: IMessage[]) {
       });
     }
     return groups;
-  }, [] as IMessageGroup[]);
+  }, [] as IMessageGroup<M>[]);
 }
 
 export function useSyncedChannel() {

@@ -22,7 +22,7 @@ export type TiptapSuggestionRenderContext = {
   clientRect?: (() => DOMRect | null) | DOMRect | null;
 };
 
-export type VueFloatingSuggestionOptions<TProps extends Record<string, unknown>> = {
+export type FloatingSuggestionOptions<TProps extends Record<string, unknown>> = {
   /** Vue component for the floating list (e.g. `MentionList`, command palette, etc.) */
   listComponent: Component;
   /**
@@ -56,8 +56,8 @@ function resolveClientRect(raw: TiptapSuggestionRenderContext["clientRect"]): DO
  * Reuse for mentions, slash-commands, or any `Suggestion` plugin that uses the
  * same render contract.
  */
-export function createVueFloatingSuggestionRender<TProps extends Record<string, unknown>>(
-  options: VueFloatingSuggestionOptions<TProps>,
+export function createFloatingSuggestionRender<TProps extends Record<string, unknown>>(
+  options: FloatingSuggestionOptions<TProps>,
 ): () => {
   onStart: (props: TiptapSuggestionRenderContext) => void;
   onUpdate: (props: TiptapSuggestionRenderContext) => void;
@@ -162,7 +162,7 @@ export function createVueFloatingSuggestionRender<TProps extends Record<string, 
  * Convenience: `{ items, render }` for a single TipTap `suggestion` config
  * (e.g. `Mention.configure({ suggestion: … })`).
  */
-export function createVueFloatingSuggestion<TItem, TProps extends Record<string, unknown>>(
+export function createFloatingSuggestion<TItem, TProps extends Record<string, unknown>>(
   config: {
     items: (ctx: { query: string }) => TItem[];
     listComponent: Component;
@@ -172,15 +172,15 @@ export function createVueFloatingSuggestion<TItem, TProps extends Record<string,
       editor: unknown;
       clientRect?: TiptapSuggestionRenderContext["clientRect"];
     }) => TProps;
-  } & Omit<VueFloatingSuggestionOptions<TProps>, "listComponent" | "mapProps">,
+  } & Omit<FloatingSuggestionOptions<TProps>, "listComponent" | "mapProps">,
 ): {
   items: (ctx: { query: string }) => TItem[];
-  render: ReturnType<typeof createVueFloatingSuggestionRender<TProps>>;
+  render: ReturnType<typeof createFloatingSuggestionRender<TProps>>;
 } {
   const { items, listComponent, mapProps, ...floating } = config;
   return {
     items,
-    render: createVueFloatingSuggestionRender<TProps>({
+    render: createFloatingSuggestionRender<TProps>({
       listComponent,
       mapProps: (ctx) =>
         mapProps({

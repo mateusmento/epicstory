@@ -23,7 +23,7 @@ import { computed, nextTick, ref, watch } from "vue";
 import { UserAvatar, UserAvatarStack } from "@/components/user";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
-import MessageComposer from "./MessageComposer.vue";
+import { MessageComposer } from "@/components/messages";
 import { enumerateNames } from "@/utils";
 
 const props = defineProps<{
@@ -316,7 +316,6 @@ defineExpose({
     <MessageComposer
       :key="channelId"
       :channel-id="channelId"
-      :workspace-id="workspace.id"
       :mentionables="channel.peers"
       :me-id="meId"
       :quoted-message="quotedMessage"

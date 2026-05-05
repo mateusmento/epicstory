@@ -2,8 +2,8 @@ import daianaPhoto from "@/assets/images/daiana.png";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { map, max } from "lodash";
 import { h } from "vue";
-import { StoryContainer } from "../app-pane/channel/story-container";
-import Chatbox from "./Chatbox.vue";
+import { StoryContainer } from "../../app-pane/channel/story-container";
+import Chatbox from "../Chatbox.vue";
 import { messageGroup, messageGroups } from "./message-groups.data";
 import seanPhoto from "@/assets/images/sean.png";
 

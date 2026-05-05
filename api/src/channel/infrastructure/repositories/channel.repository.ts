@@ -16,6 +16,27 @@ export class ChannelRepository extends Repository<Channel> {
     return this.findOne({ where: { id }, relations });
   }
 
+  async findChannelsUserIsMember(userId: number, workspaceId: number) {
+    return this.createQueryBuilder('channel')
+      .innerJoin('channel.peers', 'peer')
+      .where('peer.id = :userId', { userId })
+      .andWhere('channel.workspaceId = :workspaceId', { workspaceId })
+      .getMany();
+  }
+
+  async findChannelUserIsMember(
+    channelId: number,
+    userId: number,
+    workspaceId?: number,
+  ): Promise<Channel> {
+    const qb = this.createQueryBuilder('c')
+      .innerJoin('c.peers', 'peer', 'peer.id = :userId', { userId })
+      .where('c.id = :channelId', { channelId });
+    if (workspaceId)
+      qb.andWhere('c.workspaceId = :workspaceId', { workspaceId });
+    return await qb.getOne();
+  }
+
   findMultiDirectChannel(peers: number[]) {
     return this.createQueryBuilder('c')
       .innerJoin('channel_peers', 'p', 'p.channel_id = c.id')

@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/design-system/ui/popo
 import { SmilePlusIcon } from "lucide-vue-next";
 import type { HTMLAttributes } from "vue";
 import { ref } from "vue";
-import { emojis } from "./emojis";
+import { emojis } from "../channel/emojis";
 
 const props = defineProps<{
   variant?: ButtonVariants["variant"];

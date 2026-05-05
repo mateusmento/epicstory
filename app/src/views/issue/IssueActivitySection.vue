@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import IssueCommentCard from "@/components/issue/IssueCommentCard.vue";
-import MessageComposer from "@/components/channel/MessageComposer.vue";
 import { Icon } from "@/design-system/icons";
 import { UserAvatar } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
@@ -12,12 +11,11 @@ import type { User } from "@/domain/auth";
 import { formatDistanceToNow } from "date-fns";
 import { computed, reactive, ref, watch } from "vue";
 import { cn } from "@/design-system/utils";
+import { MessageComposer } from "@/components/messages";
 
 const props = defineProps<{
   issueId: number;
   commentChannelId: number;
-  workspaceId: number;
-  /** Current user — enables typing indicators + mentions. */
   meId: number;
 }>();
 
@@ -488,7 +486,6 @@ watch(
               <MessageComposer
                 :key="`reply-${item.activityId}-${item.message.id}`"
                 :channel-id="commentChannelId"
-                :workspace-id="workspaceId"
                 :mentionables="channelPeers"
                 :me-id="meId"
                 placeholder="Leave a reply…"
@@ -551,7 +548,6 @@ watch(
     <div v-if="commentChannelId != null" class="rounded-lg border border-zinc-200/90 bg-zinc-50/40 p-2">
       <MessageComposer
         :channel-id="commentChannelId"
-        :workspace-id="workspaceId"
         :mentionables="channelPeers"
         :me-id="meId"
         placeholder="Leave a comment…"

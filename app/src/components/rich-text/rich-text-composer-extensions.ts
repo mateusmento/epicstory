@@ -1,13 +1,12 @@
 import { createVueFloatingSuggestion } from "@/core/tiptap";
 import { epicStoryLowlight } from "@/core/epic-story-lowlight";
 import type { User } from "@/domain/auth";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
 import {
   createMentionExtensionWithNodeView,
   createPlaceholderExtension,
   createRichTextExtensions,
 } from "@epicstory/tiptap/vue";
-import type { ComputedRef, Ref } from "vue";
+import type { ComputedRef } from "vue";
 import type { MentionSuggestionItem } from "./MentionList.vue";
 import MentionList from "./MentionList.vue";
 import TiptapCodeBlockCardNodeView from "./TiptapCodeBlockCardNodeView.vue";
@@ -32,12 +31,10 @@ export function buildMentionSuggestion(mentionablesForSuggestion: ComputedRef<Us
 }
 
 /**
- * Channel message TipTap bodies: text + mentions + code blocks.
- * Files are staged out-of-band (see composer attachment strip), not embedded in JSON.
+ * Composer TipTap bodies for channel-style messages: text + mentions + code blocks.
+ * Files are staged out-of-band in the composer, not embedded in JSON.
  */
-export function createChannelMessageExtensions(args: {
-  channelApi: ChannelApi;
-  channelId: Ref<number | undefined> | undefined;
+export function createRichTextComposerExtensions(args: {
   getPlaceholder: () => string;
   mentionContext: { meId: number | undefined };
   mentionablesById: ComputedRef<Map<number, User>>;

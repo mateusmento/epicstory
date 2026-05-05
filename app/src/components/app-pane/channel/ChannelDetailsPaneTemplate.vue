@@ -1,5 +1,5 @@
 <script lang="tsx" setup>
-import ChannelAttachmentStrip from "@/components/channel/ChannelAttachmentStrip.vue";
+import { MessageAttachments } from "@/components/messages";
 import IconClose from "@/components/icons/IconClose.vue";
 import { Button, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
@@ -112,7 +112,7 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
             No files linked in messages yet.
           </p>
           <div v-else class="max-h-[min(70vh,36rem)] overflow-y-auto overscroll-contain pr-1">
-            <ChannelAttachmentStrip :files="channelFiles" />
+            <MessageAttachments :files="channelFiles" />
           </div>
         </TabsContent>
         <TabsContent value="schedules" class="min-h-0 flex-1 flex flex-col mt-0 data-[state=inactive]:hidden">

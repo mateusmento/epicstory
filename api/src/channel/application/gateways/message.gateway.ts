@@ -10,6 +10,7 @@ import { Message } from 'src/channel/domain';
 import { MessageReply } from 'src/channel/domain/entities';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { MessageService } from '../services/message.service';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 const channelMessagingRoom = (channelId) =>
   `channel:${channelId}:messaging` as const;
@@ -23,6 +24,7 @@ export class MessageGateway {
   constructor(
     private messageService: MessageService,
     private channelRepo: ChannelRepository,
+    private workspaceRepo: WorkspaceRepository,
   ) {}
 
   /**
@@ -132,37 +134,30 @@ export class MessageGateway {
       });
   }
 
-  private async isUserInChannel(
-    channelId: number,
-    userId: number,
-    workspaceId?: number,
-  ): Promise<boolean> {
-    const channel = await this.channelRepo.findOne({
-      where: { id: channelId },
-      relations: { peers: true },
-    });
+  async isChannelMember(channelId: number, userId: number) {
+    const channel = await this.channelRepo.findChannelUserIsMember(
+      channelId,
+      userId,
+    );
     if (!channel) return false;
-    if (workspaceId != null && channel.workspaceId !== workspaceId) {
+
+    if (!(await this.workspaceRepo.isMember(channel.workspaceId, userId)))
       return false;
-    }
-    return (channel.peers ?? []).some((p) => Number(p.id) === userId);
+    return true;
   }
 
   @SubscribeMessage('channel-typing-pulse')
   async channelTypingPulse(
-    @MessageBody() body: { channelId: number; workspaceId?: number },
+    @MessageBody() body: { channelId: number },
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
-    const userId = Number(user?.id);
-    const channelId = Number(body?.channelId);
-    const workspaceId =
-      body?.workspaceId != null ? Number(body.workspaceId) : undefined;
+    const userId = +user?.id;
+    const channelId = +body?.channelId;
     if (!Number.isFinite(userId) || !Number.isFinite(channelId))
       return { ok: false };
 
-    const ok = await this.isUserInChannel(channelId, userId, workspaceId);
-    if (!ok) return { ok: false };
+    if (!(await this.isChannelMember(channelId, userId))) return { ok: false };
 
     // Use the sender socket so delivery matches `socket.to(room)` semantics
     // (notify everyone in the channel room except this socket). Avoids
@@ -176,19 +171,16 @@ export class MessageGateway {
 
   @SubscribeMessage('channel-typing-stop')
   async channelTypingStop(
-    @MessageBody() body: { channelId: number; workspaceId?: number },
+    @MessageBody() body: { channelId: number },
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
-    const userId = Number(user?.id);
-    const channelId = Number(body?.channelId);
-    const workspaceId =
-      body?.workspaceId != null ? Number(body.workspaceId) : undefined;
+    const userId = +user?.id;
+    const channelId = +body?.channelId;
     if (!Number.isFinite(userId) || !Number.isFinite(channelId))
       return { ok: false };
 
-    const ok = await this.isUserInChannel(channelId, userId, workspaceId);
-    if (!ok) return { ok: false };
+    if (!(await this.isChannelMember(channelId, userId))) return { ok: false };
 
     socket
       .to(channelMessagingRoom(channelId))
@@ -199,18 +191,20 @@ export class MessageGateway {
 
   @SubscribeMessage('subscribe-messages')
   async subscribeMessages(
-    @MessageBody() { workspaceId }: any,
+    @MessageBody() body: { workspaceId: number },
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
-    const userId = user?.id;
+    const userId = +user?.id;
+    const workspaceId = +body?.workspaceId;
 
-    const channels = await this.channelRepo
-      .createQueryBuilder('channel')
-      .innerJoin('channel.peers', 'peer')
-      .where('peer.id = :userId', { userId })
-      .andWhere('channel.workspaceId = :workspaceId', { workspaceId })
-      .getMany();
+    if (!Number.isFinite(userId) || !Number.isFinite(workspaceId))
+      return { ok: false };
+
+    const channels = await this.channelRepo.findChannelsUserIsMember(
+      userId,
+      workspaceId,
+    );
 
     socket.leave(userRoom(userId));
     socket.join(userRoom(userId));
@@ -227,7 +221,10 @@ export class MessageGateway {
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
-    const userId = user?.id;
+    const userId = +user?.id;
+    if (!Number.isFinite(userId)) return { ok: false };
+
+    if (!(await this.isChannelMember(channelId, userId))) return { ok: false };
 
     if (messageReplyId) {
       // Toggle reaction on a message reply

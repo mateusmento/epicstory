@@ -38,6 +38,10 @@ export class WorkspaceRepository extends Repository<Workspace> {
     return member;
   }
 
+  async isMember(workspaceId: number, userId: number) {
+    return await this.workspaceMemberRepo.existsBy({ workspaceId, userId });
+  }
+
   findMember(
     workspaceId: number,
     userId: number,

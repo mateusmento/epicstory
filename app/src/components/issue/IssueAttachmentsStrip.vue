@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import ChannelAttachmentStrip from "@/components/channel/ChannelAttachmentStrip.vue";
+import { MessageAttachments } from "@/components/messages";
 import { useDependency } from "@/core/dependency-injection";
 import { IssueApi, type UploadedAttachment } from "@/domain/issues/api";
 import { ref, watch } from "vue";
@@ -38,14 +38,15 @@ watch(
   },
   { immediate: true },
 );
-
 </script>
 
 <template>
   <section
     :class="[
       'flex flex-col gap-2',
-      compact ? 'rounded-lg border border-border/80 bg-muted/10 px-2 py-2' : 'rounded-lg border border-border bg-muted/20 px-3 py-2.5',
+      compact
+        ? 'rounded-lg border border-border/80 bg-muted/10 px-2 py-2'
+        : 'rounded-lg border border-border bg-muted/20 px-3 py-2.5',
     ]"
   >
     <div v-if="!hideHeading" class="flex items-center justify-between gap-2">
@@ -57,7 +58,7 @@ watch(
       v-else-if="attachments.length"
       class="max-h-[min(40vh,28rem)] overflow-y-auto overscroll-contain pr-0.5"
     >
-      <ChannelAttachmentStrip :files="attachments" />
+      <MessageAttachments :files="attachments" />
     </div>
     <p v-else class="text-xs text-muted-foreground">No attachments on this issue yet.</p>
   </section>
