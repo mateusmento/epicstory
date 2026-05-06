@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import ScheduleMessageCustomDialog from "@/components/messages/ScheduleMessageCustomDialog.vue";
 import { formatScheduleSummary, type ResolvedSchedule } from "@/components/messages/schedule-builders";
-import { createRichTextComposerExtensions } from "@/components/rich-text/composer";
+import RichTextComposer from "@/components/rich-text/RichTextComposer.vue";
 import { useDependency } from "@/core/dependency-injection";
 import {
   Button,
@@ -17,8 +17,7 @@ import { useAuth } from "@/domain/auth";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import type { IScheduledMessage } from "@/domain/channels/types/scheduled-message.type";
 import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
-import { EPIC_STORY_COMPOSER_EDITOR_CLASS } from "@epicstory/tiptap/vue";
-import { EditorContent, useEditor } from "@tiptap/vue-3";
+import type { Editor } from "@tiptap/core";
 import { format } from "date-fns";
 import {
   Bold,
@@ -33,7 +32,7 @@ import {
   Table2,
   TextQuote,
 } from "lucide-vue-next";
-import { computed, reactive, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -55,32 +54,7 @@ const channelApi = useDependency(ChannelApi);
 const scheduleDialogOpen = ref(false);
 const scheduleOverride = ref<ResolvedSchedule | null>(null);
 const meId = computed(() => authUser.value?.id);
-const mentionContext = reactive<{ meId: number | undefined }>({ meId: undefined });
-watch(
-  meId,
-  (id) => {
-    mentionContext.meId = id;
-  },
-  { immediate: true },
-);
-const mentionablesById = computed(() => new Map((props.mentionables ?? []).map((u) => [u.id, u])));
-const mentionablesForSuggestion = computed(() => {
-  const m = meId.value;
-  return (props.mentionables ?? []).filter((u) => (m != null ? u.id !== m : true));
-});
-
-const editor = useEditor({
-  extensions: createRichTextComposerExtensions({
-    getPlaceholder: () => "Message…",
-    mentionContext,
-    mentionablesById,
-    mentionablesForSuggestion,
-  }) as any,
-  content: "",
-  editorProps: {
-    attributes: { class: EPIC_STORY_COMPOSER_EDITOR_CLASS },
-  },
-});
+const editor = ref<Editor | null>(null);
 
 const displaySchedule = computed(() => {
   if (scheduleOverride.value) return formatScheduleSummary(scheduleOverride.value);
@@ -159,7 +133,14 @@ async function save() {
       </p>
       <div class="flex:col border rounded-md overflow-hidden min-h-0 max-h-72">
         <ScrollArea class="min-h-0 max-h-48">
-          <EditorContent v-if="editor" :editor="editor" class="p-2" />
+          <div class="p-2">
+            <RichTextComposer
+              placeholder="Message…"
+              :mentionables="props.mentionables"
+              :me-id="meId"
+              @update:editor="editor = $event"
+            />
+          </div>
         </ScrollArea>
         <div class="flex:row flex-wrap items-center gap-0.5 border-t p-1 text-secondary-foreground">
           <Button
