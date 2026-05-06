@@ -110,7 +110,7 @@ export function useCodeBlockCardModel(opts: CodeBlockCardModelOptions) {
 
   const showFloatingCollapse = computed(() => isLongCode.value && codeExpanded.value);
 
-  const codeScrollLayerClass = computed(() => (showPeekChrome.value ? "overflow-hidden" : "overflow-x-auto"));
+  const codeScrollLayerClass = computed(() => (showPeekChrome.value ? "overflow-hidden" : ""));
 
   const toggleAriaLabel = computed(() => (codeExpanded.value ? "Show less code" : "Expand code block"));
 
@@ -122,7 +122,7 @@ export function useCodeBlockCardModel(opts: CodeBlockCardModelOptions) {
       "min-h-0",
       "min-w-0",
       "flex-1",
-      ...(showPeekChrome.value ? ["overflow-hidden"] : []),
+      ...(showPeekChrome.value ? ["overflow-hidden"] : ["overflow-x-auto"]),
       "font-mono",
       "text-[0.8125rem]",
       "leading-relaxed",
