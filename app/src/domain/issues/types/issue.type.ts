@@ -1,10 +1,11 @@
 import type { User } from "@/domain/auth";
 import type { Label } from "@/domain/labels";
+import type { JSONContent } from "@tiptap/core";
 
 export type Issue = {
   id: number;
   title: string;
-  description: string;
+  description: JSONContent;
   workspaceId: number;
   projectId: number;
   createdById: number;

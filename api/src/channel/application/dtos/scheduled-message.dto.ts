@@ -10,8 +10,7 @@ export class ScheduledMessageDto {
   id: UUID;
   channelId: number;
   senderId: number;
-  content: string;
-  contentRich?: JSONContent;
+  content: JSONContent;
   quotedMessageId?: number;
 
   dueAt: Date;
@@ -48,7 +47,6 @@ export function toScheduledMessageDto(job: ScheduledJob): ScheduledMessageDto {
   dto.channelId = p.channelId;
   dto.senderId = p.senderId;
   dto.content = p.content;
-  dto.contentRich = p.contentRich;
   dto.quotedMessageId = p.quotedMessageId;
   dto.dueAt = job.dueAt;
   dto.recurrence = job.recurrence;

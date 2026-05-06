@@ -3,13 +3,9 @@ import { normalizeTiptapDoc } from "./normalize";
 import { tiptapToPlainText } from "./plain-text";
 
 export function messageBodyPlainText(message: {
-  content: string;
-  contentRich?: JSONContent;
+  content: JSONContent;
 }): string {
-  if (message.contentRich) {
-    return tiptapToPlainText(normalizeTiptapDoc(message.contentRich), {
-      stripFormatting: true,
-    });
-  }
-  return message.content ?? "";
+  return tiptapToPlainText(normalizeTiptapDoc(message.content), {
+    stripFormatting: true,
+  });
 }

@@ -110,19 +110,16 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   }
 
   async function sendReply(payload: {
-    content: string;
-    contentRich: JSONContent;
+    content: JSONContent;
     quotedReplyId?: number;
     attachmentIds?: number[];
   }) {
-    if (!payload.content.trim()) return;
     if (!me.value) return;
 
     try {
       const reply = await channelApi.replyMessage(
         message.value?.id,
         payload.content,
-        payload.contentRich,
         payload.quotedReplyId,
         payload.attachmentIds,
       );

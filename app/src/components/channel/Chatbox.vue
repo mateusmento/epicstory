@@ -33,13 +33,12 @@ const props = defineProps<{
   chatPicture?: string;
   messageGroups: IMessageGroup[];
   sendMessage: (message: {
-    content: string;
-    contentRich: JSONContent;
+    content: JSONContent;
     quotedMessageId?: number;
     attachmentIds?: number[];
   }) => Promise<unknown>;
   sendScheduledMessage?: (body: ICreateScheduledMessageBody) => Promise<unknown>;
-  updateMessage: (messageId: number, body: { content: string; contentRich: JSONContent }) => Promise<unknown>;
+  updateMessage: (messageId: number, body: { content: JSONContent }) => Promise<unknown>;
   channelId: number;
   channel: IChannel;
 }>();
@@ -123,15 +122,12 @@ watch(
 );
 
 async function onSendMessage(payload: {
-  content: string;
-  contentRich: JSONContent;
+  content: JSONContent;
   quotedMessageId?: number;
   attachmentIds?: number[];
 }) {
-  if (!payload.content?.trim()) return;
   await props.sendMessage({
     content: payload.content,
-    contentRich: payload.contentRich,
     quotedMessageId:
       payload.quotedMessageId ??
       (quotedMessage.value ? channelComposerQuotedMessageId(quotedMessage.value) : undefined),
@@ -142,25 +138,17 @@ async function onSendMessage(payload: {
 }
 
 async function onSendScheduledMessage(payload: ICreateScheduledMessageBody) {
-  if (!payload.content?.trim()) return;
   const send = props.sendScheduledMessage;
   if (send) {
-    await send({
-      content: payload.content,
-      contentRich: payload.contentRich,
-      quotedMessageId: payload.quotedMessageId,
-      dueAt: payload.dueAt,
-      recurrence: payload.recurrence,
-    });
+    await send(payload);
   }
   scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: JSONContent }) {
+async function onSubmitEdit(payload: { messageId: number; content: JSONContent }) {
   await props.updateMessage(payload.messageId, {
     content: payload.content,
-    contentRich: payload.contentRich,
   });
   editingMessage.value = null;
 }

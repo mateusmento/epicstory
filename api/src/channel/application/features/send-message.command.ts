@@ -7,7 +7,6 @@ import {
   IsNotEmpty,
   IsObject,
   IsOptional,
-  IsString,
   Min,
 } from 'class-validator';
 import {
@@ -29,12 +28,8 @@ export class SendMessage {
   senderId: number;
 
   @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: JSONContent;
+  content: JSONContent;
 
   @IsOptional()
   @IsInt()
@@ -75,7 +70,6 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     channelId,
     senderId,
     content,
-    contentRich,
     quotedMessageId,
     markAsScheduled,
     attachmentIds,
@@ -105,7 +99,6 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       channel,
       senderId,
       content,
-      contentRich,
       quotedMessageId,
       { isScheduled: markAsScheduled === true },
     );

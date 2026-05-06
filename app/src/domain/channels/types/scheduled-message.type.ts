@@ -21,8 +21,7 @@ export interface IScheduledMessage {
   id: string;
   channelId: number;
   senderId: number;
-  content: string;
-  contentRich?: JSONContent;
+  content: JSONContent;
   quotedMessageId?: number;
   dueAt: string;
   recurrence: IScheduledMessageRecurrence;
@@ -34,16 +33,14 @@ export interface IScheduledMessage {
 }
 
 export type ICreateScheduledMessageBody = {
-  content: string;
-  contentRich?: JSONContent;
+  content: JSONContent;
   quotedMessageId?: number;
   dueAt: string;
   recurrence: IScheduledMessageRecurrence;
 };
 
 export type IUpdateScheduledMessageBody = {
-  content?: string;
-  contentRich?: JSONContent;
+  content?: JSONContent;
   quotedMessageId?: number;
   dueAt?: string;
   recurrence?: IScheduledMessageRecurrence;

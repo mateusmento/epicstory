@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import type { JSONContent } from '@tiptap/core';
+import { IsNotEmpty, IsNumber, IsObject, IsOptional } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { BacklogItemService } from 'src/project/domain/services/backlog-item.service';
@@ -23,9 +24,9 @@ export class CreateBacklogItem {
   @IsNotEmpty()
   title: string;
 
-  @IsString()
   @IsOptional()
-  description?: string;
+  @IsObject()
+  description?: JSONContent;
 
   @IsNumber()
   @IsOptional()

@@ -12,7 +12,6 @@ import {
   IsNotEmpty,
   IsObject,
   IsOptional,
-  IsString,
   Min,
 } from 'class-validator';
 import { dispatchNotificationsForNewChannelMessage } from 'src/channel/application/utils/dispatch-channel-message-notifications';
@@ -34,12 +33,8 @@ export class CreateIssueComment {
   issueId: number;
 
   @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: JSONContent;
+  content: JSONContent;
 
   @IsOptional()
   @IsArray()
@@ -72,7 +67,6 @@ export class CreateIssueCommentCommand
     issuer,
     issueId,
     content,
-    contentRich,
     attachmentIds,
   }: CreateIssueComment) {
     const issue = await this.issueRepo.findOne({ where: { id: issueId } });
@@ -101,7 +95,6 @@ export class CreateIssueCommentCommand
       channel,
       issuer.id,
       content,
-      contentRich,
       null,
     );
 

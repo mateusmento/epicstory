@@ -24,11 +24,8 @@ export class MessageReply {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  content: string;
-
-  @Column({ type: 'jsonb', nullable: true })
-  contentRich?: JSONContent | null;
+  @Column({ type: 'jsonb' })
+  content: JSONContent;
 
   @Column({ default: () => 'now()' })
   sentAt: Date;

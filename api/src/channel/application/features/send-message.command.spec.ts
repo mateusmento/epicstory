@@ -162,7 +162,15 @@ describe('SendMessageCommand', () => {
         workspaceId: workspace.id,
         senderId: user1.id,
         peers: [user2.id, user3.id],
-        content: 'Hello, world!',
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Hello, world!' }],
+            },
+          ],
+        },
       }),
     );
 
@@ -183,7 +191,15 @@ describe('SendMessageCommand', () => {
         workspaceId: workspace.id,
         senderId: user1.id,
         peers: [user4.id],
-        content: 'Hello, world!',
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Hello, world!' }],
+            },
+          ],
+        },
       }),
     );
 

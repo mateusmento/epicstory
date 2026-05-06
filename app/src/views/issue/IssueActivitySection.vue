@@ -119,13 +119,11 @@ async function reloadAfterComment() {
 }
 
 async function onPostIssueComment(payload: {
-  content: string;
-  contentRich: JSONContent;
+  content: JSONContent;
   attachmentIds?: number[];
 }) {
   await issueApi.postIssueComment(props.issueId, {
     content: payload.content,
-    contentRich: payload.contentRich,
     ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
       ? { attachmentIds: payload.attachmentIds }
       : {}),
@@ -135,11 +133,10 @@ async function onPostIssueComment(payload: {
 
 async function onReplyInThread(
   parentMessageId: number,
-  payload: { content: string; contentRich: JSONContent; attachmentIds?: number[] },
+  payload: { content: JSONContent; attachmentIds?: number[] },
 ) {
   await issueApi.replyToIssueComment(props.issueId, parentMessageId, {
     content: payload.content,
-    contentRich: payload.contentRich,
     ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
       ? { attachmentIds: payload.attachmentIds }
       : {}),

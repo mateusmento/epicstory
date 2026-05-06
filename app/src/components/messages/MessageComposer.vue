@@ -36,7 +36,7 @@ const props = withDefaults(
     meId?: number;
     channelId: number;
     placeholder?: string;
-    editingMessage?: { id: number; content: string; contentRich?: JSONContent } | null;
+    editingMessage?: { id: number; content: JSONContent } | null;
     quotedMessage?: (IMessage | IReply) | null;
   }>(),
   {
@@ -49,8 +49,7 @@ const emit = defineEmits<{
   (
     e: "send-message",
     value: {
-      content: string;
-      contentRich: JSONContent;
+      content: JSONContent;
       quotedMessageId?: number;
       quotedReplyId?: number;
       attachmentIds?: number[];
@@ -59,14 +58,13 @@ const emit = defineEmits<{
   (
     e: "send-scheduled-message",
     value: {
-      content: string;
-      contentRich: JSONContent;
+      content: JSONContent;
       quotedMessageId?: number;
       dueAt: string;
       recurrence: IScheduledMessageRecurrence;
     },
   ): void;
-  (e: "submit-edit", value: { messageId: number; content: string; contentRich: JSONContent }): void;
+  (e: "submit-edit", value: { messageId: number; content: JSONContent }): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
 }>();
@@ -244,8 +242,7 @@ function onSendMessage() {
   if (props.editingMessage) {
     emit("submit-edit", {
       messageId: props.editingMessage.id,
-      content: plain,
-      contentRich: doc,
+      content: doc,
     });
     emitTypingStop();
     return;
@@ -256,8 +253,7 @@ function onSendMessage() {
 
   if (activeSchedule.value) {
     emit("send-scheduled-message", {
-      content: plain,
-      contentRich: doc,
+      content: doc,
       ...scheduledQuote,
       dueAt: activeSchedule.value.dueAt.toISOString(),
       recurrence: activeSchedule.value.recurrence,
@@ -265,8 +261,7 @@ function onSendMessage() {
     activeSchedule.value = null;
   } else {
     emit("send-message", {
-      content: plain,
-      contentRich: doc,
+      content: doc,
       ...scheduledQuote,
       ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     });
@@ -342,7 +337,7 @@ watch(
       editor.value.commands.clearContent();
       return;
     }
-    const doc = msg.contentRich ? normalizeTiptapDoc(msg.contentRich) : { type: "doc", content: [] };
+    const doc = normalizeTiptapDoc(msg.content);
     editor.value.commands.setContent(doc);
     editor.value.commands.focus("end");
   },

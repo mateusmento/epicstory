@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import type { JSONContent } from '@tiptap/core';
+import { IsNotEmpty, IsNumber, IsObject, IsOptional } from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -13,14 +14,15 @@ import {
 import { Issue } from 'src/project/domain/entities';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
+import { normalizeTiptapDoc, stripImageNodesFromDoc } from '@epicstory/tiptap';
 
 export class CreateIssue {
   issuer: Issuer;
   @IsNotEmpty()
   title: string;
-  @IsString()
   @IsOptional()
-  description?: string;
+  @IsObject()
+  description?: JSONContent;
   @IsNumber()
   projectId: number;
 
@@ -73,6 +75,13 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
     const issue = await this.issueRepo.save(
       Issue.create({
         ...data,
+        ...(data.description
+          ? {
+              description: stripImageNodesFromDoc(
+                normalizeTiptapDoc(data.description),
+              ),
+            }
+          : {}),
         workspaceId,
         parentIssueId,
         createdById: issuer.id,

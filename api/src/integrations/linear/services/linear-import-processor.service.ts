@@ -24,6 +24,7 @@ import {
 } from '../entities';
 import { LinearConnectionRepository } from '../repositories';
 import { Project as EpicProject } from 'src/project/domain/entities/project.entity';
+import { markdownToTiptapDoc, normalizeTiptapDoc } from '@epicstory/tiptap';
 
 type LinearIssueLike = {
   id: string;
@@ -409,7 +410,9 @@ export class LinearImportProcessorService {
           projectId: epicProject.id,
           afterOf,
           title: li.title ?? '',
-          description: li.description ?? '',
+          description: normalizeTiptapDoc(
+            markdownToTiptapDoc(li.description ?? ''),
+          ),
         }),
       );
 

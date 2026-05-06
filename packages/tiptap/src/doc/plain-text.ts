@@ -29,8 +29,8 @@ function walk(node: JSONContent, ctx?: WalkCtx): string {
   if (type === "doc")
     return (node.content ?? []).map((c) => walk(c, ctx)).join("");
   if (type === "mention") {
-    const id = node.attrs?.id ?? node.attrs?.userId;
-    return id === undefined || id === null ? "@" : `@${id}`;
+    const label = node.attrs?.label ?? node.attrs?.name ?? node.attrs?.id ?? node.attrs?.userId;
+    return label === undefined || label === null ? "@" : `@${label}`;
   }
 
   if (type === "taskList") {

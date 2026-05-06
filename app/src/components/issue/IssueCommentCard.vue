@@ -142,8 +142,7 @@ const rootClass = computed(() =>
           class="prose prose-sm max-w-none leading-relaxed text-zinc-800 [&_a]:text-[#4F46E5] [&_a]:no-underline hover:[&_a]:underline [&_.ProseMirror]:outline-none"
         >
           <RichTextPreview
-            v-if="message.contentRich"
-            :content-rich="message.contentRich"
+            :content="message.content"
             :mentioned-users="message.mentionedUsers"
             :me-id="rmMeId()"
           />

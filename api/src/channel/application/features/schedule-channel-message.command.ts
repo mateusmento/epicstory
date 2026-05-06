@@ -1,12 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import {
-  IsInt,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsInt, IsNotEmpty, IsObject, IsOptional, Min } from 'class-validator';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
@@ -26,12 +19,8 @@ export class ScheduleChannelMessage {
   senderId: number;
 
   @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: JSONContent;
+  content: JSONContent;
 
   @IsOptional()
   @IsInt()
@@ -78,7 +67,6 @@ export class ScheduleChannelMessageCommand
       channelId: cmd.channelId,
       senderId: cmd.senderId,
       content: cmd.content,
-      contentRich: cmd.contentRich,
       quotedMessageId: cmd.quotedMessageId,
     });
 

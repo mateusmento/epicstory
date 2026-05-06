@@ -11,14 +11,7 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
-import {
-  IsDate,
-  IsInt,
-  IsObject,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator';
+import { IsDate, IsInt, IsObject, IsOptional, Min } from 'class-validator';
 import type { JSONContent } from '@tiptap/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { UseGuards } from '@nestjs/common';
@@ -29,12 +22,8 @@ import { ScheduleChannelMessage } from '../features/schedule-channel-message.com
 import { UpdateScheduledChannelMessage } from '../features/update-scheduled-channel-message.command';
 
 class CreateScheduledMessageBody {
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: JSONContent;
+  content: JSONContent;
 
   @IsOptional()
   @IsInt()
@@ -51,12 +40,8 @@ class CreateScheduledMessageBody {
 
 class UpdateScheduledMessageBody {
   @IsOptional()
-  @IsString()
-  content?: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: JSONContent;
+  content?: JSONContent;
 
   @IsOptional()
   @IsInt()
@@ -103,7 +88,6 @@ export class ChannelScheduledMessageController {
         channelId: +channelId,
         senderId: issuer.id,
         content: body.content,
-        contentRich: body.contentRich,
         quotedMessageId: body.quotedMessageId,
         dueAt: body.dueAt,
         recurrence: body.recurrence,
@@ -124,7 +108,6 @@ export class ChannelScheduledMessageController {
         channelId: +channelId,
         issuerId: issuer.id,
         content: body.content,
-        contentRich: body.contentRich,
         quotedMessageId: body.quotedMessageId,
         dueAt: body.dueAt,
         recurrence: body.recurrence,

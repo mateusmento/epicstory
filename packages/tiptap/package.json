@@ -44,6 +44,7 @@
     "@tiptap/pm": "^3.16.0",
     "@tiptap/starter-kit": "^3.16.0",
     "@tiptap/vue-3": "^3.16.0",
+    "lodash": "^4.17.21",
     "vue": "^3.5.0"
   },
   "devDependencies": {
@@ -56,9 +57,12 @@
     "@tiptap/extension-underline": "^3.16.0",
     "@tiptap/starter-kit": "^3.16.0",
     "@tiptap/vue-3": "^3.16.0",
+    "@types/markdown-it": "^14.1.2",
+    "@types/lodash": "^4.17.21",
     "tsup": "^8.5.1",
     "typescript": "~5.4.0",
     "vitest": "^1.6.0",
+    "lodash": "^4.17.21",
     "vue": "^3.5.0"
   },
   "dependencies": {
@@ -71,6 +75,11 @@
     "@tiptap/extension-table-cell": "^3.22.3",
     "@tiptap/extension-table-header": "^3.22.3",
     "@tiptap/extension-table-row": "^3.22.3",
-    "lowlight": "^3.3.0"
+    "lowlight": "^3.3.0",
+    "markdown-it": "^14.1.0",
+    "prosemirror-markdown": "^1.13.1",
+    "prosemirror-model": "^1.25.0",
+    "prosemirror-schema-basic": "^1.2.4",
+    "prosemirror-schema-list": "^1.5.1"
   }
 }
