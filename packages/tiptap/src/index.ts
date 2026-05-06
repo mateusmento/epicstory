@@ -1,3 +1,4 @@
+export { EMPTY_TIPTAP_DOC } from "./doc/empty-doc";
 export { normalizeTiptapDoc } from "./doc/normalize";
 export {
   tiptapToPlainText,

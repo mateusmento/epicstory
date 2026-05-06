@@ -14,7 +14,11 @@ import {
 import { Issue } from 'src/project/domain/entities';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
-import { normalizeTiptapDoc, stripImageNodesFromDoc } from '@epicstory/tiptap';
+import {
+  EMPTY_TIPTAP_DOC,
+  normalizeTiptapDoc,
+  stripImageNodesFromDoc,
+} from '@epicstory/tiptap';
 
 export class CreateIssue {
   issuer: Issuer;
@@ -75,13 +79,9 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
     const issue = await this.issueRepo.save(
       Issue.create({
         ...data,
-        ...(data.description
-          ? {
-              description: stripImageNodesFromDoc(
-                normalizeTiptapDoc(data.description),
-              ),
-            }
-          : {}),
+        description: stripImageNodesFromDoc(
+          normalizeTiptapDoc(data.description ?? EMPTY_TIPTAP_DOC),
+        ),
         workspaceId,
         parentIssueId,
         createdById: issuer.id,
