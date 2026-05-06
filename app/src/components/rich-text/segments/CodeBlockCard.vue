@@ -14,7 +14,7 @@ import type { JSONContent, NodeViewProps } from "@tiptap/core";
 import { NodeViewContent } from "@tiptap/vue-3";
 import { ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-vue-next";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
-import { CODE_PEEK_VISIBLE_LINES, useCodeBlockCardModel } from "./code-block-card-model";
+import { useCodeBlockCardModel } from "./code-block-card-model";
 import { highlightSnippetToInnerHtml } from "./code-snippet-highlight";
 
 /** TipTap stores code as child `text` nodes (JSON preview path). */
@@ -69,6 +69,7 @@ const {
   languageLabel,
   showPeekChrome,
   lineNumbers,
+  displayedSourceText,
   codeClass,
   expandPeekLabel,
   onToggleMouseDown,
@@ -85,8 +86,6 @@ const {
 defineExpose({
   setHostRef: setHostRef,
 });
-
-const peekVisibleLines = CODE_PEEK_VISIBLE_LINES;
 
 /** TipTap composer: language picker + editable body. */
 const isComposer = computed(() => props.variant === "tiptap" && (props.editor?.isEditable ?? false));
@@ -108,28 +107,30 @@ function onLanguageTriggerMouseDown(e: MouseEvent) {
   e.stopPropagation();
 }
 
-/** Preview: static highlight inside `<code>`. */
+/** Preview, or TipTap peek: static highlight inside `<code>` (first N lines when peeking). */
 const codeElRef = ref<HTMLElement | null>(null);
+const tiptapPeekCodeRef = ref<HTMLElement | null>(null);
 
-async function repaintHighlight(): Promise<void> {
-  if (props.variant !== "preview") return;
+async function repaintStaticHighlight(): Promise<void> {
+  const isPreview = props.variant === "preview";
+  const isTiptapPeek = props.variant === "tiptap" && showPeekChrome.value;
+  if (!isPreview && !isTiptapPeek) return;
   await nextTick();
-  const el = codeElRef.value;
+  const el = isPreview ? codeElRef.value : tiptapPeekCodeRef.value;
   if (!el) return;
   const hint = effectiveLanguageForClass.value || undefined;
-  el.innerHTML = highlightSnippetToInnerHtml(hint, sourceText.value);
+  el.innerHTML = highlightSnippetToInnerHtml(hint, displayedSourceText.value);
 }
 
-watch([sourceText, () => effectiveLanguageForClass.value], () => {
-  if (props.variant === "preview") {
-    repaintHighlight().catch(() => {});
-  }
-});
+watch(
+  [displayedSourceText, () => effectiveLanguageForClass.value, () => props.variant, showPeekChrome],
+  () => {
+    repaintStaticHighlight().catch(() => {});
+  },
+);
 
 onMounted(() => {
-  if (props.variant === "preview") {
-    repaintHighlight().catch(() => {});
-  }
+  repaintStaticHighlight().catch(() => {});
 });
 </script>
 
@@ -189,7 +190,6 @@ onMounted(() => {
       <div class="epic-code-card-scroll w-full min-h-0 min-w-0">
         <div
           class="epic-code-card-pre m-0 flex w-full min-w-0 border-0 border-t border-zinc-200/80 bg-[#f8f8f8] text-left rounded-b-lg overflow-hidden relative"
-          :class="[showPeekChrome ? 'epic-code-card-pre--peek' : '']"
         >
           <div
             class="epic-code-card-gutter pl-3 pr-2 mr-2 shrink-0 select-none border-r border-zinc-200/90 bg-zinc-100/80 font-mono text-[0.8125rem] leading-relaxed text-zinc-400 tabular-nums"
@@ -206,10 +206,21 @@ onMounted(() => {
             class="min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none outline-none [&_[data-radix-scroll-area-corner]]:hidden"
           >
             <div class="!block min-w-0">
-              <NodeViewContent v-if="variant === 'tiptap'" as="code" :class="codeClass" />
+              <template v-if="variant === 'tiptap' && showPeekChrome">
+                <code ref="tiptapPeekCodeRef" :class="codeClass" />
+              </template>
+              <NodeViewContent v-else-if="variant === 'tiptap'" as="code" :class="codeClass" />
               <code v-else ref="codeElRef" :class="codeClass" />
             </div>
           </ScrollArea>
+          <!-- TipTap requires a [data-node-view-content] host for PM; keep it visually hidden while peek shows a sliced <code>. -->
+          <div
+            v-if="variant === 'tiptap' && showPeekChrome"
+            class="sr-only pointer-events-none"
+            aria-hidden="true"
+          >
+            <NodeViewContent as="code" :class="codeClass" />
+          </div>
           <div
             v-if="showPeekChrome"
             class="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center bg-gradient-to-t from-[#f8f8f8] from-35% via-[#f8f8f8]/85 to-transparent px-2 pb-2 pt-8"
@@ -261,27 +272,6 @@ onMounted(() => {
 <style scoped>
 .epic-code-collapse-float {
   visibility: hidden;
-}
-
-/**
- * Peek mode: clip tall blocks and fade the bottom so a small snippet stays visible.
- * Height ≈ CODE_PEEK_VISIBLE_LINES × (0.8125rem × 1.625) + vertical padding on the code.
- */
-:deep(.epic-code-card-pre--peek) {
-  --epic-code-fs: 0.8125rem;
-  --epic-code-lh: 1.625;
-  max-height: calc(var(--epic-code-fs) * var(--epic-code-lh) * v-bind(peekVisibleLines) + 1.5rem);
-  position: relative;
-}
-:deep(.epic-code-card-pre--peek)::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2rem;
-  pointer-events: none;
-  background: linear-gradient(to bottom, rgba(248, 248, 248, 0), #f8f8f8);
 }
 
 .epic-code-card-pre :deep(.hljs-keyword),
