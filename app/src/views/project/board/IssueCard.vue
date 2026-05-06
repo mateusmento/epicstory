@@ -8,7 +8,7 @@ import { type BacklogItem } from "@/domain/backlog";
 import { type Issue } from "@/domain/issues";
 import { formatDistanceToNow } from "date-fns";
 
-const props = defineProps<{ item: BacklogItem }>();
+defineProps<{ item: BacklogItem }>();
 
 const emit = defineEmits<{
   (e: "openIssue", issue: Issue): void;
@@ -55,7 +55,7 @@ function openIssue(issue: Issue) {
           },
         )
       "
-      @dblclick.stop="openIssue(item.issue)"
+      @click.stop="openIssue(item.issue)"
     >
       <div
         v-if="item.issue.parentIssue?.title"

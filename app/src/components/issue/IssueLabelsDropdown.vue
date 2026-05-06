@@ -28,7 +28,7 @@ const selectedLabels = computed(() => {
 
 <template>
   <Menu type="dropdown-menu">
-    <MenuTrigger as-child>
+    <MenuTrigger as-child @click.stop>
       <slot :selected-labels="selectedLabels" />
     </MenuTrigger>
 
