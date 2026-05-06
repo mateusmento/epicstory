@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@epicstory/tiptap": "workspace:*",
+    "@tiptap/core": "^3.22.3",
     "@aws-sdk/client-s3": "^3.645.0",
     "@aws-sdk/lib-storage": "^3.645.0",
     "@linear/sdk": "^29.0.0",

@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { createChannelMessageExtensions } from "@/components/messages/channel-message-editor-extensions";
+import ScheduleMessageCustomDialog from "@/components/messages/ScheduleMessageCustomDialog.vue";
+import { formatScheduleSummary, type ResolvedSchedule } from "@/components/messages/schedule-builders";
+import { createRichTextComposerExtensions } from "@/components/rich-text/composer";
 import { useDependency } from "@/core/dependency-injection";
-import { useAuth } from "@/domain/auth";
 import {
   Button,
   Dialog,
@@ -12,10 +13,9 @@ import {
   Separator,
 } from "@/design-system";
 import type { User } from "@/domain/auth";
+import { useAuth } from "@/domain/auth";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import type { IScheduledMessage } from "@/domain/channels/types/scheduled-message.type";
-import ScheduleMessageCustomDialog from "@/components/messages/ScheduleMessageCustomDialog.vue";
-import { formatScheduleSummary, type ResolvedSchedule } from "@/components/messages/schedule-builders";
 import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import { EPIC_STORY_COMPOSER_EDITOR_CLASS } from "@epicstory/tiptap/vue";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
@@ -33,7 +33,7 @@ import {
   Table2,
   TextQuote,
 } from "lucide-vue-next";
-import { computed, reactive, ref, toRef, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -70,7 +70,7 @@ const mentionablesForSuggestion = computed(() => {
 });
 
 const editor = useEditor({
-  extensions: createChannelMessageExtensions({
+  extensions: createRichTextComposerExtensions({
     getPlaceholder: () => "Message…",
     mentionContext,
     mentionablesById,

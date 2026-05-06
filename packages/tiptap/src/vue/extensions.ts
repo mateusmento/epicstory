@@ -133,26 +133,33 @@ export function mediaExtensions(
       onPaste: (editor, files) => {
         (async () => {
           for (const file of files) {
-            const { src, attachmentId } = await resolveMediaUpload(uploadFile, file);
+            const { src, attachmentId } = await resolveMediaUpload(
+              uploadFile,
+              file,
+            );
             const attrs =
               attachmentId != null ? { src, attachmentId } : { src };
-            editor.chain().focus().setImage(attrs as never).run();
+            editor
+              .chain()
+              .focus()
+              .setImage(attrs as never)
+              .run();
           }
         })();
       },
       onDrop: (editor, files, pos) => {
         (async () => {
           for (const file of files) {
-            const { src, attachmentId } = await resolveMediaUpload(uploadFile, file);
+            const { src, attachmentId } = await resolveMediaUpload(
+              uploadFile,
+              file,
+            );
             editor
               .chain()
               .focus()
               .insertContentAt(pos, {
                 type: "image",
-                attrs:
-                  attachmentId != null
-                    ? { src, attachmentId }
-                    : { src },
+                attrs: attachmentId != null ? { src, attachmentId } : { src },
               } as never)
               .run();
           }

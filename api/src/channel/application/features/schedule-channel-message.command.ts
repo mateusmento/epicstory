@@ -8,6 +8,7 @@ import {
   Min,
 } from 'class-validator';
 import { ChannelRepository } from 'src/channel/infrastructure';
+import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
 import { ScheduledJobTypes } from 'src/scheduling/constants';
 import { ScheduledJob } from 'src/scheduling/entities';
@@ -30,7 +31,7 @@ export class ScheduleChannelMessage {
 
   @IsOptional()
   @IsObject()
-  contentRich?: any;
+  contentRich?: JSONContent;
 
   @IsOptional()
   @IsInt()

@@ -1,3 +1,5 @@
+import type { JSONContent } from "@tiptap/core";
+
 /** Mirrors API `ScheduledMessageDto` and `ScheduledJobRecurrence` JSON. */
 export type IScheduledMessageRecurrence =
   | { frequency: "once" }
@@ -20,7 +22,7 @@ export interface IScheduledMessage {
   channelId: number;
   senderId: number;
   content: string;
-  contentRich?: any;
+  contentRich?: JSONContent;
   quotedMessageId?: number;
   dueAt: string;
   recurrence: IScheduledMessageRecurrence;
@@ -33,7 +35,7 @@ export interface IScheduledMessage {
 
 export type ICreateScheduledMessageBody = {
   content: string;
-  contentRich?: any;
+  contentRich?: JSONContent;
   quotedMessageId?: number;
   dueAt: string;
   recurrence: IScheduledMessageRecurrence;
@@ -41,7 +43,7 @@ export type ICreateScheduledMessageBody = {
 
 export type IUpdateScheduledMessageBody = {
   content?: string;
-  contentRich?: any;
+  contentRich?: JSONContent;
   quotedMessageId?: number;
   dueAt?: string;
   recurrence?: IScheduledMessageRecurrence;

@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/core';
 import {
   BadRequestException,
   Body,
@@ -81,15 +82,12 @@ export class IssueController {
     @Body()
     body: {
       content: string;
-      contentRich?: Record<string, unknown>;
+      contentRich?: JSONContent;
       attachmentIds?: number[];
     },
     @Auth() issuer,
   ) {
-    if (
-      typeof body.content !== 'string' ||
-      body.content.trim().length === 0
-    ) {
+    if (typeof body.content !== 'string' || body.content.trim().length === 0) {
       throw new BadRequestException('Content is required');
     }
     return this.commandBus.execute(
@@ -112,15 +110,12 @@ export class IssueController {
     @Body()
     body: {
       content: string;
-      contentRich?: Record<string, unknown>;
+      contentRich?: JSONContent;
       attachmentIds?: number[];
     },
     @Auth() issuer,
   ) {
-    if (
-      typeof body.content !== 'string' ||
-      body.content.trim().length === 0
-    ) {
+    if (typeof body.content !== 'string' || body.content.trim().length === 0) {
       throw new BadRequestException('Content is required');
     }
     return this.commandBus.execute(

@@ -24,6 +24,7 @@ import { UserAvatar, UserAvatarStack } from "@/components/user";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import { MessageComposer } from "@/components/messages";
+import type { JSONContent } from "@tiptap/core";
 import { enumerateNames } from "@/utils";
 
 const props = defineProps<{
@@ -33,12 +34,12 @@ const props = defineProps<{
   messageGroups: IMessageGroup[];
   sendMessage: (message: {
     content: string;
-    contentRich: any;
+    contentRich: JSONContent;
     quotedMessageId?: number;
     attachmentIds?: number[];
   }) => Promise<unknown>;
   sendScheduledMessage?: (body: ICreateScheduledMessageBody) => Promise<unknown>;
-  updateMessage: (messageId: number, body: { content: string; contentRich: any }) => Promise<unknown>;
+  updateMessage: (messageId: number, body: { content: string; contentRich: JSONContent }) => Promise<unknown>;
   channelId: number;
   channel: IChannel;
 }>();
@@ -123,7 +124,7 @@ watch(
 
 async function onSendMessage(payload: {
   content: string;
-  contentRich: any;
+  contentRich: JSONContent;
   quotedMessageId?: number;
   attachmentIds?: number[];
 }) {
@@ -156,7 +157,7 @@ async function onSendScheduledMessage(payload: ICreateScheduledMessageBody) {
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: any }) {
+async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: JSONContent }) {
   await props.updateMessage(payload.messageId, {
     content: payload.content,
     contentRich: payload.contentRich,

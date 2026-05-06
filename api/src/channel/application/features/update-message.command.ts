@@ -3,6 +3,7 @@ import {
   ChannelRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
+import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -26,7 +27,7 @@ export class UpdateMessage {
 
   @IsOptional()
   @IsObject()
-  contentRich?: any;
+  contentRich?: JSONContent;
 
   constructor(data: Partial<UpdateMessage>) {
     patch(this, data);
@@ -75,8 +76,8 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
       channel,
       messageId,
       content,
-      contentRich,
       issuerId,
+      contentRich,
     );
   }
 }

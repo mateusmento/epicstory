@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/core';
 import {
   IsBoolean,
   IsDate,
@@ -115,7 +116,7 @@ export class ScheduledMessagePayload {
 
   @IsOptional()
   @IsObject()
-  contentRich?: any;
+  contentRich?: JSONContent;
 
   @IsOptional()
   @IsInt()

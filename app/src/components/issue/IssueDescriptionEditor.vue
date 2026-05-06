@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
 import { TiptapCodeBlockCardNodeView } from "@/components/rich-text";
-import { epicStoryLowlight } from "@/core/epic-story-lowlight";
+import { Lowlight } from "@/core/lowlight";
 import { IssueApi } from "@/domain/issues";
 import { Button } from "@/design-system";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
@@ -48,7 +48,7 @@ const editor = useEditor({
   extensions: [
     ...createRichTextExtensions({
       linkOpenOnClick: false,
-      lowlight: epicStoryLowlight,
+      lowlight: Lowlight,
       codeBlockNodeView: TiptapCodeBlockCardNodeView,
     }),
     ...mediaExtensions({

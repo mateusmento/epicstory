@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { RichTextPreview } from "@/components/rich-text";
 import { UserAvatar } from "@/components/user";
 import {
   Button,
@@ -9,15 +10,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/design-system";
+import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import type { IMessage, IReply } from "@/domain/channels";
 import { messageBodyPlainText } from "@epicstory/tiptap";
 import { computed, ref, watch } from "vue";
 import MessageActions from "./MessageActions.vue";
-import MessageContextMenu from "./MessageContextMenu.vue";
-import RichMessageContent from "../rich-text/RichMessageContent.vue";
 import MessageAttachments from "./MessageAttachments.vue";
-import { Icon } from "@/design-system/icons";
+import MessageContextMenu from "./MessageContextMenu.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -105,7 +105,7 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
             @quote="emit('quote', props.message)"
             @edit="emit('edit', props.message)"
           >
-            <RichMessageContent
+            <RichTextPreview
               v-if="props.message.contentRich"
               :contentRich="props.message.contentRich"
               :mentioned-users="props.message.mentionedUsers"

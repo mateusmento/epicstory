@@ -1,6 +1,6 @@
 export {
-  createFloatingSuggestion as createVueFloatingSuggestion,
-  createFloatingSuggestionRender as createVueFloatingSuggestionRender,
+  createFloatingSuggestion,
+  createFloatingSuggestionRender,
   type TiptapSuggestionRenderContext,
-  type FloatingSuggestionOptions as VueFloatingSuggestionOptions,
+  type FloatingSuggestionOptions,
 } from "./floating-suggestion";

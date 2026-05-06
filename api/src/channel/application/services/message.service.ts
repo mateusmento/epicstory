@@ -20,6 +20,7 @@ import type { CreatedAttachmentDto } from 'src/workspace/application/services/at
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
+import type { JSONContent } from '@tiptap/core';
 import { MessageNotFound } from '../exceptions';
 import {
   extractMentionIdsFromDoc,
@@ -40,7 +41,7 @@ export type QuotedMessagePreview = {
   id: number;
   sender: User;
   content: string;
-  contentRich?: any;
+  contentRich?: JSONContent | null;
   displayContent: string;
 };
 
@@ -346,7 +347,7 @@ export class MessageService {
     channel: Channel,
     senderId: number,
     content: string,
-    contentRich?: any,
+    contentRich?: JSONContent | undefined,
     quotedMessageId?: number | null,
     options?: { isScheduled?: boolean },
   ) {
@@ -358,7 +359,7 @@ export class MessageService {
     );
 
     const normalizedRich = contentRich
-      ? (stripImageNodesFromDoc(normalizeTiptapDoc(contentRich)) as object)
+      ? stripImageNodesFromDoc(normalizeTiptapDoc(contentRich))
       : undefined;
     const plainContent = normalizedRich
       ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
@@ -492,11 +493,11 @@ export class MessageService {
     channel: Channel,
     messageId: number,
     content: string,
-    contentRich: any | undefined,
     viewerId: number,
+    contentRich?: JSONContent,
   ) {
     const normalizedRich = contentRich
-      ? (stripImageNodesFromDoc(normalizeTiptapDoc(contentRich)) as object)
+      ? stripImageNodesFromDoc(normalizeTiptapDoc(contentRich))
       : undefined;
     const plainContent = normalizedRich
       ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
@@ -506,7 +507,7 @@ export class MessageService {
       { id: messageId },
       {
         content: plainContent,
-        contentRich: (normalizedRich ?? null) as any,
+        contentRich: normalizedRich ?? null,
         editedAt: new Date(),
       },
     );
@@ -627,11 +628,11 @@ export class MessageService {
 
   private plainTextBodyFromStoredContent(
     content: string,
-    contentRich?: any | null,
+    contentRich?: JSONContent | null,
   ): string {
     if (contentRich) {
       const normalized = normalizeTiptapDoc(contentRich);
-      const stripped = stripImageNodesFromDoc(normalized) as object;
+      const stripped = stripImageNodesFromDoc(normalized);
       return tiptapToPlainText(stripped, { stripFormatting: true });
     }
     return content ?? '';
