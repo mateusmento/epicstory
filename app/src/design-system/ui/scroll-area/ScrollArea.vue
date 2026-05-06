@@ -9,11 +9,18 @@ import { ScrollAreaCorner, ScrollAreaRoot, type ScrollAreaRootProps, ScrollAreaV
 import { type HTMLAttributes, computed, nextTick, onUnmounted, ref } from "vue";
 import ScrollBar from "./ScrollBar.vue";
 
-const props = defineProps<
-  ScrollAreaRootProps & {
-    class?: HTMLAttributes["class"];
-  }
->();
+const props = withDefaults(
+  defineProps<
+    ScrollAreaRootProps & {
+      class?: HTMLAttributes["class"];
+      /** When true, render a horizontal scrollbar (e.g. wide preformatted / code lines). */
+      horizontal?: boolean;
+      /** When false, hide the vertical scrollbar and prevent vertical scrolling (e.g. peek / clipped code). */
+      vertical?: boolean;
+    }
+  >(),
+  { horizontal: false, vertical: true },
+);
 
 const emit = defineEmits<{
   (e: "reached-bottom"): void;
@@ -22,8 +29,17 @@ const emit = defineEmits<{
 const delegatedProps = computed(() => {
   const delegated = { ...(props as any) };
   delete delegated.class;
+  delete delegated.horizontal;
+  delete delegated.vertical;
   return delegated;
 });
+
+const viewportClass = computed(() =>
+  cn(
+    "h-full w-full rounded-[inherit]",
+    !props.vertical && "!overflow-y-hidden",
+  ),
+);
 
 const container = ref<{ viewportElement: HTMLElement }>();
 
@@ -37,7 +53,11 @@ useInfiniteScroll(
   async () => {
     emit("reached-bottom");
   },
-  { distance: 120, interval: 200 },
+  {
+    distance: 120,
+    interval: 200,
+    canLoadMore: () => props.vertical,
+  },
 );
 
 function applyScrollToBottom(viewport: HTMLElement) {
@@ -111,10 +131,11 @@ defineExpose({
 
 <template>
   <ScrollAreaRoot v-bind="delegatedProps" :class="cn('relative overflow-hidden', props.class)">
-    <ScrollAreaViewport class="h-full w-full rounded-[inherit]" ref="container" as-child>
+    <ScrollAreaViewport :class="viewportClass" ref="container" as-child>
       <slot />
     </ScrollAreaViewport>
-    <ScrollBar />
+    <ScrollBar v-if="vertical" />
+    <ScrollBar v-if="horizontal" orientation="horizontal" />
     <ScrollAreaCorner />
   </ScrollAreaRoot>
 </template>

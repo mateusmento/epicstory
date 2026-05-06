@@ -67,7 +67,6 @@ const {
   setHostRef,
   effectiveLanguageForClass,
   languageLabel,
-  codeScrollLayerClass,
   showPeekChrome,
   lineNumbers,
   codeClass,
@@ -187,7 +186,7 @@ onMounted(() => {
       </span>
     </div>
     <div class="epic-code-card-viewport w-full min-h-0 min-w-0 rounded-b-lg">
-      <div class="epic-code-card-scroll w-full min-h-0 min-w-0" :class="codeScrollLayerClass">
+      <div class="epic-code-card-scroll w-full min-h-0 min-w-0">
         <div
           class="epic-code-card-pre m-0 flex w-full min-w-0 border-0 border-t border-zinc-200/80 bg-[#f8f8f8] text-left rounded-b-lg overflow-hidden relative"
           :class="[showPeekChrome ? 'epic-code-card-pre--peek' : '']"
@@ -200,8 +199,17 @@ onMounted(() => {
               {{ num }}
             </div>
           </div>
-          <NodeViewContent v-if="variant === 'tiptap'" as="code" :class="codeClass" />
-          <code v-else ref="codeElRef" :class="codeClass" />
+          <!-- Radix ScrollArea: horizontal thumb + constrained width; `!block` avoids viewport display:table quirk. -->
+          <ScrollArea
+            horizontal
+            :vertical="!showPeekChrome"
+            class="min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none outline-none [&_[data-radix-scroll-area-corner]]:hidden"
+          >
+            <div class="!block min-w-0">
+              <NodeViewContent v-if="variant === 'tiptap'" as="code" :class="codeClass" />
+              <code v-else ref="codeElRef" :class="codeClass" />
+            </div>
+          </ScrollArea>
           <div
             v-if="showPeekChrome"
             class="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center bg-gradient-to-t from-[#f8f8f8] from-35% via-[#f8f8f8]/85 to-transparent px-2 pb-2 pt-8"
