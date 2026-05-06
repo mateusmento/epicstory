@@ -2,6 +2,7 @@
 import { useDraggable } from "@vue-dnd-kit/core";
 import { pointerSensor } from "./sensor";
 import { applySortableTransferById } from "./sortable";
+import { useDeferredPointerDrag } from "./deferred-pointer-drag";
 
 const props = defineProps<{
   group: string;
@@ -9,7 +10,7 @@ const props = defineProps<{
   itemId: string | number;
 }>();
 
-const { elementRef, handleDragStart, isDragging } = useDraggable({
+const { elementRef, handleDragStart } = useDraggable({
   id: props.itemId,
   groups: [props.group],
   data: {
@@ -23,10 +24,12 @@ const { elementRef, handleDragStart, isDragging } = useDraggable({
     onHover: applySortableTransferById,
   },
 });
+
+const { onPointerDown } = useDeferredPointerDrag(handleDragStart);
 </script>
 
 <template>
-  <div ref="elementRef" @pointerdown="handleDragStart">
-    <slot :isDragging="isDragging" />
+  <div ref="elementRef" @pointerdown="onPointerDown">
+    <slot />
   </div>
 </template>
