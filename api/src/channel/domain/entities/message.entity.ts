@@ -21,11 +21,8 @@ export class Message {
   // @PrimaryGeneratedColumn('identity', { generatedIdentity: 'ALWAYS' })
   id: number;
 
-  @Column()
-  content: string;
-
-  @Column({ type: 'jsonb', nullable: true })
-  contentRich?: JSONContent | null;
+  @Column({ type: 'jsonb' })
+  content: JSONContent;
 
   @CreateDateColumn()
   sentAt: Date;

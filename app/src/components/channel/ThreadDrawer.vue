@@ -72,15 +72,13 @@ async function onMessageDeleted() {
 }
 
 async function onSendReply(payload: {
-  content: string;
-  contentRich: JSONContent;
+  content: JSONContent;
   quotedMessageId?: number;
   quotedReplyId?: number;
   attachmentIds?: number[];
 }) {
   await sendReply({
     content: payload.content,
-    contentRich: payload.contentRich,
     quotedReplyId: payload.quotedReplyId,
     attachmentIds: payload.attachmentIds,
   });
@@ -88,10 +86,9 @@ async function onSendReply(payload: {
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: JSONContent }) {
+async function onSubmitEdit(payload: { messageId: number; content: JSONContent }) {
   const updated = await updateMessage(payload.messageId, {
     content: payload.content,
-    contentRich: payload.contentRich,
   });
   if (message.value.id === payload.messageId) {
     Object.assign(message.value, updated);

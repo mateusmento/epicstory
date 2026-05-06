@@ -40,7 +40,7 @@ function mapPageIssues(page: Page<IssueWire>): Page<Issue> {
 
 export type UpdateIssueData = {
   title?: string;
-  description?: string;
+  description?: JSONContent;
   status?: string;
   dueDate?: Date | null;
   priority?: number | null;
@@ -84,7 +84,10 @@ export class IssueApi {
     return this.axios.get<IssueWire>(`/issues/${issueId}`).then((res) => issueFromApiResponse(res.data));
   }
 
-  createIssue(projectId: number, data: { title: string; description?: string; parentIssueId?: number }) {
+  createIssue(
+    projectId: number,
+    data: { title: string; description?: JSONContent; parentIssueId?: number },
+  ) {
     return this.axios
       .post<IssueWire>(`/projects/${projectId}/issues`, data)
       .then((res) => issueFromApiResponse(res.data));
@@ -149,7 +152,7 @@ export class IssueApi {
   /** Top-level comment on the issue timeline — writes `issue_activities` + `Message`. */
   postIssueComment(
     issueId: number,
-    body: { content: string; contentRich?: JSONContent; attachmentIds?: number[] },
+    body: { content: JSONContent; attachmentIds?: number[] },
   ) {
     return this.axios.post(`/issues/${issueId}/comments`, body).then((res) => res.data);
   }
@@ -157,7 +160,7 @@ export class IssueApi {
   replyToIssueComment(
     issueId: number,
     parentMessageId: number,
-    body: { content: string; contentRich?: JSONContent; attachmentIds?: number[] },
+    body: { content: JSONContent; attachmentIds?: number[] },
   ) {
     return this.axios.post(`/issues/${issueId}/comments/${parentMessageId}/replies`, body).then((res) => res.data);
   }

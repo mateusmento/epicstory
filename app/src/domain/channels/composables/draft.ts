@@ -4,14 +4,14 @@ import { debounce } from "lodash";
 import { toValue, type ReadonlyRefOrGetter } from "@/utils";
 import { nextTick } from "vue";
 
-type EditingMessage = { id: number; content: string; contentRich?: JSONContent } | null;
+type EditingMessage = { id: number; content: JSONContent } | null;
 
 export function channelComposerDraftKey(channelId: number) {
   return `channelComposerDraft:${channelId}`;
 }
 
 export type ChannelComposerDraft = {
-  contentRich: JSONContent;
+  content: JSONContent;
 };
 
 export function loadChannelDraft(channelId: number): ChannelComposerDraft | null {
@@ -19,16 +19,16 @@ export function loadChannelDraft(channelId: number): ChannelComposerDraft | null
     const raw = localStorage.getItem(channelComposerDraftKey(channelId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ChannelComposerDraft;
-    if (parsed?.contentRich && typeof parsed.contentRich === "object") return parsed;
+    if (parsed?.content && typeof parsed.content === "object") return parsed;
   } catch {
     /* ignore */
   }
   return null;
 }
 
-export function saveChannelDraft(channelId: number, contentRich: JSONContent) {
+export function saveChannelDraft(channelId: number, content: JSONContent) {
   try {
-    const payload: ChannelComposerDraft = { contentRich };
+    const payload: ChannelComposerDraft = { content };
     localStorage.setItem(channelComposerDraftKey(channelId), JSON.stringify(payload));
   } catch {
     /* ignore quota / private mode */
@@ -85,8 +85,8 @@ export function useChannelMessageDraft(options: {
     if (!editor || channelId == null) return;
 
     const draft = loadChannelDraft(channelId);
-    if (draft?.contentRich) {
-      editor.commands.setContent(normalizeTiptapDoc(draft.contentRich));
+    if (draft?.content) {
+      editor.commands.setContent(normalizeTiptapDoc(draft.content));
     } else {
       editor.commands.clearContent();
     }

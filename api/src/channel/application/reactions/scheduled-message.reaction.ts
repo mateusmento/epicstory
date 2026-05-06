@@ -29,7 +29,6 @@ export class ScheduledMessageReaction {
         channelId: p.channelId,
         senderId: p.senderId,
         content: p.content,
-        contentRich: p.contentRich,
         quotedMessageId: p.quotedMessageId,
         markAsScheduled: true,
       }),

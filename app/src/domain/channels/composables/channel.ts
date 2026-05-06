@@ -166,21 +166,17 @@ export function useChannel() {
 
   async function sendMessage({
     content,
-    contentRich,
     quotedMessageId,
     attachmentIds,
   }: {
-    content: string;
-    contentRich: JSONContent;
+    content: JSONContent;
     quotedMessageId?: number | null;
     attachmentIds?: number[];
   }) {
     if (!store.channel) return;
-    if (!content) return;
     const message = await channelApi.sendMessage(
       store.channel.id,
       content,
-      contentRich,
       quotedMessageId,
       attachmentIds,
     );
@@ -193,7 +189,7 @@ export function useChannel() {
     return channelApi.postScheduledMessage(store.channel.id, body);
   }
 
-  function sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: string) {
+  function sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: JSONContent) {
     return channelApi.sendDirectMessage(workspaceId, senderId, peers, content);
   }
 
@@ -225,7 +221,7 @@ export function useChannel() {
     store.messages = store.messages.filter((message) => message.id !== messageId);
   }
 
-  async function updateMessage(messageId: number, body: { content: string; contentRich: JSONContent }) {
+  async function updateMessage(messageId: number, body: { content: JSONContent }) {
     const updated = await channelApi.updateMessage(messageId, body);
     const i = store.messages.findIndex((m) => m.id === messageId);
     if (i >= 0) store.messages[i] = { ...store.messages[i], ...updated };

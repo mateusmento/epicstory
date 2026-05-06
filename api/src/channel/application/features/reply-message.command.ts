@@ -21,12 +21,12 @@ import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
 import type { JSONContent } from '@tiptap/core';
 import {
-  extractMentionIdsFromDoc,
+  enrichMentionLabels,
+  extractMentionIds,
   normalizeTiptapDoc,
   stripImageNodesFromDoc,
   tiptapToPlainText,
 } from '@epicstory/tiptap';
-import { extractMentionIds, renderMentions } from '../utils/mentions';
 import { Transactional } from 'typeorm-transactional';
 
 export class ReplyMessage {
@@ -34,12 +34,8 @@ export class ReplyMessage {
   senderId: number;
 
   @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: JSONContent;
+  content: JSONContent;
 
   @IsOptional()
   @IsInt()
@@ -78,7 +74,6 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
   async execute({
     senderId,
     content,
-    contentRich,
     messageId,
     quotedReplyId,
     attachmentIds,
@@ -98,12 +93,12 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       throw new SenderIsNotChannelMember();
     }
 
-    const normalizedRich = contentRich
-      ? stripImageNodesFromDoc(normalizeTiptapDoc(contentRich))
-      : undefined;
-    const plainContent = normalizedRich
-      ? tiptapToPlainText(normalizedRich, { stripFormatting: true })
-      : content;
+    const normalizedContent = stripImageNodesFromDoc(
+      normalizeTiptapDoc(content),
+    );
+    const plainContent = tiptapToPlainText(normalizedContent, {
+      stripFormatting: true,
+    });
 
     const resolvedQuote = await this.messageService.resolveQuotedReplyId(
       quotedReplyId,
@@ -112,8 +107,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     );
 
     const { id: replyId } = await this.messageReplyRepo.save({
-      content: plainContent,
-      contentRich: normalizedRich,
+      content: normalizedContent,
       channelId: message.channelId,
       messageId,
       senderId,
@@ -137,9 +131,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
 
     reply.setReactions(senderId);
 
-    const extractedMentionIds = normalizedRich
-      ? extractMentionIdsFromDoc(normalizedRich)
-      : extractMentionIds(plainContent);
+    const extractedMentionIds = extractMentionIds(normalizedContent);
     const peerUsersMap = await this.messageService.resolveMentionUsersMap(
       message.channel,
       uniq(extractedMentionIds),
@@ -150,7 +142,10 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     const mentionedUsers = finalMentionIds
       .map((id) => peerUsersMap.get(id))
       .filter(Boolean);
-    const displayContent = renderMentions(plainContent, peerUsersMap);
+    const displayContent = tiptapToPlainText(
+      enrichMentionLabels(normalizedContent, peerUsersMap),
+      { stripFormatting: true },
+    ).trim();
 
     (reply as any).mentionedUsers = mentionedUsers;
     (reply as any).displayContent = displayContent;

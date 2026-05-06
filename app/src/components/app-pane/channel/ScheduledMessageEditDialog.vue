@@ -67,17 +67,7 @@ watch(
   ([op]) => {
     if (!op || !editor.value) return;
     scheduleOverride.value = null;
-    const doc = props.scheduled.contentRich
-      ? normalizeTiptapDoc(props.scheduled.contentRich)
-      : {
-          type: "doc",
-          content: [
-            {
-              type: "paragraph",
-              content: props.scheduled.content ? [{ type: "text", text: props.scheduled.content }] : [],
-            },
-          ],
-        };
+    const doc = normalizeTiptapDoc(props.scheduled.content);
     editor.value.commands.setContent(doc);
   },
   { immediate: true },
@@ -110,8 +100,7 @@ async function save() {
   if (!plain.trim()) return;
   const sch = scheduleOverride.value;
   await channelApi.patchScheduledMessage(props.channelId, props.scheduled.id, {
-    content: plain,
-    contentRich: doc,
+    content: doc,
     ...(sch ? { dueAt: sch.dueAt.toISOString(), recurrence: sch.recurrence } : {}),
   });
   emit("saved");

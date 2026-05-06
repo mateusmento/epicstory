@@ -106,8 +106,7 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
             @edit="emit('edit', props.message)"
           >
             <RichTextPreview
-              v-if="props.message.contentRich"
-              :contentRich="props.message.contentRich"
+              :content="props.message.content"
               :mentioned-users="props.message.mentionedUsers"
               :me-id="props.meId"
             />

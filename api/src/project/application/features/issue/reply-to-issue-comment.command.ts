@@ -12,7 +12,6 @@ import {
   IsNotEmpty,
   IsObject,
   IsOptional,
-  IsString,
   Min,
 } from 'class-validator';
 import { ReplyMessage } from 'src/channel/application/features';
@@ -30,12 +29,8 @@ export class ReplyToIssueComment {
   parentMessageId!: number;
 
   @IsNotEmpty()
-  @IsString()
-  content!: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: JSONContent;
+  content!: JSONContent;
 
   @IsOptional()
   @IsArray()
@@ -66,13 +61,14 @@ export class ReplyToIssueCommentCommand
     issueId,
     parentMessageId,
     content,
-    contentRich,
     attachmentIds,
   }: ReplyToIssueComment) {
     const issue = await this.issueRepo.findOne({ where: { id: issueId } });
     if (!issue) throw new NotFoundException('Issue not found');
 
-    if (!(await this.workspaceRepo.memberExists(issue.workspaceId, issuer.id))) {
+    if (
+      !(await this.workspaceRepo.memberExists(issue.workspaceId, issuer.id))
+    ) {
       throw new IssuerUserIsNotWorkspaceMember();
     }
 
@@ -88,9 +84,7 @@ export class ReplyToIssueCommentCommand
     });
     if (!threadRoot) throw new NotFoundException('Comment not found');
     if (threadRoot.channelId !== commentChannelId) {
-      throw new ForbiddenException(
-        'Comment is not part of this issue thread',
-      );
+      throw new ForbiddenException('Comment is not part of this issue thread');
     }
 
     return this.commandBus.execute(
@@ -98,7 +92,6 @@ export class ReplyToIssueCommentCommand
         messageId: parentMessageId,
         senderId: issuer.id,
         content,
-        contentRich,
         quotedReplyId: undefined,
         attachmentIds,
         matchedIssueId: issue.id,

@@ -1,6 +1,6 @@
 import type { JSONContent } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
-import { extractMentionIdsFromDoc } from "./mentions-doc";
+import { extractMentionIds } from "./mentions-doc";
 import { normalizeTiptapDoc } from "./normalize";
 import { tiptapToPlainText } from "./plain-text";
 
@@ -210,7 +210,7 @@ describe("tiptapToPlainText", () => {
   });
 });
 
-describe("extractMentionIdsFromDoc", () => {
+describe("extractMentionIds", () => {
   it("collects unique numeric ids", () => {
     const doc = {
       type: "doc",
@@ -225,6 +225,6 @@ describe("extractMentionIdsFromDoc", () => {
         },
       ],
     };
-    expect(extractMentionIdsFromDoc(doc).sort()).toEqual([1, 2]);
+    expect(extractMentionIds(doc).sort()).toEqual([1, 2]);
   });
 });

@@ -113,9 +113,9 @@ function finishEditTitle() {
   saveMainFields();
 }
 
-function onSaveDescription(html: string) {
+function onSaveDescription(description: any) {
   if (!issue.value) return;
-  if (html !== issue.value.description) savePatch({ description: html });
+  savePatch({ description });
 }
 
 onMounted(() => {
@@ -184,7 +184,7 @@ watch(
 
         <IssueDescriptionEditor
           :key="props.issueId"
-          :description="issue?.description ?? ''"
+          :description="issue?.description ?? { type: 'doc', content: [{ type: 'paragraph', content: [] }] }"
           :issue-id="+props.issueId"
           :disabled="!issue"
           :is-saving="isSaving"

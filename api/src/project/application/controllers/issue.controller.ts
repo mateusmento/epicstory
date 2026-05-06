@@ -81,13 +81,12 @@ export class IssueController {
     @Param('parentMessageId') parentMessageId: number,
     @Body()
     body: {
-      content: string;
-      contentRich?: JSONContent;
+      content: JSONContent;
       attachmentIds?: number[];
     },
     @Auth() issuer,
   ) {
-    if (typeof body.content !== 'string' || body.content.trim().length === 0) {
+    if (!body.content || typeof body.content !== 'object') {
       throw new BadRequestException('Content is required');
     }
     return this.commandBus.execute(
@@ -96,7 +95,6 @@ export class IssueController {
         parentMessageId,
         issuer,
         content: body.content,
-        contentRich: body.contentRich,
         attachmentIds: body.attachmentIds,
       }),
     );
@@ -109,13 +107,12 @@ export class IssueController {
     @Param('id') issueId: number,
     @Body()
     body: {
-      content: string;
-      contentRich?: JSONContent;
+      content: JSONContent;
       attachmentIds?: number[];
     },
     @Auth() issuer,
   ) {
-    if (typeof body.content !== 'string' || body.content.trim().length === 0) {
+    if (!body.content || typeof body.content !== 'object') {
       throw new BadRequestException('Content is required');
     }
     return this.commandBus.execute(
@@ -123,7 +120,6 @@ export class IssueController {
         issueId,
         issuer,
         content: body.content,
-        contentRich: body.contentRich,
         attachmentIds: body.attachmentIds,
       }),
     );

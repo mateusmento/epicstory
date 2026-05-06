@@ -1,9 +1,12 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
 import { TiptapCodeBlockCardNodeView } from "@/components/rich-text";
+import { RichTextPreview } from "@/components/rich-text";
 import { Lowlight } from "@/core/lowlight";
 import { IssueApi } from "@/domain/issues";
 import { Button } from "@/design-system";
+import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
+import type { JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import {
   createPlaceholderExtension,
@@ -30,19 +33,25 @@ import {
 import { computed, ref, watch } from "vue";
 
 const props = defineProps<{
-  description: string;
+  description: JSONContent;
   issueId: number;
   disabled?: boolean;
   isSaving?: boolean;
 }>();
 
 const emit = defineEmits<{
-  saveDescription: [html: string];
+  saveDescription: [doc: JSONContent];
 }>();
 
 const isEditingDescription = ref(false);
 
 const issueApi = useDependency(IssueApi);
+
+const descriptionIsEmpty = computed(() => {
+  console.log(props.description);
+  const t = tiptapToPlainText(normalizeTiptapDoc(props.description), { stripFormatting: true }).trim();
+  return t.length === 0;
+});
 
 const editor = useEditor({
   extensions: [
@@ -80,11 +89,6 @@ const editor = useEditor({
   },
 });
 
-const descriptionIsHtml = computed(() => {
-  const d = props.description ?? "";
-  return /<\/?[a-z][\s\S]*>/i.test(d);
-});
-
 function startEditDescription() {
   if (props.disabled) return;
   isEditingDescription.value = true;
@@ -94,7 +98,7 @@ function startEditDescription() {
 function cancelEditDescription() {
   if (props.disabled) return;
   isEditingDescription.value = false;
-  editor.value?.commands.setContent(props.description ?? "", { emitUpdate: false });
+  editor.value?.commands.setContent(normalizeTiptapDoc(props.description), { emitUpdate: false });
 }
 
 function finishEditDescription() {
@@ -102,12 +106,12 @@ function finishEditDescription() {
   isEditingDescription.value = false;
   const instance = editor.value;
   if (!instance) return;
-  emit("saveDescription", instance.getHTML());
+  emit("saveDescription", normalizeTiptapDoc(instance.getJSON()));
 }
 
 watch(isEditingDescription, (editing) => {
   if (!editing) return;
-  editor.value?.commands.setContent(props.description ?? "", { emitUpdate: false });
+  editor.value?.commands.setContent(normalizeTiptapDoc(props.description), { emitUpdate: false });
 });
 
 function toggleLink() {
@@ -138,13 +142,8 @@ function toggleLink() {
         @dblclick="startEditDescription"
         title="Double-click to edit"
       >
-        <div v-if="description" class="text-sm text-foreground leading-relaxed">
-          <div
-            v-if="descriptionIsHtml"
-            class="[&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_a:hover]:text-blue-700 [&_.epic-blockquote]:flex [&_.epic-blockquote]:flex-row [&_.epic-blockquote]:gap-3 [&_.epic-blockquote]:items-stretch [&_.epic-blockquote]:border-0 [&_.epic-blockquote]:my-2 [&_.epic-blockquote]:mx-0 [&_.epic-blockquote]:p-0 [&_.epic-blockquote]:rounded-md [&_.epic-blockquote]:text-muted-foreground [&_.epic-blockquote-rail]:w-1.5 [&_.epic-blockquote-rail]:shrink-0 [&_.epic-blockquote-rail]:self-stretch [&_.epic-blockquote-rail]:min-h-[1.25rem] [&_.epic-blockquote-rail]:rounded-full [&_.epic-blockquote-rail]:bg-zinc-200 [&_.epic-blockquote-rail]:select-none [&_.epic-blockquote-body]:min-w-0 [&_.epic-blockquote-body]:flex-1 [&_blockquote:not(.epic-blockquote)]:border-l-4 [&_blockquote:not(.epic-blockquote)]:border-zinc-200 [&_blockquote:not(.epic-blockquote)]:pl-3 [&_blockquote:not(.epic-blockquote)]:pr-2 [&_blockquote:not(.epic-blockquote)]:py-1.5 [&_blockquote:not(.epic-blockquote)]:my-2 [&_blockquote:not(.epic-blockquote)]:rounded-md [&_blockquote:not(.epic-blockquote)]:text-muted-foreground [&_.epic-inline-code]:font-mono [&_.epic-inline-code]:text-[0.8125rem] [&_.epic-inline-code]:bg-zinc-100 [&_.epic-inline-code]:text-zinc-900 [&_.epic-inline-code]:rounded [&_.epic-inline-code]:border [&_.epic-inline-code]:border-zinc-200/90 [&_.epic-inline-code]:px-1 [&_.epic-inline-code]:py-px [&_p>code]:font-mono [&_p>code]:text-[0.8125rem] [&_p>code]:bg-zinc-100 [&_p>code]:text-zinc-900 [&_p>code]:rounded [&_p>code]:border [&_p>code]:border-zinc-200/90 [&_p>code]:px-1 [&_p>code]:py-px"
-            v-html="description"
-          />
-          <div v-else class="whitespace-pre-wrap">{{ description }}</div>
+        <div v-if="!descriptionIsEmpty" class="text-sm text-foreground leading-relaxed">
+          <RichTextPreview :content="description" :mentioned-users="[]" :me-id="0" />
         </div>
         <div v-else class="text-sm text-secondary-foreground">Add a description…</div>
       </div>

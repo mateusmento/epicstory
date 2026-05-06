@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsObject,
   IsOptional,
-  IsString,
 } from 'class-validator';
 import { UserRepository } from 'src/auth';
 import { Channel } from 'src/channel/domain';
@@ -26,12 +25,8 @@ export class SendDirectMessage {
   peers: number[];
 
   @IsNotEmpty()
-  @IsString()
-  content: string;
-
-  @IsOptional()
   @IsObject()
-  contentRich?: JSONContent;
+  content: JSONContent;
 
   @IsNumber()
   workspaceId: number;
@@ -52,13 +47,7 @@ export class SendDirectMessageCommand
     private commandBus: CommandBus,
   ) {}
 
-  async execute({
-    senderId,
-    peers,
-    workspaceId,
-    content,
-    contentRich,
-  }: SendDirectMessage) {
+  async execute({ senderId, peers, workspaceId, content }: SendDirectMessage) {
     const workspace = await this.workspaceRepo.findOneBy({ id: workspaceId });
     if (!workspace) {
       throw new WorkspaceNotFound();
@@ -97,7 +86,6 @@ export class SendDirectMessageCommand
         channelId: channel.id,
         senderId,
         content,
-        contentRich,
       }),
     );
   }
