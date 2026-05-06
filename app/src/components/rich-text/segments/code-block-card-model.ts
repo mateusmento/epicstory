@@ -73,13 +73,11 @@ export function useCodeBlockCardModel(opts: CodeBlockCardModelOptions) {
     return "Auto";
   });
 
-  const lineNumbers = computed(() => {
+  const lineCount = computed(() => {
     const raw = sourceText.value;
-    const n = raw === "" ? 1 : raw.split("\n").length;
-    return Array.from({ length: n }, (_, i) => i + 1);
+    if (raw === "") return 1;
+    return raw.split("\n").length;
   });
-
-  const lineCount = computed(() => lineNumbers.value.length);
 
   const isLongCode = computed(() => lineCount.value > CODE_LONG_LINE_THRESHOLD);
 
@@ -100,6 +98,21 @@ export function useCodeBlockCardModel(opts: CodeBlockCardModelOptions) {
   );
 
   const showPeekChrome = computed(() => isLongCode.value && !codeExpanded.value);
+
+  /** Lines shown in the gutter (matches what we mount in the code column when peeking). */
+  const lineNumbers = computed(() => {
+    const n = lineCount.value;
+    const nums = Array.from({ length: n }, (_, i) => i + 1);
+    if (!showPeekChrome.value) return nums;
+    return nums.slice(0, CODE_PEEK_VISIBLE_LINES);
+  });
+
+  /** Source text actually rendered in the visible `<code>` column (peek shows first N lines only). */
+  const displayedSourceText = computed(() => {
+    if (!showPeekChrome.value) return sourceText.value;
+    const lines = sourceText.value.split("\n");
+    return lines.slice(0, CODE_PEEK_VISIBLE_LINES).join("\n");
+  });
 
   const peekHiddenLineCount = computed(() => {
     if (!showPeekChrome.value) return 0;
@@ -279,6 +292,7 @@ export function useCodeBlockCardModel(opts: CodeBlockCardModelOptions) {
     codeExpanded,
     languageLabel,
     lineNumbers,
+    displayedSourceText,
     isLongCode,
     showPeekChrome,
     expandPeekLabel,
