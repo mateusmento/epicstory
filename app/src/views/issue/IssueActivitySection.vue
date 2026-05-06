@@ -118,10 +118,7 @@ async function reloadAfterComment() {
   }
 }
 
-async function onPostIssueComment(payload: {
-  content: JSONContent;
-  attachmentIds?: number[];
-}) {
+async function onPostIssueComment(payload: { content: JSONContent; attachmentIds?: number[] }) {
   await issueApi.postIssueComment(props.issueId, {
     content: payload.content,
     ...(payload.attachmentIds != null && payload.attachmentIds.length > 0

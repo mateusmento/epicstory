@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { listLowlightLanguagesForMenu } from "@/core/lowlight";
 import {
   Button,
   Menu,
@@ -12,10 +13,9 @@ import {
 import type { JSONContent, NodeViewProps } from "@tiptap/core";
 import { NodeViewContent } from "@tiptap/vue-3";
 import { ChevronDown, ChevronsDownUp, ChevronsUpDown } from "lucide-vue-next";
-import { computed, nextTick, onMounted, ref, toValue, watch } from "vue";
-import { listLowlightLanguagesForMenu } from "@/core/lowlight";
-import { highlightSnippetToInnerHtml } from "./code-snippet-highlight";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { CODE_PEEK_VISIBLE_LINES, useCodeBlockCardModel } from "./code-block-card-model";
+import { highlightSnippetToInnerHtml } from "./code-snippet-highlight";
 
 /** TipTap stores code as child `text` nodes (JSON preview path). */
 function codeBlockPlainText(n: JSONContent): string {
@@ -196,12 +196,12 @@ onMounted(() => {
             class="epic-code-card-gutter pl-3 pr-2 mr-2 shrink-0 select-none border-r border-zinc-200/90 bg-zinc-100/80 font-mono text-[0.8125rem] leading-relaxed text-zinc-400 tabular-nums"
             aria-hidden="true"
           >
-            <div v-for="num in toValue(lineNumbers)" :key="num" class="whitespace-nowrap">
+            <div v-for="num in lineNumbers" :key="num" class="whitespace-nowrap">
               {{ num }}
             </div>
           </div>
-          <NodeViewContent v-if="variant === 'tiptap'" as="code" :class="toValue(codeClass)" />
-          <code v-else ref="codeElRef" :class="toValue(codeClass)" />
+          <NodeViewContent v-if="variant === 'tiptap'" as="code" :class="codeClass" />
+          <code v-else ref="codeElRef" :class="codeClass" />
           <div
             v-if="showPeekChrome"
             class="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center bg-gradient-to-t from-[#f8f8f8] from-35% via-[#f8f8f8]/85 to-transparent px-2 pb-2 pt-8"
@@ -213,7 +213,7 @@ onMounted(() => {
               class="pointer-events-auto gap-1 border border-zinc-200/90 shadow-sm rounded-lg font-inter text-xs"
               :data-rich-text-json-code-expand="props.previewInteractionMarkers ? '' : undefined"
               aria-expanded="false"
-              :aria-label="toValue(expandPeekLabel)"
+              :aria-label="expandPeekLabel"
               @mousedown="onToggleMouseDown"
               @click="onToggleClick"
             >
@@ -238,7 +238,7 @@ onMounted(() => {
           class="pointer-events-auto gap-1 border border-zinc-200/90 shadow-sm rounded-lg backdrop-blur-[2px] font-inter text-xs"
           :data-rich-text-json-code-collapse="props.previewInteractionMarkers ? '' : undefined"
           aria-expanded="true"
-          :aria-label="toValue(toggleAriaLabel)"
+          :aria-label="toggleAriaLabel"
           @mousedown="onToggleMouseDown"
           @click="onToggleClick"
         >

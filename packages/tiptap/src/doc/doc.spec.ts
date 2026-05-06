@@ -16,7 +16,9 @@ describe("normalizeTiptapDoc", () => {
         { type: "paragraph", content: [] },
       ],
     };
-    const out = normalizeTiptapDoc(doc as JSONContent) as { content: unknown[] };
+    const out = normalizeTiptapDoc(doc as JSONContent) as {
+      content: unknown[];
+    };
     expect(out.content).toHaveLength(1);
   });
 

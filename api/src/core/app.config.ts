@@ -126,8 +126,6 @@ export class AppConfig {
 
   /** Unlinked composer uploads older than this are purged (DB rows). Default 72h. */
   @IsNumber()
-  @Transform(({ value }) =>
-    value == null || value === '' ? 72 : +value,
-  )
+  @Transform(({ value }) => (value == null || value === '' ? 72 : +value))
   ATTACHMENT_STAGING_TTL_HOURS: number = 72;
 }

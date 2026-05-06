@@ -60,7 +60,8 @@ function normalizeProseMirrorJsonNames(node: JSONContent): JSONContent {
   const rawType = node?.type ?? "";
   const nextType = typeMap[rawType] ?? rawType;
 
-  let next: JSONContent = nextType === rawType ? node : { ...node, type: nextType };
+  let next: JSONContent =
+    nextType === rawType ? node : { ...node, type: nextType };
 
   // code_block language lives in attrs.params; TipTap uses attrs.language.
   if (rawType === "code_block") {
@@ -75,7 +76,8 @@ function normalizeProseMirrorJsonNames(node: JSONContent): JSONContent {
   // ordered_list uses attrs.order; TipTap uses attrs.start.
   if (rawType === "ordered_list") {
     const order = (node.attrs as any)?.order;
-    const start = typeof order === "number" && Number.isFinite(order) ? order : undefined;
+    const start =
+      typeof order === "number" && Number.isFinite(order) ? order : undefined;
     if (start != null) {
       const attrs: Record<string, unknown> = { ...(node.attrs ?? {}) };
       delete (attrs as any).order;
@@ -99,7 +101,10 @@ function normalizeProseMirrorJsonNames(node: JSONContent): JSONContent {
   }
 
   if (Array.isArray(next.content)) {
-    next = { ...next, content: next.content.map(normalizeProseMirrorJsonNames) };
+    next = {
+      ...next,
+      content: next.content.map(normalizeProseMirrorJsonNames),
+    };
   }
 
   return next;

@@ -526,9 +526,7 @@ async function saveEvent() {
           isPublic: meetingIsPublic.value,
           notifyMinutesBefore: meetingNotifyMinutesBefore.value,
           recurrence,
-          participantIds: channelId
-            ? undefined
-            : meetingParticipantUsers.value.map((u) => u.id),
+          participantIds: channelId ? undefined : meetingParticipantUsers.value.map((u) => u.id),
         });
       }
 
@@ -1188,11 +1186,9 @@ const dayHours = computed(() => {
 
             <!-- Meeting settings (create + edit: show all fields; channel/participants are fixed on the server when editing) -->
             <div v-if="itemType === 'meeting'" class="mt-2.5 rounded-md border bg-zinc-50 p-2.5">
-              <p
-                v-if="editingEvent"
-                class="mb-2 text-xs text-muted-foreground"
-              >
-                Channel and participant list are set when the meeting was created; other fields below can be updated.
+              <p v-if="editingEvent" class="mb-2 text-xs text-muted-foreground">
+                Channel and participant list are set when the meeting was created; other fields below can be
+                updated.
               </p>
               <div class="grid grid-cols-2 gap-2">
                 <label class="text-xs text-muted-foreground">
@@ -1222,11 +1218,7 @@ const dayHours = computed(() => {
 
               <div class="mt-2 flex items-center justify-between">
                 <label class="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    v-model="meetingIsPublic"
-                    type="checkbox"
-                    class="h-4 w-4"
-                  />
+                  <input v-model="meetingIsPublic" type="checkbox" class="h-4 w-4" />
                   Public (workspace members with link can join)
                 </label>
               </div>

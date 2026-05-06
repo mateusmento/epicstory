@@ -203,24 +203,16 @@ async function onSend() {
     </div>
 
     <div v-if="isSearching" class="text-xs text-muted-foreground px-0.5">Searching…</div>
-    <div
-      v-else-if="primaryMatch"
-      class="flex:row gap-3 pr-1 py-1 items-center"
-    >
-      <UserAvatar
-        :name="primaryMatch.name"
-        :picture="primaryMatch.picture"
-        size="md"
-        class="flex-shrink-0"
-      />
+    <div v-else-if="primaryMatch" class="flex:row gap-3 pr-1 py-1 items-center">
+      <UserAvatar :name="primaryMatch.name" :picture="primaryMatch.picture" size="md" class="flex-shrink-0" />
       <div class="flex:col min-w-0 text-sm">
         <div class="font-medium leading-tight truncate">{{ primaryMatch.name }}</div>
         <div class="text-xs text-muted-foreground leading-tight truncate">{{ primaryMatch.email }}</div>
       </div>
     </div>
     <p v-else-if="showNotRegisteredHint" class="text-xs text-muted-foreground px-0.5">
-      This address is not associated with a registered user on the platform. You can still send an
-      invite — they will join after signing up.
+      This address is not associated with a registered user on the platform. You can still send an invite —
+      they will join after signing up.
     </p>
 
     <div
@@ -269,12 +261,7 @@ async function onSend() {
     </div>
 
     <div class="flex justify-end pt-1 mt-auto">
-      <Button
-        type="button"
-        size="sm"
-        :disabled="selectedInvites.length === 0 || isSending"
-        @click="onSend"
-      >
+      <Button type="button" size="sm" :disabled="selectedInvites.length === 0 || isSending" @click="onSend">
         {{ isSending ? "Sending…" : "Send invite" }}
       </Button>
     </div>

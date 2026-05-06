@@ -29,7 +29,11 @@ function walk(node: JSONContent, ctx?: WalkCtx): string {
   if (type === "doc")
     return (node.content ?? []).map((c) => walk(c, ctx)).join("");
   if (type === "mention") {
-    const label = node.attrs?.label ?? node.attrs?.name ?? node.attrs?.id ?? node.attrs?.userId;
+    const label =
+      node.attrs?.label ??
+      node.attrs?.name ??
+      node.attrs?.id ??
+      node.attrs?.userId;
     return label === undefined || label === null ? "@" : `@${label}`;
   }
 
