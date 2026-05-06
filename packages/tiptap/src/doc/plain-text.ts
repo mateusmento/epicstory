@@ -1,4 +1,4 @@
-import type { TiptapJSONNode } from "./types";
+import type { JSONContent } from "@tiptap/core";
 import { normalizeTiptapDoc } from "./normalize";
 
 type WalkCtx = {
@@ -9,11 +9,11 @@ type WalkCtx = {
 
 function applyTextMarks(
   text: string,
-  marks: unknown[] | undefined,
+  marks: JSONContent["marks"],
   stripFormatting?: boolean,
 ): string {
   let t = text.replace(/\u200b/g, "");
-  const list = (marks ?? []) as { type?: string }[];
+  const list = marks ?? [];
   if (list.some((m) => m.type === "code")) {
     if (t === "") return "";
     if (!stripFormatting) t = `\`${t}\``;
@@ -21,14 +21,10 @@ function applyTextMarks(
   return t;
 }
 
-function walk(node: TiptapJSONNode, ctx?: WalkCtx): string {
+function walk(node: JSONContent, ctx?: WalkCtx): string {
   const type = node?.type ?? "";
   if (type === "text")
-    return applyTextMarks(
-      node.text ?? "",
-      node.marks as unknown[] | undefined,
-      ctx?.stripFormatting,
-    );
+    return applyTextMarks(node.text ?? "", node.marks, ctx?.stripFormatting);
   if (type === "hardBreak") return "\n";
   if (type === "doc")
     return (node.content ?? []).map((c) => walk(c, ctx)).join("");
@@ -136,7 +132,7 @@ export type TiptapToPlainTextOptions = {
 };
 
 export function tiptapToPlainText(
-  doc: TiptapJSONNode | null | undefined,
+  doc: JSONContent | null | undefined,
   options?: TiptapToPlainTextOptions,
 ): string {
   if (!doc) return "";
@@ -145,7 +141,7 @@ export function tiptapToPlainText(
     ? { stripFormatting: true }
     : undefined;
 
-  return walk(normalizeTiptapDoc(doc) as TiptapJSONNode, ctx)
+  return walk(normalizeTiptapDoc(doc), ctx)
     .replace(/\n{3,}/g, "\n\n")
     .trimEnd();
 }

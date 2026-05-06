@@ -19,6 +19,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+import type { JSONContent } from '@tiptap/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { UseGuards } from '@nestjs/common';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
@@ -33,7 +34,7 @@ class CreateScheduledMessageBody {
 
   @IsOptional()
   @IsObject()
-  contentRich?: any;
+  contentRich?: JSONContent;
 
   @IsOptional()
   @IsInt()
@@ -55,7 +56,7 @@ class UpdateScheduledMessageBody {
 
   @IsOptional()
   @IsObject()
-  contentRich?: any;
+  contentRich?: JSONContent;
 
   @IsOptional()
   @IsInt()

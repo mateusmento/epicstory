@@ -5,10 +5,10 @@ import { Button, ButtonGroup, ButtonGroupSeparator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import {
-  useChannelTypingPulse,
-  useChannelMessageDraft,
   clearChannelDraft,
   composerQuoteRef,
+  useChannelMessageDraft,
+  useChannelTypingPulse,
   type IMessage,
   type IReply,
   type IScheduledMessageRecurrence,
@@ -20,7 +20,7 @@ import {
   stripImageNodesFromDoc,
   tiptapToPlainText,
 } from "@epicstory/tiptap";
-import type { Editor } from "@tiptap/core";
+import type { Editor, JSONContent } from "@tiptap/core";
 import { ChevronDown, Paperclip } from "lucide-vue-next";
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { RichTextComposer } from "../rich-text";
@@ -36,7 +36,7 @@ const props = withDefaults(
     meId?: number;
     channelId: number;
     placeholder?: string;
-    editingMessage?: { id: number; content: string; contentRich?: any } | null;
+    editingMessage?: { id: number; content: string; contentRich?: JSONContent } | null;
     quotedMessage?: (IMessage | IReply) | null;
   }>(),
   {
@@ -50,7 +50,7 @@ const emit = defineEmits<{
     e: "send-message",
     value: {
       content: string;
-      contentRich: any;
+      contentRich: JSONContent;
       quotedMessageId?: number;
       quotedReplyId?: number;
       attachmentIds?: number[];
@@ -60,13 +60,13 @@ const emit = defineEmits<{
     e: "send-scheduled-message",
     value: {
       content: string;
-      contentRich: any;
+      contentRich: JSONContent;
       quotedMessageId?: number;
       dueAt: string;
       recurrence: IScheduledMessageRecurrence;
     },
   ): void;
-  (e: "submit-edit", value: { messageId: number; content: string; contentRich: any }): void;
+  (e: "submit-edit", value: { messageId: number; content: string; contentRich: JSONContent }): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
 }>();

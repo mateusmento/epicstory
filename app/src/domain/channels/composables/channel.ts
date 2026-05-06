@@ -10,6 +10,7 @@ import { ChannelApi } from "../services";
 import type { ICreateScheduledMessageBody } from "../types/scheduled-message.type";
 import type { IChannel, IMessage, IMessageGroup, IReply } from "../types";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
+import type { JSONContent } from "@tiptap/core";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
 
 /** Shared across all `useChannel()` callers */
@@ -170,7 +171,7 @@ export function useChannel() {
     attachmentIds,
   }: {
     content: string;
-    contentRich: any;
+    contentRich: JSONContent;
     quotedMessageId?: number | null;
     attachmentIds?: number[];
   }) {
@@ -224,7 +225,7 @@ export function useChannel() {
     store.messages = store.messages.filter((message) => message.id !== messageId);
   }
 
-  async function updateMessage(messageId: number, body: { content: string; contentRich: any }) {
+  async function updateMessage(messageId: number, body: { content: string; contentRich: JSONContent }) {
     const updated = await channelApi.updateMessage(messageId, body);
     const i = store.messages.findIndex((m) => m.id === messageId);
     if (i >= 0) store.messages[i] = { ...store.messages[i], ...updated };

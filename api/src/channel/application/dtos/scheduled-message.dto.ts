@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/core';
 import { ScheduledJob } from 'src/scheduling/entities';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
 import { ScheduledJobTypes } from 'src/scheduling/constants';
@@ -10,7 +11,7 @@ export class ScheduledMessageDto {
   channelId: number;
   senderId: number;
   content: string;
-  contentRich?: any;
+  contentRich?: JSONContent;
   quotedMessageId?: number;
 
   dueAt: Date;

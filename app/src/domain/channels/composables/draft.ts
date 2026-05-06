@@ -4,14 +4,14 @@ import { debounce } from "lodash";
 import { toValue, type ReadonlyRefOrGetter } from "@/utils";
 import { nextTick } from "vue";
 
-type EditingMessage = { id: number; content: string; contentRich?: unknown } | null;
+type EditingMessage = { id: number; content: string; contentRich?: JSONContent } | null;
 
 export function channelComposerDraftKey(channelId: number) {
   return `channelComposerDraft:${channelId}`;
 }
 
 export type ChannelComposerDraft = {
-  contentRich: Record<string, unknown>;
+  contentRich: JSONContent;
 };
 
 export function loadChannelDraft(channelId: number): ChannelComposerDraft | null {
@@ -26,7 +26,7 @@ export function loadChannelDraft(channelId: number): ChannelComposerDraft | null
   return null;
 }
 
-export function saveChannelDraft(channelId: number, contentRich: Record<string, unknown>) {
+export function saveChannelDraft(channelId: number, contentRich: JSONContent) {
   try {
     const payload: ChannelComposerDraft = { contentRich };
     localStorage.setItem(channelComposerDraftKey(channelId), JSON.stringify(payload));

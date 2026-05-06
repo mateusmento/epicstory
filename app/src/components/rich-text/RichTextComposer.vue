@@ -3,8 +3,7 @@ import type { User } from "@/domain/auth";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { computed, onBeforeUnmount, reactive, watch } from "vue";
-import { EPICSTORY_RICH_TEXT_COMPOSER } from "./editor-classes";
-import { createRichTextComposerExtensions } from "./rich-text-composer-extensions";
+import { createRichTextComposerExtensions, EPICSTORY_RICH_TEXT_COMPOSER } from "./composer";
 
 const emit = defineEmits<{
   submit: [];

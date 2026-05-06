@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/core';
 import {
   ForbiddenException,
   NotFoundException,
@@ -38,7 +39,7 @@ export class CreateIssueComment {
 
   @IsOptional()
   @IsObject()
-  contentRich?: Record<string, unknown>;
+  contentRich?: JSONContent;
 
   @IsOptional()
   @IsArray()
@@ -100,7 +101,7 @@ export class CreateIssueCommentCommand
       channel,
       issuer.id,
       content,
-      contentRich as object | undefined,
+      contentRich,
       null,
     );
 

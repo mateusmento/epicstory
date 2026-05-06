@@ -1,5 +1,6 @@
 import { InjectAxios } from "@/core/axios";
 import type { Page, PageQuery } from "@/core/types";
+import type { JSONContent } from "@tiptap/core";
 import type { Axios } from "axios";
 import { isValid } from "date-fns";
 import { injectable } from "tsyringe";
@@ -148,7 +149,7 @@ export class IssueApi {
   /** Top-level comment on the issue timeline — writes `issue_activities` + `Message`. */
   postIssueComment(
     issueId: number,
-    body: { content: string; contentRich?: Record<string, unknown>; attachmentIds?: number[] },
+    body: { content: string; contentRich?: JSONContent; attachmentIds?: number[] },
   ) {
     return this.axios.post(`/issues/${issueId}/comments`, body).then((res) => res.data);
   }
@@ -156,7 +157,7 @@ export class IssueApi {
   replyToIssueComment(
     issueId: number,
     parentMessageId: number,
-    body: { content: string; contentRich?: Record<string, unknown>; attachmentIds?: number[] },
+    body: { content: string; contentRich?: JSONContent; attachmentIds?: number[] },
   ) {
     return this.axios.post(`/issues/${issueId}/comments/${parentMessageId}/replies`, body).then((res) => res.data);
   }

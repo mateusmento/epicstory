@@ -9,6 +9,7 @@ import type {
   IScheduledMessage,
   IUpdateScheduledMessageBody,
 } from "../types/scheduled-message.type";
+import type { JSONContent } from "@tiptap/core";
 import type { User } from "@/domain/auth";
 
 export type CreateDirectChannel = {
@@ -135,7 +136,7 @@ export class ChannelApi {
   sendMessage(
     channelId: number,
     content: string,
-    contentRich?: any,
+    contentRich?: JSONContent,
     quotedMessageId?: number | null,
     attachmentIds?: number[],
   ) {
@@ -183,7 +184,7 @@ export class ChannelApi {
     return this.axios.delete(`/messages/${messageId}`).then((res) => res.data);
   }
 
-  updateMessage(messageId: number, body: { content: string; contentRich?: any }) {
+  updateMessage(messageId: number, body: { content: string; contentRich?: JSONContent }) {
     return this.axios.patch<IMessage>(`/messages/${messageId}`, body).then((res) => res.data);
   }
 
@@ -204,7 +205,7 @@ export class ChannelApi {
   replyMessage(
     messageId: number,
     content: string,
-    contentRich?: any,
+    contentRich?: JSONContent,
     quotedReplyId?: number | null,
     attachmentIds?: number[],
   ) {

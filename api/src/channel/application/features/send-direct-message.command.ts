@@ -11,6 +11,7 @@ import { UserRepository } from 'src/auth';
 import { Channel } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { In } from 'typeorm';
+import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { WorkspaceNotFound } from 'src/workspace/application/features';
@@ -30,7 +31,7 @@ export class SendDirectMessage {
 
   @IsOptional()
   @IsObject()
-  contentRich?: any;
+  contentRich?: JSONContent;
 
   @IsNumber()
   workspaceId: number;

@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/core';
 import { Exclude } from 'class-transformer';
 import { User } from 'src/auth';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
@@ -24,7 +25,7 @@ export class Message {
   content: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  contentRich?: any;
+  contentRich?: JSONContent | null;
 
   @CreateDateColumn()
   sentAt: Date;

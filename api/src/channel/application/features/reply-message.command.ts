@@ -19,6 +19,7 @@ import { AttachmentService } from 'src/workspace/application/services/attachment
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
+import type { JSONContent } from '@tiptap/core';
 import {
   extractMentionIdsFromDoc,
   normalizeTiptapDoc,
@@ -38,7 +39,7 @@ export class ReplyMessage {
 
   @IsOptional()
   @IsObject()
-  contentRich?: any;
+  contentRich?: JSONContent;
 
   @IsOptional()
   @IsInt()
@@ -98,7 +99,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     }
 
     const normalizedRich = contentRich
-      ? (stripImageNodesFromDoc(normalizeTiptapDoc(contentRich)) as object)
+      ? stripImageNodesFromDoc(normalizeTiptapDoc(contentRich))
       : undefined;
     const plainContent = normalizedRich
       ? tiptapToPlainText(normalizedRich, { stripFormatting: true })

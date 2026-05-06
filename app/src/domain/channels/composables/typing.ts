@@ -1,7 +1,7 @@
 import { useWebSockets } from "@/core/websockets";
 import { toReadonlyRef, type ReadonlyRefOrGetter } from "@/utils";
-import { tiptapToPlainText, type TiptapJSONNode } from "@epicstory/tiptap";
-import type { Editor } from "@tiptap/core";
+import { tiptapToPlainText } from "@epicstory/tiptap";
+import type { Editor, JSONContent } from "@tiptap/core";
 import { ref } from "vue";
 
 /** Receiver: drop typing user if no pulse within this window */
@@ -55,7 +55,7 @@ export function useChannelTypingPulse(options: {
     websocket?.emit("channel-typing-stop", { channelId });
   }
 
-  function isDocEmpty(doc: TiptapJSONNode) {
+  function isDocEmpty(doc: JSONContent) {
     return !tiptapToPlainText(doc, { stripFormatting: true }).trim();
   }
 

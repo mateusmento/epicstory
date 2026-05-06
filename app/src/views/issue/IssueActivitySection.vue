@@ -4,6 +4,7 @@ import { Icon } from "@/design-system/icons";
 import { UserAvatar } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { IssueApi } from "@/domain/issues/api";
+import type { JSONContent } from "@tiptap/core";
 import type { IssueFeed, IssueFeedItem } from "@/domain/issues/types/issue-feed.type";
 import type { IMessage, IReply } from "@/domain/channels";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
@@ -119,12 +120,12 @@ async function reloadAfterComment() {
 
 async function onPostIssueComment(payload: {
   content: string;
-  contentRich: unknown;
+  contentRich: JSONContent;
   attachmentIds?: number[];
 }) {
   await issueApi.postIssueComment(props.issueId, {
     content: payload.content,
-    contentRich: payload.contentRich as Record<string, unknown> | undefined,
+    contentRich: payload.contentRich,
     ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
       ? { attachmentIds: payload.attachmentIds }
       : {}),
@@ -134,11 +135,11 @@ async function onPostIssueComment(payload: {
 
 async function onReplyInThread(
   parentMessageId: number,
-  payload: { content: string; contentRich: unknown; attachmentIds?: number[] },
+  payload: { content: string; contentRich: JSONContent; attachmentIds?: number[] },
 ) {
   await issueApi.replyToIssueComment(props.issueId, parentMessageId, {
     content: payload.content,
-    contentRich: payload.contentRich as Record<string, unknown> | undefined,
+    contentRich: payload.contentRich,
     ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
       ? { attachmentIds: payload.attachmentIds }
       : {}),

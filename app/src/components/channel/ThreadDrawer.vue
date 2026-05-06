@@ -5,6 +5,7 @@ import { Icon } from "@/design-system/icons";
 import type { IMessage, IReply } from "@/domain/channels";
 import { groupMessages, useChannel } from "@/domain/channels";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
+import type { JSONContent } from "@tiptap/core";
 import { computed, nextTick, ref, watch } from "vue";
 import MessageGroup from "./MessageGroup.vue";
 
@@ -72,7 +73,7 @@ async function onMessageDeleted() {
 
 async function onSendReply(payload: {
   content: string;
-  contentRich: any;
+  contentRich: JSONContent;
   quotedMessageId?: number;
   quotedReplyId?: number;
   attachmentIds?: number[];
@@ -87,7 +88,7 @@ async function onSendReply(payload: {
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: any }) {
+async function onSubmitEdit(payload: { messageId: number; content: string; contentRich: JSONContent }) {
   const updated = await updateMessage(payload.messageId, {
     content: payload.content,
     contentRich: payload.contentRich,

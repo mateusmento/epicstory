@@ -1,5 +1,5 @@
-import { createVueFloatingSuggestion } from "@/core/tiptap";
-import { epicStoryLowlight } from "@/core/epic-story-lowlight";
+import { Lowlight } from "@/core/lowlight";
+import { createFloatingSuggestion } from "@/core/tiptap";
 import type { User } from "@/domain/auth";
 import {
   createMentionExtensionWithNodeView,
@@ -7,13 +7,15 @@ import {
   createRichTextExtensions,
 } from "@epicstory/tiptap/vue";
 import type { ComputedRef } from "vue";
-import type { MentionSuggestionItem } from "./MentionList.vue";
-import MentionList from "./MentionList.vue";
-import TiptapCodeBlockCardNodeView from "./TiptapCodeBlockCardNodeView.vue";
-import TiptapMentionNodeView from "./TiptapMentionNodeView.vue";
+import type { MentionSuggestionItem } from "./node-views/MentionList.vue";
+import MentionList from "./node-views/MentionList.vue";
+import CodeBlockCardNodeView from "./node-views/CodeBlockCardNodeView.vue";
+import MentionNodeView from "./node-views/MentionNodeView.vue";
+
+export const EPICSTORY_RICH_TEXT_COMPOSER = "epicstory-rich-text epicstory-rich-text-composer";
 
 export function buildMentionSuggestion(mentionablesForSuggestion: ComputedRef<User[]>) {
-  return createVueFloatingSuggestion({
+  return createFloatingSuggestion({
     items: ({ query }): MentionSuggestionItem[] => {
       const q = (query ?? "").trim().toLowerCase();
       return mentionablesForSuggestion.value
@@ -44,13 +46,13 @@ export function createRichTextComposerExtensions(args: {
   const base = [
     ...createRichTextExtensions({
       linkOpenOnClick: false,
-      lowlight: epicStoryLowlight,
-      codeBlockNodeView: TiptapCodeBlockCardNodeView,
+      lowlight: Lowlight,
+      codeBlockNodeView: CodeBlockCardNodeView,
       images: false,
     }),
   ];
   base.push(
-    createMentionExtensionWithNodeView(TiptapMentionNodeView, {
+    createMentionExtensionWithNodeView(MentionNodeView, {
       HTMLAttributes: {
         class:
           "mention-chip inline-flex items-center px-0.5 rounded-sm bg-mention-chip text-mention font-medium",

@@ -1,3 +1,4 @@
+import type { JSONContent } from "@tiptap/core";
 import type { User } from "@/domain/auth";
 import type { IChannel } from "./channel.type";
 
@@ -6,7 +7,7 @@ export type IQuotedMessagePreview = {
   id: number;
   sender: User;
   content: string;
-  contentRich?: any;
+  contentRich?: JSONContent;
   displayContent?: string;
 };
 
@@ -22,7 +23,7 @@ export type MessageAttachmentDto = {
 export interface IMessage {
   id: number;
   content: string;
-  contentRich?: any;
+  contentRich?: JSONContent;
   displayContent?: string;
   quotedMessageId?: number | null;
   quotedMessage?: IQuotedMessagePreview;
@@ -66,7 +67,7 @@ export interface IMessageReaction {
 export interface IReply {
   id: number;
   content: string;
-  contentRich?: any;
+  contentRich?: JSONContent;
   displayContent?: string;
   /** `message_replies.id` of the quoted reply in the same thread. */
   quotedReplyId?: number | null;

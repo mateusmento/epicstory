@@ -14,6 +14,7 @@ import {
   ChannelRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
+import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -33,7 +34,7 @@ export class SendMessage {
 
   @IsOptional()
   @IsObject()
-  contentRich?: any;
+  contentRich?: JSONContent;
 
   @IsOptional()
   @IsInt()

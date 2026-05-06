@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/core';
 import {
   ForbiddenException,
   NotFoundException,
@@ -34,7 +35,7 @@ export class ReplyToIssueComment {
 
   @IsOptional()
   @IsObject()
-  contentRich?: Record<string, unknown>;
+  contentRich?: JSONContent;
 
   @IsOptional()
   @IsArray()
@@ -97,7 +98,7 @@ export class ReplyToIssueCommentCommand
         messageId: parentMessageId,
         senderId: issuer.id,
         content,
-        contentRich: contentRich as object | undefined,
+        contentRich,
         quotedReplyId: undefined,
         attachmentIds,
         matchedIssueId: issue.id,

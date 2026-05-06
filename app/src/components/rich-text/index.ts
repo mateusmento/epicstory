@@ -1,4 +1,4 @@
 export { default as RichTextComposer } from "./RichTextComposer.vue";
-export { default as RichMessageContent } from "./RichMessageContent.vue";
-export { default as TiptapCodeBlockCardNodeView } from "./TiptapCodeBlockCardNodeView.vue";
-export { default as TiptapMentionNodeView } from "./TiptapMentionNodeView.vue";
+export { default as RichTextPreview } from "./RichTextPreview.vue";
+export { default as TiptapCodeBlockCardNodeView } from "./node-views/CodeBlockCardNodeView.vue";
+export { default as TiptapMentionNodeView } from "./node-views/MentionNodeView.vue";

@@ -1,6 +1,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
+import type { JSONContent } from "@tiptap/core";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import { onMounted, onUnmounted, ref } from "vue";
 import type { Ref } from "vue";
@@ -110,7 +111,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
 
   async function sendReply(payload: {
     content: string;
-    contentRich: any;
+    contentRich: JSONContent;
     quotedReplyId?: number;
     attachmentIds?: number[];
   }) {
