@@ -37,13 +37,8 @@ export class WorkspaceApi {
     return this.axios.post(`workspaces/${workspaceId}/members`, data).then((res) => res.data);
   }
 
-  sendMemberInvite(
-    workspaceId: number,
-    data: { invites: { email: string; userId?: number }[] },
-  ) {
-    return this.axios
-      .post(`workspaces/${workspaceId}/member-invites`, data)
-      .then((res) => res.data);
+  sendMemberInvite(workspaceId: number, data: { invites: { email: string; userId?: number }[] }) {
+    return this.axios.post(`workspaces/${workspaceId}/member-invites`, data).then((res) => res.data);
   }
 
   removeMember(workspaceId: number, memberId: number) {

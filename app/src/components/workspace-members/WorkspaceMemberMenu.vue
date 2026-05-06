@@ -41,18 +41,11 @@ watch(
   { immediate: true },
 );
 
-const sortedUsers = computed(() =>
-  [...(users.value ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
-);
+const sortedUsers = computed(() => [...(users.value ?? [])].sort((a, b) => a.name.localeCompare(b.name)));
 
 const searchUsers = computed(() => {
-  const exclude = new Set([
-    ...users.value.map((u) => u.id),
-    ...props.excludeUserIds,
-  ]);
-  return members.value
-    .map((m) => m.user)
-    .filter((u) => !exclude.has(u.id));
+  const exclude = new Set([...users.value.map((u) => u.id), ...props.excludeUserIds]);
+  return members.value.map((m) => m.user).filter((u) => !exclude.has(u.id));
 });
 
 async function fetchMoreUsers() {
@@ -85,11 +78,7 @@ function onRemove(user: User) {
     <div v-if="users.length === 0" class="px-2 py-2 text-sm text-muted-foreground">None selected</div>
 
     <div v-else class="max-h-44 overflow-auto">
-      <MenuItem
-        v-for="user in sortedUsers"
-        :key="user.id"
-        class="flex:row-md flex:center-y text-sm"
-      >
+      <MenuItem v-for="user in sortedUsers" :key="user.id" class="flex:row-md flex:center-y text-sm">
         <UserAvatar :name="user.name" :picture="user.picture" size="sm" :title="user.name" />
         <div class="flex-1 truncate">{{ user.name }}</div>
         <Button

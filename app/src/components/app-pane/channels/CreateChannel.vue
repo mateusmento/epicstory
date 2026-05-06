@@ -157,10 +157,7 @@ async function onCreateChannel(event: any) {
 
       <div class="flex:col-md">
         <div class="text-sm font-medium text-foreground">Add people</div>
-        <WorkspaceMemberDropdown
-          v-model:users="members"
-          :exclude-user-ids="authUser ? [authUser.id] : []"
-        >
+        <WorkspaceMemberDropdown v-model:users="members" :exclude-user-ids="authUser ? [authUser.id] : []">
           <Button variant="ghost" class="h-auto w-full min-w-0 flex items-center justify-start gap-2 px-2">
             <UserAvatarStack v-if="members.length" :users="members" size="sm" />
             <div v-else class="text-xs text-muted-foreground">Choose workspace members</div>
@@ -207,10 +204,7 @@ async function onCreateChannel(event: any) {
 
       <div class="flex:col-md">
         <div class="text-sm font-medium text-foreground">Add people</div>
-        <WorkspaceMemberDropdown
-          v-model:users="members"
-          :exclude-user-ids="authUser ? [authUser.id] : []"
-        >
+        <WorkspaceMemberDropdown v-model:users="members" :exclude-user-ids="authUser ? [authUser.id] : []">
           <Button variant="ghost" class="h-auto w-full min-w-0 flex items-center justify-start gap-2 px-2">
             <UserAvatarStack v-if="members.length" :users="members" size="sm" />
             <div v-else class="text-xs text-muted-foreground">Choose workspace members</div>

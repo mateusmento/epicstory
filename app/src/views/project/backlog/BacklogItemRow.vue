@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import {
-  IssueLabelTags,
-  issueStatusDotClass,
-  IssueStatusDropdown,
-} from "@/components/issue";
+import { IssueLabelTags, issueStatusDotClass, IssueStatusDropdown } from "@/components/issue";
 import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { UserAvatarStack } from "@/components/user";
 import { Button, ContentEditable, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";

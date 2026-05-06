@@ -41,7 +41,8 @@ export function markdownToTiptapDoc(markdown: string): JSONContent {
 
     if (node.type === "ordered_list") {
       const order = node.attrs?.order;
-      const start = typeof order === "number" && Number.isFinite(order) ? order : undefined;
+      const start =
+        typeof order === "number" && Number.isFinite(order) ? order : undefined;
       out.attrs = {
         ...(node.attrs ?? {}),
         ...(start != null ? { start } : {}),

@@ -54,9 +54,7 @@ export function useWorkspace() {
     store.members.push(member);
   }
 
-  async function sendWorkspaceMemberInvite(
-    invites: { email: string; userId?: number }[],
-  ) {
+  async function sendWorkspaceMemberInvite(invites: { email: string; userId?: number }[]) {
     await workspaceApi.sendMemberInvite(workspaceId.value, { invites });
   }
 

@@ -44,11 +44,7 @@ watch(
         <div class="text-secondary-foreground/70 text-sm ml-xl">{{ members.length }}</div>
       </h1>
 
-      <WorkspaceMemberDropdown
-        v-model:users="memberUsers"
-        @add="addMember"
-        @remove="removeMember"
-      >
+      <WorkspaceMemberDropdown v-model:users="memberUsers" @add="addMember" @remove="removeMember">
         <Button variant="ghost" size="icon">
           <Icon name="hi-plus" class="text-secondary-foreground w-4 h-4" />
         </Button>
