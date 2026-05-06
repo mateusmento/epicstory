@@ -14,13 +14,14 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
+import { RichTextComposer } from "@/components/rich-text";
 import { useAuth } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
-import type { Label } from "@/domain/labels";
-import { useLabels } from "@/domain/labels";
 import type { User } from "@/domain/user";
 import { useWorkspace } from "@/domain/workspace";
-import { computed, ref } from "vue";
+import { EMPTY_TIPTAP_DOC, normalizeTiptapDoc } from "@epicstory/tiptap";
+import type { Editor, JSONContent } from "@tiptap/core";
+import { computed, ref, shallowRef } from "vue";
 
 const props = defineProps<{
   projectId: number;
@@ -28,11 +29,16 @@ const props = defineProps<{
 
 const { backlogItems, createBacklogItem, updateIssue, addAssignee, addLabel } = useBacklog();
 const { user: authUser } = useAuth();
-const { workspace } = useWorkspace();
-const { labelsById } = useLabels();
-
+const { workspace, members } = useWorkspace();
 const title = ref("");
-const description = ref("");
+/** Rich text description (TipTap JSON); set via RichTextComposer. */
+const descriptionEditor = shallowRef<Editor | null>(null);
+
+const mentionables = computed<User[]>(() => members.value.map((m) => m.user));
+
+function setDescriptionEditor(ed: Editor | null) {
+  descriptionEditor.value = ed;
+}
 const status = ref<"todo" | "doing" | "done">("todo");
 const priority = ref<number>(0);
 const selectedAssignees = ref<User[]>([]);
@@ -42,13 +48,6 @@ const closeBtn = ref<HTMLButtonElement | null>(null);
 const selectedLabelIds = ref<number[]>([]);
 
 const workspaceId = computed(() => workspace.value?.id ?? 0);
-
-const selectedLabels = computed(() => {
-  return selectedLabelIds.value
-    .map((id) => labelsById.value.get(id))
-    .filter((l): l is Label => Boolean(l))
-    .sort((a, b) => a.name.localeCompare(b.name));
-});
 
 const afterOf = computed(() => {
   return backlogItems.value.length > 0 ? backlogItems.value[backlogItems.value.length - 1].id : undefined;
@@ -74,9 +73,13 @@ async function onCreateIssue() {
   if (isSubmitting.value) return;
   isSubmitting.value = true;
   try {
+    const descriptionJson = normalizeTiptapDoc(
+      (descriptionEditor.value?.getJSON() ?? EMPTY_TIPTAP_DOC) as JSONContent,
+    );
+
     const item = await createBacklogItem(props.projectId, {
       title: title.value.trim(),
-      description: description.value.trim() || undefined,
+      description: descriptionJson,
       afterOf: afterOf.value,
     });
 
@@ -101,7 +104,7 @@ async function onCreateIssue() {
 
     if (createMore.value) {
       title.value = "";
-      description.value = "";
+      descriptionEditor.value?.commands.setContent(EMPTY_TIPTAP_DOC, { emitUpdate: false });
       status.value = "todo";
       priority.value = 0;
       selectedAssignees.value = [];
@@ -147,12 +150,16 @@ async function onCreateIssue() {
         placeholder="Issue title"
         autofocus
       />
-      <textarea
-        v-model="description"
-        rows="3"
-        class="mt-1.5 w-full resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none"
-        placeholder="Add description…"
-      />
+      <div
+        class="mt-1.5 w-full resize-none text-sm text-foreground outline-none [&_.ProseMirror]:min-h-[4.5rem]"
+      >
+        <RichTextComposer
+          :mentionables="mentionables"
+          :me-id="authUser?.id"
+          placeholder="Add description…"
+          @update:editor="setDescriptionEditor"
+        />
+      </div>
 
       <!-- Chips row -->
       <div class="mt-2.5 flex flex-wrap items-center gap-1.5">

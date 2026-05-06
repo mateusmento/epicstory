@@ -127,6 +127,20 @@
   --tw-shadow-colored: 0 0 #0000;
 }
 
+/**
+ * TipTap `Placeholder` (@tiptap/extensions): empty blocks get `data-placeholder` + `.is-empty`.
+ * Must target `p` under the contenteditable root — do NOT use `.composer .ProseMirror p` here:
+ * `.ProseMirror` and `.epicstory-rich-text-composer` live on the same element, not nested.
+ * @see https://tiptap.dev/docs/editor/extensions/functionality/placeholder
+ */
+.epicstory-rich-text-composer.ProseMirror p.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  @apply text-muted-foreground;
+}
+
 .epicstory-rich-text-composer .epic-blockquote {
   @apply my-2;
 }
