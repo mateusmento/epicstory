@@ -53,7 +53,7 @@ function formatTime(date: string) {
 
       <div class="ml-auto text-xs text-secondary-foreground font-dmSans">{{ formatTime(createdAt) }}</div>
     </div>
-    <div v-if="payload.sender" class="flex:row-2xl flex:center-y flex-1">
+    <div v-if="payload.sender" class="flex:row-2xl flex:center-y flex-1 min-w-0">
       <UserAvatar
         :name="payload.sender.name"
         :picture="payload.sender.picture"
@@ -61,7 +61,7 @@ function formatTime(date: string) {
         class="flex-shrink-0"
       />
       <div class="flex:col flex-1 min-w-0">
-        <div class="text-foreground font-lato">{{ payload.sender.name }}</div>
+        <div class="text-sm truncate text-foreground font-lato">{{ payload.sender.name }}</div>
         <div class="w-full min-w-0 text-sm text-secondary-foreground font-lato truncate">
           {{ messageSnippet }}
         </div>

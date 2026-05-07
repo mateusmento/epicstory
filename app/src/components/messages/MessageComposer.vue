@@ -330,18 +330,21 @@ watch(
 );
 
 watch(
-  () => props.editingMessage,
-  (msg) => {
-    if (!editor.value) return;
+  [editor, () => props.editingMessage],
+  async ([editor, msg], [prevEditor, prevMsg]) => {
+    if (!editor) return;
     if (!msg) {
-      editor.value.commands.clearContent();
+      editor.commands.clearContent();
       return;
     }
+    // Avoid clobbering in-progress edits, but still initialize content when the editor
+    // instance becomes available (common on mount).
+    if (prevMsg?.id === msg.id && prevEditor === editor) return;
     const doc = normalizeTiptapDoc(msg.content);
-    editor.value.commands.setContent(doc);
-    editor.value.commands.focus("end");
+    editor.commands.setContent(doc);
+    editor.commands.focus("end");
   },
-  { flush: "post" },
+  { flush: "post", immediate: true },
 );
 
 onBeforeUnmount(() => {

@@ -6,12 +6,14 @@ import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { PROJECT_SCHEMA } from 'src/project/constants';
+import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import {
   IssueActivityRepository,
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { syncIssueDueDateReminders } from './sync-issue-due-reminders';
 
 export class AddAssignee {
   issuer: Issuer;
@@ -34,6 +36,7 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
     private userRepo: UserRepository,
     private commandBus: CommandBus,
     private issueActivities: IssueActivityRepository,
+    private scheduledJobRepo: ScheduledJobRepository,
   ) {}
 
   async execute({ issuer, issueId, userId }: AddAssignee) {
@@ -78,6 +81,15 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
     });
     // Should exist since we just found it, but keep a defensive check
     if (!updated) throw new NotFoundException('Issue not found');
+
+    // Keep persisted due-date reminder jobs in sync with assignees.
+    if (updated.dueDate) {
+      await syncIssueDueDateReminders({
+        scheduledJobRepo: this.scheduledJobRepo,
+        issue: updated,
+        issuerId: issuer.id,
+      });
+    }
 
     if (userId !== issuer.id) {
       await this.commandBus.execute(

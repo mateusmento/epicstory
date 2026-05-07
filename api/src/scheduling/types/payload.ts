@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsObject,
   IsOptional,
+  IsString,
   IsUUID,
   Min,
 } from 'class-validator';
@@ -91,6 +92,24 @@ export class DueIssueReminderPayload {
 
   @IsNumber()
   issueId: number;
+
+  @IsDate()
+  dueDate: Date;
+
+  @IsString()
+  title: string;
+
+  @IsString()
+  description: string;
+
+  @IsNumber()
+  workspaceId: number;
+
+  @IsNumber()
+  projectId: number;
+
+  @IsNumber()
+  userId: number;
 
   constructor(data: Partial<DueIssueReminderPayload>) {
     patch(this, data);

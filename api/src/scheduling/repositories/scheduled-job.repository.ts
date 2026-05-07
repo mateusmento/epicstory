@@ -442,4 +442,29 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
     );
     return result.length > 0;
   }
+
+  /**
+   * Issue due-date reminders are modeled as one-off jobs (`due_issue_reminder`) whose payload contains `issueId`.
+   * When due date/assignees change, we delete and recreate the unprocessed jobs for the issue.
+   */
+  async deleteUnprocessedDueIssueRemindersForIssue(args: {
+    workspaceId: number;
+    issueId: number;
+  }): Promise<number> {
+    const { workspaceId, issueId } = args;
+    if (!workspaceId || !issueId) return 0;
+
+    const res = await this.createQueryBuilder()
+      .delete()
+      .from(ScheduledJob)
+      .where('type = :type', { type: ScheduledJobTypes.due_issue_reminder })
+      .andWhere('workspaceId = :workspaceId', { workspaceId })
+      .andWhere('processed = :processed', { processed: false })
+      .andWhere(`payload ->> 'issueId' = :issueId`, {
+        issueId: String(issueId),
+      })
+      .execute();
+
+    return res.affected ?? 0;
+  }
 }

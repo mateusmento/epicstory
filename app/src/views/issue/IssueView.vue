@@ -6,7 +6,7 @@ import {
   IssueStatusDropdown,
 } from "@/components/issue";
 import { WorkspaceMemberDropdown } from "@/components/workspace-members";
-import { UserAvatarStack } from "@/components/user";
+import { UserAvatar, UserAvatarStack } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -263,14 +263,24 @@ watch(
                 #default="{ users }"
               >
                 <div class="flex min-w-0 w-full items-center cursor-pointer">
-                  <UserAvatarStack
+                  <UserAvatar
+                    v-for="user in users"
+                    :key="user.id"
+                    :name="user.name"
+                    :picture="user.picture"
+                    size="mdLg"
+                    :title="user.name"
+                    class="border-2 border-white"
+                  />
+
+                  <!-- <UserAvatarStack
                     v-if="users.length"
                     :users="users"
                     size="mdLg"
                     :min="1"
                     :overlap-px="12"
                     avatar-class="border-2 border-white"
-                  />
+                  /> -->
 
                   <Button
                     v-if="users.length === 0"

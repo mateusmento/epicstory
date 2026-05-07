@@ -5,6 +5,7 @@ import type {
   ReplyReactionNotificationPayload,
 } from "@/domain/notifications/types/notification.types";
 import { formatDistanceToNow } from "date-fns";
+import { UserIcon } from "lucide-vue-next";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -37,7 +38,7 @@ const excerpt = computed(() => props.payload.messageExcerpt?.trim() ?? "");
   <div class="flex min-w-0 flex-1 flex-col gap-md text-left font-dmSans">
     <div class="flex items-start justify-between gap-2">
       <p class="min-w-0 text-sm leading-snug text-foreground">
-        <span class="text-base leading-none" aria-hidden="true">{{ emoji }}</span>
+        <span class="leading-none" aria-hidden="true">{{ emoji }}</span>
         <span class="ml-1.5 text-muted-foreground">{{ headline }}</span>
       </p>
       <time class="shrink-0 whitespace-nowrap text-xs text-muted-foreground" :datetime="createdAt">
@@ -45,25 +46,28 @@ const excerpt = computed(() => props.payload.messageExcerpt?.trim() ?? "");
       </time>
     </div>
 
-    <div class="flex gap-3 min-w-0">
+    <div class="flex:row flex:center-y gap-3 min-w-0">
       <UserAvatar v-if="reactor" :name="reactor.name" :picture="reactor.picture" size="lg" class="shrink-0" />
       <div
         v-else
         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground"
       >
-        ?
+        <UserIcon class="size-4" />
       </div>
       <div class="min-w-0 flex-1 flex flex-col">
         <div class="line-clamp-1">
-          <span class="leading-tight text-foreground font-lato">{{ reactorName }}</span>
-          <span v-if="channelContext" class="ml-1 text-xs text-muted-foreground">
+          <span class="text-sm truncate leading-tight text-foreground font-lato">{{ reactorName }}</span>
+          <span v-if="channelContext" class="ml-0.5 text-xs truncate text-muted-foreground">
             <template v-if="channelContext !== reactorName"> in {{ channelContext }} </template>
             <template v-else> in direct message </template>
           </span>
         </div>
 
-        <p v-if="excerpt" class="line-clamp-1 text-sm leading-relaxed text-secondary-foreground font-lato">
-          <span class="text-base leading-none" aria-hidden="true">{{ emoji }}</span>
+        <p
+          v-if="excerpt"
+          class="line-clamp-1 text-sm truncate leading-relaxed text-secondary-foreground font-lato"
+        >
+          <span class="text-sm leading-none" aria-hidden="true">{{ emoji }}</span>
           <span class="ml-1.5">{{ excerpt }}</span>
         </p>
       </div>
