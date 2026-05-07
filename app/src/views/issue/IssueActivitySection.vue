@@ -10,9 +10,10 @@ import type { IMessage, IReply } from "@/domain/channels";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import type { User } from "@/domain/auth";
 import { formatDistanceToNow } from "date-fns";
-import { computed, reactive, ref, watch } from "vue";
+import { computed, nextTick, reactive, ref, watch } from "vue";
 import { cn } from "@/design-system/utils";
 import { MessageComposer } from "@/components/messages";
+import { useIssue } from "@/domain/issues/composables/issue";
 
 const props = defineProps<{
   issueId: number;
@@ -65,6 +66,7 @@ function readPayload(item: IssueFeedItem): Record<string, unknown> | null {
 
 const issueApi = useDependency(IssueApi);
 const channels = useDependency(ChannelApi);
+const { deleteIssueComment, updateIssueComment } = useIssue();
 
 const tab = ref<"all" | "comments">("all");
 const feed = ref<IssueFeed | null>(null);
@@ -139,6 +141,59 @@ async function onReplyInThread(
       : {}),
   });
   await reloadAfterComment();
+}
+
+const editing = ref<{ entity: IMessage | IReply; id: number; content: JSONContent } | null>(null);
+
+function startEdit(entity: IMessage | IReply) {
+  editing.value = { entity, id: entity.id, content: entity.content as JSONContent };
+}
+
+async function submitEdit(value: { messageId: number; content: JSONContent }) {
+  if (!editing.value) return;
+  await updateIssueComment(editing.value.entity, value.content);
+  editing.value = null;
+  await reloadAfterComment();
+}
+
+function cancelEdit() {
+  editing.value = null;
+}
+
+async function onDelete(entity: IMessage | IReply) {
+  await deleteIssueComment(entity);
+  if (editing.value?.id === entity.id) editing.value = null;
+  await reloadAfterComment();
+}
+
+function itemByRootId(rootId: number): IssueFeedItem | null {
+  const items = filteredFeedItems.value;
+  for (const it of items) {
+    if (it.type === "comment_created" && it.message?.id === rootId) return it;
+  }
+  return null;
+}
+
+async function onToggleDiscussion(entity: IMessage | IReply) {
+  // Reply menu makes sense only for root messages. If called for replies, focus its parent thread.
+  const rootId =
+    "messageId" in entity && entity.messageId != null ? entity.messageId : (entity.id as number);
+
+  if (tab.value !== "all") {
+    tab.value = "all";
+    // allow watcher to fetch feed
+    await nextTick();
+    // small delay until feed is set by watcher, then expand
+    await nextTick();
+  }
+
+  const it = itemByRootId(rootId);
+  if (it) {
+    await toggleThreadReplies(it);
+    // also try to expand if already loaded but not expanded
+    const s = ensureThreadState(rootId);
+    s.expanded = true;
+  }
 }
 
 function joinEnglishList(parts: string[]): string {
@@ -445,7 +500,29 @@ watch(
           <div
             class="overflow-hidden rounded-lg border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
           >
-            <IssueCommentCard :message="item.message" :me-id="meId" variant="threadSegment" />
+            <IssueCommentCard
+              :message="item.message"
+              :me-id="meId"
+              variant="threadSegment"
+              @message-deleted="onDelete(item.message)"
+              @toggle-discussion="onToggleDiscussion(item.message)"
+              @edit="startEdit(item.message)"
+            />
+            <div
+              v-if="commentChannelId != null && editing?.id === item.message.id"
+              class="border-t border-zinc-100 bg-zinc-50/60 p-2"
+            >
+              <MessageComposer
+                :key="`edit-${item.message.id}`"
+                :channel-id="commentChannelId"
+                :mentionables="channelPeers"
+                :me-id="meId"
+                :editing-message="editing"
+                class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
+                @submit-edit="submitEdit"
+                @cancel-edit="cancelEdit"
+              />
+            </div>
             <button
               v-if="item.hasMoreOlder && hiddenReplyCount(item) > 0"
               type="button"
@@ -469,14 +546,32 @@ watch(
                 aria-hidden="true"
               />
             </button>
-            <IssueCommentCard
-              v-for="(rep, repIdx) in displayedRepliesForItem(item)"
-              :key="replyKey(rep, repIdx)"
-              :message="asReply(rep)"
-              :me-id="meId"
-              variant="threadSegment"
-              segment-divider
-            />
+            <template v-for="(rep, repIdx) in displayedRepliesForItem(item)" :key="replyKey(rep, repIdx)">
+              <IssueCommentCard
+                :message="asReply(rep)"
+                :me-id="meId"
+                variant="threadSegment"
+                segment-divider
+                @message-deleted="onDelete(asReply(rep))"
+                @toggle-discussion="onToggleDiscussion(asReply(rep))"
+                @edit="startEdit(asReply(rep))"
+              />
+              <div
+                v-if="commentChannelId != null && editing?.id === asReply(rep).id"
+                class="border-t border-zinc-100 bg-zinc-50/60 p-2"
+              >
+                <MessageComposer
+                  :key="`edit-reply-${asReply(rep).id}`"
+                  :channel-id="commentChannelId"
+                  :mentionables="channelPeers"
+                  :me-id="meId"
+                  :editing-message="editing"
+                  class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
+                  @submit-edit="submitEdit"
+                  @cancel-edit="cancelEdit"
+                />
+              </div>
+            </template>
             <div v-if="commentChannelId != null" class="border-t border-zinc-100 bg-zinc-50/60 p-2">
               <MessageComposer
                 :key="`reply-${item.activityId}-${item.message.id}`"
@@ -535,7 +630,28 @@ watch(
 
     <ul v-else class="flex list-none flex-col gap-4">
       <li v-for="msg in commentMessages" :key="msg.id">
-        <IssueCommentCard :message="msg" :me-id="meId" />
+        <IssueCommentCard
+          :message="msg"
+          :me-id="meId"
+          @message-deleted="onDelete(msg)"
+          @toggle-discussion="onToggleDiscussion(msg)"
+          @edit="startEdit(msg)"
+        />
+        <div
+          v-if="commentChannelId != null && editing?.id === msg.id"
+          class="mt-2 rounded-lg border border-zinc-200/90 bg-zinc-50/40 p-2"
+        >
+          <MessageComposer
+            :key="`edit-comments-${msg.id}`"
+            :channel-id="commentChannelId"
+            :mentionables="channelPeers"
+            :me-id="meId"
+            :editing-message="editing"
+            class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
+            @submit-edit="submitEdit"
+            @cancel-edit="cancelEdit"
+          />
+        </div>
       </li>
       <li v-if="commentMessages.length === 0" class="text-[13px] text-zinc-500">No comments yet.</li>
     </ul>

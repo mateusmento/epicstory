@@ -3,6 +3,9 @@ import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
 import { IssueApi, type UpdateIssueData } from "../api";
 import type { Issue } from "../types";
+import type { IMessage, IReply } from "@/domain/channels";
+import { ChannelApi } from "@/domain/channels/services/channel.service";
+import type { JSONContent } from "@tiptap/core";
 
 export const useIssueStore = defineStore("issue", () => {
   const issue = ref<Issue>();
@@ -12,6 +15,7 @@ export const useIssueStore = defineStore("issue", () => {
 export function useIssue() {
   const store = useIssueStore();
   const issueApi = useDependency(IssueApi);
+  const channelApi = useDependency(ChannelApi);
 
   async function fetchIssue(issueId: number) {
     store.issue = await issueApi.fetchIssue(issueId);
@@ -42,6 +46,21 @@ export function useIssue() {
     store.issue = await issueApi.removeLabel(store.issue.id, labelId);
   }
 
+  async function deleteIssueComment(entity: IMessage | IReply) {
+    if ("messageId" in entity && entity.messageId != null) {
+      await channelApi.deleteReply(entity.id);
+      return;
+    }
+    await channelApi.deleteMessage(entity.id);
+  }
+
+  async function updateIssueComment(entity: IMessage | IReply, content: JSONContent) {
+    if ("messageId" in entity && entity.messageId != null) {
+      return channelApi.updateReply(entity.id, { content });
+    }
+    return channelApi.updateMessage(entity.id, { content });
+  }
+
   return {
     ...storeToRefs(store),
     fetchIssue,
@@ -50,5 +69,7 @@ export function useIssue() {
     removeAssignee,
     addLabel,
     removeLabel,
+    deleteIssueComment,
+    updateIssueComment,
   };
 }

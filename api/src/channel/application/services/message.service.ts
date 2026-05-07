@@ -553,6 +553,31 @@ export class MessageService {
     });
   }
 
+  async updateReplyBody(
+    channel: Channel,
+    replyId: number,
+    content: JSONContent,
+    viewerId: number,
+  ) {
+    const normalizedContent = stripImageNodesFromDoc(
+      normalizeTiptapDoc(content),
+    );
+
+    await this.replyRepo.update(
+      { id: replyId },
+      { content: normalizedContent },
+    );
+
+    const reply = await this.replyRepo.findOne({
+      where: { id: replyId },
+      relations: { sender: true, allReactions: { user: true } },
+    });
+    if (!reply) throw new MessageNotFound();
+
+    await this.enrichRepliesForPreview([reply], channel, viewerId);
+    return reply;
+  }
+
   async findReplies(messageId: number, senderId: number) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
