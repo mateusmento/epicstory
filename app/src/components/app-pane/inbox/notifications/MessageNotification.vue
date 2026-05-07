@@ -52,8 +52,8 @@ function formatTime(date: string) {
         />
 
         <div class="flex:col flex:center-y min-w-0">
-          <span class="text-foreground font-lato">{{ payload.sender.name }}</span>
-          <div class="w-full min-w-0 text-sm text-secondary-foreground font-lato truncate">
+          <span class="text-sm truncate text-foreground font-lato">{{ payload.sender.name }}</span>
+          <div class="w-full min-w-0 text-sm truncate text-secondary-foreground font-lato">
             {{ payload.message.displayContent ?? payload.message.content }}
           </div>
         </div>

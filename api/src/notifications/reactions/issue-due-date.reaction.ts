@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationService } from '../services/notification.service';
 import { ScheduledJobTypes } from 'src/scheduling/constants';
+import {
+  DueIssueReminderPayload,
+  ScheduledJobWithPayload,
+} from 'src/scheduling/types';
 
 @Injectable()
 export class IssueDueDateReaction {
@@ -10,9 +14,9 @@ export class IssueDueDateReaction {
   @OnEvent(`scheduled-job.${ScheduledJobTypes.due_issue_reminder}`, {
     async: true,
   })
-  async handle(job: any) {
-    const userId = job?.payload?.userId as number | undefined;
-    const workspaceId = job?.workspaceId as number | undefined;
+  async handle(job: ScheduledJobWithPayload<DueIssueReminderPayload>) {
+    const userId = job.payload.userId;
+    const workspaceId = job.workspaceId;
     if (!userId || !workspaceId) return;
 
     await this.notificationService.sendNotification({
@@ -21,10 +25,7 @@ export class IssueDueDateReaction {
       workspaceId,
       payload: {
         type: 'issue_due_date',
-        title: job?.payload?.title,
-        description: job?.payload?.description,
-        issueId: job?.payload?.issueId,
-        projectId: job?.payload?.projectId,
+        ...job.payload,
       },
     });
   }

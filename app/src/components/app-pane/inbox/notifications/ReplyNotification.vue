@@ -33,8 +33,8 @@ function formatTime(date: string) {
         class="flex-shrink-0"
       />
 
-      <div class="flex:col flex:center-y">
-        <span class="text-foreground font-lato">{{ payload.sender.name }}</span>
+      <div class="flex:col flex:center-y min-w-0">
+        <span class="text-sm truncate text-foreground font-lato">{{ payload.sender.name }}</span>
 
         <Tooltip>
           <TooltipTrigger as-child>

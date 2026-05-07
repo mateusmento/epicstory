@@ -16,15 +16,15 @@ function formatTime(date: string) {
 </script>
 
 <template>
-  <div class="flex:row-md">
+  <div class="flex:row-2xl flex:center-y">
     <UserAvatar
       :name="payload.issuer.name"
       :picture="payload.issuer.picture"
-      size="xl"
+      size="lg"
       class="flex-shrink-0"
     />
 
-    <div class="flex:col-md flex-1 min-w-0">
+    <div class="flex:col flex-1 min-w-0">
       <div class="flex:row-md items-baseline">
         <div class="text-sm text-secondary-foreground font-dmSans flex-1">
           <SquareUser class="w-4 h-4 inline-block" />
@@ -41,7 +41,7 @@ function formatTime(date: string) {
 
       <Tooltip>
         <TooltipTrigger as-child>
-          <div class="w-full min-w-0 text-sm text-foreground font-lato truncate">
+          <div class="w-full min-w-0 text-sm truncate text-foreground font-lato">
             EP-{{ payload.issueId }} {{ payload.title }}
           </div>
         </TooltipTrigger>

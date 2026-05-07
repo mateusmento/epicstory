@@ -5,12 +5,14 @@ import { UserRepository } from 'src/auth';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { PROJECT_SCHEMA } from 'src/project/constants';
+import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import {
   IssueActivityRepository,
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { syncIssueDueDateReminders } from './sync-issue-due-reminders';
 
 export class RemoveAssignee {
   issuer: Issuer;
@@ -32,6 +34,7 @@ export class RemoveAssigneeCommand implements ICommandHandler<RemoveAssignee> {
     private workspaceRepo: WorkspaceRepository,
     private userRepo: UserRepository,
     private issueActivities: IssueActivityRepository,
+    private scheduledJobRepo: ScheduledJobRepository,
   ) {}
 
   async execute({ issuer, issueId, userId }: RemoveAssignee) {
@@ -68,6 +71,15 @@ export class RemoveAssigneeCommand implements ICommandHandler<RemoveAssignee> {
       relations: { assignees: true, parentIssue: true, labels: true },
     });
     if (!updated) throw new NotFoundException('Issue not found');
+
+    // Keep persisted due-date reminder jobs in sync with assignees.
+    if (updated.dueDate) {
+      await syncIssueDueDateReminders({
+        scheduledJobRepo: this.scheduledJobRepo,
+        issue: updated,
+        issuerId: issuer.id,
+      });
+    }
 
     return updated;
   }

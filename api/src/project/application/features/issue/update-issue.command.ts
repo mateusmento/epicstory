@@ -1,3 +1,8 @@
+import {
+  normalizeTiptapDoc,
+  stripImageNodesFromDoc,
+  tiptapToPlainText,
+} from '@epicstory/tiptap';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { JSONContent } from '@tiptap/core';
 import {
@@ -13,19 +18,12 @@ import {
   IssueActivityRepository,
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
-import { ScheduledJobTypes } from 'src/scheduling/constants';
-import { ScheduledJob } from 'src/scheduling/entities';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
-import { buildScheduledJobPayload } from 'src/scheduling/types/payload';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
 import { ProjectGateway } from '../../gateways/project.gateway';
-import {
-  normalizeTiptapDoc,
-  stripImageNodesFromDoc,
-  tiptapToPlainText,
-} from '@epicstory/tiptap';
+import { syncIssueDueDateReminders } from './sync-issue-due-reminders';
 
 const DESCRIPTION_ACTIVITY_EXCERPT_MAX = 280;
 
@@ -96,8 +94,6 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
     if (!(await this.workspaceRepo.memberExists(issue.workspaceId, issuer.id)))
       throw new IssuerUserIsNotWorkspaceMember();
 
-    const previousScheduledEventId = issue.scheduledEventId;
-
     const prevSnapshot = {
       title: issue.title,
       description: issue.description,
@@ -111,53 +107,18 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
 
     // Handle scheduled event management
     if (dueDate !== undefined) {
-      // Determine who to notify - prioritize assignees, fallback to issuer
-      const notifyUserId =
-        issue.assignees && issue.assignees.length > 0
-          ? issue.assignees[0].id // Notify first assignee (can be enhanced to notify all)
-          : issuer.id;
+      // Persist the dueDate change before syncing jobs so the sync sees the new value.
+      issue.dueDate = dueDate as any;
 
-      // Use updated title if provided, otherwise use current title
-      const issueTitle = data.title ?? issue.title;
+      // We now schedule one job per assignee (payload.userId); keep the legacy field cleared.
+      issue.scheduledEventId = null;
 
-      if (dueDate === null) {
-        // Due date is being removed - cancel the scheduled event if not processed
-        if (previousScheduledEventId) {
-          await this.scheduledJobRepo.deleteUnprocessedEvent(
-            previousScheduledEventId,
-          );
-          issue.scheduledEventId = null;
-        }
-      } else {
-        // Due date is being set or updated
-        // Delete existing scheduled event if it exists and hasn't been processed
-        if (previousScheduledEventId) {
-          await this.scheduledJobRepo.deleteUnprocessedEvent(
-            previousScheduledEventId,
-          );
-        }
-
-        // Create a new scheduled job with the new due date
-        const scheduledJob = ScheduledJob.create({
-          type: ScheduledJobTypes.due_issue_reminder,
-          workspaceId: issue.workspaceId,
-          notifyMinutesBefore: 0,
-          recurrence: { frequency: 'once' },
-          payload: buildScheduledJobPayload(
-            ScheduledJobTypes.due_issue_reminder,
-            {
-              userId: notifyUserId,
-              title: issueTitle,
-              description: `Issue "${issueTitle}" is due`,
-              issueId: issue.id,
-              projectId: issue.projectId,
-            },
-          ),
-          dueAt: dueDate,
-        });
-        const savedJob = await this.scheduledJobRepo.save(scheduledJob);
-        issue.scheduledEventId = savedJob.id as string;
-      }
+      await syncIssueDueDateReminders({
+        scheduledJobRepo: this.scheduledJobRepo,
+        issue,
+        issuerId: issuer.id,
+        titleOverride: data.title ?? issue.title,
+      });
     }
 
     if (data.description !== undefined) {
