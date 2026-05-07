@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import {
   ChannelRepository,
-  MessageRepository,
+  MessageReplyRepository,
 } from 'src/channel/infrastructure';
 import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
@@ -12,47 +12,42 @@ import {
   ChannelNotFound,
   IssuerCanOnlyEditOwnMessages,
   IssuerIsNotChannelMember,
-  MessageNotFound,
-  ScheduledMessageCannotBeEdited,
+  MessageReplyNotFound,
 } from '../exceptions';
 import { MessageService } from '../services/message.service';
 
-export class UpdateMessage {
-  messageId: number;
+export class UpdateReply {
+  replyId: number;
   issuerId: number;
 
   @IsNotEmpty()
   @IsObject()
   content: JSONContent;
 
-  constructor(data: Partial<UpdateMessage>) {
+  constructor(data: Partial<UpdateReply>) {
     patch(this, data);
   }
 }
 
-@CommandHandler(UpdateMessage)
-export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
+@CommandHandler(UpdateReply)
+export class UpdateReplyCommand implements ICommandHandler<UpdateReply> {
   constructor(
-    private messageRepo: MessageRepository,
+    private replyRepo: MessageReplyRepository,
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private messageService: MessageService,
   ) {}
 
-  async execute({ messageId, issuerId, content }: UpdateMessage) {
-    const message = await this.messageRepo.findOne({
-      where: { id: messageId },
-    });
-    if (!message) throw new MessageNotFound();
-    if (message.senderId !== issuerId) {
+  async execute({ replyId, issuerId, content }: UpdateReply) {
+    const reply = await this.replyRepo.findOne({ where: { id: replyId } });
+    if (!reply) throw new MessageReplyNotFound();
+
+    if (reply.senderId !== issuerId) {
       throw new IssuerCanOnlyEditOwnMessages();
-    }
-    if (message.isScheduled) {
-      throw new ScheduledMessageCannotBeEdited();
     }
 
     const channel = await this.channelRepo.findOne({
-      where: { id: message.channelId },
+      where: { id: reply.channelId },
       relations: { peers: true },
     });
     if (!channel) throw new ChannelNotFound();
@@ -63,17 +58,17 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
     );
     if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
 
-    const isWorkspaceOpen = channel.type === 'workspace_open';
-    if (!isWorkspaceOpen) {
+    // workspace_open: workspace membership is enough (no per-channel peers check)
+    if (channel.type !== 'workspace_open') {
       const isChannelMember = (channel.peers ?? []).some(
         (p) => p.id === issuerId,
       );
       if (!isChannelMember) throw new IssuerIsNotChannelMember();
     }
 
-    return this.messageService.updateMessageBody(
+    return this.messageService.updateReplyBody(
       channel,
-      messageId,
+      replyId,
       content,
       issuerId,
     );

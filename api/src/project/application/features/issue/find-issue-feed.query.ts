@@ -26,7 +26,7 @@ import { MessageReply } from 'src/channel/domain/entities';
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 /** Last K replies per comment card preview (aligned with Section D.1 plan). */
-const REPLY_PREVIEW_LIMIT = 5;
+const REPLY_PREVIEW_LIMIT = 3;
 
 export type IssueFeedActorDto = {
   id: number;

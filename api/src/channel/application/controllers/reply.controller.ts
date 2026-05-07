@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   Param,
   Post,
   UseGuards,
@@ -13,7 +14,7 @@ import { DeleteReply } from '../features/delete-reply.command';
 import { MessageGateway } from '../gateways/message.gateway';
 import { MessageService } from '../services/message.service';
 import { ReplyMessage } from '../features/reply-message.command';
-import { ToggleReplyReaction } from '../features';
+import { ToggleReplyReaction, UpdateReply } from '../features';
 
 @UseGuards(JwtAuthGuard)
 @Controller('messages/:messageId/replies')
@@ -97,6 +98,24 @@ export class ReplyController {
       action,
       reactions,
     };
+  }
+
+  @Patch()
+  async updateReply(
+    @Param('replyId') replyId: number,
+    @Body() body: Pick<UpdateReply, 'content'>,
+    @Auth() issuer: Issuer,
+  ) {
+    const reply = await this.commandBus.execute(
+      new UpdateReply({
+        replyId,
+        issuerId: issuer.id,
+        content: body.content,
+      }),
+    );
+
+    this.messageGateway.emitReplyUpdated(reply.channelId, reply, issuer.id);
+    return reply;
   }
 
   @Delete()

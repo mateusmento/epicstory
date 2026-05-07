@@ -1,6 +1,7 @@
 import daianaPhoto from "@/assets/images/daiana.png";
 import seanPhoto from "@/assets/images/sean.png";
 import type { IMessageGroup } from "@/domain/channels";
+import { EMPTY_TIPTAP_DOC } from "@epicstory/tiptap";
 import { ref } from "vue";
 
 export const messageGroup = ref<IMessageGroup>({
@@ -16,7 +17,8 @@ export const messageGroup = ref<IMessageGroup>({
   messages: [
     {
       id: 3,
-      content: "Yeah, I'll send you the updates later.",
+      content: EMPTY_TIPTAP_DOC,
+      displayContent: "Yeah, I'll send you the updates later.",
       sentAt: new Date().toISOString(),
       senderId: 2,
       sender: {
@@ -33,7 +35,8 @@ export const messageGroup = ref<IMessageGroup>({
         speakingTo: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
         lastMessage: {
           id: 1,
-          content: "Hello there!",
+          content: EMPTY_TIPTAP_DOC,
+          displayContent: "Hello there!",
           sentAt: new Date().toISOString(),
           senderId: 1,
           sender: {
@@ -84,7 +87,8 @@ export const messageGroups = ref<IMessageGroup[]>([
     messages: [
       {
         id: 1,
-        content: "Hello there!",
+        content: EMPTY_TIPTAP_DOC,
+        displayContent: "Hello there!",
         sentAt: new Date().toISOString(),
         senderId: 1,
         sender: {
@@ -109,7 +113,8 @@ export const messageGroups = ref<IMessageGroup[]>([
       },
       {
         id: 2,
-        content: "Any updates?",
+        content: EMPTY_TIPTAP_DOC,
+        displayContent: "Any updates?",
         sentAt: new Date().toISOString(),
         senderId: 1,
         sender: {

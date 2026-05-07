@@ -186,6 +186,10 @@ export class ChannelApi {
     return this.axios.patch<IMessage>(`/messages/${messageId}`, body).then((res) => res.data);
   }
 
+  updateReply(replyId: number, body: { content: JSONContent }) {
+    return this.axios.patch<IReply>(`/replies/${replyId}`, body).then((res) => res.data);
+  }
+
   findReactions(messageId: number) {
     return this.axios.get<IReaction[]>(`/messages/${messageId}/reactions`).then((res) => res.data);
   }
