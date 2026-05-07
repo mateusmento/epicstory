@@ -350,9 +350,6 @@ export class MessageService {
     const normalizedContent = stripImageNodesFromDoc(
       normalizeTiptapDoc(content),
     );
-    const plainContent = tiptapToPlainText(normalizedContent, {
-      stripFormatting: true,
-    });
 
     let message = await this.messageRepo.save(
       create(Message, {
@@ -644,12 +641,6 @@ export class MessageService {
     return 'Chat';
   }
 
-  private plainTextBodyFromStoredContent(content: JSONContent): string {
-    const normalized = normalizeTiptapDoc(content);
-    const stripped = stripImageNodesFromDoc(normalized);
-    return tiptapToPlainText(stripped, { stripFormatting: true });
-  }
-
   private static truncateNotificationExcerpt(text: string, max = 220): string {
     const t = text.replace(/\s+/g, ' ').trim();
     if (!t) return '';
@@ -661,7 +652,6 @@ export class MessageService {
     message: Message,
     channel: Channel | null | undefined,
   ): Promise<string> {
-    const plain = this.plainTextBodyFromStoredContent(message.content);
     const mentionIds = extractMentionIds(message.content);
     const peerUsersMap = await this.resolveMentionUsersMap(
       channel ?? undefined,
@@ -680,7 +670,6 @@ export class MessageService {
     reply: MessageReply,
     channel: Channel | null | undefined,
   ): Promise<string> {
-    const plain = this.plainTextBodyFromStoredContent(reply.content);
     const mentionIds = extractMentionIds(reply.content);
     const peerUsersMap = await this.resolveMentionUsersMap(
       channel ?? undefined,
