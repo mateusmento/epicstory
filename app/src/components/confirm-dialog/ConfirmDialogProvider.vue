@@ -2,7 +2,7 @@
 import { Dialog, DialogContent } from "@/design-system";
 import { provide, reactive, readonly, ref } from "vue";
 import ConfirmDialog from "./ConfirmDialog.vue";
-import { CONFIRM_DIALOG_KEY, type ConfirmDialogContext, type ConfirmDialogOptions } from "./useConfirmDialog";
+import { CONFIRM_DIALOG_KEY, type ConfirmDialogContext, type ConfirmDialogOptions } from "./confirm-dialog";
 
 const dialogOpen = ref(false);
 

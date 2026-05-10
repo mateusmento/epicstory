@@ -5,4 +5,4 @@ export {
   useConfirmDialog,
   type ConfirmDialogContext,
   type ConfirmDialogOptions,
-} from "./useConfirmDialog";
+} from "./confirm-dialog";

@@ -1,3 +1,6 @@
 export * from "./issues";
 export * from "./issue";
-export * from "./useIssueAttachments";
+export * from "./issue-activity-feed";
+export * from "./issue-comment-editing";
+export * from "./issue-comment-threads";
+export * from "./issue-attachments";
