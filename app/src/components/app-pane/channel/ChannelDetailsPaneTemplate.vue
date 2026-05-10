@@ -1,4 +1,5 @@
 <script lang="tsx" setup>
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import { MessageAttachments } from "@/components/messages";
 import IconClose from "@/components/icons/IconClose.vue";
 import { Button, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system";
@@ -14,6 +15,7 @@ import ChannelSchedulesTab from "./ChannelSchedulesTab.vue";
 const props = defineProps<{
   members: (User & { role?: string; online?: boolean })[];
   channelId?: number;
+  meId?: number;
 }>();
 
 const emit = defineEmits<{
@@ -23,9 +25,11 @@ const emit = defineEmits<{
 }>();
 
 const channelApi = useDependency(ChannelApi);
+const confirmDialog = useConfirmDialog();
 const channelFiles = ref<UploadedAttachment[]>([]);
 const channelFilesLoading = ref(false);
 const channelFilesError = ref<string | null>(null);
+const removingChannelFileId = ref<number | null>(null);
 
 watch(
   () => props.channelId,
@@ -54,6 +58,33 @@ function addMember(userId: number) {
 
 function removeMember(userId: number) {
   emit("remove-member", userId);
+}
+
+async function removeChannelFile(attachmentId: number) {
+  if (props.channelId == null) return;
+  const confirmed = await confirmDialog.open({
+    title: "Remove this attachment?",
+    description: "The file will be permanently deleted from this channel.",
+    confirmLabel: "Remove",
+    cancelLabel: "Cancel",
+    destructive: true,
+  });
+  if (!confirmed) return;
+  removingChannelFileId.value = attachmentId;
+  channelFilesError.value = null;
+  try {
+    await channelApi.deleteChannelAttachment(props.channelId, attachmentId);
+    channelFiles.value = channelFiles.value.filter((a) => a.id !== attachmentId);
+  } catch {
+    channelFilesError.value = "Could not remove file";
+    try {
+      channelFiles.value = await channelApi.listChannelAttachments(props.channelId);
+    } catch {
+      /* keep stale list */
+    }
+  } finally {
+    removingChannelFileId.value = null;
+  }
 }
 </script>
 
@@ -112,7 +143,13 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
             No files linked in messages yet.
           </p>
           <div v-else class="max-h-[min(70vh,36rem)] overflow-y-auto overscroll-contain pr-1">
-            <MessageAttachments :files="channelFiles" />
+            <MessageAttachments
+              removable
+              :me-id="meId ?? null"
+              :disabled="removingChannelFileId !== null"
+              :files="channelFiles"
+              @remove="removeChannelFile"
+            />
           </div>
         </TabsContent>
         <TabsContent value="schedules" class="min-h-0 flex-1 flex flex-col mt-0 data-[state=inactive]:hidden">

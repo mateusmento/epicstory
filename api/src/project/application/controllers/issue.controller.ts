@@ -252,6 +252,7 @@ export class IssueController {
       issueId,
       attachmentId,
       commentChannelId: issue.commentChannelId ?? null,
+      issuerId: issuer.id,
     });
   }
 }

@@ -6,7 +6,7 @@ import {
   IssueStatusDropdown,
 } from "@/components/issue";
 import { WorkspaceMemberDropdown } from "@/components/workspace-members";
-import { UserAvatar, UserAvatarStack } from "@/components/user";
+import { UserAvatar } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -14,12 +14,15 @@ import SubIssuesSection from "./SubIssuesSection.vue";
 import IssueActivitySection from "./IssueActivitySection.vue";
 import IssueAttachmentsStrip from "@/components/issue/IssueAttachmentsStrip.vue";
 import { useAuth } from "@/domain/auth";
+import { IssueApi } from "@/domain/issues/api";
 import { useIssue } from "@/domain/issues/composables/issue";
+import { useIssueAttachments } from "@/domain/issues/composables/useIssueAttachments";
 import { ProjectApi, type Project } from "@/domain/project";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
+import type { IMessage, IReply } from "@/domain/channels";
 import type { User } from "@/domain/user";
-import { onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 
 const props = defineProps<{
   workspaceId: string;
@@ -30,6 +33,44 @@ const props = defineProps<{
 const { user } = useAuth();
 
 const { issue, fetchIssue, updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useIssue();
+
+const issueApi = useDependency(IssueApi);
+const {
+  flatList,
+  refreshAttachments: refreshAttachments,
+  removeAttachment,
+  resolveAttachmentsForEntity,
+  ingestFromActivity,
+} = useIssueAttachments({
+  issueApi,
+  issueId: () => issue.value?.id ?? 0,
+});
+
+const issueAttachmentFiles = computed(() => flatList.value);
+
+const attachmentsLoading = ref(false);
+const attachmentsError = ref<string | null>(null);
+
+async function loadIssueAttachments() {
+  if (!issue.value?.id) return;
+  attachmentsLoading.value = true;
+  attachmentsError.value = null;
+  try {
+    await refreshAttachments();
+  } catch (e: unknown) {
+    attachmentsError.value = e instanceof Error ? e.message : "Could not load files";
+  } finally {
+    attachmentsLoading.value = false;
+  }
+}
+
+watch(
+  () => issue.value?.id,
+  (id) => {
+    if (id) loadIssueAttachments();
+  },
+  { immediate: true },
+);
 
 const assigneeUsers = ref<User[]>([]);
 watch(
@@ -47,6 +88,24 @@ const isSaving = ref(false);
 const saveError = ref<string | null>(null);
 
 const titleEl = ref<HTMLInputElement | null>(null);
+
+async function removeIssueAttachmentFile(attachmentId: number) {
+  attachmentsError.value = null;
+  try {
+    await removeAttachment(attachmentId);
+  } catch (e: unknown) {
+    attachmentsError.value = e instanceof Error ? e.message : "Could not remove file";
+    await loadIssueAttachments();
+  }
+}
+
+function resolveCommentAttachments(entity: IMessage | IReply) {
+  return resolveAttachmentsForEntity(entity);
+}
+
+async function onComposerAttachmentRemoved() {
+  await loadIssueAttachments();
+}
 
 const isEditingTitle = ref(false);
 
@@ -113,9 +172,10 @@ function finishEditTitle() {
   saveMainFields();
 }
 
-function onSaveDescription(description: any) {
+async function onSaveDescription(description: any) {
   if (!issue.value) return;
-  savePatch({ description });
+  await savePatch({ description });
+  await loadIssueAttachments();
 }
 
 onMounted(() => {
@@ -201,7 +261,15 @@ watch(
           @changed="refreshIssue"
         />
 
-        <IssueAttachmentsStrip v-if="issue" :issue-id="issue.id" class="mt-8" />
+        <IssueAttachmentsStrip
+          v-if="issue && user"
+          :files="issueAttachmentFiles"
+          :loading="attachmentsLoading"
+          :error="attachmentsError"
+          :me-id="user.id"
+          class="mt-8"
+          :remove-file="removeIssueAttachmentFile"
+        />
 
         <IssueActivitySection
           v-if="issue && user"
@@ -209,6 +277,9 @@ watch(
           :comment-channel-id="issue.commentChannelId"
           :workspace-id="issue.workspaceId"
           :me-id="user.id"
+          :resolve-comment-attachments="resolveCommentAttachments"
+          :sync-issue-attachments="ingestFromActivity"
+          @issue-attachment-removed="onComposerAttachmentRemoved"
         />
       </div>
 
@@ -347,10 +418,14 @@ watch(
           </div>
 
           <IssueAttachmentsStrip
-            v-if="issue"
-            :issue-id="issue.id"
+            v-if="issue && user"
+            :files="issueAttachmentFiles"
+            :loading="attachmentsLoading"
+            :error="attachmentsError"
+            :me-id="user.id"
             compact
             class="mt-2 border-t border-border pt-4"
+            :remove-file="removeIssueAttachmentFile"
           />
         </div>
       </div>

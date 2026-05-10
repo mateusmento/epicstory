@@ -68,6 +68,14 @@ export type UploadedAttachment = {
   mimeType: string;
   originalFilename: string;
   byteSize: number;
+  uploadedById?: number;
+};
+
+/** `GET /issues/:id/attachments` — includes anchors for composable / UI filtering. */
+export type IssueAttachmentListItem = UploadedAttachment & {
+  issueId: number | null;
+  messageId: number | null;
+  messageReplyId: number | null;
 };
 
 @injectable()
@@ -143,7 +151,9 @@ export class IssueApi {
   }
 
   listIssueAttachments(issueId: number) {
-    return this.axios.get<UploadedAttachment[]>(`/issues/${issueId}/attachments`).then((res) => res.data);
+    return this.axios
+      .get<IssueAttachmentListItem[]>(`/issues/${issueId}/attachments`)
+      .then((res) => res.data);
   }
 
   deleteIssueAttachment(issueId: number, attachmentId: number) {

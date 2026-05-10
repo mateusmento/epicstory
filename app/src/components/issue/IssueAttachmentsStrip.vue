@@ -1,46 +1,30 @@
 <script lang="ts" setup>
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import { MessageAttachments } from "@/components/messages";
-import { useDependency } from "@/core/dependency-injection";
-import { IssueApi, type UploadedAttachment } from "@/domain/issues/api";
-import { ref, watch } from "vue";
+import type { UploadedAttachment } from "@/domain/issues/api";
+import { ref } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    issueId: number;
-    /** Sidebar: no heavy border, optional title */
+    files: UploadedAttachment[];
+    loading?: boolean;
+    error?: string | null;
     compact?: boolean;
     hideHeading?: boolean;
+    meId?: number | null;
+    removeFile: (attachmentId: number) => Promise<void>;
   }>(),
   {
+    loading: false,
+    error: null,
     compact: false,
     hideHeading: false,
+    meId: null,
   },
 );
 
-const issueApi = useDependency(IssueApi);
 const confirmDialog = useConfirmDialog();
-const attachments = ref<UploadedAttachment[]>([]);
-const loading = ref(false);
 const removingId = ref<number | null>(null);
-const error = ref<string | null>(null);
-
-watch(
-  () => props.issueId,
-  async (id) => {
-    loading.value = true;
-    error.value = null;
-    try {
-      attachments.value = await issueApi.listIssueAttachments(id);
-    } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : "Could not load files";
-      attachments.value = [];
-    } finally {
-      loading.value = false;
-    }
-  },
-  { immediate: true },
-);
 
 async function removeAttachment(id: number) {
   const confirmed = await confirmDialog.open({
@@ -54,12 +38,10 @@ async function removeAttachment(id: number) {
     return;
   }
   removingId.value = id;
-  error.value = null;
   try {
-    await issueApi.deleteIssueAttachment(props.issueId, id);
-    attachments.value = attachments.value.filter((a) => a.id !== id);
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : "Could not remove file";
+    await props.removeFile(id);
+  } catch {
+    /* error from parent */
   } finally {
     removingId.value = null;
   }
@@ -80,14 +62,12 @@ async function removeAttachment(id: number) {
     </div>
     <div v-if="error" class="text-xs text-red-600">{{ error }}</div>
     <div v-else-if="loading" class="text-xs text-muted-foreground">Loading attachments…</div>
-    <div
-      v-else-if="attachments.length"
-      class="max-h-[min(40vh,28rem)] overflow-y-auto overscroll-contain pr-0.5"
-    >
+    <div v-else-if="files.length" class="max-h-[min(40vh,28rem)] overflow-y-auto overscroll-contain pr-0.5">
       <MessageAttachments
         removable
+        :me-id="meId ?? null"
         :disabled="removingId !== null"
-        :files="attachments"
+        :files="files"
         @remove="removeAttachment"
       />
     </div>

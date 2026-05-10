@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -82,6 +83,38 @@ export class ChannelAttachmentController {
       channelId,
       uploadedById: issuer.id,
       file,
+    });
+  }
+
+  @Delete(':attachmentId')
+  async delete(
+    @Param('channelId') channelId: number,
+    @Param('attachmentId') attachmentId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    const channel = await this.channels.findOne({
+      where: { id: channelId },
+      relations: { peers: true },
+    });
+    if (!channel) {
+      throw new ChannelNotFound();
+    }
+    const member = await this.workspaces.findMember(
+      channel.workspaceId,
+      issuer.id,
+    );
+    if (!member) throw new IssuerUserIsNotWorkspaceMember();
+    if (
+      channel.type !== 'workspace_open' &&
+      !channel.peers?.some((p) => p.id === issuer.id)
+    ) {
+      throw new IssuerIsNotChannelMember();
+    }
+    await this.attachments.deleteForChannel({
+      workspaceId: channel.workspaceId,
+      channelId,
+      attachmentId,
+      issuerId: issuer.id,
     });
   }
 }

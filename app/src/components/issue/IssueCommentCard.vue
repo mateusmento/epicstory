@@ -18,11 +18,12 @@ import {
 } from "@/design-system";
 import { cn } from "@/design-system/utils";
 import type { IAggregatedReaction, IMessage, IReply } from "@/domain/channels";
+import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import { formatDistanceToNow } from "date-fns";
 import { SmilePlusIcon } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
-import { MessageContextMenu } from "../channel";
+import MessageContextDropdown from "../messages/MessageContextDropdown.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -30,6 +31,8 @@ const props = withDefaults(
     meId: number;
     variant?: "default" | "threadSegment";
     segmentDivider?: boolean;
+    /** When set, overrides `message.attachments` (e.g. issue attachment store). */
+    attachments?: MessageAttachmentDto[];
   }>(),
   {
     variant: "default",
@@ -59,6 +62,8 @@ watch(
 );
 
 const isReplyEntity = computed(() => "messageId" in props.message && props.message.messageId != null);
+
+const displayAttachments = computed(() => props.attachments ?? props.message.attachments ?? []);
 
 const mostUsedEmojis = ["👍", "🙌", "❤️", "🔥", "🎉"];
 
@@ -113,7 +118,7 @@ const rootClass = computed(() =>
 </script>
 
 <template>
-  <MessageContextMenu
+  <MessageContextDropdown
     :message
     :meId
     :senderId="message.sender.id"
@@ -147,10 +152,7 @@ const rootClass = computed(() =>
             :me-id="rmMeId()"
           />
         </div>
-        <MessageAttachments
-          v-if="(message.attachments?.length ?? 0) > 0"
-          :files="message.attachments ?? []"
-        />
+        <MessageAttachments v-if="displayAttachments.length > 0" :files="displayAttachments" />
         <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
           <Tooltip v-for="reaction in reactions" :key="reaction.emoji">
             <TooltipTrigger as-child>
@@ -234,5 +236,5 @@ const rootClass = computed(() =>
         </div>
       </div>
     </article>
-  </MessageContextMenu>
+  </MessageContextDropdown>
 </template>

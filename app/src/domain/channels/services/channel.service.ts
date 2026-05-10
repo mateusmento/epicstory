@@ -45,6 +45,7 @@ export type UploadedAttachment = {
   mimeType: string;
   originalFilename: string;
   byteSize: number;
+  uploadedById?: number;
 };
 
 @injectable()
@@ -246,5 +247,9 @@ export class ChannelApi {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((res) => res.data);
+  }
+
+  deleteChannelAttachment(channelId: number, attachmentId: number) {
+    return this.axios.delete(`/channels/${channelId}/attachments/${attachmentId}`).then((res) => res.data);
   }
 }

@@ -6,6 +6,9 @@ import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
+  Menu,
+  MenuContent,
+  MenuTrigger,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -92,8 +95,35 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
       </div>
     </div>
     <HoverCard :open-delay="100" :close-delay="0">
-      <HoverCardTrigger as-child>
-        <div :class="styles.messageBox" ref="messageBoxRef">
+      <Menu type="context-menu">
+        <HoverCardTrigger as-child>
+          <MenuTrigger as-child>
+            <div :class="styles.messageBox" ref="messageBoxRef">
+              <RichTextPreview
+                :content="props.message.content"
+                :mentioned-users="props.message.mentionedUsers"
+                :me-id="props.meId"
+              />
+              <MessageAttachments
+                v-if="(props.message.attachments?.length ?? 0) > 0"
+                :files="props.message.attachments ?? []"
+              />
+              <div
+                v-if="'isScheduled' in props.message && props.message.isScheduled"
+                class="text-[0.65rem] text-muted-foreground/80 mb-0.5"
+              >
+                (Scheduled)
+              </div>
+              <div
+                v-else-if="'editedAt' in props.message && props.message.editedAt"
+                class="text-[0.65rem] text-muted-foreground/80 mb-0.5"
+              >
+                (edited)
+              </div>
+            </div>
+          </MenuTrigger>
+        </HoverCardTrigger>
+        <MenuContent class="font-dmSans">
           <MessageContextMenu
             :meId="props.meId"
             :senderId="props.message.senderId"
@@ -104,31 +134,10 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
             @emoji-selected="emit('reaction-toggled', $event)"
             @quote="emit('quote', props.message)"
             @edit="emit('edit', props.message)"
-          >
-            <RichTextPreview
-              :content="props.message.content"
-              :mentioned-users="props.message.mentionedUsers"
-              :me-id="props.meId"
-            />
-            <MessageAttachments
-              v-if="(props.message.attachments?.length ?? 0) > 0"
-              :files="props.message.attachments ?? []"
-            />
-            <div
-              v-if="'isScheduled' in props.message && props.message.isScheduled"
-              class="text-[0.65rem] text-muted-foreground/80 mb-0.5"
-            >
-              (Scheduled)
-            </div>
-            <div
-              v-else-if="'editedAt' in props.message && props.message.editedAt"
-              class="text-[0.65rem] text-muted-foreground/80 mb-0.5"
-            >
-              (edited)
-            </div>
-          </MessageContextMenu>
-        </div>
-      </HoverCardTrigger>
+          />
+        </MenuContent>
+      </Menu>
+
       <HoverCardContent as-child side="top" align="start" :align-offset="alignOffset" :side-offset="-10">
         <MessageActions
           :meId="props.meId"
