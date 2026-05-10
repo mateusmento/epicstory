@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Button, Separator } from "@/design-system";
+import { Icon } from "@/design-system/icons";
 import type { Editor } from "@tiptap/core";
 import {
   Bold,

@@ -2,7 +2,7 @@ import { useWebSockets } from "@/core/websockets";
 import { toReadonlyRef, type ReadonlyRefOrGetter } from "@/utils";
 import { tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
-import { ref } from "vue";
+import { onScopeDispose, ref, watch } from "vue";
 
 /** Receiver: drop typing user if no pulse within this window */
 export const CHANNEL_TYPING_TTL_MS = 5500;
@@ -85,6 +85,31 @@ export function useChannelTypingPulse(options: {
     }
   }
 
+  async function runWithTypingSuppressedDuringEditorMutation(fn: () => Promise<void>): Promise<void> {
+    suppressTypingSignals.value = true;
+    try {
+      await fn();
+    } finally {
+      suppressTypingSignals.value = false;
+    }
+  }
+
+  watch(
+    () => channelId.value,
+    (_id, prevId) => {
+      isEmittingTyping.value = false;
+      if (prevId != null) {
+        emitTypingStopForChannel(prevId);
+      }
+      clearTypingPulse();
+    },
+    { flush: "post" },
+  );
+
+  onScopeDispose(() => {
+    emitTypingStop();
+  });
+
   return {
     suppressTypingSignals,
     isEmittingTyping,
@@ -93,5 +118,6 @@ export function useChannelTypingPulse(options: {
     emitTypingStop,
     emitTypingStopForChannel,
     maybeStartTypingPulse,
+    runWithTypingSuppressedDuringEditorMutation,
   };
 }
