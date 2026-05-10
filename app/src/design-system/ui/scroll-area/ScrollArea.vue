@@ -35,10 +35,7 @@ const delegatedProps = computed(() => {
 });
 
 const viewportClass = computed(() =>
-  cn(
-    "h-full w-full rounded-[inherit]",
-    !props.vertical && "!overflow-y-hidden",
-  ),
+  cn("h-full w-full rounded-[inherit]", !props.vertical && "!overflow-y-hidden"),
 );
 
 const container = ref<{ viewportElement: HTMLElement }>();

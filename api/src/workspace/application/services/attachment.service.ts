@@ -2,6 +2,7 @@ import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -24,6 +25,14 @@ export type CreatedAttachmentDto = {
   mimeType: string;
   originalFilename: string;
   byteSize: number;
+  uploadedById: number;
+};
+
+/** Issue aggregate list (`GET /issues/:id/attachments`) — includes anchor columns for client filtering. */
+export type IssueAttachmentListItemDto = CreatedAttachmentDto & {
+  issueId: number | null;
+  messageId: number | null;
+  messageReplyId: number | null;
 };
 
 @Injectable()
@@ -101,6 +110,7 @@ export class AttachmentService {
         mimeType: row.mimeType,
         originalFilename: row.originalFilename,
         byteSize: file.size,
+        uploadedById: uploadedById,
       };
     } finally {
       if (!isEmpty(tempPath)) {
@@ -192,6 +202,7 @@ export class AttachmentService {
       mimeType: r.mimeType,
       originalFilename: r.originalFilename,
       byteSize: Number(r.byteSize),
+      uploadedById: r.uploadedById,
     }));
   }
 
@@ -204,10 +215,53 @@ export class AttachmentService {
     issueId: number;
     attachmentId: number;
     commentChannelId: number | null;
+    issuerId: number;
   }): Promise<void> {
     const row = await this.findAttachmentForIssueScope(params);
     if (!row) {
       throw new NotFoundException('Attachment not found');
+    }
+    if (row.uploadedById !== params.issuerId) {
+      throw new ForbiddenException(
+        'You can only remove attachments you uploaded',
+      );
+    }
+
+    await this.s3.send(
+      new DeleteObjectCommand({
+        Bucket: this.config.AWS_BUCKET,
+        Key: row.storageKey,
+      }),
+    );
+    await this.attachments.delete({ id: row.id });
+  }
+
+  /**
+   * Permanently removes an attachment linked to a channel message/reply (edit flow).
+   * Row must belong to the channel and be anchored; same uploader rule as {@link deleteForIssue}.
+   */
+  async deleteForChannel(params: {
+    workspaceId: number;
+    channelId: number;
+    attachmentId: number;
+    issuerId: number;
+  }): Promise<void> {
+    const row = await this.attachments.findOne({
+      where: { id: params.attachmentId, workspaceId: params.workspaceId },
+    });
+    if (!row) {
+      throw new NotFoundException('Attachment not found');
+    }
+    if (row.channelId !== params.channelId) {
+      throw new NotFoundException('Attachment not found');
+    }
+    if (row.messageId == null && row.messageReplyId == null) {
+      throw new NotFoundException('Attachment not found');
+    }
+    if (row.uploadedById !== params.issuerId) {
+      throw new ForbiddenException(
+        'You can only remove attachments you uploaded',
+      );
     }
 
     await this.s3.send(
@@ -248,7 +302,7 @@ export class AttachmentService {
     issueId: number,
     limit = 30,
     commentChannelId?: number | null,
-  ): Promise<CreatedAttachmentDto[]> {
+  ): Promise<IssueAttachmentListItemDto[]> {
     const take = Math.min(limit, 100);
     if (commentChannelId == null) {
       const rows = await this.attachments.find({
@@ -256,7 +310,7 @@ export class AttachmentService {
         order: { createdAt: 'DESC' },
         take,
       });
-      return rows.map((r) => this.toDto(r));
+      return rows.map((r) => this.toIssueListItemDto(r));
     }
 
     const qb = this.attachments
@@ -270,7 +324,7 @@ export class AttachmentService {
       .take(take);
 
     const rows = await qb.getMany();
-    return rows.map((r) => this.toDto(r));
+    return rows.map((r) => this.toIssueListItemDto(r));
   }
 
   /**
@@ -299,13 +353,17 @@ export class AttachmentService {
     for (const row of rows) {
       this.assertStagingRowEligible(row, params, minCreatedAt);
     }
+    const patch: Partial<Attachment> = { messageId: params.messageId };
+    if (params.matchedIssueId != null) {
+      patch.issueId = params.matchedIssueId;
+    }
     const upd = await this.attachments.update(
       {
         id: In(ids),
         workspaceId: params.workspaceId,
         channelId: params.channelId,
       },
-      { messageId: params.messageId },
+      patch,
     );
     if ((upd.affected ?? 0) !== ids.length) {
       throw new BadRequestException('Attachment link conflict');
@@ -337,13 +395,19 @@ export class AttachmentService {
     for (const row of rows) {
       this.assertStagingRowEligible(row, params, minCreatedAt);
     }
+    const patch: Partial<Attachment> = {
+      messageReplyId: params.messageReplyId,
+    };
+    if (params.matchedIssueId != null) {
+      patch.issueId = params.matchedIssueId;
+    }
     const upd = await this.attachments.update(
       {
         id: In(ids),
         workspaceId: params.workspaceId,
         channelId: params.channelId,
       },
-      { messageReplyId: params.messageReplyId },
+      patch,
     );
     if ((upd.affected ?? 0) !== ids.length) {
       throw new BadRequestException('Attachment link conflict');
@@ -442,6 +506,16 @@ export class AttachmentService {
       mimeType: r.mimeType,
       originalFilename: r.originalFilename,
       byteSize: Number(r.byteSize),
+      uploadedById: r.uploadedById,
+    };
+  }
+
+  private toIssueListItemDto(r: Attachment): IssueAttachmentListItemDto {
+    return {
+      ...this.toDto(r),
+      issueId: r.issueId ?? null,
+      messageId: r.messageId ?? null,
+      messageReplyId: r.messageReplyId ?? null,
     };
   }
 }

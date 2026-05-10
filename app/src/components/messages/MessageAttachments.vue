@@ -13,12 +13,15 @@ const props = withDefaults(
     disabled?: boolean;
     /** Show per-tile remove control (opens on hover via HoverCard). */
     removable?: boolean;
+    /** When set with `removable`, only files uploaded by this user show remove. */
+    meId?: number | null;
     /** Subtext under the strip (e.g. schedule policy). */
     hint?: string | null;
   }>(),
   {
     disabled: false,
     removable: false,
+    meId: null,
     hint: null,
   },
 );
@@ -39,6 +42,12 @@ const rootClass = computed(() =>
   ),
 );
 
+function canRemoveAttachment(f: MessageAttachmentDto): boolean {
+  if (!props.removable) return false;
+  if (props.meId == null) return true;
+  return f.uploadedById != null && f.uploadedById === props.meId;
+}
+
 function onRemoveClick(id: number) {
   emit("remove", id);
 }
@@ -49,7 +58,7 @@ function onRemoveClick(id: number) {
     <p v-if="hint" class="text-[0.65rem] text-muted-foreground leading-snug">{{ hint }}</p>
     <ul :class="rootClass" aria-label="Attachments">
       <li v-for="f in files" :key="f.id" class="flex max-w-[11rem] flex-shrink-0 flex-col">
-        <HoverCard v-if="removable" :open-delay="150" :close-delay="120">
+        <HoverCard v-if="canRemoveAttachment(f)" :open-delay="150" :close-delay="120">
           <HoverCardTrigger as-child>
             <div
               class="block w-full cursor-default rounded-lg outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

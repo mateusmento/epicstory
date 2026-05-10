@@ -17,6 +17,8 @@ export type MessageAttachmentDto = {
   mimeType: string;
   originalFilename: string;
   byteSize: number;
+  /** Present when API returns uploader info; omit on older payloads. */
+  uploadedById?: number;
 };
 
 export interface IMessage {

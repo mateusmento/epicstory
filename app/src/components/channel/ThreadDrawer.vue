@@ -1,9 +1,11 @@
 <script setup lang="tsx">
-import { MessageBox, MessageComposer } from "@/components/messages";
+import { channelMessageComposerAttachmentHandlers, MessageBox, MessageComposer } from "@/components/messages";
+import { useDependency } from "@/core/dependency-injection";
 import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { IMessage, IReply } from "@/domain/channels";
 import { groupMessages, useChannel } from "@/domain/channels";
+import { ChannelApi } from "@/domain/channels/services/channel.service";
 import { useMessageThread } from "@/domain/channels/composables/message-thread";
 import type { JSONContent } from "@tiptap/core";
 import { computed, nextTick, ref, watch } from "vue";
@@ -15,7 +17,15 @@ const message = defineModel<IMessage>("message", { required: true });
 
 const emit = defineEmits(["message-deleted", "close"]);
 
+const channelApi = useDependency(ChannelApi);
 const { channel, deleteMessage, updateMessage } = useChannel();
+
+const composerAttachmentHandlers = computed(() =>
+  channelMessageComposerAttachmentHandlers({
+    channelApi,
+    channelId: () => message.value.channelId,
+  }),
+);
 
 const { replies, toggleReaction, toggleReplyReaction, fetchReplies, sendReply, deleteReply } =
   useMessageThread(message, { onMessageDeleted: () => emit("close") });
@@ -170,6 +180,7 @@ function onEditTarget(m: IMessage | IReply) {
 
     <MessageComposer
       :channel-id="message.channelId"
+      :attachment-handlers="composerAttachmentHandlers"
       :mentionables="channel?.peers ?? []"
       :me-id="meId"
       :quoted-message="quotedMessage"

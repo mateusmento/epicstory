@@ -21,9 +21,11 @@ import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
 import { computed, nextTick, ref, watch } from "vue";
 import { UserAvatar, UserAvatarStack } from "@/components/user";
+import { channelMessageComposerAttachmentHandlers, MessageComposer } from "@/components/messages";
+import { useDependency } from "@/core/dependency-injection";
+import { ChannelApi } from "@/domain/channels/services/channel.service";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
-import { MessageComposer } from "@/components/messages";
 import type { JSONContent } from "@tiptap/core";
 import { enumerateNames } from "@/utils";
 
@@ -67,9 +69,16 @@ watch([channelMessageIds, quotedMessage], ([ids, q]) => {
 });
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 
-const { workspace } = useWorkspace();
 const { typingUserIds } = useChannel();
 const { isUserOnline } = useWorkspaceOnline();
+const channelApi = useDependency(ChannelApi);
+
+const composerAttachmentHandlers = computed(() =>
+  channelMessageComposerAttachmentHandlers({
+    channelApi,
+    channelId: () => props.channelId,
+  }),
+);
 
 const onlineUsers = computed(() =>
   props.channel.peers.filter((p) => p.id !== props.meId && isUserOnline(p.id)),
@@ -305,6 +314,7 @@ defineExpose({
     <MessageComposer
       :key="channelId"
       :channel-id="channelId"
+      :attachment-handlers="composerAttachmentHandlers"
       :mentionables="channel.peers"
       :me-id="meId"
       :quoted-message="quotedMessage"

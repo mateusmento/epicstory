@@ -1,4 +1,9 @@
 export { default as MessageComposer } from "./MessageComposer.vue";
+export {
+  channelMessageComposerAttachmentHandlers,
+  issueActivityMessageComposerAttachmentHandlers,
+  type MessageComposerAttachmentHandlers,
+} from "./message-composer-attachment-handlers";
 export { default as MessageBox } from "./MessageBox.vue";
 export { default as MessageActions } from "./MessageActions.vue";
 export { default as MessageContextMenu } from "./MessageContextMenu.vue";

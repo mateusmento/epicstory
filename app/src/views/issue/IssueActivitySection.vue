@@ -7,18 +7,31 @@ import { IssueApi } from "@/domain/issues/api";
 import type { JSONContent } from "@tiptap/core";
 import type { IssueFeed, IssueFeedItem } from "@/domain/issues/types/issue-feed.type";
 import type { IMessage, IReply } from "@/domain/channels";
+import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import type { User } from "@/domain/auth";
 import { formatDistanceToNow } from "date-fns";
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { cn } from "@/design-system/utils";
-import { MessageComposer } from "@/components/messages";
+import { issueActivityMessageComposerAttachmentHandlers, MessageComposer } from "@/components/messages";
 import { useIssue } from "@/domain/issues/composables/issue";
+import type { IssueAttachmentActivitySyncPayload } from "@/domain/issues/composables/useIssueAttachments";
 
-const props = defineProps<{
-  issueId: number;
-  commentChannelId: number;
-  meId: number;
+const props = withDefaults(
+  defineProps<{
+    issueId: number;
+    commentChannelId: number;
+    meId: number;
+    workspaceId?: number;
+    resolveCommentAttachments?: (entity: IMessage | IReply) => MessageAttachmentDto[];
+    syncIssueAttachments?: (payload: IssueAttachmentActivitySyncPayload) => void;
+  }>(),
+  {},
+);
+
+const emit = defineEmits<{
+  /** Fired when an attachment is removed from a comment/reply while editing (strip + feed sync). */
+  issueAttachmentRemoved: [];
 }>();
 
 /** Board / filter copy — keep in sync with project views. */
@@ -68,6 +81,15 @@ const issueApi = useDependency(IssueApi);
 const channels = useDependency(ChannelApi);
 const { deleteIssueComment, updateIssueComment } = useIssue();
 
+const composerAttachmentHandlers = computed(() =>
+  issueActivityMessageComposerAttachmentHandlers({
+    issueApi,
+    issueId: () => props.issueId,
+    channelApi: channels,
+    commentChannelId: () => props.commentChannelId,
+  }),
+);
+
 const tab = ref<"all" | "comments">("all");
 const feed = ref<IssueFeed | null>(null);
 const commentMessages = ref<IMessage[]>([]);
@@ -92,22 +114,34 @@ watch(
 const filteredFeedItems = computed(() => feed.value?.items ?? []);
 
 watch(
-  [() => props.issueId, () => props.commentChannelId, tab],
-  async () => {
-    loading.value = true;
-    loadError.value = null;
+  [() => props.issueId, () => props.commentChannelId, tab] as const,
+  async ([issueId, channelId, currentTab], prev) => {
+    const isInitial = prev === undefined;
+    const issueChanged = isInitial || prev[0] !== issueId;
+    const channelChanged = isInitial || prev[1] !== channelId;
+    const tabChanged = isInitial || prev[2] !== currentTab;
+    const primaryChanged = issueChanged || channelChanged || tabChanged;
+
+    if (primaryChanged) {
+      loading.value = true;
+      loadError.value = null;
+    }
     try {
-      if (tab.value === "all") {
-        feed.value = await issueApi.fetchIssueFeed(props.issueId, 50);
-      } else if (props.commentChannelId != null) {
-        commentMessages.value = await channels.findMessages(props.commentChannelId);
+      if (currentTab === "all") {
+        feed.value = await issueApi.fetchIssueFeed(issueId, 50);
+        props.syncIssueAttachments?.({ feedItems: feed.value.items });
+      } else if (channelId != null) {
+        commentMessages.value = await channels.findMessages(channelId);
+        props.syncIssueAttachments?.({ topLevelMessages: commentMessages.value });
       } else {
         commentMessages.value = [];
       }
     } catch (e: unknown) {
       loadError.value = e instanceof Error ? e.message : "Failed to load activity";
     } finally {
-      loading.value = false;
+      if (primaryChanged) {
+        loading.value = false;
+      }
     }
   },
   { immediate: true },
@@ -115,8 +149,10 @@ watch(
 
 async function reloadAfterComment() {
   feed.value = await issueApi.fetchIssueFeed(props.issueId, 50);
+  props.syncIssueAttachments?.({ feedItems: feed.value.items });
   if (tab.value === "comments" && props.commentChannelId != null) {
     commentMessages.value = await channels.findMessages(props.commentChannelId);
+    props.syncIssueAttachments?.({ topLevelMessages: commentMessages.value });
   }
 }
 
@@ -143,10 +179,34 @@ async function onReplyInThread(
   await reloadAfterComment();
 }
 
-const editing = ref<{ entity: IMessage | IReply; id: number; content: JSONContent } | null>(null);
+const editing = ref<{
+  entity: IMessage | IReply;
+  id: number;
+  content: JSONContent;
+  attachments: MessageAttachmentDto[];
+} | null>(null);
+
+const editingMessagePayload = computed(() =>
+  editing.value
+    ? {
+        id: editing.value.id,
+        content: editing.value.content,
+        attachments: editing.value.attachments,
+      }
+    : null,
+);
 
 function startEdit(entity: IMessage | IReply) {
-  editing.value = { entity, id: entity.id, content: entity.content as JSONContent };
+  editing.value = {
+    entity,
+    id: entity.id,
+    content: entity.content as JSONContent,
+    attachments: [...(entity.attachments ?? [])],
+  };
+}
+
+function onComposerIssueAttachmentRemoved() {
+  emit("issueAttachmentRemoved");
 }
 
 async function submitEdit(value: { messageId: number; content: JSONContent }) {
@@ -176,8 +236,7 @@ function itemByRootId(rootId: number): IssueFeedItem | null {
 
 async function onToggleDiscussion(entity: IMessage | IReply) {
   // Reply menu makes sense only for root messages. If called for replies, focus its parent thread.
-  const rootId =
-    "messageId" in entity && entity.messageId != null ? entity.messageId : (entity.id as number);
+  const rootId = "messageId" in entity && entity.messageId != null ? entity.messageId : (entity.id as number);
 
   if (tab.value !== "all") {
     tab.value = "all";
@@ -424,6 +483,7 @@ async function toggleThreadReplies(item: IssueFeedItem) {
     s.loading = true;
     try {
       s.fullReplies = await channels.findReplies(rootId);
+      props.syncIssueAttachments?.({ replies: s.fullReplies });
     } catch {
       /* keep previews; user can retry */
     } finally {
@@ -451,7 +511,10 @@ watch(
       try {
         const list = await channels.findReplies(rootId);
         const s = threadByRootId.get(rootId);
-        if (s) s.fullReplies = list;
+        if (s) {
+          s.fullReplies = list;
+          props.syncIssueAttachments?.({ replies: list });
+        }
       } catch {
         /* leave stale cache */
       }
@@ -503,6 +566,7 @@ watch(
             <IssueCommentCard
               :message="item.message"
               :me-id="meId"
+              :attachments="resolveCommentAttachments?.(item.message)"
               variant="threadSegment"
               @message-deleted="onDelete(item.message)"
               @toggle-discussion="onToggleDiscussion(item.message)"
@@ -515,12 +579,14 @@ watch(
               <MessageComposer
                 :key="`edit-${item.message.id}`"
                 :channel-id="commentChannelId"
+                :attachment-handlers="composerAttachmentHandlers"
                 :mentionables="channelPeers"
                 :me-id="meId"
-                :editing-message="editing"
+                :editing-message="editingMessagePayload"
                 class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
                 @submit-edit="submitEdit"
                 @cancel-edit="cancelEdit"
+                @existing-attachment-removed="onComposerIssueAttachmentRemoved"
               />
             </div>
             <button
@@ -550,6 +616,7 @@ watch(
               <IssueCommentCard
                 :message="asReply(rep)"
                 :me-id="meId"
+                :attachments="resolveCommentAttachments?.(asReply(rep))"
                 variant="threadSegment"
                 segment-divider
                 @message-deleted="onDelete(asReply(rep))"
@@ -563,12 +630,14 @@ watch(
                 <MessageComposer
                   :key="`edit-reply-${asReply(rep).id}`"
                   :channel-id="commentChannelId"
+                  :attachment-handlers="composerAttachmentHandlers"
                   :mentionables="channelPeers"
                   :me-id="meId"
-                  :editing-message="editing"
+                  :editing-message="editingMessagePayload"
                   class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
                   @submit-edit="submitEdit"
                   @cancel-edit="cancelEdit"
+                  @existing-attachment-removed="onComposerIssueAttachmentRemoved"
                 />
               </div>
             </template>
@@ -576,6 +645,7 @@ watch(
               <MessageComposer
                 :key="`reply-${item.activityId}-${item.message.id}`"
                 :channel-id="commentChannelId"
+                :attachment-handlers="composerAttachmentHandlers"
                 :mentionables="channelPeers"
                 :me-id="meId"
                 placeholder="Leave a reply…"
@@ -633,6 +703,7 @@ watch(
         <IssueCommentCard
           :message="msg"
           :me-id="meId"
+          :attachments="resolveCommentAttachments?.(msg)"
           @message-deleted="onDelete(msg)"
           @toggle-discussion="onToggleDiscussion(msg)"
           @edit="startEdit(msg)"
@@ -644,12 +715,14 @@ watch(
           <MessageComposer
             :key="`edit-comments-${msg.id}`"
             :channel-id="commentChannelId"
+            :attachment-handlers="composerAttachmentHandlers"
             :mentionables="channelPeers"
             :me-id="meId"
-            :editing-message="editing"
+            :editing-message="editingMessagePayload"
             class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
             @submit-edit="submitEdit"
             @cancel-edit="cancelEdit"
+            @existing-attachment-removed="onComposerIssueAttachmentRemoved"
           />
         </div>
       </li>
@@ -659,6 +732,7 @@ watch(
     <div v-if="commentChannelId != null" class="rounded-lg border border-zinc-200/90 bg-zinc-50/40 p-2">
       <MessageComposer
         :channel-id="commentChannelId"
+        :attachment-handlers="composerAttachmentHandlers"
         :mentionables="channelPeers"
         :me-id="meId"
         placeholder="Leave a comment…"

@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { useDependency } from "@/core/dependency-injection";
 import { startRecording } from "@/core/screen-recording";
 import { Button, ButtonGroup, ButtonGroupSeparator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -13,7 +12,8 @@ import {
   type IReply,
   type IScheduledMessageRecurrence,
 } from "@/domain/channels";
-import { ChannelApi, type UploadedAttachment } from "@/domain/channels/services/channel.service";
+import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { UploadedAttachment } from "@/domain/channels/services/channel.service";
 import {
   messageBodyPlainText,
   normalizeTiptapDoc,
@@ -26,9 +26,10 @@ import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue
 import { RichTextComposer } from "../rich-text";
 import MessageAttachments from "./MessageAttachments.vue";
 import MessageComposerActions from "./MessageComposerActions.vue";
-import { formatScheduleSummary, type ResolvedSchedule } from "./schedule-builders";
+import type { MessageComposerAttachmentHandlers } from "./message-composer-attachment-handlers";
 import ScheduleMessageCustomDialog from "./ScheduleMessageCustomDialog.vue";
 import ScheduleMessageDropdown from "./ScheduleMessageDropdown.vue";
+import { formatScheduleSummary, type ResolvedSchedule } from "./schedule-builders";
 
 const props = withDefaults(
   defineProps<{
@@ -36,8 +37,13 @@ const props = withDefaults(
     meId?: number;
     channelId: number;
     placeholder?: string;
-    editingMessage?: { id: number; content: JSONContent } | null;
+    editingMessage?: {
+      id: number;
+      content: JSONContent;
+      attachments?: MessageAttachmentDto[];
+    } | null;
     quotedMessage?: (IMessage | IReply) | null;
+    attachmentHandlers: MessageComposerAttachmentHandlers;
   }>(),
   {
     editingMessage: null,
@@ -65,11 +71,10 @@ const emit = defineEmits<{
     },
   ): void;
   (e: "submit-edit", value: { messageId: number; content: JSONContent }): void;
+  (e: "existing-attachment-removed"): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
 }>();
-
-const channelApi = useDependency(ChannelApi);
 
 const composerPlaceholder = computed(() =>
   props.editingMessage ? "Edit message…" : (props.placeholder ?? "Send a message…"),
@@ -184,6 +189,12 @@ watch(customScheduleOpen, (open) => {
 /**
  * Staged uploads.
  */
+
+/** Linked files already on the message while editing (own files can be removed via issue API). */
+const editingExistingAttachments = ref<MessageAttachmentDto[]>([]);
+const removingEditingAttachment = ref(false);
+
+/** Staged uploads (linked on send, not embedded in TipTap JSON). */
 const pendingAttachments = ref<UploadedAttachment[]>([]);
 const stagingFileInputRef = ref<HTMLInputElement | null>(null);
 
@@ -196,16 +207,10 @@ const scheduleAttachmentHint = computed(() =>
 /** Staged uploads (linked on send, not embedded in TipTap JSON). */
 async function uploadStagingFiles(fileList: File[]) {
   if (!fileList.length) return;
-  const next = [...pendingAttachments.value];
-  for (const file of fileList) {
-    try {
-      const a = await channelApi.uploadAttachment(props.channelId, file);
-      next.push(a);
-    } catch {
-      /* keep composing */
-    }
+  const uploaded = await props.attachmentHandlers.uploadFiles(fileList);
+  if (uploaded.length > 0) {
+    pendingAttachments.value = [...pendingAttachments.value, ...uploaded];
   }
-  pendingAttachments.value = next;
 }
 
 function onRichTextPastedFiles(files: File[]) {
@@ -228,6 +233,19 @@ async function onStagingFilesSelected(e: Event) {
 
 function removeStagingAttachment(id: number) {
   pendingAttachments.value = pendingAttachments.value.filter((a) => a.id !== id);
+}
+
+async function onRemoveEditingAttachment(id: number) {
+  removingEditingAttachment.value = true;
+  try {
+    await props.attachmentHandlers.removeLinkedAttachment(id);
+    editingExistingAttachments.value = editingExistingAttachments.value.filter((a) => a.id !== id);
+    emit("existing-attachment-removed");
+  } catch {
+    /* non-blocking; list refetch can repair */
+  } finally {
+    removingEditingAttachment.value = false;
+  }
 }
 
 function onSendMessage() {
@@ -324,7 +342,10 @@ watch(
     if (msg) {
       activeSchedule.value = null;
       pendingAttachments.value = [];
+      editingExistingAttachments.value = [...(msg.attachments ?? [])];
       suppressTypingSignals.value = false;
+    } else {
+      editingExistingAttachments.value = [];
     }
   },
 );
@@ -418,11 +439,24 @@ watch(
     </div>
     <input ref="stagingFileInputRef" type="file" class="sr-only" multiple @change="onStagingFilesSelected" />
     <div
-      v-if="pendingAttachments.length || scheduleAttachmentHint"
+      v-if="
+        pendingAttachments.length ||
+        scheduleAttachmentHint ||
+        (editingMessage && editingExistingAttachments.length)
+      "
       class="shrink-0 border-t border-zinc-200/80 pt-2"
       @click.stop
     >
       <MessageAttachments
+        v-if="editingMessage && editingExistingAttachments.length"
+        :files="editingExistingAttachments"
+        :disabled="removingEditingAttachment"
+        removable
+        :me-id="meId ?? null"
+        @remove="onRemoveEditingAttachment"
+      />
+      <MessageAttachments
+        v-if="pendingAttachments.length || scheduleAttachmentHint"
         :files="pendingAttachments"
         :disabled="!!activeSchedule"
         :removable="true"
