@@ -2,8 +2,25 @@
 import type { User } from "@/domain/auth";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
-import { computed, onBeforeUnmount, reactive, watch } from "vue";
+import { BubbleMenu } from "@tiptap/vue-3/menus";
+import { computed, onBeforeUnmount, reactive, useSlots, watch } from "vue";
 import { createRichTextComposerExtensions, EPICSTORY_RICH_TEXT_COMPOSER } from "./composer";
+
+defineSlots<{
+  bubbleMenu?: (props: { editor: Editor }) => unknown;
+}>();
+
+const appendBubbleToBody = () => document.body;
+
+const bubbleMenuOptions = {
+  strategy: "fixed" as const,
+  placement: "top" as const,
+  offset: 8,
+  flip: true,
+  shift: { padding: 8 },
+};
+
+const slots = useSlots();
 
 const emit = defineEmits<{
   submit: [];
@@ -120,5 +137,17 @@ defineExpose({
 </script>
 
 <template>
-  <EditorContent v-if="editor" :editor="editor" />
+  <div class="min-h-0 min-w-0">
+    <EditorContent v-if="editor" :editor="editor" />
+    <!-- Optional bubble toolbar (e.g. format actions on selection); append to body to escape overflow-hidden ancestors. -->
+    <BubbleMenu
+      v-if="editor && slots.bubbleMenu"
+      plugin-key="epicstoryRichTextBubbleMenu"
+      :editor="editor"
+      :append-to="appendBubbleToBody"
+      :options="bubbleMenuOptions"
+    >
+      <slot name="bubbleMenu" :editor="editor" />
+    </BubbleMenu>
+  </div>
 </template>

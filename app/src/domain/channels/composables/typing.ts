@@ -45,8 +45,9 @@ export function useChannelTypingPulse(options: {
   }
 
   function emitTypingStop() {
-    if (channelId.value == null) return;
-    emitTypingStopForChannel(channelId.value);
+    if (channelId.value) {
+      emitTypingStopForChannel(channelId.value);
+    }
     isEmittingTyping.value = false;
     clearTypingPulse();
   }
