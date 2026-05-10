@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { startRecording } from "@/core/screen-recording";
 import { Button, ButtonGroup, ButtonGroupSeparator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { User } from "@/domain/auth";
 import {
   clearChannelDraft,
   composerQuoteRef,
+  quotedMessageExcerpt,
   useChannelMessageDraft,
   useChannelTypingPulse,
   type IMessage,
@@ -13,23 +13,20 @@ import {
   type IScheduledMessageRecurrence,
 } from "@/domain/channels";
 import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
-import type { UploadedAttachment } from "@/domain/channels/services/channel.service";
-import {
-  messageBodyPlainText,
-  normalizeTiptapDoc,
-  stripImageNodesFromDoc,
-  tiptapToPlainText,
-} from "@epicstory/tiptap";
+import { stripImageNodesFromDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { ChevronDown, Paperclip } from "lucide-vue-next";
-import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
+import { computed, shallowRef, watch } from "vue";
 import { RichTextComposer } from "../rich-text";
 import MessageAttachments from "./MessageAttachments.vue";
 import MessageComposerActions from "./MessageComposerActions.vue";
+import { useMessageComposerAttachments } from "./composables/message-composer-attachments";
+import { useMessageComposerEditingBody } from "./composables/message-composer-editing-body";
+import { useMessageComposerSchedule } from "./composables/message-composer-schedule";
+import { useMessageComposerScreenRecording } from "./composables/message-composer-screen-recording";
 import type { MessageComposerAttachmentHandlers } from "./message-composer-attachment-handlers";
 import ScheduleMessageCustomDialog from "./ScheduleMessageCustomDialog.vue";
 import ScheduleMessageDropdown from "./ScheduleMessageDropdown.vue";
-import { formatScheduleSummary, type ResolvedSchedule } from "./schedule-builders";
 
 const props = withDefaults(
   defineProps<{
@@ -80,12 +77,9 @@ const composerPlaceholder = computed(() =>
   props.editingMessage ? "Edit message…" : (props.placeholder ?? "Send a message…"),
 );
 
-const quotedExcerpt = computed(() => {
-  if (!props.quotedMessage) return "";
-  const raw = props.quotedMessage.displayContent ?? messageBodyPlainText(props.quotedMessage);
-  const t = raw.replace(/\s+/g, " ").trim();
-  return t.length > 160 ? `${t.slice(0, 160)}…` : t;
-});
+const quotedExcerpt = computed(() =>
+  props.quotedMessage ? quotedMessageExcerpt(props.quotedMessage) : "",
+);
 
 /**
  * Rich text editor.
@@ -96,6 +90,35 @@ const editor = shallowRef<Editor | null>(null);
 function onRichTextEditorUpdate(ed: Editor | null) {
   editor.value = ed;
 }
+
+/**
+ * Typing pulse (register before draft so channel watchers run stop-before-load).
+ */
+
+const {
+  suppressTypingSignals,
+  maybeStartTypingPulse,
+  clearTypingPulse,
+  emitTypingStop,
+  runWithTypingSuppressedDuringEditorMutation,
+} = useChannelTypingPulse({
+  channelId: () => props.channelId,
+  editor,
+});
+
+/**
+ * Draft autosave.
+ */
+
+const { scheduleDraftSave, cancelPendingDraftSave } = useChannelMessageDraft({
+  channelId: () => props.channelId,
+  editingMessage: () => props.editingMessage,
+  editor,
+  runWithEditorMutationSuppressed: runWithTypingSuppressedDuringEditorMutation,
+  whenEditorMissingAfterChannelChange: () => {
+    suppressTypingSignals.value = false;
+  },
+});
 
 function onEditorUpdateForDraft() {
   scheduleDraftSave(editor.value?.getJSON());
@@ -127,125 +150,56 @@ watch(
   { immediate: true },
 );
 
-/**
- * Draft autosave.
- */
-
-const { loadDraftToEditor, scheduleDraftSave, flushDraftSync, cancelPendingDraftSave } =
-  useChannelMessageDraft({
-    channelId: () => props.channelId,
-    editingMessage: () => props.editingMessage,
-    editor,
-  });
-
-/**
- * Typing pulse.
- */
+const {
+  customScheduleOpen,
+  activeSchedule,
+  scheduleSummary,
+  onCustomScheduleConfirm,
+  clearActiveSchedule,
+} = useMessageComposerSchedule({
+  channelId: () => props.channelId,
+  getEditor: () => editor.value,
+  editingMessage: () => props.editingMessage,
+});
 
 const {
-  isEmittingTyping,
-  suppressTypingSignals,
-  maybeStartTypingPulse,
-  clearTypingPulse,
-  emitTypingStop,
-  emitTypingStopForChannel,
-} = useChannelTypingPulse({
+  editingExistingAttachments,
+  removingEditingAttachment,
+  pendingAttachments,
+  stagingFileInputRef,
+  scheduleAttachmentHint,
+  uploadStagingFiles,
+  openStagingFilePicker,
+  onStagingFilesSelected,
+  removeStagingAttachment,
+  onRemoveEditingAttachment,
+} = useMessageComposerAttachments({
   channelId: () => props.channelId,
+  editingMessage: () => props.editingMessage,
+  attachmentHandlers: () => props.attachmentHandlers,
+  activeSchedule,
+  onExistingAttachmentRemoved: () => emit("existing-attachment-removed"),
+});
+
+const { isRecording, secondsElapsed, onToggleRecording, formatRecordingElapsed } =
+  useMessageComposerScreenRecording();
+
+useMessageComposerEditingBody({
   editor,
+  editingMessage: () => props.editingMessage,
 });
 
-/**
- * Scheduled messages.
- */
-const customScheduleOpen = ref(false);
-const activeSchedule = ref<ResolvedSchedule | null>(null);
-
-const scheduleSummary = computed(() =>
-  activeSchedule.value ? formatScheduleSummary(activeSchedule.value) : "",
+watch(
+  () => props.editingMessage,
+  (msg) => {
+    if (msg) {
+      suppressTypingSignals.value = false;
+    }
+  },
 );
-
-function onCustomScheduleConfirm(s: ResolvedSchedule) {
-  activeSchedule.value = s;
-  customScheduleOpen.value = false;
-}
-
-function clearActiveSchedule() {
-  activeSchedule.value = null;
-}
-
-function focusComposerEnd() {
-  const ed = editor.value;
-  if (ed) ed.chain().focus("end").run();
-}
-
-/** Return focus to the composer when the (non-modal) custom schedule layer closes. */
-watch(customScheduleOpen, (open) => {
-  if (open) return;
-  nextTick().then(() => {
-    focusComposerEnd();
-  });
-});
-
-/**
- * Staged uploads.
- */
-
-/** Linked files already on the message while editing (own files can be removed via issue API). */
-const editingExistingAttachments = ref<MessageAttachmentDto[]>([]);
-const removingEditingAttachment = ref(false);
-
-/** Staged uploads (linked on send, not embedded in TipTap JSON). */
-const pendingAttachments = ref<UploadedAttachment[]>([]);
-const stagingFileInputRef = ref<HTMLInputElement | null>(null);
-
-const scheduleAttachmentHint = computed(() =>
-  activeSchedule.value && pendingAttachments.value.length > 0
-    ? "Attachments are not sent in scheduled messages. Clear the schedule or send now to include them."
-    : null,
-);
-
-/** Staged uploads (linked on send, not embedded in TipTap JSON). */
-async function uploadStagingFiles(fileList: File[]) {
-  if (!fileList.length) return;
-  const uploaded = await props.attachmentHandlers.uploadFiles(fileList);
-  if (uploaded.length > 0) {
-    pendingAttachments.value = [...pendingAttachments.value, ...uploaded];
-  }
-}
 
 function onRichTextPastedFiles(files: File[]) {
   uploadStagingFiles(files);
-}
-
-/**
- * Rich text editor actions
- */
-function openStagingFilePicker() {
-  stagingFileInputRef.value?.click();
-}
-
-async function onStagingFilesSelected(e: Event) {
-  const input = e.target as HTMLInputElement;
-  input.value = "";
-  if (!input.files?.length) return;
-  await uploadStagingFiles(Array.from(input.files));
-}
-
-function removeStagingAttachment(id: number) {
-  pendingAttachments.value = pendingAttachments.value.filter((a) => a.id !== id);
-}
-
-async function onRemoveEditingAttachment(id: number) {
-  removingEditingAttachment.value = true;
-  try {
-    await props.attachmentHandlers.removeLinkedAttachment(id);
-    editingExistingAttachments.value = editingExistingAttachments.value.filter((a) => a.id !== id);
-    emit("existing-attachment-removed");
-  } catch {
-    /* non-blocking; list refetch can repair */
-  } finally {
-    removingEditingAttachment.value = false;
-  }
 }
 
 function onSendMessage() {
@@ -295,111 +249,6 @@ function onSendMessage() {
 function onCancelEdit() {
   emit("cancel-edit");
 }
-
-/**
- * Screen recording.
- */
-const isRecording = ref(false);
-const stopRecording = shallowRef<(() => void) | null>(null);
-const secondsElapsed = ref(0);
-const counter = ref<ReturnType<typeof setInterval> | null>(null);
-
-async function onToggleRecording() {
-  if (!isRecording.value) {
-    secondsElapsed.value = 0;
-    isRecording.value = true;
-    stopRecording.value = await startRecording();
-    counter.value = setInterval(() => {
-      secondsElapsed.value++;
-    }, 1000);
-  } else {
-    counter.value && clearInterval(counter.value);
-    counter.value = null;
-    stopRecording.value?.();
-    stopRecording.value = null;
-    isRecording.value = false;
-  }
-}
-
-function formatTime(seconds: number) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = seconds % 60;
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-  } else if (minutes > 0) {
-    return `${minutes}m ${remainingSeconds}s`;
-  } else {
-    return `${remainingSeconds}s`;
-  }
-}
-
-/** Component logic */
-
-watch(
-  () => props.editingMessage,
-  (msg) => {
-    if (msg) {
-      activeSchedule.value = null;
-      pendingAttachments.value = [];
-      editingExistingAttachments.value = [...(msg.attachments ?? [])];
-      suppressTypingSignals.value = false;
-    } else {
-      editingExistingAttachments.value = [];
-    }
-  },
-);
-
-watch(
-  [editor, () => props.editingMessage],
-  async ([editor, msg], [prevEditor, prevMsg]) => {
-    if (!editor) return;
-    if (!msg) {
-      editor.commands.clearContent();
-      return;
-    }
-    // Avoid clobbering in-progress edits, but still initialize content when the editor
-    // instance becomes available (common on mount).
-    if (prevMsg?.id === msg.id && prevEditor === editor) return;
-    const doc = normalizeTiptapDoc(msg.content);
-    editor.commands.setContent(doc);
-    editor.commands.focus("end");
-  },
-  { flush: "post", immediate: true },
-);
-
-onBeforeUnmount(() => {
-  flushDraftSync(editor.value?.getJSON());
-});
-
-onBeforeUnmount(() => {
-  emitTypingStop();
-});
-
-watch(
-  () => props.channelId,
-  async () => {
-    if (!editor.value) return;
-    suppressTypingSignals.value = true;
-    await loadDraftToEditor(editor.value);
-    suppressTypingSignals.value = false;
-  },
-  { flush: "post" },
-);
-
-watch(
-  () => props.channelId,
-  async (id, prevId) => {
-    isEmittingTyping.value = false;
-    emitTypingStopForChannel(prevId);
-    clearTypingPulse();
-    cancelPendingDraftSave();
-    activeSchedule.value = null;
-    pendingAttachments.value = [];
-    suppressTypingSignals.value = false;
-  },
-  { flush: "post" },
-);
 </script>
 
 <template>
@@ -502,7 +351,7 @@ watch(
         <Icon v-if="!isRecording" name="bi-camera-video" class="w-6 h-6" />
         <template v-else>
           <Icon name="ri-record-circle-fill" class="w-6 h-6 text-red-500" />
-          <span class="text-xs ml-1 text-red-400">{{ formatTime(secondsElapsed) }}</span>
+          <span class="text-xs ml-1 text-red-400">{{ formatRecordingElapsed(secondsElapsed) }}</span>
         </template>
       </Button>
 

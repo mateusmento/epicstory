@@ -2,7 +2,7 @@ import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { debounce } from "lodash";
 import { toValue, type ReadonlyRefOrGetter } from "@/utils";
-import { nextTick } from "vue";
+import { nextTick, onScopeDispose, watch } from "vue";
 
 type EditingMessage = { id: number; content: JSONContent } | null;
 
@@ -51,6 +51,9 @@ export function useChannelMessageDraft(options: {
   channelId: ReadonlyRefOrGetter<number | undefined>;
   editingMessage: ReadonlyRefOrGetter<EditingMessage>;
   editor: ReadonlyRefOrGetter<Editor | null | undefined>;
+  runWithEditorMutationSuppressed?: (fn: () => Promise<void>) => Promise<void>;
+  /** When the channel changes before an editor instance exists, run this so typing suppression does not stay stuck (e.g. clear `suppressTypingSignals`). */
+  whenEditorMissingAfterChannelChange?: () => void;
 }) {
   function saveDraft(doc: JSONContent | null | undefined) {
     if (!doc) return;
@@ -92,6 +95,28 @@ export function useChannelMessageDraft(options: {
     }
     await nextTick();
   }
+
+  watch(
+    () => toValue(options.channelId),
+    async () => {
+      cancelPendingDraftSave();
+      const editor = toValue(options.editor);
+      if (!editor) {
+        options.whenEditorMissingAfterChannelChange?.();
+        return;
+      }
+      if (options.runWithEditorMutationSuppressed) {
+        await options.runWithEditorMutationSuppressed(() => loadDraftToEditor(editor));
+      } else {
+        await loadDraftToEditor(editor);
+      }
+    },
+    { flush: "post" },
+  );
+
+  onScopeDispose(() => {
+    flushDraftSync(toValue(options.editor)?.getJSON());
+  });
 
   return {
     loadDraftToEditor,

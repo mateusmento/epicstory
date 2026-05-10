@@ -1,5 +1,6 @@
 export * from "./channels";
 export * from "./channel";
+export * from "./composer-quote-text";
 export * from "./draft";
 export * from "./typing";
 export * from "./workspace-presence";
