@@ -1,0 +1,51 @@
+/* Minimal lightbox chrome: white backdrop, dark icon toolbar on the right. */
+.epicstory-attachment-lightbox.pswp {
+  --pswp-icon-color: #18181b;
+  --pswp-icon-color-secondary: #52525b;
+  --pswp-bg: #ffffff;
+}
+
+.epicstory-attachment-lightbox .pswp__bg {
+  background: var(--pswp-bg);
+}
+
+.epicstory-attachment-lightbox .pswp__top-bar {
+  justify-content: flex-end;
+  background: transparent;
+  padding-top: 12px;
+  padding-right: 12px;
+  gap: 2px;
+}
+
+.epicstory-attachment-lightbox .pswp__button {
+  color: var(--pswp-icon-color);
+  opacity: 0.82;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0;
+}
+
+.epicstory-attachment-lightbox .pswp__button:hover {
+  opacity: 1;
+}
+
+.epicstory-attachment-lightbox .psw-linear-icn {
+  display: block;
+  flex-shrink: 0;
+}
+
+.epicstory-attachment-lightbox .epicstory-psw-zoom-pill {
+  align-self: center;
+  margin-right: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--pswp-icon-color-secondary);
+  user-select: none;
+}
+
+.epicstory-attachment-lightbox .epicstory-psw-video-wrap {
+  box-sizing: border-box;
+  max-height: 85vh;
+}

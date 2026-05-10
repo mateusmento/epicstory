@@ -5,6 +5,7 @@ import { Icon } from "@/design-system/icons";
 import { computed } from "vue";
 import MessageAttachmentTileBody from "./MessageAttachmentTileBody.vue";
 import { cn } from "@/design-system/utils";
+import { openAttachmentLightbox } from "./media-attachment-lightbox";
 
 const props = withDefaults(
   defineProps<{
@@ -51,6 +52,10 @@ function canRemoveAttachment(f: MessageAttachmentDto): boolean {
 function onRemoveClick(id: number) {
   emit("remove", id);
 }
+
+async function onOpenPreview(file: MessageAttachmentDto, thumbElement: HTMLElement) {
+  await openAttachmentLightbox(props.files, file, thumbElement);
+}
 </script>
 
 <template>
@@ -63,7 +68,7 @@ function onRemoveClick(id: number) {
             <div
               class="block w-full cursor-default rounded-lg outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <MessageAttachmentTileBody :file="f" />
+              <MessageAttachmentTileBody :file="f" @open-preview="onOpenPreview(f, $event)" />
             </div>
           </HoverCardTrigger>
           <HoverCardContent
@@ -84,7 +89,7 @@ function onRemoveClick(id: number) {
             </button>
           </HoverCardContent>
         </HoverCard>
-        <MessageAttachmentTileBody v-else :file="f" />
+        <MessageAttachmentTileBody v-else :file="f" @open-preview="onOpenPreview(f, $event)" />
       </li>
     </ul>
   </div>
