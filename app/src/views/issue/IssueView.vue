@@ -16,7 +16,7 @@ import IssueAttachmentsStrip from "@/components/issue/IssueAttachmentsStrip.vue"
 import { useAuth } from "@/domain/auth";
 import { IssueApi } from "@/domain/issues/api";
 import { useIssue } from "@/domain/issues/composables/issue";
-import { useIssueAttachments } from "@/domain/issues/composables/useIssueAttachments";
+import { useIssueAttachments } from "@/domain/issues/composables/issue-attachments";
 import { ProjectApi, type Project } from "@/domain/project";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
