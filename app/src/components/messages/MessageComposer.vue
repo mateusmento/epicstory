@@ -77,9 +77,7 @@ const composerPlaceholder = computed(() =>
   props.editingMessage ? "Edit message…" : (props.placeholder ?? "Send a message…"),
 );
 
-const quotedExcerpt = computed(() =>
-  props.quotedMessage ? quotedMessageExcerpt(props.quotedMessage) : "",
-);
+const quotedExcerpt = computed(() => (props.quotedMessage ? quotedMessageExcerpt(props.quotedMessage) : ""));
 
 /**
  * Rich text editor.
@@ -98,7 +96,6 @@ function onRichTextEditorUpdate(ed: Editor | null) {
 const {
   suppressTypingSignals,
   maybeStartTypingPulse,
-  clearTypingPulse,
   emitTypingStop,
   runWithTypingSuppressedDuringEditorMutation,
 } = useChannelTypingPulse({
@@ -129,38 +126,28 @@ function onEditorUpdateForTyping() {
   maybeStartTypingPulse(editor.value);
 }
 
-function onEditorBlurForTyping() {
-  clearTypingPulse();
-  emitTypingStop();
-}
-
 watch(
   editor,
   (ed, prevEd) => {
     if (prevEd) {
       prevEd.off("update", onEditorUpdateForDraft);
       prevEd.off("update", onEditorUpdateForTyping);
-      prevEd.off("blur", onEditorBlurForTyping);
+      prevEd.off("blur", emitTypingStop);
     }
     if (!ed) return;
     ed.on("update", onEditorUpdateForDraft);
     ed.on("update", onEditorUpdateForTyping);
-    ed.on("blur", onEditorBlurForTyping);
+    ed.on("blur", emitTypingStop);
   },
   { immediate: true },
 );
 
-const {
-  customScheduleOpen,
-  activeSchedule,
-  scheduleSummary,
-  onCustomScheduleConfirm,
-  clearActiveSchedule,
-} = useMessageComposerSchedule({
-  channelId: () => props.channelId,
-  getEditor: () => editor.value,
-  editingMessage: () => props.editingMessage,
-});
+const { customScheduleOpen, activeSchedule, scheduleSummary, onCustomScheduleConfirm, clearActiveSchedule } =
+  useMessageComposerSchedule({
+    channelId: () => props.channelId,
+    getEditor: () => editor.value,
+    editingMessage: () => props.editingMessage,
+  });
 
 const {
   editingExistingAttachments,
@@ -284,7 +271,16 @@ function onCancelEdit() {
         @update:editor="onRichTextEditorUpdate"
         @pasted-files="onRichTextPastedFiles"
         @submit="onSendMessage"
-      />
+      >
+        <template #bubbleMenu="{ editor: bubbleEditor }">
+          <div
+            class="flex:row-md z-[90] flex max-w-[min(100vw-1rem,42rem)] flex-wrap items-center gap-0.5 overflow-x-auto rounded-lg border border-zinc-200/90 bg-white p-1 shadow-lg"
+            @mousedown.prevent
+          >
+            <MessageComposerActions :editor="bubbleEditor" />
+          </div>
+        </template>
+      </RichTextComposer>
     </div>
     <input ref="stagingFileInputRef" type="file" class="sr-only" multiple @change="onStagingFilesSelected" />
     <div
