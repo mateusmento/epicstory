@@ -399,10 +399,6 @@ function actorUser(item: IssueFeedItem): { name: string; picture: string | null 
   return { name: "Someone", picture: null };
 }
 
-function asReply(rep: unknown): IReply {
-  return rep as IReply;
-}
-
 function replyKey(rep: unknown, index: number): string | number {
   if (
     rep != null &&
@@ -413,10 +409,6 @@ function replyKey(rep: unknown, index: number): string | number {
     return (rep as { id: number }).id;
   }
   return index;
-}
-
-function messageRootId(item: IssueFeedItem): number | null {
-  return item.message?.id ?? null;
 }
 
 type IssueThreadState = {
@@ -440,6 +432,9 @@ function ensureThreadState(rootId: number): IssueThreadState {
   return created;
 }
 
+function messageRootId(item: IssueFeedItem): number | null {
+  return item.message?.id ?? null;
+}
 function isLoadingThread(item: IssueFeedItem): boolean {
   const rootId = messageRootId(item);
   if (rootId == null) return false;
@@ -614,21 +609,21 @@ watch(
             </button>
             <template v-for="(rep, repIdx) in displayedRepliesForItem(item)" :key="replyKey(rep, repIdx)">
               <IssueCommentCard
-                :message="asReply(rep)"
+                :message="rep"
                 :me-id="meId"
-                :attachments="resolveCommentAttachments?.(asReply(rep))"
+                :attachments="resolveCommentAttachments?.(rep)"
                 variant="threadSegment"
                 segment-divider
-                @message-deleted="onDelete(asReply(rep))"
-                @toggle-discussion="onToggleDiscussion(asReply(rep))"
-                @edit="startEdit(asReply(rep))"
+                @message-deleted="onDelete(rep)"
+                @toggle-discussion="onToggleDiscussion(rep)"
+                @edit="startEdit(rep)"
               />
               <div
-                v-if="commentChannelId != null && editing?.id === asReply(rep).id"
+                v-if="commentChannelId != null && editing?.id === rep.id"
                 class="border-t border-zinc-100 bg-zinc-50/60 p-2"
               >
                 <MessageComposer
-                  :key="`edit-reply-${asReply(rep).id}`"
+                  :key="`edit-reply-${rep.id}`"
                   :channel-id="commentChannelId"
                   :attachment-handlers="composerAttachmentHandlers"
                   :mentionables="channelPeers"
