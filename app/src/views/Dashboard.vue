@@ -10,6 +10,7 @@ import {
   WorkspaceMembers,
 } from "@/components/app-pane";
 import ThreadDrawer from "@/components/channel/ThreadDrawer.vue";
+import { ConfirmDialogProvider } from "@/components/confirm-dialog";
 import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout";
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
 import { NotFoundException, UnauthorizedException } from "@/core/axios";
@@ -60,46 +61,48 @@ watch(workspaceId, loadWorkspace);
 </script>
 
 <template>
-  <AppLayout v-model:isAppPaneOpen="isAppPaneOpen" v-model:isDetailsPaneOpen="isDetailsPaneOpen">
-    <template #navbar="{ isAppPaneOpen }">
-      <NavbarContent content="workspace">
-        <WorkspaceNavbar :isAppPaneOpen="isAppPaneOpen" />
-      </NavbarContent>
-      <NavbarContent content="switch-workspace" :as="SwitchWorkspaceNavbar" />
-      <NavbarContent content="settings" :as="SettingsNavbar" />
-    </template>
+  <ConfirmDialogProvider>
+    <AppLayout v-model:isAppPaneOpen="isAppPaneOpen" v-model:isDetailsPaneOpen="isDetailsPaneOpen">
+      <template #navbar="{ isAppPaneOpen }">
+        <NavbarContent content="workspace">
+          <WorkspaceNavbar :isAppPaneOpen="isAppPaneOpen" />
+        </NavbarContent>
+        <NavbarContent content="switch-workspace" :as="SwitchWorkspaceNavbar" />
+        <NavbarContent content="settings" :as="SettingsNavbar" />
+      </template>
 
-    <template #topbar>
-      <div class="my-2"></div>
-    </template>
+      <template #topbar>
+        <div class="my-2"></div>
+      </template>
 
-    <template #app-pane>
-      <DrawerPaneContent content="inbox" :as="Inbox" />
-      <DrawerPaneContent content="issues" :as="Issues" />
-      <DrawerPaneContent content="projects" :as="Projects" />
-      <DrawerPaneContent content="channels" :as="Channels" />
-      <DrawerPaneContent content="teams" :as="Teams" />
-      <DrawerPaneContent content="team" :as="Team" />
-      <DrawerPaneContent content="workspace-members" :as="WorkspaceMembers" />
-    </template>
+      <template #app-pane>
+        <DrawerPaneContent content="inbox" :as="Inbox" />
+        <DrawerPaneContent content="issues" :as="Issues" />
+        <DrawerPaneContent content="projects" :as="Projects" />
+        <DrawerPaneContent content="channels" :as="Channels" />
+        <DrawerPaneContent content="teams" :as="Teams" />
+        <DrawerPaneContent content="team" :as="Team" />
+        <DrawerPaneContent content="workspace-members" :as="WorkspaceMembers" />
+      </template>
 
-    <template #main-content>
-      <RouterView />
-    </template>
+      <template #main-content>
+        <RouterView />
+      </template>
 
-    <template #details-pane>
-      <DrawerPaneContent content="channel">
-        <ChannelDetailsPane @close="isDetailsPaneOpen = false" />
-      </DrawerPaneContent>
-      <DrawerPaneContent content="replies" #default="{ contentProps }">
-        <ThreadDrawer
-          v-model:message="contentProps.message"
-          :meId="contentProps.meId"
-          @close="isDetailsPaneOpen = false"
-        />
-      </DrawerPaneContent>
-    </template>
-  </AppLayout>
+      <template #details-pane>
+        <DrawerPaneContent content="channel">
+          <ChannelDetailsPane @close="isDetailsPaneOpen = false" />
+        </DrawerPaneContent>
+        <DrawerPaneContent content="replies" #default="{ contentProps }">
+          <ThreadDrawer
+            v-model:message="contentProps.message"
+            :meId="contentProps.meId"
+            @close="isDetailsPaneOpen = false"
+          />
+        </DrawerPaneContent>
+      </template>
+    </AppLayout>
+  </ConfirmDialogProvider>
 </template>
 
 <style lang="scss" scoped></style>

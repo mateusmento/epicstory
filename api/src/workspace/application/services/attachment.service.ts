@@ -1,6 +1,10 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import { createReadStream } from 'fs';
@@ -189,6 +193,54 @@ export class AttachmentService {
       originalFilename: r.originalFilename,
       byteSize: Number(r.byteSize),
     }));
+  }
+
+  /**
+   * Permanently removes an attachment linked to an issue (description upload or issue thread),
+   * if it matches {@link listForIssue} scope. Deletes the S3 object then the row.
+   */
+  async deleteForIssue(params: {
+    workspaceId: number;
+    issueId: number;
+    attachmentId: number;
+    commentChannelId: number | null;
+  }): Promise<void> {
+    const row = await this.findAttachmentForIssueScope(params);
+    if (!row) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    await this.s3.send(
+      new DeleteObjectCommand({
+        Bucket: this.config.AWS_BUCKET,
+        Key: row.storageKey,
+      }),
+    );
+    await this.attachments.delete({ id: row.id });
+  }
+
+  private async findAttachmentForIssueScope(params: {
+    workspaceId: number;
+    issueId: number;
+    attachmentId: number;
+    commentChannelId: number | null;
+  }): Promise<Attachment | null> {
+    const { workspaceId, issueId, attachmentId, commentChannelId } = params;
+    if (commentChannelId == null) {
+      return this.attachments.findOne({
+        where: { id: attachmentId, workspaceId, issueId },
+      });
+    }
+
+    return this.attachments
+      .createQueryBuilder('a')
+      .where('a.id = :attachmentId', { attachmentId })
+      .andWhere('a.workspace_id = :workspaceId', { workspaceId })
+      .andWhere(
+        `(a.issue_id = :issueId OR (a.channel_id = :commentChannelId AND (a.message_id IS NOT NULL OR a.message_reply_id IS NOT NULL)))`,
+        { issueId, commentChannelId },
+      )
+      .getOne();
   }
 
   async listForIssue(

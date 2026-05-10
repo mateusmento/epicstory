@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import { MessageAttachments } from "@/components/messages";
 import { useDependency } from "@/core/dependency-injection";
 import { IssueApi, type UploadedAttachment } from "@/domain/issues/api";
@@ -18,8 +19,10 @@ const props = withDefaults(
 );
 
 const issueApi = useDependency(IssueApi);
+const confirmDialog = useConfirmDialog();
 const attachments = ref<UploadedAttachment[]>([]);
 const loading = ref(false);
+const removingId = ref<number | null>(null);
 const error = ref<string | null>(null);
 
 watch(
@@ -38,6 +41,29 @@ watch(
   },
   { immediate: true },
 );
+
+async function removeAttachment(id: number) {
+  const confirmed = await confirmDialog.open({
+    title: "Remove this attachment?",
+    description: "The file will be permanently deleted from this issue.",
+    confirmLabel: "Remove",
+    cancelLabel: "Cancel",
+    destructive: true,
+  });
+  if (!confirmed) {
+    return;
+  }
+  removingId.value = id;
+  error.value = null;
+  try {
+    await issueApi.deleteIssueAttachment(props.issueId, id);
+    attachments.value = attachments.value.filter((a) => a.id !== id);
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : "Could not remove file";
+  } finally {
+    removingId.value = null;
+  }
+}
 </script>
 
 <template>
@@ -58,7 +84,12 @@ watch(
       v-else-if="attachments.length"
       class="max-h-[min(40vh,28rem)] overflow-y-auto overscroll-contain pr-0.5"
     >
-      <MessageAttachments :files="attachments" />
+      <MessageAttachments
+        removable
+        :disabled="removingId !== null"
+        :files="attachments"
+        @remove="removeAttachment"
+      />
     </div>
     <p v-else class="text-xs text-muted-foreground">No attachments on this issue yet.</p>
   </section>

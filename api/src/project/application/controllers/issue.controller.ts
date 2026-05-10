@@ -235,4 +235,23 @@ export class IssueController {
       file,
     });
   }
+
+  @Delete(':id/attachments/:attachmentId')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async deleteIssueAttachment(
+    @Param('id') issueId: number,
+    @Param('attachmentId') attachmentId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    const issue = await this.issues.findOne({ where: { id: issueId } });
+    if (!issue) throw new ForbiddenException('Issue not found');
+    await this.workspaces.requiresMembership(issue.workspaceId, issuer.id);
+    await this.attachments.deleteForIssue({
+      workspaceId: issue.workspaceId,
+      issueId,
+      attachmentId,
+      commentChannelId: issue.commentChannelId ?? null,
+    });
+  }
 }

@@ -146,6 +146,10 @@ export class IssueApi {
     return this.axios.get<UploadedAttachment[]>(`/issues/${issueId}/attachments`).then((res) => res.data);
   }
 
+  deleteIssueAttachment(issueId: number, attachmentId: number) {
+    return this.axios.delete(`/issues/${issueId}/attachments/${attachmentId}`);
+  }
+
   /** Top-level comment on the issue timeline — writes `issue_activities` + `Message`. */
   postIssueComment(issueId: number, body: { content: JSONContent; attachmentIds?: number[] }) {
     return this.axios.post(`/issues/${issueId}/comments`, body).then((res) => res.data);
