@@ -94,9 +94,7 @@ defineExpose({ onKeyDown });
         </button>
 
         <div v-if="isLoadingMore" class="px-3 py-2 text-xs text-muted-foreground">Loading…</div>
-        <div v-else-if="items.length === 0" class="px-3 py-2 text-xs text-muted-foreground">
-          No matches
-        </div>
+        <div v-else-if="items.length === 0" class="px-3 py-2 text-xs text-muted-foreground">No matches</div>
         <div v-else-if="onReachedBottom && !hasMore" class="px-3 py-2 text-xs text-muted-foreground">
           End of results
         </div>

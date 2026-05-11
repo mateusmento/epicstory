@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import ScheduleMessageCustomDialog from "@/components/messages/ScheduleMessageCustomDialog.vue";
 import { formatScheduleSummary, type ResolvedSchedule } from "@/components/messages/schedule-builders";
+import MessageComposerPollSection from "@/components/messages/MessageComposerPollSection.vue";
 import RichTextComposer from "@/components/rich-text/RichTextComposer.vue";
 import { useDependency } from "@/core/dependency-injection";
 import {
@@ -16,12 +17,14 @@ import type { User } from "@/domain/auth";
 import { useAuth } from "@/domain/auth";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import type { IScheduledMessage } from "@/domain/channels/types/scheduled-message.type";
+import type { MessagePollBody } from "@/domain/channels/types/message.type";
 import { docContainsImageNodes, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor } from "@tiptap/core";
 import { format } from "date-fns";
 import {
   Bold,
   Braces,
+  ChartBar,
   Code,
   Italic,
   Link2,
@@ -55,6 +58,35 @@ const scheduleDialogOpen = ref(false);
 const scheduleOverride = ref<ResolvedSchedule | null>(null);
 const meId = computed(() => authUser.value?.id);
 const editor = ref<Editor | null>(null);
+const composerPollBody = ref<MessagePollBody | null>(null);
+
+function normalizedComposerPoll(b: MessagePollBody | null): MessagePollBody | undefined {
+  if (!b) return undefined;
+  const question = b.question.trim();
+  const options = b.options
+    .map((o) => ({ id: o.id, label: o.label.trim() }))
+    .filter((o) => o.label.length > 0);
+  if (question.length === 0 || options.length < 2) return undefined;
+  return { question, options };
+}
+
+function setComposerPollBody(v: MessagePollBody | null) {
+  composerPollBody.value = v;
+}
+
+function toggleComposerPoll() {
+  if (composerPollBody.value != null) {
+    composerPollBody.value = null;
+  } else {
+    composerPollBody.value = {
+      question: "",
+      options: [
+        { id: crypto.randomUUID(), label: "" },
+        { id: crypto.randomUUID(), label: "" },
+      ],
+    };
+  }
+}
 
 const displaySchedule = computed(() => {
   if (scheduleOverride.value) return formatScheduleSummary(scheduleOverride.value);
@@ -69,6 +101,12 @@ watch(
     scheduleOverride.value = null;
     const doc = normalizeTiptapDoc(props.scheduled.content);
     editor.value.commands.setContent(doc);
+    composerPollBody.value = props.scheduled.poll
+      ? {
+          question: props.scheduled.poll.question,
+          options: props.scheduled.poll.options.map((o) => ({ ...o })),
+        }
+      : null;
   },
   { immediate: true },
 );
@@ -97,10 +135,22 @@ async function save() {
   if (!editor.value) return;
   const doc = normalizeTiptapDoc(editor.value.getJSON());
   const plain = tiptapToPlainText(doc, { stripFormatting: true }).trim();
-  if (!plain && !docContainsImageNodes(doc)) return;
+  const pollPayload = normalizedComposerPoll(composerPollBody.value);
+  const pollIncomplete = composerPollBody.value != null && pollPayload === undefined;
+  if (pollIncomplete) return;
+  if (!plain && !docContainsImageNodes(doc) && !pollPayload) return;
+
+  let pollField: MessagePollBody | null | undefined = undefined;
+  if (composerPollBody.value === null) {
+    pollField = props.scheduled.poll ? null : undefined;
+  } else {
+    pollField = pollPayload;
+  }
+
   const sch = scheduleOverride.value;
   await channelApi.patchScheduledMessage(props.channelId, props.scheduled.id, {
     content: doc,
+    ...(pollField !== undefined ? { poll: pollField } : {}),
     ...(sch ? { dueAt: sch.dueAt.toISOString(), recurrence: sch.recurrence } : {}),
   });
   emit("saved");
@@ -128,6 +178,10 @@ async function save() {
               :mentionables="props.mentionables"
               :me-id="meId"
               @update:editor="editor = $event"
+            />
+            <MessageComposerPollSection
+              :model-value="composerPollBody"
+              @update:model-value="setComposerPollBody"
             />
           </div>
         </ScrollArea>
@@ -215,6 +269,17 @@ async function save() {
           </Button>
           <Button variant="ghost" size="icon" class="h-8 w-8" @click="toggleLink()">
             <Link2 class="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="h-8 w-8"
+            title="Poll"
+            aria-label="Poll"
+            :class="composerPollBody ? 'bg-secondary' : ''"
+            @click="toggleComposerPoll()"
+          >
+            <ChartBar class="w-4 h-4" />
           </Button>
         </div>
       </div>

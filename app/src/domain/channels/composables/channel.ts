@@ -8,7 +8,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChannelApi } from "../services";
 import type { ICreateScheduledMessageBody } from "../types/scheduled-message.type";
-import type { IChannel, IMessage, IMessageGroup, IReply } from "../types";
+import type { IChannel, IMessage, IMessageGroup, IReply, MessagePollBody } from "../types";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
 import type { JSONContent } from "@tiptap/core";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
@@ -89,6 +89,28 @@ export function useChannel() {
     typingActivity.value = m;
   }
 
+  function onMessagePollUpdated(payload: {
+    channelId: number;
+    messageId: number;
+    optionVotes: Record<string, number>;
+    totalVotes: number;
+  }) {
+    if (!store.channel || store.channel.id !== payload.channelId) return;
+    const i = store.messages.findIndex((m) => m.id === payload.messageId);
+    if (i < 0) return;
+    const prev = store.messages[i].poll;
+    store.messages[i] = {
+      ...store.messages[i],
+      poll: prev
+        ? {
+            ...prev,
+            optionVotes: payload.optionVotes,
+            totalVotes: payload.totalVotes,
+          }
+        : undefined,
+    };
+  }
+
   function joinChannel() {
     sockets.websocket?.emit("subscribe-messages", {
       workspaceId: workspace.value.id,
@@ -102,6 +124,9 @@ export function useChannel() {
 
     sockets.websocket.off("message-updated", onMessageUpdated);
     sockets.websocket?.on("message-updated", onMessageUpdated);
+
+    sockets.websocket.off("message-poll-updated", onMessagePollUpdated);
+    sockets.websocket?.on("message-poll-updated", onMessagePollUpdated);
 
     sockets.websocket.off("user-typing", onUserTyping);
     sockets.websocket?.on("user-typing", onUserTyping);
@@ -120,6 +145,7 @@ export function useChannel() {
     sockets.websocket.off("incoming-message", onReceiveMessage);
     sockets.websocket.off("message-deleted", onMessageDeleted);
     sockets.websocket.off("message-updated", onMessageUpdated);
+    sockets.websocket.off("message-poll-updated", onMessagePollUpdated);
     sockets.websocket.off("user-typing", onUserTyping);
     sockets.websocket.off("user-typing-stopped", onUserTypingStopped);
 
@@ -168,13 +194,21 @@ export function useChannel() {
     content,
     quotedMessageId,
     attachmentIds,
+    poll,
   }: {
     content: JSONContent;
     quotedMessageId?: number | null;
     attachmentIds?: number[];
+    poll?: MessagePollBody;
   }) {
     if (!store.channel) return;
-    const message = await channelApi.sendMessage(store.channel.id, content, quotedMessageId, attachmentIds);
+    const message = await channelApi.sendMessage(
+      store.channel.id,
+      content,
+      quotedMessageId,
+      attachmentIds,
+      poll,
+    );
     addMessage(message);
     return message;
   }
@@ -216,7 +250,14 @@ export function useChannel() {
     store.messages = store.messages.filter((message) => message.id !== messageId);
   }
 
-  async function updateMessage(messageId: number, body: { content: JSONContent; attachmentIds?: number[] }) {
+  async function updateMessage(
+    messageId: number,
+    body: {
+      content: JSONContent;
+      attachmentIds?: number[];
+      poll?: MessagePollBody | null;
+    },
+  ) {
     const updated = await channelApi.updateMessage(messageId, body);
     const i = store.messages.findIndex((m) => m.id === messageId);
     if (i >= 0) store.messages[i] = { ...store.messages[i], ...updated };

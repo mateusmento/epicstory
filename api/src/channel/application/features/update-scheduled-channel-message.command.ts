@@ -1,5 +1,14 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsInt, IsNotEmpty, IsObject, IsOptional, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  Min,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
@@ -8,6 +17,7 @@ import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { MessagePollBody } from '../dtos/message-poll.dto';
 import {
   toScheduledMessageDto,
   ScheduledMessageDto,
@@ -35,6 +45,12 @@ export class UpdateScheduledChannelMessage {
 
   @IsOptional()
   recurrence?: ScheduledJobRecurrence;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @ValidateNested()
+  @Type(() => MessagePollBody)
+  poll?: MessagePollBody | null;
 
   constructor(data: Partial<UpdateScheduledChannelMessage>) {
     patch(this, data);
@@ -91,6 +107,13 @@ export class UpdateScheduledChannelMessageCommand
       throw new ForbiddenException('Scheduled message can no longer be edited');
     }
 
+    const nextPoll =
+      cmd.poll !== undefined
+        ? cmd.poll === null
+          ? undefined
+          : cmd.poll
+        : payload.poll;
+
     const nextPayload = new ScheduledMessagePayload({
       ...payload,
       content: cmd.content ?? payload.content,
@@ -98,6 +121,7 @@ export class UpdateScheduledChannelMessageCommand
         cmd.quotedMessageId !== undefined
           ? (cmd.quotedMessageId ?? undefined)
           : payload.quotedMessageId,
+      poll: nextPoll,
     });
 
     job.payload = nextPayload;

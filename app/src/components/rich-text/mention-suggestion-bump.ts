@@ -17,7 +17,12 @@ export function bumpActiveMentionSuggestionQuery(editor: Editor | null | undefin
     const q = st.query ?? "";
     if (q.length < 1) return;
     const end = st.range.to;
-    editor.chain().focus().deleteRange({ from: end - 1, to: end }).insertContentAt(end - 1, q.slice(-1)).run();
+    editor
+      .chain()
+      .focus()
+      .deleteRange({ from: end - 1, to: end })
+      .insertContentAt(end - 1, q.slice(-1))
+      .run();
     return;
   }
 }

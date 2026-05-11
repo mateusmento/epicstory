@@ -12,6 +12,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import type { MessagePoll } from '../types/message-poll.types';
 import { Channel } from './channel.entity';
 import { MessageReply } from './message-reply.entity';
 
@@ -23,6 +24,10 @@ export class Message {
 
   @Column({ type: 'jsonb' })
   content: JSONContent;
+
+  /** Voting poll metadata (stored on the message row, not in rich-text JSON). */
+  @Column({ type: 'jsonb', nullable: true })
+  poll?: MessagePoll | null;
 
   @CreateDateColumn()
   sentAt: Date;

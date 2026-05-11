@@ -14,6 +14,7 @@ import {
   type IChannel,
   type IMessage,
   type IMessageGroup,
+  type MessagePollBody,
 } from "@/domain/channels";
 import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import type { ICreateScheduledMessageBody } from "@/domain/channels/types/scheduled-message.type";
@@ -38,11 +39,12 @@ const props = defineProps<{
     content: JSONContent;
     quotedMessageId?: number;
     attachmentIds?: number[];
+    poll?: MessagePollBody;
   }) => Promise<unknown>;
   sendScheduledMessage?: (body: ICreateScheduledMessageBody) => Promise<unknown>;
   updateMessage: (
     messageId: number,
-    body: { content: JSONContent; attachmentIds?: number[] },
+    body: { content: JSONContent; attachmentIds?: number[]; poll?: MessagePollBody | null },
   ) => Promise<unknown>;
   channelId: number;
   channel: IChannel;
@@ -137,6 +139,7 @@ async function onSendMessage(payload: {
   content: JSONContent;
   quotedMessageId?: number;
   attachmentIds?: number[];
+  poll?: MessagePollBody;
 }) {
   await props.sendMessage({
     content: payload.content,
@@ -144,6 +147,7 @@ async function onSendMessage(payload: {
       payload.quotedMessageId ??
       (quotedMessage.value ? channelComposerQuotedMessageId(quotedMessage.value) : undefined),
     attachmentIds: payload.attachmentIds,
+    ...(payload.poll ? { poll: payload.poll } : {}),
   });
   scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
@@ -158,12 +162,18 @@ async function onSendScheduledMessage(payload: ICreateScheduledMessageBody) {
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: JSONContent; attachmentIds?: number[] }) {
+async function onSubmitEdit(payload: {
+  messageId: number;
+  content: JSONContent;
+  attachmentIds?: number[];
+  poll?: MessagePollBody | null;
+}) {
   await props.updateMessage(payload.messageId, {
     content: payload.content,
     ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
       ? { attachmentIds: payload.attachmentIds }
       : {}),
+    ...(payload.poll !== undefined ? { poll: payload.poll } : {}),
   });
   editingMessage.value = null;
 }
@@ -320,6 +330,7 @@ defineExpose({
     <MessageComposer
       :key="channelId"
       :channel-id="channelId"
+      enable-composer-poll
       :attachment-handlers="composerAttachmentHandlers"
       :mentionables="channel.peers"
       :me-id="meId"

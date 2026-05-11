@@ -146,6 +146,25 @@ export class MessageGateway {
       });
   }
 
+  emitMessagePollUpdated(
+    channelId: number,
+    messageId: number,
+    tallies: {
+      optionVotes: Record<string, number>;
+      totalVotes: number;
+    },
+  ) {
+    if (!this.server) return;
+    this.server
+      .to(channelMessagingRoom(channelId))
+      .emit('message-poll-updated', {
+        channelId,
+        messageId,
+        optionVotes: tallies.optionVotes,
+        totalVotes: tallies.totalVotes,
+      });
+  }
+
   async isChannelMember(channelId: number, userId: number) {
     const channel = await this.channelRepo.findChannelUserIsMember(
       channelId,

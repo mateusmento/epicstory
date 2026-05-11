@@ -3,7 +3,14 @@ import type { Axios } from "axios";
 import { injectable } from "tsyringe";
 import type { Page } from "@/core/types";
 import type { ChannelGroupsPage, IChannel, ISearchChannelsAndUsersItem } from "../types/channel.type";
-import type { IAggregatedReaction, IMessage, IReaction, IReply } from "../types";
+import type {
+  IAggregatedReaction,
+  IMessage,
+  IMessagePollClient,
+  IReaction,
+  IReply,
+  MessagePollBody,
+} from "../types";
 import type {
   ICreateScheduledMessageBody,
   IScheduledMessage,
@@ -32,6 +39,13 @@ export type CreateMeetingChannel = {
   type: "meeting";
   name: string;
   members?: number[];
+};
+
+export type VoteMessagePollResponse = {
+  success?: boolean;
+  channelId?: number;
+  messageId?: number;
+  poll: IMessagePollClient;
 };
 
 export type ToggleReactionResponse = {
@@ -139,12 +153,14 @@ export class ChannelApi {
     content: JSONContent,
     quotedMessageId?: number | null,
     attachmentIds?: number[],
+    poll?: MessagePollBody,
   ) {
     return this.axios
       .post<IMessage>(`channels/${channelId}/messages`, {
         content,
         ...(quotedMessageId != null ? { quotedMessageId } : {}),
         ...(attachmentIds != null && attachmentIds.length > 0 ? { attachmentIds } : {}),
+        ...(poll ? { poll } : {}),
       })
       .then((res) => res.data);
   }
@@ -183,7 +199,10 @@ export class ChannelApi {
     return this.axios.delete(`/messages/${messageId}`).then((res) => res.data);
   }
 
-  updateMessage(messageId: number, body: { content: JSONContent; attachmentIds?: number[] }) {
+  updateMessage(
+    messageId: number,
+    body: { content: JSONContent; attachmentIds?: number[]; poll?: MessagePollBody | null },
+  ) {
     return this.axios.patch<IMessage>(`/messages/${messageId}`, body).then((res) => res.data);
   }
 
@@ -198,6 +217,12 @@ export class ChannelApi {
   toggleMessageReaction(messageId: number, emoji: string) {
     return this.axios
       .post<ToggleReactionResponse>(`/messages/${messageId}/reactions`, { emoji })
+      .then((res) => res.data);
+  }
+
+  voteMessagePoll(messageId: number, optionId: string) {
+    return this.axios
+      .post<VoteMessagePollResponse>(`/messages/${messageId}/poll/vote`, { optionId })
       .then((res) => res.data);
   }
 

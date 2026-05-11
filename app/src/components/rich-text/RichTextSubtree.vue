@@ -43,10 +43,9 @@ async function onPreviewImageClick(ev: MouseEvent) {
   const gallery = ctx.previewImageGallery.value;
   const root = ev.currentTarget;
   const thumb =
-    root instanceof HTMLElement ? (root.querySelector("img") as HTMLElement | null) ?? root : null;
+    root instanceof HTMLElement ? ((root.querySelector("img") as HTMLElement | null) ?? root) : null;
   const index = gallery.findIndex((g) => g.url === src);
-  const images =
-    index >= 0 ? gallery : [{ url: src, caption: String(props.node.attrs?.alt ?? "").trim() }];
+  const images = index >= 0 ? gallery : [{ url: src, caption: String(props.node.attrs?.alt ?? "").trim() }];
   const start = index >= 0 ? index : 0;
   await openRichTextInlineImageLightbox(images, start, thumb);
 }

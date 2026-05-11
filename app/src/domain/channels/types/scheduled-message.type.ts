@@ -1,4 +1,5 @@
 import type { JSONContent } from "@tiptap/core";
+import type { MessagePollBody } from "./message.type";
 
 /** Mirrors API `ScheduledMessageDto` and `ScheduledJobRecurrence` JSON. */
 export type IScheduledMessageRecurrence =
@@ -23,6 +24,7 @@ export interface IScheduledMessage {
   senderId: number;
   content: JSONContent;
   quotedMessageId?: number;
+  poll?: MessagePollBody;
   dueAt: string;
   recurrence: IScheduledMessageRecurrence;
   notifyMinutesBefore: number;
@@ -35,6 +37,7 @@ export interface IScheduledMessage {
 export type ICreateScheduledMessageBody = {
   content: JSONContent;
   quotedMessageId?: number;
+  poll?: MessagePollBody;
   dueAt: string;
   recurrence: IScheduledMessageRecurrence;
 };
@@ -42,6 +45,7 @@ export type ICreateScheduledMessageBody = {
 export type IUpdateScheduledMessageBody = {
   content?: JSONContent;
   quotedMessageId?: number;
+  poll?: MessagePollBody | null;
   dueAt?: string;
   recurrence?: IScheduledMessageRecurrence;
 };

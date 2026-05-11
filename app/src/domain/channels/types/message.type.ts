@@ -21,6 +21,24 @@ export type MessageAttachmentDto = {
   uploadedById?: number;
 };
 
+/** Matches API `MessagePollBody` / persisted `messages.poll` option rows. */
+export type MessagePollOptionBody = {
+  id: string;
+  label: string;
+};
+
+export type MessagePollBody = {
+  question: string;
+  options: MessagePollOptionBody[];
+};
+
+/** Server merge of persisted poll + vote tallies (channel messages). */
+export type IMessagePollClient = MessagePollBody & {
+  optionVotes: Record<string, number>;
+  totalVotes: number;
+  myOptionId: string | null;
+};
+
 export interface IMessage {
   id: number;
   content: JSONContent;
@@ -40,6 +58,7 @@ export interface IMessage {
   repliers: { user: User; repliesCount: number }[];
   reactions: IAggregatedReaction[];
   attachments?: MessageAttachmentDto[];
+  poll?: IMessagePollClient;
 }
 
 export type IMessageGroup<M extends IMessage | IReply = IMessage> = {

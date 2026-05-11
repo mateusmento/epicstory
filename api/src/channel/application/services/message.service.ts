@@ -22,12 +22,23 @@ import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import type { JSONContent } from '@tiptap/core';
 import { MessageNotFound } from '../exceptions';
+import type { MessagePollBody } from '../dtos/message-poll.dto';
+import type {
+  MessagePollClientDto,
+  MessagePollSummary,
+} from './message-poll.service';
+import { MessagePollService } from './message-poll.service';
 import {
   enrichMentionLabels,
   extractMentionIds,
   normalizeTiptapDoc,
   tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
+
+export type {
+  MessagePollClientDto,
+  MessagePollSummary,
+} from './message-poll.service';
 
 export type MessageReactionsGroup = {
   emoji: string;
@@ -52,6 +63,8 @@ export class MessageDto extends Message {
   /** Linked files (not embedded in message JSON; shown below the body in the client). */
   attachments?: CreatedAttachmentDto[];
 
+  poll?: MessagePollClientDto;
+
   repliesCount: number;
   repliers: { user: User; repliesCount: number }[];
   reactions: MessageReactionsGroup[];
@@ -65,6 +78,13 @@ export class MessageDto extends Message {
   }
 }
 
+/** Avoid spreading entity `poll` (persisted shape) into {@link MessageDto} (`poll` is client summary). */
+function messageEntityWithoutPoll(message: Message): Omit<Message, 'poll'> {
+  const rest = { ...message };
+  delete rest.poll;
+  return rest as Omit<Message, 'poll'>;
+}
+
 @Injectable()
 export class MessageService {
   constructor(
@@ -76,6 +96,7 @@ export class MessageService {
     private userRepo: UserRepository,
     private workspaceRepo: WorkspaceRepository,
     private attachmentService: AttachmentService,
+    private readonly messagePolls: MessagePollService,
   ) {}
 
   /**
@@ -172,13 +193,30 @@ export class MessageService {
         )
       : new Map<number, CreatedAttachmentDto[]>();
 
+    const pollMessageIds = messages
+      .filter((m) => m.poll != null)
+      .map((m) => m.id);
+    const pollSummaries =
+      pollMessageIds.length > 0
+        ? await this.messagePolls.findPollSummariesForMessages(
+            pollMessageIds,
+            senderId,
+          )
+        : new Map<number, MessagePollSummary>();
+
     return messages.map((message) => {
       const rc = repliesCountMap.get(message.id)?.repliesCount ?? 0;
       const reps = mapRepliers(repliersMap[message.id] ?? [], usersMap);
       const reactions = mapReactions(message.allReactions, senderId, usersMap);
-      const displayContent = tiptapDocToPlainDisplayText(
+      const displayBase = tiptapDocToPlainDisplayText(
         enrichMentionLabels(message.content, peerUsersMap),
       );
+      const displayContent = message.poll
+        ? [displayBase, this.messagePolls.pollPlainSnippet(message.poll)]
+            .filter((s) => s.trim().length > 0)
+            .join('\n')
+            .trim()
+        : displayBase;
       const mentionIds = extractMentionIds(message.content);
       const mentionedUsers = mentionIds
         .map((id) => peerUsersMap.get(id))
@@ -188,8 +226,15 @@ export class MessageService {
         ? quotedById.get(message.quotedMessageId)
         : undefined;
 
+      const poll = message.poll
+        ? this.messagePolls.mergePersistedPollWithSummary(
+            message.poll,
+            pollSummaries.get(message.id),
+          )
+        : undefined;
+
       return new MessageDto({
-        ...message,
+        ...messageEntityWithoutPoll(message),
         repliesCount: rc,
         repliers: reps,
         reactions,
@@ -197,6 +242,7 @@ export class MessageService {
         mentionedUsers,
         quotedMessage: this.buildQuotedPreview(quotedSrc, peerUsersMap),
         attachments: attachmentsByMessageId.get(message.id) ?? [],
+        ...(poll ? { poll } : {}),
       });
     });
   }
@@ -335,7 +381,7 @@ export class MessageService {
     senderId: number,
     content: JSONContent,
     quotedMessageId?: number | null,
-    options?: { isScheduled?: boolean },
+    options?: { isScheduled?: boolean; poll?: MessagePollBody | null },
   ) {
     const channelId = channel.id;
 
@@ -346,11 +392,17 @@ export class MessageService {
 
     const normalizedContent = normalizeTiptapDoc(content);
 
+    const normalizedPoll =
+      options?.poll != null
+        ? this.messagePolls.normalizePollBody(options.poll)
+        : null;
+
     let message = await this.messageRepo.save(
       create(Message, {
         channelId,
         senderId,
         content: normalizedContent,
+        poll: normalizedPoll,
         sentAt: new Date(),
         quotedMessageId: resolvedQuote,
         isScheduled: options?.isScheduled === true,
@@ -368,9 +420,18 @@ export class MessageService {
 
     const mentionIds = extractMentionIds(normalizedContent);
     const peerUsersMap = await this.resolveMentionUsersMap(channel, mentionIds);
-    const displayContent = tiptapDocToPlainDisplayText(
+    let displayContent = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
     );
+    if (normalizedPoll) {
+      displayContent = [
+        displayContent,
+        this.messagePolls.pollPlainSnippet(normalizedPoll),
+      ]
+        .filter((s) => s.trim().length > 0)
+        .join('\n')
+        .trim();
+    }
     const mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
@@ -384,12 +445,22 @@ export class MessageService {
       quotedPreview = this.buildQuotedPreview(q, peerUsersMap);
     }
 
+    const pollDto =
+      message!.poll != null
+        ? await this.messagePolls.mergePollForClient(
+            message!.id,
+            message!.poll,
+            senderId,
+          )
+        : undefined;
+
     return new MessageDto({
-      ...message,
+      ...messageEntityWithoutPoll(message!),
       mentionedUsers,
       displayContent,
       quotedMessage: quotedPreview,
       attachments: [],
+      ...(pollDto ? { poll: pollDto } : {}),
     });
   }
 
@@ -477,16 +548,38 @@ export class MessageService {
     content: JSONContent,
     viewerId: number,
     attachmentIds?: number[],
+    poll?: MessagePollBody | null,
   ) {
+    const existing = await this.messageRepo.findOne({
+      where: { id: messageId },
+      relations: { sender: true, allReactions: { user: true } },
+    });
+    if (!existing) throw new MessageNotFound();
+
     const normalizedContent = normalizeTiptapDoc(content);
 
-    await this.messageRepo.update(
-      { id: messageId },
-      {
-        content: normalizedContent,
-        editedAt: new Date(),
-      },
-    );
+    existing.content = normalizedContent;
+    existing.editedAt = new Date();
+
+    if (poll !== undefined) {
+      if (poll === null) {
+        if (existing.poll != null) {
+          await this.messagePolls.deleteVotesForMessage(messageId);
+        }
+        existing.poll = null;
+      } else {
+        const normalizedPoll = this.messagePolls.normalizePollBody(poll);
+        if (
+          this.messagePolls.messagePollFingerprint(existing.poll) !==
+          this.messagePolls.messagePollFingerprint(normalizedPoll)
+        ) {
+          await this.messagePolls.deleteVotesForMessage(messageId);
+        }
+        existing.poll = normalizedPoll;
+      }
+    }
+
+    await this.messageRepo.save(existing);
 
     await this.attachmentService.linkStagingToMessage({
       workspaceId: channel.workspaceId,
@@ -504,9 +597,15 @@ export class MessageService {
 
     const mentionIds = extractMentionIds(normalizedContent);
     const peerUsersMap = await this.resolveMentionUsersMap(channel, mentionIds);
-    const displayContent = tiptapDocToPlainDisplayText(
+    const displayBase = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
     );
+    const displayContent = message.poll
+      ? [displayBase, this.messagePolls.pollPlainSnippet(message.poll)]
+          .filter((s) => s.trim().length > 0)
+          .join('\n')
+          .trim()
+      : displayBase;
     const mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
@@ -533,14 +632,24 @@ export class MessageService {
       messageId,
     );
 
+    const pollDto =
+      message.poll != null
+        ? await this.messagePolls.mergePollForClient(
+            message.id,
+            message.poll,
+            viewerId,
+          )
+        : undefined;
+
     return new MessageDto({
-      ...message,
+      ...messageEntityWithoutPoll(message),
       repliesCount,
       repliers,
       reactions,
       mentionedUsers,
       displayContent,
       attachments,
+      ...(pollDto ? { poll: pollDto } : {}),
     });
   }
 

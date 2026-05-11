@@ -11,7 +11,15 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
-import { IsDate, IsInt, IsObject, IsOptional, Min } from 'class-validator';
+import {
+  IsDate,
+  IsInt,
+  IsObject,
+  IsOptional,
+  Min,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
 import type { JSONContent } from '@tiptap/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { UseGuards } from '@nestjs/common';
@@ -20,6 +28,7 @@ import { DeleteScheduledChannelMessage } from '../features/delete-scheduled-chan
 import { ListScheduledChannelMessages } from '../features/list-scheduled-channel-messages.query';
 import { ScheduleChannelMessage } from '../features/schedule-channel-message.command';
 import { UpdateScheduledChannelMessage } from '../features/update-scheduled-channel-message.command';
+import { MessagePollBody } from '../dtos/message-poll.dto';
 
 class CreateScheduledMessageBody {
   @IsObject()
@@ -36,6 +45,11 @@ class CreateScheduledMessageBody {
 
   @IsObject()
   recurrence: ScheduledJobRecurrence;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MessagePollBody)
+  poll?: MessagePollBody;
 }
 
 class UpdateScheduledMessageBody {
@@ -56,6 +70,12 @@ class UpdateScheduledMessageBody {
   @IsOptional()
   @IsObject()
   recurrence?: ScheduledJobRecurrence;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @ValidateNested()
+  @Type(() => MessagePollBody)
+  poll?: MessagePollBody | null;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -91,6 +111,7 @@ export class ChannelScheduledMessageController {
         quotedMessageId: body.quotedMessageId,
         dueAt: body.dueAt,
         recurrence: body.recurrence,
+        poll: body.poll,
       }),
     );
   }
@@ -111,6 +132,7 @@ export class ChannelScheduledMessageController {
         quotedMessageId: body.quotedMessageId,
         dueAt: body.dueAt,
         recurrence: body.recurrence,
+        poll: body.poll,
       }),
     );
   }

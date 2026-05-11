@@ -1,4 +1,5 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -8,6 +9,7 @@ import {
   IsObject,
   IsOptional,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import {
   ChannelRepository,
@@ -22,6 +24,7 @@ import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
 import { dispatchNotificationsForNewChannelMessage } from '../utils/dispatch-channel-message-notifications';
 import { Transactional } from 'typeorm-transactional';
+import { MessagePollBody } from '../dtos/message-poll.dto';
 
 export class SendMessage {
   channelId: number;
@@ -49,6 +52,11 @@ export class SendMessage {
   @Min(1, { each: true })
   attachmentIds?: number[];
 
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MessagePollBody)
+  poll?: MessagePollBody;
+
   constructor(data: Partial<SendMessage>) {
     patch(this, data);
   }
@@ -73,6 +81,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     quotedMessageId,
     markAsScheduled,
     attachmentIds,
+    poll,
   }: SendMessage) {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
@@ -100,7 +109,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       senderId,
       content,
       quotedMessageId,
-      { isScheduled: markAsScheduled === true },
+      { isScheduled: markAsScheduled === true, poll },
     );
 
     await this.attachmentService.linkStagingToMessage({

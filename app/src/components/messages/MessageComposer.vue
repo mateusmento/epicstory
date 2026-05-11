@@ -8,9 +8,11 @@ import {
   quotedMessageExcerpt,
   useChannelMessageDraft,
   useChannelTypingPulse,
+  loadChannelDraft,
   type IMessage,
   type IReply,
   type IScheduledMessageRecurrence,
+  type MessagePollBody,
 } from "@/domain/channels";
 import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
 import {
@@ -23,6 +25,7 @@ import type { Editor, JSONContent } from "@tiptap/core";
 import { ChevronDown, Paperclip } from "lucide-vue-next";
 import { computed, ref, shallowRef, watch } from "vue";
 import { RichTextComposer } from "../rich-text";
+import MessageComposerPollSection from "./MessageComposerPollSection.vue";
 import MessageAttachments from "./MessageAttachments.vue";
 import MessageComposerActions from "./MessageComposerActions.vue";
 import { useMessageComposerAttachments } from "./composables/message-composer-attachments";
@@ -43,13 +46,17 @@ const props = withDefaults(
       id: number;
       content: JSONContent;
       attachments?: MessageAttachmentDto[];
+      poll?: IMessage["poll"];
     } | null;
     quotedMessage?: (IMessage | IReply) | null;
     attachmentHandlers: MessageComposerAttachmentHandlers;
+    /** Channel composer only: poll fields render inline below the editor (not in TipTap JSON). */
+    enableComposerPoll?: boolean;
   }>(),
   {
     editingMessage: null,
     quotedMessage: null,
+    enableComposerPoll: false,
   },
 );
 
@@ -61,6 +68,7 @@ const emit = defineEmits<{
       quotedMessageId?: number;
       quotedReplyId?: number;
       attachmentIds?: number[];
+      poll?: MessagePollBody;
     },
   ): void;
   (
@@ -70,13 +78,69 @@ const emit = defineEmits<{
       quotedMessageId?: number;
       dueAt: string;
       recurrence: IScheduledMessageRecurrence;
+      poll?: MessagePollBody;
     },
   ): void;
-  (e: "submit-edit", value: { messageId: number; content: JSONContent; attachmentIds?: number[] }): void;
+  (
+    e: "submit-edit",
+    value: {
+      messageId: number;
+      content: JSONContent;
+      attachmentIds?: number[];
+      poll?: MessagePollBody | null;
+    },
+  ): void;
   (e: "existing-attachment-removed"): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
 }>();
+
+const composerPollBody = ref<MessagePollBody | null>(null);
+
+function normalizedComposerPoll(): MessagePollBody | undefined {
+  if (!props.enableComposerPoll) return undefined;
+  const b = composerPollBody.value;
+  if (!b) return undefined;
+  const question = b.question.trim();
+  const options = b.options
+    .map((o) => ({ id: o.id, label: o.label.trim() }))
+    .filter((o) => o.label.length > 0);
+  if (question.length === 0 || options.length < 2) return undefined;
+  return { question, options };
+}
+
+function pollPayloadForEdit(): MessagePollBody | null | undefined {
+  if (!props.enableComposerPoll || !props.editingMessage) return undefined;
+  if (composerPollBody.value == null) {
+    return props.editingMessage.poll ? null : undefined;
+  }
+  return normalizedComposerPoll();
+}
+
+watch(
+  () => props.editingMessage,
+  (msg) => {
+    if (msg) {
+      suppressTypingSignals.value = false;
+    }
+    if (!props.enableComposerPoll) {
+      composerPollBody.value = null;
+      return;
+    }
+    if (msg) {
+      composerPollBody.value = msg.poll
+        ? {
+            question: msg.poll.question,
+            options: msg.poll.options.map((o) => ({ ...o })),
+          }
+        : null;
+      return;
+    }
+    const d = loadChannelDraft(props.channelId);
+    composerPollBody.value = d?.poll ?? null;
+  },
+  { immediate: true },
+);
 
 const composerPlaceholder = computed(() =>
   props.editingMessage ? "Edit message…" : (props.placeholder ?? "Send a message…"),
@@ -120,7 +184,24 @@ const { scheduleDraftSave, cancelPendingDraftSave } = useChannelMessageDraft({
   whenEditorMissingAfterChannelChange: () => {
     suppressTypingSignals.value = false;
   },
+  getPollDraft: props.enableComposerPoll === true ? () => composerPollBody.value ?? null : undefined,
+  onDraftRestored:
+    props.enableComposerPoll === true
+      ? (draft) => {
+          if (props.editingMessage) return;
+          composerPollBody.value = draft?.poll ?? null;
+        }
+      : undefined,
 });
+
+watch(
+  composerPollBody,
+  () => {
+    if (!props.enableComposerPoll || props.editingMessage) return;
+    scheduleDraftSave(editor.value?.getJSON());
+  },
+  { deep: true },
+);
 
 function onEditorUpdateForDraft() {
   scheduleDraftSave(editor.value?.getJSON());
@@ -181,15 +262,6 @@ useMessageComposerEditingBody({
   editingMessage: () => props.editingMessage,
 });
 
-watch(
-  () => props.editingMessage,
-  (msg) => {
-    if (msg) {
-      suppressTypingSignals.value = false;
-    }
-  },
-);
-
 function onRichTextPastedFiles(files: File[]) {
   uploadStagingFiles(files);
 }
@@ -222,18 +294,29 @@ function onSendMessage() {
   const doc = editor.value.getJSON();
   const stripped = stripImageNodesFromDoc(doc);
   const plain = tiptapToPlainText(stripped, { stripFormatting: true }).trim();
-  if (!plain && !docContainsImageNodes(doc)) return;
+  const pollPayload = normalizedComposerPoll();
+  const pollPanelIncomplete =
+    props.enableComposerPoll === true && composerPollBody.value != null && pollPayload === undefined;
+
+  if (pollPanelIncomplete) return;
+
+  const hasBody = plain.length > 0 || docContainsImageNodes(doc);
+  const hasPoll = pollPayload !== undefined;
+  if (!hasBody && !hasPoll) return;
 
   if (props.editingMessage) {
     const stagedIds = pendingAttachments.value.map((a) => a.id);
     const inlineIds = collectImageAttachmentIdsFromDoc(doc);
     const attachmentIds = [...new Set([...stagedIds, ...inlineIds])];
+    const pollPatch = pollPayloadForEdit();
     emit("submit-edit", {
       messageId: props.editingMessage.id,
       content: doc,
       ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
+      ...(pollPatch !== undefined ? { poll: pollPatch } : {}),
     });
     pendingAttachments.value = [];
+    composerPollBody.value = null;
     emitTypingStop();
     return;
   }
@@ -249,6 +332,7 @@ function onSendMessage() {
       ...scheduledQuote,
       dueAt: activeSchedule.value.dueAt.toISOString(),
       recurrence: activeSchedule.value.recurrence,
+      ...(pollPayload ? { poll: pollPayload } : {}),
     });
     activeSchedule.value = null;
   } else {
@@ -256,11 +340,13 @@ function onSendMessage() {
       content: doc,
       ...scheduledQuote,
       ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
+      ...(pollPayload ? { poll: pollPayload } : {}),
     });
   }
 
   editor.value.commands.clearContent();
   pendingAttachments.value = [];
+  composerPollBody.value = null;
   emitTypingStop();
   clearChannelDraft(props.channelId);
   cancelPendingDraftSave();
@@ -268,6 +354,24 @@ function onSendMessage() {
 
 function onCancelEdit() {
   emit("cancel-edit");
+}
+
+function setComposerPollBody(v: MessagePollBody | null) {
+  composerPollBody.value = v;
+}
+
+function toggleComposerPoll() {
+  if (composerPollBody.value != null) {
+    composerPollBody.value = null;
+  } else {
+    composerPollBody.value = {
+      question: "",
+      options: [
+        { id: crypto.randomUUID(), label: "" },
+        { id: crypto.randomUUID(), label: "" },
+      ],
+    };
+  }
 }
 </script>
 
@@ -315,6 +419,11 @@ function onCancelEdit() {
         </template>
       </RichTextComposer>
     </div>
+    <MessageComposerPollSection
+      v-if="enableComposerPoll"
+      :model-value="composerPollBody"
+      @update:model-value="setComposerPollBody"
+    />
     <input ref="stagingFileInputRef" type="file" class="sr-only" multiple @change="onStagingFilesSelected" />
     <input
       ref="inlineImageInputRef"
@@ -352,7 +461,13 @@ function onCancelEdit() {
     </div>
 
     <div class="flex:row-md flex:center-y mt-2 shrink-0 text-secondary-foreground">
-      <MessageComposerActions :editor="editor" @insert-inline-image="openInlineImageFilePicker" />
+      <MessageComposerActions
+        :editor="editor"
+        :show-poll-toggle="enableComposerPoll"
+        :poll-active="composerPollBody != null"
+        @insert-inline-image="openInlineImageFilePicker"
+        @toggle-poll="toggleComposerPoll"
+      />
 
       <div
         v-if="!editingMessage && scheduleSummary"

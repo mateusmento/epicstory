@@ -30,5 +30,6 @@ export * from './update-message.command';
 export * from './update-reply.command';
 export * from './schedule-channel-message.command';
 export * from './update-scheduled-channel-message.command';
+export * from './vote-message-poll.command';
 export * from './delete-scheduled-channel-message.command';
 export * from './list-scheduled-channel-messages.query';

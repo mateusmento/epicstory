@@ -1,3 +1,4 @@
+import type { MessagePoll } from 'src/channel/domain/types/message-poll.types';
 import type { JSONContent } from '@tiptap/core';
 import { ScheduledJob } from 'src/scheduling/entities';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
@@ -12,6 +13,7 @@ export class ScheduledMessageDto {
   senderId: number;
   content: JSONContent;
   quotedMessageId?: number;
+  poll?: MessagePoll;
 
   dueAt: Date;
   recurrence: ScheduledJobRecurrence;
@@ -48,6 +50,7 @@ export function toScheduledMessageDto(job: ScheduledJob): ScheduledMessageDto {
   dto.senderId = p.senderId;
   dto.content = p.content;
   dto.quotedMessageId = p.quotedMessageId;
+  dto.poll = p.poll;
   dto.dueAt = job.dueAt;
   dto.recurrence = job.recurrence;
   dto.notifyMinutesBefore = job.notifyMinutesBefore;

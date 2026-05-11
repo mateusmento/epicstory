@@ -31,6 +31,7 @@ export class ScheduledMessageReaction {
         content: p.content,
         quotedMessageId: p.quotedMessageId,
         markAsScheduled: true,
+        ...(p.poll != null ? { poll: p.poll } : {}),
       }),
     );
 

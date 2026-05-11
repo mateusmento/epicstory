@@ -1,3 +1,4 @@
+import type { MessagePoll } from 'src/channel/domain/types/message-poll.types';
 import type { JSONContent } from '@tiptap/core';
 import {
   IsBoolean,
@@ -136,6 +137,9 @@ export class ScheduledMessagePayload {
   @IsInt()
   @Min(1)
   quotedMessageId?: number;
+
+  @IsOptional()
+  poll?: MessagePoll;
 
   constructor(data: Partial<ScheduledMessagePayload>) {
     patch(this, data);

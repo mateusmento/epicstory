@@ -14,8 +14,7 @@ export function collectRichTextPreviewImages(
       const src = String(node.attrs?.src ?? "").trim();
       if (src) {
         const alt = String(node.attrs?.alt ?? "").trim();
-        const title =
-          node.attrs?.title != null ? String(node.attrs.title).trim() : "";
+        const title = node.attrs?.title != null ? String(node.attrs.title).trim() : "";
         const caption = alt || title;
         out.push({ url: src, caption });
       }

@@ -10,7 +10,13 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { DeleteMessage, SendMessage, UpdateMessage } from '../features';
+import {
+  DeleteMessage,
+  SendMessage,
+  UpdateMessage,
+  VoteMessagePoll,
+  VoteMessagePollBody,
+} from '../features';
 import { MessageGateway } from '../gateways/message.gateway';
 import { MessageService } from '../services/message.service';
 import { ToggleMessageReaction } from '../features/toggle-message-reaction.command';
@@ -43,6 +49,7 @@ export class ChannelMessageController {
         content: command.content,
         quotedMessageId: command.quotedMessageId,
         attachmentIds: command.attachmentIds,
+        poll: command.poll,
       }),
     );
 
@@ -95,10 +102,25 @@ export class MessageController {
     return { success: true, channelId, messageId, emoji, action, reactions };
   }
 
+  @Post('poll/vote')
+  async votePoll(
+    @Param('messageId') messageId: number,
+    @Body() body: VoteMessagePollBody,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new VoteMessagePoll({
+        messageId,
+        issuerId: issuer.id,
+        optionId: body.optionId,
+      }),
+    );
+  }
+
   @Patch()
   async updateMessage(
     @Param('messageId') messageId: number,
-    @Body() body: Pick<UpdateMessage, 'content' | 'attachmentIds'>,
+    @Body() body: Pick<UpdateMessage, 'content' | 'attachmentIds' | 'poll'>,
     @Auth() issuer: Issuer,
   ) {
     const message = await this.commandBus.execute(
@@ -107,6 +129,7 @@ export class MessageController {
         issuerId: issuer.id,
         content: body.content,
         attachmentIds: body.attachmentIds,
+        poll: body.poll,
       }),
     );
 

@@ -5,6 +5,7 @@ import type { Editor } from "@tiptap/core";
 import {
   Bold,
   Braces,
+  ChartBar,
   Code,
   Image,
   Italic,
@@ -19,13 +20,17 @@ import {
 
 const emit = defineEmits<{
   insertInlineImage: [];
+  togglePoll: [];
 }>();
 
 const props = withDefaults(
   defineProps<{
     editor: Editor | null;
+    /** Channel composer: show poll toggle alongside link/image/mention. */
+    showPollToggle?: boolean;
+    pollActive?: boolean;
   }>(),
-  { editor: null },
+  { editor: null, showPollToggle: false, pollActive: false },
 );
 
 function toggleLink() {
@@ -147,6 +152,17 @@ function insertAtMention() {
     @click="emit('insertInlineImage')"
   >
     <Image class="w-5 h-5" />
+  </Button>
+  <Button
+    v-if="showPollToggle"
+    variant="ghost"
+    size="icon"
+    title="Poll"
+    aria-label="Poll"
+    :class="pollActive ? 'bg-secondary' : ''"
+    @click="emit('togglePoll')"
+  >
+    <ChartBar class="w-5 h-5" />
   </Button>
   <Button variant="ghost" size="icon" @click="insertAtMention">
     <Icon name="oi-mention" class="w-5 h-5" />

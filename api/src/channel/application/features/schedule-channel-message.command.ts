@@ -1,5 +1,13 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsInt, IsNotEmpty, IsObject, IsOptional, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
@@ -12,6 +20,7 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { toScheduledMessageDto } from '../dtos/scheduled-message.dto';
 import type { ScheduledMessageDto } from '../dtos/scheduled-message.dto';
+import { MessagePollBody } from '../dtos/message-poll.dto';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 
 export class ScheduleChannelMessage {
@@ -30,6 +39,11 @@ export class ScheduleChannelMessage {
   dueAt: Date;
 
   recurrence: ScheduledJobRecurrence;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MessagePollBody)
+  poll?: MessagePollBody;
 
   constructor(data: Partial<ScheduleChannelMessage>) {
     patch(this, data);
@@ -68,6 +82,7 @@ export class ScheduleChannelMessageCommand
       senderId: cmd.senderId,
       content: cmd.content,
       quotedMessageId: cmd.quotedMessageId,
+      ...(cmd.poll != null ? { poll: cmd.poll } : {}),
     });
 
     const job = ScheduledJob.create({

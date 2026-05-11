@@ -1,4 +1,5 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { Type } from 'class-transformer';
 import {
   ChannelRepository,
   MessageRepository,
@@ -15,7 +16,10 @@ import {
   IsObject,
   IsOptional,
   Min,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
+import { MessagePollBody } from '../dtos/message-poll.dto';
 import {
   ChannelNotFound,
   IssuerCanOnlyEditOwnMessages,
@@ -41,6 +45,13 @@ export class UpdateMessage {
   @Min(1, { each: true })
   attachmentIds?: number[];
 
+  /** Omit to leave unchanged; pass `null` to remove the poll and votes. */
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @ValidateNested()
+  @Type(() => MessagePollBody)
+  poll?: MessagePollBody | null;
+
   constructor(data: Partial<UpdateMessage>) {
     patch(this, data);
   }
@@ -60,6 +71,7 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
     issuerId,
     content,
     attachmentIds,
+    poll,
   }: UpdateMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
@@ -98,6 +110,7 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
       content,
       issuerId,
       attachmentIds,
+      poll,
     );
   }
 }

@@ -1,3 +1,4 @@
+import type { MessagePollBody } from "@/domain/channels/types/message.type";
 import { docContainsImageNodes, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { debounce } from "lodash";
@@ -12,6 +13,7 @@ export function channelComposerDraftKey(channelId: number) {
 
 export type ChannelComposerDraft = {
   content: JSONContent;
+  poll?: MessagePollBody | null;
 };
 
 export function loadChannelDraft(channelId: number): ChannelComposerDraft | null {
@@ -26,10 +28,9 @@ export function loadChannelDraft(channelId: number): ChannelComposerDraft | null
   return null;
 }
 
-export function saveChannelDraft(channelId: number, content: JSONContent) {
+export function saveChannelDraft(channelId: number, draft: ChannelComposerDraft) {
   try {
-    const payload: ChannelComposerDraft = { content };
-    localStorage.setItem(channelComposerDraftKey(channelId), JSON.stringify(payload));
+    localStorage.setItem(channelComposerDraftKey(channelId), JSON.stringify(draft));
   } catch {
     /* ignore quota / private mode */
   }
@@ -43,6 +44,13 @@ export function clearChannelDraft(channelId: number) {
   }
 }
 
+function draftHasMeaningfulPoll(poll: MessagePollBody | null | undefined): boolean {
+  if (!poll) return false;
+  const q = poll.question.trim();
+  const nonempty = poll.options.filter((o) => o.label.trim().length > 0);
+  return q.length > 0 && nonempty.length >= 2;
+}
+
 /**
  * Debounced localStorage draft persistence for the channel message composer.
  * Separate from typing / websocket signals — call `scheduleDraftSave` from editor `update` only.
@@ -54,6 +62,10 @@ export function useChannelMessageDraft(options: {
   runWithEditorMutationSuppressed?: (fn: () => Promise<void>) => Promise<void>;
   /** When the channel changes before an editor instance exists, run this so typing suppression does not stay stuck (e.g. clear `suppressTypingSignals`). */
   whenEditorMissingAfterChannelChange?: () => void;
+  /** When set, poll JSON is saved/restored with `content` for this channel draft. */
+  getPollDraft?: ReadonlyRefOrGetter<MessagePollBody | null | undefined>;
+  /** After switching channels / hydrating localStorage — parent can sync inline poll UI. */
+  onDraftRestored?: (draft: ChannelComposerDraft | null) => void;
 }) {
   function saveDraft(doc: JSONContent | null | undefined) {
     if (!doc) return;
@@ -66,8 +78,21 @@ export function useChannelMessageDraft(options: {
 
     const normalizedDoc = normalizeTiptapDoc(doc);
     const plain = tiptapToPlainText(normalizedDoc, { stripFormatting: true }).trim();
-    if (!plain && !docContainsImageNodes(normalizedDoc)) clearChannelDraft(channelId);
-    else saveChannelDraft(channelId, normalizedDoc);
+    const poll = options.getPollDraft !== undefined ? (toValue(options.getPollDraft) ?? null) : undefined;
+
+    const hasPollMeaningful =
+      options.getPollDraft !== undefined ? draftHasMeaningfulPoll(poll ?? null) : false;
+
+    if (!plain && !docContainsImageNodes(normalizedDoc) && !hasPollMeaningful) {
+      clearChannelDraft(channelId);
+      return;
+    }
+
+    const payload: ChannelComposerDraft = { content: normalizedDoc };
+    if (options.getPollDraft !== undefined) {
+      payload.poll = poll ?? null;
+    }
+    saveChannelDraft(channelId, payload);
   }
 
   const scheduleDraftSave = debounce((doc: JSONContent | null | undefined) => {
@@ -93,6 +118,7 @@ export function useChannelMessageDraft(options: {
     } else {
       editor.commands.clearContent();
     }
+    options.onDraftRestored?.(draft ?? null);
     await nextTick();
   }
 

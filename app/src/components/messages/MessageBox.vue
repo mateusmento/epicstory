@@ -18,6 +18,7 @@ import { cn } from "@/design-system/utils";
 import type { IMessage, IReply } from "@/domain/channels";
 import { excludeInlineImageAttachmentsFromBubbleTiles, messageBodyPlainText } from "@epicstory/tiptap";
 import { computed, ref, watch } from "vue";
+import ChannelPollPreview from "@/components/rich-text/ChannelPollPreview.vue";
 import MessageActions from "./MessageActions.vue";
 import MessageAttachments from "./MessageAttachments.vue";
 import MessageContextMenu from "./MessageContextMenu.vue";
@@ -108,6 +109,11 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
                 :content="props.message.content"
                 :mentioned-users="props.message.mentionedUsers"
                 :me-id="props.meId"
+              />
+              <ChannelPollPreview
+                v-if="'poll' in props.message && props.message.poll && !('messageId' in props.message)"
+                :message-id="props.message.id"
+                :poll="props.message.poll"
               />
               <MessageAttachments v-if="bubbleAttachmentTiles.length > 0" :files="bubbleAttachmentTiles" />
               <div
