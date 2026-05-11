@@ -3,7 +3,8 @@ import type { User } from "@/domain/auth";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
-import { computed, onBeforeUnmount, reactive, useSlots, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, shallowRef, useSlots, watch } from "vue";
+import { bumpActiveMentionSuggestionQuery } from "./mention-suggestion-bump";
 import { createRichTextComposerExtensions, EPICSTORY_RICH_TEXT_COMPOSER } from "./composer";
 
 defineSlots<{
@@ -34,11 +35,45 @@ const props = withDefaults(
     mentionables?: User[];
     meId?: number;
     placeholder?: string;
+    /** Workspace-style pagination: scroll list to bottom → load more mention candidates. */
+    onMentionListReachedBottom?: () => void | Promise<void>;
+    mentionListHasMore?: boolean;
+    mentionListLoadingMore?: boolean;
   }>(),
   {
     mentionables: () => [],
     placeholder: "",
+    mentionListHasMore: true,
+    mentionListLoadingMore: false,
   },
+);
+
+const mentionListHasMoreRef = ref(props.mentionListHasMore);
+const mentionListLoadingMoreRef = ref(props.mentionListLoadingMore);
+const onMentionListReachedBottomRef = shallowRef(props.onMentionListReachedBottom);
+
+watch(
+  () => props.mentionListHasMore,
+  (v) => {
+    mentionListHasMoreRef.value = v ?? true;
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.mentionListLoadingMore,
+  (v) => {
+    mentionListLoadingMoreRef.value = v ?? false;
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.onMentionListReachedBottom,
+  (fn) => {
+    onMentionListReachedBottomRef.value = fn;
+  },
+  { immediate: true },
 );
 
 const mentionablesForSuggestion = computed(() => {
@@ -97,6 +132,9 @@ const editor = useEditor({
     mentionContext,
     mentionablesById,
     mentionablesForSuggestion,
+    getOnMentionListReachedBottom: () => onMentionListReachedBottomRef.value,
+    getMentionListHasMore: () => mentionListHasMoreRef.value,
+    getMentionListLoadingMore: () => mentionListLoadingMoreRef.value,
   }),
   content: "",
   editorProps: {
@@ -129,6 +167,15 @@ const editor = useEditor({
     },
   },
 });
+
+watch(
+  () => props.mentionables?.length ?? 0,
+  (len, prevLen) => {
+    if (onMentionListReachedBottomRef.value == null) return;
+    if (prevLen === undefined || len <= prevLen) return;
+    void nextTick(() => bumpActiveMentionSuggestionQuery(editor.value ?? undefined));
+  },
+);
 
 watch(
   editor,

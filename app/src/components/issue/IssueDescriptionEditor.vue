@@ -4,18 +4,31 @@ import { RichTextComposer, RichTextPreview } from "@/components/rich-text";
 import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
 import { IssueApi } from "@/domain/issues";
+import type { User } from "@/domain/user";
 import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { computed, ref, shallowRef, watch } from "vue";
 
 const INLINE_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
-const props = defineProps<{
-  description: JSONContent;
-  issueId: number;
-  disabled?: boolean;
-  isSaving?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    description: JSONContent;
+    issueId: number;
+    disabled?: boolean;
+    isSaving?: boolean;
+    mentionables?: User[];
+    meId?: number;
+    onMentionListReachedBottom?: () => void | Promise<void>;
+    mentionListHasMore?: boolean;
+    mentionListLoadingMore?: boolean;
+  }>(),
+  {
+    mentionables: () => [],
+    mentionListHasMore: true,
+    mentionListLoadingMore: false,
+  },
+);
 
 const emit = defineEmits<{
   saveDescription: [doc: JSONContent];
@@ -120,7 +133,7 @@ async function onInlineImageFilesSelected(e: Event) {
         title="Double-click to edit"
       >
         <div v-if="!descriptionIsEmpty" class="text-sm text-foreground leading-relaxed">
-          <RichTextPreview :content="description" :mentioned-users="[]" :me-id="0" />
+          <RichTextPreview :content="description" :mentioned-users="mentionables" :me-id="meId ?? 0" />
         </div>
         <div v-else class="text-sm text-secondary-foreground">Add a description…</div>
       </div>
@@ -133,7 +146,12 @@ async function onInlineImageFilesSelected(e: Event) {
     >
       <div class="min-h-[12rem] min-w-0 mb-2">
         <RichTextComposer
+          :mentionables="mentionables"
+          :me-id="meId"
           placeholder="Write a description…"
+          :on-mention-list-reached-bottom="onMentionListReachedBottom"
+          :mention-list-has-more="mentionListHasMore"
+          :mention-list-loading-more="mentionListLoadingMore"
           @update:editor="onComposerEditorUpdate"
           @pasted-files="onRichTextPastedFiles"
           @submit="finishEditDescription"

@@ -19,22 +19,32 @@ import type { IssueFeedItem } from "@/domain/issues/types/issue-feed.type";
 import type { IMessage, IReply } from "@/domain/channels";
 import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
+import type { User } from "@/domain/user";
 import { computed, nextTick, ref } from "vue";
 import { cn } from "@/design-system/utils";
-import { issueActivityMessageComposerAttachmentHandlers, MessageComposer } from "@/components/messages";
+import { issueActivityMessageComposerAttachmentHandlers } from "@/components/messages";
 import { useIssue } from "@/domain/issues/composables/issue";
 import type { IssueAttachmentActivitySyncPayload } from "@/domain/issues/composables/issue-attachments";
+import IssueCommentComposer from "./IssueCommentComposer.vue";
 
 const props = withDefaults(
   defineProps<{
     issueId: number;
     commentChannelId: number;
     meId: number;
-    workspaceId?: number;
+    /** Workspace roster for @mentions (parent-loaded to avoid duplicate fetches). */
+    workspaceMentionUsers?: User[];
+    /** Paginated workspace mentions: scroll mention list to bottom → load more. */
+    onMentionListReachedBottom?: () => void | Promise<void>;
+    mentionListHasMore?: boolean;
+    mentionListLoadingMore?: boolean;
     resolveCommentAttachments?: (entity: IMessage | IReply) => MessageAttachmentDto[];
     syncIssueAttachments?: (payload: IssueAttachmentActivitySyncPayload) => void;
   }>(),
-  {},
+  {
+    mentionListHasMore: true,
+    mentionListLoadingMore: false,
+  },
 );
 
 const emit = defineEmits<{
@@ -73,6 +83,12 @@ const {
   issueApi,
   channelApi: channels,
   onSyncAttachments: (p) => props.syncIssueAttachments?.(p),
+});
+
+const composerMentionables = computed(() => {
+  const ws = props.workspaceMentionUsers ?? [];
+  if (ws.length > 0) return ws;
+  return channelPeers.value;
 });
 
 const {
@@ -209,12 +225,15 @@ async function onToggleDiscussion(entity: IMessage | IReply) {
               v-if="commentChannelId != null && editing?.id === item.message.id"
               class="border-t border-zinc-100 bg-zinc-50/60 p-2"
             >
-              <MessageComposer
+              <IssueCommentComposer
                 :key="`edit-${item.message.id}`"
                 :channel-id="commentChannelId"
                 :attachment-handlers="composerAttachmentHandlers"
-                :mentionables="channelPeers"
+                :mentionables="composerMentionables"
                 :me-id="meId"
+                :on-mention-list-reached-bottom="onMentionListReachedBottom"
+                :mention-list-has-more="mentionListHasMore"
+                :mention-list-loading-more="mentionListLoadingMore"
                 :editing-message="editingMessagePayload"
                 class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
                 @submit-edit="submitEdit"
@@ -260,12 +279,15 @@ async function onToggleDiscussion(entity: IMessage | IReply) {
                 v-if="commentChannelId != null && editing?.id === rep.id"
                 class="border-t border-zinc-100 bg-zinc-50/60 p-2"
               >
-                <MessageComposer
+                <IssueCommentComposer
                   :key="`edit-reply-${rep.id}`"
                   :channel-id="commentChannelId"
                   :attachment-handlers="composerAttachmentHandlers"
-                  :mentionables="channelPeers"
+                  :mentionables="composerMentionables"
                   :me-id="meId"
+                  :on-mention-list-reached-bottom="onMentionListReachedBottom"
+                  :mention-list-has-more="mentionListHasMore"
+                  :mention-list-loading-more="mentionListLoadingMore"
                   :editing-message="editingMessagePayload"
                   class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
                   @submit-edit="submitEdit"
@@ -275,12 +297,15 @@ async function onToggleDiscussion(entity: IMessage | IReply) {
               </div>
             </template>
             <div v-if="commentChannelId != null" class="border-t border-zinc-100 bg-zinc-50/60 p-2">
-              <MessageComposer
+              <IssueCommentComposer
                 :key="`reply-${item.activityId}-${item.message.id}`"
                 :channel-id="commentChannelId"
                 :attachment-handlers="composerAttachmentHandlers"
-                :mentionables="channelPeers"
+                :mentionables="composerMentionables"
                 :me-id="meId"
+                :on-mention-list-reached-bottom="onMentionListReachedBottom"
+                :mention-list-has-more="mentionListHasMore"
+                :mention-list-loading-more="mentionListLoadingMore"
                 placeholder="Leave a reply…"
                 class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
                 @send-message="onReplyInThread(item.message.id, $event)"
@@ -347,12 +372,15 @@ async function onToggleDiscussion(entity: IMessage | IReply) {
           v-if="commentChannelId != null && editing?.id === msg.id"
           class="mt-2 rounded-lg border border-zinc-200/90 bg-zinc-50/40 p-2"
         >
-          <MessageComposer
+          <IssueCommentComposer
             :key="`edit-comments-${msg.id}`"
             :channel-id="commentChannelId"
             :attachment-handlers="composerAttachmentHandlers"
-            :mentionables="channelPeers"
+            :mentionables="composerMentionables"
             :me-id="meId"
+            :on-mention-list-reached-bottom="onMentionListReachedBottom"
+            :mention-list-has-more="mentionListHasMore"
+            :mention-list-loading-more="mentionListLoadingMore"
             :editing-message="editingMessagePayload"
             class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
             @submit-edit="submitEdit"
@@ -365,11 +393,14 @@ async function onToggleDiscussion(entity: IMessage | IReply) {
     </ul>
 
     <div v-if="commentChannelId != null" class="rounded-lg border border-zinc-200/90 bg-zinc-50/40 p-2">
-      <MessageComposer
+      <IssueCommentComposer
         :channel-id="commentChannelId"
         :attachment-handlers="composerAttachmentHandlers"
-        :mentionables="channelPeers"
+        :mentionables="composerMentionables"
         :me-id="meId"
+        :on-mention-list-reached-bottom="onMentionListReachedBottom"
+        :mention-list-has-more="mentionListHasMore"
+        :mention-list-loading-more="mentionListLoadingMore"
         placeholder="Leave a comment…"
         class="max-h-[min(40vh,22rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
         @send-message="onPostIssueComment"

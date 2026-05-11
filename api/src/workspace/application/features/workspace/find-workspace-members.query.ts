@@ -12,6 +12,7 @@ import { Page } from 'src/core/page';
 import { patch } from 'src/core/objects';
 import { WorkspaceMember } from 'src/workspace/domain/entities';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { appendFakeWorkspaceMembersPage } from './append-fake-workspace-members';
 
 export class FindWorkspaceMembers {
   @IsNumber()
@@ -61,16 +62,17 @@ export class FindWorkspaceMemberQuery
     name,
     email,
     q,
-    page = 0,
+    page: pageIndex = 0,
     count = 100,
   }: FindWorkspaceMembers): Promise<Page<WorkspaceMember>> {
-    return this.workspaceRepo.findMembersPage({
+    const result = await this.workspaceRepo.findMembersPage({
       workspaceId,
       q: isString(q) ? q : undefined,
       name: isString(name) ? name : undefined,
       email: isString(email) ? email : undefined,
-      page,
+      page: pageIndex,
       count,
     });
+    return appendFakeWorkspaceMembersPage(result, workspaceId);
   }
 }

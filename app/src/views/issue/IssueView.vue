@@ -18,6 +18,7 @@ import { IssueApi } from "@/domain/issues/api";
 import { useIssue } from "@/domain/issues/composables/issue";
 import { useIssueAttachments } from "@/domain/issues/composables/issue-attachments";
 import { ProjectApi, type Project } from "@/domain/project";
+import { useScopedWorkspaceMemberSearch } from "@/domain/workspace";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
 import type { IMessage, IReply } from "@/domain/channels";
@@ -33,6 +34,30 @@ const props = defineProps<{
 const { user } = useAuth();
 
 const { issue, fetchIssue, updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useIssue();
+
+const {
+  members: workspaceMemberRowsForMentions,
+  search: searchWorkspaceMembersForMentions,
+  loadMore: loadMoreWorkspaceMembersForMentions,
+  hasMore: hasMoreWorkspaceMembersForMentions,
+  isFetchingMore: isFetchingMoreWorkspaceMembersForMentions,
+} = useScopedWorkspaceMemberSearch();
+
+watch(
+  () => issue.value?.workspaceId,
+  (wid) => {
+    if (wid != null) searchWorkspaceMembersForMentions(wid, "");
+  },
+  { immediate: true },
+);
+
+const workspaceMentionUsers = computed(() => workspaceMemberRowsForMentions.value.map((m) => m.user));
+
+async function onWorkspaceMentionListReachedBottom() {
+  const wid = issue.value?.workspaceId;
+  if (wid == null) return;
+  await loadMoreWorkspaceMembersForMentions(wid);
+}
 
 const issueApi = useDependency(IssueApi);
 const {
@@ -248,6 +273,11 @@ watch(
           :issue-id="+props.issueId"
           :disabled="!issue"
           :is-saving="isSaving"
+          :mentionables="workspaceMentionUsers"
+          :me-id="user?.id"
+          :on-mention-list-reached-bottom="onWorkspaceMentionListReachedBottom"
+          :mention-list-has-more="hasMoreWorkspaceMembersForMentions"
+          :mention-list-loading-more="isFetchingMoreWorkspaceMembersForMentions"
           @save-description="onSaveDescription"
         />
 
@@ -275,8 +305,11 @@ watch(
           v-if="issue && user"
           :issue-id="issue.id"
           :comment-channel-id="issue.commentChannelId"
-          :workspace-id="issue.workspaceId"
+          :workspace-mention-users="workspaceMentionUsers"
           :me-id="user.id"
+          :on-mention-list-reached-bottom="onWorkspaceMentionListReachedBottom"
+          :mention-list-has-more="hasMoreWorkspaceMembersForMentions"
+          :mention-list-loading-more="isFetchingMoreWorkspaceMembersForMentions"
           :resolve-comment-attachments="resolveCommentAttachments"
           :sync-issue-attachments="ingestFromActivity"
           @issue-attachment-removed="onComposerAttachmentRemoved"

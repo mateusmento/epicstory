@@ -14,17 +14,29 @@ import MentionNodeView from "./node-views/MentionNodeView.vue";
 
 export const EPICSTORY_RICH_TEXT_COMPOSER = "epicstory-rich-text epicstory-rich-text-composer";
 
-export function buildMentionSuggestion(mentionablesForSuggestion: ComputedRef<User[]>) {
+export function buildMentionSuggestion(
+  mentionablesForSuggestion: ComputedRef<User[]>,
+  options?: {
+    getOnMentionListReachedBottom?: () => (() => void | Promise<void>) | undefined;
+    getMentionListHasMore?: () => boolean;
+    getMentionListLoadingMore?: () => boolean;
+  },
+) {
   return createFloatingSuggestion({
     items: ({ query }): MentionSuggestionItem[] => {
       const q = (query ?? "").trim().toLowerCase();
       return mentionablesForSuggestion.value
         .filter((u) => (q ? u.name.toLowerCase().includes(q) || String(u.id).startsWith(q) : true))
-        .slice(0, 8)
         .map((u) => ({ id: u.id, label: u.name, picture: u.picture }));
     },
     listComponent: MentionList,
-    mapProps: ({ items, command, editor }) => ({ items, command, editor }),
+    mapProps: ({ items, command }) => ({
+      items,
+      command,
+      onReachedBottom: options?.getOnMentionListReachedBottom?.(),
+      hasMore: options?.getMentionListHasMore?.() ?? true,
+      isLoadingMore: options?.getMentionListLoadingMore?.() ?? false,
+    }),
     placement: "bottom-start",
     mainAxisOffset: 8,
     zIndex: 80,
@@ -41,8 +53,15 @@ export function createRichTextComposerExtensions(args: {
   mentionContext: { meId: number | undefined };
   mentionablesById: ComputedRef<Map<number, User>>;
   mentionablesForSuggestion: ComputedRef<User[]>;
+  getOnMentionListReachedBottom?: () => (() => void | Promise<void>) | undefined;
+  getMentionListHasMore?: () => boolean;
+  getMentionListLoadingMore?: () => boolean;
 }): any[] {
-  const mentionSuggestion = buildMentionSuggestion(args.mentionablesForSuggestion);
+  const mentionSuggestion = buildMentionSuggestion(args.mentionablesForSuggestion, {
+    getOnMentionListReachedBottom: args.getOnMentionListReachedBottom,
+    getMentionListHasMore: args.getMentionListHasMore,
+    getMentionListLoadingMore: args.getMentionListLoadingMore,
+  });
   const base = [
     ...createRichTextExtensions({
       linkOpenOnClick: false,

@@ -1,7 +1,8 @@
 import { useDependency } from "@/core/dependency-injection";
 import { defineStore, storeToRefs } from "pinia";
-import { ref } from "vue";
 import { debounce } from "lodash";
+import type { Ref } from "vue";
+import { ref } from "vue";
 import { WorkspaceApi } from "../services";
 import type { WorkspaceMember } from "../types";
 
@@ -27,56 +28,112 @@ export const useWorkspaceMemberSearchStore = defineStore("workspaceMemberSearch"
   };
 });
 
-export function useWorkspaceMemberSearch() {
-  const store = useWorkspaceMemberSearchStore();
-  const { members, isSearching, isFetchingMore, hasMore } = storeToRefs(store);
-  const workspaceApi = useDependency(WorkspaceApi);
+type WorkspaceMemberSearchRefs = {
+  members: Ref<WorkspaceMember[]>;
+  isSearching: Ref<boolean>;
+  isFetchingMore: Ref<boolean>;
+  hasMore: Ref<boolean>;
+  page: Ref<number>;
+  count: Ref<number>;
+  currentQ: Ref<string>;
+};
 
+function createWorkspaceMemberSearchEngine(workspaceApi: WorkspaceApi, r: WorkspaceMemberSearchRefs) {
   const search = debounce(async (workspaceId: number, q: string) => {
     if (!workspaceId) {
-      store.isSearching = false;
+      r.isSearching.value = false;
       return;
     }
-    store.currentQ = q;
-    store.page = 0;
-    store.hasMore = true;
-    store.isSearching = true;
+    r.currentQ.value = q;
+    r.page.value = 0;
+    r.hasMore.value = true;
+    r.isSearching.value = true;
     try {
       const result = await workspaceApi.findMembers(workspaceId, {
         page: 0,
-        count: store.count,
+        count: r.count.value,
         q: q.trim() || undefined,
       });
-      store.members = result.content;
-      store.hasMore = result.hasNext;
+      r.members.value = result.content;
+      r.hasMore.value = result.hasNext;
     } finally {
-      store.isSearching = false;
+      r.isSearching.value = false;
     }
   }, 200);
 
   async function loadMore(workspaceId: number) {
-    if (store.isFetchingMore) return;
-    if (!store.hasMore) return;
+    if (r.isFetchingMore.value) return;
+    if (!r.hasMore.value) return;
     if (!workspaceId) return;
 
-    store.isFetchingMore = true;
+    r.isFetchingMore.value = true;
     try {
-      const next = store.page + 1;
+      const next = r.page.value + 1;
       const result = await workspaceApi.findMembers(workspaceId, {
         page: next,
-        count: store.count,
-        q: store.currentQ.trim() || undefined,
+        count: r.count.value,
+        q: r.currentQ.value.trim() || undefined,
       });
-      const existing = new Set(store.members.map((m) => m.id));
+      const existing = new Set(r.members.value.map((m) => m.id));
       for (const m of result.content) {
-        if (!existing.has(m.id)) store.members.push(m);
+        if (!existing.has(m.id)) r.members.value.push(m);
       }
-      store.page = next;
-      store.hasMore = result.hasNext;
+      r.page.value = next;
+      r.hasMore.value = result.hasNext;
     } finally {
-      store.isFetchingMore = false;
+      r.isFetchingMore.value = false;
     }
   }
+
+  return { search, loadMore };
+}
+
+/**
+ * Global workspace member search (debounced `q`, chunked pages). Used by menus such as
+ * {@link WorkspaceMemberMenu}. Do **not** use for TipTap @mentions — share the same Pinia store and
+ * assignee pickers will overwrite results; use {@link useScopedWorkspaceMemberSearch} instead.
+ */
+export function useWorkspaceMemberSearch() {
+  const store = useWorkspaceMemberSearchStore();
+  const refs = storeToRefs(store);
+  const workspaceApi = useDependency(WorkspaceApi);
+  const { search, loadMore } = createWorkspaceMemberSearchEngine(workspaceApi, refs);
+
+  return {
+    members: refs.members,
+    isSearching: refs.isSearching,
+    isFetchingMore: refs.isFetchingMore,
+    hasMore: refs.hasMore,
+    search,
+    loadMore,
+  };
+}
+
+/**
+ * Isolated member search state for callers that must not touch the global menu store (e.g. issue
+ * @mentions while {@link useWorkspaceMemberSearch} powers assignee dropdowns).
+ *
+ * `initialPageSize` defaults to the same chunk as menus (20). Pass a larger size when the consumer
+ * keeps a static roster (e.g. TipTap mentions filter client-side only).
+ */
+export function useScopedWorkspaceMemberSearch(options?: { initialPageSize?: number }) {
+  const workspaceApi = useDependency(WorkspaceApi);
+  const members = ref<WorkspaceMember[]>([]);
+  const isSearching = ref(false);
+  const isFetchingMore = ref(false);
+  const hasMore = ref(true);
+  const page = ref(0);
+  const count = ref(options?.initialPageSize ?? CHUNK);
+  const currentQ = ref("");
+  const { search, loadMore } = createWorkspaceMemberSearchEngine(workspaceApi, {
+    members,
+    isSearching,
+    isFetchingMore,
+    hasMore,
+    page,
+    count,
+    currentQ,
+  });
 
   return {
     members,
