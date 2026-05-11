@@ -53,7 +53,10 @@ function joinEnglishList(parts: string[]): string {
   return `${xs.slice(0, -1).join(", ")}, and ${xs[xs.length - 1]}`;
 }
 
-function resolveAddedAssigneeNames(p: Record<string, unknown> | null, peersById: ReadonlyMap<number, User>): string[] {
+function resolveAddedAssigneeNames(
+  p: Record<string, unknown> | null,
+  peersById: ReadonlyMap<number, User>,
+): string[] {
   if (!p) return [];
   const fromPayload = (p.addedUserNames as unknown[] | undefined)?.filter(
     (x): x is string => typeof x === "string" && x.trim() !== "",
@@ -88,7 +91,10 @@ function resolveLabelNames(raw: unknown): string[] {
 }
 
 /** One plain sentence: "Ada changed status to Done", "Harry added Feature label". */
-export function formatIssueActivitySentence(item: IssueFeedItem, peersById: ReadonlyMap<number, User>): string {
+export function formatIssueActivitySentence(
+  item: IssueFeedItem,
+  peersById: ReadonlyMap<number, User>,
+): string {
   const actor = resolveIssueActivityActor(item, peersById);
   const name = actor.name;
   const p = readPayload(item);

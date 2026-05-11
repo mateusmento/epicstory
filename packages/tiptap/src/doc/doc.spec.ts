@@ -1,7 +1,9 @@
 import type { JSONContent } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
+import { excludeInlineImageAttachmentsFromBubbleTiles } from "./exclude-inline-image-attachments";
 import { extractMentionIds } from "./mentions-doc";
 import { normalizeTiptapDoc } from "./normalize";
+import { tiptapDocToPlainDisplayText } from "./tiptap-doc-to-plain-display-text";
 import { tiptapToPlainText } from "./plain-text";
 
 describe("normalizeTiptapDoc", () => {
@@ -228,5 +230,58 @@ describe("extractMentionIds", () => {
       ],
     };
     expect(extractMentionIds(doc).sort()).toEqual([1, 2]);
+  });
+});
+
+describe("tiptapDocToPlainDisplayText", () => {
+  it("omits inline images from plain excerpt", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "hi" },
+            { type: "image", attrs: { src: "https://ex/img.png" } },
+          ],
+        },
+      ],
+    };
+    const out = tiptapDocToPlainDisplayText(doc as JSONContent);
+    expect(out).toBe("hi");
+    expect(out).not.toContain("https://");
+  });
+});
+
+describe("excludeInlineImageAttachmentsFromBubbleTiles", () => {
+  it("drops attachments referenced inline", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "image", attrs: { src: "u", attachmentId: 7 } }],
+        },
+      ],
+    };
+    const files = [
+      {
+        id: 7,
+        url: "u",
+        mimeType: "image/png",
+        originalFilename: "a.png",
+        byteSize: 1,
+      },
+      {
+        id: 8,
+        url: "v",
+        mimeType: "image/png",
+        originalFilename: "b.png",
+        byteSize: 1,
+      },
+    ];
+    expect(
+      excludeInlineImageAttachmentsFromBubbleTiles(doc as JSONContent, files),
+    ).toEqual([files[1]]);
   });
 });

@@ -1,6 +1,6 @@
 import { useWebSockets } from "@/core/websockets";
 import { toReadonlyRef, type ReadonlyRefOrGetter } from "@/utils";
-import { tiptapToPlainText } from "@epicstory/tiptap";
+import { docContainsImageNodes, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { onScopeDispose, ref, watch } from "vue";
 
@@ -57,7 +57,8 @@ export function useChannelTypingPulse(options: {
   }
 
   function isDocEmpty(doc: JSONContent) {
-    return !tiptapToPlainText(doc, { stripFormatting: true }).trim();
+    const plain = tiptapToPlainText(doc, { stripFormatting: true }).trim();
+    return !plain && !docContainsImageNodes(doc);
   }
 
   function stopPulsingOnEmptyOrBlur(ed: Editor) {

@@ -227,13 +227,68 @@ export class AttachmentService {
       );
     }
 
-    await this.s3.send(
-      new DeleteObjectCommand({
-        Bucket: this.config.AWS_BUCKET,
-        Key: row.storageKey,
-      }),
-    );
-    await this.attachments.delete({ id: row.id });
+    await this.deleteStoredFilesAndRows([row], false);
+  }
+
+  /**
+   * When a channel message (thread root) is deleted: remove all reply-anchored files first, then
+   * message-anchored files. Matches {@link linkStagingToMessage} / {@link linkStagingToReply} scope.
+   */
+  async deleteAnchoredForDeletedThreadRoot(params: {
+    workspaceId: number;
+    messageId: number;
+    replyIds: number[];
+  }): Promise<void> {
+    const replyIds = uniq(params.replyIds.filter((id) => id > 0));
+    if (replyIds.length > 0) {
+      const replyRows = await this.attachments.find({
+        where: {
+          workspaceId: params.workspaceId,
+          messageReplyId: In(replyIds),
+        },
+      });
+      await this.deleteStoredFilesAndRows(replyRows, true);
+    }
+    const messageRows = await this.attachments.find({
+      where: { workspaceId: params.workspaceId, messageId: params.messageId },
+    });
+    await this.deleteStoredFilesAndRows(messageRows, true);
+  }
+
+  /** When a thread reply is deleted: remove files anchored to that reply. */
+  async deleteAnchoredForDeletedReply(params: {
+    workspaceId: number;
+    replyId: number;
+  }): Promise<void> {
+    const rows = await this.attachments.find({
+      where: {
+        workspaceId: params.workspaceId,
+        messageReplyId: params.replyId,
+      },
+    });
+    await this.deleteStoredFilesAndRows(rows, true);
+  }
+
+  private async deleteStoredFilesAndRows(
+    rows: Attachment[],
+    bestEffortS3: boolean,
+  ): Promise<void> {
+    for (const row of rows) {
+      try {
+        await this.s3.send(
+          new DeleteObjectCommand({
+            Bucket: this.config.AWS_BUCKET,
+            Key: row.storageKey,
+          }),
+        );
+      } catch (err) {
+        if (!bestEffortS3) {
+          throw err;
+        }
+        /* Best-effort: still drop DB row so we do not leak attachment references. */
+      }
+      await this.attachments.delete({ id: row.id });
+    }
   }
 
   /**
@@ -264,13 +319,7 @@ export class AttachmentService {
       );
     }
 
-    await this.s3.send(
-      new DeleteObjectCommand({
-        Bucket: this.config.AWS_BUCKET,
-        Key: row.storageKey,
-      }),
-    );
-    await this.attachments.delete({ id: row.id });
+    await this.deleteStoredFilesAndRows([row], false);
   }
 
   private async findAttachmentForIssueScope(params: {

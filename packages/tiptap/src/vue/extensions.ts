@@ -118,7 +118,16 @@ function imageExtension(): AnyExtension {
     },
   }).configure({
     allowBase64: false,
-    HTMLAttributes: { class: "max-w-full h-auto rounded-md" },
+    HTMLAttributes: {
+      class: "epicstory-inline-image-img  rounded-[10px]",
+    },
+    resize: {
+      enabled: true,
+      directions: ["left", "right"],
+      minWidth: 56,
+      minHeight: 24,
+      alwaysPreserveAspectRatio: true,
+    },
   });
 }
 

@@ -3,6 +3,7 @@ import type { User } from "@/domain/auth";
 import { enrichMentionLabels, normalizeTiptapDoc } from "@epicstory/tiptap";
 import type { JSONContent } from "@tiptap/core";
 import { computed, provide } from "vue";
+import { collectRichTextPreviewImages } from "./collect-preview-images";
 import { EPICSTORY_RICH_TEXT_PREVIEW, richTextJsonPreviewKey } from "./preview";
 import RichTextSubtree from "./RichTextSubtree.vue";
 
@@ -24,9 +25,12 @@ function lookupUser(id: number): User | undefined {
   return usersById.value.get(id);
 }
 
+const previewImageGallery = computed(() => collectRichTextPreviewImages(normalizedDoc.value));
+
 provide(richTextJsonPreviewKey, {
   mentionMeId: computed(() => props.meId),
   lookupUser,
+  previewImageGallery,
 });
 </script>
 

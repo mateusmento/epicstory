@@ -3,7 +3,7 @@ import { User } from 'src/auth/domain/entities/user.entity';
 import {
   enrichMentionLabels,
   extractMentionIds,
-  tiptapToPlainText,
+  tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
 
 /**
@@ -28,10 +28,9 @@ export function enrichChannelsForListView(
     (channel.lastMessage as any).mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter(Boolean);
-    (channel.lastMessage as any).displayContent = tiptapToPlainText(
+    (channel.lastMessage as any).displayContent = tiptapDocToPlainDisplayText(
       enrichMentionLabels(channel.lastMessage.content as any, peerUsersMap),
-      { stripFormatting: true },
-    ).trim();
+    );
   }
 }
 

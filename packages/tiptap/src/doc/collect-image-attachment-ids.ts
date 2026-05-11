@@ -24,3 +24,24 @@ export function collectImageAttachmentIdsFromDoc(
   walk(doc ?? undefined);
   return [...ids];
 }
+
+/** True when the doc tree contains at least one image node (including nodes without `attachmentId`). */
+export function docContainsImageNodes(
+  doc: JSONContent | null | undefined,
+): boolean {
+  let found = false;
+
+  function walk(node: JSONContent | undefined): void {
+    if (!node || found) return;
+    if (node.type === "image") {
+      found = true;
+      return;
+    }
+    if (node.content) {
+      for (const child of node.content) walk(child);
+    }
+  }
+
+  walk(doc ?? undefined);
+  return found;
+}

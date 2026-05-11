@@ -102,7 +102,7 @@
 }
 
 .epicstory-rich-text img {
-  @apply max-w-full h-auto rounded-md my-2;
+  @apply max-w-full h-auto rounded-md;
 }
 
 /* ========== Rich text composer (editable) ========== */
@@ -158,25 +158,103 @@
   @apply my-1;
 }
 
+/* ----- Embedded images (TipTap ResizableNodeView): width-only handles ----- */
+/*
+ * TipTap uses display:flex on the resize container for block images, which stretches the wrapper
+ * to the paragraph line box — taller than the image. Shrink-wrap and kill stray line-height gaps.
+ *
+ * Frame UX (requested): box-shadow ring only (no border-width layout shift). Equal inset from the
+ * bitmap on every side via one padding value. Outer margin matches on all sides so the shadow paints
+ * past sibling text without clipping; inset + ring widths inform that margin.
+ */
+.epicstory-rich-text-composer.ProseMirror [data-resize-container][data-node="image"] {
+  --epic-img-corner: 6px;
+  /* Single length ⇒ mathematically equal padding top/right/bottom/left inside the frame */
+  --epic-img-frame-inset: 6px;
+  --epic-img-ring: 2px;
+  /* Space for ring (outside border-box) + comfortable clearance vs adjacent inline content */
+  --epic-img-outer-margin: calc(var(--epic-img-frame-inset) + var(--epic-img-ring));
+
+  @apply !inline-flex flex-col items-stretch w-fit max-w-full align-bottom rounded-[10px] leading-none;
+  margin: var(--epic-img-outer-margin);
+}
+
+.epicstory-rich-text-composer.ProseMirror [data-resize-container][data-node="image"] [data-resize-wrapper] {
+  @apply box-border block w-fit max-w-full border-0 overflow-hidden leading-none bg-background;
+  @apply rounded-[calc(var(--epic-img-corner)+var(--epic-img-frame-inset))];
+  padding: var(--epic-img-frame-inset);
+}
+
+.epicstory-rich-text-composer.ProseMirror
+  [data-resize-container][data-node="image"]
+  [data-resize-wrapper]
+  img.epicstory-inline-image-img {
+  @apply block m-0 max-w-full h-auto align-bottom rounded-[var(--epic-img-corner)];
+}
+
+/* Selected / resizing: ring drawn with box-shadow only; overflow visible for handles */
+.epicstory-rich-text-composer.ProseMirror .ProseMirror-selectednode[data-resize-container][data-node="image"],
+.epicstory-rich-text-composer.ProseMirror
+  [data-resize-container][data-node="image"][data-resize-state="true"] {
+  @apply relative z-[2] overflow-visible;
+}
+
+.epicstory-rich-text-composer.ProseMirror
+  .ProseMirror-selectednode[data-resize-container][data-node="image"]
+  [data-resize-wrapper],
+.epicstory-rich-text-composer.ProseMirror
+  [data-resize-container][data-node="image"][data-resize-state="true"]
+  [data-resize-wrapper] {
+  @apply outline-none overflow-visible shadow-[0_0_0_var(--epic-img-ring)_rgb(37_99_235)];
+}
+
+.epicstory-rich-text-composer.ProseMirror [data-resize-handle="left"],
+.epicstory-rich-text-composer.ProseMirror [data-resize-handle="right"] {
+  @apply w-2.5 !top-1/2 !bottom-auto !h-7 -mt-[14px] p-0 rounded-full bg-blue-600 opacity-0 pointer-events-none;
+  transition: opacity 0.12s ease;
+}
+
+.epicstory-rich-text-composer.ProseMirror [data-resize-handle="left"] {
+  @apply cursor-ew-resize !left-[calc(var(--epic-img-frame-inset,6px)+4px)] !right-auto;
+}
+
+.epicstory-rich-text-composer.ProseMirror [data-resize-handle="right"] {
+  @apply cursor-ew-resize !right-[calc(var(--epic-img-frame-inset,6px)+4px)] !left-auto;
+}
+
+.epicstory-rich-text-composer.ProseMirror
+  .ProseMirror-selectednode[data-resize-container][data-node="image"]
+  [data-resize-handle="left"],
+.epicstory-rich-text-composer.ProseMirror
+  .ProseMirror-selectednode[data-resize-container][data-node="image"]
+  [data-resize-handle="right"] {
+  @apply opacity-100 pointer-events-auto;
+}
+
+.epicstory-rich-text-composer.ProseMirror
+  [data-resize-container][data-node="image"][data-resize-state="true"]
+  [data-resize-handle="left"],
+.epicstory-rich-text-composer.ProseMirror
+  [data-resize-container][data-node="image"][data-resize-state="true"]
+  [data-resize-handle="right"] {
+  @apply opacity-100 pointer-events-auto;
+}
+
 .epicstory-rich-text-preview pre:not(.epic-code-card-pre) {
   @apply bg-muted;
 }
 
 /** JSON-rendered preview code cards: peek clipping (same markup/CSS as `EpicCodeBlockCard.vue`). */
 .epicstory-rich-text-preview .epic-code-card-pre--peek {
-  position: relative;
+  @apply relative;
   --epic-code-fs: 0.8125rem;
   --epic-code-lh: 1.625;
   max-height: calc(var(--epic-code-fs) * var(--epic-code-lh) * 12 + 1.5rem);
 }
 
 .epicstory-rich-text-preview .epic-code-card-pre--peek::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2rem;
-  pointer-events: none;
+  @apply pointer-events-none absolute inset-x-0 bottom-0 h-8 content-[""];
+
   background: linear-gradient(to bottom, rgba(248, 248, 248, 0), #f8f8f8);
+  /* @apply bg-gradient-to-b from-transparent to-[#f8f8f8]; */
 }

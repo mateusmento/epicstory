@@ -96,9 +96,12 @@ async function onSendReply(payload: {
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: JSONContent }) {
+async function onSubmitEdit(payload: { messageId: number; content: JSONContent; attachmentIds?: number[] }) {
   const updated = await updateMessage(payload.messageId, {
     content: payload.content,
+    ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
+      ? { attachmentIds: payload.attachmentIds }
+      : {}),
   });
   if (message.value.id === payload.messageId) {
     Object.assign(message.value, updated);

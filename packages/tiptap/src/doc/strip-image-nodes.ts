@@ -1,7 +1,9 @@
 import type { JSONContent } from "@tiptap/core";
 
 /**
- * Removes `image` nodes from a TipTap JSON document so file attachments are only linked out-of-band.
+ * Removes `image` nodes from a TipTap JSON document.
+ * Used for plain-text excerpts (notifications, sidebar copy, quotes) — **not** for persisted message body;
+ * stored docs keep inline `image` nodes while `attachmentIds` still anchor files for listings.
  */
 export function stripImageNodesFromDoc(doc: JSONContent): JSONContent {
   if (!doc || typeof doc !== "object") return doc;

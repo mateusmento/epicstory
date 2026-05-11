@@ -4,17 +4,22 @@ import { Icon } from "@/design-system/icons";
 import type { Editor } from "@tiptap/core";
 import {
   Bold,
-  Italic,
-  Strikethrough,
-  TextQuote,
   Braces,
-  List,
-  ListOrdered,
-  ListChecks,
-  Table2,
   Code,
+  Image,
+  Italic,
   Link2,
+  List,
+  ListChecks,
+  ListOrdered,
+  Strikethrough,
+  Table2,
+  TextQuote,
 } from "lucide-vue-next";
+
+const emit = defineEmits<{
+  insertInlineImage: [];
+}>();
 
 const props = withDefaults(
   defineProps<{
@@ -133,6 +138,15 @@ function insertAtMention() {
     @click="toggleLink"
   >
     <Link2 class="w-5 h-5" />
+  </Button>
+  <Button
+    variant="ghost"
+    size="icon"
+    title="Insert inline image"
+    aria-label="Insert inline image"
+    @click="emit('insertInlineImage')"
+  >
+    <Image class="w-5 h-5" />
   </Button>
   <Button variant="ghost" size="icon" @click="insertAtMention">
     <Icon name="oi-mention" class="w-5 h-5" />

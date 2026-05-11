@@ -103,7 +103,7 @@ export class ReplyController {
   @Patch()
   async updateReply(
     @Param('replyId') replyId: number,
-    @Body() body: Pick<UpdateReply, 'content'>,
+    @Body() body: Pick<UpdateReply, 'content' | 'attachmentIds'>,
     @Auth() issuer: Issuer,
   ) {
     const reply = await this.commandBus.execute(
@@ -111,6 +111,7 @@ export class ReplyController {
         replyId,
         issuerId: issuer.id,
         content: body.content,
+        attachmentIds: body.attachmentIds,
       }),
     );
 

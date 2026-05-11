@@ -1,19 +1,13 @@
 <script lang="ts" setup>
+import { RichTextPreview, TiptapCodeBlockCardNodeView } from "@/components/rich-text";
 import { useDependency } from "@/core/dependency-injection";
-import { TiptapCodeBlockCardNodeView } from "@/components/rich-text";
-import { RichTextPreview } from "@/components/rich-text";
 import { Lowlight } from "@/core/lowlight";
-import { IssueApi } from "@/domain/issues";
 import { Button } from "@/design-system";
+import { IssueApi } from "@/domain/issues";
 import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
+import { createPlaceholderExtension, createRichTextExtensions, mediaExtensions } from "@epicstory/tiptap/vue";
 import type { JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
-import {
-  createPlaceholderExtension,
-  createRichTextExtensions,
-  mediaExtensions,
-  EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
-} from "@epicstory/tiptap/vue";
 import {
   Bold,
   Braces,
@@ -31,6 +25,7 @@ import {
   Undo2,
 } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
+import { EPICSTORY_RICH_TEXT_COMPOSER } from "../rich-text/composer";
 
 const props = defineProps<{
   description: JSONContent;
@@ -73,7 +68,7 @@ const editor = useEditor({
   content: "",
   editorProps: {
     attributes: {
-      class: EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
+      class: EPICSTORY_RICH_TEXT_COMPOSER,
     },
     handleKeyDown: (_, event) => {
       if (event.key === "Escape") {

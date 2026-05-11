@@ -59,7 +59,7 @@ async function onOpenPreview(file: MessageAttachmentDto, thumbElement: HTMLEleme
 </script>
 
 <template>
-  <div v-if="files.length || hint" class="flex flex-col gap-1">
+  <div v-if="files.length || hint" class="flex flex-col gap-1 mb-2">
     <p v-if="hint" class="text-[0.65rem] text-muted-foreground leading-snug">{{ hint }}</p>
     <ul :class="rootClass" aria-label="Attachments">
       <li v-for="f in files" :key="f.id" class="flex max-w-[11rem] flex-shrink-0 flex-col">

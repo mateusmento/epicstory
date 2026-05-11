@@ -26,8 +26,7 @@ import {
   enrichMentionLabels,
   extractMentionIds,
   normalizeTiptapDoc,
-  stripImageNodesFromDoc,
-  tiptapToPlainText,
+  tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
 
 export type MessageReactionsGroup = {
@@ -177,10 +176,9 @@ export class MessageService {
       const rc = repliesCountMap.get(message.id)?.repliesCount ?? 0;
       const reps = mapRepliers(repliersMap[message.id] ?? [], usersMap);
       const reactions = mapReactions(message.allReactions, senderId, usersMap);
-      const displayContent = tiptapToPlainText(
+      const displayContent = tiptapDocToPlainDisplayText(
         enrichMentionLabels(message.content, peerUsersMap),
-        { stripFormatting: true },
-      ).trim();
+      );
       const mentionIds = extractMentionIds(message.content);
       const mentionedUsers = mentionIds
         .map((id) => peerUsersMap.get(id))
@@ -275,10 +273,9 @@ export class MessageService {
       (reply as any).mentionedUsers = mIds
         .map((id) => peerUsersMap.get(id))
         .filter(Boolean);
-      (reply as any).displayContent = tiptapToPlainText(
+      (reply as any).displayContent = tiptapDocToPlainDisplayText(
         enrichMentionLabels(reply.content, peerUsersMap),
-        { stripFormatting: true },
-      ).trim();
+      );
       const qSrc = reply.quotedReplyId
         ? replyQuotedById.get(reply.quotedReplyId)
         : undefined;
@@ -347,9 +344,7 @@ export class MessageService {
       channelId,
     );
 
-    const normalizedContent = stripImageNodesFromDoc(
-      normalizeTiptapDoc(content),
-    );
+    const normalizedContent = normalizeTiptapDoc(content);
 
     let message = await this.messageRepo.save(
       create(Message, {
@@ -373,10 +368,9 @@ export class MessageService {
 
     const mentionIds = extractMentionIds(normalizedContent);
     const peerUsersMap = await this.resolveMentionUsersMap(channel, mentionIds);
-    const displayContent = tiptapToPlainText(
+    const displayContent = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
-      { stripFormatting: true },
-    ).trim();
+    );
     const mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
@@ -456,12 +450,9 @@ export class MessageService {
       id: m.id,
       sender: m.sender,
       content: m.content,
-      displayContent: tiptapToPlainText(
+      displayContent: tiptapDocToPlainDisplayText(
         enrichMentionLabels(m.content, peerUsersMap),
-        {
-          stripFormatting: true,
-        },
-      ).trim(),
+      ),
     };
   }
 
@@ -474,12 +465,9 @@ export class MessageService {
       id: r.id,
       sender: r.sender,
       content: r.content,
-      displayContent: tiptapToPlainText(
+      displayContent: tiptapDocToPlainDisplayText(
         enrichMentionLabels(r.content, peerUsersMap),
-        {
-          stripFormatting: true,
-        },
-      ).trim(),
+      ),
     };
   }
 
@@ -488,10 +476,9 @@ export class MessageService {
     messageId: number,
     content: JSONContent,
     viewerId: number,
+    attachmentIds?: number[],
   ) {
-    const normalizedContent = stripImageNodesFromDoc(
-      normalizeTiptapDoc(content),
-    );
+    const normalizedContent = normalizeTiptapDoc(content);
 
     await this.messageRepo.update(
       { id: messageId },
@@ -501,6 +488,14 @@ export class MessageService {
       },
     );
 
+    await this.attachmentService.linkStagingToMessage({
+      workspaceId: channel.workspaceId,
+      channelId: channel.id,
+      uploadedById: viewerId,
+      messageId,
+      attachmentIds,
+    });
+
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
       relations: { sender: true, allReactions: { user: true } },
@@ -509,10 +504,9 @@ export class MessageService {
 
     const mentionIds = extractMentionIds(normalizedContent);
     const peerUsersMap = await this.resolveMentionUsersMap(channel, mentionIds);
-    const displayContent = tiptapToPlainText(
+    const displayContent = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
-      { stripFormatting: true },
-    ).trim();
+    );
     const mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
@@ -555,15 +549,22 @@ export class MessageService {
     replyId: number,
     content: JSONContent,
     viewerId: number,
+    attachmentIds?: number[],
   ) {
-    const normalizedContent = stripImageNodesFromDoc(
-      normalizeTiptapDoc(content),
-    );
+    const normalizedContent = normalizeTiptapDoc(content);
 
     await this.replyRepo.update(
       { id: replyId },
       { content: normalizedContent },
     );
+
+    await this.attachmentService.linkStagingToReply({
+      workspaceId: channel.workspaceId,
+      channelId: channel.id,
+      uploadedById: viewerId,
+      messageReplyId: replyId,
+      attachmentIds,
+    });
 
     const reply = await this.replyRepo.findOne({
       where: { id: replyId },
@@ -657,11 +658,8 @@ export class MessageService {
       channel ?? undefined,
       mentionIds,
     );
-    const display = tiptapToPlainText(
-      stripImageNodesFromDoc(
-        normalizeTiptapDoc(enrichMentionLabels(message.content, peerUsersMap)),
-      ),
-      { stripFormatting: true },
+    const display = tiptapDocToPlainDisplayText(
+      enrichMentionLabels(message.content, peerUsersMap),
     );
     return MessageService.truncateNotificationExcerpt(display);
   }
@@ -675,11 +673,8 @@ export class MessageService {
       channel ?? undefined,
       mentionIds,
     );
-    const display = tiptapToPlainText(
-      stripImageNodesFromDoc(
-        normalizeTiptapDoc(enrichMentionLabels(reply.content, peerUsersMap)),
-      ),
-      { stripFormatting: true },
+    const display = tiptapDocToPlainDisplayText(
+      enrichMentionLabels(reply.content, peerUsersMap),
     );
     return MessageService.truncateNotificationExcerpt(display);
   }

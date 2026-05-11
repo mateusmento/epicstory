@@ -122,9 +122,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
     }
 
     if (data.description !== undefined) {
-      (data as any).description = stripImageNodesFromDoc(
-        normalizeTiptapDoc(data.description),
-      );
+      (data as any).description = normalizeTiptapDoc(data.description);
     }
     patch(issue, data);
     const savedIssue = await this.issueRepo.save(issue);

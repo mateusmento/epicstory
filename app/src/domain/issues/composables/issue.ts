@@ -54,11 +54,19 @@ export function useIssue() {
     await channelApi.deleteMessage(entity.id);
   }
 
-  async function updateIssueComment(entity: IMessage | IReply, content: JSONContent) {
+  async function updateIssueComment(
+    entity: IMessage | IReply,
+    content: JSONContent,
+    attachmentIds?: number[],
+  ) {
+    const body = {
+      content,
+      ...(attachmentIds != null && attachmentIds.length > 0 ? { attachmentIds } : {}),
+    };
     if ("messageId" in entity && entity.messageId != null) {
-      return channelApi.updateReply(entity.id, { content });
+      return channelApi.updateReply(entity.id, body);
     }
-    return channelApi.updateMessage(entity.id, { content });
+    return channelApi.updateMessage(entity.id, body);
   }
 
   return {

@@ -1,9 +1,7 @@
-export { collectImageAttachmentIdsFromDoc } from "../doc/collect-image-attachment-ids";
 export {
-  EPIC_STORY_COMPOSER_EDITOR_CLASS,
-  EPIC_STORY_ISSUE_DESCRIPTION_EDITOR_CLASS,
-  EPIC_STORY_READONLY_MESSAGE_CLASS,
-} from "./editor-classes";
+  collectImageAttachmentIdsFromDoc,
+  docContainsImageNodes,
+} from "../doc/collect-image-attachment-ids";
 export {
   codeBlockLowlightCardExtension,
   createMentionExtensionWithNodeView,
@@ -15,6 +13,7 @@ export {
   type CreateRichTextExtensionsOptions,
   type LowlightInstance,
   type MediaExtensionsOptions,
+  type MediaUploadResult,
 } from "./extensions";
 export {
   useEpicStoryRichTextEditor,

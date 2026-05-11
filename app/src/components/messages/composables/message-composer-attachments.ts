@@ -46,9 +46,10 @@ export function useMessageComposerAttachments(options: {
 
   async function onStagingFilesSelected(e: Event) {
     const input = e.target as HTMLInputElement;
+    const raw = input.files ? Array.from(input.files) : [];
     input.value = "";
-    if (!input.files?.length) return;
-    await uploadStagingFiles(Array.from(input.files));
+    if (!raw.length) return;
+    await uploadStagingFiles(raw);
   }
 
   function removeStagingAttachment(id: number) {

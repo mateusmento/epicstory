@@ -20,6 +20,7 @@ import { cn } from "@/design-system/utils";
 import type { IAggregatedReaction, IMessage, IReply } from "@/domain/channels";
 import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
+import { excludeInlineImageAttachmentsFromBubbleTiles } from "@epicstory/tiptap";
 import { formatDistanceToNow } from "date-fns";
 import { SmilePlusIcon } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
@@ -63,7 +64,11 @@ watch(
 
 const isReplyEntity = computed(() => "messageId" in props.message && props.message.messageId != null);
 
-const displayAttachments = computed(() => props.attachments ?? props.message.attachments ?? []);
+const rawAttachments = computed(() => props.attachments ?? props.message.attachments ?? []);
+
+const displayAttachments = computed(() =>
+  excludeInlineImageAttachmentsFromBubbleTiles(props.message.content, rawAttachments.value),
+);
 
 const mostUsedEmojis = ["👍", "🙌", "❤️", "🔥", "🎉"];
 

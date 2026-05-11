@@ -1,4 +1,4 @@
-import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
+import { docContainsImageNodes, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { debounce } from "lodash";
 import { toValue, type ReadonlyRefOrGetter } from "@/utils";
@@ -66,7 +66,7 @@ export function useChannelMessageDraft(options: {
 
     const normalizedDoc = normalizeTiptapDoc(doc);
     const plain = tiptapToPlainText(normalizedDoc, { stripFormatting: true }).trim();
-    if (!plain) clearChannelDraft(channelId);
+    if (!plain && !docContainsImageNodes(normalizedDoc)) clearChannelDraft(channelId);
     else saveChannelDraft(channelId, normalizedDoc);
   }
 
