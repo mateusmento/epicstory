@@ -183,11 +183,11 @@ export class ChannelApi {
     return this.axios.delete(`/messages/${messageId}`).then((res) => res.data);
   }
 
-  updateMessage(messageId: number, body: { content: JSONContent }) {
+  updateMessage(messageId: number, body: { content: JSONContent; attachmentIds?: number[] }) {
     return this.axios.patch<IMessage>(`/messages/${messageId}`, body).then((res) => res.data);
   }
 
-  updateReply(replyId: number, body: { content: JSONContent }) {
+  updateReply(replyId: number, body: { content: JSONContent; attachmentIds?: number[] }) {
     return this.axios.patch<IReply>(`/replies/${replyId}`, body).then((res) => res.data);
   }
 

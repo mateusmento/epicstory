@@ -216,7 +216,7 @@ export function useChannel() {
     store.messages = store.messages.filter((message) => message.id !== messageId);
   }
 
-  async function updateMessage(messageId: number, body: { content: JSONContent }) {
+  async function updateMessage(messageId: number, body: { content: JSONContent; attachmentIds?: number[] }) {
     const updated = await channelApi.updateMessage(messageId, body);
     const i = store.messages.findIndex((m) => m.id === messageId);
     if (i >= 0) store.messages[i] = { ...store.messages[i], ...updated };

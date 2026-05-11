@@ -192,23 +192,14 @@ function registerUi(pswp: InstanceType<typeof PhotoSwipe>) {
   });
 }
 
-/**
- * Open PhotoSwipe for image/video attachments (carousel across media only).
- * Pass the clicked thumbnail `HTMLElement` so opening uses the zoom-from-thumb transition.
- */
-export async function openAttachmentLightbox(
-  files: MessageAttachmentDto[],
-  clickedFile: MessageAttachmentDto,
+async function launchPhotoSwipeGallery(
+  slides: SlideDataWithMeta[],
+  startIndex: number,
   thumbElement?: HTMLElement | null,
 ): Promise<void> {
-  const media = files.filter((f) => isImageMime(f.mimeType) || isVideoMime(f.mimeType, f.originalFilename));
-  if (!media.length) return;
-
-  const slides = await buildSlides(media);
   if (!slides.length) return;
-
-  const startIndex = mediaOnlyIndex(files, clickedFile);
-  const slide0 = slides[startIndex];
+  const i = Math.min(Math.max(0, startIndex), slides.length - 1);
+  const slide0 = slides[i];
   const imageThumbZoom = !!(thumbElement && document.contains(thumbElement) && slide0?.isImageSlide);
 
   if (imageThumbZoom && slide0) {
@@ -218,7 +209,7 @@ export async function openAttachmentLightbox(
 
   const pswp = new PhotoSwipe({
     dataSource: slides,
-    index: startIndex,
+    index: i,
     bgOpacity: 1,
     mainClass: "epicstory-attachment-lightbox",
     showHideAnimationType: imageThumbZoom ? "zoom" : "fade",
@@ -241,4 +232,70 @@ export async function openAttachmentLightbox(
   });
 
   pswp.init();
+}
+
+function filenameHintFromUrl(url: string): string {
+  try {
+    const u = new URL(url, typeof window !== "undefined" ? window.location.href : undefined);
+    const last = u.pathname.split("/").filter(Boolean).pop();
+    if (last) return decodeURIComponent(last);
+  } catch {
+    /* ignore */
+  }
+  return "image";
+}
+
+/**
+ * PhotoSwipe for inline rich-text images (URLs only). Pass images in doc order for carousel swiping.
+ */
+export async function openRichTextInlineImageLightbox(
+  images: { url: string; caption?: string }[],
+  startIndex: number,
+  thumbElement?: HTMLElement | null,
+): Promise<void> {
+  const trimmed = images
+    .map((x) => ({
+      url: x.url.trim(),
+      caption: (x.caption ?? "").trim(),
+    }))
+    .filter((x) => x.url.length > 0);
+  if (!trimmed.length) return;
+
+  const slides: SlideDataWithMeta[] = await Promise.all(
+    trimmed.map(async ({ url, caption }) => {
+      const { width, height } = await loadImageDimensions(url);
+      const originalFilename = caption || filenameHintFromUrl(url);
+      return {
+        src: url,
+        msrc: url,
+        width,
+        height,
+        alt: caption || originalFilename,
+        attachmentUrl: url,
+        originalFilename,
+        isImageSlide: true,
+      };
+    }),
+  );
+
+  await launchPhotoSwipeGallery(slides, startIndex, thumbElement);
+}
+
+/**
+ * Open PhotoSwipe for image/video attachments (carousel across media only).
+ * Pass the clicked thumbnail `HTMLElement` so opening uses the zoom-from-thumb transition.
+ */
+export async function openAttachmentLightbox(
+  files: MessageAttachmentDto[],
+  clickedFile: MessageAttachmentDto,
+  thumbElement?: HTMLElement | null,
+): Promise<void> {
+  const media = files.filter((f) => isImageMime(f.mimeType) || isVideoMime(f.mimeType, f.originalFilename));
+  if (!media.length) return;
+
+  const slides = await buildSlides(media);
+  if (!slides.length) return;
+
+  const startIndex = mediaOnlyIndex(files, clickedFile);
+  await launchPhotoSwipeGallery(slides, startIndex, thumbElement);
 }

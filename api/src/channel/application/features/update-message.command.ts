@@ -7,7 +7,15 @@ import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { IsNotEmpty, IsObject } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  Min,
+} from 'class-validator';
 import {
   ChannelNotFound,
   IssuerCanOnlyEditOwnMessages,
@@ -25,6 +33,14 @@ export class UpdateMessage {
   @IsObject()
   content: JSONContent;
 
+  /** Staged uploads to bind when saving edits (same rules as send). */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  attachmentIds?: number[];
+
   constructor(data: Partial<UpdateMessage>) {
     patch(this, data);
   }
@@ -39,7 +55,12 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
     private messageService: MessageService,
   ) {}
 
-  async execute({ messageId, issuerId, content }: UpdateMessage) {
+  async execute({
+    messageId,
+    issuerId,
+    content,
+    attachmentIds,
+  }: UpdateMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
     });
@@ -76,6 +97,7 @@ export class UpdateMessageCommand implements ICommandHandler<UpdateMessage> {
       messageId,
       content,
       issuerId,
+      attachmentIds,
     );
   }
 }

@@ -24,8 +24,7 @@ import {
   enrichMentionLabels,
   extractMentionIds,
   normalizeTiptapDoc,
-  stripImageNodesFromDoc,
-  tiptapToPlainText,
+  tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
 import { Transactional } from 'typeorm-transactional';
 
@@ -93,12 +92,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       throw new SenderIsNotChannelMember();
     }
 
-    const normalizedContent = stripImageNodesFromDoc(
-      normalizeTiptapDoc(content),
-    );
-    const plainContent = tiptapToPlainText(normalizedContent, {
-      stripFormatting: true,
-    });
+    const normalizedContent = normalizeTiptapDoc(content);
 
     const resolvedQuote = await this.messageService.resolveQuotedReplyId(
       quotedReplyId,
@@ -142,10 +136,9 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     const mentionedUsers = finalMentionIds
       .map((id) => peerUsersMap.get(id))
       .filter(Boolean);
-    const displayContent = tiptapToPlainText(
+    const displayContent = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
-      { stripFormatting: true },
-    ).trim();
+    );
 
     (reply as any).mentionedUsers = mentionedUsers;
     (reply as any).displayContent = displayContent;

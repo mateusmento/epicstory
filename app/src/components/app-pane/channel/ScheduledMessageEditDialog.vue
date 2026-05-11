@@ -16,7 +16,7 @@ import type { User } from "@/domain/auth";
 import { useAuth } from "@/domain/auth";
 import { ChannelApi } from "@/domain/channels/services/channel.service";
 import type { IScheduledMessage } from "@/domain/channels/types/scheduled-message.type";
-import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
+import { docContainsImageNodes, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor } from "@tiptap/core";
 import { format } from "date-fns";
 import {
@@ -96,8 +96,8 @@ function toggleLink() {
 async function save() {
   if (!editor.value) return;
   const doc = normalizeTiptapDoc(editor.value.getJSON());
-  const plain = tiptapToPlainText(doc, { stripFormatting: true });
-  if (!plain.trim()) return;
+  const plain = tiptapToPlainText(doc, { stripFormatting: true }).trim();
+  if (!plain && !docContainsImageNodes(doc)) return;
   const sch = scheduleOverride.value;
   await channelApi.patchScheduledMessage(props.channelId, props.scheduled.id, {
     content: doc,

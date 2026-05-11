@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { JSONContent } from "@tiptap/core";
 import type { User } from "@/domain/auth";
+import { openRichTextInlineImageLightbox } from "@/components/messages/media-attachment-lightbox";
 import { computed, inject } from "vue";
 import type { RichTextJsonPreviewContext } from "./preview";
 import { richTextJsonPreviewKey } from "./preview";
@@ -30,6 +31,36 @@ function lookupUser(id: number): User | undefined {
 }
 
 const taskAttrs = computed(() => props.node.attrs as { checked?: boolean } | undefined);
+
+const imageAriaLabel = computed(() => {
+  const alt = String(props.node.attrs?.alt ?? "").trim();
+  return alt.length > 0 ? `Open preview: ${alt}` : "Open image preview";
+});
+
+async function onPreviewImageClick(ev: MouseEvent) {
+  const src = String(props.node.attrs?.src ?? "").trim();
+  if (!src) return;
+  const gallery = ctx.previewImageGallery.value;
+  const root = ev.currentTarget;
+  const thumb =
+    root instanceof HTMLElement ? (root.querySelector("img") as HTMLElement | null) ?? root : null;
+  const index = gallery.findIndex((g) => g.url === src);
+  const images =
+    index >= 0 ? gallery : [{ url: src, caption: String(props.node.attrs?.alt ?? "").trim() }];
+  const start = index >= 0 ? index : 0;
+  await openRichTextInlineImageLightbox(images, start, thumb);
+}
+
+const imageLayoutStyle = computed(() => {
+  const attrs = props.node.attrs as { width?: unknown; height?: unknown } | undefined;
+  if (!attrs) return undefined;
+  const w = attrs.width != null ? Number(attrs.width) : NaN;
+  const h = attrs.height != null ? Number(attrs.height) : NaN;
+  const style: Record<string, string> = {};
+  if (Number.isFinite(w)) style.width = `${w}px`;
+  if (Number.isFinite(h)) style.height = `${h}px`;
+  return Object.keys(style).length ? style : undefined;
+});
 </script>
 
 <template>
@@ -109,14 +140,22 @@ const taskAttrs = computed(() => props.node.attrs as { checked?: boolean } | und
     <MentionChip :attrs="props.node.attrs" :mention-me-id="ctx.mentionMeId.value" :user-by-id="lookupUser" />
   </span>
 
-  <img
+  <button
     v-else-if="props.node.type === 'image'"
-    class="my-2 max-h-[24rem] max-w-full rounded-md"
-    loading="lazy"
-    :src="String(props.node.attrs?.src ?? '')"
-    :alt="String(props.node.attrs?.alt ?? '')"
-    :title="props.node.attrs?.title != null ? String(props.node.attrs.title) : undefined"
-  />
+    type="button"
+    class="my-2 block max-w-full cursor-zoom-in rounded-[10px] border-0 bg-transparent p-0 text-left ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    :aria-label="imageAriaLabel"
+    @click="onPreviewImageClick"
+  >
+    <img
+      class="max-h-[24rem] max-w-full rounded-[10px]"
+      loading="lazy"
+      :src="String(props.node.attrs?.src ?? '')"
+      :alt="String(props.node.attrs?.alt ?? '')"
+      :title="props.node.attrs?.title != null ? String(props.node.attrs.title) : undefined"
+      :style="imageLayoutStyle"
+    />
+  </button>
 
   <div v-else-if="props.node.type === 'table'" class="tableWrapper my-2 overflow-x-auto">
     <table class="w-full min-w-[12rem] border-collapse border border-border text-sm">

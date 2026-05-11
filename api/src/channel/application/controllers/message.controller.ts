@@ -98,7 +98,7 @@ export class MessageController {
   @Patch()
   async updateMessage(
     @Param('messageId') messageId: number,
-    @Body() body: Pick<UpdateMessage, 'content'>,
+    @Body() body: Pick<UpdateMessage, 'content' | 'attachmentIds'>,
     @Auth() issuer: Issuer,
   ) {
     const message = await this.commandBus.execute(
@@ -106,6 +106,7 @@ export class MessageController {
         messageId,
         issuerId: issuer.id,
         content: body.content,
+        attachmentIds: body.attachmentIds,
       }),
     );
 

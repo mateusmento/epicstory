@@ -1,11 +1,14 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import {
+  ChannelRepository,
   MessageReplyReactionRepository,
   MessageReplyRepository,
 } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
+import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { Transactional } from 'typeorm-transactional';
 import {
+  ChannelNotFound,
   IssuerCanOnlyDeleteOwnReplies,
   MessageReplyNotFound,
 } from '../exceptions';
@@ -24,6 +27,8 @@ export class DeleteReplyCommand implements ICommandHandler<DeleteReply> {
   constructor(
     private messageReplyRepo: MessageReplyRepository,
     private messageReplyReactionRepo: MessageReplyReactionRepository,
+    private channelRepo: ChannelRepository,
+    private attachmentService: AttachmentService,
   ) {}
 
   @Transactional()
@@ -34,6 +39,17 @@ export class DeleteReplyCommand implements ICommandHandler<DeleteReply> {
     if (!reply) throw new MessageReplyNotFound();
 
     if (reply.senderId !== issuerId) throw new IssuerCanOnlyDeleteOwnReplies();
+
+    const channel = await this.channelRepo.findOne({
+      where: { id: reply.channelId },
+      select: { id: true, workspaceId: true },
+    });
+    if (!channel) throw new ChannelNotFound();
+
+    await this.attachmentService.deleteAnchoredForDeletedReply({
+      workspaceId: channel.workspaceId,
+      replyId,
+    });
 
     await this.messageReplyReactionRepo.delete({ messageReplyId: replyId });
     await this.messageReplyRepo.remove(reply);

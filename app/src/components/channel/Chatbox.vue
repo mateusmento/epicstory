@@ -40,7 +40,10 @@ const props = defineProps<{
     attachmentIds?: number[];
   }) => Promise<unknown>;
   sendScheduledMessage?: (body: ICreateScheduledMessageBody) => Promise<unknown>;
-  updateMessage: (messageId: number, body: { content: JSONContent }) => Promise<unknown>;
+  updateMessage: (
+    messageId: number,
+    body: { content: JSONContent; attachmentIds?: number[] },
+  ) => Promise<unknown>;
   channelId: number;
   channel: IChannel;
 }>();
@@ -155,9 +158,12 @@ async function onSendScheduledMessage(payload: ICreateScheduledMessageBody) {
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: JSONContent }) {
+async function onSubmitEdit(payload: { messageId: number; content: JSONContent; attachmentIds?: number[] }) {
   await props.updateMessage(payload.messageId, {
     content: payload.content,
+    ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
+      ? { attachmentIds: payload.attachmentIds }
+      : {}),
   });
   editingMessage.value = null;
 }

@@ -33,8 +33,8 @@ export function buildMentionSuggestion(mentionablesForSuggestion: ComputedRef<Us
 }
 
 /**
- * Composer TipTap bodies for channel-style messages: text + mentions + code blocks.
- * Files are staged out-of-band in the composer, not embedded in JSON.
+ * Composer TipTap bodies for channel-style messages: text + mentions + code blocks + embedded images (insert action).
+ * Clipboard/dropped files are handled by the shell ({@link RichTextComposer} → staging), not TipTap FileHandler.
  */
 export function createRichTextComposerExtensions(args: {
   getPlaceholder: () => string;
@@ -48,7 +48,7 @@ export function createRichTextComposerExtensions(args: {
       linkOpenOnClick: false,
       lowlight: Lowlight,
       codeBlockNodeView: CodeBlockCardNodeView,
-      images: false,
+      images: true,
     }),
   ];
   base.push(

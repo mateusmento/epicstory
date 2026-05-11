@@ -24,6 +24,7 @@ const slots = useSlots();
 
 const emit = defineEmits<{
   submit: [];
+  /** Clipboard paste or editor drop of files → shell staging upload (includes images). */
   "pasted-files": [files: File[]];
   "update:editor": [editor: Editor | null];
 }>();
@@ -112,6 +113,16 @@ const editor = useEditor({
     handlePaste: (_view, event) => {
       const files = collectFilesFromClipboard(event);
       if (files.length === 0) return false;
+      event.preventDefault();
+      emit("pasted-files", files);
+      return true;
+    },
+    handleDrop: (_view, event, _slice, moved) => {
+      if (moved) return false;
+      const dt = event.dataTransfer;
+      if (!dt?.files?.length) return false;
+      const files = Array.from(dt.files).filter((f) => f.size > 0);
+      if (!files.length) return false;
       event.preventDefault();
       emit("pasted-files", files);
       return true;

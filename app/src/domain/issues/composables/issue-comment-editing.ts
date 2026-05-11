@@ -3,7 +3,11 @@ import type { MessageAttachmentDto } from "@/domain/channels/types/message.type"
 import type { JSONContent } from "@tiptap/core";
 import { computed, ref } from "vue";
 
-type UpdateIssueCommentFn = (entity: IMessage | IReply, content: JSONContent) => Promise<unknown>;
+type UpdateIssueCommentFn = (
+  entity: IMessage | IReply,
+  content: JSONContent,
+  attachmentIds?: number[],
+) => Promise<unknown>;
 
 export function useIssueCommentEditing(options: {
   updateIssueComment: UpdateIssueCommentFn;
@@ -41,9 +45,9 @@ export function useIssueCommentEditing(options: {
     editing.value = null;
   }
 
-  async function submitEdit(value: { messageId: number; content: JSONContent }) {
+  async function submitEdit(value: { messageId: number; content: JSONContent; attachmentIds?: number[] }) {
     if (!editing.value) return;
-    await updateIssueComment(editing.value.entity, value.content);
+    await updateIssueComment(editing.value.entity, value.content, value.attachmentIds);
     editing.value = null;
     await onAfterSave();
   }

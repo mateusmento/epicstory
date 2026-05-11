@@ -16,7 +16,7 @@ import {
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import type { IMessage, IReply } from "@/domain/channels";
-import { messageBodyPlainText } from "@epicstory/tiptap";
+import { excludeInlineImageAttachmentsFromBubbleTiles, messageBodyPlainText } from "@epicstory/tiptap";
 import { computed, ref, watch } from "vue";
 import MessageActions from "./MessageActions.vue";
 import MessageAttachments from "./MessageAttachments.vue";
@@ -72,6 +72,11 @@ const quotedExcerpt = computed(() => {
   return t.length > 220 ? `${t.slice(0, 220)}…` : t;
 });
 
+/** Omit attachment tiles already rendered inline in the body (listing APIs still return full set). */
+const bubbleAttachmentTiles = computed(() =>
+  excludeInlineImageAttachmentsFromBubbleTiles(props.message.content, props.message.attachments ?? []),
+);
+
 function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
   return cn(
     "border py-0.5 px-2 pr-3 rounded-full text-sm font-lato transition-colors",
@@ -104,10 +109,7 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
                 :mentioned-users="props.message.mentionedUsers"
                 :me-id="props.meId"
               />
-              <MessageAttachments
-                v-if="(props.message.attachments?.length ?? 0) > 0"
-                :files="props.message.attachments ?? []"
-              />
+              <MessageAttachments v-if="bubbleAttachmentTiles.length > 0" :files="bubbleAttachmentTiles" />
               <div
                 v-if="'isScheduled' in props.message && props.message.isScheduled"
                 class="text-[0.65rem] text-muted-foreground/80 mb-0.5"

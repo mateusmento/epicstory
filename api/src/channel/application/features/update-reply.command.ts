@@ -7,7 +7,15 @@ import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { IsNotEmpty, IsObject } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  Min,
+} from 'class-validator';
 import {
   ChannelNotFound,
   IssuerCanOnlyEditOwnMessages,
@@ -24,6 +32,13 @@ export class UpdateReply {
   @IsObject()
   content: JSONContent;
 
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  attachmentIds?: number[];
+
   constructor(data: Partial<UpdateReply>) {
     patch(this, data);
   }
@@ -38,7 +53,7 @@ export class UpdateReplyCommand implements ICommandHandler<UpdateReply> {
     private messageService: MessageService,
   ) {}
 
-  async execute({ replyId, issuerId, content }: UpdateReply) {
+  async execute({ replyId, issuerId, content, attachmentIds }: UpdateReply) {
     const reply = await this.replyRepo.findOne({ where: { id: replyId } });
     if (!reply) throw new MessageReplyNotFound();
 
@@ -71,6 +86,7 @@ export class UpdateReplyCommand implements ICommandHandler<UpdateReply> {
       replyId,
       content,
       issuerId,
+      attachmentIds,
     );
   }
 }
