@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
-import { Icon } from "@/design-system/icons";
-import { isImageMime, isVideoMime } from "./attachment-media-guards";
+import { FileTextIcon } from "lucide-vue-next";
+import { attachmentOpensInBrowserTab, isImageMime, isVideoMime } from "./attachment-media-guards";
 
 const props = defineProps<{ file: MessageAttachmentDto }>();
 
@@ -22,7 +22,7 @@ function displayName(f: MessageAttachmentDto) {
 
 <template>
   <div
-    class="flex flex-col overflow-hidden rounded-lg border border-border bg-muted/40 text-left text-xs shadow-sm"
+    class="flex flex-col relative w-full overflow-hidden rounded-lg border border-border bg-muted/40 text-left text-xs shadow-sm"
   >
     <template v-if="isImageMime(props.file.mimeType)">
       <button
@@ -54,9 +54,25 @@ function displayName(f: MessageAttachmentDto) {
         />
       </button>
     </template>
+    <template v-else-if="attachmentOpensInBrowserTab(props.file.mimeType, props.file.originalFilename)">
+      <a
+        :href="props.file.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex items-start gap-2 h-20 p-2 text-left outline-none ring-offset-background transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        :title="props.file.originalFilename"
+        :aria-label="`Open ${props.file.originalFilename ?? 'attachment'} in new tab`"
+      >
+        <FileTextIcon class="mt-0.5 size-6 shrink-0 text-muted-foreground stroke-zinc-400 fill-zinc-200" />
+        <div class="min-w-0 flex-1">
+          <div class="truncate font-medium text-foreground">{{ displayName(props.file) }}</div>
+          <div class="text-[0.65rem] text-muted-foreground">{{ props.file.mimeType || "File" }}</div>
+        </div>
+      </a>
+    </template>
     <template v-else>
-      <div class="flex items-start gap-2 p-2">
-        <Icon name="fa-file-alt" class="mt-0.5 size-6 shrink-0 text-muted-foreground" />
+      <div class="flex items-start gap-2 p-2 h-20">
+        <FileTextIcon class="mt-0.5 size-6 shrink-0 text-muted-foreground" />
         <div class="min-w-0 flex-1">
           <div class="truncate font-medium text-foreground" :title="props.file.originalFilename">
             {{ displayName(props.file) }}

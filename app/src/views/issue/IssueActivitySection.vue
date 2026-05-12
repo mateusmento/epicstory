@@ -170,6 +170,10 @@ async function onToggleDiscussion(entity: IMessage | IReply) {
     s.expanded = true;
   }
 }
+
+defineExpose({
+  reloadFeed: reloadAfterComment,
+});
 </script>
 
 <template>

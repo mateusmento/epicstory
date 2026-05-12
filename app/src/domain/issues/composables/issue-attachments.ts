@@ -12,6 +12,35 @@ export type IssueAttachmentActivitySyncPayload = {
   replies?: IReply[];
 };
 
+/** In-flight or failed optimistic rows shown above persisted attachments. */
+export type IssueAttachmentPendingEntry =
+  | { clientId: string; status: "uploading"; file: File; previewUrl: string }
+  | {
+      clientId: string;
+      status: "failed";
+      file: File;
+      previewUrl: string;
+      message?: string;
+    };
+
+export type IssueAttachmentTileRow =
+  | { key: string; kind: "persisted"; item: IssueAttachmentListItem }
+  | {
+      key: string;
+      kind: "uploading";
+      clientId: string;
+      file: File;
+      previewUrl: string;
+    }
+  | {
+      key: string;
+      kind: "failed";
+      clientId: string;
+      file: File;
+      previewUrl: string;
+      message?: string;
+    };
+
 function mergePreferExisting(
   cur: IssueAttachmentListItem | undefined,
   next: IssueAttachmentListItem,
@@ -31,6 +60,7 @@ function mergePreferExisting(
  */
 export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRefOrGetter<number> }) {
   const byId = shallowRef(new Map<number, IssueAttachmentListItem>());
+  const pendingUploads = shallowRef<IssueAttachmentPendingEntry[]>([]);
 
   function replaceMap(mutate: (m: Map<number, IssueAttachmentListItem>) => void) {
     const next = new Map(byId.value);
@@ -38,11 +68,50 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
     byId.value = next;
   }
 
+  function revokeAndDropPending(clientId: string) {
+    const entry = pendingUploads.value.find((p) => p.clientId === clientId);
+    if (entry) {
+      URL.revokeObjectURL(entry.previewUrl);
+    }
+    pendingUploads.value = pendingUploads.value.filter((p) => p.clientId !== clientId);
+  }
+
   const flatList = computed(() => {
     const list = [...byId.value.values()];
     list.sort((a, b) => b.id - a.id);
     return list;
   });
+
+  const attachmentTileRows = computed((): IssueAttachmentTileRow[] => {
+    const pendingRows: IssueAttachmentTileRow[] = pendingUploads.value.map((p) =>
+      p.status === "uploading"
+        ? {
+            key: `u:${p.clientId}`,
+            kind: "uploading",
+            clientId: p.clientId,
+            file: p.file,
+            previewUrl: p.previewUrl,
+          }
+        : {
+            key: `f:${p.clientId}`,
+            kind: "failed",
+            clientId: p.clientId,
+            file: p.file,
+            previewUrl: p.previewUrl,
+            message: p.message,
+          },
+    );
+    const persistedRows: IssueAttachmentTileRow[] = flatList.value.map((item) => ({
+      key: `a:${item.id}`,
+      kind: "persisted",
+      item,
+    }));
+    return [...pendingRows, ...persistedRows];
+  });
+
+  const attachmentsUploading = computed(() =>
+    pendingUploads.value.some((p) => p.status === "uploading"),
+  );
 
   const byAnchor = computed(() => {
     const map = new Map<IssueAttachmentAnchorKey, IssueAttachmentListItem[]>();
@@ -136,6 +205,53 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
     });
   }
 
+  function dismissPendingUpload(clientId: string) {
+    revokeAndDropPending(clientId);
+  }
+
+  async function uploadIssueAttachmentFiles(
+    files: File[],
+    options?: { reloadFeed?: () => Promise<void> },
+  ): Promise<void> {
+    const issueId = toValue(deps.issueId);
+    if (!issueId || files.length === 0) return;
+
+    const additions: IssueAttachmentPendingEntry[] = files.map((file) => ({
+      clientId: crypto.randomUUID(),
+      status: "uploading",
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+
+    pendingUploads.value = [...additions, ...pendingUploads.value];
+
+    await Promise.all(
+      additions.map(async (entry) => {
+        try {
+          const dto = await deps.issueApi.uploadAttachment(issueId, entry.file);
+          replaceMap((m) => {
+            m.set(dto.id, {
+              ...dto,
+              issueId,
+              messageId: null,
+              messageReplyId: null,
+            });
+          });
+          revokeAndDropPending(entry.clientId);
+        } catch (e: unknown) {
+          const message = e instanceof Error ? e.message : "Upload failed";
+          pendingUploads.value = pendingUploads.value.map((p) =>
+            p.clientId === entry.clientId && p.status === "uploading"
+              ? { ...p, status: "failed" as const, message }
+              : p,
+          );
+        }
+      }),
+    );
+
+    await options?.reloadFeed?.();
+  }
+
   function resolveAttachmentsForEntity(entity: IMessage | IReply): MessageAttachmentDto[] {
     const issueId = toValue(deps.issueId);
     if (!issueId) return entity.attachments ?? [];
@@ -148,10 +264,14 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
 
   return {
     flatList,
+    attachmentTileRows,
+    attachmentsUploading,
     byAnchor,
     refreshAttachments,
     ingestFromActivity,
     removeAttachment,
+    dismissPendingUpload,
+    uploadIssueAttachmentFiles,
     resolveAttachmentsForEntity,
   };
 }

@@ -99,7 +99,7 @@ function triggerDownload(url: string, filename: string) {
 }
 
 function registerUi(pswp: InstanceType<typeof PhotoSwipe>) {
-  pswp.ui.registerElement({
+  pswp.ui?.registerElement({
     name: "zoom-level-indicator",
     className: "epicstory-psw-zoom-pill",
     order: 4,
@@ -118,7 +118,7 @@ function registerUi(pswp: InstanceType<typeof PhotoSwipe>) {
     },
   });
 
-  pswp.ui.registerElement({
+  pswp.ui?.registerElement({
     name: "epicstory-download",
     title: "Download",
     ariaLabel: "Download",
@@ -132,7 +132,7 @@ function registerUi(pswp: InstanceType<typeof PhotoSwipe>) {
     },
   });
 
-  pswp.ui.registerElement({
+  pswp.ui?.registerElement({
     name: "epicstory-copy-image",
     title: "Copy image",
     ariaLabel: "Copy image",
@@ -160,7 +160,7 @@ function registerUi(pswp: InstanceType<typeof PhotoSwipe>) {
     },
   });
 
-  pswp.ui.registerElement({
+  pswp.ui?.registerElement({
     name: "epicstory-copy-link",
     title: "Copy link",
     ariaLabel: "Copy link",
@@ -179,7 +179,7 @@ function registerUi(pswp: InstanceType<typeof PhotoSwipe>) {
     },
   });
 
-  pswp.ui.registerElement({
+  pswp.ui?.registerElement({
     name: "epicstory-close",
     title: "Close",
     ariaLabel: "Close",

@@ -26,7 +26,7 @@ import { ChevronDown, Paperclip } from "lucide-vue-next";
 import { computed, ref, shallowRef, watch } from "vue";
 import { RichTextComposer } from "../rich-text";
 import MessageComposerPollSection from "./MessageComposerPollSection.vue";
-import MessageAttachments from "./MessageAttachments.vue";
+import AttachmentTilesList from "./AttachmentTilesList.vue";
 import MessageComposerActions from "./MessageComposerActions.vue";
 import { useMessageComposerAttachments } from "./composables/message-composer-attachments";
 import { useMessageComposerEditingBody } from "./composables/message-composer-editing-body";
@@ -236,12 +236,16 @@ const { customScheduleOpen, activeSchedule, scheduleSummary, onCustomScheduleCon
   });
 
 const {
-  editingExistingAttachments,
+  editingAttachmentRows,
   removingEditingAttachment,
   pendingAttachments,
   stagingFileInputRef,
   scheduleAttachmentHint,
+  stagingAttachmentRows,
+  attachmentsStagingBlocked,
   uploadStagingFiles,
+  dismissPendingTransfer,
+  resetStagingTransfers,
   openStagingFilePicker,
   onStagingFilesSelected,
   removeStagingAttachment,
@@ -291,6 +295,8 @@ async function onInlineImageFilesSelected(e: Event) {
 function onSendMessage() {
   if (!editor.value) return;
 
+  if (attachmentsStagingBlocked.value) return;
+
   const doc = editor.value.getJSON();
   const stripped = stripImageNodesFromDoc(doc);
   const plain = tiptapToPlainText(stripped, { stripFormatting: true }).trim();
@@ -316,6 +322,7 @@ function onSendMessage() {
       ...(pollPatch !== undefined ? { poll: pollPatch } : {}),
     });
     pendingAttachments.value = [];
+    resetStagingTransfers();
     composerPollBody.value = null;
     emitTypingStop();
     return;
@@ -346,6 +353,7 @@ function onSendMessage() {
 
   editor.value.commands.clearContent();
   pendingAttachments.value = [];
+  resetStagingTransfers();
   composerPollBody.value = null;
   emitTypingStop();
   clearChannelDraft(props.channelId);
@@ -435,28 +443,38 @@ function toggleComposerPoll() {
     />
     <div
       v-if="
-        pendingAttachments.length ||
+        stagingAttachmentRows.length ||
         scheduleAttachmentHint ||
-        (editingMessage && editingExistingAttachments.length)
+        (editingMessage && editingAttachmentRows.length)
       "
       class="shrink-0 border-t border-zinc-200/80 pt-2"
       @click.stop
     >
-      <MessageAttachments
-        v-if="editingMessage && editingExistingAttachments.length"
-        :files="editingExistingAttachments"
+      <AttachmentTilesList
+        v-if="editingMessage && editingAttachmentRows.length"
+        aria-label="Message attachments"
+        :rows="editingAttachmentRows"
         :disabled="removingEditingAttachment"
         removable
         :me-id="meId ?? null"
-        @remove="onRemoveEditingAttachment"
+        @remove="onRemoveEditingAttachment($event)"
+        @dismiss-pending="dismissPendingTransfer($event)"
       />
-      <MessageAttachments
-        v-if="pendingAttachments.length || scheduleAttachmentHint"
-        :files="pendingAttachments"
-        :disabled="!!activeSchedule"
-        :removable="true"
-        :hint="scheduleAttachmentHint"
-        @remove="removeStagingAttachment"
+      <p
+        v-if="scheduleAttachmentHint"
+        class="mb-1 text-[0.65rem] leading-snug text-muted-foreground"
+      >
+        {{ scheduleAttachmentHint }}
+      </p>
+      <AttachmentTilesList
+        v-if="stagingAttachmentRows.length"
+        aria-label="Staging attachments"
+        :rows="stagingAttachmentRows"
+        :disabled="!!activeSchedule || attachmentsStagingBlocked"
+        removable
+        :me-id="meId ?? null"
+        @remove="removeStagingAttachment($event)"
+        @dismiss-pending="dismissPendingTransfer($event)"
       />
     </div>
 
@@ -514,6 +532,7 @@ function toggleComposerPoll() {
         title="Attach files"
         class="shrink-0 mr-0.5"
         aria-label="Attach files"
+        :disabled="!!activeSchedule || attachmentsStagingBlocked"
         @click.stop="openStagingFilePicker()"
       >
         <Paperclip class="size-5" />
@@ -525,6 +544,7 @@ function toggleComposerPoll() {
           variant="default"
           size="sm"
           class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+          :disabled="attachmentsStagingBlocked"
           @click="onSendMessage"
         >
           <Icon name="io-paper-plane" />
@@ -538,6 +558,7 @@ function toggleComposerPoll() {
             variant="default"
             size="sm"
             class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+            :disabled="attachmentsStagingBlocked"
             @click="onSendMessage"
           >
             <Icon name="io-paper-plane" />
@@ -557,6 +578,7 @@ function toggleComposerPoll() {
               size="sm"
               class="shrink-0 border-0 bg-[#3A66FF] px-1.5 text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
               aria-label="Schedule options"
+              :disabled="attachmentsStagingBlocked"
             >
               <ChevronDown class="w-4 h-4" />
             </Button>
@@ -569,6 +591,7 @@ function toggleComposerPoll() {
         variant="default"
         size="sm"
         class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+        :disabled="attachmentsStagingBlocked"
         @click="onSendMessage"
       >
         <Icon name="io-paper-plane" />

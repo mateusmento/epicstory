@@ -61,17 +61,29 @@ async function onWorkspaceMentionListReachedBottom() {
 
 const issueApi = useDependency(IssueApi);
 const {
-  flatList,
-  refreshAttachments: refreshAttachments,
+  attachmentTileRows,
+  attachmentsUploading,
+  refreshAttachments,
   removeAttachment,
   resolveAttachmentsForEntity,
   ingestFromActivity,
+  dismissPendingUpload,
+  uploadIssueAttachmentFiles,
 } = useIssueAttachments({
   issueApi,
   issueId: () => issue.value?.id ?? 0,
 });
 
-const issueAttachmentFiles = computed(() => flatList.value);
+const activitySectionRef = ref<{ reloadFeed: () => Promise<void> } | null>(null);
+
+async function onIssueAttachmentsDropped(files: File[]) {
+  attachmentsError.value = null;
+  await uploadIssueAttachmentFiles(files, {
+    reloadFeed: async () => {
+      await activitySectionRef.value?.reloadFeed?.();
+    },
+  });
+}
 
 const attachmentsLoading = ref(false);
 const attachmentsError = ref<string | null>(null);
@@ -293,16 +305,21 @@ watch(
 
         <IssueAttachmentsStrip
           v-if="issue && user"
-          :files="issueAttachmentFiles"
+          :rows="attachmentTileRows"
           :loading="attachmentsLoading"
           :error="attachmentsError"
           :me-id="user.id"
+          droppable
+          :upload-in-progress="attachmentsUploading"
           class="mt-8"
           :remove-file="removeIssueAttachmentFile"
+          :dismiss-pending-upload="dismissPendingUpload"
+          @files-dropped="onIssueAttachmentsDropped"
         />
 
         <IssueActivitySection
           v-if="issue && user"
+          ref="activitySectionRef"
           :issue-id="issue.id"
           :comment-channel-id="issue.commentChannelId"
           :workspace-mention-users="workspaceMentionUsers"
@@ -452,13 +469,17 @@ watch(
 
           <IssueAttachmentsStrip
             v-if="issue && user"
-            :files="issueAttachmentFiles"
+            :rows="attachmentTileRows"
             :loading="attachmentsLoading"
             :error="attachmentsError"
             :me-id="user.id"
             compact
+            droppable
+            :upload-in-progress="attachmentsUploading"
             class="mt-2 border-t border-border pt-4"
             :remove-file="removeIssueAttachmentFile"
+            :dismiss-pending-upload="dismissPendingUpload"
+            @files-dropped="onIssueAttachmentsDropped"
           />
         </div>
       </div>

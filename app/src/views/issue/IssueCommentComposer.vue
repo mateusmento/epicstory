@@ -26,7 +26,7 @@ import { useMessageComposerEditingBody } from "@/components/messages/composables
 import type { ResolvedSchedule } from "@/components/messages/schedule-builders";
 import { useMessageComposerScreenRecording } from "@/components/messages/composables/message-composer-screen-recording";
 import type { MessageComposerAttachmentHandlers } from "@/components/messages/message-composer-attachment-handlers";
-import MessageAttachments from "@/components/messages/MessageAttachments.vue";
+import AttachmentTilesList from "@/components/messages/AttachmentTilesList.vue";
 import MessageComposerActions from "@/components/messages/MessageComposerActions.vue";
 
 const props = withDefaults(
@@ -116,11 +116,15 @@ watch(
 const activeSchedule = ref<ResolvedSchedule | null>(null);
 
 const {
-  editingExistingAttachments,
+  editingAttachmentRows,
   removingEditingAttachment,
   pendingAttachments,
   stagingFileInputRef,
+  stagingAttachmentRows,
+  attachmentsStagingBlocked,
   uploadStagingFiles,
+  dismissPendingTransfer,
+  resetStagingTransfers,
   openStagingFilePicker,
   onStagingFilesSelected,
   removeStagingAttachment,
@@ -170,6 +174,8 @@ async function onInlineImageFilesSelected(e: Event) {
 function onSendMessage() {
   if (!editor.value) return;
 
+  if (attachmentsStagingBlocked.value) return;
+
   const doc = editor.value.getJSON();
   const stripped = stripImageNodesFromDoc(doc);
   const plain = tiptapToPlainText(stripped, { stripFormatting: true }).trim();
@@ -185,6 +191,7 @@ function onSendMessage() {
       ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     });
     pendingAttachments.value = [];
+    resetStagingTransfers();
     return;
   }
 
@@ -201,6 +208,7 @@ function onSendMessage() {
 
   editor.value.commands.clearContent();
   pendingAttachments.value = [];
+  resetStagingTransfers();
   clearChannelDraft(props.channelId);
   cancelPendingDraftSave();
 }
@@ -267,23 +275,29 @@ function onCancelEdit() {
       @change="onInlineImageFilesSelected"
     />
     <div
-      v-if="pendingAttachments.length || (editingMessage && editingExistingAttachments.length)"
+      v-if="stagingAttachmentRows.length || (editingMessage && editingAttachmentRows.length)"
       class="shrink-0 border-t border-zinc-200/80 pt-2"
       @click.stop
     >
-      <MessageAttachments
-        v-if="editingMessage && editingExistingAttachments.length"
-        :files="editingExistingAttachments"
+      <AttachmentTilesList
+        v-if="editingMessage && editingAttachmentRows.length"
+        aria-label="Message attachments"
+        :rows="editingAttachmentRows"
         :disabled="removingEditingAttachment"
         removable
         :me-id="meId ?? null"
-        @remove="onRemoveEditingAttachment"
+        @remove="onRemoveEditingAttachment($event)"
+        @dismiss-pending="dismissPendingTransfer($event)"
       />
-      <MessageAttachments
-        v-if="pendingAttachments.length"
-        :files="pendingAttachments"
-        :removable="true"
-        @remove="removeStagingAttachment"
+      <AttachmentTilesList
+        v-if="stagingAttachmentRows.length"
+        aria-label="Staging attachments"
+        :rows="stagingAttachmentRows"
+        removable
+        :me-id="meId ?? null"
+        :disabled="attachmentsStagingBlocked"
+        @remove="removeStagingAttachment($event)"
+        @dismiss-pending="dismissPendingTransfer($event)"
       />
     </div>
 
@@ -318,6 +332,7 @@ function onCancelEdit() {
         title="Attach files"
         class="shrink-0 mr-0.5"
         aria-label="Attach files"
+        :disabled="attachmentsStagingBlocked"
         @click.stop="openStagingFilePicker()"
       >
         <Paperclip class="size-5" />
@@ -329,6 +344,7 @@ function onCancelEdit() {
           variant="default"
           size="sm"
           class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+          :disabled="attachmentsStagingBlocked"
           @click="onSendMessage"
         >
           <Icon name="io-paper-plane" />
@@ -341,6 +357,7 @@ function onCancelEdit() {
         variant="default"
         size="sm"
         class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+        :disabled="attachmentsStagingBlocked"
         @click="onSendMessage"
       >
         <Icon name="io-paper-plane" />

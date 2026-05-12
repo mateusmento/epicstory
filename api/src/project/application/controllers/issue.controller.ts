@@ -32,6 +32,7 @@ import {
   RemoveLabel,
   CreateIssueComment,
   ReplyToIssueComment,
+  UploadIssueAttachment,
 } from '../features';
 import { FindIssue } from '../features/issue/find-issue.query';
 import { FindIssueFeed } from '../features/issue/find-issue-feed.query';
@@ -228,12 +229,13 @@ export class IssueController {
     if (!file || file.size === 0) {
       throw new BadRequestException('Missing file');
     }
-    return this.attachments.createFromUpload({
-      workspaceId: issue.workspaceId,
-      issueId,
-      uploadedById: issuer.id,
-      file,
-    });
+    return this.commandBus.execute(
+      new UploadIssueAttachment({
+        issuer,
+        issueId,
+        file,
+      }),
+    );
   }
 
   @Delete(':id/attachments/:attachmentId')

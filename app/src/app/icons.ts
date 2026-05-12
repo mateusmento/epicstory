@@ -80,4 +80,5 @@ export {
   FaQuoteRight,
   FaCopy,
   FaEdit,
+  FaFileAlt,
 } from "oh-vue-icons/icons";

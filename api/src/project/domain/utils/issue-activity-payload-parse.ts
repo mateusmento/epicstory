@@ -15,6 +15,8 @@ export function parseStoredIssueActivityPayload(
     case 'issue_created':
     case 'comment_created':
       return Object.keys(raw).length ? (raw as IssueActivityPayload) : {};
+    case 'attachment_added':
+      return Object.keys(raw).length ? (raw as IssueActivityPayload) : {};
     default:
       return raw as IssueActivityPayload;
   }

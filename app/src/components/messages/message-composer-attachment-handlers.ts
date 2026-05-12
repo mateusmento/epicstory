@@ -4,6 +4,7 @@ import type { IssueApi } from "@/domain/issues/api";
 
 /** Injected into {@link MessageComposer}; built with helpers below so parents avoid prop drilling. */
 export type MessageComposerAttachmentHandlers = {
+  uploadOne: (file: File) => Promise<UploadedAttachment>;
   uploadFiles: (files: File[]) => Promise<UploadedAttachment[]>;
   removeLinkedAttachment: (attachmentId: number) => Promise<void>;
 };
@@ -16,13 +17,17 @@ export function channelMessageComposerAttachmentHandlers(deps: {
   channelApi: ChannelApi;
   channelId: () => number;
 }): MessageComposerAttachmentHandlers {
+  async function uploadOne(file: File): Promise<UploadedAttachment> {
+    return deps.channelApi.uploadAttachment(deps.channelId(), file);
+  }
+
   return {
+    uploadOne,
     async uploadFiles(files: File[]) {
-      const channelId = deps.channelId();
       const out: UploadedAttachment[] = [];
       for (const file of files) {
         try {
-          out.push(await deps.channelApi.uploadAttachment(channelId, file));
+          out.push(await uploadOne(file));
         } catch {
           /* skip failed file */
         }
@@ -48,13 +53,17 @@ export function issueActivityMessageComposerAttachmentHandlers(deps: {
   channelApi: ChannelApi;
   commentChannelId: () => number;
 }): MessageComposerAttachmentHandlers {
+  async function uploadOne(file: File): Promise<UploadedAttachment> {
+    return deps.channelApi.uploadAttachment(deps.commentChannelId(), file);
+  }
+
   return {
+    uploadOne,
     async uploadFiles(files: File[]) {
-      const channelId = deps.commentChannelId();
       const out: UploadedAttachment[] = [];
       for (const file of files) {
         try {
-          out.push(await deps.channelApi.uploadAttachment(channelId, file));
+          out.push(await uploadOne(file));
         } catch {
           /* skip failed file */
         }

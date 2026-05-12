@@ -5,6 +5,7 @@ import { Icon } from "@/design-system/icons";
 import { computed } from "vue";
 import MessageAttachmentTileBody from "./MessageAttachmentTileBody.vue";
 import { cn } from "@/design-system/utils";
+import { isImageMime, isVideoMime } from "./attachment-media-guards";
 import { openAttachmentLightbox } from "./media-attachment-lightbox";
 
 const props = withDefaults(
@@ -54,6 +55,7 @@ function onRemoveClick(id: number) {
 }
 
 async function onOpenPreview(file: MessageAttachmentDto, thumbElement: HTMLElement) {
+  if (!isImageMime(file.mimeType) && !isVideoMime(file.mimeType, file.originalFilename)) return;
   await openAttachmentLightbox(props.files, file, thumbElement);
 }
 </script>
