@@ -12,7 +12,7 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
   AddChannelMember,
-  CreateDirectOrMultiDirectChannel,
+  CreateMultiDirectChannel,
   DeleteChannel,
   RemoveChannelMember,
   RenameChannel,
@@ -106,15 +106,15 @@ export class WorkspaceChannelController {
     );
   }
 
-  @Post('direct/peers')
+  @Post('multi-direct')
   @UseGuards(JwtAuthGuard)
   createDirectOrMultiDirect(
     @Param('workspaceId') workspaceId: number,
-    @Body() command: CreateDirectOrMultiDirectChannel,
+    @Body() command: CreateMultiDirectChannel,
     @Auth() issuer: Issuer,
   ) {
     return this.commandBus.execute(
-      new CreateDirectOrMultiDirectChannel({ ...command, workspaceId, issuer }),
+      new CreateMultiDirectChannel({ ...command, workspaceId, issuer }),
     );
   }
 

@@ -7,7 +7,7 @@ import type {
 
 export type CreateDirectChannel = {
   type: "direct";
-  username: string;
+  peerId: number;
 };
 
 export type CreateDirectOrMultiDirectChannel = {

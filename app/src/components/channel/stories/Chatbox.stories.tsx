@@ -54,7 +54,7 @@ export const Default: Story = {
       messageGroup.value.messages.push({
         id: (max(map(messageGroup.value.messages, "id")) ?? 0) + 1,
         content: message.content,
-        sentAt: new Date().toISOString(),
+        sentAt: new Date(),
         senderId: 2,
         sender: {
           id: 2,

@@ -6,7 +6,8 @@ import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
-import { enrichChannelsForListView } from '../utils/channel-list-enrichment';
+import { enrichChannelsForPreview } from '../utils/enrich-channel';
+import { ChannelType } from 'src/channel/domain';
 
 export class FindChannels {
   workspaceId: number;
@@ -32,7 +33,7 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
     const member = await this.workspaceRepo.findMember(workspaceId, issuer.id);
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
 
-    let query = this.channelRepo
+    const query = this.channelRepo
       .createQueryBuilder('c')
       .innerJoin('c.peers', 'peer', 'peer.id = :userId', { userId: issuer.id })
       .leftJoinAndSelect('c.peers', 'p')
@@ -43,21 +44,15 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
         'm.channel_id = c.id AND m.ongoing = true',
       )
       .leftJoinAndSelect('c.lastMessage', 'msg')
-      .where('c.workspaceId = :workspaceId', { workspaceId });
-
-    if (teamId) query = query.andWhere('c.teamId = :teamId', { teamId });
-
-    query = query
-      .andWhere('c.type <> :workspaceOpenType', {
-        workspaceOpenType: 'workspace_open',
-      })
+      .where('c.workspaceId = :workspaceId', { workspaceId })
+      .andWhere(teamId ? 'c.teamId = :teamId' : 'TRUE', { teamId })
+      .andWhere('c.type <> :type', { type: 'workspace_open' as ChannelType })
       .orderBy(
         'CASE WHEN msg.id is null THEN c.createdAt ELSE msg.sentAt END',
         'DESC',
       );
 
     const channels = await query.getMany();
-    enrichChannelsForListView(channels, issuer.id);
-    return channels;
+    return enrichChannelsForPreview(channels, issuer.id);
   }
 }

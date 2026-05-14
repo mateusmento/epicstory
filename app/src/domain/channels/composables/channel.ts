@@ -1,22 +1,22 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
-import type { IUser as IUser } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
-import { last } from "lodash";
-import { defineStore, storeToRefs } from "pinia";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { ChannelApi } from "@epicstory/api-client";
 import type {
   CreateScheduledMessageBody,
   IChannel,
   IMessage,
   IReply,
+  IUser,
   MessagePollBody,
 } from "@epicstory/contracts";
-import { ChannelApi } from "@epicstory/api-client";
+import type { JSONContent } from "@tiptap/core";
+import { last } from "lodash";
+import { defineStore, storeToRefs } from "pinia";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import type { IMessageGroup } from "../types/message.type";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
-import type { JSONContent } from "@tiptap/core";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
 
 /** Shared across all `useChannel()` callers */

@@ -3,6 +3,7 @@ import { UserAvatar } from "@/components/user";
 import { IconChats } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 import type { DirectMessageNotificationPayload } from "@/domain/notifications";
+import type { IUser } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 import { computed } from "vue";
 
@@ -16,8 +17,8 @@ const { user: me } = useAuth();
 const channelName = computed(() => {
   if (props.payload.channel.type === "multi-direct") {
     return props.payload.channel.peers
-      .filter((peer) => peer.id !== me?.value?.id)
-      .map((peer) => peer.name)
+      .filter((peer: IUser) => peer.id !== me?.value?.id)
+      .map((peer: IUser) => peer.name)
       .join(", ");
   }
   return props.payload.sender?.name;

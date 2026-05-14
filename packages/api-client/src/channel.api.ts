@@ -1,24 +1,24 @@
 import type {
-  IChannelActivity,
   ChannelGroupsPage,
-  IChannel,
   CreateDirectChannel,
   CreateDirectOrMultiDirectChannel,
   CreateGroupChannel,
   CreateMeetingChannel,
   CreateScheduledMessageBody,
-  MessagePollBody,
+  IChannel,
+  IChannelActivity,
   IMessage,
-  Page,
   IReaction,
   IReply,
   IScheduledMessage,
   ISearchChannelsAndUsersItem,
+  IUser,
+  MessagePollBody,
+  Page,
   ToggleReactionResponse,
   UpdateChannelMessageBody,
   UpdateScheduledMessageBody,
   UploadedAttachment,
-  IUser,
   VoteMessagePollResponse,
 } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
@@ -105,7 +105,7 @@ export class ChannelApi {
     data: Omit<CreateDirectOrMultiDirectChannel, "type">,
   ) {
     return this.axios
-      .post<IChannel>(`/workspaces/${workspaceId}/channels/direct/peers`, data)
+      .post<IChannel>(`/workspaces/${workspaceId}/channels/multi-direct`, data)
       .then((res) => res.data);
   }
 

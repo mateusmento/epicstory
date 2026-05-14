@@ -1,6 +1,6 @@
 export * from './add-channel-member.command';
 export * from './create-direct-channel.command';
-export * from './create-direct-or-multi-direct-channel.command';
+export * from './create-multi-direct-channel.command';
 export * from './create-group-channel.command';
 export * from './create-meeting-channel.command';
 export * from './delete-channel.command';

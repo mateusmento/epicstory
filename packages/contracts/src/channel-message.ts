@@ -42,16 +42,28 @@ export type IReaction = {
 export type IAggregatedReaction = {
   emoji: string;
   reactedBy: IUser[];
-  firstReactedAt: string;
+  /** Same as persistence / domain: ISO timestamps are applied at the transport layer only. */
+  firstReactedAt: Date;
   reactedByMe: boolean;
 };
 
+export type ChannelType =
+  | "direct"
+  | "multi-direct"
+  | "group"
+  | "meeting"
+  | "workspace_open";
+
 export type IChannel = {
   id: number;
-  type: "direct" | "group" | "multi-direct" | "meeting";
+  type: ChannelType;
   name?: string;
   image?: string;
-  directPeer: IUser;
+  workspaceId?: number;
+  teamId?: number;
+  createdAt?: Date;
+  /** Present for direct channels when the payload is enriched for the viewer. */
+  directPeer?: IUser;
   lastMessage?: IMessage;
   unreadMessagesCount: number;
   meeting: IMeeting | null;
@@ -72,10 +84,14 @@ export type IMeeting = {
   workspaceId?: number;
   attendees: IMeetingAttendee[];
   ongoing: boolean;
-  startedAt: string;
-  endedAt: string | null;
-  occurrenceAt: string;
-  calendarEventId: string;
+  startedAt: Date;
+  endedAt: Date | null;
+  occurrenceAt?: Date | null;
+  calendarEventId?: string | null;
+  scheduledStartsAt?: Date | null;
+  scheduledEndsAt?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export type IMessage = {
@@ -84,14 +100,15 @@ export type IMessage = {
   displayContent?: string;
   quotedMessageId?: number | null;
   quotedMessage?: IQuotedMessagePreview;
-  editedAt?: string | null;
+  editedAt?: Date | null;
   isScheduled?: boolean;
   mentionedUsers?: IUser[];
-  sentAt: string;
+  sentAt: Date;
   senderId: number;
   sender: IUser;
   channelId: number;
-  channel: IChannel;
+  /** Omitted in some list payloads to avoid heavy circular nesting. */
+  channel?: IChannel;
   repliesCount: number;
   repliers: { user: IUser; repliesCount: number }[];
   reactions: IAggregatedReaction[];
@@ -107,11 +124,11 @@ export type IReply = {
   quotedMessage?: IQuotedMessagePreview;
   mentionedUsers?: IUser[];
   isScheduled?: boolean;
-  sentAt: string;
+  sentAt: Date;
   senderId: number;
   sender: IUser;
   channelId: number;
-  channel: IChannel;
+  channel?: IChannel;
   messageId: number;
   message: IMessage;
   repliesCount: number;

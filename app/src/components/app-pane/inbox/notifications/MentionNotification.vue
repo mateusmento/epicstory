@@ -1,6 +1,7 @@
 <script lang="tsx" setup>
 import { UserAvatar } from "@/components/user";
 import type { MentionNotificationPayload } from "@/domain/notifications";
+import type { IUser } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 import { AtSignIcon } from "lucide-vue-next";
 import { computed } from "vue";
@@ -29,7 +30,7 @@ const channelName = computed(() => {
     return "thread";
   }
   if (props.payload.channel.type === "multi-direct") {
-    return props.payload.channel.peers.map((peer) => peer.name).join(", ");
+    return props.payload.channel.peers.map((peer: IUser) => peer.name).join(", ");
   }
   if (props.payload.channel.type === "direct") {
     return "direct message";

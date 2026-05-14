@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Channel } from 'src/channel/domain/entities/channel.entity';
+import {
+  Channel,
+  ChannelType,
+} from 'src/channel/domain/entities/channel.entity';
 import { FindOptionsRelations, Repository } from 'typeorm';
 
 @Injectable()
@@ -37,17 +40,41 @@ export class ChannelRepository extends Repository<Channel> {
     return await qb.getOne();
   }
 
-  findMultiDirectChannel(peers: number[]) {
+  findByPeers(workspaceId: number, peers: number[], type?: ChannelType) {
+    const peerIds = [...new Set(peers)];
+    if (peerIds.length === 0) {
+      return Promise.resolve(null);
+    }
+
+    const matchingIds = this.createQueryBuilder('c2')
+      .subQuery()
+      .select('c2.id')
+      .from(Channel, 'c2')
+      .innerJoin('channel_peers', 'cp', 'cp.channel_id = c2.id')
+      .where(type ? 'c2.type = :type' : 'TRUE', { type })
+      .andWhere('c2.workspaceId = :workspaceId', { workspaceId })
+      .groupBy('c2.id')
+      .having('COUNT(DISTINCT cp.users_id) = :peerCount', {
+        peerCount: peerIds.length,
+      })
+      .andHaving('BOOL_AND(cp.users_id IN (:...peerIds))', { peerIds });
+
     return this.createQueryBuilder('c')
-      .innerJoin('channel_peers', 'p', 'p.channel_id = c.id')
-      .where('p.users_id IN (:...peers)', { peers })
-      .andWhere('c.type = :type', { type: 'multi-direct' })
-      .groupBy('c.id')
-      .having('COUNT(DISTINCT p.users_id) = :n', { n: peers.length })
+      .leftJoinAndSelect('c.peers', 'peer')
+      .where(`c.id IN ${matchingIds.getQuery()}`)
+      .setParameters(matchingIds.getParameters())
       .getOne();
   }
 
-  findDirectChannel(receiverId: number, senderId: number) {
+  /**
+   * @deprecated: Use {@link findByPeers} instead.
+   * Find a direct channel between two users in a workspace.
+   * @param workspaceId - The ID of the workspace.
+   * @param receiverId - The ID of the user who is the receiver.
+   * @param senderId - The ID of the user who is the sender.
+   * @returns The direct channel between the two users.
+   */
+  findDirectChannel(workspaceId: number, receiverId: number, senderId: number) {
     return this.createQueryBuilder('c')
       .innerJoin(
         'channel_peers',
@@ -61,7 +88,9 @@ export class ChannelRepository extends Repository<Channel> {
         'p2.channel_id = c.id AND p2.users_id = :senderId',
         { senderId },
       )
+      .leftJoinAndSelect('c.peers', 'p')
       .where('c.type = :type', { type: 'direct' })
+      .andWhere('c.workspaceId = :workspaceId', { workspaceId })
       .getOne();
   }
 }

@@ -1,3 +1,4 @@
+import type { IChannel } from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
@@ -5,15 +6,15 @@ import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { Issuer } from 'src/core/auth';
 import { Page } from 'src/core/page';
-import { patch } from 'src/core/objects';
+import { mapBy, patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { enrichChannelsForListView } from '../utils/channel-list-enrichment';
+import { enrichChannelsForPreview } from '../utils/enrich-channel';
 
 export type ChannelGroupsPage = {
-  groupChannels: Page<Channel>;
-  meetingChannels: Page<Channel>;
-  directChannels: Page<Channel>;
+  groupChannels: Page<IChannel>;
+  meetingChannels: Page<IChannel>;
+  directChannels: Page<IChannel>;
 };
 
 export class FindChannelGroups {
@@ -112,7 +113,7 @@ export class FindChannelGroupsQuery
     types: Channel['type'][];
     page: number;
     count: number;
-  }): Promise<Page<Channel>> {
+  }): Promise<Page<IChannel>> {
     const safeCount = Math.min(50, Math.max(1, Math.floor(Number(count))));
     const safePage = Math.max(1, Math.floor(Number(page)));
     const offset = (safePage - 1) * safeCount;
@@ -173,10 +174,10 @@ export class FindChannelGroupsQuery
       .where('c.id IN (:...ids)', { ids })
       .getMany();
 
-    enrichChannelsForListView(channels, issuerId);
+    const enriched = enrichChannelsForPreview(channels, issuerId);
 
-    const byId = new Map<number, Channel>(channels.map((c) => [c.id, c]));
-    const ordered = ids.map((id) => byId.get(id)).filter(Boolean) as Channel[];
+    const byId = mapBy(enriched, 'id');
+    const ordered = ids.map((id) => byId.get(id)).filter(Boolean) as IChannel[];
 
     return Page.fromResult(ordered, total, {
       page: safePage,

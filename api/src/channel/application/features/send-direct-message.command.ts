@@ -66,7 +66,7 @@ export class SendDirectMessageCommand
       throw new Error('Peers not found');
     }
 
-    let channel = await this.channelRepo.findMultiDirectChannel([
+    let channel = await this.channelRepo.findByPeers(workspaceId, [
       ...peers,
       senderId,
     ]);

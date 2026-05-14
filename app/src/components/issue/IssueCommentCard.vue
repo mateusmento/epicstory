@@ -72,11 +72,12 @@ const displayAttachments = computed(() =>
 
 const mostUsedEmojis = ["👍", "🙌", "❤️", "🔥", "🎉"];
 
-function timeLabel(sentAt: string) {
+function timeLabel(sentAt: Date | string) {
   try {
-    return formatDistanceToNow(new Date(sentAt), { addSuffix: true });
+    const d = typeof sentAt === "string" || typeof sentAt === "number" ? new Date(sentAt) : sentAt;
+    return formatDistanceToNow(d, { addSuffix: true });
   } catch {
-    return sentAt;
+    return String(sentAt);
   }
 }
 
@@ -144,7 +145,10 @@ const rootClass = computed(() =>
       <div class="min-w-0 flex-1 flex flex-col gap-1.5">
         <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0">
           <span class="text-[13px] font-semibold leading-tight text-zinc-900">{{ message.sender.name }}</span>
-          <time class="text-[12px] tabular-nums font-normal text-zinc-500" :datetime="message.sentAt">
+          <time
+            class="text-[12px] tabular-nums font-normal text-zinc-500"
+            :datetime="typeof message.sentAt === 'string' ? message.sentAt : message.sentAt.toISOString()"
+          >
             {{ timeLabel(message.sentAt) }}
           </time>
         </div>

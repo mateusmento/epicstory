@@ -136,8 +136,8 @@ async function onPickChannel(channelId: number) {
   // exitSearchUi();
 }
 
-async function onPickUser(email: string) {
-  const channel = await createChannel({ type: "direct", username: email });
+async function onPickUser(userId: number) {
+  const channel = await createChannel({ type: "direct", peerId: userId });
   openChannel(channel);
   // exitSearchUi();
 }

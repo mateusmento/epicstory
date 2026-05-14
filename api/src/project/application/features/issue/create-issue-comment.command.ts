@@ -14,7 +14,7 @@ import {
   IsOptional,
   Min,
 } from 'class-validator';
-import { dispatchNotificationsForNewChannelMessage } from 'src/channel/application/utils/dispatch-channel-message-notifications';
+import { dispatchNotificationsForMessageSent } from 'src/channel/application/utils/dispatch-message-notifications';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { MessageService } from 'src/channel/application/services/message.service';
 import { Issuer } from 'src/core/auth';
@@ -118,7 +118,7 @@ export class CreateIssueCommentCommand
       }),
     );
 
-    await dispatchNotificationsForNewChannelMessage(
+    await dispatchNotificationsForMessageSent(
       this.commandBus,
       channel,
       message,

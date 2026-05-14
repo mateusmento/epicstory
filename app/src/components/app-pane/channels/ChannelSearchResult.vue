@@ -13,7 +13,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "reached-bottom"): void;
   (e: "select-channel", channelId: number): void;
-  (e: "select-user", email: string): void;
+  (e: "select-user", userId: number): void;
 }>();
 
 const getItemKey = (item: ISearchChannelsAndUsersItem) =>
@@ -73,7 +73,7 @@ const shouldShowPeopleHeader = (items: ISearchChannelsAndUsersItem[], index: num
           class="flex w-full flex-col items-stretch gap-0.5 px-3 py-2.5 rounded-md text-left text-xs hover:bg-secondary sm:flex-row sm:items-center sm:gap-3"
           @mousedown.prevent
           @touchstart.prevent
-          @click="emit('select-user', item.user.email)"
+          @click="emit('select-user', item.user.id)"
         >
           <div class="flex items-center gap-2 min-w-0">
             <UserAvatar :name="item.user.name" :picture="item.user.picture" size="base" class="shrink-0" />

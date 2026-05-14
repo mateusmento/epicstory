@@ -1,15 +1,16 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsArray, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
-import { UserRepository } from 'src/auth';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { TeamNotFound } from 'src/workspace/domain/exceptions';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
-import { TeamRepository } from 'src/workspace/infrastructure/repositories';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import {
+  TeamRepository,
+  WorkspaceRepository,
+} from 'src/workspace/infrastructure/repositories';
+import { enrichChannelForPreview } from '../utils/enrich-channel';
 
 export class CreateGroupChannel {
   workspaceId: number;
@@ -38,7 +39,6 @@ export class CreateGroupChannelCommand
   constructor(
     private workspaceRepo: WorkspaceRepository,
     private channelRepo: ChannelRepository,
-    private userRepo: UserRepository,
     private teamRepo: TeamRepository,
   ) {}
 
@@ -49,10 +49,11 @@ export class CreateGroupChannelCommand
     name,
     members,
   }: CreateGroupChannel) {
-    const member = await this.workspaceRepo.findMember(workspaceId, issuer.id, {
-      user: true,
-    });
-    if (!member) throw new IssuerUserIsNotWorkspaceMember();
+    const member = await this.workspaceRepo.requiresMembership(
+      workspaceId,
+      issuer.id,
+      { user: true },
+    );
 
     if (teamId) {
       const team = await this.teamRepo.findOneBy({ id: teamId });
@@ -73,14 +74,16 @@ export class CreateGroupChannelCommand
       throw new NotFoundException('Members not found');
     }
 
-    const channel = Channel.create({
-      workspaceId,
-      type: 'group',
-      name,
-      peers: [member.user, ...peers.map((p) => p.user)],
-      teamId,
-    });
+    const channel = await this.channelRepo.save(
+      Channel.create({
+        workspaceId,
+        type: 'group',
+        name,
+        peers: [member.user, ...peers.map((p) => p.user)],
+        teamId,
+      }),
+    );
 
-    return this.channelRepo.save(channel);
+    return enrichChannelForPreview(channel, issuer.id);
   }
 }

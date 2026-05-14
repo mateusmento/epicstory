@@ -119,21 +119,24 @@ describe('SendMessageCommand', () => {
     const [user1, user2, user3, user4] = users;
     const [channel1, channel2, channel3] = channels;
 
-    let result = await channelRepo.findMultiDirectChannel([user1.id, user2.id]);
+    let result = await channelRepo.findByPeers(workspace.id, [
+      user1.id,
+      user2.id,
+    ]);
 
     expect(result).toBeDefined();
     expect(result.id).toBe(channel1.id);
 
-    result = await channelRepo.findMultiDirectChannel([user1.id, user3.id]);
+    result = await channelRepo.findByPeers(workspace.id, [user1.id, user3.id]);
 
     expect(result).toBeDefined();
     expect(result.id).toBe(channel2.id);
 
-    result = await channelRepo.findMultiDirectChannel([user1.id, user4.id]);
+    result = await channelRepo.findByPeers(workspace.id, [user1.id, user4.id]);
 
     expect(result).toBeNull();
 
-    result = await channelRepo.findMultiDirectChannel([
+    result = await channelRepo.findByPeers(workspace.id, [
       user1.id,
       user2.id,
       user3.id,

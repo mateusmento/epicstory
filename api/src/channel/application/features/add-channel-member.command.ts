@@ -1,10 +1,9 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNumber } from 'class-validator';
 import { UserRepository } from 'src/auth';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 export class AddChannelMember {
@@ -36,26 +35,15 @@ export class AddChannelMemberCommand
 
     if (!channel) throw new NotFoundException('Channel not found');
 
-    const issuerMember = await this.workspaceRepo.findMember(
-      channel.workspaceId,
-      issuerId,
-    );
+    await this.workspaceRepo.requiresMembership(channel.workspaceId, issuerId);
 
-    if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
-
-    const user = await this.userRepo.findOneBy({ id: userId });
-
-    if (!user) throw new NotFoundException('User not found');
-
-    const userMember = await this.workspaceRepo.findMember(
+    const member = await this.workspaceRepo.requiresMembership(
       channel.workspaceId,
       userId,
+      { user: true },
     );
 
-    if (!userMember)
-      throw new BadRequestException('User is not a workspace member');
-
-    channel.peers.push(user);
+    channel.peers.push(member.user);
 
     return this.channelRepo.save(channel);
   }

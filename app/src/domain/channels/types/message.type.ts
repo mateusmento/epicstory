@@ -6,7 +6,7 @@ export type IMessageGroup<M extends IMessage | IReply = IMessage> = {
   id: number;
   senderId: number;
   sender: IUser;
-  sentAt: string;
+  sentAt: Date;
   messages: M[];
 };
 

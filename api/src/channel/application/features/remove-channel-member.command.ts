@@ -1,10 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserRepository } from 'src/auth';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { enrichChannelForPreview } from '../utils/enrich-channel';
 
 export class RemoveChannelMember {
   channelId: number;
@@ -22,31 +21,23 @@ export class RemoveChannelMemberCommand
 {
   constructor(
     private channelRepo: ChannelRepository,
-    private userRepo: UserRepository,
     private workspaceRepo: WorkspaceRepository,
   ) {}
 
   async execute({ channelId, userId, issuerId }: RemoveChannelMember) {
-    const channel = await this.channelRepo.findOne({
+    let channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },
     });
 
     if (!channel) throw new NotFoundException('Channel not found');
 
-    const issuerMember = await this.workspaceRepo.findMember(
-      channel.workspaceId,
-      issuerId,
-    );
-
-    if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
-
-    const user = await this.userRepo.findOneBy({ id: userId });
-
-    if (!user) throw new NotFoundException('User not found');
+    await this.workspaceRepo.requiresMembership(channel.workspaceId, issuerId);
+    await this.workspaceRepo.requiresMembership(channel.workspaceId, userId);
 
     channel.peers = channel.peers.filter((u) => u.id !== userId);
 
-    return this.channelRepo.save(channel);
+    channel = await this.channelRepo.save(channel);
+    return enrichChannelForPreview(channel, issuerId);
   }
 }

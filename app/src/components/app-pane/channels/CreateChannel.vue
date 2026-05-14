@@ -51,7 +51,11 @@ async function onCreateChannel(event: any) {
   const payload: any = { ...event, type: channelType.value };
 
   if (payload.type === "direct") {
-    payload.peers = members.value.map((m) => m.id);
+    if (members.value.length === 1) {
+      payload.peerId = members.value[0].id;
+    } else {
+      payload.peers = members.value.map((m) => m.id);
+    }
   } else {
     payload.members = members.value.map((m) => m.id);
   }

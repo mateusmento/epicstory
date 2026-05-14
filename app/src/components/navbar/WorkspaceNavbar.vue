@@ -64,8 +64,12 @@ async function onJoinLiveScheduledMeeting() {
   // if (!calendarEventId || !occurrenceAt) return;
   router.push({
     name: "meeting-lobby",
-    params: { workspaceId: workspace.value.id },
-    query: { occurrenceAt, calendarEventId, meetingId: liveScheduledMeeting.value?.meeting.id },
+    params: { workspaceId: String(workspace.value.id) },
+    query: {
+      ...(occurrenceAt != null ? { occurrenceAt: occurrenceAt.toISOString() } : {}),
+      ...(calendarEventId != null ? { calendarEventId: String(calendarEventId) } : {}),
+      meetingId: String(liveScheduledMeeting.value.meeting.id),
+    },
   });
 }
 </script>

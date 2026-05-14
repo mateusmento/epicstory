@@ -13,13 +13,13 @@ export const messageGroup = ref<IMessageGroup>({
     picture: seanPhoto,
     email: "jean@example.com",
   },
-  sentAt: new Date().toISOString(),
+  sentAt: new Date(),
   messages: [
     {
       id: 3,
       content: EMPTY_TIPTAP_DOC,
       displayContent: "Yeah, I'll send you the updates later.",
-      sentAt: new Date().toISOString(),
+      sentAt: new Date(),
       senderId: 2,
       sender: {
         id: 2,
@@ -37,7 +37,7 @@ export const messageGroup = ref<IMessageGroup>({
           id: 1,
           content: EMPTY_TIPTAP_DOC,
           displayContent: "Hello there!",
-          sentAt: new Date().toISOString(),
+          sentAt: new Date(),
           senderId: 1,
           sender: {
             id: 1,
@@ -83,13 +83,13 @@ export const messageGroups = ref<IMessageGroup[]>([
       picture: daianaPhoto,
       email: "daiana@example.com",
     },
-    sentAt: "2024-07-23T21:07:30",
+    sentAt: new Date("2024-07-23T21:07:30"),
     messages: [
       {
         id: 1,
         content: EMPTY_TIPTAP_DOC,
         displayContent: "Hello there!",
-        sentAt: new Date().toISOString(),
+        sentAt: new Date(),
         senderId: 1,
         sender: {
           id: 1,
@@ -115,7 +115,7 @@ export const messageGroups = ref<IMessageGroup[]>([
         id: 2,
         content: EMPTY_TIPTAP_DOC,
         displayContent: "Any updates?",
-        sentAt: new Date().toISOString(),
+        sentAt: new Date(),
         senderId: 1,
         sender: {
           id: 1,

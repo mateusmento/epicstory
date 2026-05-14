@@ -2,10 +2,9 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, IssuerIsNotChannelMember } from '../exceptions';
-import { enrichChannelsForListView } from '../utils/channel-list-enrichment';
+import { enrichChannelForPreview } from '../utils/enrich-channel';
 
 export class FindChannel {
   channelId: number;
@@ -39,17 +38,10 @@ export class FindChannelQuery implements IQueryHandler<FindChannel> {
 
     if (!channel) throw new ChannelNotFound();
 
-    const issuerMember = await this.workspaceRepo.findMember(
-      channel.workspaceId,
-      issuerId,
-    );
-
-    if (!issuerMember) throw new IssuerUserIsNotWorkspaceMember();
+    await this.workspaceRepo.requiresMembership(channel.workspaceId, issuerId);
 
     if (!channel.hasMember(issuerId)) throw new IssuerIsNotChannelMember();
 
-    enrichChannelsForListView([channel], issuerId);
-
-    return channel;
+    return enrichChannelForPreview(channel, issuerId);
   }
 }

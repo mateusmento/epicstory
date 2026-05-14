@@ -19,7 +19,7 @@ import { useWorkspace } from "@/domain/workspace";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref, shallowRef, watch } from "vue";
-import type { IChannel, IMeeting, IMeetingAttendee } from "@epicstory/contracts";
+import type { ChannelType, IChannel, IMeeting, IMeetingAttendee } from "@epicstory/contracts";
 import { useMeetingMediaDevicesStore } from "./meeting-media-devices";
 import { useMeetingSocket } from "./meeting-socket";
 
@@ -81,7 +81,7 @@ const useMeetingStore = defineStore("meeting", () => {
   const meetingApi = useDependency(MeetingApi);
   const channelApi = useDependency(ChannelApi);
 
-  const currentMeetingChannelType = ref<IChannel["type"] | null>(null);
+  const currentMeetingChannelType = ref<ChannelType | null>(null);
 
   const sources = computed(() => {
     const src: { id: SpeakerId; stream: MediaStream | null }[] = [];

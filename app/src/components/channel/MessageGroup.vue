@@ -6,12 +6,13 @@ import { formatDate, isToday } from "date-fns";
 const props = defineProps<{
   sender: IUser;
   meId: number;
-  sentAt: string;
+  sentAt: Date | string;
 }>();
 
-function formatMessageDate(date: string) {
-  if (!date) return;
-  return isToday(date) ? formatDate(date, "H:mm a") : formatDate(date, "MMM d");
+function formatMessageDate(date: Date | string) {
+  if (date === undefined || date === null) return;
+  const d = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+  return isToday(d) ? formatDate(d, "H:mm a") : formatDate(d, "MMM d");
 }
 </script>
 

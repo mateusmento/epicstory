@@ -4,7 +4,7 @@ import type { IMessagePayload } from 'src/channel/application/services/message.s
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 
 /** Shared by `SendMessage` and issue `CreateIssueComment` orchestration. */
-export async function dispatchNotificationsForNewChannelMessage(
+export async function dispatchNotificationsForMessageSent(
   commandBus: CommandBus,
   channel: Channel,
   message: IMessagePayload,

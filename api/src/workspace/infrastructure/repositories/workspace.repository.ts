@@ -32,8 +32,12 @@ export class WorkspaceRepository extends Repository<Workspace> {
     return new AddWorkspaceMemberPrerequisite(issuer, !!issuer, memberExists);
   }
 
-  async requiresMembership(workspaceId: number, userId: number) {
-    const member = await this.findMember(workspaceId, userId);
+  async requiresMembership(
+    workspaceId: number,
+    userId: number,
+    relations?: FindOptionsRelations<WorkspaceMember>,
+  ) {
+    const member = await this.findMember(workspaceId, userId, relations);
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
     return member;
   }

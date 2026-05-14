@@ -76,7 +76,9 @@ export class IMessagePayload extends Message {
 }
 
 /** Avoid spreading entity `poll` (persisted shape) into {@link IMessagePayload} (`poll` is client summary). */
-function messageEntityWithoutPoll(message: Message): Omit<Message, 'poll'> {
+export function messageEntityWithoutPoll(
+  message: Message,
+): Omit<Message, 'poll'> {
   const rest = { ...message };
   delete rest.poll;
   return rest as Omit<Message, 'poll'>;

@@ -1,37 +1,52 @@
-import { Channel } from 'src/channel/domain/entities/channel.entity';
-import { User } from 'src/auth/domain/entities/user.entity';
+import type { IChannel } from '@epicstory/contracts';
 import {
   enrichMentionLabels,
   extractMentionIds,
   tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
+import { cloneDeep } from 'lodash';
+import { User } from 'src/auth/domain/entities/user.entity';
+import { Channel } from 'src/channel/domain/entities/channel.entity';
 
 /**
- * Sidebar / list payloads: directPeer for DMs, lastMessage mention rendering.
- * Shared by list queries and search.
+ * Enriches a persisted {@link Channel} (with typical list relations) into the contract
+ * {@link IChannel} shape used by list/search/find handlers — domain `Date` values stay
+ * as `Date`; wire serialization is handled outside this function.
  */
-export function enrichChannelsForListView(
-  channels: Channel[],
+export function enrichChannelForPreview(
+  channel: Channel,
   viewerUserId: number,
-): void {
-  for (const channel of channels) {
-    channel.name = resolveChannelName(channel, viewerUserId);
+): IChannel {
+  const enriched = cloneDeep(channel) as unknown as IChannel;
 
-    if (channel.type === 'direct')
-      channel.directPeer = resolveDirectPeer(channel, viewerUserId);
+  enriched.name = resolveChannelName(channel, viewerUserId);
+  enriched.directPeer =
+    enriched.type === 'direct'
+      ? resolveDirectPeer(channel, viewerUserId)
+      : undefined;
+  enriched.unreadMessagesCount = 0;
+  enriched.meeting = enriched.meeting ?? null;
 
-    if (!channel.lastMessage?.content) continue;
-
-    const peerUsersMap = new Map(channel.peers.map((u) => [u.id, u]));
-    const mentionIds = extractMentionIds(channel.lastMessage.content as any);
-
-    (channel.lastMessage as any).mentionedUsers = mentionIds
+  if (channel.lastMessage?.content) {
+    const peers = channel.peers ?? [];
+    const peerUsersMap = new Map(peers.map((u) => [u.id, u]));
+    const mentionIds = extractMentionIds(channel.lastMessage.content);
+    enriched.lastMessage.mentionedUsers = mentionIds
       .map((id) => peerUsersMap.get(id))
-      .filter(Boolean);
-    (channel.lastMessage as any).displayContent = tiptapDocToPlainDisplayText(
-      enrichMentionLabels(channel.lastMessage.content as any, peerUsersMap),
+      .filter((u): u is User => u != null);
+    enriched.lastMessage.displayContent = tiptapDocToPlainDisplayText(
+      enrichMentionLabels(channel.lastMessage.content, peerUsersMap),
     );
   }
+
+  return enriched;
+}
+
+export function enrichChannelsForPreview(
+  channels: Channel[],
+  viewerUserId: number,
+): IChannel[] {
+  return channels.map((ch) => enrichChannelForPreview(ch, viewerUserId));
 }
 
 function resolveChannelName(channel: Channel, viewerUserId: number): string {

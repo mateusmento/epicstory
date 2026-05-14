@@ -16,9 +16,10 @@ function onOpenChannel() {
   openChannel(props.channel);
 }
 
-function formatMessageDate(date: string) {
-  if (!date) return;
-  return isToday(date) ? formatDate(date, "H:mm a") : formatDate(date, "MMM d");
+function formatMessageDate(date: Date | string) {
+  if (date === undefined || date === null || date === "") return;
+  const d = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+  return isToday(d) ? formatDate(d, "H:mm a") : formatDate(d, "MMM d");
 }
 
 const isHoveringImage = ref(false);

@@ -1,3 +1,4 @@
+import type { IChannel } from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import {
   IsInt,
@@ -9,13 +10,12 @@ import {
 } from 'class-validator';
 import { User } from 'src/auth';
 import { UserRepository } from 'src/auth/infrastructure/repositories/user.repository';
-import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
-import { enrichChannelsForListView } from 'src/channel/application/utils/channel-list-enrichment';
+import { enrichChannelsForPreview } from 'src/channel/application/utils/enrich-channel';
 import { Issuer } from 'src/core/auth';
 import { Page } from 'src/core/page';
-import { patch } from 'src/core/objects';
+import { mapBy, patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
@@ -31,7 +31,7 @@ import {
 } from './search-channels-and-users.union';
 
 export type SearchChannelsAndUsersItem =
-  | { kind: 'channel'; channel: Channel }
+  | { kind: 'channel'; channel: IChannel }
   | { kind: 'user'; user: User };
 
 export class SearchChannelsAndUsers {
@@ -185,9 +185,8 @@ export class SearchChannelsAndUsersQuery
   private async loadChannelsById(
     channelIds: number[],
     viewerUserId: number,
-  ): Promise<Map<number, Channel>> {
-    const map = new Map<number, Channel>();
-    if (!channelIds.length) return map;
+  ): Promise<Map<number, IChannel>> {
+    if (!channelIds.length) return new Map<number, IChannel>();
 
     const channels = await this.channelRepo
       .createQueryBuilder('c')
@@ -202,9 +201,8 @@ export class SearchChannelsAndUsersQuery
       .where('c.id IN (:...channelIds)', { channelIds })
       .getMany();
 
-    enrichChannelsForListView(channels, viewerUserId);
-    for (const c of channels) map.set(c.id, c);
-    return map;
+    const enriched = enrichChannelsForPreview(channels, viewerUserId);
+    return mapBy(enriched, 'id');
   }
 
   private async loadUsersById(userIds: number[]): Promise<Map<number, User>> {

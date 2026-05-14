@@ -22,7 +22,7 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { MessageService } from '../services/message.service';
-import { dispatchNotificationsForNewChannelMessage } from '../utils/dispatch-channel-message-notifications';
+import { dispatchNotificationsForMessageSent } from '../utils/dispatch-message-notifications';
 import { Transactional } from 'typeorm-transactional';
 import { MessagePollBody } from '../dtos/message-poll.dto';
 
@@ -125,7 +125,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       message.id,
     );
 
-    await dispatchNotificationsForNewChannelMessage(
+    await dispatchNotificationsForMessageSent(
       this.commandBus,
       channel,
       message,

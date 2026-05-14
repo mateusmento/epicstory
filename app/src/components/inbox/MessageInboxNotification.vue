@@ -8,16 +8,17 @@ const props = defineProps<{
   message: string;
   seen: boolean;
   unseenMessageCount: number;
-  sentAt: string;
+  sentAt: Date | string;
 }>();
 
-function formatMessageDate(date: string) {
-  if (!date) return;
-  return isToday(date)
-    ? formatDate(date, "H:mm a")
-    : isThisYear(date)
-      ? formatDate(date, "MMM d")
-      : formatDate(date, "MMM d, yyyy");
+function formatMessageDate(date: Date | string) {
+  if (date === undefined || date === null || date === "") return;
+  const d = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+  return isToday(d)
+    ? formatDate(d, "H:mm a")
+    : isThisYear(d)
+      ? formatDate(d, "MMM d")
+      : formatDate(d, "MMM d, yyyy");
 }
 </script>
 
