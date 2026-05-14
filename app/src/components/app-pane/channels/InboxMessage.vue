@@ -34,9 +34,9 @@ const isHoveringImage = ref(false);
   >
     <div class="w-10 h-10 flex flex:center">
       <UserAvatar
-        v-if="channel.speakingTo"
-        :name="channel.speakingTo.name"
-        :picture="channel.speakingTo.picture"
+        v-if="channel.directPeer"
+        :name="channel.directPeer.name"
+        :picture="channel.directPeer.picture"
         size="lg"
         class="flex-shrink-0"
       />

@@ -77,7 +77,7 @@ export class CreateDirectChannelCommand
       }),
     );
 
-    channel.speakingTo = channel.peers.find((p) => p.id !== me);
+    channel.directPeer = channel.peers.find((p) => p.id !== me);
     return channel;
   }
 }

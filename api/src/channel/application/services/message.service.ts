@@ -30,6 +30,7 @@ import {
   normalizeTiptapDoc,
   tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
+import { truncateText } from 'src/utils';
 
 export type {
   IMessagePollClient,
@@ -114,7 +115,7 @@ export class MessageService {
    */
   private async enrichMessagesForPreview(
     messages: Message[],
-    channel: Channel | null | undefined,
+    channel: Channel,
     senderId: number,
   ): Promise<IMessagePayload[]> {
     if (messages.length === 0) return [];
@@ -141,8 +142,8 @@ export class MessageService {
       messages.flatMap((message) => extractMentionIds(message.content)),
     );
     const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      channel ?? undefined,
       allMentionIds,
+      channel.workspaceId,
     );
 
     const quoteIds = uniq(
@@ -294,8 +295,8 @@ export class MessageService {
 
     const mentionIds = extractMentionIds(normalizedContent);
     const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      channel,
       mentionIds,
+      channel.workspaceId,
     );
     let displayContent = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
@@ -434,8 +435,8 @@ export class MessageService {
 
     const mentionIds = extractMentionIds(normalizedContent);
     const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      channel,
       mentionIds,
+      channel.workspaceId,
     );
     const displayBase = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
@@ -510,11 +511,11 @@ export class MessageService {
     if (name) return name;
     const peers = channel.peers ?? [];
     if (channel.type === 'direct' || channel.type === 'multi-direct') {
-      const labels = peers
+      const peerNames = peers
         .filter((p) => recipientUserId == null || p.id !== recipientUserId)
         .map((p) => p.name)
         .filter(Boolean);
-      if (labels.length) return labels.join(', ');
+      if (peerNames.length) return peerNames.join(', ');
       if (peers.length)
         return peers
           .map((p) => p.name)
@@ -526,26 +527,19 @@ export class MessageService {
     return 'Chat';
   }
 
-  private static truncateNotificationExcerpt(text: string, max = 220): string {
-    const t = text.replace(/\s+/g, ' ').trim();
-    if (!t) return '';
-    if (t.length <= max) return t;
-    return `${t.slice(0, max - 1)}…`;
-  }
-
   async buildMessageExcerptForNotification(
     message: Message,
-    channel: Channel | null | undefined,
+    channel: Channel,
   ): Promise<string> {
     const mentionIds = extractMentionIds(message.content);
     const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      channel ?? undefined,
       mentionIds,
+      channel.workspaceId,
     );
     const display = tiptapDocToPlainDisplayText(
       enrichMentionLabels(message.content, peerUsersMap),
     );
-    return MessageService.truncateNotificationExcerpt(display);
+    return truncateText(display);
   }
 
   @Transactional()

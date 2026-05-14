@@ -213,9 +213,9 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
               @click="openChannel(channel)"
             >
               <UserAvatar
-                v-if="channel.speakingTo"
-                :name="channel.speakingTo.name"
-                :picture="channel.speakingTo.picture"
+                v-if="channel.directPeer"
+                :name="channel.directPeer.name"
+                :picture="channel.directPeer.picture"
                 size="sm"
                 class="shrink-0"
               />
@@ -225,9 +225,9 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
                 stroke-width="2.5"
               />
               <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-              <div class="text-xs">{{ channel.name || channel.speakingTo.name }}</div>
+              <div class="text-xs">{{ channel.name }}</div>
               <div
-                v-if="channel.type === 'direct' && channel.speakingTo && isUserOnline(channel.speakingTo.id)"
+                v-if="channel.type === 'direct' && channel.directPeer && isUserOnline(channel.directPeer.id)"
                 class="w-2 h-2 shrink-0 bg-green-400 rounded-full"
                 title="Online"
               ></div>

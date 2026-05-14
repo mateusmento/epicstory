@@ -41,7 +41,7 @@ export const Default: Story = {
       id: 1,
       name: "Channel 1",
       type: "direct",
-      speakingTo: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
+      directPeer: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
       unreadMessagesCount: 0,
       meeting: null,
       peers: [],
@@ -67,7 +67,7 @@ export const Default: Story = {
           id: 1,
           name: "Channel 1",
           type: "direct",
-          speakingTo: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
+          directPeer: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
           unreadMessagesCount: 0,
           meeting: null,
           peers: [

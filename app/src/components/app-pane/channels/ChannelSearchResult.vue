@@ -55,15 +55,15 @@ const shouldShowPeopleHeader = (items: ISearchChannelsAndUsersItem[], index: num
           @click="emit('select-channel', item.channel.id)"
         >
           <UserAvatar
-            v-if="item.channel.speakingTo"
-            :name="item.channel.speakingTo.name"
-            :picture="item.channel.speakingTo.picture"
+            v-if="item.channel.directPeer"
+            :name="item.channel.directPeer.name"
+            :picture="item.channel.directPeer.picture"
             size="sm"
             class="shrink-0"
           />
           <HashIcon v-else class="h-5 w-5 shrink-0 text-muted-foreground" stroke-width="2.5" />
           <span class="truncate font-medium">
-            {{ item.channel.name || item.channel.speakingTo?.name }}
+            {{ item.channel.name }}
           </span>
         </button>
 

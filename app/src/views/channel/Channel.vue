@@ -30,7 +30,7 @@ const emit = defineEmits<{
 
 const picture = computed(() => {
   if (!channel.value) return "";
-  return channel.value?.type === "direct" ? channel.value?.speakingTo.picture : "/images/hashtag.svg";
+  return channel.value?.type === "direct" ? channel.value?.directPeer.picture : "/images/hashtag.svg";
 });
 
 const { viewContent } = useNavTrigger("details-pane");

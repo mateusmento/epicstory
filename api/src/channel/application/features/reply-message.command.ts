@@ -128,8 +128,8 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
 
     const extractedMentionIds = extractMentionIds(normalizedContent);
     const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      message.channel,
       uniq(extractedMentionIds),
+      message.channel.workspaceId,
     );
     const finalMentionIds = extractedMentionIds.filter(
       (id) => id !== senderId && peerUsersMap.has(id),

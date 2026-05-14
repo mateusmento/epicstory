@@ -26,6 +26,7 @@ import {
   tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
 import { ChannelMentionsService } from './channel-mentions.service';
+import { truncateText } from 'src/utils';
 
 export type QuotedReplyPreview = {
   id: number;
@@ -48,16 +49,16 @@ export class ReplyService {
   /** Thread preview replies (already ordered per thread), with same presentation as {@link findReplies}. */
   async enrichRepliesForPreview(
     replies: MessageReply[],
-    channel: Channel | null | undefined,
+    channel: Channel,
     senderId: number,
   ): Promise<void> {
     if (replies.length === 0) return;
     const mentionIds = uniq(
       replies.flatMap((r) => extractMentionIds(r.content)),
     );
-    const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      channel ?? undefined,
+    const mentionedUsersMap = await this.channelMentions.resolveMentionUsersMap(
       mentionIds,
+      channel.workspaceId,
     );
     const replyQuoteIds = uniq(
       replies
@@ -86,17 +87,17 @@ export class ReplyService {
       reply.setReactions(senderId);
       const mIds = extractMentionIds(reply.content);
       (reply as any).mentionedUsers = mIds
-        .map((id) => peerUsersMap.get(id))
+        .map((id) => mentionedUsersMap.get(id))
         .filter(Boolean);
       (reply as any).displayContent = tiptapDocToPlainDisplayText(
-        enrichMentionLabels(reply.content, peerUsersMap),
+        enrichMentionLabels(reply.content, mentionedUsersMap),
       );
       const qSrc = reply.quotedReplyId
         ? replyQuotedById.get(reply.quotedReplyId)
         : undefined;
       (reply as any).quotedMessage = this.buildQuotedPreviewFromReply(
         qSrc,
-        peerUsersMap,
+        mentionedUsersMap,
       );
       (reply as any).attachments = attByReplyId.get(reply.id) ?? [];
     }
@@ -266,26 +267,19 @@ export class ReplyService {
     return mapReactions(reactions, senderId);
   }
 
-  private static truncateNotificationExcerpt(text: string, max = 220): string {
-    const t = text.replace(/\s+/g, ' ').trim();
-    if (!t) return '';
-    if (t.length <= max) return t;
-    return `${t.slice(0, max - 1)}…`;
-  }
-
   async buildReplyExcerptForNotification(
     reply: MessageReply,
-    channel: Channel | null | undefined,
+    channel: Channel,
   ): Promise<string> {
     const mentionIds = extractMentionIds(reply.content);
-    const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      channel ?? undefined,
+    const mentionedUsersMap = await this.channelMentions.resolveMentionUsersMap(
       mentionIds,
+      channel.workspaceId,
     );
     const display = tiptapDocToPlainDisplayText(
-      enrichMentionLabels(reply.content, peerUsersMap),
+      enrichMentionLabels(reply.content, mentionedUsersMap),
     );
-    return ReplyService.truncateNotificationExcerpt(display);
+    return truncateText(display);
   }
 
   @Transactional()

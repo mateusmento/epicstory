@@ -55,7 +55,7 @@ export class Channel {
   @Column({ nullable: true })
   dmUserGreaterId?: number;
 
-  speakingTo: User;
+  directPeer: User;
 
   meeting?: Meeting | null;
 

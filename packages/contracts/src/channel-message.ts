@@ -51,7 +51,7 @@ export type IChannel = {
   type: "direct" | "group" | "multi-direct" | "meeting";
   name?: string;
   image?: string;
-  speakingTo: IUser;
+  directPeer: IUser;
   lastMessage?: IMessage;
   unreadMessagesCount: number;
   meeting: IMeeting | null;
