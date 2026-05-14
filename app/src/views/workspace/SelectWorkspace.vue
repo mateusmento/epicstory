@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button, Combobox, Field, Form } from "@/design-system";
-import { useWorkspaces, type Workspace } from "@/domain/workspace";
+import type { IWorkspace } from "@epicstory/contracts";
+import { useWorkspaces } from "@/domain/workspace";
 import type { SubmissionHandler } from "vee-validate";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -13,7 +14,7 @@ onMounted(() => {
   fetchWorkspaces();
 });
 
-const selectedWorkspace = ref<Workspace | undefined>();
+const selectedWorkspace = ref<IWorkspace | undefined>();
 const searchTerm = ref("");
 
 async function handleCreateWorkspace(data: { name: string }) {

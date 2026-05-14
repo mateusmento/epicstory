@@ -2,7 +2,7 @@
 import { UserAvatar } from "@/components/user";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { IconReplies } from "@/design-system/icons";
-import type { ReplyNotificationPayload } from "@/domain/notifications/types/notification.types";
+import type { ReplyNotificationPayload } from "@/domain/notifications";
 import { formatDistanceToNow } from "date-fns";
 
 defineProps<{

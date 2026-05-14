@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { enrichMentionLabels, normalizeTiptapDoc } from "@epicstory/tiptap";
 import type { JSONContent } from "@tiptap/core";
 import { computed, provide } from "vue";
@@ -9,7 +9,7 @@ import RichTextSubtree from "./RichTextSubtree.vue";
 
 const props = defineProps<{
   content: JSONContent;
-  mentionedUsers?: User[];
+  mentionedUsers?: IUser[];
   meId: number;
 }>();
 
@@ -21,7 +21,7 @@ const normalizedDoc = computed(
       normalizeTiptapDoc(props.content)) as JSONContent,
 );
 
-function lookupUser(id: number): User | undefined {
+function lookupUser(id: number): IUser | undefined {
   return usersById.value.get(id);
 }
 

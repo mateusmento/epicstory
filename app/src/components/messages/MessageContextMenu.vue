@@ -10,7 +10,7 @@ import {
   ScrollArea,
 } from "@/design-system";
 import { Icon, IconReplies } from "@/design-system/icons";
-import type { IMessage, IReply } from "@/domain/channels";
+import type { IMessage, IReply } from "@epicstory/contracts";
 import { messageBodyPlainText } from "@epicstory/tiptap";
 import { CopyIcon, MessageSquareShareIcon, SmilePlusIcon, SquarePen, Trash2Icon } from "lucide-vue-next";
 import { computed } from "vue";

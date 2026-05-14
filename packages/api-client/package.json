@@ -1,0 +1,41 @@
+{
+  "name": "@epicstory/api-client",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Axios HTTP clients for Epicstory API",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:dev": "SKIP_TSUP_DTS=1 tsup && tsc --emitDeclarationOnly"
+  },
+  "dependencies": {
+    "@epicstory/contracts": "workspace:*",
+    "date-fns": "^4.1.0"
+  },
+  "peerDependencies": {
+    "@tiptap/core": "^3.16.0",
+    "axios": "^1.6.0",
+    "reflect-metadata": "^0.2.0",
+    "tsyringe": "^4.8.0"
+  },
+  "devDependencies": {
+    "@tiptap/core": "^3.22.3",
+    "@types/node": "^20.0.0",
+    "axios": "^1.7.9",
+    "reflect-metadata": "^0.2.2",
+    "tsup": "^8.5.1",
+    "typescript": "~5.4.0"
+  }
+}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { UserAvatar } from "@/components/user";
 import { ScrollArea, Separator } from "@/design-system";
-import type { ISearchChannelsAndUsersItem } from "@/domain/channels/types";
+import type { ISearchChannelsAndUsersItem } from "@epicstory/contracts";
 import type { Page } from "@/core/types";
 import { HashIcon, Loader2Icon } from "lucide-vue-next";
 

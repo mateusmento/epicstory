@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { Menu, MenuContent, MenuTrigger } from "@/design-system";
-import type { IMessage, IReply } from "@/domain/channels";
+import type { IMessage, IReply } from "@epicstory/contracts";
 import MessageContextMenu from "./MessageContextMenu.vue";
 
 withDefaults(

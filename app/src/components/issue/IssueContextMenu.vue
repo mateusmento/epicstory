@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { WorkspaceMemberMenu } from "@/components/workspace-members";
 import {
   Menu,
   MenuContent,
@@ -10,20 +11,18 @@ import {
   MenuTrigger,
 } from "@/design-system";
 import { useBacklog } from "@/domain/backlog";
-import type { User } from "@/domain/user";
-import type { Issue } from "@/domain/issues";
+import type { IIssue, IUser as IUser } from "@epicstory/contracts";
+import { CalendarClock, GitBranch, Kanban, SquarePen, Tags, Trash2Icon, UserIcon } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
-import { WorkspaceMemberMenu } from "@/components/workspace-members";
 import IssueDeleteDialog from "./IssueDeleteDialog.vue";
 import IssueDueDateMenu from "./IssueDueDateMenu.vue";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 import IssuePickerMenu from "./IssuePickerMenu.vue";
 import IssueRenameDialog from "./IssueRenameDialog.vue";
 import IssueStatusMenu from "./status/IssueStatusMenu.vue";
-import { CalendarClock, GitBranch, Kanban, SquarePen, Tags, Trash2Icon, UserIcon } from "lucide-vue-next";
 
 const props = defineProps<{
-  issue: Issue;
+  issue: IIssue;
   disabled?: boolean;
 }>();
 
@@ -34,7 +33,7 @@ const labelIds = computed(() => (props.issue?.labels ?? []).map((l) => l.id));
 const { addLabel, removeLabel, updateIssue, addAssignee, removeAssignee, removeIssue, markAsSubIssueOf } =
   useBacklog();
 
-const assigneeUsers = ref<User[]>([]);
+const assigneeUsers = ref<IUser[]>([]);
 watch(
   () => props.issue?.assignees,
   (a) => {

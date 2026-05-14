@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button, Checkbox, MenuInput, MenuItem, MenuSeparator } from "@/design-system";
-import { useLabels, type Label } from "@/domain/labels";
+import type { ILabel } from "@epicstory/contracts";
+import { useLabels } from "@/domain/labels";
 import { EditIcon, PlusIcon } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 
@@ -86,8 +87,8 @@ async function onCreate(selectedColor: string) {
   }
 }
 
-const labelToEdit = ref<Label | null>(null);
-function editLabel(label: Label | null) {
+const labelToEdit = ref<ILabel | null>(null);
+function editLabel(label: ILabel | null) {
   labelToEdit.value = label;
   if (label) currentView.value = "color-menu";
   else currentView.value = "label-menu";

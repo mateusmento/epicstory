@@ -2,8 +2,8 @@
 import { useDependency } from "@/core/dependency-injection";
 import type { Page } from "@/core/types";
 import { useChannel, useSyncedChannels } from "@/domain/channels";
-import { ChannelApi } from "@/domain/channels/services";
-import type { ISearchChannelsAndUsersItem } from "@/domain/channels/types";
+import { ChannelApi } from "@epicstory/api-client";
+import type { ISearchChannelsAndUsersItem } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
 import { watchDebounced } from "@vueuse/core";
 import { computed, nextTick, ref, watch } from "vue";

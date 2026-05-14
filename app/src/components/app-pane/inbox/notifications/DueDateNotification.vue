@@ -1,5 +1,5 @@
 <script lang="tsx" setup>
-import type { IssueDueDateNotificationPayload } from "@/domain/notifications/types/notification.types";
+import type { IssueDueDateNotificationPayload } from "@/domain/notifications";
 import { formatDate, formatDistanceToNow } from "date-fns";
 import { Calendar } from "lucide-vue-next";
 

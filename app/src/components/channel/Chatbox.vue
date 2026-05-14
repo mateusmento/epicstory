@@ -9,22 +9,17 @@ import {
   ScrollArea,
   Separator,
 } from "@/design-system";
-import {
-  channelComposerQuotedMessageId,
-  type IChannel,
-  type IMessage,
-  type IMessageGroup,
-  type MessagePollBody,
-} from "@/domain/channels";
-import { useChannel, useWorkspaceOnline } from "@/domain/channels";
-import type { ICreateScheduledMessageBody } from "@/domain/channels/types/scheduled-message.type";
+import { channelComposerQuotedMessageId, useChannel, useWorkspaceOnline } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
 import { computed, nextTick, ref, watch } from "vue";
 import { UserAvatar, UserAvatarStack } from "@/components/user";
 import { channelMessageComposerAttachmentHandlers, MessageComposer } from "@/components/messages";
 import { useDependency } from "@/core/dependency-injection";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
+import { ChannelApi } from "@epicstory/api-client";
+import type { IChannel, IMessage, MessagePollBody } from "@epicstory/contracts";
+import type { CreateScheduledMessageBody as ICreateScheduledMessageBody } from "@epicstory/contracts";
+import type { IMessageGroup } from "@/domain/channels";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import type { JSONContent } from "@tiptap/core";

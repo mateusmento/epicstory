@@ -27,7 +27,6 @@ export class MessagePollVote {
   @ManyToOne(() => User)
   user: User;
 
-  /** Selected option id (matches `messages.poll.options[].id`). */
   @Column({ type: 'varchar', length: 64 })
   optionId: string;
 }

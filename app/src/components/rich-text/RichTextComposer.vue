@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { User } from "@/domain/auth";
+import type { IUser } from "@epicstory/contracts";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import { computed, nextTick, onBeforeUnmount, reactive, ref, shallowRef, useSlots, watch } from "vue";
-import { bumpActiveMentionSuggestionQuery } from "./mention-suggestion-bump";
 import { createRichTextComposerExtensions, EPICSTORY_RICH_TEXT_COMPOSER } from "./composer";
+import { bumpActiveMentionSuggestionQuery } from "./mention-suggestion-bump";
 
 defineSlots<{
   bubbleMenu?: (props: { editor: Editor }) => unknown;
@@ -32,7 +32,7 @@ const emit = defineEmits<{
 
 const props = withDefaults(
   defineProps<{
-    mentionables?: User[];
+    mentionables?: IUser[];
     meId?: number;
     placeholder?: string;
     /** Workspace-style pagination: scroll list to bottom → load more mention candidates. */

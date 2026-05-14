@@ -1,33 +1,32 @@
 import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
-import type { User } from "@/domain/auth";
-import { ChannelApi } from "@/domain/channels/services";
-import { MeetingApi } from "@/domain/channels/services/meeting.api";
-import type { PeerSession } from "@/domain/channels/utils/media-streaming";
-import { createPeersSession, untilOpen } from "@/domain/channels/utils/media-streaming";
+import type { IUser as IUser } from "@epicstory/contracts";
+import { ChannelApi, MeetingApi } from "@epicstory/api-client";
+import type { PeerSession } from "../utils/media-streaming";
+import { createPeersSession, untilOpen } from "../utils/media-streaming";
 import {
   replaceOutgoingTracksForPeers,
   replaceOutgoingVideoTrackForPeers,
-} from "@/domain/channels/utils/meeting-peer-replace-tracks";
-import { compositeLocalMeetingMedia } from "@/domain/channels/utils/meeting-screen-share";
+} from "../utils/meeting-peer-replace-tracks";
+import { compositeLocalMeetingMedia } from "../utils/meeting-screen-share";
 import {
   createActiveSpeakerDetector,
   type ActiveSpeakerDetector,
   type SpeakerId,
-} from "@/domain/channels/utils/active-speaker";
+} from "../utils/active-speaker";
 import { useWorkspace } from "@/domain/workspace";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref, shallowRef, watch } from "vue";
-import type { IChannel, IMeeting, IMeetingAttendee } from "../types";
+import type { IChannel, IMeeting, IMeetingAttendee } from "@epicstory/contracts";
 import { useMeetingMediaDevicesStore } from "./meeting-media-devices";
 import { useMeetingSocket } from "./meeting-socket";
 
 export type MeetingStreamingAttendee = {
   remoteId: string;
   camera: MediaStream;
-  user: User;
+  user: IUser;
   isCameraOn: boolean;
   isMicrophoneOn: boolean;
   /** From server + socket; used so remotes use presentation aspect (replaceTrack hides displaySurface). */

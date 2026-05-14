@@ -2,8 +2,8 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
 import { onUnmounted, ref, watch } from "vue";
-import type { LiveScheduledMeeting } from "../services/meeting.api";
-import { MeetingApi } from "../services/meeting.api";
+import { MeetingApi } from "@epicstory/api-client";
+import type { LiveScheduledMeeting } from "@epicstory/contracts";
 import { useMeetingSocket } from "./meeting-socket";
 
 export function useLiveMeeting() {

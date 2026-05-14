@@ -1,4 +1,4 @@
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { IMessageAttachment } from "@epicstory/contracts";
 import PhotoSwipe from "photoswipe";
 import type { SlideData } from "photoswipe";
 import "photoswipe/style.css";
@@ -39,7 +39,7 @@ type SlideDataWithMeta = SlideData & {
   isImageSlide?: boolean;
 };
 
-async function buildSlides(files: MessageAttachmentDto[]): Promise<SlideDataWithMeta[]> {
+async function buildSlides(files: IMessageAttachment[]): Promise<SlideDataWithMeta[]> {
   const slides: SlideDataWithMeta[] = [];
   for (const f of files) {
     if (isImageMime(f.mimeType)) {
@@ -70,7 +70,7 @@ async function buildSlides(files: MessageAttachmentDto[]): Promise<SlideDataWith
   return slides;
 }
 
-function mediaOnlyIndex(files: MessageAttachmentDto[], clickedFile: MessageAttachmentDto): number {
+function mediaOnlyIndex(files: IMessageAttachment[], clickedFile: IMessageAttachment): number {
   const media = files.filter((f) => isImageMime(f.mimeType) || isVideoMime(f.mimeType, f.originalFilename));
   const i = media.findIndex((f) => f.id === clickedFile.id);
   return i < 0 ? 0 : i;
@@ -286,8 +286,8 @@ export async function openRichTextInlineImageLightbox(
  * Pass the clicked thumbnail `HTMLElement` so opening uses the zoom-from-thumb transition.
  */
 export async function openAttachmentLightbox(
-  files: MessageAttachmentDto[],
-  clickedFile: MessageAttachmentDto,
+  files: IMessageAttachment[],
+  clickedFile: IMessageAttachment,
   thumbElement?: HTMLElement | null,
 ): Promise<void> {
   const media = files.filter((f) => isImageMime(f.mimeType) || isVideoMime(f.mimeType, f.originalFilename));

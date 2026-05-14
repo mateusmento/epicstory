@@ -1,19 +1,27 @@
 <script lang="ts" setup>
-import { useDependency } from "@/core/dependency-injection";
-import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
-import { Icon } from "@/design-system/icons";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system";
-import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
 import { UserAvatar } from "@/components/user";
 import { WorkspaceMemberDropdown } from "@/components/workspace-members";
+import { useDependency } from "@/core/dependency-injection";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+} from "@/design-system";
+import { Icon } from "@/design-system/icons";
+import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
 import { useAuth } from "@/domain/auth";
-import { useChannels } from "@/domain/channels";
-import { CalendarEventApi } from "@/domain/calendar";
-import type { User } from "@/domain/user";
+import { useChannels, useMeetingSocket } from "@/domain/channels";
 import { useWorkspace } from "@/domain/workspace";
-import { useMeetingSocket } from "@/domain/channels/composables/meeting-socket";
-import { getLocalTimeZone, parseDate, toCalendarDate, today as todayFn } from "@internationalized/date";
+import { CalendarEventApi } from "@epicstory/api-client";
+import type { ICalendarEvent, IUser as IUser } from "@epicstory/contracts";
 import type { DateValue } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, toCalendarDate, today as todayFn } from "@internationalized/date";
 import {
   addDays,
   endOfWeek as dateFnsEndOfWeek,
@@ -22,15 +30,14 @@ import {
   endOfDay,
   format,
   getHours,
-  isSameMonth,
   isSameDay,
+  isSameMonth,
   parse,
   startOfDay,
   startOfMonth,
 } from "date-fns";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import type { CalendarEventDto } from "@/domain/calendar/api/calendar-event.api";
 
 type ViewType = "month" | "week" | "day";
 
@@ -47,9 +54,9 @@ const today = () => todayFn(getLocalTimeZone());
 
 const currentView = ref<ViewType>("month");
 const currentDate = ref<DateValue>(today());
-const events = ref<CalendarEventDto[]>([]);
+const events = ref<ICalendarEvent[]>([]);
 const showEventDialog = ref(false);
-const editingEvent = ref<CalendarEventDto | null>(null);
+const editingEvent = ref<ICalendarEvent | null>(null);
 const eventTitle = ref("");
 const eventDescription = ref("");
 const eventDateTime = ref<DateValue>(today());
@@ -61,7 +68,7 @@ const itemType = ref<ItemType>("event");
 const meetingChannelId = ref<number | null>(null);
 const meetingIsPublic = ref(true);
 const meetingNotifyMinutesBefore = ref(1);
-const meetingParticipantUsers = ref<User[]>([]);
+const meetingParticipantUsers = ref<IUser[]>([]);
 type RecurrenceFrequency = "once" | "daily" | "weekly";
 const meetingRecurrenceFrequency = ref<RecurrenceFrequency>("weekly");
 const meetingRecurrenceInterval = ref(1);
@@ -75,7 +82,7 @@ const eventRecurrenceByWeekday = ref<number[]>([new Date().getDay()]);
 const isCreating = ref(false);
 const isLoading = ref(false);
 const isResizing = ref(false);
-const resizingEvent = ref<CalendarEventDto | null>(null);
+const resizingEvent = ref<ICalendarEvent | null>(null);
 const resizeType = ref<"start" | "end" | null>(null);
 const resizeStartY = ref(0);
 const resizeStartTime = ref(0);
@@ -140,7 +147,7 @@ function toggleEventWeekday(day: number, enabled: boolean) {
 }
 
 const eventsByDayKey = computed(() => {
-  const map = new Map<string, CalendarEventDto[]>();
+  const map = new Map<string, ICalendarEvent[]>();
   for (const ev of events.value) {
     const key = format(new Date(ev.startsAt), "yyyy-MM-dd");
     const list = map.get(key) ?? [];
@@ -232,7 +239,7 @@ async function fetchEvents() {
 }
 
 // Get events that start at a specific hour (for rendering)
-function getEventsStartingAtHour(date: Date, hour: number): CalendarEventDto[] {
+function getEventsStartingAtHour(date: Date, hour: number): ICalendarEvent[] {
   return events.value.filter((event) => {
     const eventDate = new Date(event.startsAt);
     const eventHour = getHours(eventDate);
@@ -241,7 +248,7 @@ function getEventsStartingAtHour(date: Date, hour: number): CalendarEventDto[] {
 }
 
 // Get event end time (from payload or calculate default 1 hour duration)
-function getEventEndTime(event: CalendarEventDto): Date {
+function getEventEndTime(event: ICalendarEvent): Date {
   const startTime = new Date(event.startsAt);
   const endsAt = new Date(event.endsAt);
   if (!Number.isNaN(endsAt.getTime())) return endsAt;
@@ -250,13 +257,13 @@ function getEventEndTime(event: CalendarEventDto): Date {
 }
 
 // Calculate event top offset in pixels (for sub-hour positioning)
-function getEventTopOffset(event: CalendarEventDto): number {
+function getEventTopOffset(event: ICalendarEvent): number {
   const startTime = new Date(event.startsAt);
   const minutes = startTime.getMinutes();
   return minutes * PX_PER_MINUTE;
 }
 
-function getEventDurationMinutes(event: CalendarEventDto): number {
+function getEventDurationMinutes(event: ICalendarEvent): number {
   const startTime = new Date(event.startsAt);
   const endTime = getEventEndTime(event);
   const durationMs = endTime.getTime() - startTime.getTime();
@@ -265,11 +272,11 @@ function getEventDurationMinutes(event: CalendarEventDto): number {
   return Math.max(1, minutes);
 }
 
-function getEventHeightPx(event: CalendarEventDto, minPx: number) {
+function getEventHeightPx(event: ICalendarEvent, minPx: number) {
   return Math.max(minPx, getEventDurationMinutes(event) * PX_PER_MINUTE);
 }
 
-function getEventLayoutMode(event: CalendarEventDto) {
+function getEventLayoutMode(event: ICalendarEvent) {
   // Use natural (non-clamped) height so we can render short events compactly.
   const h = getEventDurationMinutes(event) * PX_PER_MINUTE;
   if (h < 22) return "tiny" as const;
@@ -357,7 +364,7 @@ function handleTimeSlotClick(date: Date, hour: number, event?: MouseEvent) {
   openCreateDialog(dateValue, startTimeStr, endTimeStr);
 }
 
-function goToMeetingLobby(event: CalendarEventDto) {
+function goToMeetingLobby(event: ICalendarEvent) {
   router.push({
     name: "meeting-lobby",
     params: { workspaceId: workspace.value.id, calendarEventId: event.id },
@@ -366,7 +373,7 @@ function goToMeetingLobby(event: CalendarEventDto) {
 }
 
 /** Opens the create/edit dialog with the correct type and all form fields (edit: populated from the calendar item). */
-function openEditCalendarDialog(event: CalendarEventDto) {
+function openEditCalendarDialog(event: ICalendarEvent) {
   if (event.type === "meeting") {
     openEditMeetingFromCalendar(event);
     return;
@@ -398,7 +405,7 @@ function openEditCalendarDialog(event: CalendarEventDto) {
   showEventDialog.value = true;
 }
 
-function openEditMeetingFromCalendar(event: CalendarEventDto) {
+function openEditMeetingFromCalendar(event: ICalendarEvent) {
   editingEvent.value = event;
   itemType.value = "meeting";
 
@@ -415,7 +422,7 @@ function openEditMeetingFromCalendar(event: CalendarEventDto) {
   meetingNotifyMinutesBefore.value = Number(event.notifyMinutesBefore ?? 1);
   meetingParticipantUsers.value = (event.participants ?? [])
     .map((p) => members.value.find((m) => m.user.id === p.id)?.user)
-    .filter((u): u is User => u != null);
+    .filter((u): u is IUser => u != null);
 
   const rec = event.recurrence ?? (event.payload as any)?.recurrence;
   if (rec?.frequency === "once") {
@@ -602,7 +609,7 @@ async function removeEvent() {
   await fetchEvents();
 }
 
-async function removeCalendarItem(event: CalendarEventDto) {
+async function removeCalendarItem(event: ICalendarEvent) {
   await calendarEventApi.removeCalendarEvent(event.id);
   await fetchEvents();
 }
@@ -633,7 +640,7 @@ function closeDialog() {
 }
 
 // Resize handlers
-function handleResizeStart(event: CalendarEventDto, type: "start" | "end", mouseEvent: MouseEvent) {
+function handleResizeStart(event: ICalendarEvent, type: "start" | "end", mouseEvent: MouseEvent) {
   if (event.type === "meeting") return;
   if (event.occurrenceId !== event.id) return; // recurring occurrence: series-only, no per-occurrence edits
   mouseEvent.preventDefault();

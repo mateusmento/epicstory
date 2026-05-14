@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { NodeViewWrapper, nodeViewProps } from "@tiptap/vue-3";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import MentionChip from "../segments/MentionChip.vue";
 
 const props = defineProps(nodeViewProps);
@@ -12,8 +12,8 @@ const mentionContext = computed(
 
 const mentionMeId = computed(() => mentionContext.value?.meId);
 
-const userById = (id: number): User | undefined => {
-  const lookup = (props.extension.options as { userById?: (id: number) => User | undefined })?.userById;
+const userById = (id: number): IUser | undefined => {
+  const lookup = (props.extension.options as { userById?: (id: number) => IUser | undefined })?.userById;
   return lookup ? lookup(id) : undefined;
 };
 </script>

@@ -1,7 +1,7 @@
 import { ref } from "vue";
-import type { Project } from "../types/project.type";
+import type { Project } from "../types";
 import { useDependency } from "@/core/dependency-injection";
-import { WorkspaceApi } from "@/domain/workspace";
+import { WorkspaceApi } from "@epicstory/api-client";
 
 export function useProjects(workspaceId: number) {
   const projects = ref<Project[]>([]);

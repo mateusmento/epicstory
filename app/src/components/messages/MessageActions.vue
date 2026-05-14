@@ -3,7 +3,7 @@ import { Button, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from 
 import { Icon, IconReplies } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { messageBodyPlainText } from "@epicstory/tiptap";
-import type { IMessage, IReply } from "@/domain/channels";
+import type { IMessage, IReply } from "@epicstory/contracts";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { computed, ref } from "vue";
 import EmojiPicker from "./EmojiPicker.vue";

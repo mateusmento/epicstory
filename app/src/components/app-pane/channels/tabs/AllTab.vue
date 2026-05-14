@@ -12,8 +12,8 @@ import {
   type IncomingMeetingPayload,
   type MeetingEndedPayload,
 } from "@/domain/channels";
-import { ChannelApi } from "@/domain/channels/services";
-import type { IChannel } from "@/domain/channels/types";
+import { ChannelApi } from "@epicstory/api-client";
+import type { IChannel } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
 import { HashIcon, HeadphonesIcon, PlusIcon } from "lucide-vue-next";
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";

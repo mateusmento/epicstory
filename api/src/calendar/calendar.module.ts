@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
@@ -20,7 +20,7 @@ import { ChannelModule } from 'src/channel/channel.module';
     NotificationsModule,
     WorkspaceModule,
     SchedulingModule,
-    ChannelModule,
+    forwardRef(() => ChannelModule),
   ],
   controllers: [...Object.values(controllers)],
   providers: [

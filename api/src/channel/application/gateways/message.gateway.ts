@@ -10,6 +10,7 @@ import { Message } from 'src/channel/domain';
 import { MessageReply } from 'src/channel/domain/entities';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { MessageService } from '../services/message.service';
+import { ReplyService } from '../services/reply.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 const channelMessagingRoom = (channelId) =>
@@ -23,6 +24,7 @@ export class MessageGateway {
 
   constructor(
     private messageService: MessageService,
+    private replyService: ReplyService,
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
   ) {}
@@ -259,13 +261,13 @@ export class MessageGateway {
 
     if (messageReplyId) {
       // Toggle reaction on a message reply
-      await this.messageService.toggleReplyReaction(
+      await this.replyService.toggleReplyReaction(
         messageReplyId,
         emoji,
         userId,
       );
 
-      const reactions = await this.messageService.findReplyReactions(
+      const reactions = await this.replyService.findReplyReactions(
         messageReplyId,
         userId,
       );

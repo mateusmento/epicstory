@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Menu, MenuContent, MenuTrigger } from "@/design-system";
-import type { User } from "@/domain/user";
+import type { IUser as IUser } from "@epicstory/contracts";
 import WorkspaceMemberMenu from "./WorkspaceMemberMenu.vue";
 
 withDefaults(
@@ -15,11 +15,11 @@ withDefaults(
   },
 );
 
-const users = defineModel<User[]>("users", { default: () => [] });
+const users = defineModel<IUser[]>("users", { default: () => [] });
 
 const emit = defineEmits<{
-  (e: "add", user: User): void;
-  (e: "remove", user: User): void;
+  (e: "add", user: IUser): void;
+  (e: "remove", user: IUser): void;
 }>();
 </script>
 

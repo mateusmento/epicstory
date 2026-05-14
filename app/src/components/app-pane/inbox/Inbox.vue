@@ -2,7 +2,7 @@
 import { Icon } from "@/design-system/icons";
 import { useNotifications } from "@/domain/notifications";
 import { useRoute, useRouter } from "vue-router";
-import type { Notification } from "@/domain/notifications/types/notification.types";
+import type { Notification } from "@/domain/notifications";
 import type {
   MentionNotificationPayload,
   ReplyNotificationPayload,
@@ -13,7 +13,7 @@ import type {
   CalendarEventReminderNotificationPayload,
   MessageReactionNotificationPayload,
   ReplyReactionNotificationPayload,
-} from "@/domain/notifications/types/notification.types";
+} from "@/domain/notifications";
 import MentionNotification from "./notifications/MentionNotification.vue";
 import ReplyNotification from "./notifications/ReplyNotification.vue";
 import MessageNotification from "./notifications/MessageNotification.vue";

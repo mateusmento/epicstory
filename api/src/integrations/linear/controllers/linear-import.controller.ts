@@ -20,7 +20,7 @@ import {
   LinearImportMismatchRepository,
 } from '../repositories';
 
-class CreateLinearImportJobDto {
+class CreateLinearImportJob {
   @IsBoolean()
   @IsOptional()
   importAll?: boolean;
@@ -79,7 +79,7 @@ export class LinearImportController {
   @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
   async createImportJob(
     @Param('workspaceId') workspaceId: number,
-    @Body() body: CreateLinearImportJobDto,
+    @Body() body: CreateLinearImportJob,
     @Auth() issuer: Issuer,
   ) {
     const isMember = await this.workspaceRepo.memberExists(

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { cn } from "@/design-system/utils";
-import type { MeetingParticipant } from "@/domain/channels/composables/meeting-layout";
+import type { MeetingParticipant } from "@/domain/channels";
 import MeetingTile from "./MeetingTile.vue";
 
 const props = defineProps<{

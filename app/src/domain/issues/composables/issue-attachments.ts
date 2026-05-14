@@ -1,8 +1,9 @@
-import type { IMessage, IReply } from "@/domain/channels";
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { IMessage, IReply } from "@epicstory/contracts";
+import type { IMessageAttachment } from "@epicstory/contracts";
 import { computed, shallowRef, toValue, type MaybeRefOrGetter } from "vue";
-import type { IssueApi, IssueAttachmentListItem } from "../api/issue.api";
-import type { IssueFeedItem } from "../types/issue-feed.type";
+import type { IssueApi } from "@epicstory/api-client";
+import type { IIssueAttachmentListItem } from "@epicstory/contracts";
+import type { IssueFeedItem } from "../types";
 
 export type IssueAttachmentAnchorKey = `message:${number}` | `reply:${number}` | `issue:${number}`;
 
@@ -12,7 +13,6 @@ export type IssueAttachmentActivitySyncPayload = {
   replies?: IReply[];
 };
 
-/** In-flight or failed optimistic rows shown above persisted attachments. */
 export type IssueAttachmentPendingEntry =
   | { clientId: string; status: "uploading"; file: File; previewUrl: string }
   | {
@@ -24,7 +24,7 @@ export type IssueAttachmentPendingEntry =
     };
 
 export type IssueAttachmentTileRow =
-  | { key: string; kind: "persisted"; item: IssueAttachmentListItem }
+  | { key: string; kind: "persisted"; item: IIssueAttachmentListItem }
   | {
       key: string;
       kind: "uploading";
@@ -42,9 +42,9 @@ export type IssueAttachmentTileRow =
     };
 
 function mergePreferExisting(
-  cur: IssueAttachmentListItem | undefined,
-  next: IssueAttachmentListItem,
-): IssueAttachmentListItem {
+  cur: IIssueAttachmentListItem | undefined,
+  next: IIssueAttachmentListItem,
+): IIssueAttachmentListItem {
   if (!cur) return next;
   return {
     ...cur,
@@ -55,14 +55,11 @@ function mergePreferExisting(
   };
 }
 
-/**
- * Returns only refs/computed refs and plain functions — safe to destructure without losing reactivity.
- */
 export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRefOrGetter<number> }) {
-  const byId = shallowRef(new Map<number, IssueAttachmentListItem>());
+  const byId = shallowRef(new Map<number, IIssueAttachmentListItem>());
   const pendingUploads = shallowRef<IssueAttachmentPendingEntry[]>([]);
 
-  function replaceMap(mutate: (m: Map<number, IssueAttachmentListItem>) => void) {
+  function replaceMap(mutate: (m: Map<number, IIssueAttachmentListItem>) => void) {
     const next = new Map(byId.value);
     mutate(next);
     byId.value = next;
@@ -109,12 +106,10 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
     return [...pendingRows, ...persistedRows];
   });
 
-  const attachmentsUploading = computed(() =>
-    pendingUploads.value.some((p) => p.status === "uploading"),
-  );
+  const attachmentsUploading = computed(() => pendingUploads.value.some((p) => p.status === "uploading"));
 
   const byAnchor = computed(() => {
-    const map = new Map<IssueAttachmentAnchorKey, IssueAttachmentListItem[]>();
+    const map = new Map<IssueAttachmentAnchorKey, IIssueAttachmentListItem[]>();
     for (const a of flatList.value) {
       let key: IssueAttachmentAnchorKey | null = null;
       if (a.messageReplyId != null) key = `reply:${a.messageReplyId}`;
@@ -140,14 +135,14 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
     });
   }
 
-  function mergeAttachmentDtos(
-    dtos: MessageAttachmentDto[],
+  function mergeAttachments(
+    attachments: IMessageAttachment[],
     anchors: { issueId: number; messageId: number | null; messageReplyId: number | null },
   ) {
-    if (dtos.length === 0) return;
+    if (attachments.length === 0) return;
     replaceMap((m) => {
-      for (const att of dtos) {
-        const item: IssueAttachmentListItem = {
+      for (const att of attachments) {
+        const item: IIssueAttachmentListItem = {
           ...att,
           issueId: anchors.issueId,
           messageId: anchors.messageId,
@@ -160,7 +155,7 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
 
   function mergeMessageAttachments(message: IMessage | null, issueId: number) {
     if (!message?.attachments?.length) return;
-    mergeAttachmentDtos(message.attachments, {
+    mergeAttachments(message.attachments, {
       issueId,
       messageId: message.id,
       messageReplyId: null,
@@ -169,7 +164,7 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
 
   function mergeReplyAttachments(reply: IReply, issueId: number) {
     if (!reply.attachments?.length) return;
-    mergeAttachmentDtos(reply.attachments, {
+    mergeAttachments(reply.attachments, {
       issueId,
       messageId: null,
       messageReplyId: reply.id,
@@ -252,7 +247,7 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
     await options?.reloadFeed?.();
   }
 
-  function resolveAttachmentsForEntity(entity: IMessage | IReply): MessageAttachmentDto[] {
+  function resolveAttachmentsForEntity(entity: IMessage | IReply): IMessageAttachment[] {
     const issueId = toValue(deps.issueId);
     if (!issueId) return entity.attachments ?? [];
     const key: IssueAttachmentAnchorKey =

@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { UserAvatar } from "@/components/user";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/design-system";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 
 const props = withDefaults(
   defineProps<{
-    user?: User;
+    user?: IUser;
     raw: string;
     openDelay?: number;
     closeDelay?: number;

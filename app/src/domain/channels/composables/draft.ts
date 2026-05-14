@@ -1,8 +1,8 @@
-import type { MessagePollBody } from "@/domain/channels/types/message.type";
+import { toValue, type ReadonlyRefOrGetter } from "@/utils";
+import type { MessagePollBody, MessagePollOptionBody } from "@epicstory/contracts";
 import { docContainsImageNodes, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { debounce } from "lodash";
-import { toValue, type ReadonlyRefOrGetter } from "@/utils";
 import { nextTick, onScopeDispose, watch } from "vue";
 
 type EditingMessage = { id: number; content: JSONContent } | null;
@@ -47,7 +47,7 @@ export function clearChannelDraft(channelId: number) {
 function draftHasMeaningfulPoll(poll: MessagePollBody | null | undefined): boolean {
   if (!poll) return false;
   const q = poll.question.trim();
-  const nonempty = poll.options.filter((o) => o.label.trim().length > 0);
+  const nonempty = poll.options.filter((o: MessagePollOptionBody) => o.label.trim().length > 0);
   return q.length > 0 && nonempty.length >= 2;
 }
 

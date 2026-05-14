@@ -1,15 +1,1 @@
-export type Page<T> = {
-  content: T[];
-  page: number;
-  count: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
-  total: number;
-};
-
-export type PageQuery = {
-  orderBy?: string;
-  order?: string;
-  page: number;
-  count: number;
-};
+export type { Page, PageQuery } from "@epicstory/contracts";

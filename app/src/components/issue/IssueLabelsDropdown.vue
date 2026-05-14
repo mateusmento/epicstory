@@ -2,7 +2,8 @@
 import { Menu, MenuTrigger, MenuContent } from "@/design-system";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 import { computed } from "vue";
-import { useLabels, type Label } from "@/domain/labels";
+import type { ILabel } from "@epicstory/contracts";
+import { useLabels } from "@/domain/labels";
 
 const props = defineProps<{
   disabled?: boolean;
@@ -22,7 +23,7 @@ function onUpdateModelValue(value: number[]) {
 const { labelsById } = useLabels();
 
 const selectedLabels = computed(() => {
-  return props.modelValue.map((id) => labelsById.value.get(id)).filter((l): l is Label => Boolean(l));
+  return props.modelValue.map((id) => labelsById.value.get(id)).filter((l): l is ILabel => Boolean(l));
 });
 </script>
 

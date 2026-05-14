@@ -2,7 +2,7 @@
 import { UserAvatar } from "@/components/user";
 import { IconChats } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import type { DirectMessageNotificationPayload } from "@/domain/notifications/types/notification.types";
+import type { DirectMessageNotificationPayload } from "@/domain/notifications";
 import { formatDistanceToNow } from "date-fns";
 import { computed } from "vue";
 

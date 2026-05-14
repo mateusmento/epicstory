@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { JSONContent } from "@tiptap/core";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { openRichTextInlineImageLightbox } from "@/components/messages/media-attachment-lightbox";
 import { computed, inject } from "vue";
 import type { RichTextJsonPreviewContext } from "./preview";
@@ -26,7 +26,7 @@ const headingTag = computed(() => {
   return `h${level}`;
 });
 
-function lookupUser(id: number): User | undefined {
+function lookupUser(id: number): IUser | undefined {
   return ctx.lookupUser(id);
 }
 

@@ -1,4 +1,4 @@
-import type { IChannel } from "@/domain/channels/types";
+import type { IChannel } from "@epicstory/contracts";
 import type { InjectionKey, Ref } from "vue";
 
 export type ChannelContextMenuApi = {

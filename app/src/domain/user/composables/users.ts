@@ -1,12 +1,12 @@
 import { useDependency } from "@/core/dependency-injection";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
 import { UserApi } from "../api";
 import { debounce } from "lodash";
 
 export const useUsersStore = defineStore("users", () => {
-  const users = ref<User[]>([]);
+  const users = ref<IUser[]>([]);
   const isFetchingUsers = ref(false);
   const isFetchingMoreUsers = ref(false);
   const hasMoreUsers = ref(true);

@@ -22,7 +22,7 @@ import {
   IssuerIsNotChannelMember,
   MessageReplyNotFound,
 } from '../exceptions';
-import { MessageService } from '../services/message.service';
+import { ReplyService } from '../services/reply.service';
 
 export class UpdateReply {
   replyId: number;
@@ -50,7 +50,7 @@ export class UpdateReplyCommand implements ICommandHandler<UpdateReply> {
     private replyRepo: MessageReplyRepository,
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
-    private messageService: MessageService,
+    private replyService: ReplyService,
   ) {}
 
   async execute({ replyId, issuerId, content, attachmentIds }: UpdateReply) {
@@ -81,7 +81,7 @@ export class UpdateReplyCommand implements ICommandHandler<UpdateReply> {
       if (!isChannelMember) throw new IssuerIsNotChannelMember();
     }
 
-    return this.messageService.updateReplyBody(
+    return this.replyService.updateReplyBody(
       channel,
       replyId,
       content,

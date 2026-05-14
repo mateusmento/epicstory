@@ -3,9 +3,9 @@ import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
 import { storeToRefs } from "pinia";
 import { computed, onUnmounted, watch } from "vue";
-import { NotificationApi } from "../api";
 import { useNotificationFeedStore } from "../notification-feed.store";
-import type { Notification } from "../types/notification.types";
+import type { Notification } from "@epicstory/contracts";
+import { NotificationApi } from "@epicstory/api-client";
 
 type IncomingListener = (notification: Notification) => void;
 

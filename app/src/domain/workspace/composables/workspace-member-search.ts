@@ -3,8 +3,8 @@ import { defineStore, storeToRefs } from "pinia";
 import { debounce } from "lodash";
 import type { Ref } from "vue";
 import { ref } from "vue";
-import { WorkspaceApi } from "../services";
-import type { WorkspaceMember } from "../types";
+import { WorkspaceApi } from "@epicstory/api-client";
+import type { WorkspaceMember } from "@epicstory/contracts";
 
 const CHUNK = 20;
 

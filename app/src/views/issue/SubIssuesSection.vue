@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { useDependency } from "@/core/dependency-injection";
-import { BacklogItemApi } from "@/domain/backlog";
-import type { Issue } from "@/domain/issues";
-import { IssueApi } from "@/domain/issues";
+import { BacklogApi, IssueApi } from "@epicstory/api-client";
+import type { IIssue } from "@epicstory/contracts";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import SubIssueRow from "./sub-issues/SubIssueRow.vue";
@@ -13,7 +12,7 @@ const props = defineProps<{
   workspaceId: string;
   projectId: string;
   parentIssueId: number;
-  subIssues: Issue[];
+  subIssues: IIssue[];
   disabled?: boolean;
 }>();
 
@@ -23,7 +22,7 @@ const emit = defineEmits<{
 
 const router = useRouter();
 const issueApi = useDependency(IssueApi);
-const backlogItemApi = useDependency(BacklogItemApi);
+const backlogItemApi = useDependency(BacklogApi);
 
 const isCollapsed = ref(false);
 const newTitle = ref("");
@@ -35,7 +34,7 @@ function openSubIssue(subIssueId: number) {
   router.push(`/${props.workspaceId}/project/${props.projectId}/issue/${subIssueId}`);
 }
 
-async function toggleDone(sub: Issue) {
+async function toggleDone(sub: IIssue) {
   const nextStatus = sub.status === "done" ? "todo" : "done";
   await issueApi.updateIssue(sub.id, { status: nextStatus });
   emit("changed");

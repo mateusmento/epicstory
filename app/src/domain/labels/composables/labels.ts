@@ -1,13 +1,13 @@
 import { useDependency } from "@/core/dependency-injection";
+import { useWorkspace } from "@/domain/workspace";
+import { LabelApi } from "@epicstory/api-client";
+import type { CreateLabelData, ILabel, UpdateLabelData } from "@epicstory/contracts";
+import { sortBy } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
-import { LabelApi, type CreateLabelData, type UpdateLabelData } from "../api";
-import type { Label } from "../types";
-import { useWorkspace } from "@/domain/workspace";
-import { sortBy } from "lodash";
 
 const useLabelStore = defineStore("labels", () => {
-  const labels = ref<Label[]>([]);
+  const labels = ref<ILabel[]>([]);
   return { labels };
 });
 
@@ -18,7 +18,7 @@ export function useLabels() {
   const { workspaceId } = useWorkspace();
 
   const labelsById = computed(() => {
-    const map = new Map<number, Label>();
+    const map = new Map<number, ILabel>();
     for (const l of store.labels) map.set(l.id, l);
     return map;
   });

@@ -1,11 +1,11 @@
-import type { User } from "@/domain/auth";
-import type { IChannel, IMessage, IReply } from "@/domain/channels";
+import type { IUser as IUser } from "@epicstory/contracts";
+import type { IChannel, IMessage, IReply } from "@epicstory/contracts";
 
 export type MentionNotificationPayload = {
   type: "mention";
   channel: IChannel;
   message: IMessage;
-  sender: User;
+  sender: IUser;
   reply?: IReply;
 };
 
@@ -14,14 +14,14 @@ export type ReplyNotificationPayload = {
   reply: IReply;
   message: IMessage;
   channel: IChannel;
-  sender: User;
+  sender: IUser;
 };
 
 export type DirectMessageNotificationPayload = {
   type: "direct_message";
   message: IMessage;
   channel: IChannel;
-  sender: User;
+  sender: IUser;
 };
 
 export type IssueDueDateNotificationPayload = {
@@ -40,7 +40,7 @@ export type IssueAssignedNotificationPayload = {
   description: string;
   issueId: number;
   projectId: number;
-  issuer: User;
+  issuer: IUser;
 };
 
 export type CalendarMeetingReminderNotificationPayload = {
@@ -50,7 +50,6 @@ export type CalendarMeetingReminderNotificationPayload = {
   meetingId: number;
   channelId?: number | null;
   title: string;
-  /** Minutes before start this reminder was scheduled for (from scheduled job / event). */
   notifyMinutesBefore?: number;
   description?: string;
   calendarEventType?: "event" | "meeting";
@@ -58,7 +57,6 @@ export type CalendarMeetingReminderNotificationPayload = {
   endsAt?: string;
   isPublic?: boolean;
   notifyEnabled?: boolean;
-  /** Calendar row `payload` JSON (e.g. meeting channelId). */
   eventPayload?: Record<string, unknown>;
 };
 
@@ -68,7 +66,6 @@ export type CalendarEventReminderNotificationPayload = {
   occurrenceAt: string;
   channelId?: number | null;
   title: string;
-  /** Minutes before start this reminder was scheduled for (from scheduled job / event). */
   notifyMinutesBefore?: number;
   description?: string;
   calendarEventType?: "event" | "meeting";
@@ -79,7 +76,6 @@ export type CalendarEventReminderNotificationPayload = {
   eventPayload?: Record<string, unknown>;
 };
 
-/** Payload for inbox / websocket when someone reacts to your channel message. */
 export type MessageReactionNotificationPayload = {
   type?: "message_reaction";
   messageId: number;
@@ -87,12 +83,10 @@ export type MessageReactionNotificationPayload = {
   emoji: string;
   reactorUserId: number;
   channelName?: string;
-  reactor?: User;
-  /** Resolved plain excerpt (mentions expanded, truncated). */
+  reactor?: IUser;
   messageExcerpt?: string;
 };
 
-/** Payload when someone reacts to your thread reply. */
 export type ReplyReactionNotificationPayload = {
   type?: "reply_reaction";
   replyId: number;
@@ -100,7 +94,7 @@ export type ReplyReactionNotificationPayload = {
   emoji: string;
   reactorUserId: number;
   channelName?: string;
-  reactor?: User;
+  reactor?: IUser;
   messageExcerpt?: string;
 };
 

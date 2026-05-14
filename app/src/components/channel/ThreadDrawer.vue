@@ -3,10 +3,10 @@ import { channelMessageComposerAttachmentHandlers, MessageBox, MessageComposer }
 import { useDependency } from "@/core/dependency-injection";
 import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import type { IMessage, IReply } from "@/domain/channels";
+import type { IMessage, IReply } from "@epicstory/contracts";
 import { groupMessages, useChannel } from "@/domain/channels";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
-import { useMessageThread } from "@/domain/channels/composables/message-thread";
+import { ChannelApi } from "@epicstory/api-client";
+import { useMessageThread } from "@/domain/channels";
 import type { JSONContent } from "@tiptap/core";
 import { computed, nextTick, ref, watch } from "vue";
 import MessageGroup from "./MessageGroup.vue";

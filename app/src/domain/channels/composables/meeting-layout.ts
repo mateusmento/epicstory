@@ -1,13 +1,13 @@
 import { useAuth } from "@/domain/auth";
-import type { User } from "@/domain/user";
-import { compositeLocalMeetingMedia } from "@/domain/channels/utils/meeting-screen-share";
+import type { IUser as IUser } from "@epicstory/contracts";
+import { compositeLocalMeetingMedia } from "../utils/meeting-screen-share";
 import { computed } from "vue";
 import { useMeeting } from "./meeting";
 
 export type MeetingParticipant = {
   id: string; // remoteId or "local"
   stream: MediaStream | null;
-  user: User | null;
+  user: IUser | null;
   isLocal: boolean;
   isCameraOn: boolean;
   isMicrophoneOn: boolean;

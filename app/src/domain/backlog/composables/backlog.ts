@@ -1,14 +1,13 @@
 import { useDependency } from "@/core/dependency-injection";
-import { IssueApi, type Issue, type UpdateIssueData } from "@/domain/issues";
+import type { FindBacklogItemsQuery, IBacklogItem, IIssue, UpdateIssueData } from "@epicstory/contracts";
+import { BacklogApi, IssueApi } from "@epicstory/api-client";
 import { defineStore, storeToRefs } from "pinia";
 import { reactive, ref } from "vue";
-import { BacklogItemApi, type FindBacklogItemsQuery } from "../api";
-import type { BacklogItem } from "../types";
 
 const useBacklogStore = defineStore("backlog", () => {
-  const backlogItems = ref<BacklogItem[]>([]);
+  const backlogItems = ref<IBacklogItem[]>([]);
 
-  async function updateIssue(issue: Issue) {
+  async function updateIssue(issue: IIssue) {
     const index = backlogItems.value.findIndex((b) => b.issue.id === issue.id);
     if (index >= 0) backlogItems.value[index].issue = issue;
     return issue;
@@ -20,7 +19,7 @@ const useBacklogStore = defineStore("backlog", () => {
 export function useBacklog() {
   const store = useBacklogStore();
 
-  const backlogItemApi = useDependency(BacklogItemApi);
+  const backlogItemApi = useDependency(BacklogApi);
   const issueApi = useDependency(IssueApi);
 
   async function fetchBacklogItems(query: FindBacklogItemsQuery) {
@@ -33,7 +32,7 @@ export function useBacklog() {
     const index = store.backlogItems.findIndex((i) => i.order > item.order);
     if (index >= 0) store.backlogItems.splice(index, 0, reactive(item));
     else store.backlogItems.push(reactive(item));
-    return item as BacklogItem;
+    return item as IBacklogItem;
   }
 
   async function moveBacklogItem(itemId: number, data: any) {

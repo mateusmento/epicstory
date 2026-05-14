@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { UserAvatar } from "@/components/user";
-import { useChannel, type IChannel } from "@/domain/channels";
+import type { IChannel } from "@epicstory/contracts";
+import { useChannel } from "@/domain/channels";
 import { formatDate, isToday } from "date-fns";
 import { ref } from "vue";
 

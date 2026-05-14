@@ -28,6 +28,9 @@ importers:
       "@aws-sdk/lib-storage":
         specifier: ^3.645.0
         version: 3.1030.0(@aws-sdk/client-s3@3.1030.0)
+      "@epicstory/contracts":
+        specifier: workspace:*
+        version: link:../packages/contracts
       "@epicstory/tiptap":
         specifier: workspace:*
         version: link:../packages/tiptap
@@ -254,6 +257,12 @@ importers:
 
   app:
     dependencies:
+      "@epicstory/api-client":
+        specifier: workspace:*
+        version: link:../packages/api-client
+      "@epicstory/contracts":
+        specifier: workspace:*
+        version: link:../packages/contracts
       "@epicstory/tiptap":
         specifier: workspace:*
         version: link:../packages/tiptap
@@ -537,6 +546,49 @@ importers:
       vue-tsc:
         specifier: ^2.0.21
         version: 2.2.12(typescript@5.4.5)
+
+  packages/api-client:
+    dependencies:
+      "@epicstory/contracts":
+        specifier: workspace:*
+        version: link:../contracts
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
+      tsyringe:
+        specifier: ^4.8.0
+        version: 4.10.0
+    devDependencies:
+      "@tiptap/core":
+        specifier: ^3.22.3
+        version: 3.22.3(@tiptap/pm@3.22.3)
+      "@types/node":
+        specifier: ^20.0.0
+        version: 20.19.39
+      axios:
+        specifier: ^1.7.9
+        version: 1.15.0(debug@4.4.3)
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.10)(typescript@5.4.5)(yaml@2.6.1)
+      typescript:
+        specifier: ~5.4.0
+        version: 5.4.5
+
+  packages/contracts:
+    devDependencies:
+      "@tiptap/core":
+        specifier: ^3.22.3
+        version: 3.22.3(@tiptap/pm@3.22.3)
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.10)(typescript@5.4.5)(yaml@2.6.1)
+      typescript:
+        specifier: ~5.4.0
+        version: 5.4.5
 
   packages/tiptap:
     dependencies:
@@ -14964,10 +15016,10 @@ packages:
         integrity: sha512-YbGqHZ5/eW4SnkPNR44mKVc6ZKQoRs/Rux1sxC6rdwXb4qpbOSYfDr9DsTHolOTGmIKgM9j141mZbBeg05R1pw==,
       }
 
-  vue-component-type-helpers@3.2.8:
+  vue-component-type-helpers@3.2.9:
     resolution:
       {
-        integrity: sha512-9689efAXhN/EV86plgkL/XFiJSXhGtWPG6JDboZ+QnjlUWUUQrQ0ILKQtw4iQsuwIwu5k6Aw+JnehDe7161e7A==,
+        integrity: sha512-S3BiWYaLSzHxTpln665ELSrMR9UYmrIDUmhik7nVZxmJjTKL2/a+ew1hvGxksKelivm0ujjWfG1fYOiU/2e8rA==,
       }
 
   vue-demi@0.12.5:
@@ -18142,7 +18194,7 @@ snapshots:
       ts-dedent: 2.2.0
       type-fest: 2.19.0
       vue: 3.5.32(typescript@5.4.5)
-      vue-component-type-helpers: 3.2.8
+      vue-component-type-helpers: 3.2.9
 
   "@swc/helpers@0.5.21":
     dependencies:
@@ -25201,7 +25253,7 @@ snapshots:
 
   vue-component-type-helpers@2.2.12: {}
 
-  vue-component-type-helpers@3.2.8: {}
+  vue-component-type-helpers@3.2.9: {}
 
   vue-demi@0.12.5(vue@3.5.32(typescript@5.4.5)):
     dependencies:

@@ -2,10 +2,10 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
 import type { JSONContent } from "@tiptap/core";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
+import { ChannelApi } from "@epicstory/api-client";
 import { onMounted, onUnmounted, ref } from "vue";
 import type { Ref } from "vue";
-import type { IAggregatedReaction, IMessage, IReply } from "../types";
+import type { IAggregatedReaction, IMessage, IReply, IUser } from "@epicstory/contracts";
 
 type UseMessageThreadOptions = {
   onMessageDeleted?: () => void;
@@ -159,7 +159,11 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   function addReply(reply: IReply) {
     replies.value.push(reply);
     message.value.repliesCount++;
-    if (!message.value.repliers.some((replier) => replier.user.id === reply.senderId))
+    if (
+      !message.value.repliers.some(
+        (replier: { user: IUser; repliesCount: number }) => replier.user.id === reply.senderId,
+      )
+    )
       message.value.repliers.push({ user: reply.sender, repliesCount: 1 });
   }
 
@@ -167,7 +171,9 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     replies.value = replies.value.filter((reply) => reply.id !== replyId);
     message.value.repliesCount--;
     if (replies.value.filter((reply) => reply.senderId === me.value?.id).length === 0)
-      message.value.repliers = message.value.repliers.filter((replier) => replier.user.id !== me.value?.id);
+      message.value.repliers = message.value.repliers.filter(
+        (replier: { user: IUser; repliesCount: number }) => replier.user.id !== me.value?.id,
+      );
   }
 
   function updateReplyReactions(replyId: number, reactions: IAggregatedReaction[]) {

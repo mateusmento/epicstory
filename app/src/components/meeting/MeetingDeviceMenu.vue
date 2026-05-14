@@ -14,7 +14,7 @@ import {
   MenuTrigger,
 } from "@/design-system";
 import { IconCameraOn, IconMicrophoneOn } from "@/components/icons";
-import { useMeetingMediaDevicesStore } from "@/domain/channels/composables/meeting-media-devices";
+import { useMeetingMediaDevicesStore } from "@/domain/channels";
 import { storeToRefs } from "pinia";
 import { Headphones, MoreVertical, RefreshCw, Settings2 } from "lucide-vue-next";
 import { onMounted } from "vue";

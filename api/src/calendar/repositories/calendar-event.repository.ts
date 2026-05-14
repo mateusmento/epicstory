@@ -10,4 +10,15 @@ export class CalendarEventRepository extends Repository<CalendarEvent> {
   ) {
     super(repo.target, repo.manager, repo.queryRunner);
   }
+
+  findCalendarEventsForUser(userId: number, workspaceId: number) {
+    return this.createQueryBuilder('event')
+      .leftJoin('event.participants', 'participant')
+      .where('event.workspaceId = :workspaceId', { workspaceId })
+      .andWhere('event.type = :type', { type: 'meeting' })
+      .andWhere('participant.id = :userId OR event.createdById = :userId', {
+        userId,
+      })
+      .getMany();
+  }
 }

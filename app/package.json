@@ -6,7 +6,7 @@
   "packageManager": "pnpm@9.0.1",
   "scripts": {
     "dev": "vite",
-    "prebuild": "pnpm -C ../packages/tiptap run build",
+    "prebuild": "pnpm -C ../packages/contracts run build && pnpm -C ../packages/api-client run build && pnpm -C ../packages/tiptap run build",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
@@ -21,6 +21,8 @@
     "shadcn-vue": "shadcn-vue"
   },
   "dependencies": {
+    "@epicstory/api-client": "workspace:*",
+    "@epicstory/contracts": "workspace:*",
     "@epicstory/tiptap": "workspace:*",
     "@floating-ui/dom": "^1.7.6",
     "@formkit/drag-and-drop": "^0.2.2",

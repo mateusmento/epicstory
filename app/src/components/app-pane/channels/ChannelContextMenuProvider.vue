@@ -2,7 +2,7 @@
 import ChannelDeleteDialog from "./ChannelDeleteDialog.vue";
 import ChannelRenameDialog from "./ChannelRenameDialog.vue";
 import { useChannelActions, useMeeting } from "@/domain/channels";
-import type { IChannel } from "@/domain/channels/types";
+import type { IChannel } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
 import { provide, ref } from "vue";
 import { useRouter } from "vue-router";

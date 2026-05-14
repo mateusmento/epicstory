@@ -19,8 +19,8 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { MessagePollBody } from '../dtos/message-poll.dto';
 import {
-  toScheduledMessageDto,
-  ScheduledMessageDto,
+  IScheduledMessage,
+  mapScheduledJobToMessage,
 } from '../dtos/scheduled-message.dto';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -69,7 +69,7 @@ export class UpdateScheduledChannelMessageCommand
 
   async execute(
     cmd: UpdateScheduledChannelMessage,
-  ): Promise<ScheduledMessageDto> {
+  ): Promise<IScheduledMessage> {
     const channel = await this.channelRepo.findOne({
       where: { id: cmd.channelId },
       relations: { peers: true },
@@ -129,6 +129,6 @@ export class UpdateScheduledChannelMessageCommand
     if (cmd.recurrence) job.recurrence = cmd.recurrence;
 
     const saved = await this.scheduledJobRepo.save(job);
-    return toScheduledMessageDto(saved);
+    return mapScheduledJobToMessage(saved);
   }
 }

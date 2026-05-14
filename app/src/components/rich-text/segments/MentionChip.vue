@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { useAuth } from "@/domain/auth";
 import { computed } from "vue";
 import MentionHoverCard from "./MentionHoverCard.vue";
@@ -10,7 +10,7 @@ import MentionHoverCard from "./MentionHoverCard.vue";
 const props = defineProps<{
   attrs: Record<string, unknown> | undefined;
   mentionMeId: number | undefined;
-  userById: (id: number) => User | undefined;
+  userById: (id: number) => IUser | undefined;
 }>();
 
 const { user: currentUser } = useAuth();
@@ -18,7 +18,7 @@ const { user: currentUser } = useAuth();
 const id = computed(() => Number(props.attrs?.id ?? props.attrs?.userId));
 const label = computed(() => String(props.attrs?.label ?? props.attrs?.id ?? props.attrs?.userId ?? ""));
 
-const user = computed<User | undefined>(() =>
+const user = computed<IUser | undefined>(() =>
   Number.isFinite(id.value) ? props.userById(id.value) : undefined,
 );
 

@@ -1,1 +1,1 @@
-export * from "./user.api";
+export { UserApi } from "@epicstory/api-client";

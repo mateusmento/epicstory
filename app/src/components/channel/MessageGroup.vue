@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import { UserAvatar } from "@/components/user";
-import type { User } from "@/domain/user";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { formatDate, isToday } from "date-fns";
 
 const props = defineProps<{
-  sender: User;
+  sender: IUser;
   meId: number;
   sentAt: string;
 }>();

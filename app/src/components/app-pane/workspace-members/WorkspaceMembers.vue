@@ -16,16 +16,16 @@ import {
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 import { useDependency } from "@/core/dependency-injection";
-import { UserApi } from "@/domain/user";
+import { UserApi } from "@epicstory/api-client";
 import { useWorkspace } from "@/domain/workspace";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { format } from "date-fns";
 import { debounce } from "lodash";
 import { ArrowLeft, Trash2Icon, UserPlus, X } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
-import type { User } from "@/domain/user";
+import type { IUser as IUser } from "@epicstory/contracts";
 
-type PendingInvite = { email: string; user: User | null };
+type PendingInvite = { email: string; user: IUser | null };
 
 const { workspace, members, fetchWorkspaceMembers, sendWorkspaceMemberInvite, removeMember } = useWorkspace();
 const { user: authUser } = useAuth();
@@ -36,7 +36,7 @@ watch(workspace, () => fetchWorkspaceMembers());
 
 const inviteOpen = ref(false);
 const emailInput = ref("");
-const searchHits = ref<User[]>([]);
+const searchHits = ref<IUser[]>([]);
 const isSearching = ref(false);
 const selectedInvites = ref<PendingInvite[]>([]);
 const isSending = ref(false);

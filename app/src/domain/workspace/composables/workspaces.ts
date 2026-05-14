@@ -1,10 +1,10 @@
 import { useDependency } from "@/core/dependency-injection";
 import { ref } from "vue";
-import { WorkspaceApi } from "../services/workspace.service";
-import type { Workspace } from "../types/workspace.type";
+import { WorkspaceApi } from "@epicstory/api-client";
+import type { IWorkspace } from "@epicstory/contracts";
 
 export function useWorkspaces() {
-  const workspaces = ref<Workspace[]>([]);
+  const workspaces = ref<IWorkspace[]>([]);
   const workspaceApi = useDependency(WorkspaceApi);
 
   async function fetchWorkspaces() {

@@ -3,13 +3,13 @@ import { UserAvatar } from "@/components/user";
 import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { Button, Menu, MenuContent, MenuGroup, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { Trash2Icon } from "lucide-vue-next";
 import { ref, watch } from "vue";
 
 const props = defineProps<{
-  members: (User & { role?: string; online?: boolean })[];
+  members: (IUser & { role?: string; online?: boolean })[];
 }>();
 
 const emit = defineEmits<{
@@ -17,15 +17,15 @@ const emit = defineEmits<{
   (e: "remove", userId: number): void;
 }>();
 
-function removeMember(user: User) {
+function removeMember(user: IUser) {
   emit("remove", user.id);
 }
 
-function addMember(user: User) {
+function addMember(user: IUser) {
   emit("add", user.id);
 }
 
-const memberUsers = ref<User[]>([]);
+const memberUsers = ref<IUser[]>([]);
 watch(
   () => props.members,
   (m) => {

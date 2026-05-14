@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Icon } from "@/design-system/icons";
-import type { Label } from "@/domain/labels";
+import type { ILabel } from "@epicstory/contracts";
 import { useLabels } from "@/domain/labels";
 import { computed, onMounted, ref, watch } from "vue";
 import IssueLabelsDropdown from "./IssueLabelsDropdown.vue";
@@ -43,7 +43,7 @@ watch(
 const selectedLabels = computed(() => {
   return (modelValue.value ?? [])
     .map((id) => labelsById.value.get(id))
-    .filter((l): l is Label => Boolean(l))
+    .filter((l): l is ILabel => Boolean(l))
     .sort((a, b) => a.name.localeCompare(b.name));
 });
 </script>

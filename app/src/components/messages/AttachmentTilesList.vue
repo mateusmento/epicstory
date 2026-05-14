@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { AttachmentMediaState, AttachmentTileRow } from "@/components/messages/attachment-tile-rows";
 import AttachmentMediaTile from "@/components/messages/AttachmentMediaTile.vue";
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { IMessageAttachment } from "@epicstory/contracts";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
@@ -69,7 +69,7 @@ function mediaState(row: AttachmentTileRow): AttachmentMediaState {
   };
 }
 
-function canRemoveUploaded(item: MessageAttachmentDto): boolean {
+function canRemoveUploaded(item: IMessageAttachment): boolean {
   if (!props.removable) return false;
   if (props.meId == null) return true;
   return item.uploadedById != null && item.uploadedById === props.meId;

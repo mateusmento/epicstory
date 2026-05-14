@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
-import { Axios, AxiosError } from "axios";
+import { WorkspaceApi } from "@epicstory/api-client";
+import { AxiosError } from "axios";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -10,7 +11,7 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
-const axios = useDependency(Axios);
+const workspaceApi = useDependency(WorkspaceApi);
 
 const isLoading = ref(false);
 const error = ref<string | null>(null);
@@ -21,7 +22,7 @@ async function acceptInvite() {
   error.value = null;
 
   try {
-    await axios.put(`/workspace-member-invites/${props.inviteId}/accepted`);
+    await workspaceApi.acceptWorkspaceMemberInvite(props.inviteId);
     isSuccess.value = true;
 
     // Redirect after a short delay to show success message

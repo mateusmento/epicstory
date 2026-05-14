@@ -1,6 +1,6 @@
 import type { AttachmentTileRow } from "@/components/messages/attachment-tile-rows";
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
-import type { UploadedAttachment } from "@/domain/channels/services/channel.service";
+import type { IMessageAttachment } from "@epicstory/contracts";
+import type { UploadedAttachment } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
 import type { Ref } from "vue";
 import { computed, ref, shallowRef, watch } from "vue";
@@ -12,7 +12,7 @@ import type { ResolvedSchedule } from "../schedule-builders";
 type EditingMessage = {
   id: number;
   content: JSONContent;
-  attachments?: MessageAttachmentDto[];
+  attachments?: IMessageAttachment[];
 } | null;
 
 type PendingComposerTransfer =
@@ -38,15 +38,14 @@ export function useMessageComposerAttachments(options: {
   activeSchedule: Ref<ResolvedSchedule | null>;
   onExistingAttachmentRemoved: () => void;
 }) {
-  const editingExistingAttachments = ref<MessageAttachmentDto[]>([]);
+  const editingExistingAttachments = ref<IMessageAttachment[]>([]);
   const removingEditingAttachment = ref(false);
   const pendingAttachments = ref<UploadedAttachment[]>([]);
   const pendingTransfers = shallowRef<PendingComposerTransfer[]>([]);
   const stagingFileInputRef = ref<HTMLInputElement | null>(null);
 
   const scheduleAttachmentHint = computed(() =>
-    options.activeSchedule.value &&
-    (pendingAttachments.value.length > 0 || pendingTransfers.value.length > 0)
+    options.activeSchedule.value && (pendingAttachments.value.length > 0 || pendingTransfers.value.length > 0)
       ? "Attachments are not sent in scheduled messages. Clear the schedule or send now to include them."
       : null,
   );

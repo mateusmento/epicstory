@@ -13,11 +13,11 @@ import {
   ScrollArea,
   Separator,
 } from "@/design-system";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { useAuth } from "@/domain/auth";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
-import type { IScheduledMessage } from "@/domain/channels/types/scheduled-message.type";
-import type { MessagePollBody } from "@/domain/channels/types/message.type";
+import { ChannelApi } from "@epicstory/api-client";
+import type { IScheduledMessage } from "@epicstory/contracts";
+import type { MessagePollBody } from "@epicstory/contracts";
 import { docContainsImageNodes, normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor } from "@tiptap/core";
 import { format } from "date-fns";
@@ -42,7 +42,7 @@ const props = withDefaults(
     open: boolean;
     channelId: number;
     scheduled: IScheduledMessage;
-    mentionables?: User[];
+    mentionables?: IUser[];
   }>(),
   { mentionables: () => [] },
 );

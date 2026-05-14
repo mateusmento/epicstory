@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
 import MentionChip from "./MentionChip.vue";
 import RichTextJsonMarkedSegment from "./MarkedSegment.vue";
@@ -7,10 +7,10 @@ import RichTextJsonMarkedSegment from "./MarkedSegment.vue";
 const props = defineProps<{
   nodes: JSONContent[] | undefined;
   mentionMeId: number | undefined;
-  userById: (id: number) => User | undefined;
+  userById: (id: number) => IUser | undefined;
 }>();
 
-function lookupUser(id: number): User | undefined {
+function lookupUser(id: number): IUser | undefined {
   return props.userById(id);
 }
 </script>

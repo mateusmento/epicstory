@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/design-system";
-import type { IChannel } from "@/domain/channels/types";
+import type { IChannel } from "@epicstory/contracts";
 import { inject } from "vue";
 import { CalendarClockIcon, HeadphonesIcon, LogOutIcon, SquarePenIcon, Trash2Icon } from "lucide-vue-next";
 import { CHANNEL_CONTEXT_MENU_KEY } from "./channel-context-menu.context";

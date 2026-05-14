@@ -1,70 +1,11 @@
-import type { JSONContent } from "@tiptap/core";
-import type { User } from "@/domain/auth";
-import type { IChannel } from "./channel.type";
+import type { IAggregatedReaction, IMessage, IReply, MessagePollClient, IUser } from "@epicstory/contracts";
 
-/** Server-hydrated quote body; `id` is `messages.id` or a thread `message_replies.id`. */
-export type IQuotedMessagePreview = {
-  id: number;
-  sender: User;
-  content: JSONContent;
-  displayContent?: string;
-};
-
-/** Server-linked files; rendered below the text body, not inside message JSON. */
-export type MessageAttachmentDto = {
-  id: number;
-  url: string;
-  mimeType: string;
-  originalFilename: string;
-  byteSize: number;
-  /** Present when API returns uploader info; omit on older payloads. */
-  uploadedById?: number;
-};
-
-/** Matches API `MessagePollBody` / persisted `messages.poll` option rows. */
-export type MessagePollOptionBody = {
-  id: string;
-  label: string;
-};
-
-export type MessagePollBody = {
-  question: string;
-  options: MessagePollOptionBody[];
-};
-
-/** Server merge of persisted poll + vote tallies (channel messages). */
-export type IMessagePollClient = MessagePollBody & {
-  optionVotes: Record<string, number>;
-  totalVotes: number;
-  myOptionId: string | null;
-};
-
-export interface IMessage {
-  id: number;
-  content: JSONContent;
-  displayContent?: string;
-  quotedMessageId?: number | null;
-  quotedMessage?: IQuotedMessagePreview;
-  editedAt?: string | null;
-  isScheduled?: boolean;
-  mentionedUsers?: User[];
-  sentAt: string;
-  senderId: number;
-  sender: User;
-  channelId: number;
-  channel: IChannel;
-
-  repliesCount: number;
-  repliers: { user: User; repliesCount: number }[];
-  reactions: IAggregatedReaction[];
-  attachments?: MessageAttachmentDto[];
-  poll?: IMessagePollClient;
-}
+export type IMessagePollClient = MessagePollClient;
 
 export type IMessageGroup<M extends IMessage | IReply = IMessage> = {
   id: number;
   senderId: number;
-  sender: User;
+  sender: IUser;
   sentAt: string;
   messages: M[];
 };
@@ -74,61 +15,25 @@ export type IMessageAggregation = {
   replies: IAggregatedReply;
 };
 
-export interface IMessageReaction {
+export type IMessageReaction = {
   id: number;
   emoji: string;
   userId: number;
-  user: User;
+  user: IUser;
   messageId: number;
   message: IMessage;
-}
-
-export interface IReply {
-  id: number;
-  content: JSONContent;
-  displayContent?: string;
-  /** `message_replies.id` of the quoted reply in the same thread. */
-  quotedReplyId?: number | null;
-  /** Hydrated body of the quoted reply (or thread root, same shape for UI). */
-  quotedMessage?: IQuotedMessagePreview;
-  mentionedUsers?: User[];
-  isScheduled?: boolean;
-  sentAt: string;
-  senderId: number;
-  sender: User;
-  channelId: number;
-  channel: IChannel;
-  messageId: number;
-  message: IMessage;
-
-  repliesCount: number;
-  repliers: { user: User; repliesCount: number }[];
-  reactions: IAggregatedReaction[];
-  attachments?: MessageAttachmentDto[];
-}
-
-export interface IReplyReaction {
-  id: number;
-  emoji: string;
-  userId: number;
-  user: User;
-  replyId: number;
-  reply: IReply;
-}
-
-export type IReaction = {
-  emoji: string;
-  reactedBy: User;
 };
 
-export type IAggregatedReaction = {
+export type IReplyReaction = {
+  id: number;
   emoji: string;
-  reactedBy: User[];
-  firstReactedAt: string;
-  reactedByMe: boolean;
+  userId: number;
+  user: IUser;
+  replyId: number;
+  reply: IReply;
 };
 
 export type IAggregatedReply = {
   count: number;
-  repliedBy: User[];
+  repliedBy: IUser[];
 };

@@ -3,8 +3,8 @@ import MessageComposerActions from "@/components/messages/MessageComposerActions
 import { RichTextComposer, RichTextPreview } from "@/components/rich-text";
 import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
-import { IssueApi } from "@/domain/issues";
-import type { User } from "@/domain/user";
+import { IssueApi } from "@epicstory/api-client";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { computed, ref, shallowRef, watch } from "vue";
@@ -17,7 +17,7 @@ const props = withDefaults(
     issueId: number;
     disabled?: boolean;
     isSaving?: boolean;
-    mentionables?: User[];
+    mentionables?: IUser[];
     meId?: number;
     onMentionListReachedBottom?: () => void | Promise<void>;
     mentionListHasMore?: boolean;

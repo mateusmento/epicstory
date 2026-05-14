@@ -1,1 +1,1 @@
-export * from "./user.type";
+export type { IUser as IUser } from "@epicstory/contracts";

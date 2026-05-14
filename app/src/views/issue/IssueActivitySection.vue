@@ -3,28 +3,23 @@ import IssueCommentCard from "@/components/issue/IssueCommentCard.vue";
 import { Icon } from "@/design-system/icons";
 import { UserAvatar } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
-import { IssueApi } from "@/domain/issues/api";
-import {
-  useIssueActivityFeed,
-  useIssueCommentEditing,
-  useIssueCommentThreads,
-} from "@/domain/issues/composables";
+import { ChannelApi, IssueApi } from "@epicstory/api-client";
+import { useIssueActivityFeed, useIssueCommentEditing, useIssueCommentThreads } from "@/domain/issues";
 import {
   formatIssueActivitySentence,
   formatIssueActivityWhen,
   resolveIssueActivityActor,
-} from "@/domain/issues/issue-activity-feed-text";
+} from "@/domain/issues";
 import type { JSONContent } from "@tiptap/core";
-import type { IssueFeedItem } from "@/domain/issues/types/issue-feed.type";
-import type { IMessage, IReply } from "@/domain/channels";
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
-import type { User } from "@/domain/user";
+import type { IssueFeedItem } from "@/domain/issues";
+import type { IMessage, IReply } from "@epicstory/contracts";
+import type { IMessageAttachment } from "@epicstory/contracts";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { computed, nextTick, ref } from "vue";
 import { cn } from "@/design-system/utils";
 import { issueActivityMessageComposerAttachmentHandlers } from "@/components/messages";
-import { useIssue } from "@/domain/issues/composables/issue";
-import type { IssueAttachmentActivitySyncPayload } from "@/domain/issues/composables/issue-attachments";
+import { useIssue } from "@/domain/issues";
+import type { IssueAttachmentActivitySyncPayload } from "@/domain/issues";
 import IssueCommentComposer from "./IssueCommentComposer.vue";
 
 const props = withDefaults(
@@ -33,12 +28,12 @@ const props = withDefaults(
     commentChannelId: number;
     meId: number;
     /** Workspace roster for @mentions (parent-loaded to avoid duplicate fetches). */
-    workspaceMentionUsers?: User[];
+    workspaceMentionUsers?: IUser[];
     /** Paginated workspace mentions: scroll mention list to bottom → load more. */
     onMentionListReachedBottom?: () => void | Promise<void>;
     mentionListHasMore?: boolean;
     mentionListLoadingMore?: boolean;
-    resolveCommentAttachments?: (entity: IMessage | IReply) => MessageAttachmentDto[];
+    resolveCommentAttachments?: (entity: IMessage | IReply) => IMessageAttachment[];
     syncIssueAttachments?: (payload: IssueAttachmentActivitySyncPayload) => void;
   }>(),
   {

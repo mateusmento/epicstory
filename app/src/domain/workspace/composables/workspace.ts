@@ -3,11 +3,11 @@ import type { PageQuery } from "@/core/types";
 import { StorageSerializers, useStorage } from "@vueuse/core";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
-import { WorkspaceApi } from "../services";
-import type { Project, Team, Workspace, WorkspaceMember } from "../types";
+import { WorkspaceApi } from "@epicstory/api-client";
+import type { Project, Team, IWorkspace, WorkspaceMember } from "@epicstory/contracts";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
-  const workspace = useStorage<Workspace>("workspace", null, localStorage, {
+  const workspace = useStorage<IWorkspace>("workspace", null, localStorage, {
     serializer: StorageSerializers.object,
     mergeDefaults: true,
   });

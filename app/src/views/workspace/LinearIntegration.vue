@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { useDependency } from "@/core/dependency-injection";
-import { Button, Input } from "@/design-system";
 import { config } from "@/config";
-import { useRoute } from "vue-router";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { LinearIntegrationApi, type LinearMismatch, type LinearProject } from "@/domain/integrations/linear";
+import { useDependency } from "@/core/dependency-injection";
+import { Button } from "@/design-system";
 import { useWorkspace } from "@/domain/workspace";
+import { LinearIntegrationApi } from "@epicstory/api-client";
+import type { ILinearProject, ILinearMismatch } from "@epicstory/contracts";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 
 const route = useRoute();
 const api = useDependency(LinearIntegrationApi);
@@ -17,13 +18,13 @@ const loading = ref(false);
 const connection = ref<Awaited<ReturnType<typeof api.getWorkspaceConnection>>>();
 
 const importAll = ref(true);
-const projects = ref<LinearProject[]>([]);
+const projects = ref<ILinearProject[]>([]);
 const selectedProjectIds = ref<string[]>([]);
 const projectMappings = ref<Record<string, number | null>>({});
 
 const jobId = ref<string>();
 const job = ref<any>();
-const mismatches = ref<LinearMismatch[]>([]);
+const mismatches = ref<ILinearMismatch[]>([]);
 const pollMs = ref(1500);
 let timer: number | undefined;
 

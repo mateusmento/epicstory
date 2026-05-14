@@ -1,9 +1,9 @@
-import { resolveCalendarReminderStartsInLabel } from "@/domain/notifications/event-starts-in";
+import { resolveCalendarReminderStartsInLabel } from "./event-starts-in";
 import type {
   MessageReactionNotificationPayload,
   Notification,
   ReplyReactionNotificationPayload,
-} from "@/domain/notifications/types/notification.types";
+} from "./types";
 
 function formatCalendarOccurrenceSubtitle(occurrenceAt: unknown): string | undefined {
   if (occurrenceAt == null || occurrenceAt === "") return undefined;

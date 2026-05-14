@@ -1,4 +1,4 @@
-import type { IScheduledMessageRecurrence } from "@/domain/channels/types/scheduled-message.type";
+import type { ScheduledMessageRecurrence as IScheduledMessageRecurrence } from "@epicstory/contracts";
 import {
   addDays,
   addHours,

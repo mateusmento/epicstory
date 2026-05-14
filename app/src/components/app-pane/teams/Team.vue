@@ -12,7 +12,7 @@ import {
   TooltipTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { useTeam } from "@/domain/team";
 import { format } from "date-fns";
 import { Trash2Icon, UserPlus } from "lucide-vue-next";
@@ -25,7 +25,7 @@ const props = defineProps<{
 const { team, members, fetchTeam, addMember, removeMember } = useTeam();
 onMounted(() => fetchTeam(props.teamId));
 
-const selectedUser = ref<User>();
+const selectedUser = ref<IUser>();
 </script>
 
 <template>

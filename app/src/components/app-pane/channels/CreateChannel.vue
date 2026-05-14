@@ -13,7 +13,7 @@ import {
 } from "@/design-system";
 import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";
-import { type User } from "@/domain/user";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
 import { ChevronsUpDown, Trash2Icon } from "lucide-vue-next";
 import { ref, watch } from "vue";
@@ -41,7 +41,7 @@ const { workspace } = useWorkspace();
 const channelType = ref<"group" | "meeting" | "direct">(props.initialType);
 const { createChannel } = useChannels();
 
-const members = ref<User[]>([]);
+const members = ref<IUser[]>([]);
 
 function removeMember(userId: number) {
   members.value = members.value.filter((member) => member.id !== userId);

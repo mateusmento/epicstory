@@ -1,7 +1,7 @@
 <script lang="tsx" setup>
 import { UserAvatar } from "@/components/user";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
-import type { IssueAssignedNotificationPayload } from "@/domain/notifications/types/notification.types";
+import type { IssueAssignedNotificationPayload } from "@/domain/notifications";
 import { formatDistanceToNow } from "date-fns";
 import { SquareUser } from "lucide-vue-next";
 

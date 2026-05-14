@@ -1,5 +1,5 @@
 import { messageBodyPlainText } from "@epicstory/tiptap";
-import type { IMessage, IReply } from "@/domain/channels/types/message.type";
+import type { IMessage, IReply } from "@epicstory/contracts";
 
 export function quotedMessageExcerpt(message: IMessage | IReply): string {
   const raw = message.displayContent ?? messageBodyPlainText(message);

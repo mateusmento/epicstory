@@ -1,6 +1,6 @@
-import type { IReply } from "@/domain/channels";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
-import type { IssueFeed, IssueFeedItem } from "@/domain/issues/types/issue-feed.type";
+import type { IReply } from "@epicstory/contracts";
+import { ChannelApi } from "@epicstory/api-client";
+import type { IssueFeed, IssueFeedItem } from "../types";
 import { reactive, toValue, watch, type MaybeRefOrGetter, type Ref } from "vue";
 
 export type IssueCommentThreadState = {
@@ -55,13 +55,14 @@ export function useIssueCommentThreads(options: {
   }
 
   function displayedRepliesForItem(item: IssueFeedItem): IReply[] {
+    const previews = item.replyPreviews ?? [];
     const rootId = messageRootId(item);
-    if (rootId == null) return item.replyPreviews;
+    if (rootId == null) return previews;
     const s = ensureThreadState(rootId);
     if (item.hasMoreOlder && s.expanded && s.fullReplies) {
       return s.fullReplies;
     }
-    return item.replyPreviews;
+    return previews;
   }
 
   async function toggleThreadReplies(item: IssueFeedItem) {
@@ -78,8 +79,9 @@ export function useIssueCommentThreads(options: {
     if (!s.fullReplies) {
       s.loading = true;
       try {
-        s.fullReplies = await channelApi.findReplies(rootId);
-        onSyncReplies?.(s.fullReplies);
+        const replies = (await channelApi.findReplies(rootId)) ?? [];
+        s.fullReplies = replies;
+        onSyncReplies?.(replies);
       } catch {
         /* keep previews; user can retry */
       } finally {
@@ -105,7 +107,7 @@ export function useIssueCommentThreads(options: {
       const expandedIds = [...threadByRootId.entries()].filter(([, s]) => s.expanded).map(([id]) => id);
       for (const rootId of expandedIds) {
         try {
-          const list = await channelApi.findReplies(rootId);
+          const list = (await channelApi.findReplies(rootId)) ?? [];
           const s = threadByRootId.get(rootId);
           if (s) {
             s.fullReplies = list;

@@ -11,16 +11,15 @@ import {
 } from '@nestjs/websockets';
 import { isDate } from 'date-fns';
 import { Server, Socket } from 'socket.io';
-import { CalendarEvent } from 'src/calendar/entities';
+import { CalendarEventRepository } from 'src/calendar/repositories';
 import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { RedisService } from 'src/core/redis.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
-import { DataSource } from 'typeorm';
 import { MeetingNotFoundException } from '../exceptions';
-import { JoinScheduledMeeting } from '../features/meeting/join-scheduled-meeting.command';
 import { JoinChannelMeeting } from '../features/meeting/join-channel-meeting.command';
 import { JoinMeeting } from '../features/meeting/join-meeting.command';
+import { JoinScheduledMeeting } from '../features/meeting/join-scheduled-meeting.command';
 import { MeetingService } from '../services/meeting.service';
 
 const channelMeetingRoom = (channelId) =>
@@ -40,12 +39,12 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   private ttlRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
-    private dataSource: DataSource,
     private meetingService: MeetingService,
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private commandBus: CommandBus,
     private redis: RedisService,
+    private calendarEventRepo: CalendarEventRepository,
   ) {}
 
   afterInit() {
@@ -212,22 +211,15 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     const member = await this.workspaceRepo.findMember(workspaceId, userId);
     if (!member) return;
 
-    const channels = await this.channelRepo
-      .createQueryBuilder('channel')
-      .innerJoin('channel.peers', 'peer')
-      .where('channel.workspaceId = :workspaceId', { workspaceId })
-      .andWhere('peer.id = :userId', { userId })
-      .getMany();
+    const channels = await this.channelRepo.findChannelsUserIsMember(
+      userId,
+      workspaceId,
+    );
 
-    const events = await this.dataSource
-      .createQueryBuilder(CalendarEvent, 'event')
-      .leftJoin('event.participants', 'participant')
-      .where('event.workspaceId = :workspaceId', { workspaceId })
-      .andWhere('event.type = :type', { type: 'meeting' })
-      .andWhere('participant.id = :userId OR event.createdById = :userId', {
-        userId,
-      })
-      .getMany();
+    const events = await this.calendarEventRepo.findCalendarEventsForUser(
+      userId,
+      workspaceId,
+    );
 
     socket.leave(userRoom(userId));
     socket.join(userRoom(userId));

@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { IssueLabelTags, issueStatusDotClass, IssueStatusDropdown } from "@/components/issue";
-import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { UserAvatarStack } from "@/components/user";
+import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { Button, ContentEditable, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
-import type { Issue } from "@/domain/issues";
-import type { User } from "@/domain/user";
+import type { IIssue, IUser as IUser } from "@epicstory/contracts";
 import { computed, ref, watch } from "vue";
 import { useBacklogRowContext } from "./backlog-row.context";
 import { DueDatePicker } from "./date-picker";
@@ -15,7 +14,7 @@ import { PriorityToggler } from "./priority-toggler";
 
 const props = defineProps<{
   itemId: number;
-  issue: Issue;
+  issue: IIssue;
   dragging: boolean;
   dragHandleTitle: string;
   dragHandleForceHidden?: boolean;
@@ -27,7 +26,7 @@ const { gridColsClass, editing, openIssue, startEdit, cancelEdit, saveEdit } = c
 
 const { updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useBacklog();
 
-const assigneeUsers = ref<User[]>([]);
+const assigneeUsers = ref<IUser[]>([]);
 watch(
   () => props.issue?.assignees,
   (a) => {

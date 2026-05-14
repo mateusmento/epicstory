@@ -1,13 +1,13 @@
 import type { CommandBus } from '@nestjs/cqrs';
 import type { Channel } from 'src/channel/domain/entities/channel.entity';
-import type { MessageDto } from 'src/channel/application/services/message.service';
+import type { IMessagePayload } from 'src/channel/application/services/message.service';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 
 /** Shared by `SendMessage` and issue `CreateIssueComment` orchestration. */
 export async function dispatchNotificationsForNewChannelMessage(
   commandBus: CommandBus,
   channel: Channel,
-  message: MessageDto,
+  message: IMessagePayload,
   senderId: number,
 ): Promise<void> {
   const mentionIds = (message.mentionedUsers ?? [])

@@ -1,14 +1,12 @@
 import { useDependency } from "@/core/dependency-injection";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
-import { IssueApi, type UpdateIssueData } from "../api";
-import type { Issue } from "../types";
-import type { IMessage, IReply } from "@/domain/channels";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
+import { ChannelApi, IssueApi } from "@epicstory/api-client";
+import type { IIssue, IMessage, IReply, UpdateIssueData } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
 
 export const useIssueStore = defineStore("issue", () => {
-  const issue = ref<Issue>();
+  const issue = ref<IIssue>();
   return { issue };
 });
 

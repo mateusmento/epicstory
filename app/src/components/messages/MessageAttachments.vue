@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { IMessageAttachment } from "@epicstory/contracts";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { computed } from "vue";
@@ -10,7 +10,7 @@ import { openAttachmentLightbox } from "./media-attachment-lightbox";
 
 const props = withDefaults(
   defineProps<{
-    files: MessageAttachmentDto[];
+    files: IMessageAttachment[];
     /** Tone down + block interaction (e.g. scheduled send). */
     disabled?: boolean;
     /** Show per-tile remove control (opens on hover via HoverCard). */
@@ -44,7 +44,7 @@ const rootClass = computed(() =>
   ),
 );
 
-function canRemoveAttachment(f: MessageAttachmentDto): boolean {
+function canRemoveAttachment(f: IMessageAttachment): boolean {
   if (!props.removable) return false;
   if (props.meId == null) return true;
   return f.uploadedById != null && f.uploadedById === props.meId;
@@ -54,7 +54,7 @@ function onRemoveClick(id: number) {
   emit("remove", id);
 }
 
-async function onOpenPreview(file: MessageAttachmentDto, thumbElement: HTMLElement) {
+async function onOpenPreview(file: IMessageAttachment, thumbElement: HTMLElement) {
   if (!isImageMime(file.mimeType) && !isVideoMime(file.mimeType, file.originalFilename)) return;
   await openAttachmentLightbox(props.files, file, thumbElement);
 }

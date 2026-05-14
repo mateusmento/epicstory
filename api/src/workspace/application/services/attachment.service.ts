@@ -19,7 +19,7 @@ import { Attachment } from '../../domain/entities/attachment.entity';
 import { isEmpty, uniq } from 'lodash';
 import { Readable } from 'stream';
 
-export type CreatedAttachmentDto = {
+export type ICreatedAttachment = {
   id: number;
   url: string;
   mimeType: string;
@@ -29,7 +29,7 @@ export type CreatedAttachmentDto = {
 };
 
 /** Issue aggregate list (`GET /issues/:id/attachments`) — includes anchor columns for client filtering. */
-export type IssueAttachmentListItemDto = CreatedAttachmentDto & {
+export type IIssueAttachmentListItem = ICreatedAttachment & {
   issueId: number | null;
   messageId: number | null;
   messageReplyId: number | null;
@@ -54,7 +54,7 @@ export class AttachmentService {
     messageId?: number | null;
     uploadedById: number;
     file: Express.Multer.File;
-  }): Promise<CreatedAttachmentDto> {
+  }): Promise<ICreatedAttachment> {
     const { workspaceId, uploadedById, file } = params;
     const safeBase = basename(file.originalname || 'file')
       .replace(/[^a-zA-Z0-9._-]+/g, '_')
@@ -123,7 +123,7 @@ export class AttachmentService {
   async listAnchoredForMessage(
     workspaceId: number,
     messageId: number,
-  ): Promise<CreatedAttachmentDto[]> {
+  ): Promise<ICreatedAttachment[]> {
     const rows = await this.attachments.find({
       where: { workspaceId, messageId },
       order: { id: 'ASC' },
@@ -135,7 +135,7 @@ export class AttachmentService {
   async listAnchoredForReply(
     workspaceId: number,
     replyId: number,
-  ): Promise<CreatedAttachmentDto[]> {
+  ): Promise<ICreatedAttachment[]> {
     const rows = await this.attachments.find({
       where: { workspaceId, messageReplyId: replyId },
       order: { id: 'ASC' },
@@ -146,14 +146,14 @@ export class AttachmentService {
   async listAnchoredForMessages(
     workspaceId: number,
     messageIds: number[],
-  ): Promise<Map<number, CreatedAttachmentDto[]>> {
+  ): Promise<Map<number, ICreatedAttachment[]>> {
     const ids = uniq(messageIds.filter(Boolean));
     if (ids.length === 0) return new Map();
     const rows = await this.attachments.find({
       where: { workspaceId, messageId: In(ids) },
       order: { id: 'ASC' },
     });
-    const map = new Map<number, CreatedAttachmentDto[]>();
+    const map = new Map<number, ICreatedAttachment[]>();
     for (const r of rows) {
       if (r.messageId == null) continue;
       const list = map.get(r.messageId) ?? [];
@@ -166,14 +166,14 @@ export class AttachmentService {
   async listAnchoredForReplies(
     workspaceId: number,
     replyIds: number[],
-  ): Promise<Map<number, CreatedAttachmentDto[]>> {
+  ): Promise<Map<number, ICreatedAttachment[]>> {
     const ids = uniq(replyIds.filter(Boolean));
     if (ids.length === 0) return new Map();
     const rows = await this.attachments.find({
       where: { workspaceId, messageReplyId: In(ids) },
       order: { id: 'ASC' },
     });
-    const map = new Map<number, CreatedAttachmentDto[]>();
+    const map = new Map<number, ICreatedAttachment[]>();
     for (const r of rows) {
       if (r.messageReplyId == null) continue;
       const list = map.get(r.messageReplyId) ?? [];
@@ -187,7 +187,7 @@ export class AttachmentService {
     workspaceId: number,
     channelId: number,
     limit = 100,
-  ): Promise<CreatedAttachmentDto[]> {
+  ): Promise<ICreatedAttachment[]> {
     const rows = await this.attachments
       .createQueryBuilder('a')
       .where('a.workspace_id = :ws', { ws: workspaceId })
@@ -351,7 +351,7 @@ export class AttachmentService {
     issueId: number,
     limit = 30,
     commentChannelId?: number | null,
-  ): Promise<IssueAttachmentListItemDto[]> {
+  ): Promise<IIssueAttachmentListItem[]> {
     const take = Math.min(limit, 100);
     if (commentChannelId == null) {
       const rows = await this.attachments.find({
@@ -548,7 +548,7 @@ export class AttachmentService {
     }
   }
 
-  private toDto(r: Attachment): CreatedAttachmentDto {
+  private toDto(r: Attachment): ICreatedAttachment {
     return {
       id: r.id,
       url: r.publicUrl,
@@ -559,7 +559,7 @@ export class AttachmentService {
     };
   }
 
-  private toIssueListItemDto(r: Attachment): IssueAttachmentListItemDto {
+  private toIssueListItemDto(r: Attachment): IIssueAttachmentListItem {
     return {
       ...this.toDto(r),
       issueId: r.issueId ?? null,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { MenuInput, MenuItem, MenuSeparator, ScrollArea } from "@/design-system";
-import { useIssues, type Issue } from "@/domain/issues";
+import { useIssues } from "@/domain/issues";
+import type { IIssue } from "@epicstory/contracts";
 import { computed, ref, watchEffect } from "vue";
 
 const props = defineProps<{
@@ -11,11 +12,11 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "select", issue: Pick<Issue, "id" | "title" | "status">): void;
+  (e: "select", issue: Pick<IIssue, "id" | "title" | "status">): void;
   (e: "clear"): void;
 }>();
 
-const issue = defineModel<Issue | null | undefined>("issue", { required: false });
+const issue = defineModel<IIssue | null | undefined>("issue", { required: false });
 
 const query = ref("");
 

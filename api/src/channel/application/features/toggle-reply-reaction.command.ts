@@ -12,6 +12,7 @@ import {
   MessageReplyNotFound,
 } from '../exceptions';
 import { MessageService } from '../services/message.service';
+import { ReplyService } from '../services/reply.service';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 
 export class ToggleReplyReaction {
@@ -33,6 +34,7 @@ export class ToggleReplyReactionCommand
 {
   constructor(
     private messageService: MessageService,
+    private replyService: ReplyService,
     private channelRepo: ChannelRepository,
     private messageReplyRepo: MessageReplyRepository,
     private userRepo: UserRepository,
@@ -59,13 +61,13 @@ export class ToggleReplyReactionCommand
       throw new IssuerIsNotChannelMember();
     }
 
-    const result = await this.messageService.toggleReplyReaction(
+    const result = await this.replyService.toggleReplyReaction(
       replyId,
       emoji,
       issuerId,
     );
 
-    const reactions = await this.messageService.findReplyReactions(
+    const reactions = await this.replyService.findReplyReactions(
       replyId,
       issuerId,
     );
@@ -94,7 +96,7 @@ export class ToggleReplyReactionCommand
         reply.senderId,
       );
       const messageExcerpt =
-        await this.messageService.buildReplyExcerptForNotification(
+        await this.replyService.buildReplyExcerptForNotification(
           reply,
           channel,
         );

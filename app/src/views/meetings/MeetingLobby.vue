@@ -3,7 +3,7 @@ import { UserAvatar } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { CalendarEventApi } from "@/domain/calendar";
+import { CalendarEventApi } from "@epicstory/api-client";
 import { useMeeting, useMeetingMediaDevicesStore } from "@/domain/channels";
 import MeetingDeviceMenu from "@/components/meeting/MeetingDeviceMenu.vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";

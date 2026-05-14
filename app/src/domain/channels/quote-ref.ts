@@ -1,4 +1,4 @@
-import type { IMessage, IReply } from "./types";
+import type { IMessage, IReply } from "@epicstory/contracts";
 
 /**
  * Channel **messages** (composer in main view): `quotedMessageId` is `messages.id`.

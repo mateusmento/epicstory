@@ -1,5 +1,5 @@
-import type { IMessage, IReply } from "@/domain/channels";
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { IMessage, IReply } from "@epicstory/contracts";
+import type { IMessageAttachment } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
 import { computed, ref } from "vue";
 
@@ -19,7 +19,7 @@ export function useIssueCommentEditing(options: {
     entity: IMessage | IReply;
     id: number;
     content: JSONContent;
-    attachments: MessageAttachmentDto[];
+    attachments: IMessageAttachment[];
   } | null>(null);
 
   const editingMessagePayload = computed(() =>

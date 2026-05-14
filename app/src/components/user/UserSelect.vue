@@ -2,14 +2,14 @@
 import UserAvatar from "./UserAvatar.vue";
 import { Combobox } from "@/design-system";
 import { useAuth } from "@/domain/auth";
-import { useUsers, type User } from "@/domain/user";
+import { useUsers, type IUser } from "@/domain/user";
 import { computed, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
   exclude?: string;
 }>();
 
-const user = defineModel<User>();
+const user = defineModel<IUser>();
 
 const { user: authUser } = useAuth();
 const { users, fetchUsersByName } = useUsers();

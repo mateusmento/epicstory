@@ -17,7 +17,8 @@ import { patch } from 'src/core/objects';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
-import { MessageService } from '../services/message.service';
+import { ChannelMentionsService } from '../services/channel-mentions.service';
+import { ReplyService } from '../services/reply.service';
 import type { JSONContent } from '@tiptap/core';
 import {
   enrichMentionLabels,
@@ -63,7 +64,8 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
   constructor(
     private messageReplyRepo: MessageReplyRepository,
     private messageRepo: MessageRepository,
-    private messageService: MessageService,
+    private replyService: ReplyService,
+    private channelMentions: ChannelMentionsService,
     private commandBus: CommandBus,
     private attachmentService: AttachmentService,
   ) {}
@@ -93,7 +95,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
 
     const normalizedContent = normalizeTiptapDoc(content);
 
-    const resolvedQuote = await this.messageService.resolveQuotedReplyId(
+    const resolvedQuote = await this.replyService.resolveQuotedReplyId(
       quotedReplyId,
       messageId,
       message.channelId,
@@ -125,7 +127,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     reply.setReactions(senderId);
 
     const extractedMentionIds = extractMentionIds(normalizedContent);
-    const peerUsersMap = await this.messageService.resolveMentionUsersMap(
+    const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
       message.channel,
       uniq(extractedMentionIds),
     );
@@ -148,7 +150,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
         relations: { sender: true },
       });
       (reply as any).quotedMessage =
-        this.messageService.buildQuotedPreviewFromReply(q, peerUsersMap);
+        this.replyService.buildQuotedPreviewFromReply(q, peerUsersMap);
     }
 
     if (finalMentionIds.length > 0) {

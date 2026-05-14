@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { Button, Input, Label } from "@/design-system";
-import type { MessagePollBody } from "@/domain/channels/types/message.type";
+import type { MessagePollBody } from "@epicstory/contracts";
 import { Plus, Trash2 } from "lucide-vue-next";
 
 const props = defineProps<{

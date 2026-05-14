@@ -2,8 +2,8 @@
 import BoardColumn from "@/components/board/BoardColumn.vue";
 import BoardItem from "@/components/board/BoardItem.vue";
 import { cn } from "@/design-system/utils";
-import { useBacklog, type BacklogItem } from "@/domain/backlog";
-import type { Issue } from "@/domain/issues";
+import { useBacklog } from "@/domain/backlog";
+import type { IIssue, IBacklogItem } from "@epicstory/contracts";
 import { useProjectFilters } from "@/domain/project";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -17,20 +17,20 @@ const { filters: activeFilters } = useProjectFilters(+props.projectId);
 
 type ColumnStatus = "todo" | "doing" | "done";
 
-const todo = ref<BacklogItem[]>([]);
-const doing = ref<BacklogItem[]>([]);
-const done = ref<BacklogItem[]>([]);
+const todo = ref<IBacklogItem[]>([]);
+const doing = ref<IBacklogItem[]>([]);
+const done = ref<IBacklogItem[]>([]);
 
 const router = useRouter();
 
-function openIssue(issue: Issue) {
+function openIssue(issue: IIssue) {
   router.push(`/${props.workspaceId}/project/${props.projectId}/issue/${issue.id}`);
 }
 
-function syncFromBacklogItems(items: BacklogItem[]) {
-  const nextTodo: BacklogItem[] = [];
-  const nextDoing: BacklogItem[] = [];
-  const nextDone: BacklogItem[] = [];
+function syncFromBacklogItems(items: IBacklogItem[]) {
+  const nextTodo: IBacklogItem[] = [];
+  const nextDoing: IBacklogItem[] = [];
+  const nextDone: IBacklogItem[] = [];
 
   for (const it of items) {
     const s = (it?.issue?.status ?? "todo") as ColumnStatus;

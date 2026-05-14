@@ -25,7 +25,6 @@ export class Message {
   @Column({ type: 'jsonb' })
   content: JSONContent;
 
-  /** Voting poll metadata (stored on the message row, not in rich-text JSON). */
   @Column({ type: 'jsonb', nullable: true })
   poll?: MessagePoll | null;
 
@@ -50,7 +49,6 @@ export class Message {
   @ManyToOne(() => Channel, { onDelete: 'CASCADE' })
   channel: Channel;
 
-  /** Optional reference to another top-level message quoted in this one (same channel). */
   @Column({ type: 'int', nullable: true })
   quotedMessageId: number | null;
 

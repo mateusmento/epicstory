@@ -1,6 +1,6 @@
 <script lang="tsx" setup>
 import { UserAvatar } from "@/components/user";
-import type { MentionNotificationPayload } from "@/domain/notifications/types/notification.types";
+import type { MentionNotificationPayload } from "@/domain/notifications";
 import { formatDistanceToNow } from "date-fns";
 import { AtSignIcon } from "lucide-vue-next";
 import { computed } from "vue";

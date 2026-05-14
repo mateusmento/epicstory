@@ -4,9 +4,10 @@ import { uniq } from 'lodash';
 import { UserRepository } from 'src/auth';
 import { In } from 'typeorm';
 import {
-  MessageDto,
+  IMessagePayload,
   MessageService,
 } from 'src/channel/application/services/message.service';
+import { ReplyService } from 'src/channel/application/services/reply.service';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import {
@@ -28,24 +29,24 @@ const MAX_LIMIT = 100;
 /** Last K replies per comment card preview (aligned with Section D.1 plan). */
 const REPLY_PREVIEW_LIMIT = 3;
 
-export type IssueFeedActorDto = {
+export type IIssueFeedActor = {
   id: number;
   name: string;
   picture: string | null;
 };
 
-export type IssueFeedActivityItemDto = {
+export type IIssueFeedActivityItem = {
   activityId: number;
   issueId: number;
   type: IssueActivityType;
   actorId: number | null;
   /** Hydrated from `users` — not all actors are comment-channel peers. */
-  actor: IssueFeedActorDto | null;
+  actor: IIssueFeedActor | null;
   createdAt: Date;
   messageId: number | null;
   attachmentId: number | null;
   payload: IssueActivityPayload | null;
-  /** Populated when `type === comment_created` — same shape as channel `MessageDto`. */
+  /** Populated when `type === comment_created` — same shape as channel `IMessagePayload`. */
   message: unknown | null;
   replyPreviews: unknown[];
   repliesTotal?: number;
@@ -53,9 +54,9 @@ export type IssueFeedActivityItemDto = {
   hasMoreOlder?: boolean;
 };
 
-export type IssueFeedDto = {
+export type IIssueFeedQueryResult = {
   commentChannelId: number | null;
-  items: IssueFeedActivityItemDto[];
+  items: IIssueFeedActivityItem[];
 };
 
 export class FindIssueFeed {
@@ -80,6 +81,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
     private workspaceRepo: WorkspaceRepository,
     private activities: IssueActivityRepository,
     private messages: MessageService,
+    private replies: ReplyService,
     private userRepo: UserRepository,
   ) {}
 
@@ -87,7 +89,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
     issueId,
     issuer,
     limit,
-  }: FindIssueFeed): Promise<IssueFeedDto> {
+  }: FindIssueFeed): Promise<IIssueFeedQueryResult> {
     const issue = await this.issueRepo.findOne({ where: { id: issueId } });
     if (!issue) throw new NotFoundException('Issue not found');
 
@@ -118,11 +120,11 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
             commentIds,
             issuer.id,
           )
-        : new Map<number, MessageDto>();
+        : new Map<number, IMessagePayload>();
 
     const { repliesByParentId } =
       issue.commentChannelId != null && commentIds.length > 0
-        ? await this.messages.findReplyPreviewsForMessageIds(
+        ? await this.replies.findReplyPreviewsForMessageIds(
             commentIds,
             REPLY_PREVIEW_LIMIT,
             issuer.id,
@@ -138,7 +140,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
         : [];
     const actorById = new Map(actorRows.map((u) => [u.id, u]));
 
-    const items: IssueFeedActivityItemDto[] = rows.map((a) => {
+    const items: IIssueFeedActivityItem[] = rows.map((a) => {
       const dto = a.messageId ? messagesById.get(a.messageId) : undefined;
       const replyPreviews = a.messageId
         ? (repliesByParentId.get(a.messageId) ?? [])

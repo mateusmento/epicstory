@@ -1,14 +1,20 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
-import { type User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
 import { last } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ChannelApi } from "../services";
-import type { ICreateScheduledMessageBody } from "../types/scheduled-message.type";
-import type { IChannel, IMessage, IMessageGroup, IReply, MessagePollBody } from "../types";
+import type {
+  CreateScheduledMessageBody,
+  IChannel,
+  IMessage,
+  IReply,
+  MessagePollBody,
+} from "@epicstory/contracts";
+import { ChannelApi } from "@epicstory/api-client";
+import type { IMessageGroup } from "../types/message.type";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
 import type { JSONContent } from "@tiptap/core";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
@@ -20,7 +26,7 @@ let typingPruneTimer: ReturnType<typeof setInterval> | null = null;
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
   const messages = ref<IMessage[]>([]);
-  const members = ref<User[]>([]);
+  const members = ref<IUser[]>([]);
   return { channel, messages, members };
 });
 
@@ -213,7 +219,7 @@ export function useChannel() {
     return message;
   }
 
-  async function sendScheduledMessage(body: ICreateScheduledMessageBody) {
+  async function sendScheduledMessage(body: CreateScheduledMessageBody) {
     if (!store.channel) return;
     return channelApi.postScheduledMessage(store.channel.id, body);
   }

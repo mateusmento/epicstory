@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { cn } from "@/design-system/utils";
 import { useDependency } from "@/core/dependency-injection";
-import { useChannelStore } from "@/domain/channels/composables/channel";
-import type { IMessagePollClient } from "@/domain/channels/types/message.type";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
+import { useChannelStore } from "@/domain/channels";
+import type { MessagePollClient as IMessagePollClient } from "@epicstory/contracts";
+import { ChannelApi } from "@epicstory/api-client";
 import { Check } from "lucide-vue-next";
 import { computed, ref } from "vue";
 

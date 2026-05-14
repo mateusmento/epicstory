@@ -3,15 +3,15 @@ import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Field, Form } from "@/design-system";
 import { IconGoogle } from "@/design-system/icons";
-import { AuthService } from "@/domain/auth/auth.service";
-import type { SigninRequest } from "@/domain/auth/dtos/singin.dto";
+import { AuthApi } from "@epicstory/api-client";
+import type { SigninRequest } from "@epicstory/contracts";
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
 
-const authService = useDependency(AuthService);
+const authApi = useDependency(AuthApi);
 
 const signinEmail = ref<string>(typeof route.query.email === "string" ? route.query.email : "");
 
@@ -22,7 +22,7 @@ function getGoogleAuthUrl() {
 }
 
 async function signin(data: SigninRequest) {
-  await authService.signin(data);
+  await authApi.signin(data);
 
   // Redirect to the intended destination or default to home
   const redirectPath = typeof route.query.redirect === "string" ? route.query.redirect : "/";

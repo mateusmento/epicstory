@@ -15,7 +15,7 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
-import type { IMessage, IReply } from "@/domain/channels";
+import type { IMessage, IReply } from "@epicstory/contracts";
 import { excludeInlineImageAttachmentsFromBubbleTiles, messageBodyPlainText } from "@epicstory/tiptap";
 import { computed, ref, watch } from "vue";
 import ChannelPollPreview from "@/components/rich-text/ChannelPollPreview.vue";

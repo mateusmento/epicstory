@@ -2,13 +2,13 @@
 import { UserAvatar, type UserAvatarSize } from "@/components/user";
 import { IconCameraOff, IconMicrophoneOff } from "@/components/icons";
 import { cn } from "@/design-system/utils";
-import type { MeetingParticipant } from "@/domain/channels/composables/meeting-layout";
+import type { MeetingParticipant } from "@/domain/channels";
 import {
   isPresentationLikeVideoTrack,
   meetingTileVisualStreams,
   type MeetingTileRole,
   partitionMeetingVideoTracks,
-} from "@/domain/channels/utils/meeting-screen-share";
+} from "@/domain/channels";
 import { Monitor, Pin } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useMediaStreamVideo } from "./composables/useMediaStreamVideo";

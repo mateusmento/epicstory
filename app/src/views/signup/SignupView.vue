@@ -3,17 +3,17 @@ import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Field, Form } from "@/design-system";
 import { IconGoogle } from "@/design-system/icons";
-import { AuthService } from "@/domain/auth/auth.service";
-import type { SignupRequest } from "@/domain/auth/dtos/signup.dto";
+import { AuthApi } from "@epicstory/api-client";
+import type { SignupRequest } from "@epicstory/contracts";
 import type { SubmissionHandler } from "vee-validate";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-const authService = useDependency(AuthService);
+const authApi = useDependency(AuthApi);
 
 async function signup(data: SignupRequest) {
-  const user = await authService.signup(data);
+  const user = await authApi.signup(data);
   router.push({ name: "signin", query: { email: user.email } });
 }
 </script>

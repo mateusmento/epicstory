@@ -20,7 +20,7 @@ export type MessagePollSummary = {
   myOptionId: string | null;
 };
 
-export type MessagePollClientDto = MessagePoll & MessagePollSummary;
+export type IMessagePollClient = MessagePoll & MessagePollSummary;
 
 @Injectable()
 export class MessagePollService {
@@ -61,7 +61,7 @@ export class MessagePollService {
   mergePersistedPollWithSummary(
     persisted: MessagePoll,
     summary?: MessagePollSummary,
-  ): MessagePollClientDto {
+  ): IMessagePollClient {
     const s = summary ?? {
       optionVotes: {},
       totalVotes: 0,
@@ -121,7 +121,7 @@ export class MessagePollService {
     messageId: number,
     persisted: MessagePoll | null | undefined,
     viewerId: number,
-  ): Promise<MessagePollClientDto | undefined> {
+  ): Promise<IMessagePollClient | undefined> {
     if (!persisted) return undefined;
     const map = await this.findPollSummariesForMessages([messageId], viewerId);
     const summary = map.get(messageId) ?? {
@@ -141,7 +141,7 @@ export class MessagePollService {
     messageId: number,
     issuerId: number,
     optionId: string,
-  ): Promise<{ channelId: number; poll: MessagePollClientDto }> {
+  ): Promise<{ channelId: number; poll: IMessagePollClient }> {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
     });

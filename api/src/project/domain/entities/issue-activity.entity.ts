@@ -30,7 +30,6 @@ export class IssueActivity {
   @Column({ nullable: true })
   attachmentId: number | null;
 
-  /** Semantic diff for timeline rendering; FK ids live on dedicated columns above. */
   @Column({ type: 'jsonb', nullable: true })
   payload: Record<string, unknown> | null;
 }

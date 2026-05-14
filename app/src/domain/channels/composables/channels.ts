@@ -5,14 +5,14 @@ import { useWorkspace } from "@/domain/workspace";
 import { defineStore, storeToRefs } from "pinia";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import {
-  ChannelApi,
-  type CreateDirectChannel,
-  type CreateDirectOrMultiDirectChannel,
-  type CreateGroupChannel,
-  type CreateMeetingChannel,
-} from "../services";
-import type { IChannel } from "../types";
+import { ChannelApi } from "@epicstory/api-client";
+import type {
+  CreateDirectChannel,
+  CreateDirectOrMultiDirectChannel,
+  CreateGroupChannel,
+  CreateMeetingChannel,
+  IChannel,
+} from "@epicstory/contracts";
 import { assign } from "lodash";
 import { useMeetingSocket } from "./meeting-socket";
 import { useChannelStore } from "./channel";
@@ -191,7 +191,8 @@ export function useChannelActions() {
 
     // Keep both the channels list + currently open channel in sync (best-effort).
     channelsStore.updateChannel(updated.id, { name: updated.name });
-    if (channelStore.channel?.id === updated.id) channelStore.channel.name = updated.name;
+    const active = channelStore.channel;
+    if (active && active.id === updated.id) active.name = updated.name;
 
     await options.refresh?.();
     return updated;

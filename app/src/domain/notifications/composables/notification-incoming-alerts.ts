@@ -1,10 +1,7 @@
-import {
-  getNotificationToastDescription,
-  getNotificationToastTitle,
-} from "@/domain/notifications/notification-preview";
-import type { Notification } from "@/domain/notifications/types/notification.types";
-import { toast } from "vue-sonner";
 import { onUnmounted } from "vue";
+import { toast } from "vue-sonner";
+import { getNotificationToastDescription, getNotificationToastTitle } from "../notification-preview";
+import type { Notification } from "@epicstory/contracts";
 import { registerNotificationIncomingListener } from "./notifications";
 
 function shouldMirrorToSystemNotification(): boolean {

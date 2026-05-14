@@ -1,5 +1,5 @@
-import type { User } from "@/domain/auth";
-import type { IssueFeedItem } from "@/domain/issues/types/issue-feed.type";
+import type { IUser as IUser } from "@epicstory/contracts";
+import type { IssueFeedItem } from "./types";
 import { formatDistanceToNow } from "date-fns";
 
 /** Board / filter labels — keep in sync with project views. */
@@ -55,7 +55,7 @@ function joinEnglishList(parts: string[]): string {
 
 function resolveAddedAssigneeNames(
   p: Record<string, unknown> | null,
-  peersById: ReadonlyMap<number, User>,
+  peersById: ReadonlyMap<number, IUser>,
 ): string[] {
   if (!p) return [];
   const fromPayload = (p.addedUserNames as unknown[] | undefined)?.filter(
@@ -71,7 +71,7 @@ function resolveAddedAssigneeNames(
 
 function resolveRemovedAssigneeNames(
   p: Record<string, unknown> | null,
-  peersById: ReadonlyMap<number, User>,
+  peersById: ReadonlyMap<number, IUser>,
 ): string[] {
   if (!p) return [];
   const fromPayload = (p.removedUserNames as unknown[] | undefined)?.filter(
@@ -93,7 +93,7 @@ function resolveLabelNames(raw: unknown): string[] {
 /** One plain sentence: "Ada changed status to Done", "Harry added Feature label". */
 export function formatIssueActivitySentence(
   item: IssueFeedItem,
-  peersById: ReadonlyMap<number, User>,
+  peersById: ReadonlyMap<number, IUser>,
 ): string {
   const actor = resolveIssueActivityActor(item, peersById);
   const name = actor.name;
@@ -187,13 +187,13 @@ export function formatIssueActivityWhen(iso: string): string {
 
 export function resolveIssueActivityActor(
   item: IssueFeedItem,
-  peersById: ReadonlyMap<number, User>,
+  peersById: ReadonlyMap<number, IUser>,
 ): { name: string; picture: string | null } {
   const normPic = (pic: string | null | undefined) => (pic?.trim() ? pic : null);
   if (item.actor != null) {
     return { name: item.actor.name, picture: normPic(item.actor.picture) };
   }
-  const picUser = (u: User) => normPic(u.picture);
+  const picUser = (u: IUser) => normPic(u.picture);
   if (item.actorId != null) {
     const u = peersById.get(item.actorId);
     if (u) return { name: u.name, picture: picUser(u) };

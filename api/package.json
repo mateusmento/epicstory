@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "prebuild": "pnpm -C ../packages/tiptap run build",
+    "prebuild": "pnpm -C ../packages/contracts run build && pnpm -C ../packages/tiptap run build",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -27,6 +27,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.645.0",
     "@aws-sdk/lib-storage": "^3.645.0",
+    "@epicstory/contracts": "workspace:*",
     "@epicstory/tiptap": "workspace:*",
     "@faker-js/faker": "^9.0.0",
     "@linear/sdk": "^29.0.0",

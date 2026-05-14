@@ -45,7 +45,6 @@ export class MessageReply {
   @ManyToOne(() => Message, { onDelete: 'CASCADE' })
   message: Message;
 
-  /** Optional reference to another reply in this thread (same `message` / thread root). */
   @Column({ type: 'int', nullable: true })
   quotedReplyId: number | null;
 

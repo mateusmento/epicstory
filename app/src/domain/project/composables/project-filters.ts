@@ -1,7 +1,7 @@
 import { useStorage } from "@vueuse/core";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
-import { createDefaultFilter, type ProjectFilter } from "../types/project-filters.types";
+import { createDefaultFilter, type ProjectFilter } from "../types";
 import { isDate, isValid } from "date-fns";
 
 export function useProjectFilters(projectId: MaybeRefOrGetter<number>) {

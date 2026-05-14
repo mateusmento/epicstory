@@ -5,15 +5,15 @@ import IconClose from "@/components/icons/IconClose.vue";
 import { Button, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
 import { useDependency } from "@/core/dependency-injection";
-import type { UploadedAttachment } from "@/domain/channels/services/channel.service";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
-import type { User } from "@/domain/auth";
+import type { UploadedAttachment } from "@epicstory/contracts";
+import { ChannelApi } from "@epicstory/api-client";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { type FunctionalComponent as FC, ref, watch } from "vue";
 import ChannelMembers from "./ChannelMembers.vue";
 import ChannelSchedulesTab from "./ChannelSchedulesTab.vue";
 
 const props = defineProps<{
-  members: (User & { role?: string; online?: boolean })[];
+  members: (IUser & { role?: string; online?: boolean })[];
   channelId?: number;
   meId?: number;
 }>();

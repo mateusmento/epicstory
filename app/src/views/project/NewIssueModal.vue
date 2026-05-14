@@ -17,7 +17,7 @@ import { cn } from "@/design-system/utils";
 import { RichTextComposer } from "@/components/rich-text";
 import { useAuth } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
-import type { User } from "@/domain/user";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
 import { EMPTY_TIPTAP_DOC, normalizeTiptapDoc } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
@@ -34,14 +34,14 @@ const title = ref("");
 /** Rich text description (TipTap JSON); set via RichTextComposer. */
 const descriptionEditor = shallowRef<Editor | null>(null);
 
-const mentionables = computed<User[]>(() => members.value.map((m) => m.user));
+const mentionables = computed<IUser[]>(() => members.value.map((m) => m.user));
 
 function setDescriptionEditor(ed: Editor | null) {
   descriptionEditor.value = ed;
 }
 const status = ref<"todo" | "doing" | "done">("todo");
 const priority = ref<number>(0);
-const selectedAssignees = ref<User[]>([]);
+const selectedAssignees = ref<IUser[]>([]);
 const createMore = ref(false);
 const isSubmitting = ref(false);
 const closeBtn = ref<HTMLButtonElement | null>(null);

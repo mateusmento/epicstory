@@ -1,6 +1,6 @@
 import { Lowlight } from "@/core/lowlight";
 import { createFloatingSuggestion } from "@/core/tiptap";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import {
   createMentionExtensionWithNodeView,
   createPlaceholderExtension,
@@ -15,7 +15,7 @@ import MentionNodeView from "./node-views/MentionNodeView.vue";
 export const EPICSTORY_RICH_TEXT_COMPOSER = "epicstory-rich-text epicstory-rich-text-composer";
 
 export function buildMentionSuggestion(
-  mentionablesForSuggestion: ComputedRef<User[]>,
+  mentionablesForSuggestion: ComputedRef<IUser[]>,
   options?: {
     getOnMentionListReachedBottom?: () => (() => void | Promise<void>) | undefined;
     getMentionListHasMore?: () => boolean;
@@ -51,8 +51,8 @@ export function buildMentionSuggestion(
 export function createRichTextComposerExtensions(args: {
   getPlaceholder: () => string;
   mentionContext: { meId: number | undefined };
-  mentionablesById: ComputedRef<Map<number, User>>;
-  mentionablesForSuggestion: ComputedRef<User[]>;
+  mentionablesById: ComputedRef<Map<number, IUser>>;
+  mentionablesForSuggestion: ComputedRef<IUser[]>;
   getOnMentionListReachedBottom?: () => (() => void | Promise<void>) | undefined;
   getMentionListHasMore?: () => boolean;
   getMentionListLoadingMore?: () => boolean;

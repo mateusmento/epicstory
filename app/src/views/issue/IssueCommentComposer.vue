@@ -1,16 +1,14 @@
 <script lang="ts" setup>
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import type { User } from "@/domain/auth";
+import type { IUser as IUser } from "@epicstory/contracts";
 import {
   clearChannelDraft,
   composerQuoteRef,
   quotedMessageExcerpt,
   useChannelMessageDraft,
-  type IMessage,
-  type IReply,
 } from "@/domain/channels";
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { IMessage, IMessageAttachment, IReply } from "@epicstory/contracts";
 import {
   collectImageAttachmentIdsFromDoc,
   docContainsImageNodes,
@@ -31,14 +29,14 @@ import MessageComposerActions from "@/components/messages/MessageComposerActions
 
 const props = withDefaults(
   defineProps<{
-    mentionables?: User[];
+    mentionables?: IUser[];
     meId?: number;
     channelId: number;
     placeholder?: string;
     editingMessage?: {
       id: number;
       content: JSONContent;
-      attachments?: MessageAttachmentDto[];
+      attachments?: IMessageAttachment[];
     } | null;
     quotedMessage?: (IMessage | IReply) | null;
     attachmentHandlers: MessageComposerAttachmentHandlers;

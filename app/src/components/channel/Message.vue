@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useNavTrigger } from "@/design-system";
-import { useMessageThread } from "@/domain/channels/composables/message-thread";
-import type { IMessage } from "@/domain/channels/types";
+import { useMessageThread } from "@/domain/channels";
+import type { IMessage } from "@epicstory/contracts";
 import MessageBox from "../messages/MessageBox.vue";
 
 const props = defineProps<{

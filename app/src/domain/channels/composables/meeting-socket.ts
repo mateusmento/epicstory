@@ -1,5 +1,5 @@
 import { useWebSockets } from "@/core/websockets";
-import type { IMeeting } from "../types";
+import type { IMeeting } from "@epicstory/contracts";
 
 export type IncomingMeetingPayload = {
   meeting: IMeeting;

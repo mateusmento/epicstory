@@ -5,8 +5,8 @@ import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
-  toScheduledMessageDto,
-  ScheduledMessageDto,
+  IScheduledMessage,
+  mapScheduledJobToMessage,
 } from '../dtos/scheduled-message.dto';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 
@@ -29,9 +29,7 @@ export class ListScheduledChannelMessagesQuery
     private scheduledJobRepo: ScheduledJobRepository,
   ) {}
 
-  async execute(
-    q: ListScheduledChannelMessages,
-  ): Promise<ScheduledMessageDto[]> {
+  async execute(q: ListScheduledChannelMessages): Promise<IScheduledMessage[]> {
     const channel = await this.channelRepo.findOne({
       where: { id: q.channelId },
       relations: { peers: true },
@@ -52,6 +50,6 @@ export class ListScheduledChannelMessagesQuery
       workspaceId: channel.workspaceId,
     });
 
-    return jobs.map((j) => toScheduledMessageDto(j));
+    return jobs.map((j) => mapScheduledJobToMessage(j));
   }
 }

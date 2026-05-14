@@ -12,7 +12,7 @@ import {
   MeetingRepository,
 } from '../../infrastructure/repositories';
 
-export type LiveScheduledMeetingDto = {
+export type ILiveScheduledMeetingQueryResult = {
   meeting: Meeting;
   calendarEvent: CalendarEvent;
   participantsPreview: Array<{
@@ -47,7 +47,7 @@ export class FindLiveMeetingHandler implements IQueryHandler<FindLiveMeeting> {
 
   async execute(
     query: FindLiveMeeting,
-  ): Promise<LiveScheduledMeetingDto | null> {
+  ): Promise<ILiveScheduledMeetingQueryResult | null> {
     const { workspaceId, issuerId } = query;
     const now = query.now ?? new Date();
 

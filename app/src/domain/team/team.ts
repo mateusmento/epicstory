@@ -1,21 +1,12 @@
+import { useDependency } from "@/core/dependency-injection";
+import { TeamApi } from "@epicstory/api-client";
+import type { ITeam, ITeamMember } from "@epicstory/contracts";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
-import type { User } from "../auth";
-import { useDependency } from "@/core/dependency-injection";
-import { TeamApi } from "./team.api";
-import type { Team } from "../workspace";
-
-type TeamMember = {
-  id: number;
-  userId: number;
-  user: User;
-  workspaceMemberId: number;
-  joinedAt: string;
-};
 
 export const useTeamStore = defineStore("team", () => {
-  const team = ref<Team>();
-  const members = ref<TeamMember[]>();
+  const team = ref<ITeam>();
+  const members = ref<ITeamMember[]>();
   return { team, members };
 });
 

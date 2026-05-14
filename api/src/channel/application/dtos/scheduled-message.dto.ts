@@ -7,7 +7,7 @@ import { ScheduledMessagePayload } from 'src/scheduling/types/payload';
 import { UUID } from 'crypto';
 
 /** API shape for a channel scheduled message, mapped from `ScheduledJob`. */
-export class ScheduledMessageDto {
+export class IScheduledMessage {
   id: UUID;
   channelId: number;
   senderId: number;
@@ -41,22 +41,22 @@ function assertScheduledMessageJob(
   }
 }
 
-export function toScheduledMessageDto(job: ScheduledJob): ScheduledMessageDto {
+export function mapScheduledJobToMessage(job: ScheduledJob): IScheduledMessage {
   assertScheduledMessageJob(job);
   const p = job.payload;
-  const dto = new ScheduledMessageDto();
-  dto.id = job.id;
-  dto.channelId = p.channelId;
-  dto.senderId = p.senderId;
-  dto.content = p.content;
-  dto.quotedMessageId = p.quotedMessageId;
-  dto.poll = p.poll;
-  dto.dueAt = job.dueAt;
-  dto.recurrence = job.recurrence;
-  dto.notifyMinutesBefore = job.notifyMinutesBefore;
-  dto.processed = job.processed;
-  dto.lastRunAt = job.lastRunAt;
-  dto.createdAt = job.createdAt;
-  dto.updatedAt = job.updatedAt;
-  return dto;
+  const row = new IScheduledMessage();
+  row.id = job.id;
+  row.channelId = p.channelId;
+  row.senderId = p.senderId;
+  row.content = p.content;
+  row.quotedMessageId = p.quotedMessageId;
+  row.poll = p.poll;
+  row.dueAt = job.dueAt;
+  row.recurrence = job.recurrence;
+  row.notifyMinutesBefore = job.notifyMinutesBefore;
+  row.processed = job.processed;
+  row.lastRunAt = job.lastRunAt;
+  row.createdAt = job.createdAt;
+  row.updatedAt = job.updatedAt;
+  return row;
 }

@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { UserAvatarStack } from "@/components/user";
-import { Button } from "@/design-system";
-import { Icon } from "@/design-system/icons";
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
-import type { Issue } from "@/domain/issues";
-import { computed } from "vue";
 import { IssueContextMenu } from "@/components/issue";
+import { UserAvatarStack } from "@/components/user";
+import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
+import { Icon } from "@/design-system/icons";
+import type { IIssue } from "@epicstory/contracts";
+import { computed } from "vue";
 
 const props = defineProps<{
-  sub: Issue;
+  sub: IIssue;
   disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: "open", issueId: number): void;
-  (e: "toggle-done", sub: Issue): void;
+  (e: "toggle-done", sub: IIssue): void;
   (e: "remove", issueId: number): void;
 }>();
 

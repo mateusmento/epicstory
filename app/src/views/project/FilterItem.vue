@@ -20,7 +20,6 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useIssues } from "@/domain/issues";
-import { parseDate } from "@/domain/issues/api/issue.api";
 import {
   FIELD_ALLOWED_OPERATORS,
   FILTER_FIELDS,
@@ -28,6 +27,7 @@ import {
   type ProjectFilter,
   type ProjectFilterOperator,
 } from "@/domain/project";
+import { parseDate } from "@/utils";
 import { formatDate, isDate, isThisYear, isToday } from "date-fns";
 import { isEmpty } from "lodash";
 import { computed, ref, watch } from "vue";

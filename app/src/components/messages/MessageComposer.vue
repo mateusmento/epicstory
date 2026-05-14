@@ -1,20 +1,22 @@
 <script lang="ts" setup>
 import { Button, ButtonGroup, ButtonGroupSeparator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import type { User } from "@/domain/auth";
 import {
   clearChannelDraft,
   composerQuoteRef,
+  loadChannelDraft,
   quotedMessageExcerpt,
   useChannelMessageDraft,
   useChannelTypingPulse,
-  loadChannelDraft,
-  type IMessage,
-  type IReply,
-  type IScheduledMessageRecurrence,
-  type MessagePollBody,
 } from "@/domain/channels";
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type {
+  IMessage,
+  IMessageAttachment,
+  IReply,
+  ScheduledMessageRecurrence as IScheduledMessageRecurrence,
+  IUser,
+  MessagePollBody,
+} from "@epicstory/contracts";
 import {
   collectImageAttachmentIdsFromDoc,
   docContainsImageNodes,
@@ -25,27 +27,27 @@ import type { Editor, JSONContent } from "@tiptap/core";
 import { ChevronDown, Paperclip } from "lucide-vue-next";
 import { computed, ref, shallowRef, watch } from "vue";
 import { RichTextComposer } from "../rich-text";
-import MessageComposerPollSection from "./MessageComposerPollSection.vue";
 import AttachmentTilesList from "./AttachmentTilesList.vue";
-import MessageComposerActions from "./MessageComposerActions.vue";
 import { useMessageComposerAttachments } from "./composables/message-composer-attachments";
 import { useMessageComposerEditingBody } from "./composables/message-composer-editing-body";
 import { useMessageComposerSchedule } from "./composables/message-composer-schedule";
 import { useMessageComposerScreenRecording } from "./composables/message-composer-screen-recording";
 import type { MessageComposerAttachmentHandlers } from "./message-composer-attachment-handlers";
+import MessageComposerActions from "./MessageComposerActions.vue";
+import MessageComposerPollSection from "./MessageComposerPollSection.vue";
 import ScheduleMessageCustomDialog from "./ScheduleMessageCustomDialog.vue";
 import ScheduleMessageDropdown from "./ScheduleMessageDropdown.vue";
 
 const props = withDefaults(
   defineProps<{
-    mentionables?: User[];
+    mentionables?: IUser[];
     meId?: number;
     channelId: number;
     placeholder?: string;
     editingMessage?: {
       id: number;
       content: JSONContent;
-      attachments?: MessageAttachmentDto[];
+      attachments?: IMessageAttachment[];
       poll?: IMessage["poll"];
     } | null;
     quotedMessage?: (IMessage | IReply) | null;
@@ -460,10 +462,7 @@ function toggleComposerPoll() {
         @remove="onRemoveEditingAttachment($event)"
         @dismiss-pending="dismissPendingTransfer($event)"
       />
-      <p
-        v-if="scheduleAttachmentHint"
-        class="mb-1 text-[0.65rem] leading-snug text-muted-foreground"
-      >
+      <p v-if="scheduleAttachmentHint" class="mb-1 text-[0.65rem] leading-snug text-muted-foreground">
         {{ scheduleAttachmentHint }}
       </p>
       <AttachmentTilesList

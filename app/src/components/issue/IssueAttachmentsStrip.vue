@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useConfirmDialog } from "@/components/confirm-dialog";
 import IssueAttachmentTilesList from "@/components/issue/IssueAttachmentTilesList.vue";
-import type { IssueAttachmentTileRow } from "@/domain/issues/composables/issue-attachments";
+import type { IssueAttachmentTileRow } from "@/domain/issues";
 import { computed, ref } from "vue";
 
 function dragHasFiles(dt: DataTransfer | null): boolean {
@@ -110,7 +110,9 @@ const shellClass = computed(() =>
       ? "rounded-lg border border-border/80 bg-muted/10 px-2 py-2"
       : "rounded-lg border border-border bg-muted/20 px-3 py-2.5",
     props.droppable ? "min-h-[7rem]" : "",
-    isDragActive.value ? "border-primary/50 bg-muted/30 ring-2 ring-primary/25 ring-offset-2 ring-offset-background" : "",
+    isDragActive.value
+      ? "border-primary/50 bg-muted/30 ring-2 ring-primary/25 ring-offset-2 ring-offset-background"
+      : "",
   ].join(" "),
 );
 </script>

@@ -6,7 +6,7 @@ import {
   IssueActivityRepository,
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
-import type { CreatedAttachmentDto } from 'src/workspace/application/services/attachment.service';
+import type { ICreatedAttachment } from 'src/workspace/application/services/attachment.service';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -38,7 +38,7 @@ export class UploadIssueAttachmentCommand
     issuer,
     issueId,
     file,
-  }: UploadIssueAttachment): Promise<CreatedAttachmentDto> {
+  }: UploadIssueAttachment): Promise<ICreatedAttachment> {
     const issue = await this.issueRepo.findOne({ where: { id: issueId } });
     if (!issue) throw new NotFoundException('Issue not found');
 

@@ -17,9 +17,9 @@ import {
   TooltipTrigger,
 } from "@/design-system";
 import { cn } from "@/design-system/utils";
-import type { IAggregatedReaction, IMessage, IReply } from "@/domain/channels";
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
+import type { IAggregatedReaction, IMessage, IReply } from "@epicstory/contracts";
+import type { IMessageAttachment } from "@epicstory/contracts";
+import { ChannelApi } from "@epicstory/api-client";
 import { excludeInlineImageAttachmentsFromBubbleTiles } from "@epicstory/tiptap";
 import { formatDistanceToNow } from "date-fns";
 import { SmilePlusIcon } from "lucide-vue-next";
@@ -33,7 +33,7 @@ const props = withDefaults(
     variant?: "default" | "threadSegment";
     segmentDivider?: boolean;
     /** When set, overrides `message.attachments` (e.g. issue attachment store). */
-    attachments?: MessageAttachmentDto[];
+    attachments?: IMessageAttachment[];
   }>(),
   {
     variant: "default",

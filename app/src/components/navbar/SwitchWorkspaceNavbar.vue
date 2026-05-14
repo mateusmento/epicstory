@@ -11,7 +11,8 @@ import {
 import { Icon } from "@/design-system/icons";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { cn } from "@/design-system/utils";
-import { useWorkspace, useWorkspaces, type Workspace } from "@/domain/workspace";
+import type { IWorkspace } from "@epicstory/contracts";
+import { useWorkspace, useWorkspaces } from "@/domain/workspace";
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 
@@ -24,11 +25,11 @@ onMounted(async () => {
 });
 
 const router = useRouter();
-const selectWorkspace = (workspace: Workspace) => {
+const selectWorkspace = (workspace: IWorkspace) => {
   router.push(`/${workspace.id}`);
 };
 
-function onSelectWorkspace(workspace: Workspace) {
+function onSelectWorkspace(workspace: IWorkspace) {
   selectWorkspace(workspace);
   viewContent("workspace");
 }

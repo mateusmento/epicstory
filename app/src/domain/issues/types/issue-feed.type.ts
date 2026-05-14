@@ -1,6 +1,5 @@
-import type { IMessage, IReply } from "@/domain/channels";
+import type { IMessage, IReply } from "@epicstory/contracts";
 
-/** Mirrors `IssueFeedActivityItemDto` from the API (subset used by the UI). */
 export type IssueFeedActivityType =
   | "issue_created"
   | "comment_created"
@@ -14,13 +13,11 @@ export type IssueFeedActivityType =
   | "parent_changed"
   | "attachment_added";
 
-/** Rich message bubble shape from `/channels/:id/messages` feed hydration. */
 export type IssueFeedItem = {
   activityId: number;
   issueId: number;
   type: IssueFeedActivityType;
   actorId: number | null;
-  /** Present when API hydrates users (actors may not be comment-channel peers). */
   actor?: { id: number; name: string; picture: string | null } | null;
   createdAt: string;
   messageId: number | null;

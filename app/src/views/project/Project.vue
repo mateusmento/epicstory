@@ -27,8 +27,9 @@ import {
   ToggleGroupItem,
 } from "@/design-system";
 import { Icon, IconSearch } from "@/design-system/icons";
-import { IssueApi, type Issue } from "@/domain/issues";
-import { ProjectApi, type Project } from "@/domain/project";
+import type { Project } from "@/domain/project";
+import { IssueApi, ProjectApi } from "@epicstory/api-client";
+import type { IIssue } from "@epicstory/contracts";
 import { useMagicKeys, useStorage, whenever } from "@vueuse/core";
 import {
   Calculator,
@@ -79,7 +80,7 @@ onMounted(async () => {
 });
 
 const issueApi = useDependency(IssueApi);
-const issue = ref<Issue | null>(null);
+const issue = ref<IIssue | null>(null);
 onMounted(async () => {
   if (props.issueId) {
     issue.value = await issueApi.fetchIssue(+props.issueId);

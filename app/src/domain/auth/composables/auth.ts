@@ -1,12 +1,12 @@
 import { useDependency } from "@/core/dependency-injection";
-import type { User } from "@/domain/user";
+import type { IUser as IUser } from "@epicstory/contracts";
+import { AuthApi } from "@epicstory/api-client";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { AuthService } from "../auth.service";
 
 export const useAuthStore = defineStore("auth", () => {
-  const user = ref<User>();
+  const user = ref<IUser>();
   const token = ref("");
   return { user, token };
 });
@@ -14,7 +14,7 @@ export const useAuthStore = defineStore("auth", () => {
 export function useAuth() {
   const store = useAuthStore();
 
-  const authApi = useDependency(AuthService);
+  const authApi = useDependency(AuthApi);
 
   const router = useRouter();
 

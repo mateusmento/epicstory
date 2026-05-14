@@ -1,0 +1,19 @@
+import type { Project } from "@epicstory/contracts";
+import type { AxiosInstance } from "axios";
+import { Axios as AxiosImport } from "axios";
+import { inject, injectable } from "tsyringe";
+
+@injectable()
+export class ProjectApi {
+  constructor(@inject(AxiosImport) protected readonly axios: AxiosInstance) {}
+
+  findProject(id: number) {
+    return this.axios.get(`/projects/${id}`).then((res) => res.data);
+  }
+
+  createProject(workspaceId: number, name: string) {
+    return this.axios
+      .post<Project>(`/workspaces/${workspaceId}/projects`, { name })
+      .then((res) => res.data);
+  }
+}

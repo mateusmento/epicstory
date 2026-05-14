@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { IMessageAttachment } from "@epicstory/contracts";
 import { FileTextIcon } from "lucide-vue-next";
 import { attachmentOpensInBrowserTab, isImageMime, isVideoMime } from "./attachment-media-guards";
 
-const props = defineProps<{ file: MessageAttachmentDto }>();
+const props = defineProps<{ file: IMessageAttachment }>();
 
 const emit = defineEmits<{ openPreview: [triggerElement: HTMLElement] }>();
 
@@ -14,7 +14,7 @@ function onOpenPreview(ev: MouseEvent) {
   emit("openPreview", (media ?? root) as HTMLElement);
 }
 
-function displayName(f: MessageAttachmentDto) {
+function displayName(f: IMessageAttachment) {
   const n = f.originalFilename || "file";
   return n.length > 28 ? `${n.slice(0, 26)}…` : n;
 }

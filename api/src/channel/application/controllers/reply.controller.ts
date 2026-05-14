@@ -12,7 +12,7 @@ import { CommandBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { DeleteReply } from '../features/delete-reply.command';
 import { MessageGateway } from '../gateways/message.gateway';
-import { MessageService } from '../services/message.service';
+import { ReplyService } from '../services/reply.service';
 import { ReplyMessage } from '../features/reply-message.command';
 import { ToggleReplyReaction, UpdateReply } from '../features';
 
@@ -20,14 +20,14 @@ import { ToggleReplyReaction, UpdateReply } from '../features';
 @Controller('messages/:messageId/replies')
 export class MessageRepliesController {
   constructor(
-    private messageService: MessageService,
+    private replyService: ReplyService,
     private commandBus: CommandBus,
     private messageGateway: MessageGateway,
   ) {}
 
   @Get()
   findReplies(@Param('messageId') messageId: number, @Auth() issuer: Issuer) {
-    return this.messageService.findReplies(messageId, issuer.id);
+    return this.replyService.findReplies(messageId, issuer.id);
   }
 
   @Post()
@@ -54,7 +54,7 @@ export class MessageRepliesController {
 @Controller('replies/:replyId')
 export class ReplyController {
   constructor(
-    private messageService: MessageService,
+    private replyService: ReplyService,
     private commandBus: CommandBus,
     private messageGateway: MessageGateway,
   ) {}
@@ -64,7 +64,7 @@ export class ReplyController {
     @Param('replyId') replyId: number,
     @Auth() issuer: Issuer,
   ) {
-    return this.messageService.findReplyReactions(replyId, issuer.id);
+    return this.replyService.findReplyReactions(replyId, issuer.id);
   }
 
   @Post('reactions')

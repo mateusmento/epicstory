@@ -3,7 +3,7 @@ import { UserAvatar } from "@/components/user";
 import { Button, MenuInput, MenuItem, MenuSeparator, ScrollArea } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useWorkspaceMemberSearch, useWorkspace } from "@/domain/workspace";
-import type { User } from "@/domain/user";
+import type { IUser as IUser } from "@epicstory/contracts";
 import { computed, ref, watch } from "vue";
 
 const props = withDefaults(
@@ -22,11 +22,11 @@ const props = withDefaults(
   },
 );
 
-const users = defineModel<User[]>("users", { default: () => [] });
+const users = defineModel<IUser[]>("users", { default: () => [] });
 
 const emit = defineEmits<{
-  (e: "add", user: User): void;
-  (e: "remove", user: User): void;
+  (e: "add", user: IUser): void;
+  (e: "remove", user: IUser): void;
 }>();
 
 const query = ref("");
@@ -53,14 +53,14 @@ async function fetchMoreUsers() {
   await loadMore(workspaceId.value);
 }
 
-function onAdd(user: User) {
+function onAdd(user: IUser) {
   if (props.disabled) return;
   if (users.value.some((u) => u.id === user.id)) return;
   users.value = [...users.value, user];
   emit("add", user);
 }
 
-function onRemove(user: User) {
+function onRemove(user: IUser) {
   if (props.disabled) return;
   users.value = users.value.filter((u) => u.id !== user.id);
   emit("remove", user);

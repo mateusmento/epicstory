@@ -3,7 +3,7 @@ import { UserAvatar } from "@/components/user";
 import type {
   MessageReactionNotificationPayload,
   ReplyReactionNotificationPayload,
-} from "@/domain/notifications/types/notification.types";
+} from "@/domain/notifications";
 import { formatDistanceToNow } from "date-fns";
 import { UserIcon } from "lucide-vue-next";
 import { computed } from "vue";

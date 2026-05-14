@@ -5,25 +5,23 @@ import {
   issueStatusDotClass,
   IssueStatusDropdown,
 } from "@/components/issue";
-import { WorkspaceMemberDropdown } from "@/components/workspace-members";
+import IssueAttachmentsStrip from "@/components/issue/IssueAttachmentsStrip.vue";
 import { UserAvatar } from "@/components/user";
+import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import SubIssuesSection from "./SubIssuesSection.vue";
-import IssueActivitySection from "./IssueActivitySection.vue";
-import IssueAttachmentsStrip from "@/components/issue/IssueAttachmentsStrip.vue";
 import { useAuth } from "@/domain/auth";
-import { IssueApi } from "@/domain/issues/api";
-import { useIssue } from "@/domain/issues/composables/issue";
-import { useIssueAttachments } from "@/domain/issues/composables/issue-attachments";
-import { ProjectApi, type Project } from "@/domain/project";
+import { useIssue, useIssueAttachments } from "@/domain/issues";
+import type { Project } from "@/domain/project";
 import { useScopedWorkspaceMemberSearch } from "@/domain/workspace";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
-import type { IMessage, IReply } from "@/domain/channels";
-import type { User } from "@/domain/user";
+import { IssueApi, ProjectApi } from "@epicstory/api-client";
+import type { IMessage, IReply, IUser } from "@epicstory/contracts";
 import { computed, onMounted, reactive, ref, watch } from "vue";
+import IssueActivitySection from "./IssueActivitySection.vue";
+import SubIssuesSection from "./SubIssuesSection.vue";
 
 const props = defineProps<{
   workspaceId: string;
@@ -109,7 +107,7 @@ watch(
   { immediate: true },
 );
 
-const assigneeUsers = ref<User[]>([]);
+const assigneeUsers = ref<IUser[]>([]);
 watch(
   () => issue.value?.assignees,
   (a) => {

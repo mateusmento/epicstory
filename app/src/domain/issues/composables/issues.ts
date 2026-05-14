@@ -1,12 +1,12 @@
 import { useDependency } from "@/core/dependency-injection";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
-import { IssueApi, type FindIssuesQuery, type UpdateIssueData } from "../api";
-import type { Issue } from "../types";
+import { IssueApi } from "@epicstory/api-client";
+import type { FindIssuesQuery, IIssue, UpdateIssueData } from "@epicstory/contracts";
 import type { Page } from "@/core/types";
 
 const useIssueStore = defineStore("issues", () => {
-  const issues = ref<Issue[]>([]);
+  const issues = ref<IIssue[]>([]);
   return { issues };
 });
 
@@ -15,7 +15,7 @@ export function useIssues() {
 
   const issueApi = useDependency(IssueApi);
 
-  const page = ref<Page<Issue>>();
+  const page = ref<Page<IIssue>>();
   const isFetchingIssues = ref(false);
   const hasMoreIssues = computed(() => !page.value || (page.value?.hasNext ?? false));
 

@@ -2,9 +2,9 @@
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger, ScrollArea } from "@/design-system";
 import { useAuth } from "@/domain/auth";
-import type { User } from "@/domain/auth";
-import type { IScheduledMessage } from "@/domain/channels/types/scheduled-message.type";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
+import type { IUser as IUser } from "@epicstory/contracts";
+import type { IScheduledMessage } from "@epicstory/contracts";
+import { ChannelApi } from "@epicstory/api-client";
 import { format, formatDistanceToNow } from "date-fns";
 import { Pencil, Trash2 } from "lucide-vue-next";
 import { onMounted, ref, watch } from "vue";
@@ -12,7 +12,7 @@ import ScheduledMessageEditDialog from "./ScheduledMessageEditDialog.vue";
 
 const props = defineProps<{
   channelId?: number;
-  members?: User[];
+  members?: IUser[];
 }>();
 
 const { user } = useAuth();

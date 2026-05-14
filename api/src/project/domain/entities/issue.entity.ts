@@ -77,7 +77,6 @@ export class Issue {
   @Column({ nullable: true })
   parentIssueId?: number;
 
-  /** Private comment thread (`ChannelType.workspace_open`); no `Channel.issueId` FK. */
   @Column({ nullable: true })
   commentChannelId?: number | null;
 

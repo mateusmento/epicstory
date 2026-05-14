@@ -4,14 +4,13 @@ import { IssueContextMenu, IssueLabelTags } from "@/components/issue";
 import { UserAvatarStack } from "@/components/user";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
-import { type BacklogItem } from "@/domain/backlog";
-import { type Issue } from "@/domain/issues";
+import type { IBacklogItem, IIssue } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 
-defineProps<{ item: BacklogItem }>();
+defineProps<{ item: IBacklogItem }>();
 
 const emit = defineEmits<{
-  (e: "openIssue", issue: Issue): void;
+  (e: "openIssue", issue: IIssue): void;
   (e: "add-label", id: number): void;
   (e: "remove-label", id: number): void;
 }>();
@@ -38,7 +37,7 @@ function statusBadge(status: ColumnStatus) {
   return { label: "To do", cls: "bg-gray-100 text-gray-700 border-gray-200" };
 }
 
-function openIssue(issue: Issue) {
+function openIssue(issue: IIssue) {
   emit("openIssue", issue);
 }
 </script>

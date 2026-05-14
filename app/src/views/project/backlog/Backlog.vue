@@ -2,8 +2,8 @@
 import { IssueContextMenu, issueStatusDotClass } from "@/components/issue";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
-import { useBacklog, type BacklogItem } from "@/domain/backlog";
-import { type Issue } from "@/domain/issues";
+import { useBacklog } from "@/domain/backlog";
+import type { IIssue, IBacklogItem } from "@epicstory/contracts";
 import { animations } from "@formkit/drag-and-drop";
 import { dragAndDrop } from "@formkit/drag-and-drop/vue";
 import { useStorage } from "@vueuse/core";
@@ -58,13 +58,13 @@ const itemsContainer = ref<HTMLElement>();
 const draggingId = ref<number | null>(null);
 
 function setupDragAndDrop() {
-  dragAndDrop<BacklogItem>({
+  dragAndDrop<IBacklogItem>({
     parent: itemsContainer,
     values: backlogItems,
     plugins: [animations({ duration: 200 })],
     disabled: orderBy.value !== "manual" || groupBy.value !== "none",
     onDragstart(e) {
-      const item = e.draggedNode.data.value as BacklogItem;
+      const item = e.draggedNode.data.value as IBacklogItem;
       draggingId.value = item.id;
     },
     onDragend() {
@@ -116,7 +116,7 @@ const editingIssue = reactive<{
   title: string;
 }>({ id: null, title: "" });
 
-function openIssueEdit(issue: Issue) {
+function openIssueEdit(issue: IIssue) {
   editingIssue.title = issue.title;
   editingIssue.id = issue.id;
 }
@@ -137,7 +137,7 @@ function saveEdit() {
 
 const router = useRouter();
 
-function openIssue(issue: Issue) {
+function openIssue(issue: IIssue) {
   router.push(`/${props.workspaceId}/project/${props.projectId}/issue/${issue.id}`);
 }
 
@@ -168,7 +168,7 @@ type IssueGroup = {
   label: string;
   kind: "status" | "priority" | "none";
   key: string | number;
-  items: BacklogItem[];
+  items: IBacklogItem[];
 };
 
 function mapBy<T, K extends string | number>(items: T[], keySelector: (item: T) => K) {

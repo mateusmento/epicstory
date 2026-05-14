@@ -1,9 +1,9 @@
-import type { User } from "@/domain/auth";
-import type { IMessage } from "@/domain/channels";
-import { ChannelApi } from "@/domain/channels/services/channel.service";
-import type { IssueApi } from "@/domain/issues/api";
-import type { IssueAttachmentActivitySyncPayload } from "@/domain/issues/composables/issue-attachments";
-import type { IssueFeed } from "@/domain/issues/types/issue-feed.type";
+import type { IUser as IUser } from "@epicstory/contracts";
+import { ChannelApi } from "@epicstory/api-client";
+import type { IMessage } from "@epicstory/contracts";
+import type { IssueApi } from "@epicstory/api-client";
+import type { IssueAttachmentActivitySyncPayload } from "./issue-attachments";
+import type { IssueFeed } from "../types";
 import { computed, ref, toValue, watch, type MaybeRefOrGetter, type Ref } from "vue";
 
 export function useIssueActivityFeed(options: {
@@ -18,7 +18,7 @@ export function useIssueActivityFeed(options: {
 
   const feed = ref<IssueFeed | null>(null);
   const commentMessages = ref<IMessage[]>([]);
-  const channelPeers = ref<User[]>([]);
+  const channelPeers = ref<IUser[]>([]);
   const loading = ref(false);
   const loadError = ref<string | null>(null);
 

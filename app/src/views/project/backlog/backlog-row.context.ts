@@ -1,4 +1,4 @@
-import type { Issue } from "@/domain/issues";
+import type { IIssue } from "@epicstory/contracts";
 import { inject, provide, type InjectionKey } from "vue";
 
 export type BacklogEditingState = {
@@ -11,8 +11,8 @@ export type BacklogRowContext = {
   gridColsClass: string;
   editing: BacklogEditingState;
 
-  openIssue(issue: Issue): void;
-  startEdit(issue: Issue): void;
+  openIssue(issue: IIssue): void;
+  startEdit(issue: IIssue): void;
   cancelEdit(): void;
   saveEdit(): void;
 };

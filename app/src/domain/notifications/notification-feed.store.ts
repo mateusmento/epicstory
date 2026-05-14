@@ -1,4 +1,4 @@
-import type { Notification } from "@/domain/notifications/types/notification.types";
+import type { Notification } from "./types";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 

@@ -1,8 +1,8 @@
-import type { MessageAttachmentDto } from "@/domain/channels/types/message.type";
+import type { IMessageAttachment } from "@epicstory/contracts";
 
 /** Tile chrome for an attachment that is already uploaded (server has id/url). */
 export type AttachmentMediaState =
-  | { variant: "uploaded"; file: MessageAttachmentDto }
+  | { variant: "uploaded"; file: IMessageAttachment }
   | {
       variant: "uploading";
       previewUrl: string;
@@ -18,7 +18,7 @@ export type AttachmentMediaState =
     };
 
 export type AttachmentTileRow =
-  | { key: string; kind: "uploaded"; attachment: MessageAttachmentDto }
+  | { key: string; kind: "uploaded"; attachment: IMessageAttachment }
   | {
       key: string;
       kind: "uploading";

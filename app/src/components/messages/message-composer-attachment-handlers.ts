@@ -1,6 +1,6 @@
-import type { ChannelApi } from "@/domain/channels/services/channel.service";
-import type { UploadedAttachment } from "@/domain/channels/services/channel.service";
-import type { IssueApi } from "@/domain/issues/api";
+import { ChannelApi } from "@epicstory/api-client";
+import type { UploadedAttachment } from "@epicstory/contracts";
+import type { IssueApi } from "@epicstory/api-client";
 
 /** Injected into {@link MessageComposer}; built with helpers below so parents avoid prop drilling. */
 export type MessageComposerAttachmentHandlers = {
