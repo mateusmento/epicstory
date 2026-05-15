@@ -7,10 +7,10 @@ import type {
   IChannel,
   IChannelActivity,
   IChannelActivityMeetingSummary,
+  IMeeting,
   IMessage,
   IReply,
   IUser,
-  IMeeting,
   MessagePollBody,
 } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
@@ -22,6 +22,8 @@ import type { IMessageGroup } from "../types/message.type";
 import { buildChatTimeline } from "../utils/build-chat-timeline";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
+
+const CHANNEL_ACTIVITIES_PAGE_SIZE = 50;
 
 /** Shared across all `useChannel()` callers */
 const typingActivity = ref(new Map<number, number>());
@@ -46,7 +48,9 @@ export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
   const activities = ref<IChannelActivity[]>([]);
   const members = ref<IUser[]>([]);
-  return { channel, activities, members };
+  const hasMoreOlder = ref(false);
+  const loadingOlderActivities = ref(false);
+  return { channel, activities, members, hasMoreOlder, loadingOlderActivities };
 });
 
 export function useChannel() {
@@ -71,14 +75,45 @@ export function useChannel() {
   function insertActivity(activity: IChannelActivity) {
     const next = store.activities.filter((a) => a.id !== activity.id);
     next.push(activity);
-    next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    next.sort((a, b) => {
+      const t = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (t !== 0) return t;
+      return a.id - b.id;
+    });
     store.activities = next;
   }
 
-  async function fetchChannelActivities() {
-    if (!store.channel) return [];
-    store.activities = await channelApi.findChannelActivities(store.channel.id);
-    return store.activities;
+  async function resetAndLoadLatestActivities() {
+    if (!store.channel) return;
+    store.activities = [];
+    store.hasMoreOlder = false;
+    const page = await channelApi.findChannelActivities(store.channel.id, {
+      limit: CHANNEL_ACTIVITIES_PAGE_SIZE,
+    });
+    store.activities = page.content;
+    store.hasMoreOlder = page.hasNext;
+  }
+
+  async function loadOlderActivitiesPage() {
+    if (!store.channel || !store.hasMoreOlder || store.loadingOlderActivities) return;
+    const oldest = store.activities[0];
+    if (!oldest) return;
+    store.loadingOlderActivities = true;
+    try {
+      const page = await channelApi.findChannelActivities(store.channel.id, {
+        limit: CHANNEL_ACTIVITIES_PAGE_SIZE,
+        beforeCreatedAt: oldest.createdAt,
+        beforeId: oldest.id,
+      });
+      const existing = new Set(store.activities.map((a) => a.id));
+      store.activities = [
+        ...page.content.filter((i: IChannelActivity) => !existing.has(i.id)),
+        ...store.activities,
+      ];
+      store.hasMoreOlder = page.hasNext;
+    } finally {
+      store.loadingOlderActivities = false;
+    }
   }
 
   function onReceiveChannelActivity({
@@ -335,7 +370,8 @@ export function useChannel() {
     typingUserIds,
     openChannel,
     fetchChannel,
-    fetchChannelActivities,
+    resetAndLoadLatestActivities,
+    loadOlderActivitiesPage,
     joinChannel,
     leaveChannel,
     subscribeMeetings,
@@ -374,7 +410,7 @@ export function useSyncedChannel() {
   const {
     activities,
     fetchChannel,
-    fetchChannelActivities,
+    resetAndLoadLatestActivities,
     fetchMembers,
     joinChannel,
     leaveChannel,
@@ -389,7 +425,7 @@ export function useSyncedChannel() {
     activities.value = [];
     await fetchChannel(channelId.value);
     joinChannel();
-    fetchChannelActivities();
+    resetAndLoadLatestActivities();
     fetchMembers();
     subscribeMeetings();
   });
@@ -403,7 +439,7 @@ export function useSyncedChannel() {
     activities.value = [];
     await fetchChannel(id);
     joinChannel();
-    fetchChannelActivities();
+    resetAndLoadLatestActivities();
     fetchMembers();
   });
 

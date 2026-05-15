@@ -143,10 +143,17 @@ export class ChannelController {
   @UseGuards(JwtAuthGuard)
   findChannelActivities(
     @Param('id') channelId: number,
+    @Query() query: FindChannelActivities,
     @Auth() issuer: Issuer,
   ) {
     return this.queryBus.execute(
-      new FindChannelActivities({ channelId, issuerId: issuer.id }),
+      new FindChannelActivities({
+        channelId,
+        issuerId: issuer.id,
+        limit: query.limit,
+        beforeCreatedAt: query.beforeCreatedAt,
+        beforeId: query.beforeId,
+      }),
     );
   }
 

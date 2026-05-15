@@ -136,6 +136,13 @@ export type IReply = {
   attachments?: IMessageAttachment[];
 };
 
+export type FindMessageReplies = {
+  full?: boolean;
+  limit?: number;
+  beforeSentAt?: string;
+  beforeId?: number;
+};
+
 export type ISearchChannelsAndUsersItem =
   | { kind: "channel"; channel: IChannel }
   | { kind: "user"; user: IUser };

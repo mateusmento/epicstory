@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import { channelMessageComposerAttachmentHandlers, MessageComposer } from "@/components/messages";
+import { UserAvatar, UserAvatarStack } from "@/components/user";
+import { useDependency } from "@/core/dependency-injection";
 import {
   Button,
   ButtonGroup,
@@ -10,22 +13,25 @@ import {
   Separator,
 } from "@/design-system";
 import { channelComposerQuotedMessageId, useChannel, useWorkspaceOnline } from "@/domain/channels";
-import { useWorkspace } from "@/domain/workspace";
-import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
-import { computed, nextTick, ref, watch } from "vue";
-import { UserAvatar, UserAvatarStack } from "@/components/user";
-import { channelMessageComposerAttachmentHandlers, MessageComposer } from "@/components/messages";
-import { useDependency } from "@/core/dependency-injection";
-import { ChannelApi } from "@epicstory/api-client";
-import type { IChannel, IMessage, MessagePollBody } from "@epicstory/contracts";
-import type { CreateScheduledMessageBody as ICreateScheduledMessageBody } from "@epicstory/contracts";
 import type { ChatTimelineItem } from "@/domain/channels/utils/build-chat-timeline";
 import { chatTimelineRowCount } from "@/domain/channels/utils/build-chat-timeline";
+import { enumerateNames } from "@/utils";
+import { ChannelApi } from "@epicstory/api-client";
+import type {
+  IChannel,
+  CreateScheduledMessageBody as ICreateScheduledMessageBody,
+  IMessage,
+  MessagePollBody,
+} from "@epicstory/contracts";
+import { useVirtualizer } from "@tanstack/vue-virtual";
+import type { JSONContent } from "@tiptap/core";
+import { useThrottleFn } from "@vueuse/core";
+import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
+import type { VNodeRef } from "vue";
+import { computed, nextTick, onUnmounted, ref, watch } from "vue";
+import ChannelActivityRow from "./ChannelActivityRow.vue";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
-import type { JSONContent } from "@tiptap/core";
-import { enumerateNames } from "@/utils";
-import ChannelActivityRow from "./ChannelActivityRow.vue";
 
 const props = defineProps<{
   meId: number;
@@ -75,7 +81,7 @@ watch([channelMessageIds, quotedMessage], ([ids, q]) => {
 });
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 
-const { typingUserIds } = useChannel();
+const { typingUserIds, hasMoreOlder, loadingOlderActivities, loadOlderActivitiesPage } = useChannel();
 const { isUserOnline } = useWorkspaceOnline();
 const channelApi = useDependency(ChannelApi);
 
@@ -85,6 +91,132 @@ const composerAttachmentHandlers = computed(() =>
     channelId: () => props.channelId,
   }),
 );
+
+const introEl = ref<HTMLElement | null>(null);
+const introHeight = ref(0);
+let introResizeObserver: ResizeObserver | null = null;
+
+function timelineRowKey(item: ChatTimelineItem) {
+  return item.kind === "messages" ? `g-${item.group.id}` : `a-${item.activity.id}`;
+}
+
+function messageRow(index: number): Extract<ChatTimelineItem, { kind: "messages" }> | undefined {
+  const item = props.chatTimeline[index];
+  return item?.kind === "messages" ? item : undefined;
+}
+
+function activityRow(index: number): Extract<ChatTimelineItem, { kind: "activity" }> | undefined {
+  const item = props.chatTimeline[index];
+  return item?.kind === "activity" ? item : undefined;
+}
+
+function timelineRowKeyAt(index: number) {
+  const item = props.chatTimeline[index];
+  return item ? timelineRowKey(item) : String(index);
+}
+
+const rowVirtualizer = useVirtualizer(
+  computed(() => ({
+    count: props.chatTimeline.length,
+    getScrollElement: () => scrollAreaRef.value?.getScrollElement() ?? null,
+    estimateSize: () => 150,
+    overscan: 8,
+    paddingStart: introHeight.value,
+    scrollPaddingStart: introHeight.value,
+    getItemKey: (index: number) => {
+      const item = props.chatTimeline[index];
+      return item ? timelineRowKey(item) : index;
+    },
+  })),
+);
+
+const measureTimelineRow: VNodeRef = (el) => {
+  rowVirtualizer.value.measureElement(el as HTMLElement | null);
+};
+
+watch(
+  introEl,
+  (el) => {
+    introResizeObserver?.disconnect();
+    introResizeObserver = null;
+    if (!el) {
+      introHeight.value = 0;
+      return;
+    }
+    const ro = new ResizeObserver(() => {
+      introHeight.value = Math.round(el.getBoundingClientRect().height);
+    });
+    ro.observe(el);
+    introHeight.value = Math.round(el.getBoundingClientRect().height);
+    introResizeObserver = ro;
+  },
+  { flush: "post" },
+);
+
+const prependBusy = ref(false);
+
+async function loadOlderWithScrollPreserve() {
+  if (prependBusy.value || !hasMoreOlder.value || loadingOlderActivities.value) return;
+  prependBusy.value = true;
+  const el = scrollAreaRef.value?.getScrollElement();
+  if (!el) {
+    prependBusy.value = false;
+    return;
+  }
+  const prevScrollHeight = el.scrollHeight;
+  const prevScrollTop = el.scrollTop;
+  try {
+    await loadOlderActivitiesPage();
+  } finally {
+    await nextTick();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const v = scrollAreaRef.value?.getScrollElement();
+        if (v) {
+          v.scrollTop = prevScrollTop + (v.scrollHeight - prevScrollHeight);
+        }
+        prependBusy.value = false;
+      });
+    });
+  }
+}
+
+const NEAR_TOP_PX = 200;
+
+const onViewportScroll = useThrottleFn(() => {
+  const el = scrollAreaRef.value?.getScrollElement();
+  if (!el || el.scrollTop > NEAR_TOP_PX) return;
+  if (!hasMoreOlder.value || loadingOlderActivities.value || prependBusy.value) return;
+  loadOlderWithScrollPreserve();
+}, 100);
+
+watch(
+  scrollAreaRef,
+  (area, prev) => {
+    const prevEl = prev?.getScrollElement?.() ?? null;
+    if (prevEl) prevEl.removeEventListener("scroll", onViewportScroll);
+    const el = area?.getScrollElement?.() ?? null;
+    if (el) el.addEventListener("scroll", onViewportScroll, { passive: true });
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  introResizeObserver?.disconnect();
+  scrollAreaRef.value?.getScrollElement?.()?.removeEventListener("scroll", onViewportScroll);
+});
+
+function timelineEndCursor(timeline: ChatTimelineItem[]): string | null {
+  const last = timeline[timeline.length - 1];
+  if (!last) return null;
+  if (last.kind === "messages") {
+    const m = last.group.messages[last.group.messages.length - 1];
+    if (!m) return null;
+    return `${new Date(m.sentAt as unknown as string).getTime()}\0${m.id}`;
+  }
+  const a = last.activity;
+  return `${new Date(a.createdAt).getTime()}\0${a.id}`;
+}
 
 const onlineUsers = computed(() =>
   props.channel.peers.filter((p) => p.id !== props.meId && isUserOnline(p.id)),
@@ -105,28 +237,39 @@ const typingBannerText = computed(() => {
 });
 
 const prevMessageTotal = ref(-1);
+/** Tracks newest timeline leaf; unchanged when older rows are prepended. */
+const prevTimelineEndCursor = ref<string | null>(null);
 
 watch(
   () => props.channelId,
   () => {
     prevMessageTotal.value = -1;
+    prevTimelineEndCursor.value = null;
   },
 );
 
 watch(
   () => chatTimelineRowCount(props.chatTimeline),
   (totalRows) => {
+    const endCur = timelineEndCursor(props.chatTimeline);
     const prev = prevMessageTotal.value;
     if (prev < 0) {
       prevMessageTotal.value = totalRows;
+      prevTimelineEndCursor.value = endCur;
       if (totalRows > 0) nextTick(() => scrollAreaRef.value?.scrollToBottom());
       return;
     }
     if (totalRows > prev) {
+      const prevEnd = prevTimelineEndCursor.value;
       prevMessageTotal.value = totalRows;
-      nextTick(() => scrollAreaRef.value?.scrollToBottom());
+      prevTimelineEndCursor.value = endCur;
+      // Prepending history increases row count but leaves the newest item unchanged.
+      if (endCur !== prevEnd) {
+        nextTick(() => scrollAreaRef.value?.scrollToBottom());
+      }
     } else {
       prevMessageTotal.value = totalRows;
+      prevTimelineEndCursor.value = endCur;
     }
   },
 );
@@ -264,64 +407,81 @@ defineExpose({
     <div class="relative min-h-0">
       <ScrollArea class="min-h-0 h-full" ref="scrollAreaRef">
         <div class="flex:col-xl !flex justify-end p-4 min-h-full pb-14">
-          <div class="flex:col-3xl p-xl mb-2xl">
-            <div class="flex:row-xl flex:center-y gap-2">
-              <UserAvatar
-                v-for="member of channel.peers"
-                :key="member.id"
-                :name="member.name"
-                :picture="member.picture"
-                size="tileXl"
-                class="-ml-10 first:ml-0"
-              />
+          <div
+            class="w-full"
+            :style="{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: 'relative',
+            }"
+          >
+            <div ref="introEl" class="flex:col-3xl p-xl mb-2xl absolute left-0 right-0 top-0 z-[1]">
+              <div class="flex:row-xl flex:center-y gap-2">
+                <UserAvatar
+                  v-for="member of channel.peers"
+                  :key="member.id"
+                  :name="member.name"
+                  :picture="member.picture"
+                  size="tileXl"
+                  class="-ml-10 first:ml-0"
+                />
+              </div>
+              <div class="text-xl text-accent-foreground font-lato">
+                This is the begining of a conversation between
+                <template v-for="(member, i) of channel.peers" :key="member.id">
+                  <template v-if="i > 0 && i < channel.peers.length - 1">, </template>
+                  <template v-else-if="i > 0"> and </template>
+                  <span
+                    class="inline-flex items-center"
+                    :class="
+                      member.id === meId
+                        ? 'px-0.5 rounded-sm bg-mentionHighlight text-mentionHighlight-foreground font-medium'
+                        : 'px-0.5 rounded-sm bg-mention-chip text-mention font-medium'
+                    "
+                  >
+                    @{{ member.name }}
+                  </span> </template
+                >.
+              </div>
             </div>
-            <div class="text-xl text-accent-foreground font-lato">
-              This is the begining of a conversation between
-              <template v-for="(member, i) of channel.peers" :key="member.id">
-                <template v-if="i > 0 && i < channel.peers.length - 1">, </template>
-                <template v-else-if="i > 0"> and </template>
-                <span
-                  class="inline-flex items-center"
-                  :class="
-                    member.id === meId
-                      ? 'px-0.5 rounded-sm bg-mentionHighlight text-mentionHighlight-foreground font-medium'
-                      : 'px-0.5 rounded-sm bg-mention-chip text-mention font-medium'
-                  "
-                >
-                  @{{ member.name }}
-                </span> </template
-              >.
+
+            <div
+              v-for="virtualRow in rowVirtualizer.getVirtualItems()"
+              :key="timelineRowKeyAt(virtualRow.index)"
+              :data-index="virtualRow.index"
+              :ref="measureTimelineRow"
+              :style="{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }"
+            >
+              <MessageGroup
+                v-if="messageRow(virtualRow.index)"
+                :sender="messageRow(virtualRow.index)!.group.sender"
+                :meId="meId"
+                :sentAt="messageRow(virtualRow.index)!.group.sentAt"
+              >
+                <Message
+                  v-for="message of messageRow(virtualRow.index)!.group.messages"
+                  :key="message.id"
+                  :message
+                  :meId
+                  @message-deleted="onMessageDeleted"
+                  @quote="onQuote"
+                  @start-edit="onStartEdit"
+                />
+              </MessageGroup>
+              <ChannelActivityRow
+                v-else-if="activityRow(virtualRow.index)"
+                :activity="activityRow(virtualRow.index)!.activity"
+                :channel-display-name="channel.name"
+                :me-id="meId"
+                @join-meeting="emit('join-meeting')"
+              />
             </div>
           </div>
-
-          <template
-            v-for="item of chatTimeline"
-            :key="item.kind === 'messages' ? `g-${item.group.id}` : `a-${item.activity.id}`"
-          >
-            <MessageGroup
-              v-if="item.kind === 'messages'"
-              :sender="item.group.sender"
-              :meId="meId"
-              :sentAt="item.group.sentAt"
-            >
-              <Message
-                v-for="message of item.group.messages"
-                :key="message.id"
-                :message
-                :meId
-                @message-deleted="onMessageDeleted"
-                @quote="onQuote"
-                @start-edit="onStartEdit"
-              />
-            </MessageGroup>
-            <ChannelActivityRow
-              v-else
-              :activity="item.activity"
-              :channel-display-name="channel.name"
-              :me-id="meId"
-              @join-meeting="emit('join-meeting')"
-            />
-          </template>
         </div>
       </ScrollArea>
 

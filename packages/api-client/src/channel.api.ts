@@ -5,6 +5,8 @@ import type {
   CreateGroupChannel,
   CreateMeetingChannel,
   CreateScheduledMessageBody,
+  FindChannelActivities,
+  FindMessageReplies,
   IChannel,
   IChannelActivity,
   IMessage,
@@ -257,9 +259,19 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  findReplies(messageId: number) {
+  findReplies(messageId: number, params?: FindMessageReplies) {
+    const query =
+      params == null
+        ? undefined
+        : Object.fromEntries(
+            Object.entries(params).filter(
+              ([, v]) => v !== undefined && v !== null,
+            ),
+          );
     return this.axios
-      .get<IReply[]>(`/messages/${messageId}/replies`)
+      .get<Page<IReply>>(`/messages/${messageId}/replies`, {
+        ...(Object.keys(query ?? {}).length > 0 ? { params: query } : {}),
+      })
       .then((res) => res.data);
   }
 
@@ -318,9 +330,19 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  findChannelActivities(channelId: number) {
+  findChannelActivities(channelId: number, params?: FindChannelActivities) {
+    const query =
+      params == null
+        ? undefined
+        : Object.fromEntries(
+            Object.entries(params).filter(
+              ([, v]) => v !== undefined && v !== null,
+            ),
+          );
     return this.axios
-      .get<IChannelActivity[]>(`/channels/${channelId}/activities`)
+      .get<Page<IChannelActivity>>(`/channels/${channelId}/activities`, {
+        ...(Object.keys(query ?? {}).length > 0 ? { params: query } : {}),
+      })
       .then((res) => res.data);
   }
 }

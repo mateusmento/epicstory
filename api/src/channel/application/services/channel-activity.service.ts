@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import type { IChannelActivityMeetingSummary } from '@epicstory/contracts';
-import type { ChannelActivityType } from '@epicstory/contracts';
+import type {
+  ChannelActivityType,
+  IChannelActivity,
+  IChannelActivityMeetingSummary,
+} from '@epicstory/contracts';
 import { uniq } from 'lodash';
 import { ChannelActivity } from 'src/channel/domain/entities/channel-activity.entity';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { ChannelActivityRepository } from 'src/channel/infrastructure/repositories/channel-activity.repository';
 import { MeetingRepository } from 'src/channel/infrastructure/repositories/meeting.repository';
 import { create } from 'src/core/objects';
+import { Page } from 'src/core/page';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { In } from 'typeorm';
 import {
@@ -30,10 +34,15 @@ export class ChannelActivityService {
     private messageGateway: MessageGateway,
   ) {}
 
-  async findForChannel(
+  async findPageForChannel(
     channelId: number,
     viewerId: number,
-  ): Promise<IChannelActivityClient[]> {
+    options: {
+      limit: number;
+      beforeCreatedAt?: Date;
+      beforeId?: number;
+    },
+  ): Promise<Page<IChannelActivity>> {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },
@@ -48,18 +57,39 @@ export class ChannelActivityService {
       throw new IssuerIsNotChannelMember();
     }
 
-    const rows = await this.activityRepo.find({
-      where: { channelId },
-      relations: { actor: true, subjectUser: true },
-      order: { createdAt: 'ASC' },
-    });
+    const take = Math.min(Math.max(1, options.limit), 100) + 1;
 
-    const messageIds = rows
+    const qb = this.activityRepo
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.actor', 'actor')
+      .leftJoinAndSelect('a.subjectUser', 'subjectUser')
+      .where('a.channelId = :channelId', { channelId })
+      .orderBy('a.createdAt', 'DESC')
+      .addOrderBy('a.id', 'DESC')
+      .take(take);
+
+    if (options.beforeCreatedAt != null && options.beforeId != null) {
+      qb.andWhere(
+        '(a.createdAt < :bc OR (a.createdAt = :bc AND a.id < :bid))',
+        {
+          bc: options.beforeCreatedAt,
+          bid: options.beforeId,
+        },
+      );
+    }
+
+    const rawDesc = await qb.getMany();
+    const hasMoreOlder = rawDesc.length >= take;
+    const pageRows = (hasMoreOlder ? rawDesc.slice(0, take - 1) : rawDesc)
+      .slice()
+      .reverse();
+
+    const messageIds = pageRows
       .filter((r) => r.type === 'message_sent' && r.messageId != null)
       .map((r) => r.messageId!);
 
     const meetingIds = uniq(
-      rows
+      pageRows
         .filter((r) => r.type === 'meeting_started' && r.meetingId != null)
         .map((r) => r.meetingId!),
     );
@@ -72,12 +102,24 @@ export class ChannelActivityService {
 
     const meetingsMap = await this.loadMeetingSummaries(meetingIds);
 
-    return rows.map((r) =>
+    const items = pageRows.map((r) =>
       this.rowToClient(r, {
         messagesMap,
         meetingsMap,
       }),
     );
+
+    const hasCursor =
+      options.beforeCreatedAt != null && options.beforeId != null;
+
+    return new Page({
+      content: items as unknown as IChannelActivity[],
+      page: 0,
+      count: Math.min(Math.max(1, options.limit), 100),
+      hasNext: hasMoreOlder,
+      hasPrevious: hasCursor,
+      total: 0,
+    });
   }
 
   private async loadMeetingSummaries(

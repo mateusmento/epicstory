@@ -1,7 +1,7 @@
-import type { IReply } from "@epicstory/contracts";
 import { ChannelApi } from "@epicstory/api-client";
-import type { IssueFeed, IssueFeedItem } from "../types";
+import type { IReply } from "@epicstory/contracts";
 import { reactive, toValue, watch, type MaybeRefOrGetter, type Ref } from "vue";
+import type { IssueFeed, IssueFeedItem } from "../types";
 
 export type IssueCommentThreadState = {
   loading: boolean;
@@ -79,7 +79,8 @@ export function useIssueCommentThreads(options: {
     if (!s.fullReplies) {
       s.loading = true;
       try {
-        const replies = (await channelApi.findReplies(rootId)) ?? [];
+        const page = await channelApi.findReplies(rootId, { full: true });
+        const replies = page.content;
         s.fullReplies = replies;
         onSyncReplies?.(replies);
       } catch {
@@ -107,7 +108,8 @@ export function useIssueCommentThreads(options: {
       const expandedIds = [...threadByRootId.entries()].filter(([, s]) => s.expanded).map(([id]) => id);
       for (const rootId of expandedIds) {
         try {
-          const list = (await channelApi.findReplies(rootId)) ?? [];
+          const page = await channelApi.findReplies(rootId, { full: true });
+          const list = page.content;
           const s = threadByRootId.get(rootId);
           if (s) {
             s.fullReplies = list;

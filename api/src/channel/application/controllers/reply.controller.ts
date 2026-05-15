@@ -3,31 +3,46 @@ import {
   Controller,
   Delete,
   Get,
-  Patch,
   Param,
+  Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { ToggleReplyReaction, UpdateReply } from '../features';
 import { DeleteReply } from '../features/delete-reply.command';
+import { FindMessageReplies } from '../features/find-message-replies.query';
+import { ReplyMessage } from '../features/reply-message.command';
 import { MessageGateway } from '../gateways/message.gateway';
 import { ReplyService } from '../services/reply.service';
-import { ReplyMessage } from '../features/reply-message.command';
-import { ToggleReplyReaction, UpdateReply } from '../features';
 
 @UseGuards(JwtAuthGuard)
 @Controller('messages/:messageId/replies')
 export class MessageRepliesController {
   constructor(
-    private replyService: ReplyService,
+    private queryBus: QueryBus,
     private commandBus: CommandBus,
     private messageGateway: MessageGateway,
   ) {}
 
   @Get()
-  findReplies(@Param('messageId') messageId: number, @Auth() issuer: Issuer) {
-    return this.replyService.findReplies(messageId, issuer.id);
+  findReplies(
+    @Param('messageId') messageId: number,
+    @Query() query: FindMessageReplies,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.queryBus.execute(
+      new FindMessageReplies({
+        messageId,
+        issuerId: issuer.id,
+        full: query.full,
+        limit: query.limit,
+        beforeSentAt: query.beforeSentAt,
+        beforeId: query.beforeId,
+      }),
+    );
   }
 
   @Post()

@@ -40,3 +40,9 @@ export type SendChannelMessageResponse = {
   message: IMessage;
   activity: IChannelActivity;
 };
+
+export type FindChannelActivities = {
+  limit?: number;
+  beforeCreatedAt?: string;
+  beforeId?: number;
+};

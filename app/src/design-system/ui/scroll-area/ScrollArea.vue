@@ -123,6 +123,7 @@ onUnmounted(() => {
 
 defineExpose({
   scrollToBottom: scrollContainerToBottom,
+  getScrollElement: () => container.value?.viewportElement ?? null,
 });
 </script>
 

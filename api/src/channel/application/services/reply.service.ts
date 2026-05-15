@@ -1,4 +1,11 @@
+import {
+  enrichMentionLabels,
+  extractMentionIds,
+  normalizeTiptapDoc,
+  tiptapDocToPlainDisplayText,
+} from '@epicstory/tiptap';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import type { JSONContent } from '@tiptap/core';
 import { uniq } from 'lodash';
 import { User, UserRepository } from 'src/auth';
 import { Channel } from 'src/channel/domain';
@@ -13,20 +20,14 @@ import {
   MessageRepository,
 } from 'src/channel/infrastructure';
 import { groupBy, mapBy } from 'src/core/objects';
+import { Page } from 'src/core/page';
+import { truncateText } from 'src/utils';
 import type { ICreatedAttachment } from 'src/workspace/application/services/attachment.service';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
-import type { JSONContent } from '@tiptap/core';
 import { MessageNotFound } from '../exceptions';
-import {
-  enrichMentionLabels,
-  extractMentionIds,
-  normalizeTiptapDoc,
-  tiptapDocToPlainDisplayText,
-} from '@epicstory/tiptap';
 import { ChannelMentionsService } from './channel-mentions.service';
-import { truncateText } from 'src/utils';
 
 export type QuotedReplyPreview = {
   id: number;
@@ -46,7 +47,6 @@ export class ReplyService {
     private channelMentions: ChannelMentionsService,
   ) {}
 
-  /** Thread preview replies (already ordered per thread), with same presentation as {@link findReplies}. */
   async enrichRepliesForPreview(
     replies: MessageReply[],
     channel: Channel,
@@ -238,24 +238,102 @@ export class ReplyService {
     return reply;
   }
 
-  async findReplies(messageId: number, senderId: number) {
+  async findAllRepliesForMessage(
+    messageId: number,
+    senderId: number,
+  ): Promise<Page<MessageReply>> {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
       relations: { channel: { peers: true } },
     });
 
+    if (!message) {
+      throw new MessageNotFound();
+    }
+
     const replies = await this.replyRepo.find({
       where: { messageId },
       relations: { sender: true, allReactions: { user: true } },
-      order: { sentAt: 'asc' },
+      order: { sentAt: 'ASC', id: 'ASC' },
     });
 
     await this.enrichRepliesForPreview(
       replies,
-      message?.channel ?? null,
+      message.channel ?? null,
       senderId,
     );
-    return replies;
+
+    const n = replies.length;
+
+    return new Page({
+      content: replies,
+      page: 0,
+      count: n,
+      hasNext: false,
+      hasPrevious: false,
+      total: n,
+    });
+  }
+
+  async findReplies(
+    messageId: number,
+    senderId: number,
+    options: {
+      limit: number;
+      beforeSentAt?: Date;
+      beforeId?: number;
+    },
+  ): Promise<Page<MessageReply>> {
+    const message = await this.messageRepo.findOne({
+      where: { id: messageId },
+      relations: { channel: { peers: true } },
+    });
+
+    if (!message) {
+      throw new MessageNotFound();
+    }
+
+    const take = Math.min(Math.max(1, options.limit), 100) + 1;
+
+    const qb = this.replyRepo
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.sender', 'sender')
+      .leftJoinAndSelect('r.allReactions', 'allReactions')
+      .leftJoinAndSelect('allReactions.user', 'user')
+      .where('r.messageId = :messageId', { messageId })
+      .orderBy('r.sentAt', 'DESC')
+      .addOrderBy('r.id', 'DESC')
+      .take(take);
+
+    if (options.beforeSentAt != null && options.beforeId != null) {
+      qb.andWhere('(r.sentAt < :bs OR (r.sentAt = :bs AND r.id < :bid))', {
+        bs: options.beforeSentAt,
+        bid: options.beforeId,
+      });
+    }
+
+    const rawDesc = await qb.getMany();
+    const hasMoreOlder = rawDesc.length >= take;
+    const pageRows = (hasMoreOlder ? rawDesc.slice(0, take - 1) : rawDesc)
+      .slice()
+      .reverse();
+
+    await this.enrichRepliesForPreview(
+      pageRows,
+      message.channel ?? null,
+      senderId,
+    );
+
+    const hasCursor = options.beforeSentAt != null && options.beforeId != null;
+
+    return new Page({
+      content: pageRows,
+      page: 0,
+      count: Math.min(Math.max(1, options.limit), 100),
+      hasNext: hasMoreOlder,
+      hasPrevious: hasCursor,
+      total: 0,
+    });
   }
 
   async findReplyReactions(messageReplyId: number, senderId: number) {

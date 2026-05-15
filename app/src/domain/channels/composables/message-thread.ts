@@ -1,20 +1,36 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
-import type { JSONContent } from "@tiptap/core";
 import { ChannelApi } from "@epicstory/api-client";
-import { onMounted, onUnmounted, ref } from "vue";
-import type { Ref } from "vue";
 import type { IAggregatedReaction, IMessage, IReply, IUser } from "@epicstory/contracts";
+import type { JSONContent } from "@tiptap/core";
+import type { Ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 
 type UseMessageThreadOptions = {
   onMessageDeleted?: () => void;
   ignoreIncomingReplies?: boolean;
 };
 
+const THREAD_REPLIES_PAGE_SIZE = 50;
+
+function replySentAtIso(r: IReply): string {
+  return typeof r.sentAt === "string" ? r.sentAt : (r.sentAt as Date).toISOString();
+}
+
+function sortRepliesAsc(list: IReply[]): IReply[] {
+  return [...list].sort((a, b) => {
+    const t = new Date(replySentAtIso(a)).getTime() - new Date(replySentAtIso(b)).getTime();
+    if (t !== 0) return t;
+    return a.id - b.id;
+  });
+}
+
 export function useMessageThread(message: Ref<IMessage>, options: UseMessageThreadOptions = {}) {
   const replies = ref<IReply[]>([]);
   const isLoadingReplies = ref(false);
+  const hasMoreOlderReplies = ref(false);
+  const loadingOlderReplies = ref(false);
 
   const { user: me } = useAuth();
 
@@ -52,6 +68,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   });
 
   async function onIncomingReply({ reply, messageId }: { reply: IReply; messageId: number }) {
+    if (options.ignoreIncomingReplies) return;
     if (messageId === message.value?.id) {
       addReply(reply);
 
@@ -97,11 +114,41 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     }
   }
 
+  async function resetAndLoadLatestReplies() {
+    if (!message.value?.id) return;
+    replies.value = [];
+    hasMoreOlderReplies.value = false;
+    const page = await channelApi.findReplies(message.value.id, {
+      limit: THREAD_REPLIES_PAGE_SIZE,
+    });
+    replies.value = page.content;
+    hasMoreOlderReplies.value = page.hasNext;
+  }
+
+  async function loadOlderRepliesPage() {
+    if (!message.value?.id || !hasMoreOlderReplies.value || loadingOlderReplies.value) return;
+    const oldest = replies.value[0];
+    if (!oldest) return;
+    loadingOlderReplies.value = true;
+    try {
+      const page = await channelApi.findReplies(message.value.id, {
+        limit: THREAD_REPLIES_PAGE_SIZE,
+        beforeSentAt: replySentAtIso(oldest),
+        beforeId: oldest.id,
+      });
+      const existing = new Set(replies.value.map((r) => r.id));
+      replies.value = [...page.content.filter((r) => !existing.has(r.id)), ...replies.value];
+      hasMoreOlderReplies.value = page.hasNext;
+    } finally {
+      loadingOlderReplies.value = false;
+    }
+  }
+
   async function fetchReplies() {
     if (isLoadingReplies.value) return;
     isLoadingReplies.value = true;
     try {
-      replies.value = await channelApi.findReplies(message.value?.id);
+      await resetAndLoadLatestReplies();
     } catch (error) {
       console.error("Failed to fetch replies:", error);
     } finally {
@@ -157,7 +204,9 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   }
 
   function addReply(reply: IReply) {
-    replies.value.push(reply);
+    const next = replies.value.filter((r) => r.id !== reply.id);
+    next.push(reply);
+    replies.value = sortRepliesAsc(next);
     message.value.repliesCount++;
     if (
       !message.value.repliers.some(
@@ -186,7 +235,10 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   return {
     replies,
     isLoadingReplies,
+    hasMoreOlderReplies,
+    loadingOlderReplies,
     fetchReplies,
+    loadOlderRepliesPage,
     sendReply,
     deleteReply,
     toggleReaction,
