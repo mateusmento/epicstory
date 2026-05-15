@@ -11,20 +11,27 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import {
-  ChannelRepository,
-  MessageRepository,
-} from 'src/channel/infrastructure';
+import { ChannelRepository } from 'src/channel/infrastructure';
 import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
-import { MessageService } from '../services/message.service';
+import type { IChannelActivityClient } from '../dtos/channel-activity-client.dto';
+import { ChannelActivityService } from '../services/channel-activity.service';
+import {
+  MessageService,
+  type IMessagePayload,
+} from '../services/message.service';
 import { dispatchNotificationsForMessageSent } from '../utils/dispatch-message-notifications';
 import { Transactional } from 'typeorm-transactional';
 import { MessagePollBody } from '../dtos/message-poll.dto';
+
+export type SendMessageResult = {
+  message: IMessagePayload;
+  activity: IChannelActivityClient;
+};
 
 export class SendMessage {
   channelId: number;
@@ -67,8 +74,8 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
   constructor(
     private workspaceRepo: WorkspaceRepository,
     private channelRepo: ChannelRepository,
-    private messageRepo: MessageRepository,
     private messageService: MessageService,
+    private channelActivityService: ChannelActivityService,
     private commandBus: CommandBus,
     private attachmentService: AttachmentService,
   ) {}
@@ -82,7 +89,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     markAsScheduled,
     attachmentIds,
     poll,
-  }: SendMessage) {
+  }: SendMessage): Promise<SendMessageResult> {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },
@@ -132,6 +139,16 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       senderId,
     );
 
-    return message;
+    const activity = await this.channelActivityService.publishMessageSent({
+      channelId: channel.id,
+      senderId,
+      messageId: message.id,
+      websocket:
+        markAsScheduled === true
+          ? { includeIssuer: true }
+          : { excludeUserId: senderId },
+    });
+
+    return { message, activity };
   }
 }

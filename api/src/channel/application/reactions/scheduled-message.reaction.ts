@@ -7,14 +7,10 @@ import {
   ScheduledJobWithPayload,
 } from 'src/scheduling/types/payload';
 import { SendMessage } from '../features/send-message.command';
-import { MessageGateway } from '../gateways/message.gateway';
 
 @Injectable()
 export class ScheduledMessageReaction {
-  constructor(
-    private commandBus: CommandBus,
-    private messageGateway: MessageGateway,
-  ) {}
+  constructor(private commandBus: CommandBus) {}
 
   @OnEvent(`scheduled-job.${ScheduledJobTypes.scheduled_message}`, {
     async: true,
@@ -24,7 +20,7 @@ export class ScheduledMessageReaction {
     if (p.type !== 'scheduled_message') return;
 
     /** Attachment linking is intentionally omitted for scheduled delivery (staging TTL). */
-    const message = await this.commandBus.execute(
+    await this.commandBus.execute(
       new SendMessage({
         channelId: p.channelId,
         senderId: p.senderId,
@@ -34,7 +30,5 @@ export class ScheduledMessageReaction {
         ...(p.poll != null ? { poll: p.poll } : {}),
       }),
     );
-
-    this.messageGateway.emitIncomingMessage(message, { includeSender: true });
   }
 }

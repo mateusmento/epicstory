@@ -11,7 +11,7 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const { user } = useAuth();
 const { workspace } = useWorkspace();
-const { channel, messageGroups, sendMessage, sendScheduledMessage, deleteMessage, updateMessage } =
+const { channel, chatTimeline, sendMessage, sendScheduledMessage, deleteMessage, updateMessage } =
   useSyncedChannel();
 const { currentMeeting, joinChannelMeeting } = useMeeting();
 
@@ -55,7 +55,7 @@ function onMessageDeleted(messageId: number) {
       class="flex-1"
       :chat-title="channel.name"
       :chat-picture="picture"
-      :message-groups="messageGroups"
+      :chat-timeline="chatTimeline"
       :me-id="user.id"
       :channel-id="channel.id"
       :send-message="sendMessage"

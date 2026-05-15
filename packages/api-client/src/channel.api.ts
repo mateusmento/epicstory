@@ -15,6 +15,7 @@ import type {
   IUser,
   MessagePollBody,
   Page,
+  SendChannelMessageResponse,
   ToggleReactionResponse,
   UpdateChannelMessageBody,
   UpdateScheduledMessageBody,
@@ -150,7 +151,7 @@ export class ChannelApi {
     poll?: MessagePollBody,
   ) {
     return this.axios
-      .post<IMessage>(`channels/${channelId}/messages`, {
+      .post<SendChannelMessageResponse>(`channels/${channelId}/messages`, {
         content,
         ...(quotedMessageId != null ? { quotedMessageId } : {}),
         ...(attachmentIds != null && attachmentIds.length > 0
@@ -204,11 +205,14 @@ export class ChannelApi {
     content: JSONContent,
   ) {
     return this.axios
-      .post<IMessage>(`workspaces/${workspaceId}/channels/direct/message`, {
-        senderId,
-        peers,
-        content,
-      })
+      .post<SendChannelMessageResponse>(
+        `workspaces/${workspaceId}/channels/direct/message`,
+        {
+          senderId,
+          peers,
+          content,
+        },
+      )
       .then((res) => res.data);
   }
 

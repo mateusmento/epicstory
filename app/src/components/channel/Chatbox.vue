@@ -19,17 +19,19 @@ import { useDependency } from "@/core/dependency-injection";
 import { ChannelApi } from "@epicstory/api-client";
 import type { IChannel, IMessage, MessagePollBody } from "@epicstory/contracts";
 import type { CreateScheduledMessageBody as ICreateScheduledMessageBody } from "@epicstory/contracts";
-import type { IMessageGroup } from "@/domain/channels";
+import type { ChatTimelineItem } from "@/domain/channels/utils/build-chat-timeline";
+import { chatTimelineRowCount } from "@/domain/channels/utils/build-chat-timeline";
 import Message from "./Message.vue";
 import MessageGroup from "./MessageGroup.vue";
 import type { JSONContent } from "@tiptap/core";
 import { enumerateNames } from "@/utils";
+import ChannelActivityRow from "./ChannelActivityRow.vue";
 
 const props = defineProps<{
   meId: number;
   chatTitle?: string;
   chatPicture?: string;
-  messageGroups: IMessageGroup[];
+  chatTimeline: ChatTimelineItem[];
   sendMessage: (message: {
     content: JSONContent;
     quotedMessageId?: number;
@@ -58,7 +60,11 @@ const editingMessage = ref<IMessage | null>(null);
 
 /** Clear reply-to when that message is removed (local delete, websocket, or channel switch). */
 const channelMessageIds = computed(() => {
-  return new Set(props.messageGroups.flatMap((mg) => mg.messages).map((m) => m.id));
+  return new Set(
+    props.chatTimeline.flatMap((item) =>
+      item.kind === "messages" ? item.group.messages.map((m) => m.id) : [],
+    ),
+  );
 });
 
 watch([channelMessageIds, quotedMessage], ([ids, q]) => {
@@ -98,11 +104,6 @@ const typingBannerText = computed(() => {
   return "";
 });
 
-function totalMessages(groups: IMessageGroup[]) {
-  return groups.reduce((n, g) => n + g.messages.length, 0);
-}
-
-/** Tracks list size so we only scroll on append/load, not on in-place edits (height-only changes). */
 const prevMessageTotal = ref(-1);
 
 watch(
@@ -113,19 +114,19 @@ watch(
 );
 
 watch(
-  () => totalMessages(props.messageGroups),
-  (totalMessages) => {
+  () => chatTimelineRowCount(props.chatTimeline),
+  (totalRows) => {
     const prev = prevMessageTotal.value;
     if (prev < 0) {
-      prevMessageTotal.value = totalMessages;
-      if (totalMessages > 0) nextTick(() => scrollAreaRef.value?.scrollToBottom());
+      prevMessageTotal.value = totalRows;
+      if (totalRows > 0) nextTick(() => scrollAreaRef.value?.scrollToBottom());
       return;
     }
-    if (totalMessages > prev) {
-      prevMessageTotal.value = totalMessages;
+    if (totalRows > prev) {
+      prevMessageTotal.value = totalRows;
       nextTick(() => scrollAreaRef.value?.scrollToBottom());
     } else {
-      prevMessageTotal.value = totalMessages;
+      prevMessageTotal.value = totalRows;
     }
   },
 );
@@ -293,23 +294,34 @@ defineExpose({
             </div>
           </div>
 
-          <MessageGroup
-            v-for="group of messageGroups"
-            :key="group.id"
-            :sender="group.sender"
-            :meId="meId"
-            :sentAt="group.sentAt"
+          <template
+            v-for="item of chatTimeline"
+            :key="item.kind === 'messages' ? `g-${item.group.id}` : `a-${item.activity.id}`"
           >
-            <Message
-              v-for="message of group.messages"
-              :key="message.id"
-              :message
-              :meId
-              @message-deleted="onMessageDeleted"
-              @quote="onQuote"
-              @start-edit="onStartEdit"
+            <MessageGroup
+              v-if="item.kind === 'messages'"
+              :sender="item.group.sender"
+              :meId="meId"
+              :sentAt="item.group.sentAt"
+            >
+              <Message
+                v-for="message of item.group.messages"
+                :key="message.id"
+                :message
+                :meId
+                @message-deleted="onMessageDeleted"
+                @quote="onQuote"
+                @start-edit="onStartEdit"
+              />
+            </MessageGroup>
+            <ChannelActivityRow
+              v-else
+              :activity="item.activity"
+              :channel-display-name="channel.name"
+              :me-id="meId"
+              @join-meeting="emit('join-meeting')"
             />
-          </MessageGroup>
+          </template>
         </div>
       </ScrollArea>
 

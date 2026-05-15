@@ -41,6 +41,8 @@ export const Default: Story = {
       id: 1,
       name: "Channel 1",
       type: "direct",
+      workspaceId: 1,
+      createdAt: new Date(),
       directPeer: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
       unreadMessagesCount: 0,
       meeting: null,
@@ -48,7 +50,7 @@ export const Default: Story = {
     },
     chatTitle: "Daiana",
     chatPicture: daianaPhoto,
-    messageGroups: messageGroups.value,
+    chatTimeline: messageGroups.value.map((g) => ({ kind: "messages" as const, group: g })),
     updateMessage: async () => {},
     sendMessage: async (message) => {
       messageGroup.value.messages.push({
@@ -67,6 +69,8 @@ export const Default: Story = {
           id: 1,
           name: "Channel 1",
           type: "direct",
+          workspaceId: 1,
+          createdAt: new Date(),
           directPeer: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
           unreadMessagesCount: 0,
           meeting: null,

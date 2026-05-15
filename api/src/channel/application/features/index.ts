@@ -7,6 +7,7 @@ export * from './delete-channel.command';
 export * from './delete-message.command';
 export * from './delete-reply.command';
 export * from './find-channel-members.query';
+export * from './find-channel-activities.query';
 export * from './find-channel.query';
 export * from './find-channels.query';
 export * from './find-channel-groups.query';

@@ -57,13 +57,12 @@ export type ChannelType =
 export type IChannel = {
   id: number;
   type: ChannelType;
-  name?: string;
+  name: string;
   image?: string;
-  workspaceId?: number;
+  workspaceId: number;
   teamId?: number;
-  createdAt?: Date;
-  /** Present for direct channels when the payload is enriched for the viewer. */
-  directPeer?: IUser;
+  createdAt: Date;
+  directPeer?: IUser /** direct channels */;
   lastMessage?: IMessage;
   unreadMessagesCount: number;
   meeting: IMeeting | null;

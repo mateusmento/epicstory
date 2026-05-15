@@ -4,6 +4,7 @@ import { IsNumber } from 'class-validator';
 import { UserRepository } from 'src/auth';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
+import { ChannelActivityService } from '../services/channel-activity.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 export class AddChannelMember {
@@ -25,6 +26,7 @@ export class AddChannelMemberCommand
     private channelRepo: ChannelRepository,
     private userRepo: UserRepository,
     private workspaceRepo: WorkspaceRepository,
+    private channelActivityService: ChannelActivityService,
   ) {}
 
   async execute({ channelId, userId, issuerId }: AddChannelMember) {
@@ -45,6 +47,14 @@ export class AddChannelMemberCommand
 
     channel.peers.push(member.user);
 
-    return this.channelRepo.save(channel);
+    const saved = await this.channelRepo.save(channel);
+
+    await this.channelActivityService.publishUserAdded({
+      channelId,
+      actorId: issuerId,
+      subjectUserId: userId,
+    });
+
+    return saved;
   }
 }

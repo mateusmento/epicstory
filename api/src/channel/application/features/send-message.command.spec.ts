@@ -2,7 +2,12 @@ import { CommandBus } from '@nestjs/cqrs';
 import { TestingModule } from '@nestjs/testing';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { User } from 'src/auth';
-import { Channel, Message, MessageReaction } from 'src/channel/domain';
+import {
+  Channel,
+  ChannelActivity,
+  Message,
+  MessageReaction,
+} from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import {
   createTestingModule,
@@ -39,6 +44,7 @@ describe('SendMessageCommand', () => {
 
   afterEach(async () => {
     await truncateTables(dataSource, [
+      ChannelActivity,
       MessageReaction,
       Message,
       Channel,
@@ -160,7 +166,7 @@ describe('SendMessageCommand', () => {
 
     const [user1, user2, user3, user4] = users;
 
-    const result = await commandBus.execute(
+    const { message: result } = await commandBus.execute(
       new SendDirectMessage({
         workspaceId: workspace.id,
         senderId: user1.id,
@@ -189,7 +195,7 @@ describe('SendMessageCommand', () => {
       expect.arrayContaining([user1.id, user2.id, user3.id]),
     );
 
-    const result2 = await commandBus.execute(
+    const { message: result2Message } = await commandBus.execute(
       new SendDirectMessage({
         workspaceId: workspace.id,
         senderId: user1.id,
@@ -207,7 +213,7 @@ describe('SendMessageCommand', () => {
     );
 
     const created2 = await dataSource.getRepository(Channel).findOne({
-      where: { id: result2.channelId },
+      where: { id: result2Message.channelId },
       relations: { peers: true },
     });
     expect(created2).toBeTruthy();

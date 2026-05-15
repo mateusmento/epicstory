@@ -1,3 +1,4 @@
+export * from './channel-activity.repository';
 export * from './channel.repository';
 export * from './meeting-attendee.repository';
 export * from './meeting.repository';

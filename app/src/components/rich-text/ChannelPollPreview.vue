@@ -42,9 +42,13 @@ async function onPick(optionId: string) {
   try {
     const res = await channelApi.voteMessagePoll(props.messageId, optionId);
     const poll = res.poll;
-    const i = channelStore.messages.findIndex((m) => m.id === props.messageId);
+    const acts = [...channelStore.activities];
+    const i = acts.findIndex((a) => a.type === "message_sent" && a.messageId === props.messageId);
     if (i >= 0) {
-      channelStore.messages[i] = { ...channelStore.messages[i], poll };
+      const act = acts[i];
+      const msg = act.message!;
+      acts[i] = { ...act, message: { ...msg, poll } };
+      channelStore.activities = acts;
     }
   } finally {
     votingOptionId.value = null;

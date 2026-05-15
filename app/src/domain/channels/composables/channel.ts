@@ -5,9 +5,12 @@ import { ChannelApi } from "@epicstory/api-client";
 import type {
   CreateScheduledMessageBody,
   IChannel,
+  IChannelActivity,
+  IChannelActivityMeetingSummary,
   IMessage,
   IReply,
   IUser,
+  IMeeting,
   MessagePollBody,
 } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
@@ -16,6 +19,7 @@ import { defineStore, storeToRefs } from "pinia";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { IMessageGroup } from "../types/message.type";
+import { buildChatTimeline } from "../utils/build-chat-timeline";
 import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
 
@@ -23,11 +27,26 @@ import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
 const typingActivity = ref(new Map<number, number>());
 let typingPruneTimer: ReturnType<typeof setInterval> | null = null;
 
+function meetingSummaryFromLive(m: IMeeting): IChannelActivityMeetingSummary {
+  const started = m.startedAt;
+  const attendeeNames =
+    m.attendees
+      ?.map((a) => a.user?.name)
+      .filter((n): n is string => typeof n === "string" && n.trim() !== "") ?? [];
+  return {
+    id: m.id,
+    channelId: m.channelId ?? null,
+    ongoing: m.ongoing,
+    startedAt: started instanceof Date ? started.toISOString() : started ? String(started) : null,
+    ...(attendeeNames.length > 0 ? { attendeeNames } : {}),
+  };
+}
+
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
-  const messages = ref<IMessage[]>([]);
+  const activities = ref<IChannelActivity[]>([]);
   const members = ref<IUser[]>([]);
-  return { channel, messages, members };
+  return { channel, activities, members };
 });
 
 export function useChannel() {
@@ -37,7 +56,7 @@ export function useChannel() {
   const { workspace } = useWorkspace();
   const meetingSocket = useMeetingSocket();
 
-  const messageGroups = computed(() => groupMessages(store.messages));
+  const chatTimeline = computed(() => buildChatTimeline(store.activities));
 
   const router = useRouter();
 
@@ -49,28 +68,50 @@ export function useChannel() {
     store.channel = await channelApi.findChannel(channelId);
   }
 
-  async function fetchMessages() {
-    if (!store.channel) return [];
-    store.messages = await channelApi.findMessages(store.channel?.id);
+  function insertActivity(activity: IChannelActivity) {
+    const next = store.activities.filter((a) => a.id !== activity.id);
+    next.push(activity);
+    next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    store.activities = next;
   }
 
-  function onReceiveMessage({ message, channelId }: any) {
+  async function fetchChannelActivities() {
+    if (!store.channel) return [];
+    store.activities = await channelApi.findChannelActivities(store.channel.id);
+    return store.activities;
+  }
+
+  function onReceiveChannelActivity({
+    activity,
+    channelId,
+  }: {
+    activity: IChannelActivity;
+    channelId: number;
+  }) {
     if (store.channel && store.channel.id === channelId) {
-      addMessage({ ...message, replies: [] });
+      insertActivity(activity);
+      if (activity.type === "message_sent" && activity.message) {
+        store.channel.lastMessage = activity.message;
+      }
     }
   }
 
-  function onMessageDeleted({ messageId, channelId }: any) {
+  function onMessageDeleted({ messageId, channelId }: { messageId: number; channelId: number }) {
     if (store.channel && store.channel.id === channelId) {
-      store.messages = store.messages.filter((message) => message.id !== messageId);
+      store.activities = store.activities.filter(
+        (a) => !(a.type === "message_sent" && a.messageId === messageId),
+      );
     }
   }
 
   function onMessageUpdated({ message, channelId }: { message: IMessage; channelId: number }) {
     if (store.channel && store.channel.id === channelId) {
-      const i = store.messages.findIndex((m) => m.id === message.id);
+      const i = store.activities.findIndex((a) => a.type === "message_sent" && a.messageId === message.id);
       if (i >= 0) {
-        store.messages[i] = { ...store.messages[i], ...message };
+        const prev = store.activities[i];
+        const next = [...store.activities];
+        next[i] = { ...prev, message: { ...prev.message!, ...message } };
+        store.activities = next;
       }
     }
   }
@@ -102,19 +143,28 @@ export function useChannel() {
     totalVotes: number;
   }) {
     if (!store.channel || store.channel.id !== payload.channelId) return;
-    const i = store.messages.findIndex((m) => m.id === payload.messageId);
+    const i = store.activities.findIndex(
+      (a) => a.type === "message_sent" && a.messageId === payload.messageId,
+    );
     if (i < 0) return;
-    const prev = store.messages[i].poll;
-    store.messages[i] = {
-      ...store.messages[i],
-      poll: prev
-        ? {
-            ...prev,
-            optionVotes: payload.optionVotes,
-            totalVotes: payload.totalVotes,
-          }
-        : undefined,
+    const msg = store.activities[i].message;
+    if (!msg) return;
+    const prevPoll = msg.poll;
+    const next = [...store.activities];
+    next[i] = {
+      ...store.activities[i],
+      message: {
+        ...msg,
+        poll: prevPoll
+          ? {
+              ...prevPoll,
+              optionVotes: payload.optionVotes,
+              totalVotes: payload.totalVotes,
+            }
+          : undefined,
+      },
     };
+    store.activities = next;
   }
 
   function joinChannel() {
@@ -122,8 +172,8 @@ export function useChannel() {
       workspaceId: workspace.value.id,
     });
 
-    sockets.websocket.off("incoming-message", onReceiveMessage);
-    sockets.websocket?.on("incoming-message", onReceiveMessage);
+    sockets.websocket.off("incoming-channel-activity", onReceiveChannelActivity);
+    sockets.websocket?.on("incoming-channel-activity", onReceiveChannelActivity);
 
     sockets.websocket.off("message-deleted", onMessageDeleted);
     sockets.websocket?.on("message-deleted", onMessageDeleted);
@@ -148,7 +198,7 @@ export function useChannel() {
   }
 
   function leaveChannel() {
-    sockets.websocket.off("incoming-message", onReceiveMessage);
+    sockets.websocket.off("incoming-channel-activity", onReceiveChannelActivity);
     sockets.websocket.off("message-deleted", onMessageDeleted);
     sockets.websocket.off("message-updated", onMessageUpdated);
     sockets.websocket.off("message-poll-updated", onMessagePollUpdated);
@@ -174,11 +224,17 @@ export function useChannel() {
   function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
     if (channelId && store.channel?.id === channelId) {
       store.channel.meeting = meeting;
+      store.activities = store.activities.map((a) =>
+        a.meetingId === meeting.id ? { ...a, meeting: meetingSummaryFromLive(meeting) } : a,
+      );
     }
   }
 
   function onMeetingEnded({ meetingId }: MeetingEndedPayload) {
     if (store.channel?.meeting?.id === meetingId) store.channel.meeting = null;
+    store.activities = store.activities.map((a) =>
+      a.meetingId === meetingId && a.meeting ? { ...a, meeting: { ...a.meeting, ongoing: false } } : a,
+    );
   }
 
   function subscribeMeetings() {
@@ -208,14 +264,15 @@ export function useChannel() {
     poll?: MessagePollBody;
   }) {
     if (!store.channel) return;
-    const message = await channelApi.sendMessage(
+    const { message, activity } = await channelApi.sendMessage(
       store.channel.id,
       content,
       quotedMessageId,
       attachmentIds,
       poll,
     );
-    addMessage(message);
+    insertActivity(activity);
+    if (store.channel) store.channel.lastMessage = message;
     return message;
   }
 
@@ -226,11 +283,6 @@ export function useChannel() {
 
   function sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: JSONContent) {
     return channelApi.sendDirectMessage(workspaceId, senderId, peers, content);
-  }
-
-  function addMessage(message: IMessage) {
-    store.messages.push(message);
-    if (store.channel) store.channel.lastMessage = message;
   }
 
   async function fetchMembers() {
@@ -253,7 +305,9 @@ export function useChannel() {
   async function deleteMessage(messageId: number) {
     if (!store.channel) return;
     await channelApi.deleteMessage(messageId);
-    store.messages = store.messages.filter((message) => message.id !== messageId);
+    store.activities = store.activities.filter(
+      (a) => !(a.type === "message_sent" && a.messageId === messageId),
+    );
   }
 
   async function updateMessage(
@@ -265,18 +319,23 @@ export function useChannel() {
     },
   ) {
     const updated = await channelApi.updateMessage(messageId, body);
-    const i = store.messages.findIndex((m) => m.id === messageId);
-    if (i >= 0) store.messages[i] = { ...store.messages[i], ...updated };
+    const i = store.activities.findIndex((a) => a.type === "message_sent" && a.messageId === messageId);
+    if (i >= 0) {
+      const prev = store.activities[i];
+      const next = [...store.activities];
+      next[i] = { ...prev, message: { ...prev.message!, ...updated } };
+      store.activities = next;
+    }
     return updated;
   }
 
   return {
     ...storeToRefs(store),
-    messageGroups,
+    chatTimeline,
     typingUserIds,
     openChannel,
     fetchChannel,
-    fetchMessages,
+    fetchChannelActivities,
     joinChannel,
     leaveChannel,
     subscribeMeetings,
@@ -313,9 +372,9 @@ export function groupMessages<M extends IMessage | IReply>(messages: M[]) {
 export function useSyncedChannel() {
   const context = useChannel();
   const {
-    messages,
+    activities,
     fetchChannel,
-    fetchMessages,
+    fetchChannelActivities,
     fetchMembers,
     joinChannel,
     leaveChannel,
@@ -327,10 +386,10 @@ export function useSyncedChannel() {
   const channelId = computed(() => +route.params.channelId);
 
   onMounted(async () => {
-    messages.value = [];
+    activities.value = [];
     await fetchChannel(channelId.value);
     joinChannel();
-    fetchMessages();
+    fetchChannelActivities();
     fetchMembers();
     subscribeMeetings();
   });
@@ -341,10 +400,10 @@ export function useSyncedChannel() {
   });
 
   watch(channelId, async (id) => {
-    messages.value = [];
+    activities.value = [];
     await fetchChannel(id);
     joinChannel();
-    fetchMessages();
+    fetchChannelActivities();
     fetchMembers();
   });
 

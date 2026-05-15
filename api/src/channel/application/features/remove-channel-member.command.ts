@@ -3,6 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { ChannelActivityService } from '../services/channel-activity.service';
 import { enrichChannelForPreview } from '../utils/enrich-channel';
 
 export class RemoveChannelMember {
@@ -22,6 +23,7 @@ export class RemoveChannelMemberCommand
   constructor(
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
+    private channelActivityService: ChannelActivityService,
   ) {}
 
   async execute({ channelId, userId, issuerId }: RemoveChannelMember) {
@@ -38,6 +40,13 @@ export class RemoveChannelMemberCommand
     channel.peers = channel.peers.filter((u) => u.id !== userId);
 
     channel = await this.channelRepo.save(channel);
+
+    await this.channelActivityService.publishUserRemoved({
+      channelId,
+      actorId: issuerId,
+      subjectUserId: userId,
+    });
+
     return enrichChannelForPreview(channel, issuerId);
   }
 }

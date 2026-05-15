@@ -5,6 +5,7 @@ import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import { ChannelActivityService } from '../services/channel-activity.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 export class RenameChannel {
@@ -26,6 +27,7 @@ export class RenameChannelCommand implements ICommandHandler<RenameChannel> {
   constructor(
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
+    private channelActivityService: ChannelActivityService,
   ) {}
 
   async execute({
@@ -52,7 +54,17 @@ export class RenameChannelCommand implements ICommandHandler<RenameChannel> {
       throw new BadRequestException('Direct channels can not be renamed');
     }
 
+    const previousName = channel.name;
     channel.name = name.trim();
-    return await this.channelRepo.save(channel);
+    const saved = await this.channelRepo.save(channel);
+
+    await this.channelActivityService.publishChannelRenamed({
+      channelId,
+      actorId: issuerId,
+      previousName,
+      newName: saved.name,
+    });
+
+    return saved;
   }
 }

@@ -35,3 +35,8 @@ export type IChannelActivity = {
   subjectUser?: ChannelActivityUserSummary | null;
   message?: IMessage | null;
 };
+
+export type SendChannelMessageResponse = {
+  message: IMessage;
+  activity: IChannelActivity;
+};

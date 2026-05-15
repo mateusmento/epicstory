@@ -23,6 +23,7 @@ import { CreateGroupChannel } from '../features/create-group-channel.command';
 import { CreateMeetingChannel } from '../features/create-meeting-channel.command';
 import { FindChannelMembers } from '../features/find-channel-members.query';
 import { FindChannel } from '../features/find-channel.query';
+import { FindChannelActivities } from '../features/find-channel-activities.query';
 import { FindChannels } from '../features/find-channels.query';
 import { FindChannelGroups } from '../features/find-channel-groups.query';
 import { SearchChannelsAndUsers } from '../features/search-channels-and-users.query';
@@ -138,6 +139,25 @@ export class ChannelController {
     private commandBus: CommandBus,
   ) {}
 
+  @Get(':id/activities')
+  @UseGuards(JwtAuthGuard)
+  findChannelActivities(
+    @Param('id') channelId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.queryBus.execute(
+      new FindChannelActivities({ channelId, issuerId: issuer.id }),
+    );
+  }
+
+  @Get(':id/members')
+  @UseGuards(JwtAuthGuard)
+  findMembers(@Param('id') channelId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(
+      new FindChannelMembers({ channelId, issuerId: issuer.id }),
+    );
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   findChannel(@Param('id') channelId: number, @Auth() issuer: Issuer) {
@@ -163,14 +183,6 @@ export class ChannelController {
   deleteChannel(@Param('id') channelId: number, @Auth() issuer: Issuer) {
     return this.commandBus.execute(
       new DeleteChannel({ channelId, issuerId: issuer.id }),
-    );
-  }
-
-  @Get(':id/members')
-  @UseGuards(JwtAuthGuard)
-  findMembers(@Param('id') channelId: number, @Auth() issuer: Issuer) {
-    return this.queryBus.execute(
-      new FindChannelMembers({ channelId, issuerId: issuer.id }),
     );
   }
 

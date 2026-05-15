@@ -12,6 +12,7 @@ import type {
   CreateGroupChannel,
   CreateMeetingChannel,
   IChannel,
+  IChannelActivity,
 } from "@epicstory/contracts";
 import { assign } from "lodash";
 import { useMeetingSocket } from "./meeting-socket";
@@ -40,8 +41,16 @@ export function useChannels() {
 
   const channelApi = useDependency(ChannelApi);
 
-  function onReceiveMessage({ message, channelId }: any) {
-    store.updateChannel(channelId, { lastMessage: message });
+  function onReceiveChannelActivity({
+    activity,
+    channelId,
+  }: {
+    activity: IChannelActivity;
+    channelId: number;
+  }) {
+    if (activity.type === "message_sent" && activity.message) {
+      store.updateChannel(channelId, { lastMessage: activity.message });
+    }
   }
 
   function subscribeMessages() {
@@ -49,12 +58,12 @@ export function useChannels() {
       workspaceId: workspace.value.id,
     });
 
-    sockets.websocket.off("incoming-message", onReceiveMessage);
-    sockets.websocket?.on("incoming-message", onReceiveMessage);
+    sockets.websocket.off("incoming-channel-activity", onReceiveChannelActivity);
+    sockets.websocket?.on("incoming-channel-activity", onReceiveChannelActivity);
   }
 
   function unsubscribeMessages() {
-    sockets.websocket.off("incoming-message", onReceiveMessage);
+    sockets.websocket.off("incoming-channel-activity", onReceiveChannelActivity);
   }
 
   function onIncomingMeeting({ meeting, channelId }: any) {

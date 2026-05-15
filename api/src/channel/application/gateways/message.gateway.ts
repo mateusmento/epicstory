@@ -9,6 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { Message } from 'src/channel/domain';
 import { MessageReply } from 'src/channel/domain/entities';
 import { ChannelRepository } from 'src/channel/infrastructure';
+import type { IChannelActivityClient } from '../dtos/channel-activity-client.dto';
 import { MessageService } from '../services/message.service';
 import { ReplyService } from '../services/reply.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -40,6 +41,24 @@ export class MessageGateway {
       ? room
       : room.except(userRoom(message.senderId));
     target.emit('incoming-message', { message, channelId: message.channelId });
+  }
+
+  emitIncomingChannelActivity(
+    activity: IChannelActivityClient,
+    options?: { excludeUserId?: number; includeIssuer?: boolean },
+  ) {
+    if (!this.server) return;
+    const room = this.server.to(channelMessagingRoom(activity.channelId));
+    const target =
+      options?.includeIssuer === true
+        ? room
+        : options?.excludeUserId != null
+          ? room.except(userRoom(options.excludeUserId))
+          : room;
+    target.emit('incoming-channel-activity', {
+      activity,
+      channelId: activity.channelId,
+    });
   }
 
   emitIncomingReply(reply: MessageReply) {

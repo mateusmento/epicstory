@@ -17,6 +17,7 @@ import {
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound } from '../../exceptions';
+import { ChannelActivityService } from '../../services/channel-activity.service';
 import type { MeetingGateway } from '../../gateways';
 
 export class CreateMeeting {
@@ -58,6 +59,7 @@ export class CreateMeetingHandler implements ICommandHandler<CreateMeeting> {
     private meetingRepo: MeetingRepository,
     private channelRepo: ChannelRepository,
     @Inject('MeetingGateway') private meetingGateway: MeetingGateway,
+    private channelActivityService: ChannelActivityService,
   ) {}
 
   async execute({
@@ -87,6 +89,13 @@ export class CreateMeetingHandler implements ICommandHandler<CreateMeeting> {
 
     if (meeting.ongoing)
       this.meetingGateway.emitIncomingMeeting(meeting, issuerId);
+
+    if (meeting.ongoing && meeting.channelId) {
+      await this.channelActivityService.publishMeetingStarted({
+        meetingId: meeting.id,
+        actorId: issuerId,
+      });
+    }
 
     meeting = await this.meetingRepo.findOne({
       where: { id: meeting.id },

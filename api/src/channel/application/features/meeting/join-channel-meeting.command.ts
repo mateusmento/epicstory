@@ -11,6 +11,7 @@ import { Transactional } from 'typeorm-transactional';
 import { ChannelNotFound, IssuerIsNotChannelMember } from '../../exceptions';
 import { Inject } from '@nestjs/common';
 import type { MeetingGateway } from '../../gateways';
+import { ChannelActivityService } from '../../services/channel-activity.service';
 
 export class JoinChannelMeeting {
   issuerId: number;
@@ -38,6 +39,7 @@ export class JoinChannelMeetingHandler
     private workspaceRepo: WorkspaceRepository,
     private channelRepo: ChannelRepository,
     @Inject('MeetingGateway') private meetingGateway: MeetingGateway,
+    private channelActivityService: ChannelActivityService,
   ) {}
 
   @Transactional()
@@ -63,9 +65,12 @@ export class JoinChannelMeetingHandler
       { attendees: { user: true } },
     );
 
+    let createdNewMeeting = false;
+
     if (!meeting) {
       meeting = Meeting.ongoing(channelId, workspaceId);
       meeting = await this.meetingRepo.save(meeting);
+      createdNewMeeting = true;
       // Meeting channels are persistent (always ongoing) so we don't treat creation as an "incoming call".
       if (channel.type !== 'meeting') {
         this.meetingGateway.emitIncomingMeeting(meeting, issuerId);
@@ -82,6 +87,13 @@ export class JoinChannelMeetingHandler
     meeting.addAttendee(attendee);
 
     meeting = await this.meetingRepo.save(meeting);
+
+    if (createdNewMeeting && meeting.channelId) {
+      await this.channelActivityService.publishMeetingStarted({
+        meetingId: meeting.id,
+        actorId: issuerId,
+      });
+    }
 
     this.meetingGateway.emitAttendeeJoined(meeting, attendee);
 

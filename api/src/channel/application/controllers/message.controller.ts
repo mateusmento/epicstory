@@ -42,7 +42,7 @@ export class ChannelMessageController {
     @Body() command: SendMessage,
     @Auth() issuer: Issuer,
   ) {
-    const message = await this.commandBus.execute(
+    return this.commandBus.execute(
       new SendMessage({
         channelId,
         senderId: issuer.id,
@@ -52,10 +52,6 @@ export class ChannelMessageController {
         poll: command.poll,
       }),
     );
-
-    this.messageGateway.emitIncomingMessage(message);
-
-    return message;
   }
 }
 
