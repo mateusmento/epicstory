@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Button } from "@/design-system";
 import { cn } from "@/design-system/utils";
-import type { MeetingParticipant } from "@/domain/channels";
+import type { MeetingParticipant } from "@/domain/meetings";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import MeetingTile from "./MeetingTile.vue";

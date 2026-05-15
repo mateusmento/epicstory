@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import ChannelDeleteDialog from "./ChannelDeleteDialog.vue";
 import ChannelRenameDialog from "./ChannelRenameDialog.vue";
-import { useChannelActions, useMeeting } from "@/domain/channels";
+import { useChannelActions } from "@/domain/channels";
+import { useMeeting } from "@/domain/meetings";
 import type { IChannel } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
 import { provide, ref } from "vue";

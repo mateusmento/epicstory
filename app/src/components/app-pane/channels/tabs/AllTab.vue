@@ -4,14 +4,13 @@ import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/des
 import { cn } from "@/design-system/utils";
 import { useDependency } from "@/core/dependency-injection";
 import type { Page } from "@/core/types";
+import { useChannel, useWorkspaceOnline } from "@/domain/channels";
 import {
-  useChannel,
   useMeeting,
   useMeetingSocket,
-  useWorkspaceOnline,
   type IncomingMeetingPayload,
   type MeetingEndedPayload,
-} from "@/domain/channels";
+} from "@/domain/meetings";
 import { ChannelApi } from "@epicstory/api-client";
 import type { IChannel } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";

@@ -4,7 +4,7 @@ import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { CalendarEventApi } from "@epicstory/api-client";
-import { useMeeting, useMeetingMediaDevicesStore } from "@/domain/channels";
+import { useMeeting, useMeetingMediaDevicesStore } from "@/domain/meetings";
 import MeetingDeviceMenu from "@/components/meeting/MeetingDeviceMenu.vue";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";

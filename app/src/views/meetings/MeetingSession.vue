@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Meeting from "@/components/meeting/Meeting.vue";
-import { useMeeting } from "@/domain/channels";
+import { useMeeting } from "@/domain/meetings";
 
 const { currentMeeting } = useMeeting();
 </script>

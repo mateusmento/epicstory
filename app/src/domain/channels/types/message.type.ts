@@ -10,11 +10,13 @@ export type IMessageGroup<M extends IMessage | IReply = IMessage> = {
   messages: M[];
 };
 
+/** @deprecated NOT USED ANYWHERE AND CAN BE REMOVED */
 export type IMessageAggregation = {
   reactions: IAggregatedReaction[];
   replies: IAggregatedReply;
 };
 
+/** @deprecated NOT USED ANYWHERE AND CAN BE REMOVED */
 export type IMessageReaction = {
   id: number;
   emoji: string;
@@ -24,6 +26,7 @@ export type IMessageReaction = {
   message: IMessage;
 };
 
+/** @deprecated NOT USED ANYWHERE AND CAN BE REMOVED */
 export type IReplyReaction = {
   id: number;
   emoji: string;
@@ -33,6 +36,7 @@ export type IReplyReaction = {
   reply: IReply;
 };
 
+/** @deprecated NOT USED ANYWHERE AND CAN BE REMOVED */
 export type IAggregatedReply = {
   count: number;
   repliedBy: IUser[];

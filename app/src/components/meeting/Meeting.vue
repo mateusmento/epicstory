@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Button, Separator } from "@/design-system";
-import { useMeeting, useMeetingMediaDevicesStore } from "@/domain/channels";
-import { useMeetingLayout } from "@/domain/channels";
+import { useMeeting, useMeetingLayout, useMeetingMediaDevicesStore } from "@/domain/meetings";
 import { storeToRefs } from "pinia";
 import { computed, onMounted } from "vue";
 import MeetingControls from "./MeetingControls.vue";

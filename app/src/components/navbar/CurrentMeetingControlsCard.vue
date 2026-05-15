@@ -3,7 +3,7 @@ import { UserAvatar } from "@/components/user";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import { useMeeting } from "@/domain/channels";
+import { useMeeting } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
 import { compact, take, uniqBy } from "lodash";
 import { computed } from "vue";

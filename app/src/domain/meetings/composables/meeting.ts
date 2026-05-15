@@ -1,8 +1,17 @@
 import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
-import type { IUser as IUser } from "@epicstory/contracts";
+import { useWorkspace } from "@/domain/workspace";
 import { ChannelApi, MeetingApi } from "@epicstory/api-client";
+import type { ChannelType, IMeeting, IMeetingAttendee, IUser } from "@epicstory/contracts";
+import Peer from "peerjs";
+import { defineStore, storeToRefs } from "pinia";
+import { computed, ref, shallowRef, watch } from "vue";
+import {
+  createActiveSpeakerDetector,
+  type ActiveSpeakerDetector,
+  type SpeakerId,
+} from "../utils/active-speaker";
 import type { PeerSession } from "../utils/media-streaming";
 import { createPeersSession, untilOpen } from "../utils/media-streaming";
 import {
@@ -10,16 +19,6 @@ import {
   replaceOutgoingVideoTrackForPeers,
 } from "../utils/meeting-peer-replace-tracks";
 import { compositeLocalMeetingMedia } from "../utils/meeting-screen-share";
-import {
-  createActiveSpeakerDetector,
-  type ActiveSpeakerDetector,
-  type SpeakerId,
-} from "../utils/active-speaker";
-import { useWorkspace } from "@/domain/workspace";
-import Peer from "peerjs";
-import { defineStore, storeToRefs } from "pinia";
-import { computed, ref, shallowRef, watch } from "vue";
-import type { ChannelType, IChannel, IMeeting, IMeetingAttendee } from "@epicstory/contracts";
 import { useMeetingMediaDevicesStore } from "./meeting-media-devices";
 import { useMeetingSocket } from "./meeting-socket";
 

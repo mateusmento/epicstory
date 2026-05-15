@@ -14,7 +14,7 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import { useLiveMeeting, useMeeting } from "@/domain/channels";
+import { useLiveMeeting, useMeeting } from "@/domain/meetings";
 import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
 import {

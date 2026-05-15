@@ -16,7 +16,8 @@ import {
 import { Icon } from "@/design-system/icons";
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
 import { useAuth } from "@/domain/auth";
-import { useChannels, useMeetingSocket } from "@/domain/channels";
+import { useChannels } from "@/domain/channels";
+import { useMeetingSocket } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarEventApi } from "@epicstory/api-client";
 import type { ICalendarEvent, IUser as IUser } from "@epicstory/contracts";

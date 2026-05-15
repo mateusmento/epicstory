@@ -20,7 +20,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { IMessageGroup } from "../types/message.type";
 import { buildChatTimeline } from "../utils/build-chat-timeline";
-import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "./meeting-socket";
+import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "@/domain/meetings";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
 
 const CHANNEL_ACTIVITIES_PAGE_SIZE = 50;

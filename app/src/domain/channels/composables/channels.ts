@@ -15,7 +15,7 @@ import type {
   IChannelActivity,
 } from "@epicstory/contracts";
 import { assign } from "lodash";
-import { useMeetingSocket } from "./meeting-socket";
+import { useMeetingSocket } from "@/domain/meetings";
 import { useChannelStore } from "./channel";
 
 const useChannelsStore = defineStore("channels", () => {
