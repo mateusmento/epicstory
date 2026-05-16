@@ -81,4 +81,5 @@ export {
   FaCopy,
   FaEdit,
   FaFileAlt,
+  FaUserCircle,
 } from "oh-vue-icons/icons";

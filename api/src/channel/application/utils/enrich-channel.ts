@@ -71,7 +71,7 @@ function resolveChannelNameForMultiDirect(
     .sort();
   const lastOne = peerNames.pop();
   if (peerNames.length === 0) return lastOne ?? '';
-  return [...peerNames, `and ${lastOne}`].join(', ');
+  return `${peerNames.join(', ')} and ${lastOne}`;
 }
 
 export function getChannelLabelForNotification(
