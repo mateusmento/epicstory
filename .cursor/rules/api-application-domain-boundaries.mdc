@@ -1,0 +1,40 @@
+---
+description: API — separate application orchestration from domain meaning (folders per bounded module)
+globs: api/**/*
+alwaysApply: false
+---
+
+# Application vs domain (`api/src/<feature>/`)
+
+Match **`backend-architecture.mdc`**: **domain = meaning and rules**; **application = use cases and I/O orchestration**.
+
+## Keep in **`domain/`**
+
+- **Concepts and vocabulary**: entities (including TypeORM-mapped entities where this repo stores them), value objects, domain-only types under `domain/types/`.
+- **Business rules that stay meaningful without HTTP/Nest**: invariants, validations, policies expressed as **pure** functions or small domain services—**no** repository calls, **no** `Injectable`, **no** framework imports except what entities already use (e.g. TypeORM decorators on entities).
+- **Domain exceptions** (`IssuerIsNotChannelMember`, `MessageNotFound`, etc.)—thrown when a **business rule** fails, not for generic transport errors.
+- **`domain/utils/`**: grouping/sorting/mapping that depends **only** on domain shapes + plain data (prefer pushing auth/workspace-specific coupling upward if it becomes adapter logic).
+
+## Keep in **`application/`**
+
+- **Use cases**: `features/*.command.ts`, `features/*.query.ts`, handlers, controllers—coordinate repositories, services, buses, transactions.
+- **`application/services/`**: orchestration and **integration** (multi-repo reads, enrichment for API/read models, transactional writes, calling other modules). Fine place for “load these rows, then assemble `IMessagePayload` / gateway payloads”.
+- **Ports to the outside**: gateways, notification dispatch helpers, DTOs aimed at clients or other bounded contexts.
+- **Caching auth/context-dependent assembly** (e.g. resolve mentions for a viewer, attach files list): application concerns because they **combine** domain state with infrastructure queries.
+
+## Heuristics when adding or moving code
+
+1. **Needs DB, another module’s service, `@Injectable()`, or a transaction?** → **`application/`** (usually a command/handler or application service).
+2. **Could you unit-test it with plain objects and zero mocks of repositories?** → strong candidate for **`domain/`** (entity method, `domain/utils`, or pure policy).
+3. **Duplicated rule** (“quoted message must be same channel”) appearing in several handlers → consolidate into **one** place: preferably **domain** (pure checker) called from application; **not** copy-pasted queries.
+
+## Pragmatic notes for this codebase
+
+- **Large application services** often mean **read-model assembly** (many queries + mapping). That is still **application** concern unless you extract **pure** mapping/rules into `domain/` or shared helpers.
+- **Entities may carry TypeORM metadata** here—that does **not** mean all message/channel logic belongs on entities; heavy workflows stay in application **or** become explicit domain methods when they encode true invariants.
+
+## Anti-patterns
+
+- Growing **business rules** only inside `application/services/` when they are **stable and reusable**—lift pure cores to `domain/`.
+- Putting **repository queries** or **Nest providers** under `domain/` (outside entity mapping).
+- Putting **HTTP/client-specific shapes** (`IMessagePayload`, socket envelopes) in `domain/`—keep those in **application** (or contracts package), mapped from entities.

@@ -1,0 +1,11 @@
+---
+description: Soft file-size limits — split before files become dumping grounds
+alwaysApply: true
+---
+
+# File size and growth
+
+- Treat **~600 lines** as a **signal to pause**, not a hard limit: consider extracting modules, types, or services when a file mixes unrelated responsibilities or becomes hard to navigate.
+- **Prefer new cohesive files** over repeatedly appending to an existing large module—especially for Nest services, Vue SFCs, and barrels—unless the change is tiny and clearly belongs there.
+- When touching a large file for a **non-trivial** change, **bias toward splitting** if it improves cohesion (one obvious place per behavior, smaller review surface).
+- **Legitimate exceptions**: generated code, narrowly scoped configuration, or a single well-factored type cluster—document intent briefly if staying large is intentional.

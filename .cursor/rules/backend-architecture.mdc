@@ -8,7 +8,7 @@ alwaysApply: false
 
 - **Top-down**: Clarify use case and domain outcome first, then commands/queries and DTOs, then persistence/adapters.
 - **Bottom-up**: Express rules as **small pure functions** (validators, mappers, policies) composed in application services; keep I/O at the edges.
-- **Architecture**: Respect module/feature boundaries; keep domain logic free of framework details where the codebase already separates them.
+- **Architecture**: Respect module/feature boundaries; keep domain logic free of framework details where the codebase already separates them (see **`api-application-domain-boundaries.mdc`** for application vs `domain/` folders).
 - **Domain**: **Concise models**—prefer value objects / explicit types over stringly-typed flags scattered across layers.
 - **Maintainability**: One obvious place per behavior; avoid duplicate validation or mapping.
 - **Clean code**: Small functions, explicit types, meaningful names; configuration and I/O at the edges.
