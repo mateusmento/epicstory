@@ -13,4 +13,5 @@ export {
 export { excludeInlineImageAttachmentsFromBubbleTiles } from "./doc/exclude-inline-image-attachments";
 export { stripImageNodesFromDoc } from "./doc/strip-image-nodes";
 export { tiptapDocToPlainDisplayText } from "./doc/tiptap-doc-to-plain-display-text";
+export { truncatePlainText } from "./doc/truncate-plain-text";
 export { markdownToTiptapDoc } from "./doc/markdown";

@@ -11,8 +11,8 @@ import {
   IssuerIsNotChannelMember,
   MessageReplyNotFound,
 } from '../exceptions';
-import { MessageService } from '../services/message.service';
 import { ReplyService } from '../services/reply.service';
+import { getChannelLabelForNotification } from '../utils/enrich-channel';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 
 export class ToggleReplyReaction {
@@ -33,7 +33,6 @@ export class ToggleReplyReactionCommand
   implements ICommandHandler<ToggleReplyReaction>
 {
   constructor(
-    private messageService: MessageService,
     private replyService: ReplyService,
     private channelRepo: ChannelRepository,
     private messageReplyRepo: MessageReplyRepository,
@@ -91,7 +90,7 @@ export class ToggleReplyReactionCommand
             email: '',
             picture: '',
           };
-      const channelLabel = this.messageService.getChannelLabelForNotification(
+      const channelLabel = getChannelLabelForNotification(
         channel,
         reply.senderId,
       );

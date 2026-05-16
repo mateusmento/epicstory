@@ -18,7 +18,7 @@ Match **`backend-architecture.mdc`**: **domain = meaning and rules**; **applicat
 ## Keep in **`application/`**
 
 - **Use cases**: `features/*.command.ts`, `features/*.query.ts`, handlers, controllers—coordinate repositories, services, buses, transactions.
-- **`application/services/`**: orchestration and **integration** (multi-repo reads, enrichment for API/read models, transactional writes, calling other modules). Fine place for “load these rows, then assemble `IMessagePayload` / gateway payloads”.
+- **`application/services/`**: orchestration and **integration** (multi-repo reads, enrichment for API/read models, transactional writes, calling other modules). Fine place for “load these rows, then assemble `IMessage` (`@epicstory/contracts`) / gateway payloads”.
 - **Ports to the outside**: gateways, notification dispatch helpers, DTOs aimed at clients or other bounded contexts.
 - **Caching auth/context-dependent assembly** (e.g. resolve mentions for a viewer, attach files list): application concerns because they **combine** domain state with infrastructure queries.
 
@@ -37,4 +37,10 @@ Match **`backend-architecture.mdc`**: **domain = meaning and rules**; **applicat
 
 - Growing **business rules** only inside `application/services/` when they are **stable and reusable**—lift pure cores to `domain/`.
 - Putting **repository queries** or **Nest providers** under `domain/` (outside entity mapping).
-- Putting **HTTP/client-specific shapes** (`IMessagePayload`, socket envelopes) in `domain/`—keep those in **application** (or contracts package), mapped from entities.
+- Putting **HTTP/client-specific shapes** (`IMessage`, socket envelopes) in `domain/`—keep those in **application** (or contracts package), mapped from entities.
+
+## Examples (channel bounded context)
+
+- **Domain rules (pure):** `api/src/channel/domain/rules/quoted-content.rules.ts` — quoting/thread invariants; application maps `QuotedContentRuleError` → `BadRequestException` via `application/utils/rethrow-quoted-rule-as-bad-request.ts`.
+- **Domain display helpers (pure):** `api/src/channel/domain/utils/message-quote-display.ts`, `reply-quote-display.ts` — quoted previews for clients.
+- **Application orchestration:** `message-preview-enrichment.service.ts`, `reply-preview-enrichment.service.ts` — load related rows and assemble client payloads.

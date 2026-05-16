@@ -15,8 +15,12 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
-import type { IMessage, IReply } from "@epicstory/contracts";
-import { excludeInlineImageAttachmentsFromBubbleTiles, messageBodyPlainText } from "@epicstory/tiptap";
+import { TIPTAP_MESSAGE_BOX_QUOTE_EXCERPT_MAX, type IMessage, type IReply } from "@epicstory/contracts";
+import {
+  excludeInlineImageAttachmentsFromBubbleTiles,
+  messageBodyPlainText,
+  truncatePlainText,
+} from "@epicstory/tiptap";
 import { computed, ref, watch } from "vue";
 import ChannelPollPreview from "@/components/rich-text/ChannelPollPreview.vue";
 import MessageActions from "./MessageActions.vue";
@@ -69,8 +73,7 @@ const quotedExcerpt = computed(() => {
   const q = props.message.quotedMessage;
   if (!q) return "";
   const raw = q.displayContent ?? messageBodyPlainText(q);
-  const t = raw.replace(/\s+/g, " ").trim();
-  return t.length > 220 ? `${t.slice(0, 220)}…` : t;
+  return truncatePlainText(raw, TIPTAP_MESSAGE_BOX_QUOTE_EXCERPT_MAX);
 });
 
 /** Omit attachment tiles already rendered inline in the body (listing APIs still return full set). */

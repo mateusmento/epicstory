@@ -16,3 +16,4 @@ export * from "./linear";
 export * from "./notification";
 export * from "./channel-activity";
 export * from "./meeting-live";
+export * from "./tiptap-excerpt";

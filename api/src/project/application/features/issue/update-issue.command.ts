@@ -1,8 +1,4 @@
-import {
-  normalizeTiptapDoc,
-  stripImageNodesFromDoc,
-  tiptapToPlainText,
-} from '@epicstory/tiptap';
+import { normalizeTiptapDoc } from '@epicstory/tiptap';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { JSONContent } from '@tiptap/core';
 import {
@@ -20,26 +16,14 @@ import {
 } from 'src/project/infrastructure/repositories';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import {
+  excerptFromTiptapDocOptional,
+  TIPTAP_ISSUE_DESCRIPTION_ACTIVITY_EXCERPT_MAX,
+} from 'src/utils/tiptap-excerpt';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
 import { ProjectGateway } from '../../gateways/project.gateway';
 import { syncIssueDueDateReminders } from './sync-issue-due-reminders';
-
-const DESCRIPTION_ACTIVITY_EXCERPT_MAX = 280;
-
-function excerptFromDescription(
-  doc: JSONContent | null | undefined,
-  max = DESCRIPTION_ACTIVITY_EXCERPT_MAX,
-): string | undefined {
-  if (!doc) return undefined;
-  const t = tiptapToPlainText(stripImageNodesFromDoc(normalizeTiptapDoc(doc)), {
-    stripFormatting: true,
-  })
-    .trim()
-    .replace(/\s+/g, ' ');
-  if (!t) return undefined;
-  return t.length > max ? `${t.slice(0, max)}…` : t;
-}
 
 export class UpdateIssue {
   issueId: number;
@@ -147,6 +131,10 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
       data.description !== undefined &&
       savedIssue.description !== prevSnapshot.description
     ) {
+      const descriptionExcerpt = excerptFromTiptapDocOptional(
+        savedIssue.description,
+        { max: TIPTAP_ISSUE_DESCRIPTION_ACTIVITY_EXCERPT_MAX },
+      );
       await this.issueActivities.save(
         this.issueActivities.create({
           issueId,
@@ -155,12 +143,8 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
           messageId: null,
           attachmentId: null,
           payload: {
-            changeKind: excerptFromDescription(savedIssue.description)
-              ? 'edited'
-              : 'cleared',
-            ...(excerptFromDescription(savedIssue.description)
-              ? { excerpt: excerptFromDescription(savedIssue.description) }
-              : {}),
+            changeKind: descriptionExcerpt ? 'edited' : 'cleared',
+            ...(descriptionExcerpt ? { excerpt: descriptionExcerpt } : {}),
           },
         }),
       );

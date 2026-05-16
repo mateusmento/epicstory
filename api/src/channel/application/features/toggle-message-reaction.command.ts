@@ -2,7 +2,10 @@ import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UserRepository } from 'src/auth';
 import { patch } from 'src/core/objects';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
+import { getChannelLabelForNotification } from '../utils/enrich-channel';
 import { MessageService } from '../services/message.service';
+import { excerptFromTiptapDocWithWorkspaceMembers } from 'src/utils/tiptap-excerpt';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
   ChannelRepository,
   MessageRepository,
@@ -33,6 +36,7 @@ export class ToggleMessageReactionCommand
 {
   constructor(
     private messageService: MessageService,
+    private workspaceRepo: WorkspaceRepository,
     private messageRepo: MessageRepository,
     private channelRepo: ChannelRepository,
     private userRepo: UserRepository,
@@ -93,15 +97,15 @@ export class ToggleMessageReactionCommand
             email: '',
             picture: '',
           };
-      const channelLabel = this.messageService.getChannelLabelForNotification(
+      const channelLabel = getChannelLabelForNotification(
         channel,
         message.senderId,
       );
-      const messageExcerpt =
-        await this.messageService.buildMessageExcerptForNotification(
-          message,
-          channel,
-        );
+      const messageExcerpt = await excerptFromTiptapDocWithWorkspaceMembers(
+        this.workspaceRepo,
+        channel.workspaceId,
+        message.content,
+      );
       await this.commandBus.execute(
         new SendNotification({
           userIds: [message.senderId],

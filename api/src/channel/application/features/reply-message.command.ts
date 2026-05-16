@@ -17,7 +17,7 @@ import { patch } from 'src/core/objects';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
-import { ChannelMentionsService } from '../services/channel-mentions.service';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ReplyService } from '../services/reply.service';
 import type { JSONContent } from '@tiptap/core';
 import {
@@ -65,7 +65,7 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     private messageReplyRepo: MessageReplyRepository,
     private messageRepo: MessageRepository,
     private replyService: ReplyService,
-    private channelMentions: ChannelMentionsService,
+    private workspaceRepo: WorkspaceRepository,
     private commandBus: CommandBus,
     private attachmentService: AttachmentService,
   ) {}
@@ -127,9 +127,9 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     reply.setReactions(senderId);
 
     const extractedMentionIds = extractMentionIds(normalizedContent);
-    const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      uniq(extractedMentionIds),
+    const peerUsersMap = await this.workspaceRepo.findMembersMap(
       message.channel.workspaceId,
+      uniq(extractedMentionIds),
     );
     const finalMentionIds = extractedMentionIds.filter(
       (id) => id !== senderId && peerUsersMap.has(id),

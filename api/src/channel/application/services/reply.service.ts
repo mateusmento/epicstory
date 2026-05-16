@@ -1,19 +1,19 @@
-import {
-  enrichMentionLabels,
-  extractMentionIds,
-  normalizeTiptapDoc,
-  tiptapDocToPlainDisplayText,
-} from '@epicstory/tiptap';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { normalizeTiptapDoc } from '@epicstory/tiptap';
 import type { JSONContent } from '@tiptap/core';
+import { Injectable } from '@nestjs/common';
 import { uniq } from 'lodash';
 import { User, UserRepository } from 'src/auth';
-import { Channel } from 'src/channel/domain';
+import { Channel, assertQuotedReplyInThread } from 'src/channel/domain';
 import {
   MessageReply,
   MessageReplyReaction,
 } from 'src/channel/domain/entities';
-import { mapReactions, mapRepliers } from 'src/channel/domain/utils';
+import {
+  buildQuotedReplyPreview,
+  mapReactions,
+  mapRepliers,
+  type QuotedReplyPreview,
+} from 'src/channel/domain/utils';
 import {
   MessageReplyReactionRepository,
   MessageReplyRepository,
@@ -21,20 +21,16 @@ import {
 } from 'src/channel/infrastructure';
 import { groupBy, mapBy } from 'src/core/objects';
 import { Page } from 'src/core/page';
-import { truncateText } from 'src/utils';
-import type { ICreatedAttachment } from 'src/workspace/application/services/attachment.service';
+import { excerptFromTiptapDocWithWorkspaceMembers } from 'src/utils/tiptap-excerpt';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { MessageNotFound } from '../exceptions';
-import { ChannelMentionsService } from './channel-mentions.service';
+import { rethrowQuotedRuleAsBadRequest } from '../utils/rethrow-quoted-rule-as-bad-request';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { ReplyPreviewEnrichmentService } from './reply-preview-enrichment.service';
 
-export type QuotedReplyPreview = {
-  id: number;
-  sender: User;
-  content: JSONContent;
-  displayContent: string;
-};
+export type { QuotedReplyPreview } from 'src/channel/domain/utils';
 
 @Injectable()
 export class ReplyService {
@@ -44,63 +40,20 @@ export class ReplyService {
     private messageReplyReactionRepo: MessageReplyReactionRepository,
     private userRepo: UserRepository,
     private attachmentService: AttachmentService,
-    private channelMentions: ChannelMentionsService,
+    private workspaceRepo: WorkspaceRepository,
+    private readonly replyPreview: ReplyPreviewEnrichmentService,
   ) {}
 
-  async enrichRepliesForPreview(
+  enrichRepliesForPreview(
     replies: MessageReply[],
     channel: Channel,
     senderId: number,
-  ): Promise<void> {
-    if (replies.length === 0) return;
-    const mentionIds = uniq(
-      replies.flatMap((r) => extractMentionIds(r.content)),
+  ) {
+    return this.replyPreview.enrichRepliesForPreview(
+      replies,
+      channel,
+      senderId,
     );
-    const mentionedUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      mentionIds,
-      channel.workspaceId,
-    );
-    const replyQuoteIds = uniq(
-      replies
-        .map((r) => r.quotedReplyId)
-        .filter((id): id is number => id != null),
-    );
-    const replyQuotedRows =
-      replyQuoteIds.length > 0
-        ? await this.replyRepo.find({
-            where: { id: In(replyQuoteIds) },
-            relations: { sender: true },
-          })
-        : [];
-    const replyQuotedById = mapBy(replyQuotedRows, 'id');
-
-    const replyIds = replies.map((r) => r.id);
-    const attByReplyId =
-      channel?.workspaceId != null
-        ? await this.attachmentService.listAnchoredForReplies(
-            channel.workspaceId,
-            replyIds,
-          )
-        : new Map<number, ICreatedAttachment[]>();
-
-    for (const reply of replies) {
-      reply.setReactions(senderId);
-      const mIds = extractMentionIds(reply.content);
-      (reply as any).mentionedUsers = mIds
-        .map((id) => mentionedUsersMap.get(id))
-        .filter(Boolean);
-      (reply as any).displayContent = tiptapDocToPlainDisplayText(
-        enrichMentionLabels(reply.content, mentionedUsersMap),
-      );
-      const qSrc = reply.quotedReplyId
-        ? replyQuotedById.get(reply.quotedReplyId)
-        : undefined;
-      (reply as any).quotedMessage = this.buildQuotedPreviewFromReply(
-        qSrc,
-        mentionedUsersMap,
-      );
-      (reply as any).attachments = attByReplyId.get(reply.id) ?? [];
-    }
   }
 
   /**
@@ -158,14 +111,10 @@ export class ReplyService {
       where: { id: quotedReplyId },
       relations: { message: true },
     });
-    if (!target) {
-      throw new BadRequestException('Quoted reply not found');
-    }
-    if (target.channelId !== channelId) {
-      throw new BadRequestException('Quoted reply must belong to this channel');
-    }
-    if (target.messageId !== threadMessageId) {
-      throw new BadRequestException('Quoted reply must belong to this thread');
+    try {
+      assertQuotedReplyInThread(target, channelId, threadMessageId);
+    } catch (e) {
+      rethrowQuotedRuleAsBadRequest(e);
     }
     return quotedReplyId;
   }
@@ -174,15 +123,7 @@ export class ReplyService {
     r: MessageReply | null | undefined,
     peerUsersMap: Map<number, User>,
   ): QuotedReplyPreview | undefined {
-    if (!r?.sender) return undefined;
-    return {
-      id: r.id,
-      sender: r.sender,
-      content: r.content,
-      displayContent: tiptapDocToPlainDisplayText(
-        enrichMentionLabels(r.content, peerUsersMap),
-      ),
-    };
+    return buildQuotedReplyPreview(r, peerUsersMap);
   }
 
   async getReplySidebarForMessage(messageId: number): Promise<{
@@ -345,19 +286,15 @@ export class ReplyService {
     return mapReactions(reactions, senderId);
   }
 
-  async buildReplyExcerptForNotification(
+  buildReplyExcerptForNotification(
     reply: MessageReply,
     channel: Channel,
   ): Promise<string> {
-    const mentionIds = extractMentionIds(reply.content);
-    const mentionedUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      mentionIds,
+    return excerptFromTiptapDocWithWorkspaceMembers(
+      this.workspaceRepo,
       channel.workspaceId,
+      reply.content,
     );
-    const display = tiptapDocToPlainDisplayText(
-      enrichMentionLabels(reply.content, mentionedUsersMap),
-    );
-    return truncateText(display);
   }
 
   @Transactional()

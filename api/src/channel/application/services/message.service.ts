@@ -1,253 +1,79 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { uniq } from 'lodash';
-import { User, UserRepository } from 'src/auth';
-import { Channel, Message, MessageReaction } from 'src/channel/domain';
-import { mapReactions, mapRepliers } from 'src/channel/domain/utils';
-import {
-  ChannelRepository,
-  MessageReactionRepository,
-  MessageReplyRepository,
-  MessageRepository,
-} from 'src/channel/infrastructure';
-import { create, groupBy, mapBy, patch } from 'src/core/objects';
-import type { ICreatedAttachment } from 'src/workspace/application/services/attachment.service';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
-import { In } from 'typeorm';
-import { Transactional } from 'typeorm-transactional';
-import type { JSONContent } from '@tiptap/core';
-import { MessageNotFound } from '../exceptions';
-import type { MessagePollBody } from '../dtos/message-poll.dto';
-import type {
-  IMessagePollClient,
-  MessagePollSummary,
-} from './message-poll.service';
-import { ChannelMentionsService } from './channel-mentions.service';
-import { MessagePollService } from './message-poll.service';
-import { ReplyService } from './reply.service';
+import { Injectable } from '@nestjs/common';
 import {
   enrichMentionLabels,
   extractMentionIds,
   normalizeTiptapDoc,
   tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
-import { truncateText } from 'src/utils';
+import type { IMessage } from '@epicstory/contracts';
+import type { JSONContent } from '@tiptap/core';
+import { uniq } from 'lodash';
+import { UserRepository } from 'src/auth';
+import {
+  Channel,
+  Message,
+  MessageReaction,
+  assertQuotedParentMessageInChannel,
+} from 'src/channel/domain';
+import {
+  buildQuotedMessagePreview,
+  mapReactions,
+} from 'src/channel/domain/utils';
+import {
+  ChannelRepository,
+  MessageReactionRepository,
+  MessageRepository,
+} from 'src/channel/infrastructure';
+import { create, mapBy } from 'src/core/objects';
+import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { In } from 'typeorm';
+import { Transactional } from 'typeorm-transactional';
+import type { MessagePollBody } from '../dtos/message-poll.dto';
+import { MessageNotFound } from '../exceptions';
+import { messageEntityToIMessageCore } from '../utils/message-entity-to-imessage';
+import { rethrowQuotedRuleAsBadRequest } from '../utils/rethrow-quoted-rule-as-bad-request';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import type { QuotedMessagePreview } from 'src/channel/domain/utils/message-quote-display';
+import { MessagePollService } from './message-poll.service';
+import { MessagePreviewEnrichmentService } from './message-preview-enrichment.service';
+import { ReplyService } from './reply.service';
 
+export type { IMessage } from '@epicstory/contracts';
+export type { IMessage as IMessagePayload } from '@epicstory/contracts';
 export type {
   IMessagePollClient,
   MessagePollSummary,
 } from './message-poll.service';
-
-export type MessageReactionsGroup = {
-  emoji: string;
-  reactedBy: User[];
-  firstReactedAt?: Date;
-  reactedByMe: boolean;
-};
-
-export type QuotedMessagePreview = {
-  id: number;
-  sender: User;
-  content: JSONContent;
-  displayContent: string;
-};
-
-export class IMessagePayload extends Message {
-  mentionedUsers?: User[];
-  displayContent?: string;
-  /** Hydrated preview of `quotedMessageId` for clients. */
-  quotedMessage?: QuotedMessagePreview;
-
-  /** Linked files (not embedded in message JSON; shown below the body in the client). */
-  attachments?: ICreatedAttachment[];
-
-  poll?: IMessagePollClient;
-
-  repliesCount: number;
-  repliers: { user: User; repliesCount: number }[];
-  reactions: MessageReactionsGroup[];
-
-  constructor(data: Partial<IMessagePayload>) {
-    super();
-    this.reactions = [];
-    this.repliesCount = 0;
-    this.repliers = [];
-    patch(this, data);
-  }
-}
-
-/** Avoid spreading entity `poll` (persisted shape) into {@link IMessagePayload} (`poll` is client summary). */
-function messageEntityWithoutPoll(message: Message): Omit<Message, 'poll'> {
-  const rest = { ...message };
-  delete rest.poll;
-  return rest as Omit<Message, 'poll'>;
-}
+export type { QuotedMessagePreview } from 'src/channel/domain/utils/message-quote-display';
 
 @Injectable()
 export class MessageService {
   constructor(
     private messageRepo: MessageRepository,
-    private replyRepo: MessageReplyRepository,
     private messageReactionRepo: MessageReactionRepository,
     private channelRepo: ChannelRepository,
     private userRepo: UserRepository,
     private attachmentService: AttachmentService,
     private readonly messagePolls: MessagePollService,
     private readonly replyService: ReplyService,
-    private readonly channelMentions: ChannelMentionsService,
+    private readonly workspaceRepo: WorkspaceRepository,
+    private readonly messagePreview: MessagePreviewEnrichmentService,
   ) {}
 
-  async findMessages(channelId: number, senderId: number) {
-    const channel = await this.channelRepo.findOne({
-      where: { id: channelId },
-      relations: { peers: true },
-    });
-    const messages = await this.messageRepo.find({
-      where: { channelId },
-      relations: { sender: true, allReactions: true },
-      order: { sentAt: 'asc' },
-    });
-
-    return this.enrichMessagesForPreview(messages, channel, senderId);
+  findMessages(channelId: number, senderId: number) {
+    return this.messagePreview.findMessages(channelId, senderId);
   }
 
-  /**
-   * Channel message list enrichment (quotes, reactions, replies meta, mentions).
-   */
-  private async enrichMessagesForPreview(
-    messages: Message[],
-    channel: Channel,
-    senderId: number,
-  ): Promise<IMessagePayload[]> {
-    if (messages.length === 0) return [];
-
-    const messageIds = messages.map((m) => m.id);
-
-    const repliesCount = await this.messageRepo.findRepliesCount(messageIds);
-    const repliers = await this.replyRepo.findRepliers(messageIds);
-
-    const usersIds = uniq([
-      ...repliers.map((r) => r.senderId),
-      ...messages.flatMap((m) => m.allReactions.map((r) => r.userId)),
-    ]);
-
-    const users = await this.userRepo.find({
-      where: { id: In(usersIds) },
-    });
-
-    const usersMap = mapBy(users, 'id');
-    const repliesCountMap = mapBy(repliesCount, 'messageId');
-    const repliersMap = groupBy(repliers, 'messageId');
-
-    const allMentionIds = uniq(
-      messages.flatMap((message) => extractMentionIds(message.content)),
-    );
-    const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      allMentionIds,
-      channel.workspaceId,
-    );
-
-    const quoteIds = uniq(
-      messages
-        .map((m) => m.quotedMessageId)
-        .filter((id): id is number => id != null),
-    );
-    const quotedRows =
-      quoteIds.length > 0
-        ? await this.messageRepo.find({
-            where: { id: In(quoteIds) },
-            relations: { sender: true },
-          })
-        : [];
-    const quotedById = mapBy(quotedRows, 'id');
-
-    const attachmentsByMessageId = channel
-      ? await this.attachmentService.listAnchoredForMessages(
-          channel.workspaceId,
-          messageIds,
-        )
-      : new Map<number, ICreatedAttachment[]>();
-
-    const pollMessageIds = messages
-      .filter((m) => m.poll != null)
-      .map((m) => m.id);
-    const pollSummaries =
-      pollMessageIds.length > 0
-        ? await this.messagePolls.findPollSummariesForMessages(
-            pollMessageIds,
-            senderId,
-          )
-        : new Map<number, MessagePollSummary>();
-
-    return messages.map((message) => {
-      const rc = repliesCountMap.get(message.id)?.repliesCount ?? 0;
-      const reps = mapRepliers(repliersMap[message.id] ?? [], usersMap);
-      const reactions = mapReactions(message.allReactions, senderId, usersMap);
-      const displayBase = tiptapDocToPlainDisplayText(
-        enrichMentionLabels(message.content, peerUsersMap),
-      );
-      const displayContent = message.poll
-        ? [displayBase, this.messagePolls.pollPlainSnippet(message.poll)]
-            .filter((s) => s.trim().length > 0)
-            .join('\n')
-            .trim()
-        : displayBase;
-      const mentionIds = extractMentionIds(message.content);
-      const mentionedUsers = mentionIds
-        .map((id) => peerUsersMap.get(id))
-        .filter((user) => user);
-
-      const quotedSrc = message.quotedMessageId
-        ? quotedById.get(message.quotedMessageId)
-        : undefined;
-
-      const poll = message.poll
-        ? this.messagePolls.mergePersistedPollWithSummary(
-            message.poll,
-            pollSummaries.get(message.id),
-          )
-        : undefined;
-
-      return new IMessagePayload({
-        ...messageEntityWithoutPoll(message),
-        repliesCount: rc,
-        repliers: reps,
-        reactions,
-        displayContent,
-        mentionedUsers,
-        quotedMessage: this.buildQuotedPreview(quotedSrc, peerUsersMap),
-        attachments: attachmentsByMessageId.get(message.id) ?? [],
-        ...(poll ? { poll } : {}),
-      });
-    });
-  }
-
-  /**
-   * Load and enrich selected parent messages scoped to `channelId` (same DTO shape as list).
-   */
-  async findMessagesByIdsForChannel(
+  findMessagesByIdsForChannel(
     channelId: number,
     messageIds: number[],
     senderId: number,
-  ): Promise<Map<number, IMessagePayload>> {
-    const ids = uniq(messageIds.filter(Boolean));
-    if (ids.length === 0) {
-      return new Map();
-    }
-    const channel = await this.channelRepo.findOne({
-      where: { id: channelId },
-      relations: { peers: true },
-    });
-    const messages = await this.messageRepo.find({
-      where: { channelId, id: In(ids) },
-      relations: { sender: true, allReactions: true },
-      order: { sentAt: 'asc' },
-    });
-    const dtos = await this.enrichMessagesForPreview(
-      messages,
-      channel,
+  ) {
+    return this.messagePreview.findMessagesByIdsForChannel(
+      channelId,
+      messageIds,
       senderId,
     );
-    return mapBy(dtos, 'id');
   }
 
   @Transactional()
@@ -294,9 +120,9 @@ export class MessageService {
     });
 
     const mentionIds = extractMentionIds(normalizedContent);
-    const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      mentionIds,
+    const peerUsersMap = await this.workspaceRepo.findMembersMap(
       channel.workspaceId,
+      mentionIds,
     );
     let displayContent = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
@@ -320,7 +146,7 @@ export class MessageService {
         where: { id: resolvedQuote },
         relations: { sender: true },
       });
-      quotedPreview = this.buildQuotedPreview(q, peerUsersMap);
+      quotedPreview = buildQuotedMessagePreview(q, peerUsersMap);
     }
 
     const pollDto =
@@ -332,14 +158,17 @@ export class MessageService {
           )
         : undefined;
 
-    return new IMessagePayload({
-      ...messageEntityWithoutPoll(message!),
+    return {
+      ...messageEntityToIMessageCore(message!),
       mentionedUsers,
       displayContent,
       quotedMessage: quotedPreview,
       attachments: [],
+      repliesCount: 0,
+      repliers: [],
+      reactions: [],
       ...(pollDto ? { poll: pollDto } : {}),
-    });
+    } satisfies IMessage;
   }
 
   /**
@@ -354,30 +183,12 @@ export class MessageService {
     const target = await this.messageRepo.findOne({
       where: { id: quotedMessageId },
     });
-    if (!target) {
-      throw new BadRequestException('Quoted message not found');
-    }
-    if (target.channelId !== channelId) {
-      throw new BadRequestException(
-        'Quoted message must belong to this channel',
-      );
+    try {
+      assertQuotedParentMessageInChannel(target, channelId);
+    } catch (e) {
+      rethrowQuotedRuleAsBadRequest(e);
     }
     return quotedMessageId;
-  }
-
-  buildQuotedPreview(
-    m: Message | null | undefined,
-    peerUsersMap: Map<number, User>,
-  ): QuotedMessagePreview | undefined {
-    if (!m?.sender) return undefined;
-    return {
-      id: m.id,
-      sender: m.sender,
-      content: m.content,
-      displayContent: tiptapDocToPlainDisplayText(
-        enrichMentionLabels(m.content, peerUsersMap),
-      ),
-    };
   }
 
   async updateMessageBody(
@@ -434,9 +245,9 @@ export class MessageService {
     if (!message) throw new MessageNotFound();
 
     const mentionIds = extractMentionIds(normalizedContent);
-    const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      mentionIds,
+    const peerUsersMap = await this.workspaceRepo.findMembersMap(
       channel.workspaceId,
+      mentionIds,
     );
     const displayBase = tiptapDocToPlainDisplayText(
       enrichMentionLabels(normalizedContent, peerUsersMap),
@@ -478,8 +289,8 @@ export class MessageService {
           )
         : undefined;
 
-    return new IMessagePayload({
-      ...messageEntityWithoutPoll(message),
+    return {
+      ...messageEntityToIMessageCore(message),
       repliesCount,
       repliers,
       reactions,
@@ -487,7 +298,7 @@ export class MessageService {
       displayContent,
       attachments,
       ...(pollDto ? { poll: pollDto } : {}),
-    });
+    } satisfies IMessage;
   }
 
   async findMessageReactions(messageId: number, senderId: number) {
@@ -497,49 +308,6 @@ export class MessageService {
     });
 
     return mapReactions(reactions, senderId);
-  }
-
-  /**
-   * Plain label for notifications — avoids empty names on DMs / unnamed channels
-   * and never uses raw numeric channel ids in user-facing copy.
-   */
-  getChannelLabelForNotification(
-    channel: Channel,
-    recipientUserId?: number | null,
-  ): string {
-    const name = channel.name?.trim();
-    if (name) return name;
-    const peers = channel.peers ?? [];
-    if (channel.type === 'direct' || channel.type === 'multi-direct') {
-      const peerNames = peers
-        .filter((p) => recipientUserId == null || p.id !== recipientUserId)
-        .map((p) => p.name)
-        .filter(Boolean);
-      if (peerNames.length) return peerNames.join(', ');
-      if (peers.length)
-        return peers
-          .map((p) => p.name)
-          .filter(Boolean)
-          .join(', ');
-    }
-    if (channel.type === 'meeting') return 'Meeting';
-    if (channel.type === 'workspace_open') return 'Team';
-    return 'Chat';
-  }
-
-  async buildMessageExcerptForNotification(
-    message: Message,
-    channel: Channel,
-  ): Promise<string> {
-    const mentionIds = extractMentionIds(message.content);
-    const peerUsersMap = await this.channelMentions.resolveMentionUsersMap(
-      mentionIds,
-      channel.workspaceId,
-    );
-    const display = tiptapDocToPlainDisplayText(
-      enrichMentionLabels(message.content, peerUsersMap),
-    );
-    return truncateText(display);
   }
 
   @Transactional()
@@ -561,8 +329,6 @@ export class MessageService {
       };
     }
 
-    // Add if it doesn't exist. Requires a unique constraint on (messageId, emoji, userId)
-    // to be race-safe under concurrency.
     await this.messageReactionRepo
       .createQueryBuilder()
       .insert()

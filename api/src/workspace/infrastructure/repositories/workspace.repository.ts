@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { uniq } from 'lodash';
+import { User } from 'src/auth';
 import { WorkspaceMember } from 'src/workspace/domain/entities/workspace-member.entity';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -136,5 +138,21 @@ export class WorkspaceRepository extends Repository<Workspace> {
 
   memberExists(workspaceId: number, userId: number) {
     return this.workspaceMemberRepo.exists({ where: { workspaceId, userId } });
+  }
+
+  /**
+   * Members in this workspace for the given user ids, keyed by userId (`userIds` deduped).
+   */
+  async findMembersMap(
+    workspaceId: number,
+    userIds: number[],
+  ): Promise<Map<number, User>> {
+    const ids = uniq(userIds.filter((id) => id != null));
+    if (ids.length === 0) return new Map();
+    const members = await this.findMembers(
+      { workspaceId, userIds: ids },
+      { user: true },
+    );
+    return new Map(members.map((m) => [m.userId, m.user]));
   }
 }
