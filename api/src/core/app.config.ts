@@ -291,6 +291,11 @@ export class AppConfig {
     return `${this.APP_URL.replace(/\/$/, '')}/api/integrations/github/user/callback`;
   }
 
+  /** Webhook URL to register on the GitHub App (`POST`, `X-Hub-Signature-256`). */
+  getGithubWebhookUrl(): string {
+    return `${this.APP_URL.replace(/\/$/, '')}/api/integrations/github/webhook`;
+  }
+
   /** True when App id + client id + secret are set (private key required later for API calls). */
   isGithubAppRegistrationComplete(): boolean {
     return Boolean(

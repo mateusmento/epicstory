@@ -52,7 +52,9 @@ async function bootstrap() {
   })
   class DynamicModule {}
 
-  const app = await NestFactory.create(DynamicModule);
+  const app = await NestFactory.create(DynamicModule, {
+    rawBody: true,
+  });
 
   app.setGlobalPrefix('/api');
 
