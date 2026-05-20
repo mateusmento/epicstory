@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
+import { Project } from 'src/project/domain/entities/project.entity';
 import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import * as controllers from './controllers';
 import * as services from './services';
@@ -18,6 +19,7 @@ import * as repositories from './repositories';
       GithubInstallation,
       GithubUserConnection,
       ProjectGithubRepo,
+      Project,
     ]),
     WorkspaceModule,
     AuthModule,

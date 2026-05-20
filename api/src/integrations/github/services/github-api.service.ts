@@ -28,6 +28,24 @@ type GithubInstallationReposRest = {
   repositories?: GithubRepoRest[];
 };
 
+type GithubSingleRepoRest = {
+  id: number;
+  name: string;
+  full_name: string;
+  default_branch?: string | null;
+  owner?: { login?: string };
+};
+
+export type GithubRepoDetailsForLink = {
+  githubRepoId: string;
+  /** Canonical owner login from GitHub. */
+  owner: string;
+  /** Repository name from GitHub. */
+  name: string;
+  fullName: string;
+  defaultBranch: string | null;
+};
+
 export type GithubCatalogRepo = {
   githubRepoId: string;
   name: string;
@@ -166,5 +184,54 @@ export class GithubApiService {
     }));
 
     return { totalCount, repositories };
+  }
+
+  /**
+   * Resolves a single repo using the installation token (verifies the app can access it).
+   */
+  async fetchRepositoryDetails(
+    installationId: string,
+    owner: string,
+    name: string,
+  ): Promise<GithubRepoDetailsForLink | null> {
+    const installationToken =
+      await this.createInstallationAccessToken(installationId);
+    const o = encodeURIComponent(owner.trim());
+    const n = encodeURIComponent(name.trim());
+    const url = `https://api.github.com/repos/${o}/${n}`;
+
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${installationToken}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    });
+
+    if (res.status === 404) {
+      return null;
+    }
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(
+        `GitHub repository fetch failed (${res.status}): ${text}`,
+      );
+    }
+
+    const body = (await res.json()) as GithubSingleRepoRest;
+    const login = body.owner?.login?.trim();
+    const repoName = body.name?.trim();
+    if (!login || !repoName) {
+      throw new Error('GitHub returned an unexpected repository payload.');
+    }
+
+    return {
+      githubRepoId: String(body.id),
+      owner: login,
+      name: repoName,
+      fullName: body.full_name,
+      defaultBranch: body.default_branch ?? null,
+    };
   }
 }

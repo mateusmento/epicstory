@@ -2,22 +2,52 @@
 import { config } from "@/config";
 import { Button } from "@/design-system";
 import { useDependency } from "@/core/dependency-injection";
-import { GithubIntegrationApi } from "@epicstory/api-client";
-import type { IGithubRepositoryCatalogPage } from "@epicstory/contracts";
-import { computed, onMounted, ref } from "vue";
+import { GithubIntegrationApi, WorkspaceApi } from "@epicstory/api-client";
+import type { IGithubProjectRepoLink, IGithubRepositoryCatalogPage, Project } from "@epicstory/contracts";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
 const api = useDependency(GithubIntegrationApi);
+const workspaceApi = useDependency(WorkspaceApi);
 
 const workspaceId = computed(() => Number(route.params.workspaceId));
 
 const loading = ref(false);
 const status = ref<Awaited<ReturnType<typeof api.getStatus>>>();
 
+const projectsLoading = ref(false);
+const projects = ref<Project[]>([]);
+const projectsError = ref<string | null>(null);
+const selectedProjectId = ref<number | null>(null);
+
+const projectRepos = ref<IGithubProjectRepoLink[]>([]);
+const projectReposLoading = ref(false);
+const projectReposError = ref<string | null>(null);
+const linkError = ref<string | null>(null);
+const linkActionKey = ref<string | null>(null);
+
 const catalogLoading = ref(false);
 const catalog = ref<IGithubRepositoryCatalogPage | null>(null);
 const catalogError = ref<string | null>(null);
+
+function extractApiError(e: unknown, fallback: string) {
+  const msg =
+    e &&
+    typeof e === "object" &&
+    "response" in e &&
+    e.response &&
+    typeof e.response === "object" &&
+    "data" in e.response &&
+    e.response.data &&
+    typeof e.response.data === "object" &&
+    "message" in e.response.data
+      ? (e.response.data as { message: unknown }).message
+      : e instanceof Error
+        ? e.message
+        : fallback;
+  return Array.isArray(msg) ? msg.join(", ") : String(msg);
+}
 
 function installStartUrl() {
   const redirect = `/${workspaceId.value}/settings/integrations/github`;
@@ -46,6 +76,61 @@ async function refresh() {
   }
 }
 
+async function loadProjects() {
+  projectsLoading.value = true;
+  projectsError.value = null;
+  try {
+    const page = await workspaceApi.findProjects(workspaceId.value, { count: 100 });
+    projects.value = page.content;
+    if (projects.value.length && selectedProjectId.value == null) {
+      selectedProjectId.value = projects.value[0]!.id;
+    }
+  } catch (e: unknown) {
+    projects.value = [];
+    projectsError.value = extractApiError(e, "Could not load projects.");
+  } finally {
+    projectsLoading.value = false;
+  }
+}
+
+async function loadProjectRepos() {
+  const pid = selectedProjectId.value;
+  if (pid == null) {
+    projectRepos.value = [];
+    return;
+  }
+  projectReposLoading.value = true;
+  projectReposError.value = null;
+  try {
+    projectRepos.value = await api.listProjectGithubRepos(workspaceId.value, pid);
+  } catch (e: unknown) {
+    projectRepos.value = [];
+    projectReposError.value = extractApiError(e, "Could not load linked repositories.");
+  } finally {
+    projectReposLoading.value = false;
+  }
+}
+
+watch(workspaceId, async () => {
+  selectedProjectId.value = null;
+  projectRepos.value = [];
+  catalog.value = null;
+  await Promise.all([refresh(), loadProjects()]);
+});
+
+watch(
+  selectedProjectId,
+  async (pid) => {
+    if (pid != null) await loadProjectRepos();
+    else projectRepos.value = [];
+  },
+  { immediate: true },
+);
+
+function isCatalogRepoLinked(repo: { githubRepoId: string }) {
+  return projectRepos.value.some((l: IGithubProjectRepoLink) => l.githubRepoId === repo.githubRepoId);
+}
+
 async function loadCatalog(page = 1) {
   catalogLoading.value = true;
   catalogError.value = null;
@@ -55,21 +140,7 @@ async function loadCatalog(page = 1) {
       perPage: 20,
     });
   } catch (e: unknown) {
-    const msg =
-      e &&
-      typeof e === "object" &&
-      "response" in e &&
-      e.response &&
-      typeof e.response === "object" &&
-      "data" in e.response &&
-      e.response.data &&
-      typeof e.response.data === "object" &&
-      "message" in e.response.data
-        ? String((e.response.data as { message: unknown }).message)
-        : e instanceof Error
-          ? e.message
-          : "Could not load repositories.";
-    catalogError.value = Array.isArray(msg) ? msg.join(", ") : msg;
+    catalogError.value = extractApiError(e, "Could not load repositories.");
     catalog.value = null;
   } finally {
     catalogLoading.value = false;
@@ -100,6 +171,36 @@ async function loadMoreCatalog() {
   }
 }
 
+async function linkCatalogRepo(repo: { owner: string; name: string; githubRepoId: string }) {
+  if (selectedProjectId.value == null) return;
+  const key = repo.githubRepoId;
+  linkActionKey.value = key;
+  linkError.value = null;
+  try {
+    await api.linkProjectGithubRepo(workspaceId.value, selectedProjectId.value, {
+      owner: repo.owner,
+      name: repo.name,
+    });
+    await loadProjectRepos();
+  } catch (e: unknown) {
+    linkError.value = extractApiError(e, "Could not link repository.");
+  } finally {
+    linkActionKey.value = null;
+  }
+}
+
+async function unlinkProjectRepo(linkId: number) {
+  if (selectedProjectId.value == null) return;
+  if (!confirm("Remove this repository link from the project?")) return;
+  projectReposError.value = null;
+  try {
+    await api.unlinkProjectGithubRepo(workspaceId.value, selectedProjectId.value, linkId);
+    await loadProjectRepos();
+  } catch (e: unknown) {
+    projectReposError.value = extractApiError(e, "Could not remove link.");
+  }
+}
+
 async function disconnectInstallation() {
   if (!confirm("Remove the GitHub App installation from this workspace?")) return;
   loading.value = true;
@@ -107,6 +208,7 @@ async function disconnectInstallation() {
     await api.disconnectInstallation(workspaceId.value);
     catalog.value = null;
     await refresh();
+    await loadProjectRepos();
   } finally {
     loading.value = false;
   }
@@ -123,7 +225,9 @@ async function disconnectUser() {
   }
 }
 
-onMounted(refresh);
+onMounted(async () => {
+  await Promise.all([refresh(), loadProjects()]);
+});
 </script>
 
 <template>
@@ -196,6 +300,76 @@ onMounted(refresh);
     </div>
 
     <div v-if="status?.installation" class="mt-6 border rounded-lg p-4">
+      <div class="text-sm font-medium">Project repository links</div>
+      <p class="text-xs text-secondary-foreground mt-1">
+        Choose a project, then link installation catalogue entries below or manage links here.
+      </p>
+      <div v-if="projectsError" class="mt-2 text-sm text-destructive">
+        {{ projectsError }}
+      </div>
+      <div v-if="projectsLoading" class="mt-2 text-sm text-secondary-foreground">Loading projects…</div>
+      <div v-else class="mt-3 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <label class="text-sm flex flex-col gap-1 min-w-0 flex-1">
+          <span class="text-secondary-foreground">Project</span>
+          <select
+            v-model.number="selectedProjectId"
+            class="border rounded-md px-2 py-1.5 text-sm bg-background"
+            :disabled="!projects.length"
+          >
+            <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+        </label>
+      </div>
+      <div v-if="!projects.length && !projectsLoading" class="mt-2 text-sm text-secondary-foreground">
+        No projects in this workspace yet. Create a project first.
+      </div>
+      <div v-if="projectReposError" class="mt-2 text-sm text-destructive">
+        {{ projectReposError }}
+      </div>
+      <div v-if="linkError" class="mt-2 text-sm text-destructive">
+        {{ linkError }}
+      </div>
+      <div
+        v-if="selectedProjectId != null && projectReposLoading"
+        class="mt-3 text-sm text-secondary-foreground"
+      >
+        Loading links…
+      </div>
+      <ul
+        v-if="selectedProjectId != null && projectRepos.length && !projectReposLoading"
+        class="mt-3 border rounded-md divide-y"
+      >
+        <li
+          v-for="l in projectRepos"
+          :key="l.id"
+          class="px-3 py-2 text-sm flex flex-row items-center justify-between gap-2"
+        >
+          <div class="min-w-0">
+            <div class="font-medium truncate">{{ l.fullName }}</div>
+            <div class="text-xs text-secondary-foreground truncate">
+              default: {{ l.defaultBranch ?? "—" }}
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            :disabled="loading"
+            class="shrink-0"
+            @click="unlinkProjectRepo(l.id)"
+          >
+            Remove
+          </Button>
+        </li>
+      </ul>
+      <div
+        v-if="selectedProjectId != null && !projectReposLoading && !projectRepos.length && projects.length"
+        class="mt-3 text-sm text-secondary-foreground"
+      >
+        No repositories linked to this project yet.
+      </div>
+    </div>
+
+    <div v-if="status?.installation" class="mt-6 border rounded-lg p-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="text-sm font-medium">Repositories (installation catalogue)</div>
         <Button variant="outline" size="sm" :disabled="catalogLoading" @click="loadCatalog(1)">
@@ -203,7 +377,8 @@ onMounted(refresh);
         </Button>
       </div>
       <p class="text-xs text-secondary-foreground mt-1">
-        Repos your GitHub App can access on this installation. Project linking comes next.
+        Repos your GitHub App can access on this installation. Select a project above, then use Link on a row
+        to attach a repo to that project.
       </p>
       <div v-if="catalogError" class="mt-3 text-sm text-destructive">
         {{ catalogError }}
@@ -213,18 +388,37 @@ onMounted(refresh);
         <li
           v-for="r in catalog.repositories"
           :key="r.githubRepoId"
-          class="px-3 py-2 text-sm flex flex-col gap-0.5"
+          class="px-3 py-2 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
         >
-          <a
-            :href="r.htmlUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="font-medium text-primary hover:underline"
-            >{{ r.fullName }}</a
-          >
-          <span class="text-xs text-secondary-foreground">
-            default: {{ r.defaultBranch ?? "—" }} · {{ r.private ? "private" : "public" }}
-          </span>
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <a
+              :href="r.htmlUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-medium text-primary hover:underline truncate"
+              >{{ r.fullName }}</a
+            >
+            <span class="text-xs text-secondary-foreground">
+              default: {{ r.defaultBranch ?? "—" }} · {{ r.private ? "private" : "public" }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span v-if="isCatalogRepoLinked(r)" class="text-xs text-secondary-foreground">Linked</span>
+            <Button
+              v-else
+              variant="secondary"
+              size="sm"
+              :disabled="
+                catalogLoading ||
+                selectedProjectId == null ||
+                !projects.length ||
+                linkActionKey === r.githubRepoId
+              "
+              @click="linkCatalogRepo(r)"
+            >
+              {{ linkActionKey === r.githubRepoId ? "Linking…" : "Link" }}
+            </Button>
+          </div>
         </li>
       </ul>
       <div v-if="catalog && !catalog.repositories.length" class="mt-3 text-sm text-secondary-foreground">

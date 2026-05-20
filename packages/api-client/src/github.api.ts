@@ -1,5 +1,6 @@
 import type {
   IGithubIntegrationStatus,
+  IGithubProjectRepoLink,
   IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
@@ -8,6 +9,7 @@ import { inject, injectable } from "tsyringe";
 
 export type {
   IGithubIntegrationStatus,
+  IGithubProjectRepoLink,
   IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
 
@@ -44,6 +46,37 @@ export class GithubIntegrationApi {
   disconnectUser(workspaceId: number) {
     return this.axios.delete(
       `/integrations/github/workspaces/${workspaceId}/user`,
+    );
+  }
+
+  listProjectGithubRepos(workspaceId: number, projectId: number) {
+    return this.axios
+      .get<
+        IGithubProjectRepoLink[]
+      >(`/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos`)
+      .then((r) => r.data);
+  }
+
+  linkProjectGithubRepo(
+    workspaceId: number,
+    projectId: number,
+    body: { owner: string; name: string },
+  ) {
+    return this.axios
+      .post<IGithubProjectRepoLink>(
+        `/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos`,
+        body,
+      )
+      .then((r) => r.data);
+  }
+
+  unlinkProjectGithubRepo(
+    workspaceId: number,
+    projectId: number,
+    linkId: number,
+  ) {
+    return this.axios.delete(
+      `/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos/${linkId}`,
     );
   }
 }

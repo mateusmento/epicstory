@@ -36,3 +36,15 @@ export type IGithubRepositoryCatalogPage = {
   hasNextPage: boolean;
   repositories: IGithubCatalogRepository[];
 };
+
+/** Linked GitHub repository row for a project (list + link response). */
+export type IGithubProjectRepoLink = {
+  id: number;
+  projectId: number;
+  owner: string;
+  name: string;
+  fullName: string;
+  githubRepoId: string;
+  defaultBranch: string | null;
+  createdAt: string;
+};
