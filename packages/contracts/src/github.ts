@@ -37,6 +37,28 @@ export type IGithubRepositoryCatalogPage = {
   repositories: IGithubCatalogRepository[];
 };
 
+/** GET `/integrations/github/issues/:issueId/pull-requests` */
+export type IGithubIssuePullRequestLink = {
+  id: number;
+  issueId: number;
+  githubPullRequestId: string;
+  owner: string;
+  repoName: string;
+  fullName: string;
+  prNumber: number;
+  htmlUrl: string;
+  headRef: string | null;
+  baseRef: string | null;
+  state: string;
+  draft: boolean;
+  merged: boolean;
+  mergedAt: string | null;
+  closedAt: string | null;
+  githubUpdatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 /** Linked GitHub repository row for a project (list + link response). */
 export type IGithubProjectRepoLink = {
   id: number;

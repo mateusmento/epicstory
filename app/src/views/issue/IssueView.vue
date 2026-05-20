@@ -17,8 +17,8 @@ import type { Project } from "@/domain/project";
 import { useScopedWorkspaceMemberSearch } from "@/domain/workspace";
 import { DueDatePicker } from "@/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
-import { IssueApi, ProjectApi } from "@epicstory/api-client";
-import type { IMessage, IReply, IUser } from "@epicstory/contracts";
+import { GithubIntegrationApi, IssueApi, ProjectApi } from "@epicstory/api-client";
+import type { IGithubIssuePullRequestLink, IMessage, IReply, IUser } from "@epicstory/contracts";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import IssueActivitySection from "./IssueActivitySection.vue";
 import SubIssuesSection from "./SubIssuesSection.vue";
@@ -117,7 +117,34 @@ watch(
 );
 
 const projectApi = useDependency(ProjectApi);
+const githubIntegrationApi = useDependency(GithubIntegrationApi);
 const project = ref<Project | null>(null);
+
+const githubPullRequests = ref<IGithubIssuePullRequestLink[]>([]);
+const githubPullRequestsLoading = ref(false);
+const githubPullRequestsError = ref<string | null>(null);
+
+watch(
+  () => issue.value?.id,
+  async (id) => {
+    if (id == null) {
+      githubPullRequests.value = [];
+      githubPullRequestsError.value = null;
+      return;
+    }
+    githubPullRequestsLoading.value = true;
+    githubPullRequestsError.value = null;
+    try {
+      githubPullRequests.value = await githubIntegrationApi.listIssueGithubPullRequests(id);
+    } catch (e: unknown) {
+      githubPullRequests.value = [];
+      githubPullRequestsError.value = e instanceof Error ? e.message : "Could not load GitHub pull requests";
+    } finally {
+      githubPullRequestsLoading.value = false;
+    }
+  },
+  { immediate: true },
+);
 
 const isSaving = ref(false);
 const saveError = ref<string | null>(null);
@@ -463,6 +490,36 @@ watch(
                 @remove-label="removeLabel"
               />
             </div>
+          </div>
+
+          <!-- GitHub PRs synced via webhooks -->
+          <div v-if="issue" class="flex:col-sm border-t border-border pt-4">
+            <div class="text-xs text-secondary-foreground">GitHub pull requests</div>
+            <div v-if="githubPullRequestsLoading" class="text-xs text-muted-foreground">Loading…</div>
+            <div v-else-if="githubPullRequestsError" class="text-xs text-red-600">
+              {{ githubPullRequestsError }}
+            </div>
+            <div v-else-if="githubPullRequests.length === 0" class="text-xs text-muted-foreground">
+              None synced yet (open a PR from a branch named
+              <span class="font-mono">{{ issue.id }}-…</span> on a linked repo).
+            </div>
+            <ul v-else class="flex:col-sm list-none min-w-0">
+              <li v-for="pr in githubPullRequests" :key="pr.githubPullRequestId" class="min-w-0">
+                <a
+                  :href="pr.htmlUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-primary hover:underline min-w-0"
+                >
+                  <span class="font-medium truncate">{{ pr.fullName }}#{{ pr.prNumber }}</span>
+                  <span class="text-xs text-muted-foreground shrink-0">
+                    {{
+                      pr.merged ? "merged" : pr.state === "closed" ? "closed" : pr.draft ? "draft" : "open"
+                    }}
+                  </span>
+                </a>
+              </li>
+            </ul>
           </div>
 
           <IssueAttachmentsStrip

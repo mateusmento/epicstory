@@ -1,4 +1,5 @@
 export * from './github-api.service';
+export * from './github-issue-pull-request-read.service';
 export * from './github-issue-pull-request-sync.service';
 export * from './github-install-flow.service';
 export * from './github-oauth-pending-state.store';

@@ -1,5 +1,6 @@
 import type {
   IGithubIntegrationStatus,
+  IGithubIssuePullRequestLink,
   IGithubProjectRepoLink,
   IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
@@ -9,6 +10,7 @@ import { inject, injectable } from "tsyringe";
 
 export type {
   IGithubIntegrationStatus,
+  IGithubIssuePullRequestLink,
   IGithubProjectRepoLink,
   IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
@@ -78,5 +80,13 @@ export class GithubIntegrationApi {
     return this.axios.delete(
       `/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos/${linkId}`,
     );
+  }
+
+  listIssueGithubPullRequests(issueId: number) {
+    return this.axios
+      .get<
+        IGithubIssuePullRequestLink[]
+      >(`/integrations/github/issues/${issueId}/pull-requests`)
+      .then((r) => r.data);
   }
 }
