@@ -9,4 +9,5 @@ export { default as IssueDeleteDialog } from "./IssueDeleteDialog.vue";
 export { default as IssueRenameDialog } from "./IssueRenameDialog.vue";
 export { default as IssueContextMenu } from "./IssueContextMenu.vue";
 export { default as IssueDescriptionEditor } from "./IssueDescriptionEditor.vue";
+export { default as IssueGithubSidebarSection } from "./IssueGithubSidebarSection.vue";
 export * from "./status/status-fns";

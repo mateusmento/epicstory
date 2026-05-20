@@ -10,6 +10,7 @@ import * as services from './services';
 import {
   GithubInstallation,
   GithubUserConnection,
+  GithubEpicstoryPrTimelineMarker,
   IssueGithubPullRequest,
   ProjectGithubRepo,
 } from './entities';
@@ -20,6 +21,7 @@ import * as repositories from './repositories';
     TypeOrmModule.forFeature([
       GithubInstallation,
       GithubUserConnection,
+      GithubEpicstoryPrTimelineMarker,
       IssueGithubPullRequest,
       ProjectGithubRepo,
       Project,

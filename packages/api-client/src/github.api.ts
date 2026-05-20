@@ -1,4 +1,5 @@
 import type {
+  IGithubCreateIssueBranchResponse,
   IGithubIntegrationStatus,
   IGithubIssuePullRequestLink,
   IGithubProjectRepoLink,
@@ -9,6 +10,7 @@ import { Axios as AxiosImport } from "axios";
 import { inject, injectable } from "tsyringe";
 
 export type {
+  IGithubCreateIssueBranchResponse,
   IGithubIntegrationStatus,
   IGithubIssuePullRequestLink,
   IGithubProjectRepoLink,
@@ -87,6 +89,45 @@ export class GithubIntegrationApi {
       .get<
         IGithubIssuePullRequestLink[]
       >(`/integrations/github/issues/${issueId}/pull-requests`)
+      .then((r) => r.data);
+  }
+
+  createIssueGithubBranch(
+    workspaceId: number,
+    issueId: number,
+    body: {
+      owner: string;
+      name: string;
+      baseBranch?: string;
+      branchName?: string;
+    },
+  ) {
+    return this.axios
+      .post<IGithubCreateIssueBranchResponse>(
+        `/integrations/github/workspaces/${workspaceId}/issues/${issueId}/branches`,
+        body,
+      )
+      .then((r) => r.data);
+  }
+
+  createIssueGithubPull(
+    workspaceId: number,
+    issueId: number,
+    body: {
+      owner: string;
+      name: string;
+      headBranch: string;
+      baseBranch?: string;
+      title: string;
+      bodyMarkdown?: string;
+      draft?: boolean;
+    },
+  ) {
+    return this.axios
+      .post<IGithubIssuePullRequestLink>(
+        `/integrations/github/workspaces/${workspaceId}/issues/${issueId}/pulls`,
+        body,
+      )
       .then((r) => r.data);
   }
 }

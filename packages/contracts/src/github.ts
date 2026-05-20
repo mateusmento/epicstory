@@ -37,6 +37,13 @@ export type IGithubRepositoryCatalogPage = {
   repositories: IGithubCatalogRepository[];
 };
 
+/** POST `/integrations/github/workspaces/:workspaceId/issues/:issueId/branches` */
+export type IGithubCreateIssueBranchResponse = {
+  branchName: string;
+  gitRef: string;
+  tipSha: string;
+};
+
 /** GET `/integrations/github/issues/:issueId/pull-requests` */
 export type IGithubIssuePullRequestLink = {
   id: number;

@@ -23,6 +23,63 @@ export class GithubIssuePullRequestSyncService {
     private readonly projectGithubRepoRepo: ProjectGithubRepoRepository,
   ) {}
 
+  async upsertFromPullPayloadForIssue(params: {
+    issueId: number;
+    owner: string;
+    repoName: string;
+    pullRequest: GenericPayload | null | undefined;
+  }): Promise<void> {
+    const pr = params.pullRequest;
+    if (!pr) return;
+
+    const ghPrId = githubIdString(pr);
+    if (ghPrId == null) return;
+
+    const htmlUrl = typeof pr.html_url === 'string' ? pr.html_url : null;
+    if (!htmlUrl) return;
+
+    const prNumber =
+      typeof pr.number === 'number' && Number.isFinite(pr.number)
+        ? pr.number
+        : null;
+    if (prNumber == null) return;
+
+    const state = typeof pr.state === 'string' ? pr.state : 'open';
+    const draft = typeof pr.draft === 'boolean' ? pr.draft : false;
+    const merged = typeof pr.merged === 'boolean' ? pr.merged : false;
+
+    const head = asObject(pr.head as unknown);
+    const base = asObject(pr.base as unknown);
+    const headRef = typeof head?.ref === 'string' ? head.ref : null;
+    const baseRef = typeof base?.ref === 'string' ? base.ref : null;
+
+    const mergedAt = isoToDate(pr.merged_at);
+    const closedAt = isoToDate(pr.closed_at);
+    const ghUpdatedAt = isoToDate(pr.updated_at);
+
+    const existing = await this.prLinkRepo.findOne({
+      where: { githubPullRequestId: ghPrId },
+    });
+
+    await this.persistRow({
+      issueId: params.issueId,
+      owner: params.owner.trim(),
+      repoName: params.repoName.trim(),
+      ghPrId,
+      htmlUrl,
+      prNumber,
+      state,
+      draft,
+      merged,
+      headRef,
+      baseRef,
+      mergedAt,
+      closedAt,
+      ghUpdatedAt,
+      existing,
+    });
+  }
+
   async syncFromPullRequestWebhookPayload(payload: unknown): Promise<void> {
     const root = asObject(payload);
     const pr = asObject(root?.pull_request);
@@ -99,26 +156,62 @@ export class GithubIssuePullRequestSyncService {
       }
     }
 
-    const rowData: Partial<IssueGithubPullRequest> = {
+    await this.persistRow({
       issueId,
-      githubPullRequestId: ghPrId,
       owner,
       repoName,
-      prNumber,
+      ghPrId,
       htmlUrl,
-      headRef,
-      baseRef,
+      prNumber,
       state,
       draft,
       merged,
+      headRef,
+      baseRef,
       mergedAt,
       closedAt,
-      githubUpdatedAt: ghUpdatedAt,
+      ghUpdatedAt,
+      existing,
+    });
+  }
+
+  private async persistRow(params: {
+    issueId: number;
+    owner: string;
+    repoName: string;
+    ghPrId: string;
+    htmlUrl: string;
+    prNumber: number;
+    state: string;
+    draft: boolean;
+    merged: boolean;
+    headRef: string | null;
+    baseRef: string | null;
+    mergedAt: Date | null;
+    closedAt: Date | null;
+    ghUpdatedAt: Date | null;
+    existing: IssueGithubPullRequest | null;
+  }): Promise<void> {
+    const rowData: Partial<IssueGithubPullRequest> = {
+      issueId: params.issueId,
+      githubPullRequestId: params.ghPrId,
+      owner: params.owner,
+      repoName: params.repoName,
+      prNumber: params.prNumber,
+      htmlUrl: params.htmlUrl,
+      headRef: params.headRef,
+      baseRef: params.baseRef,
+      state: params.state,
+      draft: params.draft,
+      merged: params.merged,
+      mergedAt: params.mergedAt,
+      closedAt: params.closedAt,
+      githubUpdatedAt: params.ghUpdatedAt,
     };
 
-    if (existing) {
-      Object.assign(existing, rowData);
-      await this.prLinkRepo.save(existing);
+    if (params.existing) {
+      Object.assign(params.existing, rowData);
+      await this.prLinkRepo.save(params.existing);
       return;
     }
 
