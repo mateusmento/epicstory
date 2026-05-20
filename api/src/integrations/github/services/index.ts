@@ -1,5 +1,6 @@
 export * from './github-api.service';
 export * from './github-install-flow.service';
+export * from './github-oauth-pending-state.store';
 export * from './github-project-repo-link.service';
 export * from './github-user-oauth.service';
 export * from './github-user-oauth-flow.service';

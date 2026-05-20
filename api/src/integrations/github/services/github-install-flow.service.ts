@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -14,6 +13,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { GithubInstallationRepository } from '../repositories';
 import { GithubApiService } from './github-api.service';
 import { GithubUserOAuthService } from './github-user-oauth.service';
+import { GithubOAuthPendingStateStore } from './github-oauth-pending-state.store';
 
 export type GithubInstallStartResult = {
   state: string;
@@ -34,6 +34,7 @@ export class GithubInstallFlowService {
     private readonly installationRepo: GithubInstallationRepository,
     private readonly githubApi: GithubApiService,
     private readonly githubUrls: GithubUserOAuthService,
+    private readonly pendingState: GithubOAuthPendingStateStore,
   ) {}
 
   async beginAdminInstall(params: {
@@ -69,7 +70,10 @@ export class GithubInstallFlowService {
       );
     }
 
-    const state = randomBytes(16).toString('hex');
+    const state = this.pendingState.allocateInstallationState({
+      workspaceId,
+      oauthRedirect: params.oauthRedirect,
+    });
     const redirectUrl = this.githubUrls.getNewInstallationUrl(state);
 
     return {
@@ -83,21 +87,17 @@ export class GithubInstallFlowService {
   async completeAdminInstall(params: {
     stateFromQuery?: string;
     installationIdRaw?: string;
-    cookieState?: string;
-    cookieWorkspaceIdRaw?: string;
-    oauthRedirectCookie?: string;
   }): Promise<GithubInstallCallbackResult> {
-    const expectedState = params.cookieState;
-    const state = params.stateFromQuery;
-
-    if (!expectedState || !state || expectedState !== state) {
-      throw new BadRequestException('Invalid OAuth state');
+    const sess = this.pendingState.consumeInstallationState(
+      params.stateFromQuery,
+    );
+    if (!sess) {
+      throw new BadRequestException(
+        'Invalid or expired install session. Start the GitHub App install again from Workspace → Integrations → GitHub.',
+      );
     }
 
-    const workspaceId = Number(params.cookieWorkspaceIdRaw);
-    if (!workspaceId || Number.isNaN(workspaceId)) {
-      throw new BadRequestException('Missing install workspace context');
-    }
+    const { workspaceId, oauthRedirect: redirectAfter } = sess;
 
     const installationIdRaw = params.installationIdRaw;
     if (!installationIdRaw?.trim()) {
@@ -156,7 +156,7 @@ export class GithubInstallFlowService {
     }
 
     const baseUrl = this.config.APP_URL.replace(/\/$/, '');
-    const redirectPath = params.oauthRedirectCookie || '';
+    const redirectPath = redirectAfter || '';
     const finalRedirect = redirectPath ? `${baseUrl}${redirectPath}` : baseUrl;
 
     return { finalRedirect };

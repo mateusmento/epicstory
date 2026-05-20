@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { AppConfig } from 'src/core/app.config';
 import type { Issuer } from 'src/core/auth';
@@ -7,6 +6,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import { GithubUserConnectionRepository } from '../repositories';
 import { GithubUserOAuthService } from './github-user-oauth.service';
+import { GithubOAuthPendingStateStore } from './github-oauth-pending-state.store';
 
 export type GithubUserOauthStartResult = {
   state: string;
@@ -28,6 +28,7 @@ export class GithubUserOauthFlowService {
     private readonly userConnRepo: GithubUserConnectionRepository,
     private readonly oauth: GithubUserOAuthService,
     private readonly crypto: IntegrationTokenCryptoService,
+    private readonly pendingState: GithubOAuthPendingStateStore,
   ) {}
 
   async beginMemberLink(params: {
@@ -52,7 +53,11 @@ export class GithubUserOauthFlowService {
     );
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
 
-    const state = randomBytes(16).toString('hex');
+    const state = this.pendingState.allocateUserOAuthState({
+      workspaceId,
+      userId: params.issuer.id,
+      oauthRedirect: params.oauthRedirect,
+    });
     const authorizeUrl = this.oauth.getUserAuthorizeUrl(state);
 
     return {
@@ -69,31 +74,20 @@ export class GithubUserOauthFlowService {
     stateFromQuery?: string;
     oauthError?: string;
     errorDescription?: string;
-    cookieState?: string;
-    cookieWorkspaceIdRaw?: string;
-    cookieUserIdRaw?: string;
-    oauthRedirectCookie?: string;
   }): Promise<GithubUserOauthCallbackResult> {
     if (params.oauthError) {
       const msg = params.errorDescription || params.oauthError;
       throw new BadRequestException(`GitHub authorization failed: ${msg}`);
     }
 
-    const expectedState = params.cookieState;
-    const state = params.stateFromQuery;
-
-    if (!expectedState || !state || expectedState !== state) {
-      throw new BadRequestException('Invalid OAuth state');
+    const sess = this.pendingState.consumeUserOAuthState(params.stateFromQuery);
+    if (!sess) {
+      throw new BadRequestException(
+        'Invalid or expired session. Try linking your GitHub account again from Workspace → Integrations → GitHub.',
+      );
     }
 
-    const workspaceId = Number(params.cookieWorkspaceIdRaw);
-    const userId = Number(params.cookieUserIdRaw);
-    if (!workspaceId || Number.isNaN(workspaceId)) {
-      throw new BadRequestException('Missing OAuth workspace context');
-    }
-    if (!userId || Number.isNaN(userId)) {
-      throw new BadRequestException('Missing OAuth user context');
-    }
+    const { workspaceId, userId, oauthRedirect: redirectAfter } = sess;
 
     if (!params.code?.trim()) {
       throw new BadRequestException('Missing authorization code');
@@ -147,7 +141,7 @@ export class GithubUserOauthFlowService {
     await this.userConnRepo.save(row);
 
     const baseUrl = this.config.APP_URL.replace(/\/$/, '');
-    const redirectPath = params.oauthRedirectCookie || '';
+    const redirectPath = redirectAfter || '';
     const finalRedirect = redirectPath ? `${baseUrl}${redirectPath}` : baseUrl;
 
     return { finalRedirect };
