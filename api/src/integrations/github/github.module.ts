@@ -8,9 +8,10 @@ import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import * as controllers from './controllers';
 import * as services from './services';
 import {
+  GithubEpicstoryPrTimelineMarker,
   GithubInstallation,
   GithubUserConnection,
-  GithubEpicstoryPrTimelineMarker,
+  GithubWebhookDeliveryReceipt,
   IssueGithubPullRequest,
   ProjectGithubRepo,
 } from './entities';
@@ -22,6 +23,7 @@ import * as repositories from './repositories';
       GithubInstallation,
       GithubUserConnection,
       GithubEpicstoryPrTimelineMarker,
+      GithubWebhookDeliveryReceipt,
       IssueGithubPullRequest,
       ProjectGithubRepo,
       Project,

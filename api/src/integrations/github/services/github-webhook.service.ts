@@ -5,7 +5,10 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { AppConfig } from 'src/core/app.config';
+import { GithubWebhookDeliveryReceipt } from '../entities/github-webhook-delivery-receipt.entity';
 import { verifyGithubWebhookSignature256 } from '../lib/verify-github-webhook-signature';
 import { GithubInstallationRepository } from '../repositories';
 import { GithubIssuePullRequestSyncService } from './github-issue-pull-request-sync.service';
@@ -22,6 +25,8 @@ export class GithubWebhookService {
     private readonly installationRepo: GithubInstallationRepository,
     private readonly workspaceInstallation: GithubWorkspaceInstallationService,
     private readonly issuePullSync: GithubIssuePullRequestSyncService,
+    @InjectRepository(GithubWebhookDeliveryReceipt)
+    private readonly webhookDeliveryReceipts: Repository<GithubWebhookDeliveryReceipt>,
   ) {}
 
   /**
@@ -192,7 +197,47 @@ export class GithubWebhookService {
       `pull_request action=${action} repo=${fullName} pr=#${number} gh_pr_id=${prId ?? '?'} state=${state} merged=${merged} delivery=${deliveryId ?? '?'}`,
     );
 
-    await this.issuePullSync.syncFromPullRequestWebhookPayload(payloadRoot);
+    const receiptState = await this.claimPullRequestWebhookDelivery(deliveryId);
+    if (receiptState === 'skipped_duplicate') {
+      this.logger.debug(
+        `pull_request duplicate X-GitHub-Delivery (${deliveryId ?? '?'}); skip ingest`,
+      );
+      return;
+    }
+
+    try {
+      await this.issuePullSync.syncFromPullRequestWebhookPayload(payloadRoot);
+    } catch (e) {
+      if (receiptState === 'claimed' && deliveryId?.trim()) {
+        await this.webhookDeliveryReceipts.delete({
+          deliveryId: deliveryId.trim(),
+        });
+      }
+      throw e;
+    }
+  }
+
+  /** Idempotent ingest per GitHub delivery UUID; release receipt if sync throws so retries converge. */
+  private async claimPullRequestWebhookDelivery(
+    deliveryId: string | undefined,
+  ): Promise<'skipped_duplicate' | 'claimed' | 'no_delivery_id'> {
+    const id = deliveryId?.trim();
+    if (!id) return 'no_delivery_id';
+
+    try {
+      await this.webhookDeliveryReceipts.insert({
+        deliveryId: id,
+      });
+      return 'claimed';
+    } catch (e) {
+      if (
+        e instanceof QueryFailedError &&
+        (e.driverError as { code?: string } | undefined)?.code === '23505'
+      ) {
+        return 'skipped_duplicate';
+      }
+      throw e;
+    }
   }
 }
 

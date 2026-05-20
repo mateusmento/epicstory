@@ -3,6 +3,20 @@
 const GH_ACCEPT = 'application/vnd.github+json';
 const GH_VER = '2022-11-28';
 
+export class GithubUserRestHttpError extends Error {
+  override readonly name = 'GithubUserRestHttpError';
+
+  constructor(
+    /** HTTP status from GitHub. */
+    readonly statusCode: number,
+    readonly summary: string,
+    /** Untrimmed JSON/text body (truncate for logs if needed). */
+    readonly rawBodySnippet: string,
+  ) {
+    super(summary);
+  }
+}
+
 async function sleep(ms: number): Promise<void> {
   await new Promise((r) => setTimeout(r, ms));
 }
@@ -12,6 +26,61 @@ type GithubUserFetchResult = {
   status: number;
   bodyText: string;
 };
+
+/** Best-effort message line from GitHub error JSON ({ message, errors[] }). */
+export function summarizeGithubRestErrorBody(bodyText: string): string {
+  const trimmed = bodyText.trim();
+  if (!trimmed) return '';
+
+  try {
+    const j = JSON.parse(trimmed) as {
+      message?: unknown;
+      errors?: unknown;
+    };
+
+    let line = '';
+    if (typeof j.message === 'string' && j.message.trim()) {
+      line = j.message.trim();
+    }
+
+    const errs = j.errors;
+    if (Array.isArray(errs) && errs.length > 0) {
+      const first = errs[0];
+      let m = '';
+      if (typeof first === 'string') {
+        m = first.trim();
+      } else if (first !== null && typeof first === 'object') {
+        const msg = (first as { message?: unknown }).message;
+        m = typeof msg === 'string' ? msg.trim() : '';
+      }
+      if (m) {
+        line = line ? `${line}: ${m}` : m;
+      }
+    }
+
+    return line.slice(0, 2000);
+  } catch {
+    return trimmed.slice(0, 2000);
+  }
+}
+
+export function githubUserThrowHttp(params: {
+  status: number;
+  bodyText: string;
+  fallbackLabel: string;
+}): never {
+  const extra = summarizeGithubRestErrorBody(params.bodyText);
+  const summary =
+    extra.length > 0
+      ? `${params.fallbackLabel} (${params.status}): ${extra}`
+      : `${params.fallbackLabel} (${params.status})`;
+
+  throw new GithubUserRestHttpError(
+    params.status,
+    summary,
+    params.bodyText.slice(0, 4096),
+  );
+}
 
 async function githubUserFetchWithRetries(params: {
   userAccessToken: string;
@@ -76,21 +145,31 @@ export async function githubGetRefHeadSha(params: {
   });
 
   if (!res.ok) {
-    throw new Error(
-      `GitHub ref/heads resolve failed (${res.status}): ${res.bodyText}`,
-    );
+    githubUserThrowHttp({
+      status: res.status,
+      bodyText: res.bodyText,
+      fallbackLabel: `GitHub ref/heads/${params.headBranchName.trim()}`,
+    });
   }
 
   let body: unknown;
   try {
     body = JSON.parse(res.bodyText) as unknown;
   } catch {
-    throw new Error('GitHub returned non-JSON payload for GET ref/heads');
+    throw new GithubUserRestHttpError(
+      res.status,
+      'GitHub returned non-JSON payload for GET ref/heads',
+      res.bodyText.slice(0, 4096),
+    );
   }
   const gh = body as { object?: { sha?: string } };
   const sha = gh.object?.sha;
   if (!sha || typeof sha !== 'string') {
-    throw new Error('GitHub returned unexpected ref payload');
+    throw new GithubUserRestHttpError(
+      200,
+      'GitHub returned unexpected ref payload',
+      res.bodyText.slice(0, 4096),
+    );
   }
   return sha;
 }
@@ -120,16 +199,22 @@ export async function githubCreateGitRef(params: {
   });
 
   if (!res.ok) {
-    throw new Error(
-      `GitHub create ref failed (${res.status}) for refs/heads/${branchLeaf}: ${res.bodyText}`,
-    );
+    githubUserThrowHttp({
+      status: res.status,
+      bodyText: res.bodyText,
+      fallbackLabel: `GitHub create refs/heads/${branchLeaf}`,
+    });
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(res.bodyText) as unknown;
   } catch {
-    throw new Error('GitHub create ref returned non-JSON payload');
+    throw new GithubUserRestHttpError(
+      res.status,
+      'GitHub create ref returned non-JSON payload',
+      res.bodyText.slice(0, 4096),
+    );
   }
   const gh = parsed as {
     ref?: string;
@@ -138,7 +223,11 @@ export async function githubCreateGitRef(params: {
   const refStr = gh.ref;
   const objectSha = gh.object?.sha;
   if (!refStr || !objectSha) {
-    throw new Error('GitHub returned unexpected create-ref payload');
+    throw new GithubUserRestHttpError(
+      res.status,
+      'GitHub returned unexpected create-ref payload',
+      res.bodyText.slice(0, 4096),
+    );
   }
   return { ref: refStr, objectSha };
 }
@@ -172,12 +261,20 @@ export async function githubCreatePullRequest(params: {
   });
 
   if (!res.ok) {
-    throw new Error(`GitHub open PR failed (${res.status}): ${res.bodyText}`);
+    githubUserThrowHttp({
+      status: res.status,
+      bodyText: res.bodyText,
+      fallbackLabel: 'GitHub open pull request',
+    });
   }
 
   try {
     return JSON.parse(res.bodyText) as unknown;
   } catch {
-    throw new Error('GitHub open PR returned non-JSON payload');
+    throw new GithubUserRestHttpError(
+      res.status,
+      'GitHub open PR returned non-JSON payload',
+      res.bodyText.slice(0, 4096),
+    );
   }
 }

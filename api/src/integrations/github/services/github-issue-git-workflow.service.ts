@@ -4,10 +4,12 @@ import type {
 } from '@epicstory/contracts';
 import type { JSONContent } from '@tiptap/core';
 import {
+  BadGatewayException,
   BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
@@ -23,6 +25,7 @@ import {
   IssueGithubPullRequest,
 } from '../entities';
 import {
+  GithubUserRestHttpError,
   githubCreateGitRef,
   githubCreatePullRequest,
   githubGetRefHeadSha,
@@ -81,34 +84,36 @@ export class GithubIssueGitWorkflowService {
       );
     }
 
-    const tipSha = await githubGetRefHeadSha({
-      token: ctx.accessToken,
-      owner: ctx.owner,
-      repo: ctx.repoName,
-      headBranchName: baseBranchResolved,
-    });
-
     try {
-      const created = await githubCreateGitRef({
+      const tipSha = await githubGetRefHeadSha({
         token: ctx.accessToken,
         owner: ctx.owner,
         repo: ctx.repoName,
-        branchNameOnly: trimmedBranch,
-        sha: tipSha,
+        headBranchName: baseBranchResolved,
       });
-      return {
-        branchName: trimmedBranch,
-        gitRef: created.ref,
-        tipSha: created.objectSha,
-      };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (/422|already\s+exists/i.test(msg)) {
-        throw new ConflictException(
-          `Branch "${trimmedBranch}" already exists on ${ctx.owner}/${ctx.repoName}`,
-        );
+      try {
+        const created = await githubCreateGitRef({
+          token: ctx.accessToken,
+          owner: ctx.owner,
+          repo: ctx.repoName,
+          branchNameOnly: trimmedBranch,
+          sha: tipSha,
+        });
+        return {
+          branchName: trimmedBranch,
+          gitRef: created.ref,
+          tipSha: created.objectSha,
+        };
+      } catch (branchErr) {
+        normalizeGithubUserRestWorkflowFailure(branchErr, {
+          duplicateBranchConflict: trimmedBranch,
+          repoFullName: `${ctx.owner}/${ctx.repoName}`,
+        });
       }
-      throw e;
+    } catch (baseErr) {
+      normalizeGithubUserRestWorkflowFailure(baseErr, {
+        repoFullName: `${ctx.owner}/${ctx.repoName}`,
+      });
     }
   }
 
@@ -139,16 +144,23 @@ export class GithubIssueGitWorkflowService {
     const headLeaf = sanitizeBranchLeaf(params.headBranchName);
     if (!headLeaf) throw new BadRequestException('Invalid headBranch');
 
-    const rawPr = await githubCreatePullRequest({
-      token: ctx.accessToken,
-      owner: ctx.owner,
-      repo: ctx.repoName,
-      headBranchName: headLeaf,
-      baseBranchName: baseBranchResolved,
-      title: params.title.trim(),
-      bodyMarkdown: params.bodyMarkdown?.trim() ?? '',
-      draft: params.draft,
-    });
+    let rawPr: unknown;
+    try {
+      rawPr = await githubCreatePullRequest({
+        token: ctx.accessToken,
+        owner: ctx.owner,
+        repo: ctx.repoName,
+        headBranchName: headLeaf,
+        baseBranchName: baseBranchResolved,
+        title: params.title.trim(),
+        bodyMarkdown: params.bodyMarkdown?.trim() ?? '',
+        draft: params.draft,
+      });
+    } catch (e) {
+      normalizeGithubUserRestWorkflowFailure(e, {
+        repoFullName: `${ctx.owner}/${ctx.repoName}`,
+      });
+    }
 
     await this.prSync.upsertFromPullPayloadForIssue({
       issueId: ctx.issue.id,
@@ -159,7 +171,9 @@ export class GithubIssueGitWorkflowService {
 
     const ghPrNumeric = ghPrNumericId(rawPr);
     if (ghPrNumeric == null) {
-      throw new Error('GitHub opened a PR without a usable id payload');
+      throw new InternalServerErrorException(
+        'GitHub opened a PR without a usable id payload',
+      );
     }
     const ghPrIdStr = String(ghPrNumeric);
 
@@ -167,7 +181,7 @@ export class GithubIssueGitWorkflowService {
       where: { githubPullRequestId: ghPrIdStr },
     });
     if (!persisted) {
-      throw new Error(
+      throw new InternalServerErrorException(
         'Failed to load persisted PR link after GitHub PR create',
       );
     }
@@ -404,4 +418,55 @@ function ghPrNumericId(payload: unknown): number | null {
     return Number(idRaw);
   }
   return null;
+}
+
+/**
+ * Turns {@link GithubUserRestHttpError} into Nest exceptions with GitHub-derived messages;
+ * duplicate branch create → 409; auth/ACL → 422; plausible server errors → 502.
+ */
+function normalizeGithubUserRestWorkflowFailure(
+  err: unknown,
+  opts?: { duplicateBranchConflict?: string; repoFullName?: string },
+): never {
+  if (!(err instanceof GithubUserRestHttpError)) {
+    throw err;
+  }
+  const e = err;
+  const repoLabel = opts?.repoFullName ?? 'this repository';
+
+  if (e.statusCode === 401 || e.statusCode === 403) {
+    throw new UnprocessableEntityException(
+      `${e.summary} Check GitHub access to ${repoLabel} or reconnect GitHub from workspace settings.`,
+    );
+  }
+
+  if (e.statusCode === 404) {
+    throw new BadRequestException(e.summary);
+  }
+
+  if (
+    e.statusCode === 422 &&
+    opts?.duplicateBranchConflict != null &&
+    opts.repoFullName != null
+  ) {
+    const haystack = `${e.summary}\n${e.rawBodySnippet}`.toLowerCase();
+    if (
+      haystack.includes('reference already exists') ||
+      haystack.includes('already exists')
+    ) {
+      throw new ConflictException(
+        `Branch "${opts.duplicateBranchConflict}" already exists on ${opts.repoFullName}`,
+      );
+    }
+  }
+
+  if (e.statusCode === 422) {
+    throw new BadRequestException(e.summary);
+  }
+
+  if (e.statusCode >= 500) {
+    throw new BadGatewayException(e.summary);
+  }
+
+  throw new BadRequestException(e.summary);
 }
