@@ -18,4 +18,10 @@ export class GithubInstallationRepository extends Repository<GithubInstallation>
       order: { id: 'DESC' },
     });
   }
+
+  findByGithubInstallationId(githubInstallationId: string) {
+    return this.findOne({
+      where: { githubInstallationId },
+    });
+  }
 }

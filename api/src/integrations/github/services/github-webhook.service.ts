@@ -7,22 +7,30 @@ import {
 } from '@nestjs/common';
 import { AppConfig } from 'src/core/app.config';
 import { verifyGithubWebhookSignature256 } from '../lib/verify-github-webhook-signature';
+import { GithubInstallationRepository } from '../repositories';
+import { GithubWorkspaceInstallationService } from './github-workspace-installation.service';
+
+type GenericPayload = Record<string, unknown>;
 
 @Injectable()
 export class GithubWebhookService {
   private readonly logger = new Logger(GithubWebhookService.name);
 
-  constructor(private readonly config: AppConfig) {}
+  constructor(
+    private readonly config: AppConfig,
+    private readonly installationRepo: GithubInstallationRepository,
+    private readonly workspaceInstallation: GithubWorkspaceInstallationService,
+  ) {}
 
   /**
-   * Validates HMAC signature and acknowledges the delivery. Event-specific handling (e.g. `pull_request`) comes later.
+   * Validates HMAC, then routes by `X-GitHub-Event` (installation cleanup, observability hooks, etc.).
    */
-  handleVerifiedDelivery(params: {
+  async handleVerifiedDelivery(params: {
     rawBody: Buffer;
     signature256: string | undefined;
     event: string | undefined;
     deliveryId: string | undefined;
-  }): void {
+  }): Promise<void> {
     const secret = this.config.GITHUB_APP_WEBHOOK_SECRET?.trim();
     if (!secret) {
       throw new ServiceUnavailableException(
@@ -47,16 +55,161 @@ export class GithubWebhookService {
       throw new BadRequestException('Invalid JSON payload');
     }
 
-    const action =
-      payload &&
-      typeof payload === 'object' &&
-      'action' in payload &&
-      typeof (payload as { action?: unknown }).action === 'string'
-        ? (payload as { action: string }).action
-        : undefined;
+    await this.dispatchEvent(params.event, payload, params.deliveryId);
+  }
+
+  private async dispatchEvent(
+    event: string | undefined,
+    payload: unknown,
+    deliveryId: string | undefined,
+  ): Promise<void> {
+    const p = asObject(payload);
+    const action = p && typeof p.action === 'string' ? p.action : '(no action)';
+    const del = deliveryId ?? '?';
+
+    switch (event) {
+      case 'ping':
+        this.logger.log(
+          `GitHub ping delivery=${del} zen=${githubPingZen(payload)}`,
+        );
+        return;
+      case 'installation':
+        await this.onInstallationWebhook(p, deliveryId);
+        return;
+      case 'installation_repositories':
+        this.onInstallationRepositoriesWebhook(p, deliveryId);
+        return;
+      case 'repository':
+        this.onRepositoryWebhook(p, deliveryId);
+        return;
+      case 'pull_request':
+        this.onPullRequestWebhook(p, deliveryId);
+        return;
+      default:
+        this.logger.debug(
+          `GitHub webhook unhandled event=${event ?? '?'} action=${action} delivery=${del}`,
+        );
+    }
+  }
+
+  private async onInstallationWebhook(
+    payload: GenericPayload | null,
+    deliveryId: string | undefined,
+  ): Promise<void> {
+    const action = typeof payload?.action === 'string' ? payload.action : '?';
+    const ghId = installationIdString(asObject(payload?.installation));
+    const del = deliveryId ?? '?';
 
     this.logger.log(
-      `GitHub webhook received: event=${params.event ?? '?'} action=${action ?? '—'} delivery=${params.deliveryId ?? '?'}`,
+      `GitHub installation webhook action=${action} installation_id=${ghId ?? '?'} delivery=${del}`,
+    );
+
+    if (action === 'deleted' && ghId != null) {
+      const installation =
+        await this.installationRepo.findByGithubInstallationId(ghId);
+      if (!installation) {
+        this.logger.warn(
+          `installation deleted on GitHub (id=${ghId}); no Epicstory row matched delivery=${del}`,
+        );
+        return;
+      }
+
+      await this.workspaceInstallation.removeInstallationForWorkspace(
+        installation.workspaceId,
+      );
+      this.logger.log(
+        `Removed GitHub linkage for Epicstory workspace ${installation.workspaceId} (GitHub installation_id=${ghId})`,
+      );
+    }
+  }
+
+  private onInstallationRepositoriesWebhook(
+    payload: GenericPayload | null,
+    deliveryId: string | undefined,
+  ): void {
+    const action = typeof payload?.action === 'string' ? payload.action : '?';
+    const installId =
+      installationIdString(asObject(payload?.installation)) ?? '?';
+    const del = deliveryId ?? '?';
+
+    this.logger.log(
+      `installation_repositories action=${action} installation_id=${installId} delivery=${del}`,
+    );
+
+    if (
+      this.config.GITHUB_CACHE_INVALIDATE_ON_REPO_WEBHOOKS &&
+      this.config.GITHUB_CACHE_USE_REDIS
+    ) {
+      this.logger.debug(
+        `Repo catalogue cache purge not implemented (installation_id=${installId} delivery=${del})`,
+      );
+    }
+  }
+
+  private onRepositoryWebhook(
+    payload: GenericPayload | null,
+    deliveryId: string | undefined,
+  ): void {
+    const action = typeof payload?.action === 'string' ? payload.action : '?';
+    const repo = asObject(payload?.repository);
+    const fullName =
+      repo && typeof repo.full_name === 'string' ? repo.full_name : '?';
+    const del = deliveryId ?? '?';
+    this.logger.log(
+      `repository webhook action=${action} repo=${fullName} delivery=${del}`,
+    );
+
+    if (
+      this.config.GITHUB_CACHE_INVALIDATE_ON_REPO_WEBHOOKS &&
+      this.config.GITHUB_CACHE_USE_REDIS
+    ) {
+      this.logger.debug(
+        `Repository metadata cache purge not implemented (delivery=${del})`,
+      );
+    }
+  }
+
+  /** Future: persist / upsert issue ↔ PR rows (task 06). */
+  private onPullRequestWebhook(
+    payload: GenericPayload | null,
+    deliveryId: string | undefined,
+  ): void {
+    const action = typeof payload?.action === 'string' ? payload.action : '?';
+    const pr = asObject(payload?.pull_request);
+    const repo = asObject(payload?.repository);
+
+    const prId = installationIdString(pr);
+    const number =
+      pr && typeof pr.number === 'number' ? String(pr.number) : '?';
+    const state = pr && typeof pr.state === 'string' ? pr.state : '?';
+    const merged = pr && typeof pr.merged === 'boolean' ? pr.merged : false;
+    const fullName =
+      repo && typeof repo.full_name === 'string' ? repo.full_name : '?';
+
+    this.logger.log(
+      `pull_request action=${action} repo=${fullName} pr=#${number} gh_pr_id=${prId ?? '?'} state=${state} merged=${merged} delivery=${deliveryId ?? '?'}`,
     );
   }
+}
+
+function asObject(v: unknown): GenericPayload | null {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+    ? (v as GenericPayload)
+    : null;
+}
+
+function installationIdString(inst: GenericPayload | null): string | undefined {
+  if (inst === null || !('id' in inst)) {
+    return undefined;
+  }
+  const id = inst.id;
+  if (typeof id === 'number') return String(id);
+  if (typeof id === 'string') return id.trim();
+  return undefined;
+}
+
+function githubPingZen(payload: unknown): string {
+  const p = asObject(payload);
+  const z = p?.zen;
+  return typeof z === 'string' ? z : '?';
 }

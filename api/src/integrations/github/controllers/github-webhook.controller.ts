@@ -19,7 +19,7 @@ export class GithubWebhookController {
 
   @Post('webhook')
   @HttpCode(200)
-  receive(@Req() req: RawBodyRequest<Request>): { ok: true } {
+  async receive(@Req() req: RawBodyRequest<Request>): Promise<{ ok: true }> {
     const raw = req.rawBody;
     if (!raw || !Buffer.isBuffer(raw)) {
       throw new InternalServerErrorException(
@@ -27,7 +27,7 @@ export class GithubWebhookController {
       );
     }
 
-    this.githubWebhook.handleVerifiedDelivery({
+    await this.githubWebhook.handleVerifiedDelivery({
       rawBody: raw,
       signature256: req.get('x-hub-signature-256'),
       event: req.get('x-github-event') ?? undefined,
