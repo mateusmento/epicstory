@@ -23,6 +23,7 @@ import {
   GithubInstallationRepository,
   GithubUserConnectionRepository,
 } from '../repositories';
+import { GithubInstallation, ProjectGithubRepo } from '../entities';
 import { GithubApiService } from '../services/github-api.service';
 
 @Controller('integrations/github/workspaces')
@@ -142,6 +143,10 @@ export class GithubIntegrationController {
     }
   }
 
+  /**
+   * Removes the workspace GitHub App installation and all project→repo links for this workspace
+   * (links are only valid while an installation exists).
+   */
   @Delete(':workspaceId/installation')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
@@ -161,7 +166,18 @@ export class GithubIntegrationController {
       );
     }
 
-    await this.installationRepo.delete({ workspaceId });
+    await this.installationRepo.manager.transaction(async (em) => {
+      await em
+        .createQueryBuilder()
+        .delete()
+        .from(ProjectGithubRepo)
+        .where(
+          'project_id IN (SELECT id FROM workspace.workspace_project WHERE workspace_id = :wid)',
+        )
+        .setParameter('wid', workspaceId)
+        .execute();
+      await em.delete(GithubInstallation, { workspaceId });
+    });
   }
 
   @Delete(':workspaceId/user')
