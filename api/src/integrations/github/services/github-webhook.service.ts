@@ -8,6 +8,7 @@ import {
 import { AppConfig } from 'src/core/app.config';
 import { verifyGithubWebhookSignature256 } from '../lib/verify-github-webhook-signature';
 import { GithubInstallationRepository } from '../repositories';
+import { GithubIssuePullRequestSyncService } from './github-issue-pull-request-sync.service';
 import { GithubWorkspaceInstallationService } from './github-workspace-installation.service';
 
 type GenericPayload = Record<string, unknown>;
@@ -20,6 +21,7 @@ export class GithubWebhookService {
     private readonly config: AppConfig,
     private readonly installationRepo: GithubInstallationRepository,
     private readonly workspaceInstallation: GithubWorkspaceInstallationService,
+    private readonly issuePullSync: GithubIssuePullRequestSyncService,
   ) {}
 
   /**
@@ -83,7 +85,7 @@ export class GithubWebhookService {
         this.onRepositoryWebhook(p, deliveryId);
         return;
       case 'pull_request':
-        this.onPullRequestWebhook(p, deliveryId);
+        await this.onPullRequestWebhook(payload, p, deliveryId);
         return;
       default:
         this.logger.debug(
@@ -169,11 +171,11 @@ export class GithubWebhookService {
     }
   }
 
-  /** Future: persist / upsert issue ↔ PR rows (task 06). */
-  private onPullRequestWebhook(
+  private async onPullRequestWebhook(
+    payloadRoot: unknown,
     payload: GenericPayload | null,
     deliveryId: string | undefined,
-  ): void {
+  ): Promise<void> {
     const action = typeof payload?.action === 'string' ? payload.action : '?';
     const pr = asObject(payload?.pull_request);
     const repo = asObject(payload?.repository);
@@ -189,6 +191,8 @@ export class GithubWebhookService {
     this.logger.log(
       `pull_request action=${action} repo=${fullName} pr=#${number} gh_pr_id=${prId ?? '?'} state=${state} merged=${merged} delivery=${deliveryId ?? '?'}`,
     );
+
+    await this.issuePullSync.syncFromPullRequestWebhookPayload(payloadRoot);
   }
 }
 

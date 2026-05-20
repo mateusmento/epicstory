@@ -1,3 +1,4 @@
 export * from './github-installation.entity';
 export * from './github-user-connection.entity';
+export * from './issue-github-pull-request.entity';
 export * from './project-github-repo.entity';

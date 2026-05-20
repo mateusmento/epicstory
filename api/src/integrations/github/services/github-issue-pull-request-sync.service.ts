@@ -1,0 +1,156 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Issue } from 'src/project/domain/entities/issue.entity';
+import { IssueGithubPullRequest } from '../entities';
+import { ProjectGithubRepoRepository } from '../repositories';
+
+type GenericPayload = Record<string, unknown>;
+
+/**
+ * Persists / updates issue ↔ GitHub PR rows from `pull_request` webhooks.
+ * New correlation: PR head ref starts with `{issueId}-` (Epicstory branch default; task 01 §7.1).
+ */
+@Injectable()
+export class GithubIssuePullRequestSyncService {
+  private readonly logger = new Logger(GithubIssuePullRequestSyncService.name);
+
+  constructor(
+    @InjectRepository(IssueGithubPullRequest)
+    private readonly prLinkRepo: Repository<IssueGithubPullRequest>,
+    @InjectRepository(Issue)
+    private readonly issueRepo: Repository<Issue>,
+    private readonly projectGithubRepoRepo: ProjectGithubRepoRepository,
+  ) {}
+
+  async syncFromPullRequestWebhookPayload(payload: unknown): Promise<void> {
+    const root = asObject(payload);
+    const pr = asObject(root?.pull_request);
+    const repo = asObject(root?.repository);
+    if (!pr || !repo) return;
+
+    const ghPrId = githubIdString(pr);
+    if (ghPrId == null) return;
+
+    const htmlUrl = typeof pr.html_url === 'string' ? pr.html_url : null;
+    if (!htmlUrl) return;
+
+    const prNumber =
+      typeof pr.number === 'number' && Number.isFinite(pr.number)
+        ? pr.number
+        : null;
+    if (prNumber == null) return;
+
+    const state = typeof pr.state === 'string' ? pr.state : 'open';
+    const draft = typeof pr.draft === 'boolean' ? pr.draft : false;
+    const merged = typeof pr.merged === 'boolean' ? pr.merged : false;
+
+    const fullName =
+      typeof repo.full_name === 'string' ? repo.full_name.trim() : null;
+    if (!fullName) return;
+    const slash = fullName.indexOf('/');
+    if (slash < 1 || slash >= fullName.length - 1) return;
+    const owner = fullName.slice(0, slash);
+    const repoName = fullName.slice(slash + 1);
+
+    const head = asObject(pr.head);
+    const base = asObject(pr.base);
+    const headRef = typeof head?.ref === 'string' ? head.ref : null;
+    const baseRef = typeof base?.ref === 'string' ? base.ref : null;
+
+    const mergedAt = isoToDate(pr.merged_at);
+    const closedAt = isoToDate(pr.closed_at);
+    const ghUpdatedAt = isoToDate(pr.updated_at);
+
+    const existing = await this.prLinkRepo.findOne({
+      where: { githubPullRequestId: ghPrId },
+    });
+
+    let issueId: number | undefined = existing?.issueId;
+    if (issueId == null && headRef != null) {
+      const candidateId = extractIssueIdFromBranchHeadRef(headRef);
+      if (candidateId != null) {
+        const issue = await this.issueRepo.findOne({
+          where: { id: candidateId },
+        });
+        if (issue) {
+          const link = await this.projectGithubRepoRepo.findOne({
+            where: {
+              projectId: issue.projectId,
+              owner,
+              name: repoName,
+            },
+          });
+          if (link) {
+            issueId = issue.id;
+          }
+        }
+      }
+    }
+
+    if (issueId == null) {
+      if (existing) {
+        issueId = existing.issueId;
+      } else {
+        this.logger.debug(
+          `pull_request github id=${ghPrId}: no Epicstory issue correlation (head_ref=${headRef ?? '?'})`,
+        );
+        return;
+      }
+    }
+
+    const rowData: Partial<IssueGithubPullRequest> = {
+      issueId,
+      githubPullRequestId: ghPrId,
+      owner,
+      repoName,
+      prNumber,
+      htmlUrl,
+      headRef,
+      baseRef,
+      state,
+      draft,
+      merged,
+      mergedAt,
+      closedAt,
+      githubUpdatedAt: ghUpdatedAt,
+    };
+
+    if (existing) {
+      Object.assign(existing, rowData);
+      await this.prLinkRepo.save(existing);
+      return;
+    }
+
+    await this.prLinkRepo.save(this.prLinkRepo.create(rowData));
+  }
+}
+
+function asObject(v: unknown): GenericPayload | null {
+  return v !== null && typeof v === 'object' && !Array.isArray(v)
+    ? (v as GenericPayload)
+    : null;
+}
+
+function githubIdString(obj: GenericPayload | null): string | undefined {
+  if (obj === null || !('id' in obj)) return undefined;
+  const id = obj.id;
+  if (typeof id === 'number') return String(id);
+  if (typeof id === 'string') return id.trim();
+  return undefined;
+}
+
+function isoToDate(v: unknown): Date | null {
+  if (v == null) return null;
+  if (typeof v !== 'string') return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Branch default `{issueId}-{slug}` from product docs. */
+function extractIssueIdFromBranchHeadRef(ref: string): number | undefined {
+  const m = /^(\d+)-/.exec(ref.trim());
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+}
