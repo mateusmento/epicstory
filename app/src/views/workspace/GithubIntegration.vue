@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { config } from "@/config";
 import { Button } from "@/design-system";
 import { useDependency } from "@/core/dependency-injection";
 import { GithubIntegrationApi } from "@epicstory/api-client";
@@ -12,6 +13,22 @@ const workspaceId = computed(() => Number(route.params.workspaceId));
 
 const loading = ref(false);
 const status = ref<Awaited<ReturnType<typeof api.getStatus>>>();
+
+function installStartUrl() {
+  const redirect = `/${workspaceId.value}/settings/integrations/github`;
+  const url = new URL(`${config.API_URL}/integrations/github/install/start`);
+  url.searchParams.set("workspaceId", String(workspaceId.value));
+  url.searchParams.set("redirect", redirect);
+  return url.toString();
+}
+
+function userOAuthStartUrl() {
+  const redirect = `/${workspaceId.value}/settings/integrations/github`;
+  const url = new URL(`${config.API_URL}/integrations/github/user/start`);
+  url.searchParams.set("workspaceId", String(workspaceId.value));
+  url.searchParams.set("redirect", redirect);
+  return url.toString();
+}
 
 async function refresh() {
   loading.value = true;
@@ -59,14 +76,35 @@ onMounted(refresh);
           </template>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Button
+            v-if="status?.appConfigured"
+            variant="default"
+            :disabled="loading"
+            :as="'a'"
+            :href="installStartUrl()"
+          >
+            Install GitHub App
+          </Button>
+          <Button
+            v-if="status?.appConfigured"
+            variant="outline"
+            :disabled="loading"
+            :as="'a'"
+            :href="userOAuthStartUrl()"
+          >
+            Link your GitHub account
+          </Button>
           <Button variant="outline" :disabled="loading" @click="refresh"> Refresh </Button>
         </div>
       </div>
     </div>
 
-    <div class="mt-4 text-sm text-secondary-foreground">
-      OAuth install flows and repository linking are next — this page confirms API wiring and database tables.
-    </div>
+    <p class="mt-4 text-sm text-secondary-foreground">
+      In GitHub → App settings, set the installation callback URL to match your API’s install handler, and the
+      user OAuth callback for member linking. Add <code class="text-xs">GITHUB_APP_SLUG</code> and
+      <code class="text-xs">GITHUB_APP_PRIVATE_KEY</code> in the API environment so installs resolve the org
+      or user account name.
+    </p>
   </div>
 </template>

@@ -4,6 +4,7 @@ import { AuthModule } from 'src/auth';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import * as controllers from './controllers';
+import * as services from './services';
 import {
   GithubInstallation,
   GithubUserConnection,
@@ -22,7 +23,15 @@ import * as repositories from './repositories';
     AuthModule,
   ],
   controllers: [...Object.values(controllers)],
-  providers: [...Object.values(repositories), IntegrationTokenCryptoService],
-  exports: [...Object.values(repositories), IntegrationTokenCryptoService],
+  providers: [
+    ...Object.values(repositories),
+    ...Object.values(services),
+    IntegrationTokenCryptoService,
+  ],
+  exports: [
+    ...Object.values(repositories),
+    ...Object.values(services),
+    IntegrationTokenCryptoService,
+  ],
 })
 export class GithubIntegrationModule {}

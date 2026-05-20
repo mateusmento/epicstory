@@ -272,6 +272,25 @@ export class AppConfig {
   @IsString()
   GITHUB_APP_USER_CALLBACK_URL?: string;
 
+  /**
+   * Public app slug for `https://github.com/apps/<slug>/installations/new`.
+   */
+  @IsOptional()
+  @IsString()
+  GITHUB_APP_SLUG?: string;
+
+  getGithubInstallCallbackUrl(): string {
+    const explicit = this.GITHUB_APP_INSTALL_CALLBACK_URL?.trim();
+    if (explicit) return explicit;
+    return `${this.APP_URL.replace(/\/$/, '')}/api/integrations/github/install/callback`;
+  }
+
+  getGithubUserCallbackUrl(): string {
+    const explicit = this.GITHUB_APP_USER_CALLBACK_URL?.trim();
+    if (explicit) return explicit;
+    return `${this.APP_URL.replace(/\/$/, '')}/api/integrations/github/user/callback`;
+  }
+
   /** True when App id + client id + secret are set (private key required later for API calls). */
   isGithubAppRegistrationComplete(): boolean {
     return Boolean(
