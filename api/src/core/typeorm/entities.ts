@@ -4,6 +4,7 @@ import * as authEntities from '../../auth/domain';
 import * as channelEntities from '../../channel/domain/entities';
 import { Notification } from 'src/notifications/entities/notification.entity';
 import * as linearIntegrationEntities from 'src/integrations/linear/entities';
+import * as githubIntegrationEntities from 'src/integrations/github/entities';
 import * as calendarEntities from 'src/calendar/entities';
 import * as schedulingEntities from 'src/scheduling/entities';
 
@@ -16,4 +17,5 @@ export default [
   ...Object.values(calendarEntities),
   ...Object.values(schedulingEntities),
   ...Object.values(linearIntegrationEntities),
+  ...Object.values(githubIntegrationEntities),
 ];

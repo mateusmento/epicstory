@@ -2,6 +2,7 @@ export * from "./auth.api";
 export * from "./backlog.api";
 export * from "./calendar-event.api";
 export * from "./channel.api";
+export * from "./github.api";
 export * from "./issue.api";
 export * from "./label.api";
 export * from "./linear.api";

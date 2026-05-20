@@ -35,12 +35,21 @@ const { workspace } = useWorkspace();
       </NavListItem>
       <NavListItem
         view="app-pane"
+        content="settings-integrations-github"
+        :to="`/${workspace.id}/settings/integrations/github`"
+        class="flex:row-md flex:center-y"
+      >
+        <Icon name="bi-box-arrow-up-right" />
+        GitHub
+      </NavListItem>
+      <NavListItem
+        view="app-pane"
         content="settings-integrations-linear"
         :to="`/${workspace.id}/settings/integrations/linear`"
         class="flex:row-md flex:center-y"
       >
         <Icon name="hi-clipboard-list" />
-        Integrations
+        Linear
       </NavListItem>
     </nav>
   </div>

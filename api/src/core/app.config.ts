@@ -1,5 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import {
   dotenvLoader,
   selectConfig,
@@ -128,4 +134,150 @@ export class AppConfig {
   @IsNumber()
   @Transform(({ value }) => (value == null || value === '' ? 72 : +value))
   ATTACHMENT_STAGING_TTL_HOURS: number = 72;
+
+  // ---- Integrations (GitHub API — Redis cache, backoff; implementation pending) ----
+  //
+  // Invalidation (when GitHub integration ships): purge matching keys on synchronous
+  // workspace-admin mutations AND on GitHub webhooks `installation_repositories` + `repository`.
+
+  /** Store GitHub read caches in Redis (`RedisService` / `REDIS_URL`). */
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => !(value === 'false' || value === false))
+  GITHUB_CACHE_USE_REDIS: boolean = true;
+
+  /** Invalidate GitHub caches when an admin changes installation/repo linkage in Epicstory. */
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => !(value === 'false' || value === false))
+  GITHUB_CACHE_INVALIDATE_ON_ADMIN_ACTIONS: boolean = true;
+
+  /** Invalidate GitHub caches on `installation_repositories` + `repository` webhook deliveries. */
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => !(value === 'false' || value === false))
+  GITHUB_CACHE_INVALIDATE_ON_REPO_WEBHOOKS: boolean = true;
+
+  @IsString()
+  @Transform(({ value }) =>
+    value == null || value === '' ? 'github:' : String(value).trim(),
+  )
+  GITHUB_CACHE_KEY_PREFIX: string = 'github:';
+
+  /** Single-repo metadata (REST / GraphQL snapshot). */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 300 : +value))
+  GITHUB_CACHE_REPO_METADATA_TTL_SEC: number = 300;
+
+  /** Installation-visible repo lists (paginated). Shorter TTL — changes when repos added/removed. */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 120 : +value))
+  GITHUB_CACHE_REPO_LIST_TTL_SEC: number = 120;
+
+  /** Default branch name cache when stored separately from full metadata. */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 300 : +value))
+  GITHUB_CACHE_DEFAULT_BRANCH_TTL_SEC: number = 300;
+
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 30_000 : +value))
+  GITHUB_HTTP_TIMEOUT_MS: number = 30_000;
+
+  /** Total tries per request including the first attempt (429 / retryable 5xx only). */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 5 : +value))
+  GITHUB_HTTP_RETRY_MAX_ATTEMPTS: number = 5;
+
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 500 : +value))
+  GITHUB_HTTP_RETRY_INITIAL_DELAY_MS: number = 500;
+
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 30_000 : +value))
+  GITHUB_HTTP_RETRY_MAX_DELAY_MS: number = 30_000;
+
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 2 : +value))
+  GITHUB_HTTP_RETRY_BACKOFF_MULTIPLIER: number = 2;
+
+  /** Extra delay fraction in [0, 1] applied as random jitter on backoff. */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 0.2 : +value))
+  GITHUB_HTTP_RETRY_JITTER: number = 0.2;
+
+  /** Re-mint installation access tokens at least this many seconds before GitHub expiry. */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 120 : +value))
+  GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SEC: number = 120;
+
+  /** Proactively refresh user-to-server tokens when within this skew of expiry (if refresh tokens exist). */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 300 : +value))
+  GITHUB_USER_TOKEN_REFRESH_SKEW_SEC: number = 300;
+
+  /**
+   * If a GitHub call returns 401 with an installation token, drop cache, re-mint once, retry that request once (no loops).
+   */
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => !(value === 'false' || value === false))
+  GITHUB_INSTALLATION_TOKEN_RETRY_REQUEST_ON_401: boolean = true;
+
+  /**
+   * Persist and use GitHub **user-to-server** refresh_token grants when GitHub returns them (configure the GitHub App / authorization per GitHub docs).
+   */
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => !(value === 'false' || value === false))
+  GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED: boolean = true;
+
+  /**
+   * Limit concurrent outbound GitHub HTTP calls per workspace (0 = no limit).
+   * Helps avoid burning shared rate limits across tabs/users.
+   */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 4 : +value))
+  GITHUB_HTTP_MAX_CONCURRENT_REQUESTS_PER_WORKSPACE: number = 4;
+
+  /** GitHub App (manifest) — optional until integration is wired for an environment. */
+  @IsOptional()
+  @IsString()
+  GITHUB_APP_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  GITHUB_APP_CLIENT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  GITHUB_APP_CLIENT_SECRET?: string;
+
+  /** Verify `X-Hub-Signature-256` on webhook deliveries. */
+  @IsOptional()
+  @IsString()
+  GITHUB_APP_WEBHOOK_SECRET?: string;
+
+  /** PEM contents or path — consumed when minting JWTs for installation tokens (future). */
+  @IsOptional()
+  @IsString()
+  GITHUB_APP_PRIVATE_KEY?: string;
+
+  /** POST `/api/integrations/github/install/callback` target after GitHub App setup (admin install). */
+  @IsOptional()
+  @IsString()
+  GITHUB_APP_INSTALL_CALLBACK_URL?: string;
+
+  /** Member user-to-server OAuth callback (`/integrations/github/user/callback`). */
+  @IsOptional()
+  @IsString()
+  GITHUB_APP_USER_CALLBACK_URL?: string;
+
+  /** True when App id + client id + secret are set (private key required later for API calls). */
+  isGithubAppRegistrationComplete(): boolean {
+    return Boolean(
+      this.GITHUB_APP_ID &&
+        this.GITHUB_APP_CLIENT_ID &&
+        this.GITHUB_APP_CLIENT_SECRET,
+    );
+  }
 }

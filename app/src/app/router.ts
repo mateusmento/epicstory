@@ -60,6 +60,11 @@ const authenticatedRoutes = defineRoutes({
           component: () => import("@/views/user/UserAccountSettings.vue"),
         },
         {
+          path: "settings/integrations/github",
+          name: "github-integration-settings",
+          component: () => import("@/views/workspace/GithubIntegration.vue"),
+        },
+        {
           path: "settings/integrations/linear",
           name: "linear-integration-settings",
           component: () => import("@/views/workspace/LinearIntegration.vue"),

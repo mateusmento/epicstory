@@ -8,6 +8,7 @@ import { ChannelModule } from './channel/channel.module';
 import { ProjectModule } from './project/project.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LinearIntegrationModule } from './integrations/linear/linear.module';
+import { GithubIntegrationModule } from './integrations/github/github.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { SchedulingModule } from './scheduling/scheduling.module';
 
@@ -22,6 +23,7 @@ import { SchedulingModule } from './scheduling/scheduling.module';
     CalendarModule,
     SchedulingModule,
     LinearIntegrationModule,
+    GithubIntegrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

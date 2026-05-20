@@ -12,6 +12,7 @@ export * from "./issue-feed";
 export * from "./backlog";
 export * from "./auth";
 export * from "./calendar";
+export * from "./github";
 export * from "./linear";
 export * from "./notification";
 export * from "./channel-activity";

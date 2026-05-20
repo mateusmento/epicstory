@@ -3,6 +3,7 @@ import {
   BacklogApi,
   CalendarEventApi,
   ChannelApi,
+  GithubIntegrationApi,
   IssueApi,
   LabelApi,
   LinearIntegrationApi,
@@ -36,6 +37,7 @@ export async function createDependencies() {
   container.registerSingleton(CalendarEventApi);
   container.registerSingleton(NotificationApi);
   container.registerSingleton(LinearIntegrationApi);
+  container.registerSingleton(GithubIntegrationApi);
 
   return container;
 }
