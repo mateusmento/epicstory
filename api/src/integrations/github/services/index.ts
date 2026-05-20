@@ -1,2 +1,7 @@
 export * from './github-api.service';
+export * from './github-install-flow.service';
+export * from './github-project-repo-link.service';
 export * from './github-user-oauth.service';
+export * from './github-user-oauth-flow.service';
+export * from './github-workspace-installation.service';
+export * from './github-workspace-integration.service';
