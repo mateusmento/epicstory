@@ -26,6 +26,10 @@ export class ProjectGithubRepo {
   @Column({ name: 'default_branch', nullable: true })
   defaultBranch?: string | null;
 
+  /** Default repo for branch/PR UI when a project has multiple links. */
+  @Column({ name: 'is_primary', default: false })
+  isPrimary: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 }

@@ -75,5 +75,7 @@ export type IGithubProjectRepoLink = {
   fullName: string;
   githubRepoId: string;
   defaultBranch: string | null;
+  /** Default target for issue branch/PR flows when multiple repos are linked. */
+  isPrimary: boolean;
   createdAt: string;
 };

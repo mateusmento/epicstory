@@ -84,6 +84,18 @@ export class GithubIntegrationApi {
     );
   }
 
+  setPrimaryProjectGithubRepo(
+    workspaceId: number,
+    projectId: number,
+    linkId: number,
+  ) {
+    return this.axios
+      .post<IGithubProjectRepoLink>(
+        `/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos/${linkId}/primary`,
+      )
+      .then((r) => r.data);
+  }
+
   listIssueGithubPullRequests(issueId: number) {
     return this.axios
       .get<

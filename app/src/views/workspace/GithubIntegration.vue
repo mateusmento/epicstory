@@ -26,6 +26,7 @@ const projectReposLoading = ref(false);
 const projectReposError = ref<string | null>(null);
 const linkError = ref<string | null>(null);
 const linkActionKey = ref<string | null>(null);
+const primaryActionId = ref<number | null>(null);
 
 const catalogLoading = ref(false);
 const catalog = ref<IGithubRepositoryCatalogPage | null>(null);
@@ -201,6 +202,20 @@ async function unlinkProjectRepo(linkId: number) {
   }
 }
 
+async function setPrimaryProjectRepo(linkId: number) {
+  if (selectedProjectId.value == null) return;
+  primaryActionId.value = linkId;
+  projectReposError.value = null;
+  try {
+    await api.setPrimaryProjectGithubRepo(workspaceId.value, selectedProjectId.value, linkId);
+    await loadProjectRepos();
+  } catch (e: unknown) {
+    projectReposError.value = extractApiError(e, "Could not set default repository.");
+  } finally {
+    primaryActionId.value = null;
+  }
+}
+
 async function disconnectInstallation() {
   if (!confirm("Remove the GitHub App installation from this workspace?")) return;
   loading.value = true;
@@ -345,20 +360,32 @@ onMounted(async () => {
           class="px-3 py-2 text-sm flex flex-row items-center justify-between gap-2"
         >
           <div class="min-w-0">
-            <div class="font-medium truncate">{{ l.fullName }}</div>
+            <div class="font-medium truncate flex flex-wrap items-center gap-2">
+              <span>{{ l.fullName }}</span>
+              <span
+                v-if="l.isPrimary"
+                class="text-xs font-normal text-primary border border-primary/30 rounded px-1.5 py-0"
+                >Default</span
+              >
+            </div>
             <div class="text-xs text-secondary-foreground truncate">
-              default: {{ l.defaultBranch ?? "—" }}
+              default branch: {{ l.defaultBranch ?? "—" }}
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            :disabled="loading"
-            class="shrink-0"
-            @click="unlinkProjectRepo(l.id)"
-          >
-            Remove
-          </Button>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <Button
+              v-if="!l.isPrimary"
+              variant="secondary"
+              size="sm"
+              :disabled="loading || primaryActionId === l.id"
+              @click="setPrimaryProjectRepo(l.id)"
+            >
+              {{ primaryActionId === l.id ? "Saving…" : "Set as default" }}
+            </Button>
+            <Button variant="outline" size="sm" :disabled="loading" @click="unlinkProjectRepo(l.id)">
+              Remove
+            </Button>
+          </div>
         </li>
       </ul>
       <div

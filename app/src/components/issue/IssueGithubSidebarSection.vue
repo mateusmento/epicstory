@@ -24,6 +24,8 @@ const {
   ghWorkflowError,
   headBranchLeaf,
   openPrAsDraft,
+  prStatusFilter,
+  githubPullRequestGroups,
   createGithubBranch,
   openGithubPull,
 } = useIssueGithubSidebar({
@@ -45,21 +47,46 @@ const {
       None synced yet (open a PR from a branch named
       <span class="font-mono">{{ issue.id }}-…</span> on a linked repo).
     </div>
-    <ul v-else class="flex:col-sm list-none min-w-0">
-      <li v-for="pr in githubPullRequests" :key="pr.githubPullRequestId" class="min-w-0">
-        <a
-          :href="pr.htmlUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-primary hover:underline min-w-0"
+    <div v-else class="flex:col-sm min-w-0">
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="text-xs text-secondary-foreground shrink-0" for="gh-pr-filter">Show</label>
+        <select
+          id="gh-pr-filter"
+          v-model="prStatusFilter"
+          class="rounded-md border border-input bg-background px-2 py-1 text-xs min-w-[8rem]"
         >
-          <span class="font-medium truncate">{{ pr.fullName }}#{{ pr.prNumber }}</span>
-          <span class="text-xs text-muted-foreground shrink-0">
-            {{ pr.merged ? "merged" : pr.state === "closed" ? "closed" : pr.draft ? "draft" : "open" }}
-          </span>
-        </a>
-      </li>
-    </ul>
+          <option value="all">All</option>
+          <option value="open">Open</option>
+          <option value="merged">Merged</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <div v-if="githubPullRequestGroups.length === 0" class="text-xs text-muted-foreground">
+        No pull requests match this filter.
+      </div>
+      <div v-else class="flex:col-md">
+        <div v-for="group in githubPullRequestGroups" :key="group.fullName" class="flex:col-xs min-w-0">
+          <div class="text-xs font-medium text-muted-foreground truncate" :title="group.fullName">
+            {{ group.fullName }}
+          </div>
+          <ul class="flex:col-sm list-none min-w-0 m-0 pl-0">
+            <li v-for="pr in group.pullRequests" :key="pr.githubPullRequestId" class="min-w-0">
+              <a
+                :href="pr.htmlUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-primary hover:underline min-w-0"
+              >
+                <span class="font-medium truncate">#{{ pr.prNumber }}</span>
+                <span class="text-xs text-muted-foreground shrink-0">
+                  {{ pr.merged ? "merged" : pr.state === "closed" ? "closed" : pr.draft ? "draft" : "open" }}
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
 
     <!-- Epicstory-created branch / PR flow (GitHub App user token) -->
     <div

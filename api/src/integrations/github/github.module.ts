@@ -6,6 +6,7 @@ import { Issue } from 'src/project/domain/entities/issue.entity';
 import { Project } from 'src/project/domain/entities/project.entity';
 import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import * as controllers from './controllers';
+import * as jobs from './jobs';
 import * as services from './services';
 import {
   GithubEpicstoryPrTimelineMarker,
@@ -36,6 +37,7 @@ import * as repositories from './repositories';
   providers: [
     ...Object.values(repositories),
     ...Object.values(services),
+    ...Object.values(jobs),
     IntegrationTokenCryptoService,
   ],
   exports: [

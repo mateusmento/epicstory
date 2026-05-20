@@ -257,6 +257,26 @@ export class AppConfig {
   @IsString()
   GITHUB_APP_WEBHOOK_SECRET?: string;
 
+  /**
+   * Purge `integration.github_webhook_delivery_receipts` rows older than this (daily job).
+   * Set to **0** to disable pruning.
+   */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 30 : +value))
+  GITHUB_WEBHOOK_DELIVERY_RECEIPT_RETENTION_DAYS: number = 30;
+
+  /**
+   * Poll GitHub for rows in `issue_github_pull_requests` still **open** in Epicstory, in case webhooks were missed.
+   */
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => !(value === 'false' || value === false))
+  GITHUB_PR_RECONCILE_ENABLED: boolean = true;
+
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 25 : +value))
+  GITHUB_PR_RECONCILE_BATCH_SIZE: number = 25;
+
   /** PEM contents or path — consumed when minting JWTs for installation tokens (future). */
   @IsOptional()
   @IsString()

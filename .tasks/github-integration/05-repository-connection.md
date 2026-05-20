@@ -13,14 +13,15 @@ Repos may be under **personal** or **org** `owner` (task **01 §5.1**).
 
 ### Workspace (catalogue)
 
-- [ ] Persist installation + **workspace-visible** repos/orgs from GitHub (pagination, caching per **01 §5.2**).
-- [ ] UI: workspace GitHub settings — **register / manage** which repos orgs appear in the workspace catalogue (exact UX TBD).
+- [x] Persist installation + **workspace-visible** repos/orgs from GitHub (pagination, caching per **01 §5.2**). *(Installation persisted; catalogue via installation repo list API with pagination. **Redis catalogue cache** per **01 §5.2** may still be partial—see task **03** Redis bullet.)*
+- [x] UI: workspace GitHub settings — **register / manage** which repos orgs appear in the workspace catalogue (exact UX TBD). *(GitHub integration page loads catalogue + links repos to projects.)*
 
 ### Project ↔ repo links
 
-- [ ] Persist **`project_id` ↔ `repo`** links (owner, name, optional `default_branch`, GitHub repo id); enforce **only repos from workspace catalogue**.
-- [ ] UI: **project** settings — **add/remove** linked repos; optional **primary repo** for branch/PR default when multiple.
-- [ ] API for issue flows: list **project-linked** repos for the issue’s project; validate before create branch/PR.
+- [x] Persist **`project_id` ↔ `repo`** links (owner, name, optional `default_branch`, GitHub repo id); enforce **only repos from workspace catalogue** (`integration.project_github_repos`, validated via installation repo fetch on link).
+- [x] Optional **primary / default repo** per project for issue branch/PR default (`is_primary` + **`POST …/repos/:linkId/primary`**); first linked repo becomes primary automatically; removing the primary promotes the next link by id.
+- [x] UI: **workspace GitHub** integration page — **add/remove** linked repos; **default** badge + **Set as default** when multiple links (dedicated per-project settings tab not required for MVP).
+- [x] API for issue flows: list **project-linked** repos; create branch/PR validates the repo is linked to the issue’s project (`GithubIssueGitWorkflowService`).
 
 ## Acceptance criteria
 

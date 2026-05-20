@@ -14,6 +14,7 @@ import {
   ProjectGithubRepoRepository,
 } from '../repositories';
 import { GithubApiService } from './github-api.service';
+import { ProjectGithubRepo } from '../entities';
 
 export type LinkedGithubRepoRow = {
   id: number;
@@ -23,6 +24,7 @@ export type LinkedGithubRepoRow = {
   fullName: string;
   githubRepoId: string;
   defaultBranch: string | null;
+  isPrimary: boolean;
   createdAt: string;
 };
 
@@ -71,6 +73,7 @@ export class GithubProjectRepoLinkService {
       fullName: `${r.owner}/${r.name}`,
       githubRepoId: r.githubRepoId,
       defaultBranch: r.defaultBranch ?? null,
+      isPrimary: r.isPrimary,
       createdAt: r.createdAt.toISOString(),
     }));
   }
@@ -131,12 +134,17 @@ export class GithubProjectRepoLinkService {
       );
     }
 
+    const existingCount = await this.projectGithubRepoRepo.count({
+      where: { projectId },
+    });
+
     const row = this.projectGithubRepoRepo.create({
       projectId,
       owner: details.owner,
       name: details.name,
       githubRepoId: details.githubRepoId,
       defaultBranch: details.defaultBranch,
+      isPrimary: existingCount === 0,
     });
 
     try {
@@ -149,6 +157,7 @@ export class GithubProjectRepoLinkService {
         fullName: details.fullName,
         githubRepoId: saved.githubRepoId,
         defaultBranch: saved.defaultBranch ?? null,
+        isPrimary: saved.isPrimary,
         createdAt: saved.createdAt.toISOString(),
       };
     } catch (e: unknown) {
@@ -184,6 +193,70 @@ export class GithubProjectRepoLinkService {
       throw new NotFoundException('Linked repository not found.');
     }
 
+    const wasPrimary = row.isPrimary;
+
     await this.projectGithubRepoRepo.delete({ id: linkId });
+
+    if (wasPrimary) {
+      const next = await this.projectGithubRepoRepo.findOne({
+        where: { projectId },
+        order: { id: 'ASC' },
+      });
+      if (next) {
+        next.isPrimary = true;
+        await this.projectGithubRepoRepo.save(next);
+      }
+    }
+  }
+
+  async setPrimaryRepo(params: {
+    workspaceId: number;
+    projectId: number;
+    linkId: number;
+    userId: number;
+  }): Promise<LinkedGithubRepoRow> {
+    const { workspaceId, projectId, linkId, userId } = params;
+
+    await this.assertWorkspaceMember(workspaceId, userId);
+    await this.assertProjectInWorkspace(projectId, workspaceId);
+
+    const target = await this.projectGithubRepoRepo.findOne({
+      where: { id: linkId, projectId },
+    });
+    if (!target) {
+      throw new NotFoundException('Linked repository not found.');
+    }
+
+    await this.projectGithubRepoRepo.manager.transaction(async (manager) => {
+      await manager.update(
+        ProjectGithubRepo,
+        { projectId },
+        { isPrimary: false },
+      );
+      await manager.update(
+        ProjectGithubRepo,
+        { id: linkId, projectId },
+        { isPrimary: true },
+      );
+    });
+
+    const refreshed = await this.projectGithubRepoRepo.findOne({
+      where: { id: linkId },
+    });
+    if (!refreshed) {
+      throw new NotFoundException('Linked repository not found.');
+    }
+
+    return {
+      id: refreshed.id,
+      projectId: refreshed.projectId,
+      owner: refreshed.owner,
+      name: refreshed.name,
+      fullName: `${refreshed.owner}/${refreshed.name}`,
+      githubRepoId: refreshed.githubRepoId,
+      defaultBranch: refreshed.defaultBranch ?? null,
+      isPrimary: refreshed.isPrimary,
+      createdAt: refreshed.createdAt.toISOString(),
+    };
   }
 }

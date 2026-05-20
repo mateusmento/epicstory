@@ -4,11 +4,11 @@
 
 ## Tasks
 
-- [ ] Add **Integrations → GitHub** (or workspace settings) route and empty state.
-- [ ] **Admin:** control to start **GitHub App installation** (redirect to GitHub install/setup).
-- [ ] **Member:** **Connect my GitHub** opens the GitHub App **user authorization** URL (same tab or popup—decide with UX).
-- [ ] **Connected** state: show GitHub username, connected date, disconnect with confirm dialog (admin vs member scopes as designed).
-- [ ] Error handling: denied consent, callback error query params, “reconnect required” banner when token invalid.
+- [x] Add **Integrations → GitHub** (or workspace settings) route and empty state.
+- [x] **Admin:** control to start **GitHub App installation** (redirect to GitHub install/setup).
+- [x] **Member:** **Connect my GitHub** opens the GitHub App **user authorization** URL (same tab or popup—decide with UX).
+- [x] **Connected** state: show GitHub username, connected date, disconnect with confirm dialog (admin vs member scopes as designed).
+- [ ] Error handling: denied consent, callback error query params, “reconnect required” banner when token invalid. *(Basic errors / loading states exist; dedicated reconnect banner + callback query UX may still be shallow.)*
 - [ ] Loading and accessibility (focus management after redirect return).
 
 ## Acceptance criteria

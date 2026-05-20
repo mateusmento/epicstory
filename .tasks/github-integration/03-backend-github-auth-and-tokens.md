@@ -8,18 +8,18 @@
 
 ## Tasks
 
-- [ ] **Admin install flow:** resolve installation id after GitHub redirect; persist workspace ↔ installation ↔ linked repos (per product model).
-- [ ] Mint **installation access tokens** (JWT app auth → GitHub API); cache short-lived tokens only (prefer **Redis** when `GITHUB_CACHE_USE_REDIS` / `REDIS_URL`) with TTL aligned to GitHub expiry. **Before each use:** if expired/missing (see `GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SEC`), invalidate cache + **re-mint**. **401:** at most **one** re-mint + retry per logical request when `GITHUB_INSTALLATION_TOKEN_RETRY_REQUEST_ON_401`.
-- [ ] **User flow:** build GitHub App **user authorization URL** using settings that allow **refresh tokens** where GitHub supports them (`GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED`); **callback** exchanges code for **user-to-server** access + **refresh** tokens; store both encrypted. Refresh via GitHub’s refresh grant before expiry (`GITHUB_USER_TOKEN_REFRESH_SKEW_SEC`); on **401**, try refresh **once** then retry **once**, then force **re-authorization**.
-- [ ] Persist per Epicstory user: GitHub user id, login, **encrypted** tokens, scopes granted, timestamps.
-- [ ] **Disconnect:** revoke/delete tokens per user and/or remove installation linkage per workspace rules; **purge related caches** (installation + repo lists).
+- [x] **Admin install flow:** resolve installation id after GitHub redirect; persist workspace ↔ installation ↔ linked repos (per product model).
+- [ ] Mint **installation access tokens** (JWT app auth → GitHub API); cache short-lived tokens only (prefer **Redis** when `GITHUB_CACHE_USE_REDIS` / `REDIS_URL`) with TTL aligned to GitHub expiry. **Before each use:** if expired/missing (see `GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SEC`), invalidate cache + **re-mint**. **401:** at most **one** re-mint + retry per logical request when `GITHUB_INSTALLATION_TOKEN_RETRY_REQUEST_ON_401`. *(JWT → installation token mint is implemented; **Redis-backed installation token cache + skew discipline as specified** is not wired yet.)*
+- [x] **User flow:** build GitHub App **user authorization URL** using settings that allow **refresh tokens** where GitHub supports them (`GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED`); **callback** exchanges code for **user-to-server** access + **refresh** tokens; store both encrypted when GitHub returns them. *(Proactive refresh using `GITHUB_USER_TOKEN_REFRESH_SKEW_SEC` and **401 → refresh-once → retry-once** before forcing re-authorization may still be incomplete vs this bullet.)*
+- [x] Persist per Epicstory user: GitHub user id, login, **encrypted** tokens, scopes granted, timestamps.
+- [x] **Disconnect:** revoke/delete tokens per user and/or remove installation linkage per workspace rules; **purge related caches** (installation + repo lists). *(Disconnect endpoints implemented; **Redis cache purge hooks** may still be partial—see Redis bullet.)*
 - [ ] **Validation:** detect revoked installs/tokens; surface “reconnect” to admin vs member appropriately.
-- [ ] **GitHub HTTP client:** use `GITHUB_HTTP_*` from `AppConfig` — timeouts, **429** + **`Retry-After`**, exponential backoff + jitter, max concurrency per workspace; structured errors for 401/403/429.
+- [ ] **GitHub HTTP client:** use `GITHUB_HTTP_*` from `AppConfig` — timeouts, **429** + **`Retry-After`**, exponential backoff + jitter, max concurrency per workspace; structured errors for 401/403/429. *(Member **user-token** branch/PR REST helpers use **429 / Retry-After** retries and typed HTTP errors; **full AppConfig-driven matrix + installation-token paths** are not unified yet.)*
 - [ ] **Read caching (Redis):** cache safe GET-derived data under `GITHUB_CACHE_KEY_PREFIX` + TTLs (`GITHUB_CACHE_*_TTL_SEC`). **Invalidate** matching keys when:
   - **Synchronous:** admin changes installation / linked repos in Epicstory (gate with `GITHUB_CACHE_INVALIDATE_ON_ADMIN_ACTIONS`), and
   - **Webhooks:** handle `installation_repositories` and `repository` events (gate with `GITHUB_CACHE_INVALIDATE_ON_REPO_WEBHOOKS`).
   Task **01 §5.2** remains the behavioral source of truth.
-- [ ] **`pull_request` webhook:** verify signature/installation; normalize payload → upsert linkage / refresh PR state (`state`, **`merged`**, timestamps) per **task 06** and **01 §7.4** (many PRs per issue×repo — **no** “single open PR” invariant). Handler **thin**; idempotent deliveries via **`github_pull_request_id`** + **`X-GitHub-Delivery`** (or equivalent).
+- [x] **`pull_request` webhook:** verify signature/installation; normalize payload → upsert linkage / refresh PR state (`state`, **`merged`**, timestamps) per **task 06** and **01 §7.4** (many PRs per issue×repo — **no** “single open PR” invariant). Handler **thin**; idempotent deliveries via **`github_pull_request_id`** + **`X-GitHub-Delivery`** (or equivalent).
 
 ## Configuration (`AppConfig`)
 

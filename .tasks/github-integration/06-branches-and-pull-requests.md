@@ -6,15 +6,15 @@
 
 ## Tasks
 
-- [ ] **Create branch**: API accepts `repo`, `base` (default branch or explicit), `branchName`; handle conflicts (branch exists); use shared GitHub client (**429** / backoff).
-- [ ] **Open PR**: API accepts `title`, `body`, `head`, `base`, **`draft`** (boolean; UI default **false** = ready for review); map GitHub validation errors to user-visible messages; **429** surfaces retry-friendly messaging via shared GitHub client/backoff layer.
-- [ ] **Persistence (issue ↔ PR):** store `issue_id`, `project_id`/repo identity, **`github_pull_request_id`** (stable), **`html_url`**, **`state`**, **`merged`**, timestamps; **many rows per `(issue_id, repo)`** (no uniqueness on “only one open”).
-- [ ] **Auto comment on Epicstory issue (required MVP):** after successful PR create via flow, persist a **system / integration** timeline entry on the **Epicstory issue** (copy + markdown link to GitHub PR, repo slug, branch, optional **`draft`** flag). **Idempotency:** same logical create must not spam duplicate comments (**e.g.** idempotency key = `issue_id` + **`github_pull_request_id`** + event `pr_created`).
-- [ ] **Webhook sync:** handle GitHub **`pull_request`** (`opened`, `closed`, `edited`, *TBD*) → upsert linkage rows; **`merged`** transitions update **`merged`** and **`closed_at`**; no “slot freeing” invariant — concurrency is purely a UX concern (**01 §8.4**). Idempotent per **`github_pull_request_id`** + delivery id (**`X-GitHub-Delivery`**).
+- [x] **Create branch**: API accepts `repo`, `base` (default branch or explicit), `branchName`; handle conflicts (branch exists); use shared GitHub client (**429** / backoff).
+- [x] **Open PR**: API accepts `title`, `body`, `head`, `base`, **`draft`** (boolean; UI default **false** = ready for review); map GitHub validation errors to user-visible messages; **429** surfaces retry-friendly messaging via shared GitHub client/backoff layer.
+- [x] **Persistence (issue ↔ PR):** store `issue_id`, `project_id`/repo identity, **`github_pull_request_id`** (stable), **`html_url`**, **`state`**, **`merged`**, timestamps; **many rows per `(issue_id, repo)`** (no uniqueness on “only one open”).
+- [x] **Auto comment on Epicstory issue (required MVP):** after successful PR create via flow, persist a **system / integration** timeline entry on the **Epicstory issue** (copy + markdown link to GitHub PR, repo slug, branch, optional **`draft`** flag). **Idempotency:** same logical create must not spam duplicate comments (**e.g.** idempotency key = `issue_id` + **`github_pull_request_id`** + event `pr_created`).
+- [x] **Webhook sync:** handle GitHub **`pull_request`** (`opened`, `closed`, `edited`, *TBD*) → upsert linkage rows; **`merged`** transitions update **`merged`** and **`closed_at`**; no “slot freeing” invariant — concurrency is purely a UX concern (**01 §8.4**). Idempotent per **`github_pull_request_id`** + delivery id (**`X-GitHub-Delivery`**).
 - [ ] Optional: **lifecycle comments** (**merged** / **closed**) on Epicstory — **defer** vs “DB + structured panel only”; if added, reuse idempotency by PR id + transition.
-- [ ] Optional **reconcile job:** poll or refresh PR state when webhooks delayed or missed (**01 §5.2**); bounded frequency + workspace-scoped.
-- [ ] Wire **origin** in product (**01 §8:** issue detail MVP).
-- [ ] **UI:** **linked PR(s)** aggregate on issue (**group/filter by repo**, show **open** vs **merged** vs **closed**); **never** treat “already has open PR” as blocking create (**01 §8.4**).
+- [x] Optional **reconcile job:** poll or refresh PR state when webhooks delayed or missed (**01 §5.2**); bounded frequency + workspace-scoped.
+- [x] Wire **origin** in product (**01 §8:** issue detail MVP). *(Issue detail:** GitHub sidebar** with linked PRs + branch/PR actions.)*
+- [x] **UI:** **linked PR(s)** aggregate on issue (**group/filter by repo**, show **open** vs **merged** vs **closed**); **never** treat “already has open PR” as blocking create (**01 §8.4**).
 
 ## Acceptance criteria
 

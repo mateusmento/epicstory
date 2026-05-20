@@ -5,6 +5,15 @@ import type { ComputedRef, Ref } from "vue";
 import { computed, ref, watch } from "vue";
 import { githubApiErrorMessage } from "../github-api-errors";
 
+export type GithubPrStatusFilter = "all" | "open" | "merged" | "closed";
+
+function matchesGithubPrFilter(pr: IGithubIssuePullRequestLink, filter: GithubPrStatusFilter): boolean {
+  if (filter === "all") return true;
+  if (filter === "merged") return pr.merged === true;
+  if (filter === "closed") return pr.merged === false && pr.state === "closed";
+  return pr.merged === false && pr.state === "open";
+}
+
 export type UseIssueGithubSidebarParams = {
   workspaceId: Ref<string>;
   projectId: Ref<string>;
@@ -31,6 +40,9 @@ export type UseIssueGithubSidebarReturn = {
   headBranchLeaf: Ref<string>;
   openPrAsDraft: Ref<boolean>;
 
+  prStatusFilter: Ref<GithubPrStatusFilter>;
+  githubPullRequestGroups: ComputedRef<{ fullName: string; pullRequests: IGithubIssuePullRequestLink[] }[]>;
+
   createGithubBranch: () => Promise<void>;
   openGithubPull: () => Promise<void>;
 };
@@ -51,6 +63,24 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
   const ghWorkflowError = ref<string | null>(null);
   const headBranchLeaf = ref("");
   const openPrAsDraft = ref(false);
+  const prStatusFilter = ref<GithubPrStatusFilter>("all");
+
+  const githubPullRequestGroups = computed(() => {
+    const filtered = githubPullRequests.value.filter((pr) => matchesGithubPrFilter(pr, prStatusFilter.value));
+    const byRepo = new Map<string, IGithubIssuePullRequestLink[]>();
+    for (const pr of filtered) {
+      const key = pr.fullName;
+      const list = byRepo.get(key);
+      if (list) list.push(pr);
+      else byRepo.set(key, [pr]);
+    }
+    return [...byRepo.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([fullName, pullRequests]) => ({
+        fullName,
+        pullRequests: pullRequests.sort((x, y) => y.prNumber - x.prNumber),
+      }));
+  });
 
   watch(
     () => linkedGhRepos.value,
@@ -60,7 +90,8 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
         return;
       }
       if (selectedGhLinkId.value == null || !repos.some((r) => r.id === selectedGhLinkId.value)) {
-        selectedGhLinkId.value = repos[0].id;
+        const primary = repos.find((r) => r.isPrimary);
+        selectedGhLinkId.value = primary?.id ?? repos[0]?.id ?? null;
       }
     },
     { deep: true },
@@ -179,6 +210,8 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     ghWorkflowError,
     headBranchLeaf,
     openPrAsDraft,
+    prStatusFilter,
+    githubPullRequestGroups,
     createGithubBranch,
     openGithubPull,
   };

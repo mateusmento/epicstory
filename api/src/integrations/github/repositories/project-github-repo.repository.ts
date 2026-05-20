@@ -15,7 +15,7 @@ export class ProjectGithubRepoRepository extends Repository<ProjectGithubRepo> {
   findByProjectId(projectId: number) {
     return this.find({
       where: { projectId },
-      order: { id: 'ASC' },
+      order: { isPrimary: 'DESC', id: 'ASC' },
     });
   }
 }

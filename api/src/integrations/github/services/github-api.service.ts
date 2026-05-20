@@ -234,4 +234,37 @@ export class GithubApiService {
       defaultBranch: body.default_branch ?? null,
     };
   }
+
+  /**
+   * Single pull request (same JSON shape as webhook `pull_request` payloads).
+   */
+  async fetchPullRequestWithInstallationToken(
+    installationAccessToken: string,
+    owner: string,
+    name: string,
+    pullNumber: number,
+  ): Promise<Record<string, unknown> | null> {
+    const o = encodeURIComponent(owner.trim());
+    const n = encodeURIComponent(name.trim());
+    const url = `https://api.github.com/repos/${o}/${n}/pulls/${pullNumber}`;
+
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${installationAccessToken}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    });
+
+    if (res.status === 404) {
+      return null;
+    }
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`GitHub GET pull failed (${res.status}): ${text}`);
+    }
+
+    return (await res.json()) as Record<string, unknown>;
+  }
 }

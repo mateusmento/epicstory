@@ -56,6 +56,23 @@ export class GithubProjectReposController {
     });
   }
 
+  @Post(':projectId/repos/:linkId/primary')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async setPrimaryRepo(
+    @Param('workspaceId', ParseIntPipe) workspaceId: number,
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Param('linkId', ParseIntPipe) linkId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.projectRepoLinks.setPrimaryRepo({
+      workspaceId,
+      projectId,
+      linkId,
+      userId: issuer.id,
+    });
+  }
+
   @Delete(':projectId/repos/:linkId')
   @HttpCode(204)
   @UseGuards(JwtAuthGuard)
