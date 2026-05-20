@@ -17,3 +17,22 @@ export type IGithubIntegrationStatus = {
   installation: IGithubInstallationSummary | null;
   user: IGithubUserLinkSummary | null;
 };
+
+export type IGithubCatalogRepository = {
+  githubRepoId: string;
+  name: string;
+  fullName: string;
+  owner: string;
+  defaultBranch: string | null;
+  private: boolean;
+  htmlUrl: string;
+};
+
+/** GET `/integrations/github/workspaces/:workspaceId/repositories` */
+export type IGithubRepositoryCatalogPage = {
+  page: number;
+  perPage: number;
+  totalCount: number;
+  hasNextPage: boolean;
+  repositories: IGithubCatalogRepository[];
+};

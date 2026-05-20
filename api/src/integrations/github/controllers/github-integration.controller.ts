@@ -1,9 +1,15 @@
 import {
+  BadRequestException,
   Controller,
+  Delete,
+  DefaultValuePipe,
   ForbiddenException,
   Get,
+  HttpCode,
   Param,
   ParseIntPipe,
+  Query,
+  ServiceUnavailableException,
   UseGuards,
 } from '@nestjs/common';
 import { ExceptionFilter } from 'src/core';
@@ -11,19 +17,22 @@ import { JwtAuthGuard } from 'src/core/auth/jwt.strategy';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Auth, Issuer } from 'src/core/auth';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 import { AppConfig } from 'src/core/app.config';
 import {
   GithubInstallationRepository,
   GithubUserConnectionRepository,
 } from '../repositories';
+import { GithubApiService } from '../services/github-api.service';
 
 @Controller('integrations/github/workspaces')
 export class GithubIntegrationController {
   constructor(
-    private config: AppConfig,
-    private installationRepo: GithubInstallationRepository,
-    private userConnRepo: GithubUserConnectionRepository,
-    private workspaceRepo: WorkspaceRepository,
+    private readonly config: AppConfig,
+    private readonly installationRepo: GithubInstallationRepository,
+    private readonly userConnRepo: GithubUserConnectionRepository,
+    private readonly workspaceRepo: WorkspaceRepository,
+    private readonly githubApi: GithubApiService,
   ) {}
 
   @Get(':workspaceId/status')
@@ -67,5 +76,112 @@ export class GithubIntegrationController {
           }
         : null,
     };
+  }
+
+  /**
+   * Lists repositories visible to the workspace’s GitHub App installation (paginated catalogue).
+   */
+  @Get(':workspaceId/repositories')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async listRepositories(
+    @Param('workspaceId', ParseIntPipe) workspaceId: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('perPage', new DefaultValuePipe(30), ParseIntPipe)
+    perPageRaw: number,
+    @Auth() issuer: Issuer,
+  ) {
+    const isMember = await this.workspaceRepo.memberExists(
+      workspaceId,
+      issuer.id,
+    );
+    if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
+
+    const installation =
+      await this.installationRepo.findByWorkspaceId(workspaceId);
+    if (!installation) {
+      throw new BadRequestException(
+        'Workspace has no GitHub App installation yet.',
+      );
+    }
+
+    const perPage = Math.min(100, Math.max(1, perPageRaw));
+    const safePage = Math.max(1, page);
+
+    try {
+      const { totalCount, repositories } =
+        await this.githubApi.listInstallationRepositoriesPage(
+          installation.githubInstallationId,
+          safePage,
+          perPage,
+        );
+
+      return {
+        page: safePage,
+        perPage,
+        totalCount,
+        hasNextPage: safePage * perPage < totalCount,
+        repositories: repositories.map((r) => ({
+          githubRepoId: r.githubRepoId,
+          name: r.name,
+          fullName: r.fullName,
+          owner: r.owner,
+          defaultBranch: r.defaultBranch,
+          private: r.private,
+          htmlUrl: r.htmlUrl,
+        })),
+      };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes('GITHUB_APP_PRIVATE_KEY') && msg.includes('required')) {
+        throw new ServiceUnavailableException(
+          'GitHub catalogue requires GITHUB_APP_PRIVATE_KEY on the API.',
+        );
+      }
+      throw new BadRequestException(msg);
+    }
+  }
+
+  @Delete(':workspaceId/installation')
+  @HttpCode(204)
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async disconnectInstallation(
+    @Param('workspaceId', ParseIntPipe) workspaceId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    const member = await this.workspaceRepo.findMember(workspaceId, issuer.id);
+    if (!member) throw new IssuerUserIsNotWorkspaceMember();
+    if (
+      member.role !== WorkspaceRole.ADMIN &&
+      member.role !== WorkspaceRole.OWNER
+    ) {
+      throw new ForbiddenException(
+        'Only workspace admins can remove the GitHub App installation.',
+      );
+    }
+
+    await this.installationRepo.delete({ workspaceId });
+  }
+
+  @Delete(':workspaceId/user')
+  @HttpCode(204)
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async disconnectUser(
+    @Param('workspaceId', ParseIntPipe) workspaceId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    const isMember = await this.workspaceRepo.memberExists(
+      workspaceId,
+      issuer.id,
+    );
+    if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
+
+    const row = await this.userConnRepo.findActiveForWorkspaceUser(
+      workspaceId,
+      issuer.id,
+    );
+    if (row) await this.userConnRepo.delete({ id: row.id });
   }
 }
