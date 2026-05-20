@@ -5,9 +5,10 @@ import { useDependency } from "@/core/dependency-injection";
 import { GithubIntegrationApi, WorkspaceApi } from "@epicstory/api-client";
 import type { IGithubProjectRepoLink, IGithubRepositoryCatalogPage, Project } from "@epicstory/contracts";
 import { computed, onMounted, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 
 const route = useRoute();
+const router = useRouter();
 const api = useDependency(GithubIntegrationApi);
 const workspaceApi = useDependency(WorkspaceApi);
 
@@ -31,6 +32,41 @@ const primaryActionId = ref<number | null>(null);
 const catalogLoading = ref(false);
 const catalog = ref<IGithubRepositoryCatalogPage | null>(null);
 const catalogError = ref<string | null>(null);
+
+const oauthBannerError = ref<string | null>(null);
+const oauthBannerSuccess = ref(false);
+
+function queryParamFirst(
+  v: LocationQueryValue | LocationQueryValue[] | undefined | null,
+): string | undefined {
+  if (v == null) return undefined;
+  if (Array.isArray(v)) {
+    const first = v.find((item): item is string => typeof item === "string");
+    return first;
+  }
+  return typeof v === "string" ? v : undefined;
+}
+
+/** OAuth callback redirects here with query params instead of JSON errors. */
+function consumeGithubOAuthQueryParams() {
+  const hasKeys = route.query.github_oauth_error != null || route.query.github_oauth_success != null;
+  if (!hasKeys) return;
+
+  const err = queryParamFirst(route.query.github_oauth_error);
+  const ok = queryParamFirst(route.query.github_oauth_success);
+  oauthBannerError.value = err?.trim() ? err.trim() : null;
+  oauthBannerSuccess.value = ok === "1" || ok === "true";
+
+  const nextQuery = { ...route.query };
+  delete nextQuery.github_oauth_error;
+  delete nextQuery.github_oauth_success;
+  router.replace({ path: route.path, query: nextQuery });
+}
+
+watch(
+  () => [route.query.github_oauth_error, route.query.github_oauth_success] as const,
+  () => consumeGithubOAuthQueryParams(),
+);
 
 function extractApiError(e: unknown, fallback: string) {
   const msg =
@@ -65,6 +101,13 @@ function userOAuthStartUrl() {
   url.searchParams.set("redirect", redirect);
   return url.toString();
 }
+
+const installCallbackPath = computed(
+  () => `${config.API_URL.replace(/\/$/, "")}/integrations/github/install/callback`,
+);
+const userCallbackPath = computed(
+  () => `${config.API_URL.replace(/\/$/, "")}/integrations/github/user/callback`,
+);
 
 async function refresh() {
   loading.value = true;
@@ -241,6 +284,7 @@ async function disconnectUser() {
 }
 
 onMounted(async () => {
+  consumeGithubOAuthQueryParams();
   await Promise.all([refresh(), loadProjects()]);
 });
 </script>
@@ -251,6 +295,19 @@ onMounted(async () => {
     <div class="text-sm text-secondary-foreground mt-1">
       Connect your workspace to GitHub (App installation + member authorization) to link repos and open pull
       requests from issues.
+    </div>
+
+    <div
+      v-if="oauthBannerError"
+      class="mt-4 rounded-md border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+    >
+      {{ oauthBannerError }}
+    </div>
+    <div
+      v-else-if="oauthBannerSuccess"
+      class="mt-4 rounded-md border border-emerald-600/30 bg-emerald-600/5 px-3 py-2 text-sm text-emerald-950 dark:text-emerald-100"
+    >
+      GitHub account linked. You can create branches and pull requests from issues.
     </div>
 
     <div class="mt-6 border rounded-lg p-4">
@@ -459,8 +516,12 @@ onMounted(async () => {
     </div>
 
     <p class="mt-4 text-sm text-secondary-foreground">
-      In GitHub → App settings, set the installation callback URL to match your API’s install handler, and the
-      user OAuth callback for member linking. Add <code class="text-xs">GITHUB_APP_SLUG</code> and
+      In GitHub → App settings: <strong class="font-medium text-foreground">Setup URL</strong> (after install)
+      should be <code class="text-xs">{{ installCallbackPath }}</code
+      >; <strong class="font-medium text-foreground">User authorization callback</strong> should be
+      <code class="text-xs">{{ userCallbackPath }}</code
+      >. If both point at the user URL, installs still work after a server update, but fixing the Setup URL
+      avoids confusion. Add <code class="text-xs">GITHUB_APP_SLUG</code> and
       <code class="text-xs">GITHUB_APP_PRIVATE_KEY</code> in the API environment so installs resolve the org
       or user account name and the repo catalogue can load.
     </p>

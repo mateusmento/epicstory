@@ -1,6 +1,11 @@
 import { useDependency } from "@/core/dependency-injection";
 import { GithubIntegrationApi } from "@epicstory/api-client";
-import type { IGithubIssuePullRequestLink, IGithubProjectRepoLink, IIssue } from "@epicstory/contracts";
+import type {
+  IGithubIntegrationStatus,
+  IGithubIssuePullRequestLink,
+  IGithubProjectRepoLink,
+  IIssue,
+} from "@epicstory/contracts";
 import type { ComputedRef, Ref } from "vue";
 import { computed, ref, watch } from "vue";
 import { githubApiErrorMessage } from "../github-api-errors";
@@ -43,6 +48,8 @@ export type UseIssueGithubSidebarReturn = {
   prStatusFilter: Ref<GithubPrStatusFilter>;
   githubPullRequestGroups: ComputedRef<{ fullName: string; pullRequests: IGithubIssuePullRequestLink[] }[]>;
 
+  githubMemberAuthRequired: ComputedRef<boolean>;
+
   createGithubBranch: () => Promise<void>;
   openGithubPull: () => Promise<void>;
 };
@@ -64,6 +71,33 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
   const headBranchLeaf = ref("");
   const openPrAsDraft = ref(false);
   const prStatusFilter = ref<GithubPrStatusFilter>("all");
+
+  const githubIntegrationStatus = ref<IGithubIntegrationStatus | null>(null);
+  const githubIntegrationStatusLoading = ref(false);
+
+  watch(
+    () => params.workspaceId.value,
+    async (wid) => {
+      githubIntegrationStatus.value = null;
+      if (!wid) return;
+      githubIntegrationStatusLoading.value = true;
+      try {
+        githubIntegrationStatus.value = await githubIntegrationApi.getStatus(+wid);
+      } catch {
+        githubIntegrationStatus.value = null;
+      } finally {
+        githubIntegrationStatusLoading.value = false;
+      }
+    },
+    { immediate: true },
+  );
+
+  const githubMemberAuthRequired = computed(() => {
+    if (githubIntegrationStatusLoading.value) return false;
+    const s = githubIntegrationStatus.value;
+    if (!s?.installation) return false;
+    return s.user == null;
+  });
 
   const githubPullRequestGroups = computed(() => {
     const filtered = githubPullRequests.value.filter((pr) => matchesGithubPrFilter(pr, prStatusFilter.value));
@@ -150,7 +184,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     const iss = params.issue.value;
     const ws = params.workspaceId.value;
     const repo = selectedGhRepo.value;
-    if (!iss || !repo || ghWorkflowBusy.value) return;
+    if (!iss || !repo || ghWorkflowBusy.value || githubMemberAuthRequired.value) return;
     ghWorkflowBusy.value = true;
     ghWorkflowError.value = null;
     try {
@@ -172,7 +206,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     const iss = params.issue.value;
     const ws = params.workspaceId.value;
     const repo = selectedGhRepo.value;
-    if (!iss || !repo || ghWorkflowBusy.value) return;
+    if (!iss || !repo || ghWorkflowBusy.value || githubMemberAuthRequired.value) return;
     const head = headBranchLeaf.value.trim();
     if (!head) {
       ghWorkflowError.value = "Set a branch name (create a branch first, or paste the head branch).";
@@ -212,6 +246,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     openPrAsDraft,
     prStatusFilter,
     githubPullRequestGroups,
+    githubMemberAuthRequired,
     createGithubBranch,
     openGithubPull,
   };

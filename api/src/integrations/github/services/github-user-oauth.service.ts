@@ -76,6 +76,49 @@ export class GithubUserOAuthService {
     return data;
   }
 
+  /**
+   * Refresh user-to-server access token when GitHub issued a refresh_token.
+   * @see https://docs.github.com/en/apps/using-github-apps/refreshing-user-access-tokens
+   */
+  async refreshUserAccessToken(
+    refreshToken: string,
+  ): Promise<GithubUserTokenResponse> {
+    const clientId = this.config.GITHUB_APP_CLIENT_ID?.trim();
+    const clientSecret = this.config.GITHUB_APP_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) {
+      throw new Error('GitHub OAuth client is not configured');
+    }
+
+    const body = new URLSearchParams();
+    body.set('client_id', clientId);
+    body.set('client_secret', clientSecret);
+    body.set('grant_type', 'refresh_token');
+    body.set('refresh_token', refreshToken);
+
+    const res = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`GitHub token refresh failed (${res.status}): ${text}`);
+    }
+
+    const data = (await res.json()) as GithubUserTokenResponse & {
+      error?: string;
+      error_description?: string;
+    };
+    if (data.error) {
+      throw new Error(data.error_description || data.error);
+    }
+    return data;
+  }
+
   async fetchGithubUser(accessToken: string): Promise<{
     id: string;
     login: string;

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { IIssue } from "@epicstory/contracts";
 import { computed, toRef } from "vue";
+import { RouterLink } from "vue-router";
 import { Button, Input } from "@/design-system";
 import { useIssueGithubSidebar } from "@/domain/github";
 
@@ -10,6 +11,11 @@ const props = defineProps<{
   issue: IIssue;
   reloadIssueActivityFeed: () => Promise<void>;
 }>();
+
+const githubSettingsRoute = computed(() => ({
+  name: "github-integration-settings" as const,
+  params: { workspaceId: props.workspaceId },
+}));
 
 const {
   githubPullRequests,
@@ -26,6 +32,7 @@ const {
   openPrAsDraft,
   prStatusFilter,
   githubPullRequestGroups,
+  githubMemberAuthRequired,
   createGithubBranch,
   openGithubPull,
 } = useIssueGithubSidebar({
@@ -136,12 +143,22 @@ const {
         <input v-model="openPrAsDraft" type="checkbox" class="rounded border-input" />
         Draft pull request
       </label>
+      <div
+        v-if="githubMemberAuthRequired"
+        class="rounded-md border border-primary/25 bg-primary/5 px-2 py-2 text-xs text-secondary-foreground"
+      >
+        Branch and PR actions run as <span class="font-medium text-foreground">your</span> GitHub user. The
+        linked repo here only chooses the target repository — you still need member OAuth.
+        <RouterLink :to="githubSettingsRoute" class="block mt-1.5 font-medium text-primary underline">
+          Link your GitHub account in workspace settings →
+        </RouterLink>
+      </div>
       <div class="flex flex-wrap gap-2">
         <Button
           variant="outline"
           size="sm"
           type="button"
-          :disabled="ghWorkflowBusy || selectedGhRepo == null"
+          :disabled="ghWorkflowBusy || selectedGhRepo == null || githubMemberAuthRequired"
           @click="createGithubBranch"
         >
           Create branch
@@ -149,7 +166,7 @@ const {
         <Button
           size="sm"
           type="button"
-          :disabled="ghWorkflowBusy || selectedGhRepo == null"
+          :disabled="ghWorkflowBusy || selectedGhRepo == null || githubMemberAuthRequired"
           @click="openGithubPull"
         >
           Open pull request

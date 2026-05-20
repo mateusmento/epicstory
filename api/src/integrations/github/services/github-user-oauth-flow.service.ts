@@ -69,6 +69,9 @@ export class GithubUserOauthFlowService {
     };
   }
 
+  /**
+   * Always returns a frontend redirect URL so browser OAuth callbacks never render raw JSON errors.
+   */
   async completeMemberLink(params: {
     code?: string;
     stateFromQuery?: string;
@@ -76,30 +79,69 @@ export class GithubUserOauthFlowService {
     errorDescription?: string;
   }): Promise<GithubUserOauthCallbackResult> {
     if (params.oauthError) {
+      const sessOnError = this.pendingState.consumeUserOAuthState(
+        params.stateFromQuery,
+      );
       const msg = params.errorDescription || params.oauthError;
-      throw new BadRequestException(`GitHub authorization failed: ${msg}`);
+      return {
+        finalRedirect: this.userOAuthReturnUrl(sessOnError?.oauthRedirect, {
+          github_oauth_error: msg.slice(0, 1200),
+        }),
+      };
     }
 
     const sess = this.pendingState.consumeUserOAuthState(params.stateFromQuery);
     if (!sess) {
-      throw new BadRequestException(
-        'Invalid or expired session. Try linking your GitHub account again from Workspace → Integrations → GitHub.',
-      );
+      return {
+        finalRedirect: this.userOAuthReturnUrl(undefined, {
+          github_oauth_error:
+            'Invalid or expired session. Try linking again from Workspace → Integrations → GitHub.',
+        }),
+      };
     }
 
     const { workspaceId, userId, oauthRedirect: redirectAfter } = sess;
 
     if (!params.code?.trim()) {
-      throw new BadRequestException('Missing authorization code');
+      return {
+        finalRedirect: this.userOAuthReturnUrl(redirectAfter, {
+          github_oauth_error: 'Missing authorization code from GitHub.',
+        }),
+      };
     }
 
-    const token = await this.oauth.exchangeCodeForToken(params.code.trim());
-    const accessToken = token.access_token;
+    let token;
+    try {
+      token = await this.oauth.exchangeCodeForToken(params.code.trim());
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return {
+        finalRedirect: this.userOAuthReturnUrl(redirectAfter, {
+          github_oauth_error: msg.slice(0, 1200),
+        }),
+      };
+    }
+
+    const accessToken = token.access_token?.trim();
     if (!accessToken) {
-      throw new BadRequestException('Missing access_token from GitHub');
+      return {
+        finalRedirect: this.userOAuthReturnUrl(redirectAfter, {
+          github_oauth_error: 'Missing access_token from GitHub.',
+        }),
+      };
     }
 
-    const ghUser = await this.oauth.fetchGithubUser(accessToken);
+    let ghUser;
+    try {
+      ghUser = await this.oauth.fetchGithubUser(accessToken);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return {
+        finalRedirect: this.userOAuthReturnUrl(redirectAfter, {
+          github_oauth_error: msg.slice(0, 1200),
+        }),
+      };
+    }
 
     const accessTokenEncrypted = this.crypto.encrypt(accessToken);
     const refreshTokenEncrypted =
@@ -140,10 +182,27 @@ export class GithubUserOauthFlowService {
 
     await this.userConnRepo.save(row);
 
-    const baseUrl = this.config.APP_URL.replace(/\/$/, '');
-    const redirectPath = redirectAfter || '';
-    const finalRedirect = redirectPath ? `${baseUrl}${redirectPath}` : baseUrl;
+    return {
+      finalRedirect: this.userOAuthReturnUrl(redirectAfter, {
+        github_oauth_success: '1',
+      }),
+    };
+  }
 
-    return { finalRedirect };
+  /** Builds absolute URL to the Epicstory frontend (`APP_URL` origin + optional path fragment). */
+  private userOAuthReturnUrl(
+    oauthRedirectPath: string | undefined,
+    query: Record<string, string | undefined>,
+  ): string {
+    const baseOrigin = this.config.APP_URL.replace(/\/$/, '');
+    const raw = oauthRedirectPath?.trim() ?? '';
+    const path = raw.startsWith('/') ? raw : raw.length > 0 ? `/${raw}` : '/';
+    const url = new URL(path, `${baseOrigin}/`);
+    for (const [k, v] of Object.entries(query)) {
+      if (v != null && String(v).length > 0) {
+        url.searchParams.set(k, String(v));
+      }
+    }
+    return url.toString();
   }
 }

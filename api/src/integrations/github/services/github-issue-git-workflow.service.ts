@@ -16,12 +16,14 @@ import { CommandBus } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { Issuer } from 'src/core/auth';
+import { AppConfig } from 'src/core/app.config';
 import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import { CreateIssueComment } from 'src/project/application/features';
 import { Issue } from 'src/project/domain/entities/issue.entity';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
   GithubEpicstoryPrTimelineMarker,
+  GithubUserConnection,
   IssueGithubPullRequest,
 } from '../entities';
 import {
@@ -38,6 +40,7 @@ import {
 import { GithubApiService } from './github-api.service';
 import { mapIssueGithubPullRequestRow } from './github-issue-pull-request.mapper';
 import { GithubIssuePullRequestSyncService } from './github-issue-pull-request-sync.service';
+import { GithubUserOAuthService } from './github-user-oauth.service';
 
 type GenericPayload = Record<string, unknown>;
 
@@ -54,6 +57,8 @@ export class GithubIssueGitWorkflowService {
     private readonly installations: GithubInstallationRepository,
     private readonly userGithub: GithubUserConnectionRepository,
     private readonly crypto: IntegrationTokenCryptoService,
+    private readonly config: AppConfig,
+    private readonly githubUserOAuth: GithubUserOAuthService,
     private readonly githubInstallationApi: GithubApiService,
     private readonly prSync: GithubIssuePullRequestSyncService,
     private readonly commandBus: CommandBus,
@@ -232,15 +237,17 @@ export class GithubIssueGitWorkflowService {
       );
     }
 
-    const userConn = await this.userGithub.findActiveForWorkspaceUser(
+    let userConn = await this.userGithub.findActiveForWorkspaceUser(
       params.workspaceId,
       params.userId,
     );
     if (!userConn?.accessTokenEncrypted) {
       throw new UnprocessableEntityException(
-        'Connect GitHub before creating branches or pull requests.',
+        'Link your GitHub account in workspace Integrations → GitHub before creating branches or pull requests (member OAuth is separate from linking a repo to the project).',
       );
     }
+
+    userConn = await this.refreshGithubUserTokensIfEligible(userConn);
 
     const expiresAt = userConn.tokenExpiresAt ?? null;
     if (expiresAt != null && expiresAt <= new Date()) {
@@ -297,6 +304,68 @@ export class GithubIssueGitWorkflowService {
       repoName: params.repoName.trim(),
       baseBranch: resolvedDefault,
     };
+  }
+
+  /**
+   * Proactively refresh user-to-server access token when within {@link AppConfig.GITHUB_USER_TOKEN_REFRESH_SKEW_SEC}
+   * of expiry (or past expiry), when a refresh_token is stored and the feature flag is on.
+   */
+  private async refreshGithubUserTokensIfEligible(
+    userConn: GithubUserConnection,
+  ): Promise<GithubUserConnection> {
+    if (!this.config.GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED) {
+      return userConn;
+    }
+    const refreshEnc = userConn.refreshTokenEncrypted?.trim();
+    if (!refreshEnc) {
+      return userConn;
+    }
+
+    const skewMs =
+      Math.max(0, this.config.GITHUB_USER_TOKEN_REFRESH_SKEW_SEC) * 1000;
+    const expMs = userConn.tokenExpiresAt?.getTime();
+    const shouldRefresh = expMs == null || Date.now() >= expMs - skewMs;
+
+    if (!shouldRefresh) {
+      return userConn;
+    }
+
+    let refreshPlain: string;
+    try {
+      refreshPlain = this.crypto.decrypt(refreshEnc);
+    } catch {
+      return userConn;
+    }
+
+    try {
+      const token =
+        await this.githubUserOAuth.refreshUserAccessToken(refreshPlain);
+      const accessToken = token.access_token?.trim();
+      if (!accessToken) {
+        return userConn;
+      }
+
+      const accessTokenEncrypted = this.crypto.encrypt(accessToken);
+      const rotatedRefresh = token.refresh_token?.trim();
+      const nextRefreshEncrypted =
+        rotatedRefresh && rotatedRefresh.length > 0
+          ? this.crypto.encrypt(rotatedRefresh)
+          : refreshEnc;
+      const tokenExpiresAt =
+        token.expires_in != null && token.expires_in > 0
+          ? new Date(Date.now() + token.expires_in * 1000)
+          : null;
+
+      Object.assign(userConn, {
+        accessTokenEncrypted,
+        refreshTokenEncrypted: nextRefreshEncrypted,
+        tokenExpiresAt,
+      });
+      await this.userGithub.save(userConn);
+      return userConn;
+    } catch {
+      return userConn;
+    }
   }
 
   private async maybePostTimelineAnnouncement(params: {

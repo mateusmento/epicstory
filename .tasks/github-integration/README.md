@@ -15,3 +15,9 @@ Goal: workspaces integrate GitHub via a **GitHub App only** — **no standalone 
 | 7 | [Future: chat, command palette, status→branch](./07-future-chat-commands-and-status-branch.md) | 1–6 (optional follow-up) |
 
 Cross-cutting: **GitHub rate limits** — caching, backoff, cache invalidation, token refresh (task **01 §5.2**, task **03**). Analytics / formal QA matrices / dedicated observability are **deferred** (task **01 §6**).
+
+## Keeping tasks aligned with code
+
+After shipping or materially changing GitHub integration behavior, **update the checkboxes and notes** in this folder (especially **`03`–`06`**, **`04`** for UI). **`02`** stays mostly **operational checklist** until each environment has a registered app — leave boxes unchecked unless you intentionally track live setup state here.
+
+**Snapshot (code in repo vs docs):** MVP issue-detail **branch/PR** flows are largely in place (task **06**). Member **OAuth** redirects to the app with query params, documented in tasks **03** and **04**. **Redis-backed** caches, unified **`GITHUB_HTTP_*`** adoption, explicit **revoked/reconnect** surfacing, and task **07** (chat/palette) remain **open** or deferred as noted in each task file.
