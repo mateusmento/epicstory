@@ -1,5 +1,6 @@
 import type {
   IGithubCreateIssueBranchResponse,
+  IGithubIntegrationApiErrorCode,
   IGithubIssuePullRequestLink,
 } from '@epicstory/contracts';
 import type { JSONContent } from '@tiptap/core';
@@ -18,7 +19,7 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { Issuer } from 'src/core/auth';
 import { AppConfig } from 'src/core/app.config';
 import { IntegrationTokenCryptoService } from 'src/integrations/shared';
-import { CreateIssueComment } from 'src/project/application/features';
+import { CreateIssueComment } from 'src/project/application/features/issue/create-issue-comment.command';
 import { Issue } from 'src/project/domain/entities/issue.entity';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
@@ -26,6 +27,7 @@ import {
   GithubUserConnection,
   IssueGithubPullRequest,
 } from '../entities';
+import { githubHttpConfigFromApp } from '../lib/github-http-client';
 import {
   GithubUserRestHttpError,
   githubCreateGitRef,
@@ -40,6 +42,7 @@ import {
 import { GithubApiService } from './github-api.service';
 import { mapIssueGithubPullRequestRow } from './github-issue-pull-request.mapper';
 import { GithubIssuePullRequestSyncService } from './github-issue-pull-request-sync.service';
+import { GithubIssueBranchService } from './github-issue-branch.service';
 import { GithubUserOAuthService } from './github-user-oauth.service';
 
 type GenericPayload = Record<string, unknown>;
@@ -63,6 +66,7 @@ export class GithubIssueGitWorkflowService {
     private readonly prSync: GithubIssuePullRequestSyncService,
     private readonly commandBus: CommandBus,
     private readonly projectGithubRepos: ProjectGithubRepoRepository,
+    private readonly issueBranches: GithubIssueBranchService,
   ) {}
 
   async createIssueBranch(params: {
@@ -74,50 +78,92 @@ export class GithubIssueGitWorkflowService {
     branchNameRaw?: string;
     baseBranchRaw?: string | null;
   }): Promise<IGithubCreateIssueBranchResponse> {
-    const ctx = await this.loadWorkflowContext(params);
-    const baseTrim = params.baseBranchRaw?.trim();
-    const baseBranchResolved =
-      baseTrim && baseTrim.length > 0 ? baseTrim : ctx.baseBranch;
-    const branchNameResolved =
-      params.branchNameRaw?.trim() ??
-      `${ctx.issue.id}-${slugFromIssueTitle(ctx.issue.title)}`;
+    const repoFullOuter = `${params.owner}/${params.repoName}`;
+    const runBranch = async (): Promise<IGithubCreateIssueBranchResponse> => {
+      const ctx = await this.loadWorkflowContext(params);
+      const baseTrim = params.baseBranchRaw?.trim();
+      const baseBranchResolved =
+        baseTrim && baseTrim.length > 0 ? baseTrim : ctx.baseBranch;
+      const branchNameResolved =
+        params.branchNameRaw?.trim() ??
+        `${ctx.issue.id}-${slugFromIssueTitle(ctx.issue.title)}`;
 
-    const trimmedBranch = sanitizeBranchLeaf(branchNameResolved);
-    if (!trimmedBranch) {
-      throw new BadRequestException(
-        'branchName resolves empty after sanitizing',
-      );
-    }
+      const trimmedBranch = sanitizeBranchLeaf(branchNameResolved);
+      if (!trimmedBranch) {
+        throw new BadRequestException(
+          'branchName resolves empty after sanitizing',
+        );
+      }
 
-    try {
-      const tipSha = await githubGetRefHeadSha({
-        token: ctx.accessToken,
-        owner: ctx.owner,
-        repo: ctx.repoName,
-        headBranchName: baseBranchResolved,
-      });
+      const httpConfig = githubHttpConfigFromApp(this.config);
       try {
-        const created = await githubCreateGitRef({
+        const tipSha = await githubGetRefHeadSha({
           token: ctx.accessToken,
           owner: ctx.owner,
           repo: ctx.repoName,
-          branchNameOnly: trimmedBranch,
-          sha: tipSha,
+          headBranchName: baseBranchResolved,
+          httpConfig,
         });
-        return {
-          branchName: trimmedBranch,
-          gitRef: created.ref,
-          tipSha: created.objectSha,
-        };
-      } catch (branchErr) {
-        normalizeGithubUserRestWorkflowFailure(branchErr, {
-          duplicateBranchConflict: trimmedBranch,
+        try {
+          const created = await githubCreateGitRef({
+            token: ctx.accessToken,
+            owner: ctx.owner,
+            repo: ctx.repoName,
+            branchNameOnly: trimmedBranch,
+            sha: tipSha,
+            httpConfig,
+          });
+          return {
+            branchName: trimmedBranch,
+            gitRef: created.ref,
+            tipSha: created.objectSha,
+          };
+        } catch (branchErr: unknown) {
+          if (
+            branchErr instanceof GithubUserRestHttpError &&
+            branchErr.statusCode === 401
+          ) {
+            throw branchErr;
+          }
+          normalizeGithubUserRestWorkflowFailure(branchErr, {
+            duplicateBranchConflict: trimmedBranch,
+            repoFullName: `${ctx.owner}/${ctx.repoName}`,
+          });
+        }
+      } catch (baseErr: unknown) {
+        if (
+          baseErr instanceof GithubUserRestHttpError &&
+          baseErr.statusCode === 401
+        ) {
+          throw baseErr;
+        }
+        normalizeGithubUserRestWorkflowFailure(baseErr, {
           repoFullName: `${ctx.owner}/${ctx.repoName}`,
         });
       }
-    } catch (baseErr) {
-      normalizeGithubUserRestWorkflowFailure(baseErr, {
-        repoFullName: `${ctx.owner}/${ctx.repoName}`,
+    };
+
+    try {
+      const created = await this.withGithubUser401RefreshRetry(
+        params.workspaceId,
+        params.userId,
+        runBranch,
+      );
+      await this.issueBranches.persistIssueBranchSelection({
+        issueId: params.issueId,
+        workspaceId: params.workspaceId,
+        userId: params.userId,
+        selection: {
+          branchName: created.branchName,
+          owner: params.owner.trim(),
+          repoName: params.repoName.trim(),
+        },
+        verifyExistsOnGithub: false,
+      });
+      return created;
+    } catch (e: unknown) {
+      normalizeGithubUserRestWorkflowFailure(e, {
+        repoFullName: repoFullOuter,
       });
     }
   }
@@ -134,43 +180,64 @@ export class GithubIssueGitWorkflowService {
     bodyMarkdown?: string;
     draft: boolean;
   }): Promise<IGithubIssuePullRequestLink> {
-    const ctx = await this.loadWorkflowContext({
-      workspaceId: params.workspaceId,
-      issueId: params.issueId,
-      userId: params.issuer.id,
-      owner: params.owner,
-      repoName: params.repoName,
-    });
-
-    const baseTrim = params.baseBranchRaw?.trim();
-    const baseBranchResolved =
-      baseTrim && baseTrim.length > 0 ? baseTrim : ctx.baseBranch;
-
     const headLeaf = sanitizeBranchLeaf(params.headBranchName);
     if (!headLeaf) throw new BadRequestException('Invalid headBranch');
 
+    const repoFullOuter = `${params.owner}/${params.repoName}`;
+
+    const runPullRequest = async (): Promise<unknown> => {
+      const ctx = await this.loadWorkflowContext({
+        workspaceId: params.workspaceId,
+        issueId: params.issueId,
+        userId: params.issuer.id,
+        owner: params.owner,
+        repoName: params.repoName,
+      });
+
+      const baseTrim = params.baseBranchRaw?.trim();
+      const baseBranchResolved =
+        baseTrim && baseTrim.length > 0 ? baseTrim : ctx.baseBranch;
+
+      const httpConfig = githubHttpConfigFromApp(this.config);
+      try {
+        return await githubCreatePullRequest({
+          token: ctx.accessToken,
+          owner: ctx.owner,
+          repo: ctx.repoName,
+          headBranchName: headLeaf,
+          baseBranchName: baseBranchResolved,
+          title: params.title.trim(),
+          bodyMarkdown: params.bodyMarkdown?.trim() ?? '',
+          draft: params.draft,
+          httpConfig,
+        });
+      } catch (e: unknown) {
+        if (e instanceof GithubUserRestHttpError && e.statusCode === 401) {
+          throw e;
+        }
+        normalizeGithubUserRestWorkflowFailure(e, {
+          repoFullName: `${ctx.owner}/${ctx.repoName}`,
+        });
+      }
+    };
+
     let rawPr: unknown;
     try {
-      rawPr = await githubCreatePullRequest({
-        token: ctx.accessToken,
-        owner: ctx.owner,
-        repo: ctx.repoName,
-        headBranchName: headLeaf,
-        baseBranchName: baseBranchResolved,
-        title: params.title.trim(),
-        bodyMarkdown: params.bodyMarkdown?.trim() ?? '',
-        draft: params.draft,
-      });
-    } catch (e) {
+      rawPr = await this.withGithubUser401RefreshRetry(
+        params.workspaceId,
+        params.issuer.id,
+        runPullRequest,
+      );
+    } catch (e: unknown) {
       normalizeGithubUserRestWorkflowFailure(e, {
-        repoFullName: `${ctx.owner}/${ctx.repoName}`,
+        repoFullName: repoFullOuter,
       });
     }
 
     await this.prSync.upsertFromPullPayloadForIssue({
-      issueId: ctx.issue.id,
-      owner: ctx.owner,
-      repoName: ctx.repoName,
+      issueId: params.issueId,
+      owner: params.owner.trim(),
+      repoName: params.repoName.trim(),
       pullRequest: asObject(rawPr),
     });
 
@@ -193,9 +260,9 @@ export class GithubIssueGitWorkflowService {
 
     await this.maybePostTimelineAnnouncement({
       issuer: params.issuer,
-      issueId: ctx.issue.id,
+      issueId: params.issueId,
       githubPullRequestId: ghPrIdStr,
-      fullName: `${ctx.owner}/${ctx.repoName}`,
+      fullName: `${params.owner.trim()}/${params.repoName.trim()}`,
       prNumber: persisted.prNumber,
       htmlUrl: persisted.htmlUrl,
       draft: params.draft,
@@ -232,8 +299,9 @@ export class GithubIssueGitWorkflowService {
       params.workspaceId,
     );
     if (!installation) {
-      throw new UnprocessableEntityException(
-        'This workspace does not have a GitHub installation',
+      throw githubIntegrationMemberUnprocessable(
+        'This workspace does not have the GitHub App installed yet. Ask a workspace admin to install it under Integrations → GitHub.',
+        'GITHUB_WORKSPACE_INSTALL_REQUIRED',
       );
     }
 
@@ -242,17 +310,19 @@ export class GithubIssueGitWorkflowService {
       params.userId,
     );
     if (!userConn?.accessTokenEncrypted) {
-      throw new UnprocessableEntityException(
-        'Link your GitHub account in workspace Integrations → GitHub before creating branches or pull requests (member OAuth is separate from linking a repo to the project).',
+      throw githubIntegrationMemberUnprocessable(
+        'Your Epicstory account is not linked to GitHub for this workspace. Open Integrations → GitHub and complete “Link your GitHub account”, then try creating the branch or pull request again.',
+        'GITHUB_MEMBER_OAUTH_REQUIRED',
       );
     }
 
-    userConn = await this.refreshGithubUserTokensIfEligible(userConn);
+    userConn = await this.refreshGithubUserTokensMaybe(userConn, 'skew');
 
     const expiresAt = userConn.tokenExpiresAt ?? null;
     if (expiresAt != null && expiresAt <= new Date()) {
-      throw new UnprocessableEntityException(
-        'GitHub authorization expired — reconnect GitHub.',
+      throw githubIntegrationMemberUnprocessable(
+        'Your GitHub link for this workspace has expired. Open Integrations → GitHub and link your account again, then retry.',
+        'GITHUB_MEMBER_TOKEN_EXPIRED',
       );
     }
 
@@ -260,8 +330,9 @@ export class GithubIssueGitWorkflowService {
     try {
       accessToken = this.crypto.decrypt(userConn.accessTokenEncrypted);
     } catch {
-      throw new UnprocessableEntityException(
-        'Could not decrypt stored GitHub token — reconnect GitHub.',
+      throw githubIntegrationMemberUnprocessable(
+        'Your stored GitHub link is invalid. Open Integrations → GitHub, unlink if shown, then link your account again before retrying.',
+        'GITHUB_MEMBER_TOKEN_DECRYPT_FAILED',
       );
     }
 
@@ -288,6 +359,7 @@ export class GithubIssueGitWorkflowService {
         installation.githubInstallationId,
         params.owner.trim(),
         params.repoName.trim(),
+        params.workspaceId,
       );
       if (!details?.defaultBranch) {
         throw new BadRequestException(
@@ -307,11 +379,11 @@ export class GithubIssueGitWorkflowService {
   }
 
   /**
-   * Proactively refresh user-to-server access token when within {@link AppConfig.GITHUB_USER_TOKEN_REFRESH_SKEW_SEC}
-   * of expiry (or past expiry), when a refresh_token is stored and the feature flag is on.
+   * Proactively refresh user-to-server access token (skew window, or forced after GitHub HTTP 401).
    */
-  private async refreshGithubUserTokensIfEligible(
+  private async refreshGithubUserTokensMaybe(
     userConn: GithubUserConnection,
+    mode: 'skew' | 'force',
   ): Promise<GithubUserConnection> {
     if (!this.config.GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED) {
       return userConn;
@@ -324,7 +396,8 @@ export class GithubIssueGitWorkflowService {
     const skewMs =
       Math.max(0, this.config.GITHUB_USER_TOKEN_REFRESH_SKEW_SEC) * 1000;
     const expMs = userConn.tokenExpiresAt?.getTime();
-    const shouldRefresh = expMs == null || Date.now() >= expMs - skewMs;
+    const shouldRefresh =
+      mode === 'force' || expMs == null || Date.now() >= expMs - skewMs;
 
     if (!shouldRefresh) {
       return userConn;
@@ -365,6 +438,44 @@ export class GithubIssueGitWorkflowService {
       return userConn;
     } catch {
       return userConn;
+    }
+  }
+
+  private async tryForceRefreshGithubUserAccessToken(
+    workspaceId: number,
+    userId: number,
+  ): Promise<boolean> {
+    const row = await this.userGithub.findActiveForWorkspaceUser(
+      workspaceId,
+      userId,
+    );
+    if (!row) return false;
+    const prevTok = row.accessTokenEncrypted ?? '';
+    const nextRow = await this.refreshGithubUserTokensMaybe(row, 'force');
+    return (nextRow.accessTokenEncrypted ?? '') !== prevTok;
+  }
+
+  /**
+   * Runs a GitHub user-token call; if GitHub returns HTTP 401 once, force-refresh the user token
+   * (when refresh_token flow is enabled) then retry the runner once.
+   */
+  private async withGithubUser401RefreshRetry<T>(
+    workspaceId: number,
+    userId: number,
+    runner: () => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await runner();
+    } catch (e: unknown) {
+      if (!(e instanceof GithubUserRestHttpError && e.statusCode === 401)) {
+        throw e;
+      }
+      const rotated = await this.tryForceRefreshGithubUserAccessToken(
+        workspaceId,
+        userId,
+      );
+      if (!rotated) throw e;
+      return await runner();
     }
   }
 
@@ -489,6 +600,13 @@ function ghPrNumericId(payload: unknown): number | null {
   return null;
 }
 
+function githubIntegrationMemberUnprocessable(
+  message: string,
+  code: IGithubIntegrationApiErrorCode,
+): UnprocessableEntityException {
+  return new UnprocessableEntityException({ message, githubErrorCode: code });
+}
+
 /**
  * Turns {@link GithubUserRestHttpError} into Nest exceptions with GitHub-derived messages;
  * duplicate branch create → 409; auth/ACL → 422; plausible server errors → 502.
@@ -503,9 +621,17 @@ function normalizeGithubUserRestWorkflowFailure(
   const e = err;
   const repoLabel = opts?.repoFullName ?? 'this repository';
 
-  if (e.statusCode === 401 || e.statusCode === 403) {
-    throw new UnprocessableEntityException(
-      `${e.summary} Check GitHub access to ${repoLabel} or reconnect GitHub from workspace settings.`,
+  if (e.statusCode === 401) {
+    throw githubIntegrationMemberUnprocessable(
+      `${e.summary} Open Integrations → GitHub and link your GitHub account again, then retry.`,
+      'GITHUB_MEMBER_REAUTHORIZE_REQUIRED',
+    );
+  }
+
+  if (e.statusCode === 403) {
+    throw githubIntegrationMemberUnprocessable(
+      `${e.summary} Check repo permissions on ${repoLabel}; if your GitHub link is stale, reconnect from workspace Integrations.`,
+      'GITHUB_MEMBER_REPO_PERMISSION_DENIED',
     );
   }
 

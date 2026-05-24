@@ -1,6 +1,9 @@
 import type { JSONContent } from "@tiptap/core";
+import type { IIssueGithubBranch, IIssueGithubBranchStored } from "./github";
 import type { ILabel } from "./label";
 import type { IUser } from "./user";
+
+export type { IIssueGithubBranch, IIssueGithubBranchStored };
 
 export type IIssue = {
   id: number;
@@ -19,6 +22,8 @@ export type IIssue = {
   commentChannelId: number;
   parentIssue?: IIssue | null;
   subIssues?: IIssue[];
+  /** Active GitHub branch for this issue (repo + branch name). */
+  githubBranch?: IIssueGithubBranch | null;
 };
 
 export type UpdateIssueData = {
@@ -28,6 +33,7 @@ export type UpdateIssueData = {
   dueDate?: Date | null;
   priority?: number | null;
   parentIssueId?: number | null;
+  githubBranch?: IIssueGithubBranchStored | null;
 };
 
 export type FindIssuesQuery = {

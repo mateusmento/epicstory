@@ -4,15 +4,33 @@ import { Button } from "@/design-system";
 import { useDependency } from "@/core/dependency-injection";
 import { GithubIntegrationApi, WorkspaceApi } from "@epicstory/api-client";
 import type { IGithubProjectRepoLink, IGithubRepositoryCatalogPage, Project } from "@epicstory/contracts";
-import { computed, onMounted, ref, watch } from "vue";
+import { useAuth } from "@/domain/auth";
+import {
+  clearGithubIssueWorkflowPendingForWorkspace,
+  issueGithubReturnPath,
+  readGithubIssueWorkflowPending,
+} from "@/domain/github";
+import { useWorkspace } from "@/domain/workspace";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
 const api = useDependency(GithubIntegrationApi);
 const workspaceApi = useDependency(WorkspaceApi);
+const { user: authUser } = useAuth();
+const { members: workspaceMembers, fetchWorkspaceMembers } = useWorkspace();
 
 const workspaceId = computed(() => Number(route.params.workspaceId));
+
+/** Workspace install/remove is admin-only (API enforces the same). */
+const canManageGithubInstallation = computed(() => {
+  const uid = authUser.value?.id;
+  if (uid == null) return false;
+  const row = workspaceMembers.value.find((m) => m.userId === uid);
+  if (!row) return false;
+  return row.role === 0 || row.role === 1;
+});
 
 const loading = ref(false);
 const status = ref<Awaited<ReturnType<typeof api.getStatus>>>();
@@ -32,9 +50,27 @@ const primaryActionId = ref<number | null>(null);
 const catalogLoading = ref(false);
 const catalog = ref<IGithubRepositoryCatalogPage | null>(null);
 const catalogError = ref<string | null>(null);
+const catalogSectionEl = ref<HTMLElement | null>(null);
 
 const oauthBannerError = ref<string | null>(null);
 const oauthBannerSuccess = ref(false);
+const githubPageHeadingEl = ref<HTMLElement | null>(null);
+
+const linkRepoFromIssue = computed(() => queryParamFirst(route.query.github_link_repo) === "1");
+
+const issueWorkflowPending = computed(() => readGithubIssueWorkflowPending());
+
+const linkRepoFromIssueBanner = computed(
+  () =>
+    linkRepoFromIssue.value &&
+    issueWorkflowPending.value != null &&
+    issueWorkflowPending.value.workspaceId === String(workspaceId.value),
+);
+
+function resetOauthBannerState() {
+  oauthBannerError.value = null;
+  oauthBannerSuccess.value = false;
+}
 
 function queryParamFirst(
   v: LocationQueryValue | LocationQueryValue[] | undefined | null,
@@ -49,22 +85,38 @@ function queryParamFirst(
 
 /** OAuth callback redirects here with query params instead of JSON errors. */
 function consumeGithubOAuthQueryParams() {
-  const hasKeys = route.query.github_oauth_error != null || route.query.github_oauth_success != null;
+  const hasKeys =
+    route.query.github_oauth_error != null ||
+    route.query.github_oauth_success != null ||
+    route.query.github_install_success != null;
   if (!hasKeys) return;
 
   const err = queryParamFirst(route.query.github_oauth_error);
   const ok = queryParamFirst(route.query.github_oauth_success);
+  const installOk = queryParamFirst(route.query.github_install_success);
   oauthBannerError.value = err?.trim() ? err.trim() : null;
-  oauthBannerSuccess.value = ok === "1" || ok === "true";
+  oauthBannerSuccess.value = ok === "1" || ok === "true" || installOk === "1" || installOk === "true";
 
   const nextQuery = { ...route.query };
   delete nextQuery.github_oauth_error;
   delete nextQuery.github_oauth_success;
+  delete nextQuery.github_install_success;
   router.replace({ path: route.path, query: nextQuery });
+
+  nextTick(() => {
+    if (oauthBannerError.value !== null || oauthBannerSuccess.value) {
+      githubPageHeadingEl.value?.focus({ preventScroll: true });
+    }
+  });
 }
 
 watch(
-  () => [route.query.github_oauth_error, route.query.github_oauth_success] as const,
+  () =>
+    [
+      route.query.github_oauth_error,
+      route.query.github_oauth_success,
+      route.query.github_install_success,
+    ] as const,
   () => consumeGithubOAuthQueryParams(),
 );
 
@@ -105,7 +157,8 @@ function userOAuthStartUrl() {
 const installCallbackPath = computed(
   () => `${config.API_URL.replace(/\/$/, "")}/integrations/github/install/callback`,
 );
-const userCallbackPath = computed(
+/** Must match GitHub App → Callback URL exactly (same scheme/host/path as API `redirect_uri`). */
+const userAuthorizationCallbackUrl = computed(
   () => `${config.API_URL.replace(/\/$/, "")}/integrations/github/user/callback`,
 );
 
@@ -186,6 +239,7 @@ async function loadCatalog(page = 1) {
   } catch (e: unknown) {
     catalogError.value = extractApiError(e, "Could not load repositories.");
     catalog.value = null;
+    nextTick(() => catalogSectionEl.value?.focus({ preventScroll: true }));
   } finally {
     catalogLoading.value = false;
   }
@@ -215,6 +269,19 @@ async function loadMoreCatalog() {
   }
 }
 
+function tryReturnToIssueAfterProjectRepoLink(): void {
+  const pending = readGithubIssueWorkflowPending();
+  if (
+    pending == null ||
+    pending.workspaceId !== String(workspaceId.value) ||
+    pending.projectId !== String(selectedProjectId.value) ||
+    !projectRepos.value.length
+  ) {
+    return;
+  }
+  router.push(issueGithubReturnPath(pending.workspaceId, pending.projectId, pending.issueId));
+}
+
 async function linkCatalogRepo(repo: { owner: string; name: string; githubRepoId: string }) {
   if (selectedProjectId.value == null) return;
   const key = repo.githubRepoId;
@@ -226,6 +293,7 @@ async function linkCatalogRepo(repo: { owner: string; name: string; githubRepoId
       name: repo.name,
     });
     await loadProjectRepos();
+    tryReturnToIssueAfterProjectRepoLink();
   } catch (e: unknown) {
     linkError.value = extractApiError(e, "Could not link repository.");
   } finally {
@@ -263,7 +331,9 @@ async function disconnectInstallation() {
   if (!confirm("Remove the GitHub App installation from this workspace?")) return;
   loading.value = true;
   try {
+    resetOauthBannerState();
     await api.disconnectInstallation(workspaceId.value);
+    clearGithubIssueWorkflowPendingForWorkspace(String(workspaceId.value));
     catalog.value = null;
     await refresh();
     await loadProjectRepos();
@@ -276,25 +346,62 @@ async function disconnectUser() {
   if (!confirm("Unlink your GitHub account from this workspace?")) return;
   loading.value = true;
   try {
+    resetOauthBannerState();
     await api.disconnectUser(workspaceId.value);
+    clearGithubIssueWorkflowPendingForWorkspace(String(workspaceId.value));
     await refresh();
   } finally {
     loading.value = false;
   }
 }
 
+function applyGithubIntegrationRouteQuery(): void {
+  const projectIdRaw = queryParamFirst(route.query.projectId);
+  if (projectIdRaw) {
+    const pid = Number(projectIdRaw);
+    if (Number.isFinite(pid)) {
+      selectedProjectId.value = pid;
+    }
+  }
+}
+
+watch(
+  () => route.query.projectId,
+  () => applyGithubIntegrationRouteQuery(),
+);
+
+watch(
+  () => [status.value?.installation, linkRepoFromIssue.value] as const,
+  ([installed, linkFromIssue]) => {
+    if (installed && linkFromIssue && catalog.value == null && !catalogLoading.value) {
+      loadCatalog(1);
+    }
+  },
+);
+
 onMounted(async () => {
   consumeGithubOAuthQueryParams();
-  await Promise.all([refresh(), loadProjects()]);
+  await Promise.all([refresh(), loadProjects(), fetchWorkspaceMembers()]);
+  applyGithubIntegrationRouteQuery();
+  if (linkRepoFromIssue.value && status.value?.installation) {
+    await loadCatalog(1);
+  }
 });
 </script>
 
 <template>
   <div class="p-6 max-w-3xl">
-    <div class="text-lg font-semibold">GitHub</div>
+    <div
+      ref="githubPageHeadingEl"
+      id="github-integration-heading"
+      tabindex="-1"
+      class="text-lg font-semibold outline-none"
+    >
+      GitHub
+    </div>
     <div class="text-sm text-secondary-foreground mt-1">
-      Connect your workspace to GitHub (App installation + member authorization) to link repos and open pull
-      requests from issues.
+      Workspace admins install the GitHub App once. Each member links their own GitHub account before creating
+      branches or pull requests from issues.
     </div>
 
     <div
@@ -307,12 +414,55 @@ onMounted(async () => {
       v-else-if="oauthBannerSuccess"
       class="mt-4 rounded-md border border-emerald-600/30 bg-emerald-600/5 px-3 py-2 text-sm text-emerald-950 dark:text-emerald-100"
     >
-      GitHub account linked. You can create branches and pull requests from issues.
+      GitHub is ready. You can create branches and pull requests from issues when a repo is linked to the
+      project.
+    </div>
+    <div
+      v-if="linkRepoFromIssueBanner"
+      class="mt-4 rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-secondary-foreground"
+    >
+      Link a repository to
+      <span class="font-medium text-foreground">this project</span>
+      below, then you will return to the issue to finish
+      {{ issueWorkflowPending?.action === "open_pull" ? "opening the pull request" : "creating the branch" }}.
+    </div>
+
+    <div
+      v-if="status && status.installation && status.installationRemoteVerification === 'missing_on_github'"
+      class="mt-4 rounded-md border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+    >
+      GitHub no longer has this workspace&apos;s installation. Repository catalogue and automation will fail
+      until a workspace admin reinstalls the app (Integrations → GitHub → Install).
+    </div>
+    <div
+      v-if="status && status.installation && status.installationRemoteVerification === 'error'"
+      class="mt-4 rounded-md border border-amber-600/35 bg-amber-500/5 px-3 py-2 text-sm text-amber-950 dark:text-amber-100"
+    >
+      Could not verify the GitHub installation right now.
+      <span v-if="status.installationRemoteVerificationDetail">{{
+        " " + status.installationRemoteVerificationDetail
+      }}</span>
+    </div>
+
+    <div
+      v-if="status?.appConfigured"
+      class="mt-4 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-secondary-foreground"
+    >
+      <span class="font-medium text-foreground">GitHub App → Callback URL</span> must include exactly:
+      <code class="block mt-1 text-[11px] break-all">{{ userAuthorizationCallbackUrl }}</code>
+      (Member branch/PR uses this <code class="text-[11px]">redirect_uri</code> on
+      <a
+        href="https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-user-access-token-for-a-github-app"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="text-primary underline"
+        >GitHub user authorization</a
+      >.)
     </div>
 
     <div class="mt-6 border rounded-lg p-4">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div class="flex flex-col gap-1 min-w-0">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
           <div class="text-sm font-medium">Status</div>
           <div v-if="!status" class="text-sm text-secondary-foreground">Loading…</div>
           <template v-else>
@@ -320,11 +470,20 @@ onMounted(async () => {
               GitHub App env:
               <span class="font-medium">{{ status.appConfigured ? "configured" : "not configured" }}</span>
             </div>
-            <div v-if="status.installation" class="text-sm text-secondary-foreground">
-              Workspace install:
-              <span class="font-medium">{{ status.installation.accountLogin }}</span>
-              ({{ status.installation.accountType }})
-            </div>
+            <template v-if="status.installation">
+              <div class="text-sm text-secondary-foreground">
+                Workspace install:
+                <span class="font-medium">{{ status.installation.accountLogin }}</span>
+                ({{ status.installation.accountType }})
+              </div>
+              <div
+                v-if="status.installation.suspendedAt"
+                class="text-sm text-amber-800 dark:text-amber-200 mt-2"
+              >
+                This installation is suspended on GitHub (suspended_at). Org admins must unsuspend before the
+                app can access repositories.
+              </div>
+            </template>
             <div v-else class="text-sm text-secondary-foreground">No workspace installation yet.</div>
             <div v-if="status.user" class="text-sm text-secondary-foreground">
               Your GitHub account:
@@ -336,9 +495,9 @@ onMounted(async () => {
           </template>
         </div>
 
-        <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 shrink-0">
+        <div class="flex flex-wrap gap-2 pt-1 border-t border-border">
           <Button
-            v-if="status?.appConfigured"
+            v-if="status?.appConfigured && canManageGithubInstallation"
             variant="default"
             :disabled="loading"
             :as="'a'"
@@ -356,7 +515,7 @@ onMounted(async () => {
             Link your GitHub account
           </Button>
           <Button
-            v-if="status?.installation"
+            v-if="status?.installation && canManageGithubInstallation"
             variant="destructive"
             :disabled="loading"
             @click="disconnectInstallation"
@@ -453,7 +612,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="status?.installation" class="mt-6 border rounded-lg p-4">
+    <div
+      v-if="status?.installation"
+      ref="catalogSectionEl"
+      tabindex="-1"
+      class="mt-6 border rounded-lg p-4 outline-none"
+    >
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="text-sm font-medium">Repositories (installation catalogue)</div>
         <Button variant="outline" size="sm" :disabled="catalogLoading" @click="loadCatalog(1)">
@@ -519,7 +683,7 @@ onMounted(async () => {
       In GitHub → App settings: <strong class="font-medium text-foreground">Setup URL</strong> (after install)
       should be <code class="text-xs">{{ installCallbackPath }}</code
       >; <strong class="font-medium text-foreground">User authorization callback</strong> should be
-      <code class="text-xs">{{ userCallbackPath }}</code
+      <code class="text-xs">{{ userAuthorizationCallbackUrl }}</code
       >. If both point at the user URL, installs still work after a server update, but fixing the Setup URL
       avoids confusion. Add <code class="text-xs">GITHUB_APP_SLUG</code> and
       <code class="text-xs">GITHUB_APP_PRIVATE_KEY</code> in the API environment so installs resolve the org

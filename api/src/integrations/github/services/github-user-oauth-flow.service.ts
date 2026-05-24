@@ -5,6 +5,7 @@ import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions'
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import { GithubUserConnectionRepository } from '../repositories';
+import { createGithubOAuthCodeVerifier } from '../lib/github-oauth-pkce';
 import { GithubUserOAuthService } from './github-user-oauth.service';
 import { GithubOAuthPendingStateStore } from './github-oauth-pending-state.store';
 
@@ -53,12 +54,14 @@ export class GithubUserOauthFlowService {
     );
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
 
+    const codeVerifier = createGithubOAuthCodeVerifier();
     const state = this.pendingState.allocateUserOAuthState({
       workspaceId,
       userId: params.issuer.id,
       oauthRedirect: params.oauthRedirect,
+      codeVerifier,
     });
-    const authorizeUrl = this.oauth.getUserAuthorizeUrl(state);
+    const authorizeUrl = this.oauth.getUserAuthorizeUrl(state, codeVerifier);
 
     return {
       state,
@@ -79,10 +82,15 @@ export class GithubUserOauthFlowService {
     errorDescription?: string;
   }): Promise<GithubUserOauthCallbackResult> {
     if (params.oauthError) {
-      const sessOnError = this.pendingState.consumeUserOAuthState(
+      const sessOnError = await this.pendingState.consumeUserOAuthState(
         params.stateFromQuery,
       );
-      const msg = params.errorDescription || params.oauthError;
+      const isAccessDenied =
+        params.oauthError === 'access_denied' ||
+        String(params.oauthError).toLowerCase() === 'access_denied';
+      const msg = isAccessDenied
+        ? 'GitHub authorization was cancelled or declined. You can link your account anytime from Workspace → Integrations → GitHub.'
+        : params.errorDescription || params.oauthError;
       return {
         finalRedirect: this.userOAuthReturnUrl(sessOnError?.oauthRedirect, {
           github_oauth_error: msg.slice(0, 1200),
@@ -90,7 +98,9 @@ export class GithubUserOauthFlowService {
       };
     }
 
-    const sess = this.pendingState.consumeUserOAuthState(params.stateFromQuery);
+    const sess = await this.pendingState.consumeUserOAuthState(
+      params.stateFromQuery,
+    );
     if (!sess) {
       return {
         finalRedirect: this.userOAuthReturnUrl(undefined, {
@@ -100,7 +110,12 @@ export class GithubUserOauthFlowService {
       };
     }
 
-    const { workspaceId, userId, oauthRedirect: redirectAfter } = sess;
+    const {
+      workspaceId,
+      userId,
+      oauthRedirect: redirectAfter,
+      codeVerifier,
+    } = sess;
 
     if (!params.code?.trim()) {
       return {
@@ -112,7 +127,10 @@ export class GithubUserOauthFlowService {
 
     let token;
     try {
-      token = await this.oauth.exchangeCodeForToken(params.code.trim());
+      token = await this.oauth.exchangeCodeForToken(
+        params.code.trim(),
+        codeVerifier,
+      );
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       return {

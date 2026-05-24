@@ -8,6 +8,7 @@
 
 - [ ] Create **GitHub App** under the GitHub **org** (or transitional personal account) that will own Epicstory’s integration.
 - [ ] Configure **Callback URL** / **Setup URL** (and any **Redirect URLs** for **user authorization**) per environment: local, staging, production; HTTPS and reverse proxy aligned.
+  - **User authorization callback URL** (GitHub App → **Callback URL**, up to 10) must **exactly** match what the API sends as `redirect_uri`, e.g. production `https://epicstory.io/api/integrations/github/user/callback` (`GITHUB_APP_USER_CALLBACK_URL` or `APP_URL` + path). **http vs https** mismatch causes authorization failures.
   - **Setup URL / post-install redirect** must match `GET …/api/integrations/github/install/callback` **on the same public host** Epicstory browsers use (`APP_URL`; override with `GITHUB_APP_INSTALL_CALLBACK_URL` if split).
 - [ ] Generate and store **credentials** in secret hosting only:
   - Private key (`.pem`) or GitHub’s credential mechanism for minting JWTs

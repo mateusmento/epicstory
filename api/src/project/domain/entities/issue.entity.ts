@@ -13,6 +13,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import type { IIssueGithubBranchStored } from '@epicstory/contracts';
 import { Project } from './project.entity';
 import { Label } from './label.entity';
 
@@ -79,6 +80,10 @@ export class Issue {
 
   @Column({ nullable: true })
   commentChannelId?: number | null;
+
+  /** Selected GitHub branch for issue workflows (`owner`, `repoName`, `branchName`). */
+  @Column({ name: 'github_branch', type: 'jsonb', nullable: true })
+  githubBranch: IIssueGithubBranchStored | null;
 
   @ManyToOne(() => Issue, { nullable: true, onDelete: 'CASCADE' })
   parentIssue: Issue;

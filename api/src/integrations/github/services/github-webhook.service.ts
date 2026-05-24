@@ -11,6 +11,7 @@ import { AppConfig } from 'src/core/app.config';
 import { GithubWebhookDeliveryReceipt } from '../entities/github-webhook-delivery-receipt.entity';
 import { verifyGithubWebhookSignature256 } from '../lib/verify-github-webhook-signature';
 import { GithubInstallationRepository } from '../repositories';
+import { GithubCacheService } from './github-cache.service';
 import { GithubIssuePullRequestSyncService } from './github-issue-pull-request-sync.service';
 import { GithubWorkspaceInstallationService } from './github-workspace-installation.service';
 
@@ -24,6 +25,7 @@ export class GithubWebhookService {
     private readonly config: AppConfig,
     private readonly installationRepo: GithubInstallationRepository,
     private readonly workspaceInstallation: GithubWorkspaceInstallationService,
+    private readonly githubCache: GithubCacheService,
     private readonly issuePullSync: GithubIssuePullRequestSyncService,
     @InjectRepository(GithubWebhookDeliveryReceipt)
     private readonly webhookDeliveryReceipts: Repository<GithubWebhookDeliveryReceipt>,
@@ -121,6 +123,10 @@ export class GithubWebhookService {
         return;
       }
 
+      if (this.githubCache.shouldInvalidateOnAdminActions()) {
+        await this.githubCache.purgeInstallationCaches(ghId);
+      }
+
       await this.workspaceInstallation.removeInstallationForWorkspace(
         installation.workspaceId,
       );
@@ -143,13 +149,16 @@ export class GithubWebhookService {
       `installation_repositories action=${action} installation_id=${installId} delivery=${del}`,
     );
 
-    if (
-      this.config.GITHUB_CACHE_INVALIDATE_ON_REPO_WEBHOOKS &&
-      this.config.GITHUB_CACHE_USE_REDIS
-    ) {
-      this.logger.debug(
-        `Repo catalogue cache purge not implemented (installation_id=${installId} delivery=${del})`,
-      );
+    if (this.githubCache.shouldInvalidateOnRepoWebhooks()) {
+      if (installId !== '?') {
+        this.githubCache
+          .purgeInstallationCaches(installId)
+          .catch((e: unknown) =>
+            this.logger.warn(
+              `installation_repositories cache purge failed: ${e instanceof Error ? e.message : String(e)}`,
+            ),
+          );
+      }
     }
   }
 
@@ -166,13 +175,31 @@ export class GithubWebhookService {
       `repository webhook action=${action} repo=${fullName} delivery=${del}`,
     );
 
-    if (
-      this.config.GITHUB_CACHE_INVALIDATE_ON_REPO_WEBHOOKS &&
-      this.config.GITHUB_CACHE_USE_REDIS
-    ) {
-      this.logger.debug(
-        `Repository metadata cache purge not implemented (delivery=${del})`,
-      );
+    if (this.githubCache.shouldInvalidateOnRepoWebhooks()) {
+      const installId = installationIdString(asObject(payload?.installation));
+      const owner =
+        repo && typeof repo.owner === 'object'
+          ? (repo.owner as { login?: string }).login
+          : undefined;
+      const name =
+        repo && typeof repo.name === 'string' ? repo.name : undefined;
+      if (installId && owner && name) {
+        this.githubCache
+          .purgeRepoMetadata(installId, owner, name)
+          .catch((e: unknown) =>
+            this.logger.warn(
+              `repository webhook cache purge failed: ${e instanceof Error ? e.message : String(e)}`,
+            ),
+          );
+      } else if (installId) {
+        this.githubCache
+          .purgeInstallationCaches(installId)
+          .catch((e: unknown) =>
+            this.logger.warn(
+              `repository webhook catalogue purge failed: ${e instanceof Error ? e.message : String(e)}`,
+            ),
+          );
+      }
     }
   }
 

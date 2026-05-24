@@ -18,9 +18,7 @@ import { GithubWorkspaceIntegrationService } from '../services';
 
 @Controller('integrations/github/workspaces')
 export class GithubIntegrationController {
-  constructor(
-    private readonly githubWorkspaceIntegration: GithubWorkspaceIntegrationService,
-  ) {}
+  constructor(private readonly service: GithubWorkspaceIntegrationService) {}
 
   @Get(':workspaceId/status')
   @UseGuards(JwtAuthGuard)
@@ -29,10 +27,7 @@ export class GithubIntegrationController {
     @Param('workspaceId', ParseIntPipe) workspaceId: number,
     @Auth() issuer: Issuer,
   ) {
-    return this.githubWorkspaceIntegration.getIntegrationStatus(
-      workspaceId,
-      issuer.id,
-    );
+    return this.service.getIntegrationStatus(workspaceId, issuer.id);
   }
 
   @Get(':workspaceId/repositories')
@@ -45,7 +40,7 @@ export class GithubIntegrationController {
     perPageRaw: number,
     @Auth() issuer: Issuer,
   ) {
-    return this.githubWorkspaceIntegration.listInstallationRepositoryCatalog(
+    return this.service.listInstallationRepositoryCatalog(
       workspaceId,
       issuer.id,
       page,
@@ -61,7 +56,7 @@ export class GithubIntegrationController {
     @Param('workspaceId', ParseIntPipe) workspaceId: number,
     @Auth() issuer: Issuer,
   ) {
-    await this.githubWorkspaceIntegration.disconnectInstallationForWorkspace(
+    await this.service.disconnectInstallationForWorkspace(
       workspaceId,
       issuer.id,
     );
@@ -75,9 +70,6 @@ export class GithubIntegrationController {
     @Param('workspaceId', ParseIntPipe) workspaceId: number,
     @Auth() issuer: Issuer,
   ) {
-    await this.githubWorkspaceIntegration.disconnectUserGitHubLink(
-      workspaceId,
-      issuer.id,
-    );
+    await this.service.disconnectUserGitHubLink(workspaceId, issuer.id);
   }
 }

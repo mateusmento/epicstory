@@ -78,28 +78,15 @@ export class GithubIssuePullRequestReconcileCronjob {
         continue;
       }
 
-      let token: string;
-      try {
-        token = await this.githubApi.createInstallationAccessToken(
-          installation.githubInstallationId,
-        );
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        this.logger.warn(
-          `PR reconcile: could not mint installation token for workspace ${workspaceId}: ${msg}`,
-        );
-        continue;
-      }
-
       for (const row of rows) {
         try {
-          const pull =
-            await this.githubApi.fetchPullRequestWithInstallationToken(
-              token,
-              row.owner,
-              row.repoName,
-              row.prNumber,
-            );
+          const pull = await this.githubApi.fetchPullRequestForInstallation(
+            installation.githubInstallationId,
+            row.owner,
+            row.repoName,
+            row.prNumber,
+            workspaceId,
+          );
           if (pull == null) {
             this.logger.debug(
               `PR reconcile: GitHub returned 404 for ${row.owner}/${row.repoName}#${row.prNumber}`,

@@ -3,6 +3,7 @@ import type {
   IGithubIntegrationStatus,
   IGithubIssuePullRequestLink,
   IGithubProjectRepoLink,
+  IGithubRepositoryBranchesPage,
   IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
@@ -14,6 +15,7 @@ export type {
   IGithubIntegrationStatus,
   IGithubIssuePullRequestLink,
   IGithubProjectRepoLink,
+  IGithubRepositoryBranchesPage,
   IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
 
@@ -25,6 +27,20 @@ export class GithubIntegrationApi {
     return this.axios
       .get<IGithubIntegrationStatus>(
         `/integrations/github/workspaces/${workspaceId}/status`,
+      )
+      .then((r) => r.data);
+  }
+
+  listRepositoryBranches(
+    workspaceId: number,
+    owner: string,
+    repoName: string,
+    params?: { page?: number; size?: number },
+  ) {
+    return this.axios
+      .get<IGithubRepositoryBranchesPage>(
+        `/integrations/github/workspaces/${workspaceId}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repoName)}/branches`,
+        { params },
       )
       .then((r) => r.data);
   }

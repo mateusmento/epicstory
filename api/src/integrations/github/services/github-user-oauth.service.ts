@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppConfig } from 'src/core/app.config';
+import { createGithubOAuthCodeChallenge } from '../lib/github-oauth-pkce';
 
 type GithubUserTokenResponse = {
   access_token?: string;
@@ -18,7 +19,7 @@ type GithubUserRest = {
 export class GithubUserOAuthService {
   constructor(private readonly config: AppConfig) {}
 
-  getUserAuthorizeUrl(state: string): string {
+  getUserAuthorizeUrl(state: string, codeVerifier: string): string {
     const clientId = this.config.GITHUB_APP_CLIENT_ID?.trim();
     if (!clientId) throw new Error('GITHUB_APP_CLIENT_ID is not configured');
 
@@ -27,6 +28,11 @@ export class GithubUserOAuthService {
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', redirectUri);
     url.searchParams.set('state', state);
+    url.searchParams.set(
+      'code_challenge',
+      createGithubOAuthCodeChallenge(codeVerifier),
+    );
+    url.searchParams.set('code_challenge_method', 'S256');
     return url.toString();
   }
 
@@ -39,7 +45,10 @@ export class GithubUserOAuthService {
     return url.toString();
   }
 
-  async exchangeCodeForToken(code: string): Promise<GithubUserTokenResponse> {
+  async exchangeCodeForToken(
+    code: string,
+    codeVerifier: string,
+  ): Promise<GithubUserTokenResponse> {
     const clientId = this.config.GITHUB_APP_CLIENT_ID?.trim();
     const clientSecret = this.config.GITHUB_APP_CLIENT_SECRET?.trim();
     if (!clientId || !clientSecret) {
@@ -51,6 +60,7 @@ export class GithubUserOAuthService {
     body.set('client_secret', clientSecret);
     body.set('code', code);
     body.set('redirect_uri', this.config.getGithubUserCallbackUrl());
+    body.set('code_verifier', codeVerifier);
 
     const res = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',

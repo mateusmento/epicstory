@@ -14,6 +14,7 @@ import {
   ProjectGithubRepoRepository,
 } from '../repositories';
 import { GithubApiService } from './github-api.service';
+import { GithubCacheService } from './github-cache.service';
 import { ProjectGithubRepo } from '../entities';
 
 export type LinkedGithubRepoRow = {
@@ -35,6 +36,7 @@ export class GithubProjectRepoLinkService {
     private readonly installationRepo: GithubInstallationRepository,
     private readonly projectGithubRepoRepo: ProjectGithubRepoRepository,
     private readonly githubApi: GithubApiService,
+    private readonly githubCache: GithubCacheService,
     @InjectRepository(Project)
     private readonly projectRepo: Repository<Project>,
   ) {}
@@ -104,6 +106,7 @@ export class GithubProjectRepoLinkService {
         installation.githubInstallationId,
         owner,
         name,
+        workspaceId,
       );
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -149,6 +152,13 @@ export class GithubProjectRepoLinkService {
 
     try {
       const saved = await this.projectGithubRepoRepo.save(row);
+      if (this.githubCache.shouldInvalidateOnAdminActions()) {
+        await this.githubCache.purgeRepoMetadata(
+          installation.githubInstallationId,
+          details.owner,
+          details.name,
+        );
+      }
       return {
         id: saved.id,
         projectId: saved.projectId,

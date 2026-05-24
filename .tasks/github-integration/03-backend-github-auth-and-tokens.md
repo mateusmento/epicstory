@@ -9,19 +9,16 @@
 ## Tasks
 
 - [x] **Admin install flow:** resolve installation id after GitHub redirect; persist workspace ↔ installation ↔ linked repos (per product model).
-- [ ] Mint **installation access tokens** (JWT app auth → GitHub API); cache short-lived tokens only (prefer **Redis** when `GITHUB_CACHE_USE_REDIS` / `REDIS_URL`) with TTL aligned to GitHub expiry. **Before each use:** if expired/missing (see `GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SEC`), invalidate cache + **re-mint**. **401:** at most **one** re-mint + retry per logical request when `GITHUB_INSTALLATION_TOKEN_RETRY_REQUEST_ON_401`. *(JWT → installation token mint is implemented; **Redis-backed installation token cache + skew discipline as specified** is not wired yet.)*
+- [x] Mint **installation access tokens** (JWT app auth → GitHub API); cache short-lived tokens (Redis when `GITHUB_CACHE_USE_REDIS` / `REDIS_URL`, else in-process) with TTL aligned to GitHub expiry. **Before each use:** re-mint within `GITHUB_INSTALLATION_TOKEN_REFRESH_SKEW_SEC` of expiry. **401:** at most **one** re-mint + retry per logical request when `GITHUB_INSTALLATION_TOKEN_RETRY_REQUEST_ON_401` (**`GithubApiService.getInstallationAccessToken`** + **`installationAuthedFetch`**).
 - [x] **User flow:** build GitHub App **user authorization URL** using settings that allow **refresh tokens** where GitHub supports them (`GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED`); **callback** exchanges code for **user-to-server** access + **refresh** tokens; store both encrypted when GitHub returns them.
   - **Callback UX:** redirects to **`APP_URL`** integrations path with **`github_oauth_error`** or **`github_oauth_success`** (browser-friendly); no JSON error throws for typical callback failures (**`GithubUserOAuthFlowService`**).
-  - **Proactive refresh:** `GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED` + **`GithubUserOAuthService.refreshUserAccessToken`**; **`GithubIssueGitWorkflowService.refreshGithubUserTokensIfEligible`** before decrypting/using the member token (**`GITHUB_USER_TOKEN_REFRESH_SKEW_SEC`** / unknown expiry edge).
-  - **Still incomplete vs ideal:** generic **401 → refresh-once → retry-once** on arbitrary GitHub REST calls (beyond this workflow skew path); force re-authorization UX when refresh fails remains product follow-up (**see task 04 reconnect** bullet).
+  - **Proactive refresh:** `GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED` + **`GithubUserOAuthService.refreshUserAccessToken`**; **`GithubIssueGitWorkflowService.refreshGithubUserTokensMaybe`** before decrypting/using the member token (**`GITHUB_USER_TOKEN_REFRESH_SKEW_SEC`** / unknown expiry edge).
+  - **`401` recovery (member token):** one **refresh_token → retry** cycle inside issue branch/PR workflow (**`withGithubUser401RefreshRetry`**).
 - [x] Persist per Epicstory user: GitHub user id, login, **encrypted** tokens, scopes granted, timestamps.
-- [x] **Disconnect:** revoke/delete tokens per user and/or remove installation linkage per workspace rules; **purge related caches** (installation + repo lists). *(Disconnect endpoints implemented; **Redis cache purge hooks** may still be partial—see Redis bullet.)*
-- [ ] **Validation:** detect revoked installs/tokens; surface “reconnect” to admin vs member appropriately.
-- [ ] **GitHub HTTP client:** use `GITHUB_HTTP_*` from `AppConfig` — timeouts, **429** + **`Retry-After`**, exponential backoff + jitter, max concurrency per workspace; structured errors for 401/403/429. *(Member **user-token** branch/PR REST helpers use **429 / Retry-After** retries and typed HTTP errors; **full AppConfig-driven matrix + installation-token paths** are not unified yet.)*
-- [ ] **Read caching (Redis):** cache safe GET-derived data under `GITHUB_CACHE_KEY_PREFIX` + TTLs (`GITHUB_CACHE_*_TTL_SEC`). **Invalidate** matching keys when:
-  - **Synchronous:** admin changes installation / linked repos in Epicstory (gate with `GITHUB_CACHE_INVALIDATE_ON_ADMIN_ACTIONS`), and
-  - **Webhooks:** handle `installation_repositories` and `repository` events (gate with `GITHUB_CACHE_INVALIDATE_ON_REPO_WEBHOOKS`).
-  Task **01 §5.2** remains the behavioral source of truth.
+- [x] **Disconnect:** revoke/delete tokens per user and/or remove installation linkage per workspace rules; **purge related caches** (installation token + repo list + repo metadata via **`GithubCacheService.purgeInstallationCaches`** on admin disconnect / install replace / webhooks).
+- [x] **Validation:** best-effort **installation** probe on **`GET …/integrations/github/status`**; workflow failures use **`githubErrorCode`** (`GITHUB_MEMBER_*`) for distinct member reconnect vs ACL.
+- [x] **GitHub HTTP client:** **`lib/github-http-client.ts`** — `GITHUB_HTTP_*` timeouts, **429** + **`Retry-After`**, exponential backoff + jitter; used by **`GithubApiService`** and member REST (**`github-user-api-rest`**). Per-workspace concurrency via **`GithubWorkspaceRequestGate`** (`GITHUB_HTTP_MAX_CONCURRENT_REQUESTS_PER_WORKSPACE`).
+- [x] **Read caching:** **`GithubCacheService`** — installation tokens, paginated repo catalogue pages, single-repo metadata; invalidation on admin install/disconnect/link metadata, **`installation_repositories`** + **`repository`** webhooks (gated by `GITHUB_CACHE_INVALIDATE_*`).
 - [x] **`pull_request` webhook:** verify signature/installation; normalize payload → upsert linkage / refresh PR state (`state`, **`merged`**, timestamps) per **task 06** and **01 §7.4** (many PRs per issue×repo — **no** “single open PR” invariant). Handler **thin**; idempotent deliveries via **`github_pull_request_id`** + **`X-GitHub-Delivery`** (or equivalent).
 
 ## Configuration (`AppConfig`)
@@ -63,9 +60,9 @@ Defaults and env var names live in **`api/src/core/app.config.ts`** (`GITHUB_*`)
 
 ## Acceptance criteria
 
-- Tests for `state` validation and duplicate-callback edge cases.
-- No plaintext tokens in logs or DB.
-- Documented cache TTLs + invalidation triggers; backoff behavior covered in tests or integration harness where feasible.
+- [ ] Tests for `state` validation and duplicate-callback edge cases (unit/integration harness — **not** in repo yet).
+- [x] No plaintext tokens in logs or DB.
+- [x] Documented cache TTLs + invalidation triggers; backoff behavior in **`github-http-client`** (config-driven).
 
 ## Dependencies
 

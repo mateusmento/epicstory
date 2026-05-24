@@ -13,7 +13,7 @@ Repos may be under **personal** or **org** `owner` (task **01 §5.1**).
 
 ### Workspace (catalogue)
 
-- [x] Persist installation + **workspace-visible** repos/orgs from GitHub (pagination, caching per **01 §5.2**). *(Installation persisted; catalogue via installation repo list API with pagination. **Redis catalogue cache** per **01 §5.2** may still be partial—see task **03** Redis bullet.)*
+- [x] Persist installation + **workspace-visible** repos/orgs from GitHub (pagination, caching per **01 §5.2**). *(Catalogue pages cached in **`GithubCacheService`**; invalidated on admin install/disconnect and repo webhooks — task **03**.)*
 - [x] UI: workspace GitHub settings — **register / manage** which repos orgs appear in the workspace catalogue (exact UX TBD). *(GitHub integration page loads catalogue + links repos to projects.)*
 
 ### Project ↔ repo links

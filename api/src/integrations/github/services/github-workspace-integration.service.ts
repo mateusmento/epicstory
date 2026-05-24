@@ -4,6 +4,7 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import type { IGithubInstallationRemoteVerification } from '@epicstory/contracts';
 import { AppConfig } from 'src/core/app.config';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
@@ -13,6 +14,7 @@ import {
   GithubUserConnectionRepository,
 } from '../repositories';
 import { GithubApiService } from './github-api.service';
+import { GithubCacheService } from './github-cache.service';
 import { GithubWorkspaceInstallationService } from './github-workspace-installation.service';
 
 export type GithubIntegrationStatusResult = {
@@ -28,6 +30,8 @@ export type GithubIntegrationStatusResult = {
     githubUserId: string;
     githubLogin: string;
   } | null;
+  installationRemoteVerification: IGithubInstallationRemoteVerification;
+  installationRemoteVerificationDetail: string | null;
 };
 
 export type GithubRepositoryCatalogResult = {
@@ -54,6 +58,7 @@ export class GithubWorkspaceIntegrationService {
     private readonly userConnRepo: GithubUserConnectionRepository,
     private readonly workspaceRepo: WorkspaceRepository,
     private readonly githubApi: GithubApiService,
+    private readonly githubCache: GithubCacheService,
     private readonly githubWorkspaceInstallation: GithubWorkspaceInstallationService,
   ) {}
 
@@ -72,6 +77,33 @@ export class GithubWorkspaceIntegrationService {
       userId,
     );
 
+    let installationRemoteVerification: IGithubInstallationRemoteVerification =
+      'skipped_no_install_record';
+    let installationRemoteVerificationDetail: string | null = null;
+
+    if (!installation) {
+      installationRemoteVerification = 'skipped_no_install_record';
+    } else if (!appConfigured) {
+      installationRemoteVerification = 'skipped_app_not_registered';
+    } else if (!this.config.GITHUB_APP_PRIVATE_KEY?.trim()) {
+      installationRemoteVerification = 'skipped_missing_private_key';
+    } else {
+      try {
+        await this.githubApi.fetchInstallationAccount(
+          installation.githubInstallationId,
+        );
+        installationRemoteVerification = 'ok';
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (/\(\s*404\b|\b404\b|Not\s+Found/i.test(msg)) {
+          installationRemoteVerification = 'missing_on_github';
+        } else {
+          installationRemoteVerification = 'error';
+          installationRemoteVerificationDetail = msg.slice(0, 240);
+        }
+      }
+    }
+
     return {
       appConfigured,
       installation: installation
@@ -89,6 +121,8 @@ export class GithubWorkspaceIntegrationService {
             githubLogin: userConn.githubLogin,
           }
         : null,
+      installationRemoteVerification,
+      installationRemoteVerificationDetail,
     };
   }
 
@@ -118,6 +152,7 @@ export class GithubWorkspaceIntegrationService {
           installation.githubInstallationId,
           safePage,
           perPage,
+          workspaceId,
         );
 
       return {
@@ -158,6 +193,14 @@ export class GithubWorkspaceIntegrationService {
     ) {
       throw new ForbiddenException(
         'Only workspace admins can remove the GitHub App installation.',
+      );
+    }
+
+    const installation =
+      await this.installationRepo.findByWorkspaceId(workspaceId);
+    if (installation && this.githubCache.shouldInvalidateOnAdminActions()) {
+      await this.githubCache.purgeInstallationCaches(
+        installation.githubInstallationId,
       );
     }
 

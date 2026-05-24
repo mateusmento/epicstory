@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { SchedulingModule } from 'src/scheduling/scheduling.module';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import { ChannelModule } from 'src/channel/channel.module';
+import { GithubIntegrationModule } from 'src/integrations/github/github.module';
 import * as controllers from './application/controllers';
 import * as features from './application/features';
 import * as gateways from './application/gateways';
@@ -21,6 +22,7 @@ import * as repositories from './infrastructure/repositories';
     NotificationsModule,
     SchedulingModule,
     ChannelModule,
+    forwardRef(() => GithubIntegrationModule),
   ],
   controllers: [...Object.values(controllers)],
   providers: [

@@ -49,8 +49,8 @@ export class IssueController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  findIssue(@Param('id') issueId: number) {
-    return this.queryBus.execute(new FindIssue({ issueId }));
+  findIssue(@Param('id') issueId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(new FindIssue({ issueId, userId: issuer.id }));
   }
 
   @Get(':id/feed')

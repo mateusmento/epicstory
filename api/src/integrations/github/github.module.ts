@@ -8,6 +8,7 @@ import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import * as controllers from './controllers';
 import * as jobs from './jobs';
 import * as services from './services';
+import { GithubIssueBranchService } from './services/github-issue-branch.service';
 import {
   GithubEpicstoryPrTimelineMarker,
   GithubInstallation,
@@ -44,6 +45,7 @@ import * as repositories from './repositories';
     ...Object.values(repositories),
     ...Object.values(services),
     IntegrationTokenCryptoService,
+    GithubIssueBranchService,
   ],
 })
 export class GithubIntegrationModule {}

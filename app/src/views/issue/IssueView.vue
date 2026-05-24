@@ -473,10 +473,11 @@ watch(
           <!-- GitHub: composable + sidebar child keeps IssueView thin -->
           <IssueGithubSidebarSection
             v-if="issue"
-            :workspace-id="props.workspaceId"
-            :project-id="props.projectId"
+            :workspace-id="String(issue.workspaceId)"
+            :project-id="String(issue.projectId)"
             :issue="issue"
             :reload-issue-activity-feed="reloadIssueActivityFeed"
+            :reload-issue="refreshIssue"
           />
 
           <IssueAttachmentsStrip

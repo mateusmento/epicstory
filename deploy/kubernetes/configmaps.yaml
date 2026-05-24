@@ -7,7 +7,7 @@ metadata:
     app: api
 data:
   NODE_ENV: "production"
-  APP_URL: "http://epicstory.io/"
+  APP_URL: "https://epicstory.io/"
   API_PORT: "3000"
   DATABASE_USER: "postgres"
   DATABASE_HOST: "postgres"
@@ -16,9 +16,11 @@ data:
   REDIS_URL: "redis://redis:6379"
   PASSWORD_ROUNDS: "10"
   JWT_EXPIRES_IN: "1d"
-  GOOGLE_CALLBACK_URI: "http://epicstory.io/api/auth/google/callback"
-  GOOGLE_APP_REDIRECT_URL: "http://epicstory.io/"
-  LINEAR_CALLBACK_URI: "http://epicstory.io/api/integrations/linear/oauth/callback"
+  GOOGLE_CALLBACK_URI: "https://epicstory.io/api/auth/google/callback"
+  GOOGLE_APP_REDIRECT_URL: "https://epicstory.io/"
+  LINEAR_CALLBACK_URI: "https://epicstory.io/api/integrations/linear/oauth/callback"
+  GITHUB_APP_USER_CALLBACK_URL: "https://epicstory.io/api/integrations/github/user/callback"
+  GITHUB_APP_INSTALL_CALLBACK_URL: "https://epicstory.io/api/integrations/github/install/callback"
   DEFAULT_SENDER_EMAIL_ADDRESS: "noreply@example.com"
   EMAIL_SMTP_URL: "smtp://epicstory.io:587"
   EMAIL_SMTP_USER: "user"
@@ -53,7 +55,7 @@ metadata:
   labels:
     app: frontend
 data:
-  API_URL: "http://epicstory.io/api"
+  API_URL: "https://epicstory.io/api"
   PEERJS_SERVER_HOST: "epicstory.io"
   PEERJS_SERVER_PATH: "/peerjs"
   PEERJS_SERVER_PORT: "3001"

@@ -1,7 +1,10 @@
 /** GitHub REST using a member user token (installation token stays in GithubApiService). */
 
-const GH_ACCEPT = 'application/vnd.github+json';
-const GH_VER = '2022-11-28';
+import {
+  type GithubHttpConfig,
+  githubHttpFetch,
+  githubRestJsonHeaders,
+} from './github-http-client';
 
 export class GithubUserRestHttpError extends Error {
   override readonly name = 'GithubUserRestHttpError';
@@ -15,10 +18,6 @@ export class GithubUserRestHttpError extends Error {
   ) {
     super(summary);
   }
-}
-
-async function sleep(ms: number): Promise<void> {
-  await new Promise((r) => setTimeout(r, ms));
 }
 
 type GithubUserFetchResult = {
@@ -87,45 +86,28 @@ async function githubUserFetchWithRetries(params: {
   url: string;
   method?: 'GET' | 'POST';
   jsonBody?: unknown;
-  maxRetries?: number;
+  httpConfig: GithubHttpConfig;
 }): Promise<GithubUserFetchResult> {
-  const maxRetries = params.maxRetries ?? 3;
-  let attempt = 0;
+  const method = params.method ?? 'GET';
+  const headers = githubRestJsonHeaders(
+    params.userAccessToken,
+    params.jsonBody !== undefined && method !== 'GET'
+      ? { 'Content-Type': 'application/json' }
+      : undefined,
+  );
 
-  while (true) {
-    const method = params.method ?? 'GET';
-    const res = await fetch(params.url, {
-      method,
-      headers: {
-        Authorization: `Bearer ${params.userAccessToken}`,
-        Accept: GH_ACCEPT,
-        'X-GitHub-Api-Version': GH_VER,
-        ...(params.jsonBody !== undefined && method !== 'GET'
-          ? { 'Content-Type': 'application/json' }
-          : {}),
-      },
-      body:
-        params.jsonBody !== undefined && method !== 'GET'
-          ? JSON.stringify(params.jsonBody)
-          : undefined,
-    });
+  const res = await githubHttpFetch({
+    url: params.url,
+    method,
+    headers,
+    body:
+      params.jsonBody !== undefined && method !== 'GET'
+        ? JSON.stringify(params.jsonBody)
+        : undefined,
+    httpConfig: params.httpConfig,
+  });
 
-    const bodyText = await res.text();
-
-    if ((res.status === 429 || res.status >= 520) && attempt < maxRetries) {
-      const retryAfter = res.headers.get('retry-after');
-      const retrySecondsNum = retryAfter != null ? Number(retryAfter) : NaN;
-      const backoffMs =
-        Number.isFinite(retrySecondsNum) && retrySecondsNum > 0
-          ? retrySecondsNum * 1000
-          : Math.min(5000, 300 * Math.pow(2, attempt));
-      attempt += 1;
-      await sleep(backoffMs);
-      continue;
-    }
-
-    return { ok: res.ok, status: res.status, bodyText };
-  }
+  return { ok: res.ok, status: res.status, bodyText: res.bodyText };
 }
 
 export async function githubGetRefHeadSha(params: {
@@ -133,6 +115,7 @@ export async function githubGetRefHeadSha(params: {
   owner: string;
   repo: string;
   headBranchName: string;
+  httpConfig: GithubHttpConfig;
 }): Promise<string> {
   const o = encodeURIComponent(params.owner.trim());
   const r = encodeURIComponent(params.repo.trim());
@@ -142,6 +125,7 @@ export async function githubGetRefHeadSha(params: {
     userAccessToken: params.token,
     url,
     method: 'GET',
+    httpConfig: params.httpConfig,
   });
 
   if (!res.ok) {
@@ -182,6 +166,7 @@ export async function githubCreateGitRef(params: {
   branchNameOnly: string;
   /** Commit SHA the new branch tip should reference. */
   sha: string;
+  httpConfig: GithubHttpConfig;
 }): Promise<{ ref: string; objectSha: string }> {
   const o = encodeURIComponent(params.owner.trim());
   const r = encodeURIComponent(params.repo.trim());
@@ -196,6 +181,7 @@ export async function githubCreateGitRef(params: {
       ref: `refs/heads/${branchLeaf}`,
       sha: params.sha,
     },
+    httpConfig: params.httpConfig,
   });
 
   if (!res.ok) {
@@ -243,6 +229,7 @@ export async function githubCreatePullRequest(params: {
   title: string;
   bodyMarkdown: string;
   draft: boolean;
+  httpConfig: GithubHttpConfig;
 }): Promise<unknown> {
   const o = encodeURIComponent(params.owner.trim());
   const r = encodeURIComponent(params.repo.trim());
@@ -258,6 +245,7 @@ export async function githubCreatePullRequest(params: {
       base: params.baseBranchName.trim(),
       draft: params.draft,
     },
+    httpConfig: params.httpConfig,
   });
 
   if (!res.ok) {
@@ -277,4 +265,89 @@ export async function githubCreatePullRequest(params: {
       res.bodyText.slice(0, 4096),
     );
   }
+}
+
+/** Returns false on HTTP 404; rethrows other GitHub errors. */
+export async function githubRepoBranchExists(params: {
+  token: string;
+  owner: string;
+  repo: string;
+  branchName: string;
+  httpConfig: GithubHttpConfig;
+}): Promise<boolean> {
+  try {
+    await githubGetRefHeadSha({
+      token: params.token,
+      owner: params.owner,
+      repo: params.repo,
+      headBranchName: params.branchName,
+      httpConfig: params.httpConfig,
+    });
+    return true;
+  } catch (e: unknown) {
+    if (e instanceof GithubUserRestHttpError && e.statusCode === 404) {
+      return false;
+    }
+    throw e;
+  }
+}
+
+export async function githubListRepoBranches(params: {
+  token: string;
+  owner: string;
+  repo: string;
+  page: number;
+  perPage: number;
+  httpConfig: GithubHttpConfig;
+}): Promise<{ branches: { name: string }[]; hasNextPage: boolean }> {
+  const o = encodeURIComponent(params.owner.trim());
+  const r = encodeURIComponent(params.repo.trim());
+  const perPage = Math.min(100, Math.max(1, params.perPage));
+  const page = Math.max(1, params.page);
+  const url = `https://api.github.com/repos/${o}/${r}/branches?per_page=${perPage}&page=${page}`;
+  const res = await githubUserFetchWithRetries({
+    userAccessToken: params.token,
+    url,
+    method: 'GET',
+    httpConfig: params.httpConfig,
+  });
+
+  if (!res.ok) {
+    githubUserThrowHttp({
+      status: res.status,
+      bodyText: res.bodyText,
+      fallbackLabel: `GitHub list branches for ${params.owner}/${params.repo}`,
+    });
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(res.bodyText) as unknown;
+  } catch {
+    throw new GithubUserRestHttpError(
+      res.status,
+      'GitHub list branches returned non-JSON payload',
+      res.bodyText.slice(0, 4096),
+    );
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new GithubUserRestHttpError(
+      200,
+      'GitHub list branches returned unexpected payload',
+      res.bodyText.slice(0, 4096),
+    );
+  }
+
+  const branches: { name: string }[] = [];
+  for (const row of parsed) {
+    if (row !== null && typeof row === 'object' && !Array.isArray(row)) {
+      const name = (row as { name?: unknown }).name;
+      if (typeof name === 'string' && name.trim()) {
+        branches.push({ name: name.trim() });
+      }
+    }
+  }
+
+  return { branches, hasNextPage: branches.length >= perPage };
 }

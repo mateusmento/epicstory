@@ -135,10 +135,7 @@ export class AppConfig {
   @Transform(({ value }) => (value == null || value === '' ? 72 : +value))
   ATTACHMENT_STAGING_TTL_HOURS: number = 72;
 
-  // ---- Integrations (GitHub API — Redis cache, backoff; implementation pending) ----
-  //
-  // Invalidation (when GitHub integration ships): purge matching keys on synchronous
-  // workspace-admin mutations AND on GitHub webhooks `installation_repositories` + `repository`.
+  // ---- Integrations (GitHub API — Redis/memory cache, HTTP backoff) ----
 
   /** Store GitHub read caches in Redis (`RedisService` / `REDIS_URL`). */
   @IsBoolean()

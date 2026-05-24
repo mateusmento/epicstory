@@ -11,11 +11,38 @@ export type IGithubUserLinkSummary = {
   githubLogin: string;
 };
 
+/**
+ * Structured error codes on Epicstory GitHub workflow HTTP failures (typically 422 bodies).
+ * See API `global-exception.filter` merging `HttpException` object payloads.
+ */
+export type IGithubIntegrationApiErrorCode =
+  | "GITHUB_WORKSPACE_INSTALL_REQUIRED"
+  | "GITHUB_MEMBER_OAUTH_REQUIRED"
+  | "GITHUB_MEMBER_TOKEN_EXPIRED"
+  | "GITHUB_MEMBER_TOKEN_DECRYPT_FAILED"
+  | "GITHUB_MEMBER_REAUTHORIZE_REQUIRED"
+  | "GITHUB_MEMBER_REPO_PERMISSION_DENIED";
+
+/**
+ * GitHub `/app/installations/:id` probe for persisted workspace linkage (best-effort on status load).
+ * `skipped_*` means Epicstory cannot or should not imply GitHub revoked the installation.
+ */
+export type IGithubInstallationRemoteVerification =
+  | "skipped_no_install_record"
+  | "skipped_app_not_registered"
+  | "skipped_missing_private_key"
+  | "ok"
+  | "missing_on_github"
+  | "error";
+
 /** GET `/integrations/github/workspaces/:workspaceId/status` */
 export type IGithubIntegrationStatus = {
   appConfigured: boolean;
   installation: IGithubInstallationSummary | null;
   user: IGithubUserLinkSummary | null;
+  installationRemoteVerification: IGithubInstallationRemoteVerification;
+  /** User-safe excerpt when verification is `error` (truncated upstream). */
+  installationRemoteVerificationDetail: string | null;
 };
 
 export type IGithubCatalogRepository = {
@@ -35,6 +62,32 @@ export type IGithubRepositoryCatalogPage = {
   totalCount: number;
   hasNextPage: boolean;
   repositories: IGithubCatalogRepository[];
+};
+
+/** Persisted on `project.issue.github_branch` (jsonb). */
+export type IIssueGithubBranchStored = {
+  branchName: string;
+  owner: string;
+  repoName: string;
+};
+
+/** Enriched on issue fetch (includes GitHub existence probe). */
+export type IIssueGithubBranch = IIssueGithubBranchStored & {
+  fullName: string;
+  htmlUrl: string;
+  existsOnGithub: boolean;
+};
+
+/** GET `.../repos/:owner/:repoName/branches` */
+export type IGithubRepositoryBranchListItem = {
+  name: string;
+};
+
+export type IGithubRepositoryBranchesPage = {
+  page: number;
+  size: number;
+  hasNextPage: boolean;
+  branches: IGithubRepositoryBranchListItem[];
 };
 
 /** POST `/integrations/github/workspaces/:workspaceId/issues/:issueId/branches` */

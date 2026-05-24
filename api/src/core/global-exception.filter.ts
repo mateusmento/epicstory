@@ -25,8 +25,60 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      message = exception.message;
+      const rawResponse = exception.getResponse();
+      let payload: Record<string, unknown>;
+
+      if (typeof rawResponse === 'string') {
+        message = rawResponse;
+        payload = {
+          statusCode: status,
+          message: rawResponse,
+        };
+      } else if (
+        typeof rawResponse === 'object' &&
+        rawResponse !== null &&
+        !Array.isArray(rawResponse)
+      ) {
+        const obj = rawResponse as Record<string, unknown>;
+        const nestedMsg = obj['message'];
+        message =
+          typeof nestedMsg === 'string'
+            ? nestedMsg
+            : Array.isArray(nestedMsg) &&
+                nestedMsg.every((entry) => typeof entry === 'string')
+              ? nestedMsg.join('; ')
+              : typeof exception.message === 'string'
+                ? exception.message
+                : 'Error';
+
+        payload = {
+          ...obj,
+          statusCode: status,
+          message,
+        };
+      } else {
+        message = exception.message;
+        payload = {
+          statusCode: status,
+          message: exception.message,
+        };
+      }
+
+      const errorResponse = {
+        timestamp: new Date().toISOString(),
+        path: request?.url || 'unknown',
+        method: request?.method || 'unknown',
+        ...payload,
+      };
+
       this.logger.error(`HTTP Exception: ${status} - ${message}`);
+
+      try {
+        response.status(status).json(errorResponse);
+      } catch (responseError) {
+        this.logger.error('Failed to send error response:', responseError);
+      }
+      return;
     } else if (exception instanceof QueryFailedError) {
       // Handle database constraint violations and other query errors
       status = HttpStatus.BAD_REQUEST;
