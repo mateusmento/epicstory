@@ -3,8 +3,8 @@ import { IsNumber } from 'class-validator';
 import { compact, take, uniqBy } from 'lodash';
 import { CalendarEvent } from 'src/calendar/entities';
 import { Meeting } from 'src/channel/domain';
+import { AppConfig } from 'src/core/app.config';
 import { patch } from 'src/core/objects';
-import { logQuery } from 'src/core/typeorm/logging';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import { DataSource } from 'typeorm';
 import {
@@ -43,6 +43,7 @@ export class FindLiveMeetingHandler implements IQueryHandler<FindLiveMeeting> {
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private dataSource: DataSource,
+    private config: AppConfig,
   ) {}
 
   async execute(
@@ -92,8 +93,6 @@ export class FindLiveMeetingHandler implements IQueryHandler<FindLiveMeeting> {
         { userId: query.issuerId },
       )
       .orderBy('m.startedAt', 'ASC');
-
-    logQuery(qb);
 
     const meeting = await qb.getOne();
 

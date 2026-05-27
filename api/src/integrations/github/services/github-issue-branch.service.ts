@@ -15,6 +15,7 @@ import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import { Issue } from 'src/project/domain/entities/issue.entity';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import { IssueGithubBranch } from '../entities/issue-github-branch.entity';
 import { githubHttpConfigFromApp } from '../lib/github-http-client';
 import {
   githubListRepoBranches,
@@ -48,6 +49,8 @@ export class GithubIssueBranchService {
   constructor(
     @InjectRepository(Issue)
     private readonly issueRepo: Repository<Issue>,
+    @InjectRepository(IssueGithubBranch)
+    private readonly issueBranchLinks: Repository<IssueGithubBranch>,
     private readonly workspaceRepo: WorkspaceRepository,
     private readonly workspaceRepoAccess: GithubWorkspaceRepoAccessService,
     private readonly userGithub: GithubUserConnectionRepository,
@@ -232,10 +235,30 @@ export class GithubIssueBranchService {
   }
 
   async enrichIssueForResponse(issue: Issue, userId?: number): Promise<Issue> {
+    // If the legacy `issue.githubBranch` field isn't set, fall back to the most
+    // recently pushed branch link discovered via push webhooks.
+    const link =
+      issue.githubBranch == null
+        ? await this.issueBranchLinks.findOne({
+            where: { issueId: issue.id, workspaceId: issue.workspaceId },
+            order: { lastPushedAt: 'DESC' },
+          })
+        : null;
+
+    const effectiveStored =
+      issue.githubBranch ??
+      (link
+        ? {
+            owner: link.owner,
+            repoName: link.repoName,
+            branchName: link.branchName,
+          }
+        : null);
+
     const enriched = await this.enrichStoredBranch(
       issue.workspaceId,
       userId,
-      issue.githubBranch,
+      effectiveStored,
     );
     return Object.assign(issue, { githubBranch: enriched });
   }

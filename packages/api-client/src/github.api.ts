@@ -1,6 +1,7 @@
 import type {
   IGithubCreateIssueBranchResponse,
   IGithubIntegrationStatus,
+  IGithubIssueBranchLink,
   IGithubIssuePullRequestLink,
   IGithubRepositoryBranchesPage,
   IGithubRepositoryCatalogPage,
@@ -12,6 +13,7 @@ import { inject, injectable } from "tsyringe";
 export type {
   IGithubCreateIssueBranchResponse,
   IGithubIntegrationStatus,
+  IGithubIssueBranchLink,
   IGithubIssuePullRequestLink,
   IGithubRepositoryBranchesPage,
   IGithubRepositoryCatalogPage,
@@ -72,6 +74,14 @@ export class GithubIntegrationApi {
       .get<
         IGithubIssuePullRequestLink[]
       >(`/integrations/github/issues/${issueId}/pull-requests`)
+      .then((r) => r.data);
+  }
+
+  listIssueGithubBranches(issueId: number) {
+    return this.axios
+      .get<
+        IGithubIssueBranchLink[]
+      >(`/integrations/github/issues/${issueId}/branches`)
       .then((r) => r.data);
   }
 

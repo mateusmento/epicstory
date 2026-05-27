@@ -1,11 +1,13 @@
 <script lang="ts" setup>
-import type { IIssue } from "@epicstory/contracts";
-import { computed, toRef } from "vue";
+import type { IIssue, IGithubIssueBranchLink } from "@epicstory/contracts";
+import { computed, ref, toRef, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { Button } from "@/design-system";
 import { useIssueGithubSidebar } from "@/domain/github";
-import IssueGithubBranchCombobox from "./IssueGithubBranchCombobox.vue";
-import IssueSelectGithubRepoDialog from "./IssueSelectGithubRepoDialog.vue";
+import { useDependency } from "@/core/dependency-injection";
+import { GithubIntegrationApi } from "@epicstory/api-client";
+import { githubApiErrorMessage } from "@/domain/github";
+import IssueCreateGithubBranchDialog from "./IssueCreateGithubBranchDialog.vue";
 
 const props = defineProps<{
   workspaceId: string;
@@ -24,9 +26,6 @@ const {
   githubPullRequests,
   githubPullRequestsLoading,
   githubPullRequestsError,
-  workspaceGhRepos,
-  workspaceGhReposLoading,
-  workspaceGhReposError,
   selectedGhRepoId,
   ghWorkflowBusy,
   ghWorkflowStatusMessage,
@@ -35,32 +34,13 @@ const {
   prStatusFilter,
   githubPullRequestGroups,
   showGithubSection,
-  canManageGithubSetup,
   githubWorkflowFormVisible,
-  githubNeedsRepoSelection,
   githubAdminNeedsWorkspaceInstall,
   githubMemberNeedsAccountLink,
   githubInstallationMissingOnGithub,
   ghWorkflowReconnectSuggested,
-  selectGithubRepoDialogOpen,
-  githubBranchPickerOpen,
-  githubBranchSearch,
-  githubRepoBranchesLoading,
-  githubRepoBranchesLoadingMore,
-  githubRepoBranchesError,
-  filteredGithubRepoBranches,
-  createBranchPickerDisabled,
-  createBranchPickerLabel,
-  githubBranchTriggerLabel,
-  activeGithubBranch,
-  selectedGhRepo,
-  openSelectGithubRepoDialog,
-  onGithubBranchPickerOpenChange,
-  loadMoreGithubRepoBranches,
-  selectGithubBranch,
-  createGithubBranchFromPicker,
-  onWorkspaceGithubRepoSelected,
   openGithubPull,
+  headBranchLeaf,
 } = useIssueGithubSidebar({
   workspaceId: toRef(props, "workspaceId"),
   projectId: toRef(props, "projectId"),
@@ -68,6 +48,93 @@ const {
   reloadIssueActivityFeed: () => props.reloadIssueActivityFeed(),
   reloadIssue: () => props.reloadIssue(),
 });
+
+const githubIntegrationApi = useDependency(GithubIntegrationApi);
+
+const linkedBranches = ref<IGithubIssueBranchLink[]>([]);
+const linkedBranchesLoading = ref(false);
+const linkedBranchesError = ref<string | null>(null);
+const selectedLinkedBranchId = ref<number | null>(null);
+const createBranchDialogOpen = ref(false);
+const createBranchDialogError = ref<string | null>(null);
+
+const selectedLinkedBranch = computed(() => {
+  const id = selectedLinkedBranchId.value;
+  if (id == null) return linkedBranches.value[0] ?? null;
+  return linkedBranches.value.find((b) => b.id === id) ?? linkedBranches.value[0] ?? null;
+});
+
+async function refreshLinkedBranches(): Promise<void> {
+  linkedBranchesLoading.value = true;
+  linkedBranchesError.value = null;
+  try {
+    linkedBranches.value = await githubIntegrationApi.listIssueGithubBranches(props.issue.id);
+    if (selectedLinkedBranchId.value == null && linkedBranches.value.length > 0) {
+      selectedLinkedBranchId.value = linkedBranches.value[0].id;
+    }
+  } catch (e) {
+    linkedBranches.value = [];
+    linkedBranchesError.value = githubApiErrorMessage(e, "Could not load linked branches.");
+  } finally {
+    linkedBranchesLoading.value = false;
+  }
+}
+
+function applySelectedBranchToWorkflow(): void {
+  const b = selectedLinkedBranch.value;
+  if (!b) return;
+  // Keep existing PR workflow behavior by syncing its internal refs.
+  headBranchLeaf.value = b.branchName;
+  selectedGhRepoId.value = `${b.owner}/${b.repoName}`;
+}
+
+async function createBranchFromDialog(payload: {
+  repo: { owner: string; name: string; githubRepoId: string };
+  branchName: string;
+}): Promise<void> {
+  createBranchDialogError.value = null;
+  try {
+    await githubIntegrationApi.createIssueGithubBranch(+props.workspaceId, props.issue.id, {
+      owner: payload.repo.owner,
+      name: payload.repo.name,
+      branchName: payload.branchName,
+    });
+
+    // Refresh linked branches list so the new link appears immediately.
+    await refreshLinkedBranches();
+    const newlyLinked =
+      linkedBranches.value.find(
+        (b) =>
+          b.owner === payload.repo.owner &&
+          b.repoName === payload.repo.name &&
+          b.branchName === payload.branchName,
+      ) ?? null;
+    if (newlyLinked) {
+      selectedLinkedBranchId.value = newlyLinked.id;
+    }
+    applySelectedBranchToWorkflow();
+    createBranchDialogOpen.value = false;
+    await props.reloadIssueActivityFeed();
+  } catch (e: unknown) {
+    createBranchDialogError.value = githubApiErrorMessage(e, "Could not create branch on GitHub");
+  }
+}
+
+watch(
+  () => props.issue.id,
+  async () => {
+    selectedLinkedBranchId.value = null;
+    createBranchDialogError.value = null;
+    await refreshLinkedBranches();
+    applySelectedBranchToWorkflow();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => selectedLinkedBranch.value?.id,
+  () => applySelectedBranchToWorkflow(),
+);
 </script>
 
 <template>
@@ -145,79 +212,52 @@ const {
       </div>
 
       <template v-else-if="githubWorkflowFormVisible">
-        <div v-if="workspaceGhReposLoading" class="text-xs text-muted-foreground">Loading repositories…</div>
-        <template v-else>
-          <div v-if="workspaceGhReposError" class="text-xs text-red-600">
-            {{ workspaceGhReposError }}
-          </div>
-          <div class="flex:col-sm min-w-0">
-            <label class="text-xs text-secondary-foreground block" for="gh-repo-picker">Repository</label>
-            <select
-              v-if="workspaceGhRepos.length && selectedGhRepo"
-              id="gh-repo-picker"
-              v-model="selectedGhRepoId"
-              class="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+        <div class="flex:col-sm min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <label class="text-xs text-secondary-foreground block">Linked branches</label>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
               :disabled="ghWorkflowBusy"
+              @click="createBranchDialogOpen = true"
             >
-              <option v-for="repo in workspaceGhRepos" :key="repo.githubRepoId" :value="repo.githubRepoId">
-                {{ repo.fullName }}
-              </option>
-            </select>
-            <div v-else class="flex flex-wrap items-center gap-2">
-              <span v-if="selectedGhRepo" class="text-xs font-medium truncate">{{
-                selectedGhRepo.fullName
-              }}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                :disabled="ghWorkflowBusy"
-                @click="openSelectGithubRepoDialog"
-              >
-                {{ selectedGhRepo ? "Change repository…" : "Select repository…" }}
-              </Button>
-            </div>
-            <p v-if="githubNeedsRepoSelection" class="text-xs text-muted-foreground m-0 mt-1">
-              Pick a repository from this workspace&apos;s GitHub installation to work on this issue.
-            </p>
+              Create branch…
+            </Button>
           </div>
-        </template>
-
-        <div v-if="selectedGhRepo" class="flex:col-sm min-w-0">
-          <label class="text-xs text-secondary-foreground block">Active branch on GitHub</label>
-          <IssueGithubBranchCombobox
-            v-model:open="githubBranchPickerOpen"
-            v-model:search="githubBranchSearch"
-            :trigger-label="githubBranchTriggerLabel"
-            :branches="filteredGithubRepoBranches"
-            :loading="githubRepoBranchesLoading"
-            :loading-more="githubRepoBranchesLoadingMore"
-            :error="githubRepoBranchesError"
-            :create-label="createBranchPickerLabel"
-            :create-disabled="createBranchPickerDisabled"
-            :selected-branch-name="activeGithubBranch?.branchName ?? null"
-            :disabled="ghWorkflowBusy"
-            @update:open="onGithubBranchPickerOpenChange"
-            @select="selectGithubBranch"
-            @create="createGithubBranchFromPicker"
-            @load-more="loadMoreGithubRepoBranches"
-          />
-          <p
-            v-if="activeGithubBranch?.branchName && !activeGithubBranch.existsOnGithub"
-            class="text-xs text-amber-800 dark:text-amber-100 m-0"
-          >
-            <span class="font-mono">{{ activeGithubBranch.branchName }}</span>
-            is no longer on GitHub. Select another branch or create one.
-          </p>
-          <a
-            v-else-if="activeGithubBranch?.existsOnGithub && activeGithubBranch.htmlUrl"
-            :href="activeGithubBranch.htmlUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-xs text-primary hover:underline truncate"
-          >
-            View branch on GitHub
-          </a>
+          <div v-if="linkedBranchesError" class="text-xs text-red-600">{{ linkedBranchesError }}</div>
+          <div v-else-if="linkedBranchesLoading" class="text-xs text-muted-foreground">
+            Loading linked branches…
+          </div>
+          <div v-else-if="linkedBranches.length === 0" class="text-xs text-muted-foreground">
+            No linked branches yet. Create one, or push a branch whose name/commit message contains the issue
+            key.
+          </div>
+          <ul v-else class="flex flex-col gap-1 m-0 p-0 list-none">
+            <li v-for="b in linkedBranches" :key="b.id" class="flex items-center justify-between gap-2">
+              <label class="flex items-center gap-2 min-w-0 cursor-pointer">
+                <input
+                  type="radio"
+                  name="gh-linked-branch"
+                  class="rounded border-input"
+                  :value="b.id"
+                  v-model="selectedLinkedBranchId"
+                />
+                <span class="min-w-0">
+                  <span class="text-xs text-muted-foreground truncate block">{{ b.fullName }}</span>
+                  <span class="text-sm font-mono truncate block">{{ b.branchName }}</span>
+                </span>
+              </label>
+              <a
+                :href="b.htmlUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-xs text-primary hover:underline shrink-0"
+              >
+                View
+              </a>
+            </li>
+          </ul>
         </div>
 
         <label class="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
@@ -248,8 +288,18 @@ const {
           <Button
             size="sm"
             type="button"
-            :disabled="ghWorkflowBusy || githubInstallationMissingOnGithub || !activeGithubBranch?.branchName"
-            @click="openGithubPull"
+            :disabled="
+              ghWorkflowBusy || githubInstallationMissingOnGithub || !selectedLinkedBranch?.branchName
+            "
+            @click="
+              selectedLinkedBranch
+                ? openGithubPull({
+                    owner: selectedLinkedBranch.owner,
+                    repoName: selectedLinkedBranch.repoName,
+                    branchName: selectedLinkedBranch.branchName,
+                  })
+                : undefined
+            "
           >
             Open pull request
           </Button>
@@ -271,11 +321,14 @@ const {
       </div>
     </div>
 
-    <IssueSelectGithubRepoDialog
-      v-model:open="selectGithubRepoDialogOpen"
+    <IssueCreateGithubBranchDialog
+      v-model:open="createBranchDialogOpen"
       :workspace-id="workspaceId"
       :selected-repo-github-id="selectedGhRepoId"
-      @selected="onWorkspaceGithubRepoSelected"
+      :initial-branch-name="headBranchLeaf"
+      :busy="ghWorkflowBusy"
+      :error="createBranchDialogError ?? ghWorkflowError"
+      @create="createBranchFromDialog"
     />
   </div>
 </template>

@@ -5,6 +5,7 @@ export * from './github-issue-pull-request-sync.service';
 export * from './github-issue-git-workflow.service';
 export * from './github-issue-branch.service';
 export * from './github-issue-branch-link.service';
+export * from './github-issue-branch-link-read.service';
 export * from './github-install-flow.service';
 export * from './github-oauth-pending-state.store';
 export * from './github-user-oauth.service';
