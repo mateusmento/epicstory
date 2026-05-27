@@ -1,7 +1,6 @@
 import { normalizeTiptapDoc } from '@epicstory/tiptap';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { JSONContent } from '@tiptap/core';
-import type { IIssueGithubBranchStored } from '@epicstory/contracts';
 import {
   IsDate,
   IsNotEmpty,
@@ -9,7 +8,6 @@ import {
   IsObject,
   IsOptional,
 } from 'class-validator';
-import { GithubIssueBranchService } from 'src/integrations/github/services/github-issue-branch.service';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import {
@@ -56,9 +54,6 @@ export class UpdateIssue {
   @IsOptional()
   parentIssueId?: number | null;
 
-  @IsOptional()
-  githubBranch?: IIssueGithubBranchStored | null;
-
   constructor(data: Partial<UpdateIssue> = {}) {
     patch(this, data);
   }
@@ -72,7 +67,6 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
     private scheduledJobRepo: ScheduledJobRepository,
     private projectGateway: ProjectGateway,
     private issueActivities: IssueActivityRepository,
-    private readonly githubIssueBranches: GithubIssueBranchService,
   ) {}
 
   @Transactional()
@@ -115,22 +109,7 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
       (data as any).description = normalizeTiptapDoc(data.description);
     }
 
-    const { githubBranch, ...rest } = data;
-    if (githubBranch !== undefined) {
-      if (githubBranch === null) {
-        issue.githubBranch = null;
-      } else {
-        issue.githubBranch =
-          await this.githubIssueBranches.validateBranchSelectionForIssue({
-            issue,
-            selection: githubBranch,
-            userId: issuer.id,
-            verifyExistsOnGithub: true,
-          });
-      }
-    }
-
-    patch(issue, rest);
+    patch(issue, data);
     const savedIssue = await this.issueRepo.save(issue);
 
     const actorId = issuer.id;
@@ -262,16 +241,9 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
       },
     });
 
-    const enriched = loadedIssue
-      ? await this.githubIssueBranches.enrichIssueForResponse(
-          loadedIssue,
-          issuer.id,
-        )
-      : loadedIssue;
-
     // Emit WebSocket event to notify all clients in the project room
-    this.projectGateway.emitIssueUpdated(issue.projectId, enriched);
+    this.projectGateway.emitIssueUpdated(issue.projectId, loadedIssue);
 
-    return enriched;
+    return loadedIssue;
   }
 }

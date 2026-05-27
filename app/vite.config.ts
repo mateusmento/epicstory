@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       host: true,
       open: true,
-      allowedHosts: ["epicstory.io"],
+      allowedHosts: ["epicstory.io", "smudgy-ashen-stuffed.ngrok-free.dev"],
       ...(useProxyHmr
         ? {
             hmr: {

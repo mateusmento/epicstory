@@ -1,6 +1,6 @@
 import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
-import { GithubIntegrationApi, IssueApi } from "@epicstory/api-client";
+import { GithubIntegrationApi } from "@epicstory/api-client";
 import type {
   IGithubIntegrationStatus,
   IGithubIssuePullRequestLink,
@@ -108,17 +108,15 @@ export type UseIssueGithubSidebarReturn = {
   openSelectGithubRepoDialog: () => void;
   onGithubBranchPickerOpenChange: (open: boolean) => Promise<void>;
   loadMoreGithubRepoBranches: () => Promise<void>;
-  selectGithubBranch: (branchName: string) => Promise<void>;
   createGithubBranchFromPicker: () => Promise<void>;
   onWorkspaceGithubRepoSelected: (repo: IGithubCatalogRepository) => Promise<void>;
-  openGithubPull: () => Promise<void>;
+  openGithubPull: (opts?: { owner: string; repoName: string; branchName: string }) => Promise<void>;
 };
 
 export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseIssueGithubSidebarReturn {
   const route = useRoute();
   const router = useRouter();
   const githubIntegrationApi = useDependency(GithubIntegrationApi);
-  const issueApi = useDependency(IssueApi);
 
   const githubPullRequests = ref<IGithubIssuePullRequestLink[]>([]);
   const githubPullRequestsLoading = ref(false);
@@ -311,32 +309,8 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     await loadGithubRepoBranches(false);
   }
 
-  async function onBranchSelectedFromGithub(branchName: string): Promise<void> {
-    const iss = params.issue.value;
-    const repo = selectedGhRepo.value;
-    if (!iss || !repo || !branchName.trim()) return;
-    ghWorkflowBusy.value = true;
-    ghWorkflowError.value = null;
-    try {
-      await issueApi.updateIssue(iss.id, {
-        githubBranch: {
-          branchName: branchName.trim(),
-          owner: repo.owner,
-          repoName: repo.name,
-        },
-      });
-      await params.reloadIssue();
-    } catch (e: unknown) {
-      ghWorkflowError.value = githubApiErrorMessage(e, "Could not save selected branch");
-    } finally {
-      ghWorkflowBusy.value = false;
-    }
-  }
-
-  async function selectGithubBranch(branchName: string): Promise<void> {
-    githubBranchPickerOpen.value = false;
-    await onBranchSelectedFromGithub(branchName);
-  }
+  // Legacy single-branch selection (issue.githubBranch) was removed; branch linking is now based on
+  // `integration.issue_github_branches` + GitHub workflow endpoints.
 
   async function createGithubBranchFromPicker(): Promise<void> {
     const iss = params.issue.value;
@@ -580,6 +554,8 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
   type ResolveGithubWorkflowPrerequisitesOptions = {
     /** When false, skip reloading the workspace catalogue (auto-resume). */
     refreshWorkspaceRepos?: boolean;
+    /** When provided, use this repo instead of requiring a selected repo. */
+    repoOverride?: { owner: string; repoName: string };
   };
 
   /** Fresh status + repo list before any branch/PR API call or resume. */
@@ -609,11 +585,27 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       return { kind: "member_link" };
     }
 
-    const repo = resolveWorkflowRepo();
-    if (!repo) {
-      return { kind: "select_repo" };
+    const override = options?.repoOverride;
+    if (override?.owner?.trim() && override?.repoName?.trim()) {
+      const owner = override.owner.trim();
+      const name = override.repoName.trim();
+      const inCatalog = workspaceGhRepos.value.find((r) => r.owner === owner && r.name === name);
+      const repo: IGithubCatalogRepository =
+        inCatalog ??
+        ({
+          githubRepoId: `${owner}/${name}`,
+          owner,
+          name,
+          fullName: `${owner}/${name}`,
+          defaultBranch: null,
+          private: false,
+          htmlUrl: `https://github.com/${owner}/${name}`,
+        } as IGithubCatalogRepository);
+      return { kind: "ready", repo };
     }
 
+    const repo = resolveWorkflowRepo();
+    if (!repo) return { kind: "select_repo" };
     return { kind: "ready", repo };
   }
 
@@ -724,14 +716,6 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       if (existingBranch?.[1]) {
         headBranchLeaf.value = existingBranch[1];
         clearGithubIssueWorkflowPending();
-        await issueApi.updateIssue(iss.id, {
-          githubBranch: {
-            branchName: existingBranch[1],
-            owner: targetRepo.owner,
-            repoName: targetRepo.name,
-          },
-        });
-        await params.reloadIssue();
         ghWorkflowError.value = parsed.message;
         return;
       }
@@ -845,7 +829,10 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     },
   );
 
-  async function beginGithubWorkflow(action: GithubIssueWorkflowPendingAction): Promise<void> {
+  async function beginGithubWorkflow(
+    action: GithubIssueWorkflowPendingAction,
+    opts?: { repoOverride?: { owner: string; repoName: string } },
+  ): Promise<void> {
     const iss = params.issue.value;
     const wid = effectiveWorkspaceId.value;
     const pj = effectiveProjectId.value;
@@ -860,7 +847,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       action,
       headBranchLeaf: headBranchLeaf.value,
       openPrAsDraft: openPrAsDraft.value,
-      selectedGhRepoId: selectedGhRepoId.value,
+      selectedRepoGithubId: selectedGhRepoId.value,
     });
 
     ghWorkflowBusy.value = true;
@@ -870,7 +857,9 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
 
     let prereq: GithubWorkflowPrerequisite;
     try {
-      prereq = await resolveGithubWorkflowPrerequisites();
+      prereq = await resolveGithubWorkflowPrerequisites({
+        repoOverride: opts?.repoOverride,
+      });
     } finally {
       ghWorkflowBusy.value = false;
       if (ghWorkflowStatusMessage.value === "Checking GitHub setup…") {
@@ -890,19 +879,28 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     }
   }
 
-  async function openGithubPull(): Promise<void> {
-    if (githubNeedsRepoSelection.value) {
-      openSelectGithubRepoDialog();
-      return;
+  async function openGithubPull(opts?: {
+    owner: string;
+    repoName: string;
+    branchName: string;
+  }): Promise<void> {
+    const overrideOwner = opts?.owner?.trim();
+    const overrideRepo = opts?.repoName?.trim();
+    const overrideBranch = opts?.branchName?.trim();
+
+    if (overrideBranch) {
+      headBranchLeaf.value = overrideBranch;
     }
-    if (!headBranchLeaf.value.trim() && !activeGithubBranch.value?.branchName) {
+
+    if (!headBranchLeaf.value.trim()) {
       ghWorkflowError.value = "Select or create a branch before opening a pull request.";
       return;
     }
-    if (!headBranchLeaf.value.trim() && activeGithubBranch.value?.branchName) {
-      headBranchLeaf.value = activeGithubBranch.value.branchName;
-    }
-    await beginGithubWorkflow("open_pull");
+
+    await beginGithubWorkflow("open_pull", {
+      repoOverride:
+        overrideOwner && overrideRepo ? { owner: overrideOwner, repoName: overrideRepo } : undefined,
+    });
   }
 
   return {
@@ -946,7 +944,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     openSelectGithubRepoDialog,
     onGithubBranchPickerOpenChange,
     loadMoreGithubRepoBranches,
-    selectGithubBranch,
+    // selectGithubBranch removed (legacy).
     createGithubBranchFromPicker,
     onWorkspaceGithubRepoSelected,
     openGithubPull,

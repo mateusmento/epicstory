@@ -151,17 +151,6 @@ export class GithubIssueGitWorkflowService {
         params.userId,
         runBranch,
       );
-      await this.issueBranches.persistIssueBranchSelection({
-        issueId: params.issueId,
-        workspaceId: params.workspaceId,
-        userId: params.userId,
-        selection: {
-          branchName: created.branchName,
-          owner: params.owner.trim(),
-          repoName: params.repoName.trim(),
-        },
-        verifyExistsOnGithub: false,
-      });
       await this.issueBranchLinks.linkBranchForIssue({
         issueId: params.issueId,
         workspaceId: params.workspaceId,

@@ -25,7 +25,11 @@ export type IIssue = {
   commentChannelId: number;
   parentIssue?: IIssue | null;
   subIssues?: IIssue[];
-  /** Active GitHub branch for this issue (repo + branch name). */
+  /**
+   * Legacy single-branch field (deprecated).
+   * Branch links are now stored in `integration.issue_github_branches` and loaded via
+   * `GET /integrations/github/issues/:issueId/branches`.
+   */
   githubBranch?: IIssueGithubBranch | null;
 };
 
@@ -36,6 +40,10 @@ export type UpdateIssueData = {
   dueDate?: Date | null;
   priority?: number | null;
   parentIssueId?: number | null;
+  /**
+   * Legacy single-branch field (deprecated).
+   * Use branch linking endpoints instead of persisting on the issue row.
+   */
   githubBranch?: IIssueGithubBranchStored | null;
 };
 

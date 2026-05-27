@@ -78,6 +78,19 @@ export type IIssueGithubBranch = IIssueGithubBranchStored & {
   existsOnGithub: boolean;
 };
 
+/** Linked branch discovered via push webhooks or created from Epicstory. */
+export type IGithubIssueBranchLink = {
+  id: number;
+  owner: string;
+  repoName: string;
+  branchName: string;
+  fullName: string;
+  htmlUrl: string;
+  source: "webhook_push" | "epicstory_create" | "manual";
+  firstLinkedAt: string;
+  lastPushedAt: string;
+};
+
 /** GET `.../repos/:owner/:repoName/branches` */
 export type IGithubRepositoryBranchListItem = {
   name: string;
