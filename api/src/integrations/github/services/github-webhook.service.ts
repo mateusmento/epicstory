@@ -218,7 +218,7 @@ export class GithubWebhookService {
     const fullName =
       repo && typeof repo.full_name === 'string' ? repo.full_name : '?';
     this.logger.log(
-      `push repo=${fullName} ref=${ref} delivery=${deliveryId ?? '?'}`,
+      `push webhook received repo=${fullName} ref=${ref} delivery=${deliveryId ?? '?'}`,
     );
     await this.issueBranchLinks.syncFromPushWebhookPayload(payload);
   }
