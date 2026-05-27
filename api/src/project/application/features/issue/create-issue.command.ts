@@ -15,6 +15,7 @@ import { Issue } from 'src/project/domain/entities';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { EMPTY_TIPTAP_DOC, normalizeTiptapDoc } from '@epicstory/tiptap';
+import { IssueKeyAllocationService } from 'src/project/application/services/issue-key-allocation.service';
 
 export class CreateIssue {
   issuer: Issuer;
@@ -43,6 +44,7 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
     private workspaceRepo: WorkspaceRepository,
     private channelRepo: ChannelRepository,
     private issueActivities: IssueActivityRepository,
+    private issueKeys: IssueKeyAllocationService,
   ) {}
 
   async execute({ issuer, parentIssueId, ...data }: CreateIssue) {
@@ -72,9 +74,15 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
       }),
     );
 
+    const { issueNumber, issueKey } = await this.issueKeys.allocateIssueKey(
+      data.projectId,
+    );
+
     const issue = await this.issueRepo.save(
       Issue.create({
         ...data,
+        issueNumber,
+        issueKey,
         description: normalizeTiptapDoc(data.description ?? EMPTY_TIPTAP_DOC),
         workspaceId,
         parentIssueId,

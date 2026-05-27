@@ -8,7 +8,8 @@ export type GithubIssueWorkflowPending = {
   action: GithubIssueWorkflowPendingAction;
   headBranchLeaf: string;
   openPrAsDraft: boolean;
-  selectedGhLinkId: number | null;
+  /** `githubRepoId` from installation catalogue. */
+  selectedRepoGithubId: string | null;
   createdAt: number;
 };
 
@@ -26,16 +27,48 @@ export function saveGithubIssueWorkflowPending(
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
 }
 
+function normalizePending(raw: Record<string, unknown>): GithubIssueWorkflowPending | null {
+  if (raw.v !== 1 || typeof raw.createdAt !== "number") return null;
+  if (Date.now() - raw.createdAt > MAX_AGE_MS) return null;
+
+  let selectedRepoGithubId: string | null = null;
+  if (typeof raw.selectedRepoGithubId === "string" && raw.selectedRepoGithubId.length > 0) {
+    selectedRepoGithubId = raw.selectedRepoGithubId;
+  }
+
+  const workspaceId = typeof raw.workspaceId === "string" ? raw.workspaceId : "";
+  const projectId = typeof raw.projectId === "string" ? raw.projectId : "";
+  const issueId = typeof raw.issueId === "number" ? raw.issueId : NaN;
+  const action = raw.action === "open_pull" ? "open_pull" : "create_branch";
+  const headBranchLeaf = typeof raw.headBranchLeaf === "string" ? raw.headBranchLeaf : "";
+  const openPrAsDraft = raw.openPrAsDraft === true;
+
+  if (!workspaceId || !projectId || !Number.isFinite(issueId)) return null;
+
+  return {
+    v: 1,
+    workspaceId,
+    projectId,
+    issueId,
+    action,
+    headBranchLeaf,
+    openPrAsDraft,
+    selectedRepoGithubId,
+    createdAt: raw.createdAt,
+  };
+}
+
 export function readGithubIssueWorkflowPending(): GithubIssueWorkflowPending | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as GithubIssueWorkflowPending;
-    if (parsed.v !== 1 || Date.now() - parsed.createdAt > MAX_AGE_MS) {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const normalized = normalizePending(parsed);
+    if (!normalized) {
       sessionStorage.removeItem(STORAGE_KEY);
       return null;
     }
-    return parsed;
+    return normalized;
   } catch {
     sessionStorage.removeItem(STORAGE_KEY);
     return null;

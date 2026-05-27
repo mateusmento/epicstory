@@ -20,11 +20,9 @@ import {
   githubListRepoBranches,
   githubRepoBranchExists,
 } from '../lib/github-user-api-rest';
-import {
-  GithubUserConnectionRepository,
-  ProjectGithubRepoRepository,
-} from '../repositories';
+import { GithubUserConnectionRepository } from '../repositories';
 import { GithubUserOAuthService } from './github-user-oauth.service';
+import { GithubWorkspaceRepoAccessService } from './github-workspace-repo-access.service';
 
 function branchTreeUrl(
   owner: string,
@@ -51,26 +49,23 @@ export class GithubIssueBranchService {
     @InjectRepository(Issue)
     private readonly issueRepo: Repository<Issue>,
     private readonly workspaceRepo: WorkspaceRepository,
-    private readonly projectGithubRepos: ProjectGithubRepoRepository,
+    private readonly workspaceRepoAccess: GithubWorkspaceRepoAccessService,
     private readonly userGithub: GithubUserConnectionRepository,
     private readonly crypto: IntegrationTokenCryptoService,
     private readonly config: AppConfig,
     private readonly githubUserOAuth: GithubUserOAuthService,
   ) {}
 
-  async assertProjectRepoLinked(
-    projectId: number,
+  async assertWorkspaceInstallationRepo(
+    workspaceId: number,
     owner: string,
     repoName: string,
   ): Promise<void> {
-    const link = await this.projectGithubRepos.findOne({
-      where: { projectId, owner: owner.trim(), name: repoName.trim() },
-    });
-    if (!link) {
-      throw new BadRequestException(
-        'Repository is not linked to this Epicstory project',
-      );
-    }
+    await this.workspaceRepoAccess.assertRepositoryAccessible(
+      workspaceId,
+      owner,
+      repoName,
+    );
   }
 
   async resolveMemberAccessToken(
@@ -144,6 +139,11 @@ export class GithubIssueBranchService {
   }): Promise<IGithubRepositoryBranchesPage> {
     const owner = params.owner.trim();
     const repoName = params.repoName.trim();
+    await this.assertWorkspaceInstallationRepo(
+      params.workspaceId,
+      owner,
+      repoName,
+    );
     const token = await this.resolveMemberAccessToken(
       params.workspaceId,
       params.userId,
@@ -173,8 +173,8 @@ export class GithubIssueBranchService {
       throw new BadRequestException('Invalid githubBranch payload');
     }
 
-    await this.assertProjectRepoLinked(
-      params.issue.projectId,
+    await this.assertWorkspaceInstallationRepo(
+      params.issue.workspaceId,
       norm.owner,
       norm.repoName,
     );

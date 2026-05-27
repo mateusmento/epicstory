@@ -18,12 +18,12 @@ import { githubApiErrorMessage } from "@/domain/github";
 const props = defineProps<{
   open: boolean;
   workspaceId: string;
-  projectId: string;
+  selectedRepoGithubId: string | null;
 }>();
 
 const emit = defineEmits<{
   "update:open": [value: boolean];
-  linked: [];
+  selected: [repo: IGithubCatalogRepository];
 }>();
 
 const githubApi = useDependency(GithubIntegrationApi);
@@ -33,8 +33,6 @@ const catalogLoading = ref(false);
 const catalogLoadingMore = ref(false);
 const catalogError = ref<string | null>(null);
 const catalog = ref<Awaited<ReturnType<typeof githubApi.listRepositories>> | null>(null);
-const linkActionKey = ref<string | null>(null);
-const linkError = ref<string | null>(null);
 
 const filteredRepositories = computed(() => {
   const repos = catalog.value?.repositories ?? [];
@@ -45,21 +43,6 @@ const filteredRepositories = computed(() => {
     return haystack.includes(q);
   });
 });
-
-const linkedRepoKeys = ref<Set<string>>(new Set());
-
-function isRepoAlreadyLinked(repo: IGithubCatalogRepository): boolean {
-  return linkedRepoKeys.value.has(repo.githubRepoId);
-}
-
-async function refreshLinkedKeys(): Promise<void> {
-  try {
-    const links = await githubApi.listProjectGithubRepos(+props.workspaceId, +props.projectId);
-    linkedRepoKeys.value = new Set(links.map((l) => l.githubRepoId));
-  } catch {
-    linkedRepoKeys.value = new Set();
-  }
-}
 
 async function loadCatalog(page = 1): Promise<void> {
   if (page === 1) {
@@ -96,22 +79,9 @@ async function loadMoreCatalog(): Promise<void> {
   await loadCatalog(catalog.value.page + 1);
 }
 
-async function linkRepo(repo: IGithubCatalogRepository): Promise<void> {
-  linkActionKey.value = repo.githubRepoId;
-  linkError.value = null;
-  try {
-    await githubApi.linkProjectGithubRepo(+props.workspaceId, +props.projectId, {
-      owner: repo.owner,
-      name: repo.name,
-    });
-    await refreshLinkedKeys();
-    emit("linked");
-    emit("update:open", false);
-  } catch (e: unknown) {
-    linkError.value = githubApiErrorMessage(e, "Could not link repository.");
-  } finally {
-    linkActionKey.value = null;
-  }
+function pickRepo(repo: IGithubCatalogRepository): void {
+  emit("selected", repo);
+  emit("update:open", false);
 }
 
 watch(
@@ -119,8 +89,8 @@ watch(
   async (isOpen) => {
     if (!isOpen) return;
     searchQuery.value = "";
-    linkError.value = null;
-    await Promise.all([refreshLinkedKeys(), loadCatalog(1)]);
+    catalogError.value = null;
+    await loadCatalog(1);
   },
 );
 </script>
@@ -129,9 +99,10 @@ watch(
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="max-w-lg max-h-[85vh] flex flex-col gap-0">
       <DialogHeader>
-        <DialogTitle>Link GitHub repository</DialogTitle>
+        <DialogTitle>Select GitHub repository</DialogTitle>
         <DialogDescription>
-          Choose a repository from the workspace GitHub App installation to link to this project.
+          Choose a repository from this workspace&apos;s GitHub App installation. Branches and pull requests
+          on the issue will use the repo you pick here.
         </DialogDescription>
       </DialogHeader>
 
@@ -171,19 +142,12 @@ watch(
             </div>
             <Button
               size="sm"
-              variant="outline"
+              :variant="selectedRepoGithubId === repo.githubRepoId ? 'default' : 'outline'"
               type="button"
               class="shrink-0"
-              :disabled="isRepoAlreadyLinked(repo) || linkActionKey != null"
-              @click="linkRepo(repo)"
+              @click="pickRepo(repo)"
             >
-              {{
-                isRepoAlreadyLinked(repo)
-                  ? "Linked"
-                  : linkActionKey === repo.githubRepoId
-                    ? "Linking…"
-                    : "Link"
-              }}
+              {{ selectedRepoGithubId === repo.githubRepoId ? "Selected" : "Select" }}
             </Button>
           </li>
         </ul>
@@ -198,7 +162,6 @@ watch(
         >
           {{ catalogLoadingMore ? "Loading…" : "Load more repositories" }}
         </Button>
-        <p v-if="linkError" class="text-sm text-destructive m-0">{{ linkError }}</p>
       </div>
 
       <DialogFooter>

@@ -91,7 +91,18 @@ export class WorkspaceApi {
       .then((res) => res.data);
   }
 
-  createProject(workspaceId: number, data: { name: string }) {
+  suggestProjectKeyPrefix(workspaceId: number, name: string) {
+    return this.axios
+      .get<{
+        issueKeyPrefix: string;
+      }>(`workspaces/${workspaceId}/projects/suggest-key`, { params: { name } })
+      .then((res) => res.data);
+  }
+
+  createProject(
+    workspaceId: number,
+    data: { name: string; issueKeyPrefix?: string; teamId?: number },
+  ) {
     return this.axios
       .post(`workspaces/${workspaceId}/projects`, data)
       .then((res) => res.data);

@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import { Issue } from 'src/project/domain/entities/issue.entity';
-import { Project } from 'src/project/domain/entities/project.entity';
 import { IntegrationTokenCryptoService } from 'src/integrations/shared';
 import * as controllers from './controllers';
 import * as jobs from './jobs';
@@ -15,7 +14,7 @@ import {
   GithubUserConnection,
   GithubWebhookDeliveryReceipt,
   IssueGithubPullRequest,
-  ProjectGithubRepo,
+  IssueGithubBranch,
 } from './entities';
 import * as repositories from './repositories';
 
@@ -27,8 +26,7 @@ import * as repositories from './repositories';
       GithubEpicstoryPrTimelineMarker,
       GithubWebhookDeliveryReceipt,
       IssueGithubPullRequest,
-      ProjectGithubRepo,
-      Project,
+      IssueGithubBranch,
       Issue,
     ]),
     WorkspaceModule,

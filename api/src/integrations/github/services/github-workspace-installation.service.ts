@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { GithubInstallationRepository } from '../repositories';
-import { GithubInstallation, ProjectGithubRepo } from '../entities';
+import { GithubInstallation } from '../entities';
 
 @Injectable()
 export class GithubWorkspaceInstallationService {
@@ -8,22 +8,10 @@ export class GithubWorkspaceInstallationService {
     private readonly installationRepo: GithubInstallationRepository,
   ) {}
 
-  /**
-   * Removes the workspace GitHub App installation row and deletes all
-   * `project_github_repos` links for projects in that workspace in one transaction.
-   */
+  /** Removes the workspace GitHub App installation row. */
   async removeInstallationForWorkspace(workspaceId: number): Promise<void> {
-    await this.installationRepo.manager.transaction(async (em) => {
-      await em
-        .createQueryBuilder()
-        .delete()
-        .from(ProjectGithubRepo)
-        .where(
-          'project_id IN (SELECT id FROM workspace.workspace_project WHERE workspace_id = :wid)',
-        )
-        .setParameter('wid', workspaceId)
-        .execute();
-      await em.delete(GithubInstallation, { workspaceId });
+    await this.installationRepo.manager.delete(GithubInstallation, {
+      workspaceId,
     });
   }
 }

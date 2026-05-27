@@ -90,9 +90,14 @@ export function useWorkspace() {
     }
   }
 
-  async function createProject(data: { name: string }) {
+  async function createProject(data: { name: string; issueKeyPrefix?: string }) {
     const project = await workspaceApi.createProject(workspaceId.value, data);
     store.projects.push(project);
+  }
+
+  async function suggestProjectKeyPrefix(name: string): Promise<string> {
+    const res = await workspaceApi.suggestProjectKeyPrefix(workspaceId.value, name);
+    return res.issueKeyPrefix;
   }
 
   async function removeProject(projectId: number) {
@@ -131,6 +136,7 @@ export function useWorkspace() {
     fetchProjects,
     fetchMoreProjects,
     createProject,
+    suggestProjectKeyPrefix,
     removeProject,
     fetchTeams,
     createTeam,

@@ -5,7 +5,7 @@ import { RouterLink } from "vue-router";
 import { Button } from "@/design-system";
 import { useIssueGithubSidebar } from "@/domain/github";
 import IssueGithubBranchCombobox from "./IssueGithubBranchCombobox.vue";
-import IssueLinkGithubRepoDialog from "./IssueLinkGithubRepoDialog.vue";
+import IssueSelectGithubRepoDialog from "./IssueSelectGithubRepoDialog.vue";
 
 const props = defineProps<{
   workspaceId: string;
@@ -24,10 +24,10 @@ const {
   githubPullRequests,
   githubPullRequestsLoading,
   githubPullRequestsError,
-  linkedGhRepos,
-  linkedGhReposLoading,
-  linkedGhReposError,
-  selectedGhLinkId,
+  workspaceGhRepos,
+  workspaceGhReposLoading,
+  workspaceGhReposError,
+  selectedGhRepoId,
   ghWorkflowBusy,
   ghWorkflowStatusMessage,
   ghWorkflowError,
@@ -37,13 +37,12 @@ const {
   showGithubSection,
   canManageGithubSetup,
   githubWorkflowFormVisible,
-  githubAdminNeedsProjectRepo,
-  githubCollaboratorAwaitingProjectRepo,
+  githubNeedsRepoSelection,
   githubAdminNeedsWorkspaceInstall,
   githubMemberNeedsAccountLink,
   githubInstallationMissingOnGithub,
   ghWorkflowReconnectSuggested,
-  linkProjectRepoDialogOpen,
+  selectGithubRepoDialogOpen,
   githubBranchPickerOpen,
   githubBranchSearch,
   githubRepoBranchesLoading,
@@ -55,12 +54,12 @@ const {
   githubBranchTriggerLabel,
   activeGithubBranch,
   selectedGhRepo,
-  openLinkProjectRepoDialog,
+  openSelectGithubRepoDialog,
   onGithubBranchPickerOpenChange,
   loadMoreGithubRepoBranches,
   selectGithubBranch,
   createGithubBranchFromPicker,
-  onProjectGithubRepoLinked,
+  onWorkspaceGithubRepoSelected,
   openGithubPull,
 } = useIssueGithubSidebar({
   workspaceId: toRef(props, "workspaceId"),
@@ -145,52 +144,42 @@ const {
         </RouterLink>
       </div>
 
-      <div
-        v-else-if="githubAdminNeedsProjectRepo"
-        class="rounded-md border border-primary/25 bg-primary/5 px-2 py-2 text-xs text-secondary-foreground"
-      >
-        <span class="font-medium text-foreground">GitHub repo missing for this project.</span>
-        Link a repository before you can create a branch or open a pull request from this issue.
-        <Button
-          variant="outline"
-          size="sm"
-          type="button"
-          class="mt-2"
-          :disabled="ghWorkflowBusy"
-          @click="openLinkProjectRepoDialog"
-        >
-          Link GitHub repository…
-        </Button>
-      </div>
-
-      <div
-        v-else-if="githubCollaboratorAwaitingProjectRepo"
-        class="rounded-md border border-border bg-muted/30 px-2 py-2 text-xs text-secondary-foreground"
-      >
-        <span class="font-medium text-foreground">GitHub repo not configured.</span>
-        A workspace admin must link a GitHub repository to this project before branch and PR actions are
-        available here.
-      </div>
-
       <template v-else-if="githubWorkflowFormVisible">
-        <div v-if="linkedGhReposLoading" class="text-xs text-muted-foreground">Loading linked repos…</div>
+        <div v-if="workspaceGhReposLoading" class="text-xs text-muted-foreground">Loading repositories…</div>
         <template v-else>
-          <div v-if="linkedGhReposError" class="text-xs text-red-600">
-            {{ linkedGhReposError }}
+          <div v-if="workspaceGhReposError" class="text-xs text-red-600">
+            {{ workspaceGhReposError }}
           </div>
           <div class="flex:col-sm min-w-0">
-            <label class="text-xs text-secondary-foreground block" for="gh-repo-picker">Linked repo</label>
+            <label class="text-xs text-secondary-foreground block" for="gh-repo-picker">Repository</label>
             <select
-              v-if="linkedGhRepos.length"
+              v-if="workspaceGhRepos.length && selectedGhRepo"
               id="gh-repo-picker"
-              v-model.number="selectedGhLinkId"
+              v-model="selectedGhRepoId"
               class="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs"
               :disabled="ghWorkflowBusy"
             >
-              <option v-for="repo in linkedGhRepos" :key="repo.id" :value="repo.id">
+              <option v-for="repo in workspaceGhRepos" :key="repo.githubRepoId" :value="repo.githubRepoId">
                 {{ repo.fullName }}
               </option>
             </select>
+            <div v-else class="flex flex-wrap items-center gap-2">
+              <span v-if="selectedGhRepo" class="text-xs font-medium truncate">{{
+                selectedGhRepo.fullName
+              }}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                :disabled="ghWorkflowBusy"
+                @click="openSelectGithubRepoDialog"
+              >
+                {{ selectedGhRepo ? "Change repository…" : "Select repository…" }}
+              </Button>
+            </div>
+            <p v-if="githubNeedsRepoSelection" class="text-xs text-muted-foreground m-0 mt-1">
+              Pick a repository from this workspace&apos;s GitHub installation to work on this issue.
+            </p>
           </div>
         </template>
 
@@ -282,12 +271,11 @@ const {
       </div>
     </div>
 
-    <IssueLinkGithubRepoDialog
-      v-if="canManageGithubSetup"
-      v-model:open="linkProjectRepoDialogOpen"
+    <IssueSelectGithubRepoDialog
+      v-model:open="selectGithubRepoDialogOpen"
       :workspace-id="workspaceId"
-      :project-id="projectId"
-      @linked="onProjectGithubRepoLinked"
+      :selected-repo-github-id="selectedGhRepoId"
+      @selected="onWorkspaceGithubRepoSelected"
     />
   </div>
 </template>

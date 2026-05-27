@@ -2,7 +2,6 @@ import type {
   IGithubCreateIssueBranchResponse,
   IGithubIntegrationStatus,
   IGithubIssuePullRequestLink,
-  IGithubProjectRepoLink,
   IGithubRepositoryBranchesPage,
   IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
@@ -14,7 +13,6 @@ export type {
   IGithubCreateIssueBranchResponse,
   IGithubIntegrationStatus,
   IGithubIssuePullRequestLink,
-  IGithubProjectRepoLink,
   IGithubRepositoryBranchesPage,
   IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
@@ -67,49 +65,6 @@ export class GithubIntegrationApi {
     return this.axios.delete(
       `/integrations/github/workspaces/${workspaceId}/user`,
     );
-  }
-
-  listProjectGithubRepos(workspaceId: number, projectId: number) {
-    return this.axios
-      .get<
-        IGithubProjectRepoLink[]
-      >(`/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos`)
-      .then((r) => r.data);
-  }
-
-  linkProjectGithubRepo(
-    workspaceId: number,
-    projectId: number,
-    body: { owner: string; name: string },
-  ) {
-    return this.axios
-      .post<IGithubProjectRepoLink>(
-        `/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos`,
-        body,
-      )
-      .then((r) => r.data);
-  }
-
-  unlinkProjectGithubRepo(
-    workspaceId: number,
-    projectId: number,
-    linkId: number,
-  ) {
-    return this.axios.delete(
-      `/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos/${linkId}`,
-    );
-  }
-
-  setPrimaryProjectGithubRepo(
-    workspaceId: number,
-    projectId: number,
-    linkId: number,
-  ) {
-    return this.axios
-      .post<IGithubProjectRepoLink>(
-        `/integrations/github/workspaces/${workspaceId}/projects/${projectId}/repos/${linkId}/primary`,
-      )
-      .then((r) => r.data);
   }
 
   listIssueGithubPullRequests(issueId: number) {

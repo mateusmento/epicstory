@@ -22,6 +22,14 @@ export class Issue {
   @PrimaryGeneratedColumn()
   id: number;
 
+  /** Monotonic per project; combined with project prefix for `issueKey`. */
+  @Column({ name: 'issue_number' })
+  issueNumber: number;
+
+  /** Stable external id, e.g. `EPIC-42` (unique per workspace). */
+  @Column({ name: 'issue_key', length: 20 })
+  issueKey: string;
+
   @Column({ default: '' })
   title: string;
 

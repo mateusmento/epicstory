@@ -1,6 +1,6 @@
 # 06 — Branches & pull requests
 
-**Prerequisites:** Task 05 (at least one linked repo).
+**Prerequisites:** Task 05 (workspace installation + repo catalogue; repo chosen per issue).
 
 **Aligned with:** task **01 §7.4** — **multiple PRs** per **`(Epicstory issue, GitHub repo)`**; **automatic Epicstory issue comments** when PRs are created from flow; **`pull_request`** webhooks update stored linkage (`state`, **`merged`**).
 
