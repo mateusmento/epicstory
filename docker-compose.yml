@@ -1,24 +1,39 @@
 services:
   app:
     build:
-      context: ./app
+      context: .
       target: dev
-      dockerfile: Dockerfile
+      dockerfile: app/Dockerfile
     image: epicstory-app:latest
     container_name: epicstory-app
+    working_dir: /home/node/ws/app
+    entrypoint:
+      - docker-dev-entrypoint.sh
     command: pnpm dev
     ports:
       - 8080:8080
+    environment:
+      EPIC_WORKSPACE_ROOT: /home/node/ws
+      # Vite HMR through Caddy (https://epicstory.io)
+      VITE_PROXY_HMR: "true"
+      VITE_HMR_HOST: epicstory.io
+      VITE_HMR_PROTOCOL: wss
+      VITE_HMR_CLIENT_PORT: "443"
     volumes:
-      - ./app:/home/node/app
-      # - ./app/node_modules:/home/node/app/node_modules
+      # Monorepo bind mount; keep image node_modules (pnpm hoists at workspace root)
+      - .:/home/node/ws
+      - app_node_modules:/home/node/ws/node_modules
+      - app_package_node_modules:/home/node/ws/app/node_modules
   api:
     build:
-      context: ./api
+      context: .
       target: dev
-      dockerfile: Dockerfile
+      dockerfile: api/Dockerfile
     image: epicstory-api:latest
     container_name: epicstory-api
+    working_dir: /home/node/app/api
+    entrypoint:
+      - docker-dev-entrypoint.sh
     # Use start:debug to enable debugging (attach with VS Code)
     # Use start:dev for normal development without debugging
     command: pnpm start:debug
@@ -28,6 +43,7 @@ services:
     env_file:
       - ./api/.env
     environment:
+      EPIC_WORKSPACE_ROOT: /home/node/app
       DEBUG: true
       DATABASE_HOST: epicstory-postgres
       REDIS_URL: "redis://epicstory-redis:6379"
@@ -37,7 +53,9 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./api:/home/node/app
+      - .:/home/node/app
+      - api_node_modules:/home/node/app/node_modules
+      - api_package_node_modules:/home/node/app/api/node_modules
     # labels:
     #   - traefik.enable=true
     #   - traefik.http.routers.epicstory.rule=PathPrefix(`/`)
@@ -121,6 +139,10 @@ services:
   #   tty: true
   #   stdin_open: true
 volumes:
+  app_node_modules:
+  api_node_modules:
+  api_package_node_modules:
+  app_package_node_modules:
   epicstory-postgres:
     name: epicstory-postgres
   epicstory-pgadmin:

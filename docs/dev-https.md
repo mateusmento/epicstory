@@ -38,15 +38,24 @@ mkcert -CAROOT
 
 Copy the root CA cert to your other devices and install it as a **trusted root**.
 
-## 3) Run infra (docker compose)
+## 3) Run infra + app + API (docker compose)
 
 From repo root (host machine):
 
 ```bash
-docker compose up -d postgres redis peerjs
+# One-time: build dev images (installs pnpm deps into the image)
+epic build api
+epic build app
+
+# Start postgres, redis, peerjs, api, app, and Caddy (HTTPS on https://epicstory.io)
+epic run
 ```
 
-## 4) Run API locally (debug)
+Requires mkcert certs in `./certs` (step 2) for Caddy to serve HTTPS. To start Caddy alone: `epic run caddy`.
+
+If `app` or `api` exit immediately with `Cannot find module .../nest.js` or `.../vite.js`, rebuild the images (`epic build api && epic build app`) and recreate containers (`epic restart --build`).
+
+## 4) Run API locally (debug) — alternative to Docker API
 
 Run your Nest API locally (VS Code `Debug API (Local)` or `pnpm start:debug`) on port `3000`.
 
@@ -89,6 +98,23 @@ docker logs -f epicstory-caddy
 
 Now open:
 - `https://epicstory.io`
+
+## 8) Expose `https://epicstory.io` over ngrok
+
+If you already have `epicstory.io` in `/etc/hosts` and Caddy is configured with a site block for `epicstory.io`, you must make ngrok send `Host: epicstory.io` so Caddy selects the correct site.
+
+From repo root (with Caddy running on port 443):
+
+```bash
+# Start ngrok tunnel → local Caddy (:443), rewriting Host to epicstory.io
+epic ngrok
+```
+
+If you prefer calling ngrok directly:
+
+```bash
+ngrok start epicstory --config ./ngrok.epicstory.yml --config default
+```
 
 ## 7) Verify Vite HMR
 

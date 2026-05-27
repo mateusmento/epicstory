@@ -8,6 +8,7 @@ const allowedServices = [
   "pgadmin",
   "peerjs",
   "redis",
+  "caddy",
   // "openbao", // uncomment if openbao is enabled
 ];
 

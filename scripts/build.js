@@ -58,6 +58,8 @@ async function buildApi() {
         "api/Dockerfile",
         "-t",
         `${name}:${version}`,
+        "-t",
+        `${name}:latest`,
         "--build-arg",
         `NODE_IMAGE_VERSION=${nodeVersion}-bullseye-slim`,
         ".",
@@ -67,8 +69,12 @@ async function buildApi() {
       },
     );
 
-    console.log("Loading image into minikube...");
-    await runCommand("minikube", ["image", "load", `${name}:${version}`]);
+    try {
+      console.log("Loading image into minikube...");
+      await runCommand("minikube", ["image", "load", `${name}:${version}`]);
+    } catch {
+      console.log("Skipping minikube image load (minikube not available).");
+    }
 
     console.log("API build completed successfully!");
   } catch (error) {
@@ -98,6 +104,8 @@ async function buildApp() {
         "app/Dockerfile",
         "-t",
         `${name}:${version}`,
+        "-t",
+        `${name}:latest`,
         "--build-arg",
         `NODE_IMAGE_VERSION=${nodeVersion}`,
         "--build-arg",
@@ -109,8 +117,12 @@ async function buildApp() {
       },
     );
 
-    console.log("Loading image into minikube...");
-    await runCommand("minikube", ["image", "load", `${name}:${version}`]);
+    try {
+      console.log("Loading image into minikube...");
+      await runCommand("minikube", ["image", "load", `${name}:${version}`]);
+    } catch {
+      console.log("Skipping minikube image load (minikube not available).");
+    }
 
     console.log("App build completed successfully!");
   } catch (error) {

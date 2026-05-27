@@ -14,12 +14,16 @@ RUN npm install -g pnpm
 
 # Repository root (monorepo) — Docker build must use context: epicstory root (`docker build -f api/Dockerfile .`)
 COPY --chown=node:node pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY --chown=node:node packages/contracts/package.json ./packages/contracts/
 COPY --chown=node:node packages/tiptap/package.json ./packages/tiptap/
 COPY --chown=node:node api/package.json ./api/
 RUN pnpm install --frozen-lockfile
 
+COPY --chown=node:node packages/contracts ./packages/contracts
 COPY --chown=node:node packages/tiptap ./packages/tiptap
 COPY --chown=node:node api ./api
+COPY --chown=node:node scripts/docker-dev-entrypoint.sh /usr/local/bin/docker-dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-dev-entrypoint.sh
 
 FROM dev AS build
 

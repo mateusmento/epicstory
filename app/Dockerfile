@@ -13,12 +13,18 @@ RUN npm install -g pnpm
 
 # Build from repository root: `docker build -f app/Dockerfile .`
 COPY --chown=node:node pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY --chown=node:node packages/contracts/package.json ./packages/contracts/
+COPY --chown=node:node packages/api-client/package.json ./packages/api-client/
 COPY --chown=node:node packages/tiptap/package.json ./packages/tiptap/
 COPY --chown=node:node app/package.json ./app/
 RUN pnpm install --frozen-lockfile
 
+COPY --chown=node:node packages/contracts ./packages/contracts
+COPY --chown=node:node packages/api-client ./packages/api-client
 COPY --chown=node:node packages/tiptap ./packages/tiptap
 COPY --chown=node:node app ./app
+COPY --chown=node:node scripts/docker-dev-entrypoint.sh /usr/local/bin/docker-dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-dev-entrypoint.sh
 
 FROM dev AS build
 

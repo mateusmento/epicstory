@@ -1,5 +1,5 @@
 const { spawn } = require("child_process");
-const path = require("path");
+const { caddyComposeFile, dockerComposeFileArgs } = require("./compose-files");
 
 // Only allow services defined in docker-compose.yml
 const allowedServices = [
@@ -9,6 +9,7 @@ const allowedServices = [
   "pgadmin",
   "peerjs",
   "redis",
+  "caddy",
   // "openbao", // uncomment if openbao is enabled
 ];
 
@@ -30,13 +31,15 @@ function validateServiceName(service) {
 // Function to remove a specific service using docker compose stop and rm
 function removeService(service) {
   return new Promise((resolve, reject) => {
-    const composeFile = path.resolve(__dirname, "../docker-compose.yml");
+    const composeFileArgs =
+      service === "caddy"
+        ? ["-f", caddyComposeFile]
+        : dockerComposeFileArgs({ includeCaddy: false });
 
     // First stop the service
     const stopArgs = [
       "compose",
-      "-f",
-      composeFile,
+      ...composeFileArgs,
       "stop",
       "--timeout",
       "10",
@@ -55,7 +58,7 @@ function removeService(service) {
       }
 
       // Then remove the service container
-      const rmArgs = ["compose", "-f", composeFile, "rm", "-f", service];
+      const rmArgs = ["compose", ...composeFileArgs, "rm", "-f", service];
       const rm = spawn("docker", rmArgs, { stdio: "inherit" });
 
       rm.on("close", (rmCode) => {
@@ -83,9 +86,12 @@ function removeService(service) {
 
 function runDockerComposeDown() {
   return new Promise((resolve, reject) => {
-    // Compose file location
-    const composeFile = path.resolve(__dirname, "../docker-compose.yml");
-    const args = ["compose", "-f", composeFile, "down", "--remove-orphans"];
+    const args = [
+      "compose",
+      ...dockerComposeFileArgs({ includeCaddy: true }),
+      "down",
+      "--remove-orphans",
+    ];
     const down = spawn("docker", args, { stdio: "inherit" });
 
     down.on("close", (code) => {

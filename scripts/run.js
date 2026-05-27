@@ -1,15 +1,26 @@
 const { spawn } = require("child_process");
-const path = require("path");
+const {
+  caddyComposeExists,
+  caddyComposeFile,
+  dockerComposeFileArgs,
+} = require("./compose-files");
 
-function runDockerComposeUp(container) {
+function runDockerComposeUp(service) {
   return new Promise((resolve, reject) => {
-    // Compose file location
-    const composeFile = path.resolve(__dirname, "../docker-compose.yml");
-    // Use -f to reference explicit file
-    const args = ["compose", "-f", composeFile, "up", "-d"];
-    if (container) {
-      args.push(container);
+    const includeCaddy = !service || service === "caddy";
+    const args = [
+      "compose",
+      ...(service === "caddy"
+        ? ["-f", caddyComposeFile]
+        : dockerComposeFileArgs({ includeCaddy })),
+      "up",
+      "-d",
+    ];
+
+    if (service && service !== "") {
+      args.push(service);
     }
+
     const up = spawn("docker", args, { stdio: "inherit" });
 
     up.on("close", (code) => {
@@ -27,8 +38,23 @@ function runDockerComposeUp(container) {
 }
 
 function main() {
-  const container = process.argv[2];
-  runDockerComposeUp(container);
+  const service = process.argv[2]?.trim() || undefined;
+
+  if (service === "caddy" && !caddyComposeExists()) {
+    console.error("❌ docker-compose.caddy.yml not found");
+    process.exit(1);
+  }
+
+  if (!service && caddyComposeExists()) {
+    console.log(
+      "Including Caddy (HTTPS reverse proxy). Requires ./certs from mkcert — see docs/dev-https.md",
+    );
+  }
+
+  runDockerComposeUp(service).catch((err) => {
+    console.error("❌ docker compose up failed:", err.message);
+    process.exit(1);
+  });
 }
 
 main();

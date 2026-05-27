@@ -1,0 +1,24 @@
+# ngrok agent config for tunneling public HTTPS → local Caddy (epicstory.io).
+#
+# Usage (from repo root, with Caddy running on :443):
+#   epic ngrok
+#   # or: ngrok start epicstory --config ngrok.epicstory.yml
+#
+# Requires ngrok authtoken in your default config (~/.config/ngrok/ngrok.yml).
+# This file is merged with that config via --config.
+
+version: 3
+
+endpoints:
+  - name: epicstory
+    # Random *.ngrok-free.app URL unless you set --url on the CLI.
+    upstream:
+      url: https://epicstory.io:443
+    traffic_policy:
+      on_http_request:
+        - actions:
+            - type: add-headers
+              config:
+                headers:
+                  # Caddy's site block is `epicstory.io`; rewrite Host so routing matches.
+                  host: epicstory.io

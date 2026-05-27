@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Issue } from 'src/project/domain/entities/issue.entity';
+import { extractIssueKeysFromText } from 'src/project/domain/issue-key';
 import {
   IssueGithubBranch,
   type IssueGithubBranchLinkSource,
@@ -104,6 +105,14 @@ export class GithubIssueBranchLinkService {
       .map((c) => (typeof c.message === 'string' ? c.message : ''))
       .filter((m) => m.length > 0);
 
+    // Helpful observability: log when we detect Jira-style issue keys in commit messages,
+    // since this is a common expectation when using push webhooks.
+    const issueKeysFromCommits = [
+      ...new Set(
+        commitMessages.flatMap((m) => extractIssueKeysFromText(m.trim())),
+      ),
+    ];
+
     const issueKeys = collectIssueKeysFromPushPayload({
       ref,
       commitMessages,
@@ -125,6 +134,12 @@ export class GithubIssueBranchLinkService {
     if (!branchName) return;
 
     const pushedAt = pushedAtFromPayload(root) ?? new Date();
+
+    if (issueKeysFromCommits.length > 0) {
+      this.logger.log(
+        `push ${fullName}#${branchName}: issue keys found in commit messages (${issueKeysFromCommits.join(', ')})`,
+      );
+    }
 
     for (const issue of issues) {
       const existing = await this.branchLinkRepo.findOne({
