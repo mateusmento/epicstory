@@ -2,14 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Issue } from 'src/project/domain/entities/issue.entity';
+import { extractIssueKeysFromText } from 'src/project/domain/issue-key';
 import { IssueGithubPullRequest } from '../entities';
-import { ProjectGithubRepoRepository } from '../repositories';
+import { extractLegacyIssueIdFromBranchRef } from '../lib/issue-key-correlation';
 
 type GenericPayload = Record<string, unknown>;
 
 /**
  * Persists / updates issue ↔ GitHub PR rows from `pull_request` webhooks.
- * New correlation: PR head ref starts with `{issueId}-` (Epicstory branch default; task 01 §7.1).
+ * Correlation: issue key in PR `head_ref` (preferred) or legacy `{issueId}-` prefix.
  */
 @Injectable()
 export class GithubIssuePullRequestSyncService {
@@ -20,7 +21,6 @@ export class GithubIssuePullRequestSyncService {
     private readonly prLinkRepo: Repository<IssueGithubPullRequest>,
     @InjectRepository(Issue)
     private readonly issueRepo: Repository<Issue>,
-    private readonly projectGithubRepoRepo: ProjectGithubRepoRepository,
   ) {}
 
   async upsertFromPullPayloadForIssue(params: {
@@ -125,24 +125,11 @@ export class GithubIssuePullRequestSyncService {
 
     let issueId: number | undefined = existing?.issueId;
     if (issueId == null && headRef != null) {
-      const candidateId = extractIssueIdFromBranchHeadRef(headRef);
-      if (candidateId != null) {
-        const issue = await this.issueRepo.findOne({
-          where: { id: candidateId },
-        });
-        if (issue) {
-          const link = await this.projectGithubRepoRepo.findOne({
-            where: {
-              projectId: issue.projectId,
-              owner,
-              name: repoName,
-            },
-          });
-          if (link) {
-            issueId = issue.id;
-          }
-        }
-      }
+      issueId = await this.resolveIssueIdFromBranchRef(
+        headRef,
+        owner,
+        repoName,
+      );
     }
 
     if (issueId == null) {
@@ -217,6 +204,37 @@ export class GithubIssuePullRequestSyncService {
 
     await this.prLinkRepo.save(this.prLinkRepo.create(rowData));
   }
+
+  private async resolveIssueIdFromBranchRef(
+    headRef: string,
+    owner: string,
+    repoName: string,
+  ): Promise<number | undefined> {
+    const keys = extractIssueKeysFromText(headRef);
+    if (keys.length > 0) {
+      const row = await this.issueRepo
+        .createQueryBuilder('i')
+        .select('i.id', 'id')
+        .where('i.issue_key IN (:...keys)', { keys })
+        .orderBy('i.id', 'ASC')
+        .limit(1)
+        .getRawOne<{ id: string }>();
+      if (row?.id) {
+        return Number(row.id);
+      }
+    }
+
+    const legacyId = extractLegacyIssueIdFromBranchRef(headRef);
+    if (legacyId != null) {
+      const issue = await this.issueRepo.findOne({ where: { id: legacyId } });
+      if (issue) return issue.id;
+    }
+
+    this.logger.debug(
+      `pull_request head_ref=${headRef} (${owner}/${repoName}): no issue key match`,
+    );
+    return undefined;
+  }
 }
 
 function asObject(v: unknown): GenericPayload | null {
@@ -238,12 +256,4 @@ function isoToDate(v: unknown): Date | null {
   if (typeof v !== 'string') return null;
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? null : d;
-}
-
-/** Branch default `{issueId}-{slug}` from product docs. */
-function extractIssueIdFromBranchHeadRef(ref: string): number | undefined {
-  const m = /^(\d+)-/.exec(ref.trim());
-  if (!m) return undefined;
-  const n = Number(m[1]);
-  return Number.isFinite(n) && n > 0 ? n : undefined;
 }

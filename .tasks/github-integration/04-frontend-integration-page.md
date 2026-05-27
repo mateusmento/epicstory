@@ -24,8 +24,8 @@
 
 1. **Admin:** Install GitHub App → return to integrations → workspace install + account shown.
 2. **Member:** Link GitHub account → success banner → status shows login.
-3. **Catalogue:** Load repositories → link repo to project → appears under project links.
-4. **Issue:** Open issue with linked repo → create branch → open PR → PR listed in sidebar + timeline comment.
+3. **Catalogue:** Load repositories on workspace GitHub settings (read-only list).
+4. **Issue:** Select repo from catalogue → create branch → open PR → PR listed in sidebar + timeline comment.
 5. **Denied OAuth:** cancel GitHub consent → error banner with clear copy.
 6. **Disconnect member:** Unlink account → issue sidebar prompts to link again.
 

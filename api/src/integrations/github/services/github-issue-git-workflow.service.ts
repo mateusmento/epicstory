@@ -37,12 +37,13 @@ import {
 import {
   GithubInstallationRepository,
   GithubUserConnectionRepository,
-  ProjectGithubRepoRepository,
 } from '../repositories';
 import { GithubApiService } from './github-api.service';
+import { GithubWorkspaceRepoAccessService } from './github-workspace-repo-access.service';
 import { mapIssueGithubPullRequestRow } from './github-issue-pull-request.mapper';
 import { GithubIssuePullRequestSyncService } from './github-issue-pull-request-sync.service';
 import { GithubIssueBranchService } from './github-issue-branch.service';
+import { GithubIssueBranchLinkService } from './github-issue-branch-link.service';
 import { GithubUserOAuthService } from './github-user-oauth.service';
 
 type GenericPayload = Record<string, unknown>;
@@ -65,8 +66,9 @@ export class GithubIssueGitWorkflowService {
     private readonly githubInstallationApi: GithubApiService,
     private readonly prSync: GithubIssuePullRequestSyncService,
     private readonly commandBus: CommandBus,
-    private readonly projectGithubRepos: ProjectGithubRepoRepository,
+    private readonly workspaceRepoAccess: GithubWorkspaceRepoAccessService,
     private readonly issueBranches: GithubIssueBranchService,
+    private readonly issueBranchLinks: GithubIssueBranchLinkService,
   ) {}
 
   async createIssueBranch(params: {
@@ -86,7 +88,7 @@ export class GithubIssueGitWorkflowService {
         baseTrim && baseTrim.length > 0 ? baseTrim : ctx.baseBranch;
       const branchNameResolved =
         params.branchNameRaw?.trim() ??
-        `${ctx.issue.id}-${slugFromIssueTitle(ctx.issue.title)}`;
+        `${ctx.issue.issueKey}-${slugFromIssueTitle(ctx.issue.title)}`;
 
       const trimmedBranch = sanitizeBranchLeaf(branchNameResolved);
       if (!trimmedBranch) {
@@ -159,6 +161,14 @@ export class GithubIssueGitWorkflowService {
           repoName: params.repoName.trim(),
         },
         verifyExistsOnGithub: false,
+      });
+      await this.issueBranchLinks.linkBranchForIssue({
+        issueId: params.issueId,
+        workspaceId: params.workspaceId,
+        owner: params.owner.trim(),
+        repoName: params.repoName.trim(),
+        branchName: created.branchName,
+        source: 'epicstory_create',
       });
       return created;
     } catch (e: unknown) {
@@ -336,34 +346,24 @@ export class GithubIssueGitWorkflowService {
       );
     }
 
-    const link = await this.projectGithubRepos.findOne({
-      where: {
-        projectId: issue.projectId,
-        owner: params.owner.trim(),
-        name: params.repoName.trim(),
-      },
-    });
-    if (!link) {
-      throw new BadRequestException(
-        'Repository is not linked to this Epicstory project',
+    const repoAccess =
+      await this.workspaceRepoAccess.assertRepositoryAccessible(
+        params.workspaceId,
+        params.owner,
+        params.repoName,
       );
-    }
 
-    const baseBranch = link.defaultBranch?.trim()?.length
-      ? link.defaultBranch!.trim()
-      : null;
-
-    let resolvedDefault = baseBranch;
+    let resolvedDefault = repoAccess.defaultBranch;
     if (!resolvedDefault) {
       const details = await this.githubInstallationApi.fetchRepositoryDetails(
         installation.githubInstallationId,
-        params.owner.trim(),
-        params.repoName.trim(),
+        repoAccess.owner,
+        repoAccess.name,
         params.workspaceId,
       );
       if (!details?.defaultBranch) {
         throw new BadRequestException(
-          'Repo default_branch is unknown — set it on the project link or GitHub repo',
+          'Repo default_branch is unknown on GitHub — set a default branch on the repository',
         );
       }
       resolvedDefault = details.defaultBranch;

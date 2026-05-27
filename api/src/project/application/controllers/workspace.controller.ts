@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   ForbiddenException,
   Get,
@@ -10,6 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
@@ -24,12 +26,22 @@ import { ExceptionFilter } from 'src/core';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { IssuerUserCanNotCreateProject } from 'src/project/domain/exceptions';
 import { TeamNotFound } from 'src/workspace/domain/exceptions';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
+import { IssueKeyAllocationService } from 'src/project/application/services/issue-key-allocation.service';
+
+class SuggestProjectKeyPrefixQuery {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+}
 
 @Controller('workspaces')
 export class WorkspaceController {
   constructor(
     private commandBus: CommandBus,
     private queryBus: QueryBus,
+    private workspaceRepo: WorkspaceRepository,
+    private issueKeys: IssueKeyAllocationService,
   ) {}
 
   @Get(':id/projects')
@@ -44,6 +56,7 @@ export class WorkspaceController {
     [IssuerUserIsNotWorkspaceMember, ForbiddenException],
     [IssuerUserCanNotCreateProject, ForbiddenException],
     [TeamNotFound, NotFoundException],
+    [ConflictException, ConflictException],
   )
   createProject(
     @Param('id') workspaceId: number,
@@ -56,6 +69,23 @@ export class WorkspaceController {
       issuerId: issuer.id,
     });
     return this.commandBus.execute(command);
+  }
+
+  /** Suggests a unique project key prefix for the given name. */
+  @Get(':id/projects/suggest-key')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async suggestProjectKeyPrefix(
+    @Param('id') workspaceId: number,
+    @Query() query: SuggestProjectKeyPrefixQuery,
+    @Auth() issuer: Issuer,
+  ): Promise<{ issueKeyPrefix: string }> {
+    await this.workspaceRepo.requiresMembership(workspaceId, issuer.id);
+    const issueKeyPrefix = await this.issueKeys.suggestUniquePrefix({
+      workspaceId,
+      projectName: query.name,
+    });
+    return { issueKeyPrefix };
   }
 
   @Get(':id/issues')

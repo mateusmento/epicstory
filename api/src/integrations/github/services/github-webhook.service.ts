@@ -12,6 +12,7 @@ import { GithubWebhookDeliveryReceipt } from '../entities/github-webhook-deliver
 import { verifyGithubWebhookSignature256 } from '../lib/verify-github-webhook-signature';
 import { GithubInstallationRepository } from '../repositories';
 import { GithubCacheService } from './github-cache.service';
+import { GithubIssueBranchLinkService } from './github-issue-branch-link.service';
 import { GithubIssuePullRequestSyncService } from './github-issue-pull-request-sync.service';
 import { GithubWorkspaceInstallationService } from './github-workspace-installation.service';
 
@@ -27,6 +28,7 @@ export class GithubWebhookService {
     private readonly workspaceInstallation: GithubWorkspaceInstallationService,
     private readonly githubCache: GithubCacheService,
     private readonly issuePullSync: GithubIssuePullRequestSyncService,
+    private readonly issueBranchLinks: GithubIssueBranchLinkService,
     @InjectRepository(GithubWebhookDeliveryReceipt)
     private readonly webhookDeliveryReceipts: Repository<GithubWebhookDeliveryReceipt>,
   ) {}
@@ -93,6 +95,9 @@ export class GithubWebhookService {
         return;
       case 'pull_request':
         await this.onPullRequestWebhook(payload, p, deliveryId);
+        return;
+      case 'push':
+        await this.onPushWebhook(payload, deliveryId);
         return;
       default:
         this.logger.debug(
@@ -201,6 +206,21 @@ export class GithubWebhookService {
           );
       }
     }
+  }
+
+  private async onPushWebhook(
+    payload: unknown,
+    deliveryId: string | undefined,
+  ): Promise<void> {
+    const p = asObject(payload);
+    const repo = asObject(p?.repository);
+    const ref = p && typeof p.ref === 'string' ? p.ref : '?';
+    const fullName =
+      repo && typeof repo.full_name === 'string' ? repo.full_name : '?';
+    this.logger.log(
+      `push repo=${fullName} ref=${ref} delivery=${deliveryId ?? '?'}`,
+    );
+    await this.issueBranchLinks.syncFromPushWebhookPayload(payload);
   }
 
   private async onPullRequestWebhook(

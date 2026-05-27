@@ -68,10 +68,22 @@ export function mockWorkspacesEndpoint() {
 
 export function mockCreateProjectEndpoint() {
   let counter = 1;
-  return http.post(`${API_URL}/workspaces/1/projects`, async ({ request }) => {
-    const body = (await request.json()) as any;
-    return HttpResponse.json({ id: counter++, workspaceId: 1, name: body.name });
-  });
+  return [
+    http.get(`${API_URL}/workspaces/1/projects/suggest-key`, ({ request }) => {
+      const url = new URL(request.url);
+      const name = (url.searchParams.get("name") ?? "").trim();
+      // very small mock: stable suggestion derived from first letters
+      const compact = name.replace(/[^a-zA-Z0-9 ]/g, "").trim();
+      const parts = compact.split(/\s+/).filter(Boolean);
+      const prefix =
+        parts.length >= 2 ? `${parts[0][0] ?? "P"}${parts[1][0] ?? "R"}` : (parts[0] ?? "PRJ").slice(0, 3);
+      return HttpResponse.json({ issueKeyPrefix: prefix.toUpperCase() });
+    }),
+    http.post(`${API_URL}/workspaces/1/projects`, async ({ request }) => {
+      const body = (await request.json()) as any;
+      return HttpResponse.json({ id: counter++, workspaceId: 1, name: body.name });
+    }),
+  ];
 }
 
 export function mockCreateIssueEndpoint() {

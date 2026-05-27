@@ -5,16 +5,23 @@ import {
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { patch } from 'src/core/objects';
-import { WorkspaceProjectCreated } from 'src/workspace/contracts/events/workspace-project-created';
+import { IssueKeyAllocationService } from 'src/project/application/services/issue-key-allocation.service';
 import { Backlog } from 'src/project/domain/entities';
 import { BacklogRepository } from 'src/project/infrastructure/repositories';
 import { ProjectRepository } from 'src/project/infrastructure/repositories/project.repository';
+import { WorkspaceProjectCreated } from 'src/workspace/contracts/events/workspace-project-created';
+import { TeamNotFound } from 'src/workspace/domain/exceptions';
+import { TeamRepository } from 'src/workspace/infrastructure/repositories';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import { Transactional } from 'typeorm-transactional';
-import { TeamRepository } from 'src/workspace/infrastructure/repositories';
-import { TeamNotFound } from 'src/workspace/domain/exceptions';
 
 export class CreateProject {
   issuerId: number;
@@ -27,6 +34,12 @@ export class CreateProject {
 
   @IsNotEmpty()
   name: string;
+
+  /** Optional Jira-style project key; unique per workspace. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  issueKeyPrefix?: string;
 
   constructor(data: Partial<CreateProject> = {}) {
     patch(this, data);
@@ -41,10 +54,17 @@ export class CreateProjectCommand implements ICommandHandler<CreateProject> {
     private projectRepo: ProjectRepository,
     private backlogRepo: BacklogRepository,
     private eventEmitter: EventEmitter2,
+    private issueKeys: IssueKeyAllocationService,
   ) {}
 
   @Transactional()
-  async execute({ issuerId, workspaceId, teamId, name }: CreateProject) {
+  async execute({
+    issuerId,
+    workspaceId,
+    teamId,
+    name,
+    issueKeyPrefix,
+  }: CreateProject) {
     const workspace = await this.workspaceRepo.findOneBy({ id: workspaceId });
     if (!workspace) throw new NotFoundException('Workspace not found');
     const issuer = await this.workspaceRepo.findMember(workspaceId, issuerId);
@@ -58,6 +78,12 @@ export class CreateProjectCommand implements ICommandHandler<CreateProject> {
       }
     }
     let project = workspace.createProject(issuer, teamId, name);
+    project.issueKeyPrefix = await this.issueKeys.resolvePrefixForNewProject({
+      workspaceId,
+      projectName: name,
+      customPrefix: issueKeyPrefix,
+    });
+    project.nextIssueNumber = 1;
     project = await this.projectRepo.save(project);
     project.backlog = await this.backlogRepo.save(
       new Backlog({ projectId: project.id }),

@@ -17,7 +17,14 @@ export function useProjects(workspaceId: number) {
     projects.value = page.content;
   }
 
-  async function createProject({ workspaceId, ...data }: { workspaceId: number; name: string }) {
+  async function createProject({
+    workspaceId,
+    ...data
+  }: {
+    workspaceId: number;
+    name: string;
+    issueKeyPrefix?: string;
+  }) {
     const project = await workspaceApi.createProject(workspaceId, data);
     projects.value.push(project);
   }

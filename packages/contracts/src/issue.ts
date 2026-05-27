@@ -7,6 +7,9 @@ export type { IIssueGithubBranch, IIssueGithubBranchStored };
 
 export type IIssue = {
   id: number;
+  /** Stable external id, e.g. `EPIC-42`. */
+  issueKey: string;
+  issueNumber: number;
   title: string;
   description: JSONContent;
   workspaceId: number;

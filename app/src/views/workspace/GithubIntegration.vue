@@ -2,14 +2,10 @@
 import { config } from "@/config";
 import { Button } from "@/design-system";
 import { useDependency } from "@/core/dependency-injection";
-import { GithubIntegrationApi, WorkspaceApi } from "@epicstory/api-client";
-import type { IGithubProjectRepoLink, IGithubRepositoryCatalogPage, Project } from "@epicstory/contracts";
+import { GithubIntegrationApi } from "@epicstory/api-client";
+import type { IGithubRepositoryCatalogPage } from "@epicstory/contracts";
 import { useAuth } from "@/domain/auth";
-import {
-  clearGithubIssueWorkflowPendingForWorkspace,
-  issueGithubReturnPath,
-  readGithubIssueWorkflowPending,
-} from "@/domain/github";
+import { clearGithubIssueWorkflowPendingForWorkspace } from "@/domain/github";
 import { useWorkspace } from "@/domain/workspace";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
@@ -17,7 +13,6 @@ import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 const route = useRoute();
 const router = useRouter();
 const api = useDependency(GithubIntegrationApi);
-const workspaceApi = useDependency(WorkspaceApi);
 const { user: authUser } = useAuth();
 const { members: workspaceMembers, fetchWorkspaceMembers } = useWorkspace();
 
@@ -35,18 +30,6 @@ const canManageGithubInstallation = computed(() => {
 const loading = ref(false);
 const status = ref<Awaited<ReturnType<typeof api.getStatus>>>();
 
-const projectsLoading = ref(false);
-const projects = ref<Project[]>([]);
-const projectsError = ref<string | null>(null);
-const selectedProjectId = ref<number | null>(null);
-
-const projectRepos = ref<IGithubProjectRepoLink[]>([]);
-const projectReposLoading = ref(false);
-const projectReposError = ref<string | null>(null);
-const linkError = ref<string | null>(null);
-const linkActionKey = ref<string | null>(null);
-const primaryActionId = ref<number | null>(null);
-
 const catalogLoading = ref(false);
 const catalog = ref<IGithubRepositoryCatalogPage | null>(null);
 const catalogError = ref<string | null>(null);
@@ -55,17 +38,6 @@ const catalogSectionEl = ref<HTMLElement | null>(null);
 const oauthBannerError = ref<string | null>(null);
 const oauthBannerSuccess = ref(false);
 const githubPageHeadingEl = ref<HTMLElement | null>(null);
-
-const linkRepoFromIssue = computed(() => queryParamFirst(route.query.github_link_repo) === "1");
-
-const issueWorkflowPending = computed(() => readGithubIssueWorkflowPending());
-
-const linkRepoFromIssueBanner = computed(
-  () =>
-    linkRepoFromIssue.value &&
-    issueWorkflowPending.value != null &&
-    issueWorkflowPending.value.workspaceId === String(workspaceId.value),
-);
 
 function resetOauthBannerState() {
   oauthBannerError.value = null;
@@ -173,60 +145,10 @@ async function refresh() {
   }
 }
 
-async function loadProjects() {
-  projectsLoading.value = true;
-  projectsError.value = null;
-  try {
-    const page = await workspaceApi.findProjects(workspaceId.value, { count: 100 });
-    projects.value = page.content;
-    if (projects.value.length && selectedProjectId.value == null) {
-      selectedProjectId.value = projects.value[0]!.id;
-    }
-  } catch (e: unknown) {
-    projects.value = [];
-    projectsError.value = extractApiError(e, "Could not load projects.");
-  } finally {
-    projectsLoading.value = false;
-  }
-}
-
-async function loadProjectRepos() {
-  const pid = selectedProjectId.value;
-  if (pid == null) {
-    projectRepos.value = [];
-    return;
-  }
-  projectReposLoading.value = true;
-  projectReposError.value = null;
-  try {
-    projectRepos.value = await api.listProjectGithubRepos(workspaceId.value, pid);
-  } catch (e: unknown) {
-    projectRepos.value = [];
-    projectReposError.value = extractApiError(e, "Could not load linked repositories.");
-  } finally {
-    projectReposLoading.value = false;
-  }
-}
-
 watch(workspaceId, async () => {
-  selectedProjectId.value = null;
-  projectRepos.value = [];
   catalog.value = null;
-  await Promise.all([refresh(), loadProjects()]);
+  await refresh();
 });
-
-watch(
-  selectedProjectId,
-  async (pid) => {
-    if (pid != null) await loadProjectRepos();
-    else projectRepos.value = [];
-  },
-  { immediate: true },
-);
-
-function isCatalogRepoLinked(repo: { githubRepoId: string }) {
-  return projectRepos.value.some((l: IGithubProjectRepoLink) => l.githubRepoId === repo.githubRepoId);
-}
 
 async function loadCatalog(page = 1) {
   catalogLoading.value = true;
@@ -269,64 +191,6 @@ async function loadMoreCatalog() {
   }
 }
 
-function tryReturnToIssueAfterProjectRepoLink(): void {
-  const pending = readGithubIssueWorkflowPending();
-  if (
-    pending == null ||
-    pending.workspaceId !== String(workspaceId.value) ||
-    pending.projectId !== String(selectedProjectId.value) ||
-    !projectRepos.value.length
-  ) {
-    return;
-  }
-  router.push(issueGithubReturnPath(pending.workspaceId, pending.projectId, pending.issueId));
-}
-
-async function linkCatalogRepo(repo: { owner: string; name: string; githubRepoId: string }) {
-  if (selectedProjectId.value == null) return;
-  const key = repo.githubRepoId;
-  linkActionKey.value = key;
-  linkError.value = null;
-  try {
-    await api.linkProjectGithubRepo(workspaceId.value, selectedProjectId.value, {
-      owner: repo.owner,
-      name: repo.name,
-    });
-    await loadProjectRepos();
-    tryReturnToIssueAfterProjectRepoLink();
-  } catch (e: unknown) {
-    linkError.value = extractApiError(e, "Could not link repository.");
-  } finally {
-    linkActionKey.value = null;
-  }
-}
-
-async function unlinkProjectRepo(linkId: number) {
-  if (selectedProjectId.value == null) return;
-  if (!confirm("Remove this repository link from the project?")) return;
-  projectReposError.value = null;
-  try {
-    await api.unlinkProjectGithubRepo(workspaceId.value, selectedProjectId.value, linkId);
-    await loadProjectRepos();
-  } catch (e: unknown) {
-    projectReposError.value = extractApiError(e, "Could not remove link.");
-  }
-}
-
-async function setPrimaryProjectRepo(linkId: number) {
-  if (selectedProjectId.value == null) return;
-  primaryActionId.value = linkId;
-  projectReposError.value = null;
-  try {
-    await api.setPrimaryProjectGithubRepo(workspaceId.value, selectedProjectId.value, linkId);
-    await loadProjectRepos();
-  } catch (e: unknown) {
-    projectReposError.value = extractApiError(e, "Could not set default repository.");
-  } finally {
-    primaryActionId.value = null;
-  }
-}
-
 async function disconnectInstallation() {
   if (!confirm("Remove the GitHub App installation from this workspace?")) return;
   loading.value = true;
@@ -336,7 +200,6 @@ async function disconnectInstallation() {
     clearGithubIssueWorkflowPendingForWorkspace(String(workspaceId.value));
     catalog.value = null;
     await refresh();
-    await loadProjectRepos();
   } finally {
     loading.value = false;
   }
@@ -355,25 +218,10 @@ async function disconnectUser() {
   }
 }
 
-function applyGithubIntegrationRouteQuery(): void {
-  const projectIdRaw = queryParamFirst(route.query.projectId);
-  if (projectIdRaw) {
-    const pid = Number(projectIdRaw);
-    if (Number.isFinite(pid)) {
-      selectedProjectId.value = pid;
-    }
-  }
-}
-
 watch(
-  () => route.query.projectId,
-  () => applyGithubIntegrationRouteQuery(),
-);
-
-watch(
-  () => [status.value?.installation, linkRepoFromIssue.value] as const,
-  ([installed, linkFromIssue]) => {
-    if (installed && linkFromIssue && catalog.value == null && !catalogLoading.value) {
+  () => status.value?.installation,
+  (installed) => {
+    if (installed && catalog.value == null && !catalogLoading.value) {
       loadCatalog(1);
     }
   },
@@ -381,9 +229,8 @@ watch(
 
 onMounted(async () => {
   consumeGithubOAuthQueryParams();
-  await Promise.all([refresh(), loadProjects(), fetchWorkspaceMembers()]);
-  applyGithubIntegrationRouteQuery();
-  if (linkRepoFromIssue.value && status.value?.installation) {
+  await Promise.all([refresh(), fetchWorkspaceMembers()]);
+  if (status.value?.installation) {
     await loadCatalog(1);
   }
 });
@@ -414,17 +261,7 @@ onMounted(async () => {
       v-else-if="oauthBannerSuccess"
       class="mt-4 rounded-md border border-emerald-600/30 bg-emerald-600/5 px-3 py-2 text-sm text-emerald-950 dark:text-emerald-100"
     >
-      GitHub is ready. You can create branches and pull requests from issues when a repo is linked to the
-      project.
-    </div>
-    <div
-      v-if="linkRepoFromIssueBanner"
-      class="mt-4 rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-secondary-foreground"
-    >
-      Link a repository to
-      <span class="font-medium text-foreground">this project</span>
-      below, then you will return to the issue to finish
-      {{ issueWorkflowPending?.action === "open_pull" ? "opening the pull request" : "creating the branch" }}.
+      GitHub is ready. Choose a repository on each issue when you create a branch or open a pull request.
     </div>
 
     <div
@@ -530,88 +367,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="status?.installation" class="mt-6 border rounded-lg p-4">
-      <div class="text-sm font-medium">Project repository links</div>
-      <p class="text-xs text-secondary-foreground mt-1">
-        Choose a project, then link installation catalogue entries below or manage links here.
-      </p>
-      <div v-if="projectsError" class="mt-2 text-sm text-destructive">
-        {{ projectsError }}
-      </div>
-      <div v-if="projectsLoading" class="mt-2 text-sm text-secondary-foreground">Loading projects…</div>
-      <div v-else class="mt-3 flex flex-col sm:flex-row gap-3 sm:items-center">
-        <label class="text-sm flex flex-col gap-1 min-w-0 flex-1">
-          <span class="text-secondary-foreground">Project</span>
-          <select
-            v-model.number="selectedProjectId"
-            class="border rounded-md px-2 py-1.5 text-sm bg-background"
-            :disabled="!projects.length"
-          >
-            <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option>
-          </select>
-        </label>
-      </div>
-      <div v-if="!projects.length && !projectsLoading" class="mt-2 text-sm text-secondary-foreground">
-        No projects in this workspace yet. Create a project first.
-      </div>
-      <div v-if="projectReposError" class="mt-2 text-sm text-destructive">
-        {{ projectReposError }}
-      </div>
-      <div v-if="linkError" class="mt-2 text-sm text-destructive">
-        {{ linkError }}
-      </div>
-      <div
-        v-if="selectedProjectId != null && projectReposLoading"
-        class="mt-3 text-sm text-secondary-foreground"
-      >
-        Loading links…
-      </div>
-      <ul
-        v-if="selectedProjectId != null && projectRepos.length && !projectReposLoading"
-        class="mt-3 border rounded-md divide-y"
-      >
-        <li
-          v-for="l in projectRepos"
-          :key="l.id"
-          class="px-3 py-2 text-sm flex flex-row items-center justify-between gap-2"
-        >
-          <div class="min-w-0">
-            <div class="font-medium truncate flex flex-wrap items-center gap-2">
-              <span>{{ l.fullName }}</span>
-              <span
-                v-if="l.isPrimary"
-                class="text-xs font-normal text-primary border border-primary/30 rounded px-1.5 py-0"
-                >Default</span
-              >
-            </div>
-            <div class="text-xs text-secondary-foreground truncate">
-              default branch: {{ l.defaultBranch ?? "—" }}
-            </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <Button
-              v-if="!l.isPrimary"
-              variant="secondary"
-              size="sm"
-              :disabled="loading || primaryActionId === l.id"
-              @click="setPrimaryProjectRepo(l.id)"
-            >
-              {{ primaryActionId === l.id ? "Saving…" : "Set as default" }}
-            </Button>
-            <Button variant="outline" size="sm" :disabled="loading" @click="unlinkProjectRepo(l.id)">
-              Remove
-            </Button>
-          </div>
-        </li>
-      </ul>
-      <div
-        v-if="selectedProjectId != null && !projectReposLoading && !projectRepos.length && projects.length"
-        class="mt-3 text-sm text-secondary-foreground"
-      >
-        No repositories linked to this project yet.
-      </div>
-    </div>
-
     <div
       v-if="status?.installation"
       ref="catalogSectionEl"
@@ -619,14 +374,14 @@ onMounted(async () => {
       class="mt-6 border rounded-lg p-4 outline-none"
     >
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div class="text-sm font-medium">Repositories (installation catalogue)</div>
+        <div class="text-sm font-medium">Workspace repositories</div>
         <Button variant="outline" size="sm" :disabled="catalogLoading" @click="loadCatalog(1)">
           {{ catalog ? "Reload" : "Load repositories" }}
         </Button>
       </div>
       <p class="text-xs text-secondary-foreground mt-1">
-        Repos your GitHub App can access on this installation. Select a project above, then use Link on a row
-        to attach a repo to that project.
+        Repositories your GitHub App can access for this workspace (org or personal account). Members pick a
+        repo on each issue when creating branches or pull requests.
       </p>
       <div v-if="catalogError" class="mt-3 text-sm text-destructive">
         {{ catalogError }}
@@ -649,23 +404,6 @@ onMounted(async () => {
             <span class="text-xs text-secondary-foreground">
               default: {{ r.defaultBranch ?? "—" }} · {{ r.private ? "private" : "public" }}
             </span>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <span v-if="isCatalogRepoLinked(r)" class="text-xs text-secondary-foreground">Linked</span>
-            <Button
-              v-else
-              variant="secondary"
-              size="sm"
-              :disabled="
-                catalogLoading ||
-                selectedProjectId == null ||
-                !projects.length ||
-                linkActionKey === r.githubRepoId
-              "
-              @click="linkCatalogRepo(r)"
-            >
-              {{ linkActionKey === r.githubRepoId ? "Linking…" : "Link" }}
-            </Button>
           </div>
         </li>
       </ul>

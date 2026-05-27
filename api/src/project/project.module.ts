@@ -13,6 +13,7 @@ import * as projectReactions from './application/reactions';
 import * as entities from './domain/entities';
 import * as services from './domain/services';
 import * as repositories from './infrastructure/repositories';
+import { IssueKeyAllocationService } from './application/services/issue-key-allocation.service';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import * as repositories from './infrastructure/repositories';
     ...Object.values(features),
     ...Object.values(gateways),
     ...Object.values(projectReactions),
+    IssueKeyAllocationService,
   ],
   exports: [],
 })

@@ -16,6 +16,7 @@
 - [ ] Configure **user-to-server** authorization so GitHub returns **refresh tokens** where supported (per current GitHub App docs — request type / flags evolve); Epicstory persists refresh tokens encrypted and rotates access tokens server-side (task **03**, `GITHUB_USER_SERVER_REFRESH_TOKEN_ENABLED`).
 - [ ] Set **repository permissions** (Contents, Pull requests, Metadata, etc.) to the minimum agreed in task **01 §5**.
 - [ ] Subscribe the app to **`pull_request`** webhooks where GitHub expects it (typically “Subscribe to events” / installation scope) so Epicstory receives **`opened`**, **`closed`**, and related lifecycle events for PR state sync per **01 §7.4** and task **06** (implementation in task **03**).
+- [ ] Subscribe to **`push`** events so branch/commit issue-key linking works (task **08**).
 - [ ] Security review: least privilege, encrypted storage plan for **persisted user tokens**, rotation runbook for secrets/keys, audit events for connect/disconnect.
 
 ## Acceptance criteria

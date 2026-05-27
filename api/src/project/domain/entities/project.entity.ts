@@ -19,6 +19,14 @@ export class Project {
   @Column()
   name: string;
 
+  /** Jira-style key prefix unique within the workspace (e.g. `EPIC`). */
+  @Column({ name: 'issue_key_prefix', length: 10 })
+  issueKeyPrefix: string;
+
+  /** Next `issue_number` to assign on this project (1-based). */
+  @Column({ name: 'next_issue_number', default: 1 })
+  nextIssueNumber: number;
+
   @Column()
   workspaceId: number;
 
