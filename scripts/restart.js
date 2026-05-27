@@ -1,7 +1,8 @@
 const { spawn } = require("child_process");
 const path = require("path");
+const { dockerComposeFileArgs } = require("./compose-files");
 
-// Only allow services defined in docker-compose.yml
+// Only allow services defined in docker-compose.yml (+ Caddy overlay)
 const allowedServices = [
   "app",
   "api",
@@ -9,6 +10,7 @@ const allowedServices = [
   "pgadmin",
   "peerjs",
   "redis",
+  "caddy",
   // "openbao", // uncomment if openbao is enabled
 ];
 
@@ -125,14 +127,14 @@ async function main() {
     process.exit(1);
   }
 
-  const composeFile = path.resolve(__dirname, "../docker-compose.yml");
+  const includeCaddy = !service || service === "caddy";
+  const composeFileArgs = dockerComposeFileArgs({ includeCaddy });
 
   if (build || recreate) {
     // Recreate rather than "restart" so compose changes (.env, env_file, environment) are picked up.
     const upArgs = [
       "compose",
-      "-f",
-      composeFile,
+      ...composeFileArgs,
       "up",
       "-d",
       "--force-recreate",
@@ -143,14 +145,14 @@ async function main() {
     if (service) upArgs.push(service);
     await runDocker(upArgs);
   } else {
-    const restartArgs = ["compose", "-f", composeFile, "restart"];
+    const restartArgs = ["compose", ...composeFileArgs, "restart"];
     if (service) restartArgs.push(service);
     await runDocker(restartArgs);
   }
 
   if (logs) {
     // Follow compose logs (service-scoped if provided).
-    const logsArgs = ["compose", "-f", composeFile, "logs", "-f"];
+    const logsArgs = ["compose", ...composeFileArgs, "logs", "-f"];
     if (service) logsArgs.push(service);
     await runDocker(logsArgs);
   }

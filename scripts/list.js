@@ -38,6 +38,7 @@ function listContainers() {
     "epicstory-pgadmin",
     "epicstory-peerjs",
     "epicstory-redis",
+    "epicstory-caddy",
     // "epicstory-openbao", // uncomment if openbao is enabled
   ];
 

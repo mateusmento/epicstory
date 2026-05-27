@@ -25,6 +25,28 @@ function runCommand(command, args = [], options = {}) {
   });
 }
 
+function runCommandCapture(command, args = [], options = {}) {
+  return new Promise((resolve, reject) => {
+    let stdout = "";
+    let stderr = "";
+
+    const child = spawn(command, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+      ...options,
+    });
+
+    child.stdout.on("data", (d) => (stdout += d.toString("utf8")));
+    child.stderr.on("data", (d) => (stderr += d.toString("utf8")));
+
+    child.on("close", (code) => {
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error((stderr || stdout || "").trim() || `Command failed (${code})`));
+    });
+
+    child.on("error", reject);
+  });
+}
+
 // Get the absolute path to the scripts directory
 const scriptsDir = path.join(__dirname, "scripts");
 const apiDir = path.join(__dirname, "api");
@@ -56,12 +78,17 @@ function takeEqualsFlagValue(args, flagLong) {
 // Run command
 async function run(container) {
   try {
-    console.log(`🚀 Running Docker container: ${container ?? ""}`);
+    const label = container?.trim() ? `service: ${container}` : "all services (+ Caddy)";
+    console.log(`🚀 Running Docker ${label}`);
     await runCommand("node", [
       path.join(scriptsDir, "run.js"),
       container ?? "",
     ]);
-    console.log(`✅ Container ${container} running successfully!`);
+    console.log(
+      container?.trim()
+        ? `✅ ${container} running successfully!`
+        : "✅ Containers running successfully!",
+    );
   } catch (error) {
     console.error(`❌ Container ${container} failed to run:`, error.message);
     process.exit(1);
@@ -311,6 +338,33 @@ async function https(action, args = []) {
   }
 }
 
+async function ngrok(target) {
+  try {
+    const name = target?.trim() ? target.trim() : "epicstory";
+    const cfg = path.join(__dirname, "ngrok.epicstory.yml");
+    console.log(`🚀 Starting ngrok tunnel: ${name}`);
+
+    // When passing --config, ngrok does NOT implicitly include the default config.
+    // So we detect the default config path and merge both configs explicitly.
+    let defaultCfg;
+    try {
+      const { stdout, stderr } = await runCommandCapture("ngrok", ["config", "check"]);
+      const text = `${stdout}\n${stderr}`;
+      const m = text.match(/Valid configuration file at (.+)\s*$/m);
+      defaultCfg = m?.[1]?.trim();
+    } catch {
+      defaultCfg = undefined;
+    }
+
+    const args = ["start", name, "--config", cfg];
+    if (defaultCfg) args.push("--config", defaultCfg);
+    await runCommand("ngrok", args);
+  } catch (error) {
+    console.error("❌ ngrok failed:", error.message);
+    process.exit(1);
+  }
+}
+
 // Main CLI logic
 function main() {
   const args = process.argv.slice(2);
@@ -356,6 +410,9 @@ function main() {
     case "https":
       https(rest[0], rest.slice(1));
       break;
+    case "ngrok":
+      ngrok(target);
+      break;
     case "help":
     case "--help":
     case "-h":
@@ -377,7 +434,7 @@ Usage:
   epic build [app|api]         Build Docker images
   epic deploy [apply|delete]   Deploy to Kubernetes
   epic inject [container-name] Inject into a running container
-  epic run                     Run Docker containers
+  epic run                     Run Docker containers (+ Caddy HTTPS proxy)
   epic logs [container-name]   Log container output
   epic list                    List running containers
   epic remove                 Stop and remove all containers
@@ -385,6 +442,7 @@ Usage:
   epic migrations <command>    Manage API database migrations
   epic postgres <command>      Rotate/list/restore postgres data folder
   epic https <command>         Local HTTPS dev helpers (mkcert, CA install)
+  epic ngrok [endpoint]        Start ngrok tunnel to local Caddy
   epic help                    Show this help message
 
 Examples:
@@ -393,7 +451,8 @@ Examples:
   epic deploy apply           Apply Kubernetes configurations
   epic deploy delete          Delete Kubernetes resources
   epic inject epicstory-api   Inject into a running container
-  epic run                    Run Docker containers
+  epic run                    Run Docker containers (+ Caddy HTTPS proxy)
+  epic run caddy              Run Caddy only (HTTPS reverse proxy)
   epic logs epicstory-api      Log container output
   epic list                   List running containers
   epic remove                 Stop and remove all containers
@@ -411,6 +470,7 @@ Examples:
   epic postgres list
   epic postgres restore 20260208T120000Z
   epic postgres restore-latest
+  epic ngrok
   epic https gen-certs --domain epicstory.io
   epic https install-ca --remote mateus@192.168.0.6 --nss auto
   epic https install-ca-local --nss auto
