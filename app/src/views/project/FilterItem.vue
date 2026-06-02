@@ -122,7 +122,7 @@ const parentIssue = computed(() => {
 });
 
 const parentPreview = computed(() => {
-  return parentIssue.value ? `EP-${parentIssue.value.id}` : "Any";
+  return parentIssue.value ? parentIssue.value.issueKey : "Any";
 });
 </script>
 

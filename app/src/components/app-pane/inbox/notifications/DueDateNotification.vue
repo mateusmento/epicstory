@@ -1,4 +1,5 @@
 <script lang="tsx" setup>
+import { IssueNotificationLabel } from "@/components/issue";
 import type { IssueDueDateNotificationPayload } from "@/domain/notifications";
 import { formatDate, formatDistanceToNow } from "date-fns";
 import { Calendar } from "lucide-vue-next";
@@ -32,8 +33,12 @@ function formatTime(date: string) {
       </div>
 
       <div class="flex:col min-w-0 flex-1">
-        <div class="text-sm text-foreground font-lato truncate">
-          EP-{{ payload.issueId }} {{ payload.title }}
+        <div class="text-sm text-foreground font-lato min-w-0">
+          <IssueNotificationLabel
+            :issue-key="payload.issueKey"
+            :issue-id="payload.issueId"
+            :title="payload.title"
+          />
         </div>
 
         <div class="flex:row-md flex:center-y text-sm text-secondary-foreground font-dmSans">

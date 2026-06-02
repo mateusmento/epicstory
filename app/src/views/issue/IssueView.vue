@@ -2,6 +2,7 @@
 import {
   IssueDescriptionEditor,
   IssueGithubSidebarSection,
+  IssueKey,
   IssueLabelTags,
   issueStatusDotClass,
   IssueStatusDropdown,
@@ -238,7 +239,14 @@ watch(
         <div class="text-xs text-secondary-foreground">
           <span class="font-medium">{{ project?.name ?? "Project" }}</span>
           <span class="mx-2">/</span>
-          <span class="text-foreground/80">Issue #{{ issue?.id ?? props.issueId }}</span>
+          <IssueKey
+            v-if="issue?.issueKey"
+            :issue-key="issue.issueKey"
+            copyable
+            size="sm"
+            class="text-foreground/80"
+          />
+          <span v-else class="text-foreground/80">Issue #{{ props.issueId }}</span>
         </div>
       </div>
 

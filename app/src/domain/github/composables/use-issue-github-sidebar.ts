@@ -217,7 +217,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       return;
     }
     if (!headBranchLeaf.value.trim()) {
-      headBranchLeaf.value = suggestGithubBranchLeaf(iss.id, iss.title ?? "");
+      headBranchLeaf.value = suggestGithubBranchLeaf(iss.issueKey, iss.title ?? "");
     }
   }
 
@@ -230,7 +230,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
   const createBranchTargetName = computed(() => {
     const iss = params.issue.value;
     const q = githubBranchSearch.value.trim();
-    return q || (iss ? suggestGithubBranchLeaf(iss.id, iss.title ?? "") : "");
+    return q || (iss ? suggestGithubBranchLeaf(iss.issueKey, iss.title ?? "") : "");
   });
 
   const createBranchPickerLabel = computed(() => {
@@ -317,7 +317,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     if (!iss || !selectedGhRepo.value) return;
 
     const raw = githubBranchSearch.value.trim();
-    headBranchLeaf.value = raw || suggestGithubBranchLeaf(iss.id, iss.title ?? "");
+    headBranchLeaf.value = raw || suggestGithubBranchLeaf(iss.issueKey, iss.title ?? "");
     githubBranchPickerOpen.value = false;
 
     const prereq = await resolveGithubWorkflowPrerequisites();
@@ -757,7 +757,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
         owner: targetRepo.owner,
         name: targetRepo.name,
         headBranch: head,
-        title: iss.title?.trim()?.length && iss.title ? iss.title : `Issue #${iss.id}`,
+        title: iss.title?.trim()?.length && iss.title ? iss.title : iss.issueKey,
         draft: openPrAsDraft.value,
       });
       clearGithubIssueWorkflowPending();

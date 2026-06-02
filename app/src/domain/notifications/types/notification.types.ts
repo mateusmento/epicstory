@@ -29,6 +29,7 @@ export type IssueDueDateNotificationPayload = {
   title: string;
   description: string;
   issueId: number;
+  issueKey?: string;
   projectId: number;
   workspaceId: number;
   dueDate: string;
@@ -39,6 +40,7 @@ export type IssueAssignedNotificationPayload = {
   title: string;
   description: string;
   issueId: number;
+  issueKey?: string;
   projectId: number;
   issuer: IUser;
 };

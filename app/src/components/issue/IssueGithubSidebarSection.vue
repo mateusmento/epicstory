@@ -146,7 +146,7 @@ watch(
     </div>
     <div v-else-if="githubPullRequests.length === 0" class="text-xs text-muted-foreground">
       None synced yet (open a PR from a branch named
-      <span class="font-mono">{{ issue.id }}-…</span> on a linked repo).
+      <span class="font-mono">{{ issue.issueKey }}-…</span> on a linked repo).
     </div>
     <div v-else class="flex:col-sm min-w-0">
       <div class="flex flex-wrap items-center gap-2">

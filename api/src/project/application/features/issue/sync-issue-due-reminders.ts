@@ -8,7 +8,7 @@ export async function syncIssueDueDateReminders(args: {
   scheduledJobRepo: ScheduledJobRepository;
   issue: Pick<
     Issue,
-    'id' | 'title' | 'projectId' | 'workspaceId' | 'dueDate'
+    'id' | 'issueKey' | 'title' | 'projectId' | 'workspaceId' | 'dueDate'
   > & {
     assignees?: { id: number }[];
   };
@@ -49,6 +49,7 @@ export async function syncIssueDueDateReminders(args: {
         title,
         description: `Issue "${title}" is due`,
         issueId: issue.id,
+        issueKey: issue.issueKey,
         projectId: issue.projectId,
         workspaceId: issue.workspaceId,
         dueDate: issue.dueDate,

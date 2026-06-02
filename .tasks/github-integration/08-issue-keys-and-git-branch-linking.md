@@ -29,17 +29,17 @@
 
 ## API / UI (follow-ups)
 
-- [ ] Expose `issueKey` on `IIssue` everywhere issues are listed.
-- [ ] Issue sidebar: **linked branches** list (from `issue_github_branches`) + PR list.
-- [ ] Copy issue key control.
-- [ ] Remove reliance on single `githubBranch` for “all branches” display.
+- [x] Expose `issueKey` on `IIssue` (contract + entity); list surfaces show key (see `.product/tasks/01`).
+- [x] Issue sidebar: **linked branches** list (from `issue_github_branches`) + PR list.
+- [x] Copy issue key control (issue detail).
+- [x] Remove reliance on single `githubBranch` for “all branches” display (linked branches API).
 
 ## Implementation phases
 
 - [x] **A** — Schema + allocation: `issue_key_prefix`, `next_issue_number`, `issue.issue_number`, `issue.issue_key`, backfill.
 - [x] **B** — `issue_github_branches` + `push` webhook ingest + key parser lib.
 - [x] **C** — Branch create default + PR webhook correlation use issue keys.
-- [ ] **D** — Frontend sidebar + backlog key column.
+- [x] **D** — Frontend sidebar + backlog key column (notifications `issueKey` follow-up in `.product/tasks/01`).
 - [ ] **E** — Development panel activity on link (*TBD*).
 - [ ] **F** — Manual “unlink branch” (*TBD*).
 
