@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IssueContextMenu } from "@/components/issue";
+import { IssueContextMenu, IssueKey } from "@/components/issue";
 import { UserAvatarStack } from "@/components/user";
 import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -39,7 +39,7 @@ const labelsOverflow = computed(() =>
 
       <div class="min-w-0 flex-1 cursor-pointer" @click="emit('open', sub.id)">
         <div class="flex items-center gap-2 min-w-0">
-          <span class="text-xs text-muted-foreground tabular-nums shrink-0">EP-{{ sub.id }}</span>
+          <IssueKey :issue-key="sub.issueKey" />
           <span
             class="truncate text-xs"
             :class="sub.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground'"

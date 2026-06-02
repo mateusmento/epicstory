@@ -94,6 +94,10 @@ export class DueIssueReminderPayload {
   @IsNumber()
   issueId: number;
 
+  @IsOptional()
+  @IsString()
+  issueKey?: string;
+
   @IsDate()
   dueDate: Date;
 

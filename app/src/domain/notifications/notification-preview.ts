@@ -30,9 +30,11 @@ export function getNotificationToastTitle(notification: Notification): string {
     case "direct_message":
       return `${p.sender.name ?? "Someone"} sent you a direct message`;
     case "issue_due_date":
-      return p.title || "Issue due date";
+      return p.issueKey ? `${p.issueKey} · ${p.title}` : p.title || "Issue due date";
     case "issue_assigned":
-      return `${p.issuer.name ?? "Someone"} assigned you an issue`;
+      return p.issueKey
+        ? `${p.issuer.name ?? "Someone"} assigned you ${p.issueKey}`
+        : `${p.issuer.name ?? "Someone"} assigned you an issue`;
     case "calendar_meeting_reminder": {
       const name = p.title || "Meeting";
       const when = resolveCalendarReminderStartsInLabel(p.notifyMinutesBefore, p.occurrenceAt);
@@ -66,7 +68,7 @@ export function getNotificationToastDescription(notification: Notification): str
     case "issue_due_date":
       return p.description;
     case "issue_assigned": {
-      return p.title;
+      return p.issueKey ? `${p.issueKey} · ${p.title}` : p.title;
     }
     case "calendar_meeting_reminder":
       return formatCalendarOccurrenceSubtitle(p.occurrenceAt);

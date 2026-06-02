@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IssueLabelTags, issueStatusDotClass, IssueStatusDropdown } from "@/components/issue";
+import { IssueKey, IssueLabelTags, issueStatusDotClass, IssueStatusDropdown } from "@/components/issue";
 import { UserAvatarStack } from "@/components/user";
 import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { Button, ContentEditable, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
@@ -81,7 +81,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
           :class="issueStatusDotClass(issue.status)"
           :title="issue.status"
         />
-        <span class="text-xs text-muted-foreground tabular-nums shrink-0"> EP-{{ issue.id }} </span>
+        <IssueKey :issue-key="issue.issueKey" />
       </div>
     </IssueStatusDropdown>
 

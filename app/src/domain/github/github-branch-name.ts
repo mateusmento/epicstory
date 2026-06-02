@@ -8,8 +8,8 @@ export function githubBranchTreeUrl(owner: string, repoName: string, branchName:
   return `https://github.com/${owner}/${repoName}/tree/${encodeURIComponent(branchName)}`;
 }
 
-/** Mirrors API default: `{issueId}-{slug-from-title}` (leaf only, no `refs/heads/`). */
-export function suggestGithubBranchLeaf(issueId: number, title: string): string {
+/** Mirrors API default: `{issueKey}-{slug-from-title}` (leaf only, no `refs/heads/`). */
+export function suggestGithubBranchLeaf(issueKey: string, title: string): string {
   const slug = title
     .trim()
     .toLowerCase()
@@ -17,5 +17,5 @@ export function suggestGithubBranchLeaf(issueId: number, title: string): string 
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
   const base = (slug || "branch").slice(0, 48);
-  return `${issueId}-${base}`;
+  return `${issueKey}-${base}`;
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { MenuInput, MenuItem, MenuSeparator, ScrollArea } from "@/design-system";
+import { IssueKey } from "@/components/issue";
 import { useIssues } from "@/domain/issues";
 import type { IIssue } from "@epicstory/contracts";
 import { computed, ref, watchEffect } from "vue";
@@ -12,7 +13,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "select", issue: Pick<IIssue, "id" | "title" | "status">): void;
+  (e: "select", issue: Pick<IIssue, "id" | "issueKey" | "title" | "status">): void;
   (e: "clear"): void;
 }>();
 
@@ -58,7 +59,7 @@ function dotClass(status: string | null | undefined) {
 
 function onSelect(issue: any) {
   issue.value = issue;
-  emit("select", { id: issue.id, title: issue.title, status: issue.status });
+  emit("select", { id: issue.id, issueKey: issue.issueKey, title: issue.title, status: issue.status });
 }
 </script>
 
@@ -69,6 +70,7 @@ function onSelect(issue: any) {
 
     <div v-if="issue" class="flex:row-lg flex:center-y m-2 mb-1">
       <div class="w-2 h-2 rounded-full ring-1 ring-border" :class="dotClass(issue.status)"></div>
+      <IssueKey :issue-key="issue.issueKey" />
       <div class="flex-1 truncate text-xs">{{ issue.title }}</div>
       <MenuItem v-if="!disabled" class="text-xs text-muted-foreground" @select="emit('clear')">
         {{ clearButtonLabel ?? "Clear selection" }}
@@ -87,6 +89,7 @@ function onSelect(issue: any) {
           @select="onSelect(issue)"
         >
           <div class="w-2 h-2 rounded-full ring-1 ring-border" :class="dotClass(issue.status)"></div>
+          <IssueKey :issue-key="issue.issueKey" />
           <div class="flex-1 truncate text-xs">{{ issue.title }}</div>
           <div class="text-xs text-muted-foreground">{{ statuses[issue.status]?.label ?? "Unknown" }}</div>
         </MenuItem>

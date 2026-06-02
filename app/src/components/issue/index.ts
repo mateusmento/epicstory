@@ -1,3 +1,5 @@
+export { default as IssueNotificationLabel } from "./IssueNotificationLabel.vue";
+export { default as IssueKey } from "./IssueKey.vue";
 export { default as IssueLabelTags } from "./IssueLabelTags.vue";
 export { default as IssuePickerMenu } from "./IssuePickerMenu.vue";
 export { default as IssueDueDateMenu } from "./IssueDueDateMenu.vue";

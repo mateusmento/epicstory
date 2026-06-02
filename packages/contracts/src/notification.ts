@@ -30,6 +30,8 @@ export type IssueDueDateNotificationPayload = {
   title: string;
   description: string;
   issueId: number;
+  /** Stable external id, e.g. `EPIC-42`. Omitted on older notifications. */
+  issueKey?: string;
   projectId: number;
   workspaceId: number;
   dueDate: string;
@@ -40,6 +42,8 @@ export type IssueAssignedNotificationPayload = {
   title: string;
   description: string;
   issueId: number;
+  /** Stable external id, e.g. `EPIC-42`. Omitted on older notifications. */
+  issueKey?: string;
   projectId: number;
   issuer: IUser;
 };

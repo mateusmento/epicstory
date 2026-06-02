@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDraggingById } from "@/components/board/useDraggingById";
-import { IssueContextMenu, IssueLabelTags } from "@/components/issue";
+import { IssueContextMenu, IssueKey, IssueLabelTags } from "@/components/issue";
 import { UserAvatarStack } from "@/components/user";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
@@ -60,17 +60,15 @@ function openIssue(issue: IIssue) {
         v-if="item.issue.parentIssue?.title"
         class="text-[11px] text-secondary-foreground truncate mb-1 flex items-center gap-1"
       >
-        <span class="shrink-0">EP-{{ item.issue.id }}</span>
+        <IssueKey :issue-key="item.issue.issueKey" class="shrink-0" />
         <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
         <span class="truncate">{{ item.issue.parentIssue.title }}</span>
       </div>
 
-      <div class="flex:row-md items-baseline justify-between gap-2">
-        <div class="font-medium text-sm text-foreground line-clamp-2">
+      <div class="flex items-start gap-2 min-w-0">
+        <IssueKey :issue-key="item.issue.issueKey" class="shrink-0 mt-0.5" />
+        <div class="font-medium text-sm text-foreground line-clamp-2 min-w-0">
           {{ item.issue.title || "Untitled issue" }}
-        </div>
-        <div v-if="!item.issue.parentIssue?.title" class="text-[11px] text-secondary-foreground">
-          #{{ item.issue.id }}
         </div>
       </div>
 
