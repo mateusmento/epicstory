@@ -133,7 +133,10 @@ useMediaStreamVideo(
       ref="pipVideoEl"
     />
 
-    <div v-if="!mainVideoEnabled" class="w-full h-full flex items-center justify-center bg-gray-800">
+    <div
+      v-if="!mainVideoEnabled"
+      class="epicstory-blur-gradient--dark-tile w-full h-full flex items-center justify-center"
+    >
       <UserAvatar
         :name="participant.user?.name ?? displayName"
         :picture="participant.user?.picture"
