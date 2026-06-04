@@ -3,6 +3,7 @@ import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
 import { storeToRefs } from "pinia";
 import { computed, onUnmounted, watch } from "vue";
+import { INBOX_NOTIFICATION_PAGE_SIZE } from "../constants";
 import { useNotificationFeedStore } from "../notification-feed.store";
 import type { Notification } from "@epicstory/contracts";
 import { NotificationApi } from "@epicstory/api-client";
@@ -20,15 +21,15 @@ function notifyIncomingListeners(notification: Notification) {
   incomingListeners.forEach((fn) => fn(notification));
 }
 
-function isValidNotification(notification: any): notification is Notification {
-  if (!notification || !notification.id || !notification.type || !notification.payload) {
-    return false;
-  }
-  return typeof notification.payload === "object";
+function isValidNotification(notification: unknown): notification is Notification {
+  if (!notification || typeof notification !== "object") return false;
+  const n = notification as Notification;
+  if (!n.id || !n.type || !n.payload) return false;
+  return typeof n.payload === "object";
 }
 
 export type UseNotificationsOptions = {
-  limit?: number;
+  pageSize?: number;
   /**
    * When true, this instance loads notifications and keeps the websocket subscription alive.
    * Use once at app-shell level (e.g. Dashboard). Other components should omit this.
@@ -37,13 +38,14 @@ export type UseNotificationsOptions = {
 };
 
 export function useNotifications(options?: UseNotificationsOptions) {
-  const { limit = 100, manageConnection = false } = options || {};
+  const pageSize = options?.pageSize ?? INBOX_NOTIFICATION_PAGE_SIZE;
+  const { manageConnection = false } = options ?? {};
 
   const { user } = useAuth();
   const { websocket } = useWebSockets();
   const notificationApi = useDependency(NotificationApi);
   const feedStore = useNotificationFeedStore();
-  const { notifications, isLoading, error } = storeToRefs(feedStore);
+  const { notifications, isLoading, isLoadingMore, hasMore, error } = storeToRefs(feedStore);
 
   const unseenCount = computed(() => notifications.value.filter((n) => !n.seen).length);
 
@@ -66,18 +68,56 @@ export function useNotifications(options?: UseNotificationsOptions) {
   }
 
   async function fetchNotifications(userId: number) {
-    isLoading.value = true;
-    error.value = null;
+    feedStore.isLoading = true;
+    feedStore.error = null;
 
     try {
-      const { content } = await notificationApi.fetchNotifications(userId, limit);
-      notifications.value = content.filter(isValidNotification);
+      const result = await notificationApi.fetchNotifications(userId, {
+        page: 0,
+        count: pageSize,
+      });
+      notifications.value = result.content.filter(isValidNotification);
+      feedStore.page = 0;
+      feedStore.hasMore = result.hasNext;
     } catch (err) {
       const errorMessage = err instanceof Error ? err : new Error("Failed to fetch notifications");
-      error.value = errorMessage;
+      feedStore.error = errorMessage;
       console.error("Failed to fetch notifications:", err);
     } finally {
-      isLoading.value = false;
+      feedStore.isLoading = false;
+    }
+  }
+
+  async function fetchMoreNotifications() {
+    if (!user.value?.id || feedStore.isLoadingMore || !feedStore.hasMore || feedStore.isLoading) {
+      return;
+    }
+
+    feedStore.isLoadingMore = true;
+    feedStore.error = null;
+
+    try {
+      const nextPage = feedStore.page + 1;
+      const result = await notificationApi.fetchNotifications(user.value.id, {
+        page: nextPage,
+        count: pageSize,
+      });
+
+      const existing = new Set(notifications.value.map((n) => n.id));
+      for (const notification of result.content.filter(isValidNotification)) {
+        if (!existing.has(notification.id)) {
+          notifications.value.push(notification);
+        }
+      }
+
+      feedStore.page = nextPage;
+      feedStore.hasMore = result.hasNext;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err : new Error("Failed to fetch notifications");
+      feedStore.error = errorMessage;
+      console.error("Failed to fetch more notifications:", err);
+    } finally {
+      feedStore.isLoadingMore = false;
     }
   }
 
@@ -98,11 +138,9 @@ export function useNotifications(options?: UseNotificationsOptions) {
           unsubscribeNotifications(prev.id);
         }
 
-        notifications.value = [];
-        error.value = null;
+        feedStore.resetFeed();
 
         if (!next?.id) {
-          isLoading.value = false;
           return;
         }
 
@@ -125,8 +163,11 @@ export function useNotifications(options?: UseNotificationsOptions) {
   return {
     notifications,
     isLoading,
+    isLoadingMore,
+    hasMore,
     error,
     unseenCount,
     markAsSeen,
+    fetchMoreNotifications,
   };
 }
