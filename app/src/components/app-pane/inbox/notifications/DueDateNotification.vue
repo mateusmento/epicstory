@@ -33,13 +33,11 @@ function formatTime(date: string) {
       </div>
 
       <div class="flex:col min-w-0 flex-1">
-        <div class="text-sm text-foreground font-lato min-w-0">
-          <IssueNotificationLabel
-            :issue-key="payload.issueKey"
-            :issue-id="payload.issueId"
-            :title="payload.title"
-          />
-        </div>
+        <IssueNotificationLabel
+          :issue-key="payload.issueKey"
+          :issue-id="payload.issueId"
+          :title="payload.title"
+        />
 
         <div class="flex:row-md flex:center-y text-sm text-secondary-foreground font-dmSans">
           <div class="text-xs text-secondary-foreground truncate">

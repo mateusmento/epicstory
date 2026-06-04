@@ -1,32 +1,50 @@
 <script lang="ts" setup>
 import { Icon } from "@/design-system/icons";
+import { ScrollArea, Separator } from "@/design-system";
 import { useNotifications } from "@/domain/notifications";
-import { useRoute, useRouter } from "vue-router";
 import type { Notification } from "@/domain/notifications";
 import type {
-  MentionNotificationPayload,
-  ReplyNotificationPayload,
-  DirectMessageNotificationPayload,
-  IssueDueDateNotificationPayload,
-  IssueAssignedNotificationPayload,
-  CalendarMeetingReminderNotificationPayload,
   CalendarEventReminderNotificationPayload,
+  CalendarMeetingReminderNotificationPayload,
+  DirectMessageNotificationPayload,
+  IssueAssignedNotificationPayload,
+  IssueDueDateNotificationPayload,
+  MentionNotificationPayload,
   MessageReactionNotificationPayload,
+  ReplyNotificationPayload,
   ReplyReactionNotificationPayload,
 } from "@/domain/notifications";
-import MentionNotification from "./notifications/MentionNotification.vue";
-import ReplyNotification from "./notifications/ReplyNotification.vue";
-import MessageNotification from "./notifications/MessageNotification.vue";
-import MessageReactionNotification from "./notifications/MessageReactionNotification.vue";
-import DueDateNotification from "./notifications/DueDateNotification.vue";
-import IssueAssignedNotification from "./notifications/IssueAssignedNotification.vue";
-import CalendarMeetingReminderNotification from "./notifications/CalendarMeetingReminderNotification.vue";
-import CalendarEventReminderNotification from "./notifications/CalendarEventReminderNotification.vue";
-import { Separator } from "@/design-system";
+import { useVirtualizer } from "@tanstack/vue-virtual";
+import type { VNodeRef } from "vue";
+import { computed, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import InboxNotificationRow from "./InboxNotificationRow.vue";
 
-const { notifications, markAsSeen } = useNotifications();
+const { notifications, isLoading, isLoadingMore, hasMore, markAsSeen, fetchMoreNotifications } =
+  useNotifications();
+
 const router = useRouter();
 const route = useRoute();
+const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
+
+const rowVirtualizer = useVirtualizer(
+  computed(() => ({
+    count: notifications.value.length,
+    getScrollElement: () => scrollAreaRef.value?.getScrollElement() ?? null,
+    estimateSize: () => 96,
+    overscan: 6,
+    getItemKey: (index: number) => notifications.value[index]?.id ?? index,
+  })),
+);
+
+const measureNotificationRow: VNodeRef = (el) => {
+  rowVirtualizer.value.measureElement(el as HTMLElement | null);
+};
+
+function onReachedBottom() {
+  if (!hasMore.value || isLoadingMore.value || isLoading.value) return;
+  fetchMoreNotifications();
+}
 
 async function openNotification(notification: Notification) {
   await markAsSeen(notification.id);
@@ -111,13 +129,7 @@ async function openNotification(notification: Notification) {
         },
       });
     }
-    return;
   }
-}
-
-function notificationTypeLabel(n: Notification): string {
-  const t = (n as { type?: unknown }).type;
-  return typeof t === "string" ? t : "unknown";
 }
 </script>
 
@@ -130,75 +142,54 @@ function notificationTypeLabel(n: Notification): string {
 
     <Separator />
 
-    <div class="flex-1 overflow-y-auto">
-      <div v-if="notifications.length === 0" class="flex:col-md flex:center p-8 text-center">
-        <Icon name="oi-inbox" class="text-4xl text-secondary-foreground/50" />
-        <div class="text-sm text-secondary-foreground">No notifications yet</div>
-      </div>
+    <ScrollArea ref="scrollAreaRef" class="flex-1 min-h-0" @reached-bottom="onReachedBottom">
+      <div class="!block">
+        <div v-if="isLoading && notifications.length === 0" class="flex:col-md flex:center p-8 text-center">
+          <div class="text-sm text-secondary-foreground">Loading notifications…</div>
+        </div>
 
-      <div v-else class="flex:col">
+        <div v-else-if="notifications.length === 0" class="flex:col-md flex:center p-8 text-center">
+          <Icon name="oi-inbox" class="text-4xl text-secondary-foreground/50" />
+          <div class="text-sm text-secondary-foreground">No notifications yet</div>
+        </div>
+
         <div
-          v-for="notification in notifications"
-          :key="notification.id"
-          role="button"
-          tabindex="0"
-          @click="openNotification(notification)"
-          @keydown.enter.prevent="openNotification(notification)"
-          class="flex:col-md p-4 border-b hover:bg-secondary transition-colors cursor-pointer"
-          :class="notification.seen ? 'opacity-80' : 'bg-secondary/10'"
+          v-else
+          :style="{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            position: 'relative',
+          }"
         >
-          <MentionNotification
-            v-if="notification.type === 'mention'"
-            :payload="notification.payload as MentionNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <ReplyNotification
-            v-else-if="notification.type === 'reply'"
-            :payload="notification.payload as ReplyNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <MessageNotification
-            v-else-if="notification.type === 'direct_message'"
-            :payload="notification.payload as DirectMessageNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <DueDateNotification
-            v-else-if="notification.type === 'issue_due_date'"
-            :payload="notification.payload as IssueDueDateNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <IssueAssignedNotification
-            v-else-if="notification.type === 'issue_assigned'"
-            :payload="notification.payload as IssueAssignedNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <CalendarMeetingReminderNotification
-            v-else-if="notification.type === 'calendar_meeting_reminder'"
-            :payload="notification.payload as CalendarMeetingReminderNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <CalendarEventReminderNotification
-            v-else-if="notification.type === 'calendar_event_reminder'"
-            :payload="notification.payload as CalendarEventReminderNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <MessageReactionNotification
-            v-else-if="notification.type === 'message_reaction'"
-            kind="message_reaction"
-            :payload="notification.payload as MessageReactionNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <MessageReactionNotification
-            v-else-if="notification.type === 'reply_reaction'"
-            kind="reply_reaction"
-            :payload="notification.payload as ReplyReactionNotificationPayload"
-            :createdAt="notification.createdAt"
-          />
-          <div v-else class="text-sm text-secondary-foreground">
-            Unknown notification type: {{ notificationTypeLabel(notification) }}
+          <div
+            v-for="virtualRow in rowVirtualizer.getVirtualItems()"
+            :key="String(virtualRow.key)"
+            :data-index="virtualRow.index"
+            :ref="measureNotificationRow"
+            :style="{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${virtualRow.start}px)`,
+            }"
+          >
+            <InboxNotificationRow
+              :notification="notifications[virtualRow.index]!"
+              @select="openNotification"
+            />
           </div>
         </div>
+
+        <div v-if="isLoadingMore" class="py-3 text-center text-xs text-secondary-foreground border-t">
+          Loading more…
+        </div>
+        <div
+          v-else-if="notifications.length > 0 && !hasMore"
+          class="py-3 text-center text-xs text-secondary-foreground border-t"
+        >
+          End of notifications
+        </div>
       </div>
-    </div>
+    </ScrollArea>
   </div>
 </template>
