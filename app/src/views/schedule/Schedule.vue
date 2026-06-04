@@ -26,21 +26,25 @@ const {
   weekProps,
   dayProps,
   resizingProps,
+  timedGridProps,
   resize,
+  pan,
   openCreateDialog,
   openEditCalendarDialog,
-  handleTimeSlotClick,
+  handleSlotMouseDown,
   removeCalendarItem,
 } = useSchedulePage();
 
 const weekViewProps = computed(() => ({
   ...weekProps.value,
   ...resizingProps.value,
+  ...timedGridProps.value,
 }));
 
 const dayViewProps = computed(() => ({
   ...dayProps.value,
   ...resizingProps.value,
+  ...timedGridProps.value,
 }));
 
 function goToMeetingLobby(event: ICalendarEvent) {
@@ -76,20 +80,22 @@ function goToMeetingLobby(event: ICalendarEvent) {
       <ScheduleWeekView
         v-else-if="currentView === 'week'"
         v-bind="weekViewProps"
-        @slot-click="(day, hour, e) => handleTimeSlotClick(day, hour, e)"
+        @slot-mouse-down="(day, hour, e) => handleSlotMouseDown(day, hour, e)"
         @edit="openEditCalendarDialog"
         @remove="removeCalendarItem"
         @open-lobby="goToMeetingLobby"
         @resize-start="resize.handleResizeStart"
+        @pan-start="pan.handlePanStart"
       />
       <ScheduleDayView
         v-else
         v-bind="dayViewProps"
-        @slot-click="(day, hour, e) => handleTimeSlotClick(day, hour, e)"
+        @slot-mouse-down="(day, hour, e) => handleSlotMouseDown(day, hour, e)"
         @edit="openEditCalendarDialog"
         @remove="removeCalendarItem"
         @open-lobby="goToMeetingLobby"
         @resize-start="resize.handleResizeStart"
+        @pan-start="pan.handlePanStart"
       />
     </div>
 

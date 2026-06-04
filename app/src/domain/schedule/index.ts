@@ -4,4 +4,5 @@ export * from "./constants";
 export * from "./composables";
 export * from "./schedule-context";
 export * from "./schedule-date";
+export * from "./schedule-slot-time";
 export * from "./schedule-view-query";

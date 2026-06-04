@@ -17,7 +17,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
 </script>
 
 <template>
-  <Dialog v-model:open="form.showEventDialog">
+  <Dialog :open="form.showEventDialog" @update:open="dialog.handleDialogOpenChange">
     <DialogContent class="!p-0 sm:max-w-[560px]">
       <div class="rounded-lg bg-white !p-0">
         <DialogHeader class="px-3 pt-3 pb-1">

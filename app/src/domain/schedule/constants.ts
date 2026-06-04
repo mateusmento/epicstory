@@ -15,3 +15,6 @@ export const SCHEDULE_VIEW_QUERY_KEY = "view";
 export type CalendarItemType = "event" | "meeting";
 
 export const SCHEDULE_HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+/** In-memory draft shown while drag-creating; never sent to the API. */
+export const SCHEDULE_DRAFT_EVENT_ID = "__schedule-draft__";

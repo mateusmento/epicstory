@@ -14,14 +14,19 @@ const props = defineProps<{
   isResizing: boolean;
   resizingEventId: string | null;
   resizeType: "start" | "end" | null;
+  isCreating: boolean;
+  draftEventId: string;
+  isPanning: boolean;
+  panningEventId: string | null;
 }>();
 
 const emit = defineEmits<{
-  slotClick: [date: Date, hour: number, event: MouseEvent];
+  slotMouseDown: [date: Date, hour: number, event: MouseEvent];
   edit: [event: ICalendarEvent];
   remove: [event: ICalendarEvent];
   openLobby: [event: ICalendarEvent];
   resizeStart: [event: ICalendarEvent, type: "start" | "end", mouseEvent: MouseEvent];
+  panStart: [event: ICalendarEvent, mouseEvent: MouseEvent];
 }>();
 </script>
 
@@ -39,35 +44,51 @@ const emit = defineEmits<{
           <Separator />
         </template>
       </div>
-      <div class="flex-1">
+      <div class="flex-1" :data-schedule-day="props.day.toISOString()">
         <template v-for="hour in props.hours" :key="hour">
           <div
             :class="
               cn(
                 SCHEDULE_HOUR_SLOT_HEIGHT_CLASS,
                 'cursor-pointer hover:bg-gray-50 transition-colors relative',
+                props.isCreating && 'select-none',
+                props.isPanning && 'select-none',
               )
             "
-            @click="emit('slotClick', props.day, hour, $event)"
+            @mousedown="emit('slotMouseDown', props.day, hour, $event)"
           >
-            <CalendarEventContextMenu
-              v-for="event in props.getEventsAtHour(props.day, hour)"
-              :key="event.occurrenceId"
-              :event="event"
-              @edit="emit('edit', $event)"
-              @remove="emit('remove', $event)"
-              @open-lobby="emit('openLobby', $event)"
-            >
+            <template v-for="event in props.getEventsAtHour(props.day, hour)" :key="event.occurrenceId">
               <CalendarTimedEventBlock
+                v-if="event.id === props.draftEventId"
                 :event="event"
+                draft
                 :min-height-px="24"
-                :is-resizing="props.isResizing"
-                :resizing-event-id="props.resizingEventId"
-                :resize-type="props.resizeType"
-                @edit="emit('edit', $event)"
-                @resize-start="(ev, type, e) => emit('resizeStart', ev, type, e)"
+                :is-resizing="false"
+                :resizing-event-id="null"
+                :resize-type="null"
+                :is-panning="false"
+                :panning-event-id="null"
               />
-            </CalendarEventContextMenu>
+              <CalendarEventContextMenu
+                v-else
+                :event="event"
+                @edit="emit('edit', $event)"
+                @remove="emit('remove', $event)"
+                @open-lobby="emit('openLobby', $event)"
+              >
+                <CalendarTimedEventBlock
+                  :event="event"
+                  :min-height-px="24"
+                  :is-resizing="props.isResizing"
+                  :resizing-event-id="props.resizingEventId"
+                  :resize-type="props.resizeType"
+                  :is-panning="props.isPanning"
+                  :panning-event-id="props.panningEventId"
+                  @pan-start="(ev, e) => emit('panStart', ev, e)"
+                  @resize-start="(ev, type, e) => emit('resizeStart', ev, type, e)"
+                />
+              </CalendarEventContextMenu>
+            </template>
           </div>
           <Separator />
         </template>
