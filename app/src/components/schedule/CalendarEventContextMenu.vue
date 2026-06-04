@@ -22,7 +22,7 @@ function hasMeetingLobby(event: ICalendarEvent) {
     <MenuTrigger as-child>
       <slot />
     </MenuTrigger>
-    <MenuContent class="w-40" disabled-portal>
+    <MenuContent class="w-40">
       <template v-if="props.event.type === 'meeting'">
         <MenuItem v-if="hasMeetingLobby(props.event)" @click="emit('openLobby', props.event)">
           Open lobby

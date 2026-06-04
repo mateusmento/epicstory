@@ -4,7 +4,7 @@ import { CalendarEventApi } from "@epicstory/api-client";
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { onMounted, onUnmounted, ref, type Ref } from "vue";
 import { getEventEndTime } from "../calendar-event-layout";
-import { SCHEDULE_HOUR_SLOT_PX } from "../constants";
+import { SCHEDULE_DRAFT_EVENT_ID, SCHEDULE_HOUR_SLOT_PX } from "../constants";
 
 export function useCalendarEventResize(options: {
   events: Ref<ICalendarEvent[]>;
@@ -20,6 +20,7 @@ export function useCalendarEventResize(options: {
   const resizeStartTime = ref(0);
 
   function handleResizeStart(event: ICalendarEvent, type: "start" | "end", mouseEvent: MouseEvent) {
+    if (event.id === SCHEDULE_DRAFT_EVENT_ID) return;
     if (event.type === "meeting") return;
     if (event.occurrenceId !== event.id) return;
     mouseEvent.preventDefault();

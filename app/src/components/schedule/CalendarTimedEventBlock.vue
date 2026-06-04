@@ -1,6 +1,12 @@
 <script lang="tsx" setup>
 import { cn } from "@/design-system/utils";
-import { getEventEndTime, getEventHeightPx, getEventLayoutMode, getEventTopOffset } from "@/domain/schedule";
+import {
+  getEventEndTime,
+  getEventHeightPx,
+  getEventLayoutMode,
+  getEventTopOffset,
+  SCHEDULE_HOUR_SLOT_PX,
+} from "@/domain/schedule";
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { format } from "date-fns";
 import { defineComponent, withModifiers, type PropType } from "vue";
@@ -9,15 +15,20 @@ const props = defineProps<{
   event: ICalendarEvent;
   minHeightPx: number;
   compact?: boolean;
+  draft?: boolean;
   isResizing: boolean;
   resizingEventId: string | null;
   resizeType: "start" | "end" | null;
+  isPanning: boolean;
+  panningEventId: string | null;
 }>();
 
 const emit = defineEmits<{
-  edit: [event: ICalendarEvent];
+  panStart: [event: ICalendarEvent, mouseEvent: MouseEvent];
   resizeStart: [event: ICalendarEvent, type: "start" | "end", mouseEvent: MouseEvent];
 }>();
+
+const isActivePan = () => props.isPanning && props.panningEventId === props.event.id;
 
 const layoutMode = () => getEventLayoutMode(props.event);
 
@@ -45,19 +56,33 @@ const ResizeHandle = defineComponent({
     );
   },
 });
+
+function getEventHeightPxPlusSeparators(event: ICalendarEvent, minPx: number): number {
+  const heightPx = getEventHeightPx(event, minPx);
+  const slots = Math.floor(heightPx / SCHEDULE_HOUR_SLOT_PX);
+  const separators = heightPx % SCHEDULE_HOUR_SLOT_PX === 0 ? slots - 1 : slots;
+  return heightPx + separators;
+}
 </script>
 
 <template>
   <div
-    class="absolute left-0 right-0 rounded bg-blue-500 text-white cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
-    :class="compact ? 'p-1 text-xs' : 'p-2'"
+    class="absolute left-0 right-0 rounded z-20 overflow-hidden flex flex-col leading-tight"
+    :class="[
+      draft
+        ? 'border-2 border-dashed border-blue-200 bg-blue-500/70 text-white'
+        : 'bg-blue-500 text-white hover:bg-blue-600',
+      !draft && (isActivePan() ? 'cursor-grabbing z-30' : 'cursor-grab'),
+      compact ? 'p-1 text-xs' : 'p-2',
+    ]"
     :style="{
       top: `${getEventTopOffset(event)}px`,
-      height: `${getEventHeightPx(event, minHeightPx)}px`,
+      height: `${getEventHeightPxPlusSeparators(event, minHeightPx)}px`,
     }"
-    @click.stop="emit('edit', event)"
+    @mousedown.stop="!draft && emit('panStart', event, $event)"
   >
     <ResizeHandle
+      v-if="!draft"
       edge="start"
       :active="isResizing && resizingEventId === event.id && resizeType === 'start'"
       @resize-start="(e) => emit('resizeStart', event, 'start', e)"
@@ -82,6 +107,7 @@ const ResizeHandle = defineComponent({
       </div>
     </div>
     <ResizeHandle
+      v-if="!draft"
       edge="end"
       :active="isResizing && resizingEventId === event.id && resizeType === 'end'"
       @resize-start="(e) => emit('resizeStart', event, 'end', e)"

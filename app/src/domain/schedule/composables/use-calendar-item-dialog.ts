@@ -64,7 +64,10 @@ function createDefaultForm(): CalendarItemForm {
   };
 }
 
-export function useCalendarItemDialog(eventsApi: Pick<ScheduleEvents, "refresh">) {
+export function useCalendarItemDialog(
+  eventsApi: Pick<ScheduleEvents, "refresh">,
+  options?: { clearDraft?: () => void },
+) {
   const { user } = useAuth();
   const { workspace, members, fetchWorkspaceMembers } = useWorkspace();
   const { channels, fetchChannels } = useChannels();
@@ -112,7 +115,15 @@ export function useCalendarItemDialog(eventsApi: Pick<ScheduleEvents, "refresh">
     form.meetingRecurrenceByWeekday = defaults.meetingRecurrenceByWeekday;
   }
 
-  function openCreateDialog(date?: Date, startTime?: string, endTime?: string) {
+  function openCreateDialog(
+    date?: Date,
+    startTime?: string,
+    endTime?: string,
+    dialogOptions?: { keepDraft?: boolean },
+  ) {
+    if (!dialogOptions?.keepDraft) {
+      options?.clearDraft?.();
+    }
     ensureDialogDataLoaded();
     form.editingEvent = null;
     resetFormDefaults();
@@ -139,6 +150,7 @@ export function useCalendarItemDialog(eventsApi: Pick<ScheduleEvents, "refresh">
   }
 
   function openEditCalendarDialog(event: ICalendarEvent) {
+    options?.clearDraft?.();
     ensureDialogDataLoaded();
     if (event.type === "meeting") {
       openEditMeetingFromCalendar(event);
@@ -202,9 +214,23 @@ export function useCalendarItemDialog(eventsApi: Pick<ScheduleEvents, "refresh">
   }
 
   function closeDialog() {
+    if (!form.showEventDialog) {
+      options?.clearDraft?.();
+      return;
+    }
     form.showEventDialog = false;
     form.editingEvent = null;
     resetFormDefaults();
+    options?.clearDraft?.();
+  }
+
+  /** Sync Radix Dialog close (overlay, Escape) with form reset and draft cleanup. */
+  function handleDialogOpenChange(open: boolean) {
+    if (open) {
+      form.showEventDialog = true;
+      return;
+    }
+    closeDialog();
   }
 
   async function saveEvent() {
@@ -298,8 +324,8 @@ export function useCalendarItemDialog(eventsApi: Pick<ScheduleEvents, "refresh">
         }
       }
 
-      closeDialog();
       await eventsApi.refresh();
+      closeDialog();
     } catch (error) {
       console.error("Failed to save event:", error);
     } finally {
@@ -336,6 +362,7 @@ export function useCalendarItemDialog(eventsApi: Pick<ScheduleEvents, "refresh">
     openEditCalendarDialog,
     handleTimeSlotClick,
     closeDialog,
+    handleDialogOpenChange,
     saveEvent,
     removeEvent,
     removeCalendarItem,
