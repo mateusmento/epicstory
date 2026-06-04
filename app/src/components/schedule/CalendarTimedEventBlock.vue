@@ -1,7 +1,9 @@
-<script lang="ts" setup>
+<script lang="tsx" setup>
+import { cn } from "@/design-system/utils";
 import { getEventEndTime, getEventHeightPx, getEventLayoutMode, getEventTopOffset } from "@/domain/schedule";
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { format } from "date-fns";
+import { defineComponent, withModifiers, type PropType } from "vue";
 
 const props = defineProps<{
   event: ICalendarEvent;
@@ -18,22 +20,47 @@ const emit = defineEmits<{
 }>();
 
 const layoutMode = () => getEventLayoutMode(props.event);
+
+type ResizeEdge = "start" | "end";
+
+const ResizeHandle = defineComponent({
+  props: {
+    edge: { type: String as PropType<ResizeEdge>, required: true },
+    active: { type: Boolean, default: false },
+  },
+  emits: {
+    resizeStart: (mouseEvent: MouseEvent) => mouseEvent instanceof MouseEvent,
+  },
+  setup(handleProps, { emit }) {
+    return () => (
+      <div
+        class={cn(
+          "absolute left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400",
+          handleProps.edge === "start" ? "top-0 rounded-t" : "bottom-0 rounded-b",
+          handleProps.active && "bg-blue-400",
+        )}
+        onMousedown={withModifiers((e) => emit("resizeStart", e as MouseEvent), ["stop", "prevent"])}
+        onClick={withModifiers(() => {}, ["stop"])}
+      />
+    );
+  },
+});
 </script>
 
 <template>
   <div
     class="absolute left-0 right-0 rounded bg-blue-500 text-white cursor-pointer hover:bg-blue-600 z-20 overflow-hidden flex flex-col leading-tight"
-    :class="compact ? 'p-1 m-1 text-xs' : 'p-2 m-1'"
+    :class="compact ? 'p-1 text-xs' : 'p-2'"
     :style="{
       top: `${getEventTopOffset(event)}px`,
       height: `${getEventHeightPx(event, minHeightPx)}px`,
     }"
     @click.stop="emit('edit', event)"
   >
-    <div
-      class="absolute top-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-t"
-      :class="{ 'bg-blue-400': isResizing && resizingEventId === event.id && resizeType === 'start' }"
-      @mousedown.stop="emit('resizeStart', event, 'start', $event)"
+    <ResizeHandle
+      edge="start"
+      :active="isResizing && resizingEventId === event.id && resizeType === 'start'"
+      @resize-start="(e) => emit('resizeStart', event, 'start', e)"
     />
     <div class="min-h-0 flex flex-col" :class="compact ? 'gap-0.5' : 'gap-1'">
       <div class="flex items-center gap-1 min-w-0">
@@ -50,13 +77,14 @@ const layoutMode = () => getEventLayoutMode(props.event);
         {{ event.description }}
       </div>
       <div v-if="layoutMode() === 'normal'" class="text-[10px] opacity-75">
-        {{ format(new Date(event.startsAt), "HH:mm") }} - {{ format(getEventEndTime(event), "HH:mm") }}
+        {{ format(new Date(event.startsAt), "HH:mm") }} -
+        {{ format(getEventEndTime(event), "HH:mm") }}
       </div>
     </div>
-    <div
-      class="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-400 rounded-b"
-      :class="{ 'bg-blue-400': isResizing && resizingEventId === event.id && resizeType === 'end' }"
-      @mousedown.stop="emit('resizeStart', event, 'end', $event)"
+    <ResizeHandle
+      edge="end"
+      :active="isResizing && resizingEventId === event.id && resizeType === 'end'"
+      @resize-start="(e) => emit('resizeStart', event, 'end', e)"
     />
   </div>
 </template>

@@ -53,38 +53,38 @@ export function useCalendarEventResize(options: {
   }
 
   async function handleResizeEnd() {
-    if (!isResizing.value || !resizingEvent.value || !resizeType.value || !user.value) {
+    if (!isResizing.value || !resizingEvent.value || !resizeType.value) {
       return;
     }
 
-    const event = resizingEvent.value;
-    if (event.type === "meeting") {
-      isResizing.value = false;
-      resizingEvent.value = null;
-      resizeType.value = null;
+    const eventId = resizingEvent.value.id;
+    const kind = resizeType.value;
+
+    isResizing.value = false;
+    resizingEvent.value = null;
+    resizeType.value = null;
+
+    const latest = options.events.value.find((e) => e.id === eventId);
+    if (!latest || latest.type === "meeting" || !user.value) {
       return;
     }
 
     try {
-      if (resizeType.value === "start") {
+      if (kind === "start") {
         await calendarEventApi.updateCalendarEvent({
-          id: event.id,
-          startsAt: new Date(event.startsAt),
+          id: latest.id,
+          startsAt: new Date(latest.startsAt),
         });
       } else {
         await calendarEventApi.updateCalendarEvent({
-          id: event.id,
-          endsAt: new Date(event.endsAt),
+          id: latest.id,
+          endsAt: new Date(latest.endsAt),
         });
       }
       await options.refresh();
     } catch (error) {
       console.error("Failed to update event:", error);
       await options.refresh();
-    } finally {
-      isResizing.value = false;
-      resizingEvent.value = null;
-      resizeType.value = null;
     }
   }
 
