@@ -3,6 +3,9 @@ import type { ICalendarEvent } from "@epicstory/contracts";
 import { format } from "date-fns";
 import CalendarEventContextMenu from "./CalendarEventContextMenu.vue";
 import CalendarTimedEventBlock from "./CalendarTimedEventBlock.vue";
+import Separator from "@/design-system/ui/separator/Separator.vue";
+import { cn } from "@/design-system/utils.js";
+import { SCHEDULE_HOUR_SLOT_HEIGHT_CLASS } from "@/domain/schedule/constants.js";
 
 const props = defineProps<{
   day: Date;
@@ -28,41 +31,46 @@ const emit = defineEmits<{
       <div class="ml-16 text-2xl font-semibold">{{ format(props.day, "EEEE, MMMM d, yyyy") }}</div>
     </div>
     <div class="flex">
-      <div class="w-16 border-r bg-white">
-        <div
-          v-for="hour in props.hours"
-          :key="hour"
-          class="h-16 border-b p-1 text-xs text-secondary-foreground"
-        >
-          {{ hour.toString().padStart(2, "0") }}:00
-        </div>
+      <div class="w-16 border-r bg-white flex flex-col">
+        <template v-for="hour in props.hours" :key="hour">
+          <div :class="cn(SCHEDULE_HOUR_SLOT_HEIGHT_CLASS, 'p-1 text-xs text-secondary-foreground')">
+            {{ hour.toString().padStart(2, "0") }}:00
+          </div>
+          <Separator />
+        </template>
       </div>
       <div class="flex-1">
-        <div
-          v-for="hour in props.hours"
-          :key="hour"
-          class="h-16 border-b cursor-pointer hover:bg-gray-50 transition-colors relative"
-          @click="emit('slotClick', props.day, hour, $event)"
-        >
-          <CalendarEventContextMenu
-            v-for="event in props.getEventsAtHour(props.day, hour)"
-            :key="event.occurrenceId"
-            :event="event"
-            @edit="emit('edit', $event)"
-            @remove="emit('remove', $event)"
-            @open-lobby="emit('openLobby', $event)"
+        <template v-for="hour in props.hours" :key="hour">
+          <div
+            :class="
+              cn(
+                SCHEDULE_HOUR_SLOT_HEIGHT_CLASS,
+                'cursor-pointer hover:bg-gray-50 transition-colors relative',
+              )
+            "
+            @click="emit('slotClick', props.day, hour, $event)"
           >
-            <CalendarTimedEventBlock
+            <CalendarEventContextMenu
+              v-for="event in props.getEventsAtHour(props.day, hour)"
+              :key="event.occurrenceId"
               :event="event"
-              :min-height-px="24"
-              :is-resizing="props.isResizing"
-              :resizing-event-id="props.resizingEventId"
-              :resize-type="props.resizeType"
               @edit="emit('edit', $event)"
-              @resize-start="(ev, type, e) => emit('resizeStart', ev, type, e)"
-            />
-          </CalendarEventContextMenu>
-        </div>
+              @remove="emit('remove', $event)"
+              @open-lobby="emit('openLobby', $event)"
+            >
+              <CalendarTimedEventBlock
+                :event="event"
+                :min-height-px="24"
+                :is-resizing="props.isResizing"
+                :resizing-event-id="props.resizingEventId"
+                :resize-type="props.resizeType"
+                @edit="emit('edit', $event)"
+                @resize-start="(ev, type, e) => emit('resizeStart', ev, type, e)"
+              />
+            </CalendarEventContextMenu>
+          </div>
+          <Separator />
+        </template>
       </div>
     </div>
   </div>
