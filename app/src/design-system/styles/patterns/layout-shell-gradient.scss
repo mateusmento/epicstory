@@ -1,0 +1,95 @@
+/**
+ * Blur-mesh accents (blue + cyan) on light or dark surfaces.
+ * Regenerate from Figma: `pnpm figma:layout-gradient`
+ */
+@mixin epicstory-blur-gradient-base(
+  $blur: 48px,
+  $base: #f8f8f9,
+  $blue-mid: rgb(59 87 255 / 0.4),
+  $blue-fade: rgb(59 87 255 / 0.16),
+  $cyan-mid: rgb(110 210 255 / 0.36),
+  $cyan-fade: rgb(110 210 255 / 0.14)
+) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: $base;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Brand indigo-blue — bottom-left */
+  &::before {
+    background: radial-gradient(
+      ellipse 90% 75% at 0% 100%,
+      $blue-mid 0%,
+      $blue-fade 38%,
+      transparent 72%
+    );
+    filter: blur($blur);
+  }
+
+  /* Cyan / sky — top-right */
+  &::after {
+    background: radial-gradient(
+      ellipse 85% 70% at 100% 0%,
+      $cyan-mid 0%,
+      $cyan-fade 36%,
+      transparent 70%
+    );
+    filter: blur($blur);
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+/** Light surface (compact cards). */
+.epicstory-blur-gradient {
+  @include epicstory-blur-gradient-base(
+    44px,
+    #f8f8f9,
+    rgb(59 87 255 / 0.38),
+    rgb(59 87 255 / 0.14),
+    rgb(110 210 255 / 0.34),
+    rgb(110 210 255 / 0.12)
+  );
+}
+
+/** Dark meeting surfaces — visible blue/cyan that still melts into gray-800. */
+$meeting-surface-dark: #1f2937;
+
+.epicstory-blur-gradient--dark {
+  @include epicstory-blur-gradient-base(
+    44px,
+    $meeting-surface-dark,
+    rgb(70 100 210 / 0.44),
+    rgb(45 62 105 / 0.2),
+    rgb(75 175 225 / 0.38),
+    rgb(42 78 105 / 0.18)
+  );
+}
+
+.epicstory-blur-gradient--dark-tile {
+  @include epicstory-blur-gradient-base(
+    52px,
+    $meeting-surface-dark,
+    rgb(70 100 210 / 0.48),
+    rgb(45 62 105 / 0.22),
+    rgb(75 175 225 / 0.42),
+    rgb(42 78 105 / 0.2)
+  );
+}
+
+/** Neutral dashboard shell — no full-viewport gradient wash. */
+.epicstory-layout-shell {
+  background-color: #f8f8f9;
+}
