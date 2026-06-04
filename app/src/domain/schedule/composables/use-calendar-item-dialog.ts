@@ -135,9 +135,12 @@ export function useCalendarItemDialog(
 
   function openCreateMeetingWithChannel(channelId: number) {
     ensureDialogDataLoaded();
+    options?.clearDraft?.();
+    form.editingEvent = null;
+    resetFormDefaults();
     form.itemType = "meeting";
-    openCreateDialog();
     form.meetingChannelId = channelId;
+    form.showEventDialog = true;
   }
 
   function populateCommonFields(event: ICalendarEvent) {

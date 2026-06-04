@@ -1,6 +1,8 @@
-import { onMounted } from "vue";
+import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { SCHEDULE_CHANNEL_ID_QUERY_KEY } from "../constants";
 import type { CalendarItemDialogController } from "./use-calendar-item-dialog";
+import { omit } from "lodash";
 
 export function useScheduleDeepLink(
   dialog: Pick<CalendarItemDialogController, "openCreateMeetingWithChannel">,
@@ -8,8 +10,8 @@ export function useScheduleDeepLink(
   const route = useRoute();
   const router = useRouter();
 
-  onMounted(() => {
-    const scheduleCid = route.query.scheduleChannelId;
+  function consumeScheduleChannelIdQuery() {
+    const scheduleCid = route.query[SCHEDULE_CHANNEL_ID_QUERY_KEY];
     if (scheduleCid == null || scheduleCid === "") return;
 
     const raw = Array.isArray(scheduleCid) ? scheduleCid[0] : scheduleCid;
@@ -17,7 +19,17 @@ export function useScheduleDeepLink(
     if (!Number.isNaN(id)) {
       dialog.openCreateMeetingWithChannel(id);
     }
-    const { scheduleChannelId: _sc, ...restQuery } = route.query;
-    router.replace({ path: route.path, query: restQuery });
-  });
+
+    const query = omit(route.query, SCHEDULE_CHANNEL_ID_QUERY_KEY);
+    router.replace({ path: route.path, query });
+  }
+
+  watch(
+    () => route.query[SCHEDULE_CHANNEL_ID_QUERY_KEY],
+    (scheduleChannelId) => {
+      if (scheduleChannelId == null || scheduleChannelId === "") return;
+      consumeScheduleChannelIdQuery();
+    },
+    { immediate: true },
+  );
 }

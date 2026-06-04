@@ -6,6 +6,7 @@ import { useAuth } from "@/domain/auth";
 import { useSyncedChannel } from "@/domain/channels";
 import { useMeeting } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
+import { SCHEDULE_CHANNEL_ID_QUERY_KEY } from "@/domain/schedule";
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
@@ -21,7 +22,7 @@ function onScheduleMeetingForChannel() {
   router.push({
     name: "schedule",
     params: { workspaceId: String(workspace.value.id) },
-    query: { scheduleChannelId: String(channel.value.id) },
+    query: { [SCHEDULE_CHANNEL_ID_QUERY_KEY]: String(channel.value.id) },
   });
 }
 

@@ -5,6 +5,7 @@ import { useChannelActions } from "@/domain/channels";
 import { useMeeting } from "@/domain/meetings";
 import type { IChannel } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
+import { SCHEDULE_CHANNEL_ID_QUERY_KEY } from "@/domain/schedule";
 import { provide, ref } from "vue";
 import { useRouter } from "vue-router";
 import { CHANNEL_CONTEXT_MENU_KEY, type ChannelContextMenuApi } from "./channel-context-menu.context";
@@ -71,7 +72,7 @@ function scheduleMeeting(channel: IChannel) {
   router.push({
     name: "schedule",
     params: { workspaceId: String(workspace.value.id) },
-    query: { scheduleChannelId: String(channel.id) },
+    query: { [SCHEDULE_CHANNEL_ID_QUERY_KEY]: String(channel.id) },
   });
 }
 
