@@ -1,0 +1,69 @@
+<script lang="ts" setup>
+import type { ICalendarEvent } from "@epicstory/contracts";
+import { format } from "date-fns";
+import CalendarEventContextMenu from "./CalendarEventContextMenu.vue";
+import CalendarTimedEventBlock from "./CalendarTimedEventBlock.vue";
+
+const props = defineProps<{
+  day: Date;
+  hours: number[];
+  getEventsAtHour: (date: Date, hour: number) => ICalendarEvent[];
+  isResizing: boolean;
+  resizingEventId: string | null;
+  resizeType: "start" | "end" | null;
+}>();
+
+const emit = defineEmits<{
+  slotClick: [date: Date, hour: number, event: MouseEvent];
+  edit: [event: ICalendarEvent];
+  remove: [event: ICalendarEvent];
+  openLobby: [event: ICalendarEvent];
+  resizeStart: [event: ICalendarEvent, type: "start" | "end", mouseEvent: MouseEvent];
+}>();
+</script>
+
+<template>
+  <div class="h-full overflow-auto">
+    <div class="flex border-b bg-white sticky top-0 z-10 p-4">
+      <div class="ml-16 text-2xl font-semibold">{{ format(props.day, "EEEE, MMMM d, yyyy") }}</div>
+    </div>
+    <div class="flex">
+      <div class="w-16 border-r bg-white">
+        <div
+          v-for="hour in props.hours"
+          :key="hour"
+          class="h-16 border-b p-1 text-xs text-secondary-foreground"
+        >
+          {{ hour.toString().padStart(2, "0") }}:00
+        </div>
+      </div>
+      <div class="flex-1">
+        <div
+          v-for="hour in props.hours"
+          :key="hour"
+          class="h-16 border-b cursor-pointer hover:bg-gray-50 transition-colors relative"
+          @click="emit('slotClick', props.day, hour, $event)"
+        >
+          <CalendarEventContextMenu
+            v-for="event in props.getEventsAtHour(props.day, hour)"
+            :key="event.occurrenceId"
+            :event="event"
+            @edit="emit('edit', $event)"
+            @remove="emit('remove', $event)"
+            @open-lobby="emit('openLobby', $event)"
+          >
+            <CalendarTimedEventBlock
+              :event="event"
+              :min-height-px="24"
+              :is-resizing="props.isResizing"
+              :resizing-event-id="props.resizingEventId"
+              :resize-type="props.resizeType"
+              @edit="emit('edit', $event)"
+              @resize-start="(ev, type, e) => emit('resizeStart', ev, type, e)"
+            />
+          </CalendarEventContextMenu>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
