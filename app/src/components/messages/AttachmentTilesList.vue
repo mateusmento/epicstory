@@ -32,8 +32,8 @@ const emit = defineEmits<{
 
 const removeHoverCardContentClass = cn(
   "flex flex:center z-50 size-5 rounded-full border-0 p-0 max-w-none bg-transparent outline-none",
-  "bg-zinc-800 leading-none shadow-md ring-1 ring-black/25 hover:bg-zinc-950 ",
-  "disabled:pointer-events-none disabled:opacity-50 dark:bg-zinc-950 dark:ring-white/15 dark:hover:bg-black",
+  "bg-black/75 leading-none shadow-md ring-1 ring-black/25 hover:bg-black/90",
+  "disabled:pointer-events-none disabled:opacity-50",
 );
 
 const rootClass = computed(() =>
@@ -111,7 +111,7 @@ async function onOpenPreview(row: AttachmentTileRow & { kind: "uploaded" }, thum
             title="Remove attachment"
             @click.stop="emit('remove', row.attachment.id)"
           >
-            <Icon name="io-close" class="size-3 text-zinc-100" aria-hidden="true" />
+            <Icon name="io-close" class="size-3 text-white" aria-hidden="true" />
           </button>
         </HoverCardContent>
       </HoverCard>

@@ -28,7 +28,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="h-full overflow-auto">
-    <div class="flex border-b bg-white sticky top-0 z-10">
+    <div class="flex border-b bg-card sticky top-0 z-10">
       <div class="w-16 border-r" />
       <div
         v-for="day in props.weekDays"
@@ -41,7 +41,7 @@ const emit = defineEmits<{
       </div>
     </div>
     <div class="flex">
-      <div class="w-16 border-r bg-white">
+      <div class="w-16 border-r bg-card">
         <div
           v-for="hour in props.hours"
           :key="hour"
@@ -59,7 +59,7 @@ const emit = defineEmits<{
         <div
           v-for="hour in props.hours"
           :key="hour"
-          class="h-16 border-b cursor-pointer hover:bg-gray-50 transition-colors relative"
+          class="h-16 border-b cursor-pointer hover:bg-muted/50 transition-colors relative"
           :class="(props.isCreating || props.isPanning) && 'select-none'"
           @mousedown="emit('slotMouseDown', day, hour, $event)"
         >

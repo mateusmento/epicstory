@@ -122,7 +122,7 @@ watch(
   { immediate: true },
 );
 
-const BOARD_COLUMN_CLASSES = "flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl bg-background/60";
+const BOARD_COLUMN_CLASSES = "flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl bg-muted/40";
 
 const BOARD_COLUMN_INNER = "!flex flex:col-md flex-1 min-h-0 m-2 rounded-lg";
 </script>

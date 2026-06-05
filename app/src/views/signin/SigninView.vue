@@ -139,12 +139,12 @@ async function signin(data: SigninRequest) {
 
 <style lang="scss" scoped>
 main {
-  background-color: #e3e8f8;
+  background-color: hsl(var(--background));
   font-family: "Plus Jakarta Sans";
 }
 
 .signup {
-  background-color: #fff;
+  background-color: hsl(var(--card));
 }
 
 .signup-form {

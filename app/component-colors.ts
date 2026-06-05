@@ -17,13 +17,12 @@ export const componentColors = {
   },
   /** @user mentions: chip background + link-colored text (non-self uses `chip`; self uses `mentionHighlight`) */
   mention: {
-    DEFAULT: "#1264a3",
-    chip: "#e3f0ff",
+    DEFAULT: "hsl(var(--mention))",
+    chip: "hsl(var(--mention-chip))",
   },
   /** @current-user highlight chip */
   mentionHighlight: {
-    DEFAULT: "#fff8e1",
-    /** Warm brown — reads on cream without harsh black */
-    foreground: "#6b5220",
+    DEFAULT: "hsl(var(--mention-highlight))",
+    foreground: "hsl(var(--mention-highlight-foreground))",
   },
 };

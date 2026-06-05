@@ -41,7 +41,7 @@ const forwardedProps = useForwardProps(delegatedProps);
           border
           border-transparent
           data-[state=active]:border-input
-          data-[state=active]:bg-white
+          data-[state=active]:bg-card
           data-[state=active]:text-foreground
           data-[state=active]:shadow
         `,

@@ -16,7 +16,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="rounded-xl border bg-white p-2 flex:row-md flex:center-y gap-2">
+  <div class="rounded-xl border bg-card p-2 flex:row-md flex:center-y gap-2">
     <div class="flex -space-x-2">
       <UserAvatar
         v-for="p in people.slice(0, 4)"

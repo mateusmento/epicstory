@@ -25,11 +25,11 @@ const labelsOverflow = computed(() =>
 
 <template>
   <IssueContextMenu :issue="sub">
-    <div class="group flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-zinc-200">
+    <div class="group flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-muted">
       <button
         type="button"
         class="flex flex:center-y size-3 rounded-full ring-1 ring-border shrink-0"
-        :class="sub.status === 'done' ? 'bg-indigo-600 ring-indigo-600' : 'bg-white'"
+        :class="sub.status === 'done' ? 'bg-indigo-600 ring-indigo-600' : 'bg-card'"
         title="Toggle done"
         :disabled="disabled"
         @click.stop="emit('toggle-done', sub)"
@@ -55,7 +55,7 @@ const labelsOverflow = computed(() =>
           <span
             v-for="l in labelsPreview"
             :key="l.id"
-            class="inline-flex items-center gap-1 rounded-full border bg-white px-2 py-0.5 text-[11px] text-muted-foreground"
+            class="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[11px] text-muted-foreground"
             :title="l.name"
           >
             <span class="h-2 w-2 rounded-full ring-1 ring-border" :style="{ backgroundColor: l.color }" />

@@ -26,7 +26,7 @@ const startsIn = computed(() =>
     <div class="flex:row-md flex:center-y items-baseline text-secondary-foreground">
       <Video class="size-4" />
       <div class="text-sm">
-        Meeting starts in <span class="text-zinc-700 font-medium">{{ startsIn }}</span>
+        Meeting starts in <span class="text-foreground font-medium">{{ startsIn }}</span>
       </div>
       <div class="ml-auto text-xs">{{ formatTime(createdAt) }}</div>
     </div>

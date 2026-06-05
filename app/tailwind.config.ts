@@ -87,6 +87,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        codeBlock: {
+          DEFAULT: "hsl(var(--code-block))",
+          header: "hsl(var(--code-block-header))",
+          shell: "hsl(var(--code-block-shell))",
+          gutter: "hsl(var(--code-block-gutter))",
+        },
         ...componentColors,
         chart: {
           "1": "hsl(var(--chart-1))",

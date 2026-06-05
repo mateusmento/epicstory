@@ -26,7 +26,7 @@ const startsIn = computed(() =>
     <div class="flex:row-md flex:center-y items-baseline text-secondary-foreground font-dmSans">
       <Calendar class="size-4" />
       <div class="text-sm">
-        Event starts in <span class="text-zinc-700 font-medium">{{ startsIn }}</span>
+        Event starts in <span class="text-foreground font-medium">{{ startsIn }}</span>
       </div>
       <div class="ml-auto text-xs">{{ formatTime(createdAt) }}</div>
     </div>

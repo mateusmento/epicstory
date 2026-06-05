@@ -60,7 +60,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
 
 <template>
   <div
-    class="group grid gap-x-4 items-center px-3 py-2 hover:bg-zinc-50"
+    class="group grid gap-x-4 items-center px-3 py-2 hover:bg-muted/50"
     :class="cn(gridColsClass, { 'opacity-70': dragging })"
   >
     <!-- Drag handle -->

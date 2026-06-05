@@ -16,7 +16,7 @@ const weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"];
   <div class="mt-0.5 grid grid-cols-2 gap-2">
     <label class="text-xs text-muted-foreground">
       Recurrence
-      <select v-model="frequency" class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm">
+      <select v-model="frequency" class="mt-1 w-full h-8 rounded-md border bg-background px-2 text-sm">
         <option value="once">Once</option>
         <option value="daily">Daily</option>
         <option value="weekly">Weekly</option>
@@ -28,7 +28,7 @@ const weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"];
         v-model.number="interval"
         type="number"
         min="1"
-        class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm outline-none"
+        class="mt-1 w-full h-8 rounded-md border bg-background px-2 text-sm outline-none"
         :disabled="frequency === 'once'"
       />
     </label>

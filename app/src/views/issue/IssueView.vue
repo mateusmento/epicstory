@@ -268,7 +268,7 @@ watch(
         <div class="flex:col-sm">
           <div v-if="!isEditingTitle" class="select-none">
             <div
-              class="text-2xl font-semibold text-foreground leading-tight cursor-text rounded-md px-2 -mx-2 hover:bg-zinc-50"
+              class="text-2xl font-semibold text-foreground leading-tight cursor-text rounded-md px-2 -mx-2 hover:bg-muted/50"
               @dblclick="startEditTitle"
               title="Double-click to edit"
             >
@@ -346,7 +346,7 @@ watch(
 
       <!-- Sidebar -->
       <div class="flex:col-xl">
-        <div class="flex:col-xl p-4 border rounded-xl bg-white shadow-sm">
+        <div class="flex:col-xl p-4 border rounded-xl bg-card shadow-sm">
           <div class="text-sm font-medium text-foreground">Details</div>
 
           <div class="flex:col-sm">

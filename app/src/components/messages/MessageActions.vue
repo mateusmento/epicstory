@@ -112,7 +112,7 @@ defineExpose({
 const styles = {
   messageActions: cn(
     [
-      "flex:row-md flex:center-y w-fit bg-white z-10",
+      "flex:row-md flex:center-y w-fit bg-popover z-10",
       // "opacity-0 group-hover/message:opacity-100 transition-opacity",
       // "absolute top-0 right-0 translate-y-[-75%] mr-3",
       "border border-secondary rounded-xl shadow-sm p-md",

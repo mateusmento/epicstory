@@ -54,7 +54,7 @@ async function joinIncomingMeeting() {
 </script>
 
 <template>
-  <div v-if="currentMeeting || incomingMeeting" class="flex:col-xl mx-auto p-2 rounded-xl border bg-white">
+  <div v-if="currentMeeting || incomingMeeting" class="flex:col-xl mx-auto p-2 rounded-xl border bg-card">
     <div class="self-stretch bg-secondary p-2 py-4 rounded-lg">
       <div class="flow-root">
         <div class="flex flex:center flex-wrap gap-2 place-content-center content-center">
@@ -69,7 +69,7 @@ async function joinIncomingMeeting() {
           </template>
           <div
             v-if="candidates.length > 4"
-            class="flex flex:center w-14 h-14 rounded-full text-lg font-semibold font-dmSans text-gray-700 bg-gray-300"
+            class="flex flex:center w-14 h-14 rounded-full text-lg font-semibold font-dmSans text-muted-foreground bg-muted"
             :title="`${candidates.length} participants`"
           >
             +{{ candidates.length - 4 }}

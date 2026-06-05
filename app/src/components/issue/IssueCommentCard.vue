@@ -90,8 +90,8 @@ function reactedByMe(reaction: IAggregatedReaction) {
 function pillClass(reaction: IAggregatedReaction) {
   return cn(
     "h-8 min-h-8 gap-1 rounded-full border px-2.5 text-[13px] font-medium",
-    "text-zinc-600 border-zinc-300 hover:bg-zinc-100 transition-colors",
-    reactedByMe(reaction) ? "bg-muted" : "bg-white",
+    "text-muted-foreground border-border hover:bg-muted transition-colors",
+    reactedByMe(reaction) ? "bg-muted" : "bg-card",
   );
 }
 
@@ -114,10 +114,10 @@ const avatarSize = computed(() => (props.variant === "threadSegment" ? "md" : "b
 
 const rootClass = computed(() =>
   props.variant === "threadSegment"
-    ? cn("flex gap-3", "px-4 py-3.5", props.segmentDivider ? "border-t border-zinc-200/75" : "")
+    ? cn("flex gap-3", "px-4 py-3.5", props.segmentDivider ? "border-t border-border/75" : "")
     : cn(
         "flex gap-3",
-        "rounded-lg border border-zinc-200/90 bg-white px-4 py-3.5",
+        "rounded-lg border border-border bg-card px-4 py-3.5",
         "shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
       ),
 );
@@ -144,17 +144,17 @@ const rootClass = computed(() =>
       />
       <div class="min-w-0 flex-1 flex flex-col gap-1.5">
         <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0">
-          <span class="text-[13px] font-semibold leading-tight text-zinc-900">{{ message.sender.name }}</span>
+          <span class="text-[13px] font-semibold leading-tight text-foreground">{{
+            message.sender.name
+          }}</span>
           <time
-            class="text-[12px] tabular-nums font-normal text-zinc-500"
+            class="text-[12px] tabular-nums font-normal text-muted-foreground"
             :datetime="typeof message.sentAt === 'string' ? message.sentAt : message.sentAt.toISOString()"
           >
             {{ timeLabel(message.sentAt) }}
           </time>
         </div>
-        <div
-          class="prose prose-sm max-w-none leading-relaxed text-zinc-800 [&_a]:text-[#4F46E5] [&_a]:no-underline hover:[&_a]:underline [&_.ProseMirror]:outline-none"
-        >
+        <div class="prose prose-sm max-w-none leading-relaxed text-foreground">
           <RichTextPreview
             :content="message.content"
             :mentioned-users="message.mentionedUsers"
@@ -201,7 +201,7 @@ const rootClass = computed(() =>
                 size="icon"
                 title="Add reaction"
                 aria-label="Add reaction"
-                class="h-8 w-8 shrink-0 rounded-full border-dashed border-zinc-300/90 bg-white text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+                class="h-8 w-8 shrink-0 rounded-full border-dashed border-border bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 :disabled="reacting"
               >
                 <SmilePlusIcon class="size-4" />

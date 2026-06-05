@@ -46,15 +46,15 @@ function onReachedBottom() {
 type StatusOption = { label: string; dotClass: string };
 
 const statuses = computed<Record<string, StatusOption>>(() => ({
-  backlog: { label: "Backlog", dotClass: "bg-zinc-300" },
-  todo: { label: "Todo", dotClass: "bg-zinc-300" },
+  backlog: { label: "Backlog", dotClass: "bg-muted-foreground/40" },
+  todo: { label: "Todo", dotClass: "bg-muted-foreground/40" },
   doing: { label: "In progress", dotClass: "bg-blue-500" },
   done: { label: "Done", dotClass: "bg-emerald-500" },
 }));
 
 function dotClass(status: string | null | undefined) {
-  if (!status) return "bg-zinc-300";
-  return statuses.value[status]?.dotClass ?? "bg-zinc-300";
+  if (!status) return "bg-muted-foreground/40";
+  return statuses.value[status]?.dotClass ?? "bg-muted-foreground/40";
 }
 
 function onSelect(issue: any) {

@@ -94,7 +94,7 @@ function previewText(m: IScheduledMessage) {
         <li
           v-for="m in list"
           :key="m.id"
-          class="flex:row items-start gap-2 rounded-md border border-zinc-200/80 p-2 text-left text-sm"
+          class="flex:row items-start gap-2 rounded-md border border-border/80 p-2 text-left text-sm"
         >
           <div class="min-w-0 flex-1">
             <p class="line-clamp-2 whitespace-pre-wrap text-foreground/90">{{ previewText(m) }}</p>

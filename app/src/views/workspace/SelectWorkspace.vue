@@ -100,9 +100,9 @@ function handleSelectWorkspace() {
 
           <!-- Divider -->
           <div class="flex items-center my-4">
-            <div class="flex-1 border-t border-gray-300"></div>
+            <div class="flex-1 border-t border-border"></div>
             <span class="px-4 text-sm text-secondary-foreground">or</span>
-            <div class="flex-1 border-t border-gray-300"></div>
+            <div class="flex-1 border-t border-border"></div>
           </div>
 
           <!-- Create New Workspace -->
@@ -140,12 +140,12 @@ function handleSelectWorkspace() {
 
 <style lang="scss" scoped>
 main {
-  background-color: #e3e8f8;
+  background-color: hsl(var(--background));
   font-family: "Plus Jakarta Sans";
 }
 
 .signup {
-  background-color: #fff;
+  background-color: hsl(var(--card));
 }
 
 .signup-form {

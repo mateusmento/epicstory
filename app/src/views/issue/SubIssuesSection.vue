@@ -89,7 +89,7 @@ function focusNewInput() {
       "
     />
 
-    <div v-show="!isCollapsed" class="flex:col-md mt-2 rounded-xl bg-white">
+    <div v-show="!isCollapsed" class="flex:col-md mt-2 rounded-xl bg-card">
       <SubIssuesCreateRow
         v-model="newTitle"
         input-id="new-sub-issue"

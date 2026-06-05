@@ -269,7 +269,7 @@ function onEditTarget(m: IMessage | IReply) {
     <Separator />
 
     <ScrollArea class="flex-1 min-h-0" ref="scrollAreaRef">
-      <div class="flex:col-2xl !flex p-4 min-w-96 min-h-full bg-white">
+      <div class="flex:col-2xl !flex p-4 min-w-96 min-h-full bg-card">
         <div
           class="w-full"
           :style="{
@@ -277,7 +277,7 @@ function onEditTarget(m: IMessage | IReply) {
             position: 'relative',
           }"
         >
-          <div ref="threadHeaderEl" class="flex:col-2xl absolute left-0 right-0 top-0 z-[1] bg-white">
+          <div ref="threadHeaderEl" class="flex:col-2xl absolute left-0 right-0 top-0 z-[1] bg-card">
             <MessageGroup :sender="message.sender" :meId="meId" :sentAt="message.sentAt">
               <MessageBox
                 :message="message"

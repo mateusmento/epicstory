@@ -128,7 +128,7 @@ async function onInlineImageFilesSelected(e: Event) {
 
     <div v-if="!isEditingDescription" class="min-h-0">
       <div
-        class="cursor-text rounded-xl p-3 -mx-3 hover:bg-zinc-50"
+        class="cursor-text rounded-xl p-3 -mx-3 hover:bg-muted/50"
         @dblclick="startEditDescription"
         title="Double-click to edit"
       >
@@ -141,7 +141,7 @@ async function onInlineImageFilesSelected(e: Event) {
 
     <div
       v-else
-      class="p-3 border border-zinc-200 rounded-xl bg-white"
+      class="p-3 border border-border rounded-xl bg-card"
       @keydown.capture="onDescriptionEditKeydown"
     >
       <div class="min-h-[12rem] min-w-0 mb-2">
@@ -158,7 +158,7 @@ async function onInlineImageFilesSelected(e: Event) {
         >
           <template #bubbleMenu="{ editor: bubbleEditor }">
             <div
-              class="flex:row-md z-[90] flex max-w-[min(100vw-1rem,42rem)] flex-wrap items-center gap-0.5 overflow-x-auto rounded-lg border border-zinc-200/90 bg-white p-1 shadow-lg"
+              class="flex:row-md z-[90] flex max-w-[min(100vw-1rem,42rem)] flex-wrap items-center gap-0.5 overflow-x-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
               @mousedown.prevent
             >
               <MessageComposerActions

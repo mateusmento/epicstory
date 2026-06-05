@@ -24,17 +24,13 @@ function bindWrapperRef(el: Element | ComponentPublicInstance | null) {
     as="div"
     :class="[
       'epic-code-card',
+      'epic-code-card-shell',
       'my-2',
       'w-full',
       'max-w-full',
       'self-start',
       'min-h-0',
       'overflow-visible',
-      'rounded-lg',
-      'border',
-      'border-zinc-200/90',
-      'bg-zinc-100',
-      'shadow-sm',
     ]"
   >
     <CodeBlockCard ref="codeBlockCardRef" variant="tiptap" v-bind="props" />

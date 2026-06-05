@@ -13,10 +13,10 @@ import "@tiptap/extensions/undo-redo";
 import "@tiptap/extension-table";
 import "@tiptap/extension-list";
 import "@tiptap/extension-image";
-import "highlight.js/styles/github.css";
 import "@/design-system/styles/main.css";
 import "@/design-system/styles/main.scss";
 
+import { initTheme } from "@/core/composables/use-theme";
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import VueDndKitPlugin from "@vue-dnd-kit/core";
@@ -29,6 +29,8 @@ import { createDependenciesPlugin } from "@/core/dependency-injection";
 import { addIcons } from "oh-vue-icons";
 import * as icons from "./icons";
 import { loadConfig } from "@/config";
+
+initTheme();
 
 async function main() {
   await loadConfig();

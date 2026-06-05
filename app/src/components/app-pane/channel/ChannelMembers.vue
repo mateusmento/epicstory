@@ -36,7 +36,7 @@ watch(
 </script>
 
 <template>
-  <div class="flex:col-xl border-zinc-300/60 overflow-auto h-full @container">
+  <div class="flex:col-xl border-border overflow-auto h-full @container">
     <div class="flex:row-auto flex:center-y">
       <h1 class="flex:row flex:baseline">
         <Icon name="bi-people-fill" class="mr-md self-center" />
@@ -59,7 +59,7 @@ watch(
       >
         <div class="relative">
           <UserAvatar :name="member.name" :picture="member.picture" size="base" />
-          <div v-if="member.online" class="p-0.5 bg-white rounded-full absolute -bottom-0.5 -right-0.5">
+          <div v-if="member.online" class="p-0.5 bg-card rounded-full absolute -bottom-0.5 -right-0.5">
             <div class="w-2 h-2 bg-green-400 rounded-full"></div>
           </div>
         </div>
@@ -82,7 +82,7 @@ watch(
           >
             Admin
           </div>
-          <div v-else class="h-fit px-1 py-0.5 rounded-sm bg-white text-xs border border-secondary">
+          <div v-else class="h-fit px-1 py-0.5 rounded-sm bg-card text-xs border border-secondary">
             Member
           </div>
         </div>

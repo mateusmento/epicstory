@@ -21,8 +21,8 @@ const emit = defineEmits<{
 
 <template>
   <div class="h-full">
-    <div class="bg-white h-full min-h-[560px] flex flex-col overflow-hidden">
-      <div class="grid grid-cols-7 border-b bg-white sticky top-0 z-10">
+    <div class="bg-card h-full min-h-[560px] flex flex-col overflow-hidden">
+      <div class="grid grid-cols-7 border-b bg-card sticky top-0 z-10">
         <div
           v-for="label in props.weekdayLabels"
           :key="label"
@@ -37,10 +37,10 @@ const emit = defineEmits<{
           v-for="day in props.gridDays"
           :key="day.toISOString()"
           class="border-r border-b last:border-r-0 min-h-0"
-          :class="{ 'bg-gray-50 text-muted-foreground': !isSameMonth(day, props.activeMonthAnchor) }"
+          :class="{ 'bg-muted/50 text-muted-foreground': !isSameMonth(day, props.activeMonthAnchor) }"
           @click="emit('dayClick', day)"
         >
-          <div class="h-full w-full p-2 flex flex-col min-h-0 hover:bg-gray-50/60 transition-colors">
+          <div class="h-full w-full p-2 flex flex-col min-h-0 hover:bg-muted/40 transition-colors">
             <div class="flex items-start justify-between gap-2">
               <div
                 class="text-xs font-medium w-7 h-7 grid place-items-center rounded-full select-none"

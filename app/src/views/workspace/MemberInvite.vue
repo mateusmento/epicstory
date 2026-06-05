@@ -43,9 +43,9 @@ async function acceptInvite() {
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+  <main class="min-h-screen flex items-center justify-center bg-background p-4">
     <div class="w-full max-w-md">
-      <div class="bg-white rounded-lg shadow-xl p-8 space-y-6">
+      <div class="bg-card rounded-lg shadow-xl border p-8 space-y-6">
         <!-- Header -->
         <div class="text-center space-y-2">
           <div
@@ -69,10 +69,10 @@ async function acceptInvite() {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 class="text-2xl font-bold text-gray-900">
+          <h1 class="text-2xl font-bold text-foreground">
             {{ isSuccess ? "Invitation Accepted!" : "Workspace Invitation" }}
           </h1>
-          <p class="text-gray-600">
+          <p class="text-muted-foreground">
             {{
               isSuccess
                 ? "You've successfully joined the workspace. Redirecting you now..."
@@ -169,7 +169,7 @@ async function acceptInvite() {
             </span>
           </Button>
 
-          <p class="text-xs text-gray-500 text-center">
+          <p class="text-xs text-muted-foreground text-center">
             By accepting, you'll be added to the workspace and gain access to its projects and teams.
           </p>
         </div>

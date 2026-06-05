@@ -56,8 +56,8 @@ const afterOf = computed(() => {
 function statusDotClass(s: string) {
   if (s === "doing") return "bg-blue-500";
   if (s === "done") return "bg-emerald-500";
-  if (s === "todo") return "bg-zinc-300";
-  return "bg-zinc-400";
+  if (s === "todo") return "bg-muted-foreground/40";
+  return "bg-muted-foreground/60";
 }
 
 const statusLabel: Record<string, string> = {
@@ -119,7 +119,7 @@ async function onCreateIssue() {
 </script>
 
 <template>
-  <div class="w-[720px] max-w-[calc(100vw-2rem)] rounded-lg bg-white !p-0">
+  <div class="w-[720px] max-w-[calc(100vw-2rem)] rounded-lg bg-card !p-0">
     <!-- Hidden close trigger so we can close programmatically -->
     <DialogClose as-child>
       <button ref="closeBtn" type="button" class="hidden" />

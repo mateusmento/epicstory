@@ -57,7 +57,7 @@ const selectedLabels = computed(() => {
     @add-label="emit('add-label', $event)"
     @remove-label="emit('remove-label', $event)"
   >
-    <button class="flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs bg-white" title="Label">
+    <button class="flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs bg-card" title="Label">
       <span class="h-2 w-2 rounded-full ring-1 ring-border" :style="{ backgroundColor: label.color }" />
       <span class="max-w-32 text-secondary-foreground capitalize truncate">{{ label.name }}</span>
     </button>
@@ -70,7 +70,7 @@ const selectedLabels = computed(() => {
     @remove-label="emit('remove-label', $event)"
   >
     <button
-      class="flex items-center gap-2 rounded-full border p-1 text-xs bg-white"
+      class="flex items-center gap-2 rounded-full border p-1 text-xs bg-card"
       title="Label"
       :disabled="disabled"
     >

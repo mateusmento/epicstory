@@ -79,27 +79,21 @@ async function onCreateChannel(event: any) {
       >
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-          :class="
-            channelType === 'direct' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'
-          "
+          :class="channelType === 'direct' ? 'bg-card text-foreground shadow' : 'text-secondary-foreground'"
         >
           <RadioGroupItem value="direct" class="sr-only" />
           Direct
         </Label>
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-          :class="
-            channelType === 'group' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'
-          "
+          :class="channelType === 'group' ? 'bg-card text-foreground shadow' : 'text-secondary-foreground'"
         >
           <RadioGroupItem value="group" class="sr-only" />
           Group
         </Label>
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-          :class="
-            channelType === 'meeting' ? 'bg-background text-foreground shadow' : 'text-secondary-foreground'
-          "
+          :class="channelType === 'meeting' ? 'bg-card text-foreground shadow' : 'text-secondary-foreground'"
         >
           <RadioGroupItem value="meeting" class="sr-only" />
           Meeting

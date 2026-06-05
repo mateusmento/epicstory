@@ -218,12 +218,12 @@ function onCancelEdit() {
 
 <template>
   <div
-    class="flex:col-md flex min-h-0 max-h-[50vh] flex-col overflow-hidden p-3 border border-zinc-200 rounded-xl bg-white focus-within:outline outline-1 outline-zinc-300/60"
+    class="flex:col-md flex min-h-0 max-h-[50vh] flex-col overflow-hidden p-3 border border-border rounded-xl bg-card focus-within:outline outline-1 outline-border/60"
     @click="editor?.commands.focus()"
   >
     <div
       v-if="quotedMessage && !editingMessage"
-      class="flex:row-md flex:center-y shrink-0 gap-2 mb-2 pb-2 border-b border-zinc-200/80 text-xs text-muted-foreground"
+      class="flex:row-md flex:center-y shrink-0 gap-2 mb-2 pb-2 border-b border-border/80 text-xs text-muted-foreground"
     >
       <Icon name="fa-quote-right" class="size-4 self-start" />
       <div class="flex:col-md flex-1 min-w-0">
@@ -255,7 +255,7 @@ function onCancelEdit() {
       >
         <template #bubbleMenu="{ editor: bubbleEditor }">
           <div
-            class="flex:row-md z-[90] flex max-w-[min(100vw-1rem,42rem)] flex-wrap items-center gap-0.5 overflow-x-auto rounded-lg border border-zinc-200/90 bg-white p-1 shadow-lg"
+            class="flex:row-md z-[90] flex max-w-[min(100vw-1rem,42rem)] flex-wrap items-center gap-0.5 overflow-x-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
             @mousedown.prevent
           >
             <MessageComposerActions :editor="bubbleEditor" @insert-inline-image="openInlineImageFilePicker" />
@@ -274,7 +274,7 @@ function onCancelEdit() {
     />
     <div
       v-if="stagingAttachmentRows.length || (editingMessage && editingAttachmentRows.length)"
-      class="shrink-0 border-t border-zinc-200/80 pt-2"
+      class="shrink-0 border-t border-border/80 pt-2"
       @click.stop
     >
       <AttachmentTilesList

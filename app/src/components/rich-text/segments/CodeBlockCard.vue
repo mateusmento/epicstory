@@ -40,7 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const previewShellClass =
-  "epic-code-card rich-text-json-code-block my-2 w-full max-w-full self-start min-h-0 overflow-visible rounded-lg border border-zinc-200/90 bg-zinc-100 shadow-sm";
+  "epic-code-card epic-code-card-shell rich-text-json-code-block my-2 w-full max-w-full self-start min-h-0 overflow-visible";
 
 const shellClass = computed(() => (props.variant === "preview" ? previewShellClass : ""));
 
@@ -136,16 +136,14 @@ onMounted(() => {
 
 <template>
   <div :ref="variant === 'preview' ? setHostRef : undefined" :class="shellClass">
-    <div
-      class="epic-code-card-header flex items-center justify-between gap-2 rounded-t-lg border-b border-zinc-200/80 bg-zinc-200/45 px-2 py-1"
-    >
+    <div class="epic-code-card-header flex items-center justify-between gap-2 rounded-t-lg px-2 py-1">
       <div v-if="variant === 'tiptap' && isComposer" class="max-w-[min(12rem,45vw)] min-w-0 flex-1">
         <Menu>
           <MenuTrigger as-child>
             <Button
               variant="secondary"
               size="sm"
-              class="h-7 w-fit px-2 gap-1 font-mono text-[11px] font-normal text-zinc-800 shadow-none"
+              class="h-7 w-fit px-2 gap-1 font-mono text-[11px] font-normal text-foreground shadow-none"
               aria-label="Syntax highlighting language"
               @click="onLanguageTriggerMouseDown"
             >
@@ -181,7 +179,7 @@ onMounted(() => {
       </div>
       <span
         v-else
-        class="epic-code-lang min-w-0 flex-1 truncate font-mono text-[11px] font-medium text-zinc-600 uppercase tracking-wide"
+        class="epic-code-lang min-w-0 flex-1 truncate font-mono text-[11px] font-medium text-muted-foreground uppercase tracking-wide"
       >
         {{ languageLabel }}
       </span>
@@ -189,10 +187,10 @@ onMounted(() => {
     <div class="epic-code-card-viewport w-full min-h-0 min-w-0 rounded-b-lg">
       <div class="epic-code-card-scroll w-full min-h-0 min-w-0">
         <div
-          class="epic-code-card-pre m-0 flex w-full min-w-0 border-0 border-t border-zinc-200/80 bg-[#f8f8f8] text-left rounded-b-lg overflow-hidden relative"
+          class="epic-code-card-pre m-0 flex w-full min-w-0 border-0 text-left rounded-b-lg overflow-hidden relative"
         >
           <div
-            class="epic-code-card-gutter pl-3 pr-2 mr-2 shrink-0 select-none border-r border-zinc-200/90 bg-zinc-100/80 font-mono text-[0.8125rem] leading-relaxed text-zinc-400 tabular-nums"
+            class="epic-code-card-gutter pl-3 pr-2 mr-2 shrink-0 select-none font-mono text-[0.8125rem] leading-relaxed tabular-nums"
             aria-hidden="true"
           >
             <div v-for="num in lineNumbers" :key="num" class="whitespace-nowrap">
@@ -223,13 +221,13 @@ onMounted(() => {
           </div>
           <div
             v-if="showPeekChrome"
-            class="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center bg-gradient-to-t from-[#f8f8f8] from-35% via-[#f8f8f8]/85 to-transparent px-2 pb-2 pt-8"
+            class="pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center epic-code-card-peek-fade px-2 pb-2 pt-8"
           >
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              class="pointer-events-auto gap-1 border border-zinc-200/90 shadow-sm rounded-lg font-inter text-xs"
+              class="pointer-events-auto gap-1 border border-border shadow-sm rounded-lg font-inter text-xs"
               :data-rich-text-json-code-expand="props.previewInteractionMarkers ? '' : undefined"
               aria-expanded="false"
               :aria-label="expandPeekLabel"
@@ -254,7 +252,7 @@ onMounted(() => {
           type="button"
           variant="secondary"
           size="sm"
-          class="pointer-events-auto gap-1 border border-zinc-200/90 shadow-sm rounded-lg backdrop-blur-[2px] font-inter text-xs"
+          class="pointer-events-auto gap-1 border border-border shadow-sm rounded-lg backdrop-blur-[2px] font-inter text-xs"
           :data-rich-text-json-code-collapse="props.previewInteractionMarkers ? '' : undefined"
           aria-expanded="true"
           :aria-label="toggleAriaLabel"

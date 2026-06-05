@@ -487,7 +487,7 @@ defineExpose({
 
       <div v-if="typingPeerNames.length" class="absolute bottom-0 left-0 right-0 mx-7 z-[10]">
         <div
-          class="px-2 py-1 border border-b-0 border-muted rounded-lg rounded-b-none text-xs bg-zinc-50 text-muted-foreground"
+          class="px-2 py-1 border border-b-0 border-muted rounded-lg rounded-b-none text-xs bg-muted text-muted-foreground"
         >
           {{ typingBannerText }}
         </div>

@@ -74,15 +74,15 @@ const textClass = computed(() => {
 const fallbackClass = computed(() => {
   switch (props.variant) {
     case "meetingDark":
-      return "bg-gray-600 text-white font-semibold";
+      return "bg-muted-foreground text-background font-semibold";
     case "meetingNavbar":
-      return "bg-gray-300 text-gray-700";
+      return "bg-muted text-muted-foreground";
     case "mentionRow":
-      return "bg-zinc-300 text-zinc-600";
+      return "bg-muted text-muted-foreground";
     case "liveJoin":
-      return "bg-gray-200 text-zinc-700";
+      return "bg-muted text-muted-foreground";
     default:
-      return "bg-zinc-300 text-zinc-600";
+      return "bg-muted text-muted-foreground";
   }
 });
 
@@ -90,9 +90,9 @@ const rootClass = computed(() =>
   cn(
     "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full",
     sizeClass.value,
-    props.variant === "liveJoin" && "border-2 border-white",
+    props.variant === "liveJoin" && "border-2 border-background",
     !hasPicture.value && fallbackClass.value,
-    hasPicture.value && props.variant === "liveJoin" && "bg-gray-200",
+    hasPicture.value && props.variant === "liveJoin" && "bg-muted",
     props.class,
   ),
 );

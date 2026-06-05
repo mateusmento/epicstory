@@ -65,7 +65,7 @@ function onSelectWorkspace(workspace: IWorkspace) {
             name="name"
             placeholder="Create workspace..."
             class="flex-1"
-            :classes="{ input: 'p-1 h-fit text-xs bg-white' }"
+            :classes="{ input: 'p-1 h-fit text-xs bg-card' }"
           />
           <Button size="xs" class="px-2 py-0 h-auto text-xs">Add</Button>
         </Form>

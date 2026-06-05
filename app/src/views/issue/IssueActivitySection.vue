@@ -172,14 +172,18 @@ defineExpose({
 </script>
 
 <template>
-  <section class="mt-10 flex flex-col gap-6 border-t border-zinc-200/80 pt-8">
+  <section class="mt-10 flex flex-col gap-6 border-t border-border pt-8">
     <div class="flex items-center justify-between gap-4">
-      <h2 class="text-[13px] font-semibold tracking-tight text-zinc-900">Activity</h2>
-      <div class="flex rounded-md bg-zinc-100/90 p-0.5">
+      <h2 class="text-[13px] font-semibold tracking-tight text-foreground">Activity</h2>
+      <div class="flex rounded-md bg-muted p-0.5">
         <button
           type="button"
           class="rounded-[5px] px-3 py-1 text-[12px] font-medium transition-colors"
-          :class="tab === 'all' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'"
+          :class="
+            tab === 'all'
+              ? 'bg-card text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          "
           @click="tab = 'all'"
         >
           All
@@ -188,7 +192,9 @@ defineExpose({
           type="button"
           class="rounded-[5px] px-3 py-1 text-[12px] font-medium transition-colors"
           :class="
-            tab === 'comments' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
+            tab === 'comments'
+              ? 'bg-card text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
           "
           @click="tab = 'comments'"
         >
@@ -198,18 +204,18 @@ defineExpose({
     </div>
 
     <div v-if="loadError" class="text-sm text-red-600">{{ loadError }}</div>
-    <div v-else-if="loading" class="text-[13px] text-zinc-500">Loading…</div>
+    <div v-else-if="loading" class="text-[13px] text-muted-foreground">Loading…</div>
 
     <ul v-else-if="tab === 'all'" class="flex list-none flex-col">
       <li v-for="(item, i) in filteredFeedItems" :key="item.activityId" class="flex min-w-0 items-stretch">
         <div v-if="item.type === 'comment_created' && item.message?.id" class="flex:col">
           <div
             v-if="filteredFeedItems[i - 1]?.type === 'comment_created'"
-            :class="cn('ml-6 h-6 w-px shrink-0 bg-zinc-200')"
+            :class="cn('ml-6 h-6 w-px shrink-0 bg-border')"
           />
 
           <div
-            class="overflow-hidden rounded-lg border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+            class="overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
           >
             <IssueCommentCard
               :message="item.message"
@@ -222,7 +228,7 @@ defineExpose({
             />
             <div
               v-if="commentChannelId != null && editing?.id === item.message.id"
-              class="border-t border-zinc-100 bg-zinc-50/60 p-2"
+              class="border-t border-border/60 bg-muted/60 p-2"
             >
               <IssueCommentComposer
                 :key="`edit-${item.message.id}`"
@@ -234,7 +240,7 @@ defineExpose({
                 :mention-list-has-more="mentionListHasMore"
                 :mention-list-loading-more="mentionListLoadingMore"
                 :editing-message="editingMessagePayload"
-                class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
+                class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
                 @submit-edit="submitEdit"
                 @cancel-edit="cancelEdit"
                 @existing-attachment-removed="onComposerIssueAttachmentRemoved"
@@ -243,7 +249,7 @@ defineExpose({
             <button
               v-if="item.hasMoreOlder && hiddenReplyCount(item) > 0"
               type="button"
-              class="flex w-full items-center justify-between gap-2 border-t border-zinc-200/70 px-4 py-2 text-left text-[12px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50/90 disabled:opacity-60"
+              class="flex w-full items-center justify-between gap-2 border-t border-border/70 px-4 py-2 text-left text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted/50 disabled:opacity-60"
               :aria-expanded="isExpandedThread(item)"
               :disabled="isLoadingThread(item)"
               @click="toggleThreadReplies(item)"
@@ -255,11 +261,11 @@ defineExpose({
                   earlier
                   {{ hiddenReplyCount(item) === 1 ? "reply" : "replies" }}
                 </template>
-                <span v-if="isLoadingThread(item)" class="text-zinc-400">Loading…</span>
+                <span v-if="isLoadingThread(item)" class="text-muted-foreground/70">Loading…</span>
               </span>
               <Icon
                 :name="isExpandedThread(item) ? 'oi-chevron-up' : 'oi-chevron-down'"
-                class="size-3.5 shrink-0 text-zinc-400"
+                class="size-3.5 shrink-0 text-muted-foreground/70"
                 aria-hidden="true"
               />
             </button>
@@ -276,7 +282,7 @@ defineExpose({
               />
               <div
                 v-if="commentChannelId != null && editing?.id === rep.id"
-                class="border-t border-zinc-100 bg-zinc-50/60 p-2"
+                class="border-t border-border/60 bg-muted/60 p-2"
               >
                 <IssueCommentComposer
                   :key="`edit-reply-${rep.id}`"
@@ -288,14 +294,14 @@ defineExpose({
                   :mention-list-has-more="mentionListHasMore"
                   :mention-list-loading-more="mentionListLoadingMore"
                   :editing-message="editingMessagePayload"
-                  class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
+                  class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
                   @submit-edit="submitEdit"
                   @cancel-edit="cancelEdit"
                   @existing-attachment-removed="onComposerIssueAttachmentRemoved"
                 />
               </div>
             </template>
-            <div v-if="commentChannelId != null" class="border-t border-zinc-100 bg-zinc-50/60 p-2">
+            <div v-if="commentChannelId != null" class="border-t border-border/60 bg-muted/60 p-2">
               <IssueCommentComposer
                 :key="`reply-${item.activityId}-${item.message.id}`"
                 :channel-id="commentChannelId"
@@ -306,7 +312,7 @@ defineExpose({
                 :mention-list-has-more="mentionListHasMore"
                 :mention-list-loading-more="mentionListLoadingMore"
                 placeholder="Leave a reply…"
-                class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
+                class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
                 @send-message="onReplyInThread(item.message.id, $event)"
               />
             </div>
@@ -317,7 +323,7 @@ defineExpose({
           <div
             :class="
               cn(
-                'ml-1 mb-1 w-px shrink-0 bg-zinc-200',
+                'ml-1 mb-1 w-px shrink-0 bg-border',
                 filteredFeedItems[i - 1]?.type === 'comment_created' ? 'h-5' : 'h-1.5',
                 { 'opacity-0': i === 0 },
               )
@@ -325,17 +331,17 @@ defineExpose({
           />
 
           <div :class="cn('flex items-center gap-3')">
-            <div class="size-2.5 shrink-0 rounded-full bg-violet-600 shadow-[0_0_0_3px_rgb(255_255_255)]" />
+            <div class="size-2.5 shrink-0 rounded-full bg-violet-600" />
             <UserAvatar
-              class="mt-0.5 shrink-0 ring-2 ring-white"
+              class="mt-0.5 shrink-0"
               :name="resolveIssueActivityActor(item, peersById).name"
               :picture="resolveIssueActivityActor(item, peersById).picture"
               size="sm"
             />
-            <p class="min-w-0 flex-1 text-[13px] leading-snug text-zinc-800">
+            <p class="min-w-0 flex-1 text-[13px] text-foreground">
               {{ formatIssueActivitySentence(item, peersById) }}
-              <span class="text-zinc-300"> · </span>
-              <time class="text-zinc-500" :datetime="item.createdAt">{{
+              <span class="text-muted-foreground/50"> · </span>
+              <time class="text-muted-foreground" :datetime="item.createdAt">{{
                 formatIssueActivityWhen(item.createdAt)
               }}</time>
             </p>
@@ -344,7 +350,7 @@ defineExpose({
           <div
             :class="
               cn(
-                'ml-1 mt-1 w-px shrink-0 bg-zinc-200',
+                'ml-1 mt-1 w-px shrink-0 bg-border',
                 filteredFeedItems[i + 1]?.type === 'comment_created' ? 'h-5' : 'h-1.5',
                 { 'opacity-0': i === filteredFeedItems.length - 1 },
               )
@@ -352,7 +358,7 @@ defineExpose({
           />
         </div>
       </li>
-      <li v-if="filteredFeedItems.length === 0" class="list-none py-2 text-[13px] text-zinc-500">
+      <li v-if="filteredFeedItems.length === 0" class="list-none py-2 text-[13px] text-muted-foreground">
         No activity yet.
       </li>
     </ul>
@@ -369,7 +375,7 @@ defineExpose({
         />
         <div
           v-if="commentChannelId != null && editing?.id === msg.id"
-          class="mt-2 rounded-lg border border-zinc-200/90 bg-zinc-50/40 p-2"
+          class="mt-2 rounded-lg border border-border bg-muted/40 p-2"
         >
           <IssueCommentComposer
             :key="`edit-comments-${msg.id}`"
@@ -381,17 +387,17 @@ defineExpose({
             :mention-list-has-more="mentionListHasMore"
             :mention-list-loading-more="mentionListLoadingMore"
             :editing-message="editingMessagePayload"
-            class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-none"
+            class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
             @submit-edit="submitEdit"
             @cancel-edit="cancelEdit"
             @existing-attachment-removed="onComposerIssueAttachmentRemoved"
           />
         </div>
       </li>
-      <li v-if="commentMessages.length === 0" class="text-[13px] text-zinc-500">No comments yet.</li>
+      <li v-if="commentMessages.length === 0" class="text-[13px] text-muted-foreground">No comments yet.</li>
     </ul>
 
-    <div v-if="commentChannelId != null" class="rounded-lg border border-zinc-200/90 bg-zinc-50/40 p-2">
+    <div v-if="commentChannelId != null" class="rounded-lg border border-border bg-muted/40 p-2">
       <IssueCommentComposer
         :channel-id="commentChannelId"
         :attachment-handlers="composerAttachmentHandlers"
@@ -401,10 +407,12 @@ defineExpose({
         :mention-list-has-more="mentionListHasMore"
         :mention-list-loading-more="mentionListLoadingMore"
         placeholder="Leave a comment…"
-        class="max-h-[min(40vh,22rem)] w-full max-w-full shrink-0 rounded-lg border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+        class="max-h-[min(40vh,22rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
         @send-message="onPostIssueComment"
       />
     </div>
-    <div v-else class="text-[12px] text-zinc-500">Comment channel is initializing — refresh in a moment.</div>
+    <div v-else class="text-[12px] text-muted-foreground">
+      Comment channel is initializing — refresh in a moment.
+    </div>
   </section>
 </template>

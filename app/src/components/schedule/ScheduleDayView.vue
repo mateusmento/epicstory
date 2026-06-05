@@ -32,11 +32,11 @@ const emit = defineEmits<{
 
 <template>
   <div class="h-full overflow-auto">
-    <div class="flex border-b bg-white sticky top-0 z-10 p-4">
+    <div class="flex border-b bg-card sticky top-0 z-10 p-4">
       <div class="ml-16 text-2xl font-semibold">{{ format(props.day, "EEEE, MMMM d, yyyy") }}</div>
     </div>
     <div class="flex">
-      <div class="w-16 border-r bg-white flex flex-col">
+      <div class="w-16 border-r bg-card flex flex-col">
         <template v-for="hour in props.hours" :key="hour">
           <div :class="cn(SCHEDULE_HOUR_SLOT_HEIGHT_CLASS, 'p-1 text-xs text-secondary-foreground')">
             {{ hour.toString().padStart(2, "0") }}:00
@@ -50,7 +50,7 @@ const emit = defineEmits<{
             :class="
               cn(
                 SCHEDULE_HOUR_SLOT_HEIGHT_CLASS,
-                'cursor-pointer hover:bg-gray-50 transition-colors relative',
+                'cursor-pointer hover:bg-muted/50 transition-colors relative',
                 props.isCreating && 'select-none',
                 props.isPanning && 'select-none',
               )

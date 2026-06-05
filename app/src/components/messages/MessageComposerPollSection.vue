@@ -44,11 +44,7 @@ function removeOption(i: number) {
 </script>
 
 <template>
-  <div
-    v-if="modelValue"
-    class="flex flex-col gap-2 border-t border-zinc-200/80 pt-2 mt-1 shrink-0"
-    @click.stop
-  >
+  <div v-if="modelValue" class="flex flex-col gap-2 border-t border-border/80 pt-2 mt-1 shrink-0" @click.stop>
     <div class="flex flex-col gap-1.5 w-96">
       <Label for="composer-poll-question" class="text-xs text-muted-foreground">Poll Question</Label>
       <Input

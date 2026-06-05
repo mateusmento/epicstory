@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Button, Field, Form, Separator } from "@/design-system";
+import { ThemePicker } from "@/components/theme";
 import UserPictureUpload from "./UserPictureUpload.vue";
 import { useUser } from "@/domain/user";
 import { ref } from "vue";
@@ -141,6 +142,15 @@ async function handlePasswordChange() {
             </span>
           </div>
         </Form>
+      </div>
+
+      <Separator class="my-8" />
+
+      <!-- Appearance Section -->
+      <div class="mb-8">
+        <h2 class="text-lg font-semibold text-foreground mb-2">Appearance</h2>
+        <p class="text-sm text-muted-foreground mb-4">Choose light, dark, or match your system.</p>
+        <ThemePicker variant="segmented" />
       </div>
 
       <Separator class="my-8" />

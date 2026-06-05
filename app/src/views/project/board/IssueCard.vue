@@ -34,7 +34,7 @@ function issuePriorityBadge(priority: number | null | undefined) {
 function statusBadge(status: ColumnStatus) {
   if (status === "doing") return { label: "In progress", cls: "bg-blue-100 text-blue-700 border-blue-200" };
   if (status === "done") return { label: "Done", cls: "bg-green-100 text-green-700 border-green-200" };
-  return { label: "To do", cls: "bg-gray-100 text-gray-700 border-gray-200" };
+  return { label: "To do", cls: "bg-muted text-muted-foreground border-border" };
 }
 
 function openIssue(issue: IIssue) {
@@ -47,7 +47,7 @@ function openIssue(issue: IIssue) {
     <div
       :class="
         cn(
-          'group relative bg-white rounded-lg border border-border p-4 shadow-sm hover:shadow-md transition-shadow cursor-move',
+          'group relative bg-card rounded-lg border border-border p-4 shadow-sm hover:shadow-md transition-shadow cursor-move',
           {
             'opacity-0': isDragging(item.id),
             'border-dashed border-2 bg-transparent shadow-none': isDragging(item.id),

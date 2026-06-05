@@ -38,14 +38,14 @@ function handleKeydown(event: KeyboardEvent) {
 
 <template>
   <div class="flex:row-lg flex:center-y px-2 -m-1" @click.stop @pointerdown.stop>
-    <MagnifyingGlassIcon class="h-4 w-4 text-muted-foreground" />
+    <MagnifyingGlassIcon class="h-4 w-4 shrink-0 text-muted-foreground" />
     <input
       v-bind="forwardedProps"
       v-model="modelValue"
       @keydown="handleKeydown"
       ref="inputEl"
       type="text"
-      class="h-8 w-full px-2 text-xs outline-none"
+      class="h-8 w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
       :placeholder="placeholder"
     />
   </div>

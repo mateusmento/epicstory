@@ -86,7 +86,7 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
     "border py-0.5 px-2 pr-3 rounded-full text-sm font-lato transition-colors",
     reaction.reactedByMe || reaction.reactedBy.some((u) => u.id === props.meId)
       ? "border-primary/50 bg-primary/10 text-primary font-medium"
-      : "border-[#686870] bg-white text-[#686870]",
+      : "border-border bg-card text-muted-foreground",
   );
 }
 </script>
@@ -235,7 +235,7 @@ const styles = {
       "border border-transparent",
       "transition-[border-color,background-color]",
       "data-[state=open]:bg-secondary/20",
-      "data-[state=open]:border-[#E4E4E4]",
+      "data-[state=open]:border-border",
       "rounded-tl-none",
     ].join(" "),
   ),

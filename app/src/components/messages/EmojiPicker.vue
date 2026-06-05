@@ -35,7 +35,7 @@ function handleEmojiSelect(emoji: string) {
       </Button>
     </PopoverTrigger>
     <PopoverContent
-      class="w-80 p-2 bg-white z-[80] shadow-sm border border-secondary rounded-lg"
+      class="w-80 p-2 bg-popover z-[80] shadow-sm border border-secondary rounded-lg"
       align="start"
       disabled-portal
     >

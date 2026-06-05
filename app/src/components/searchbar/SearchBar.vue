@@ -54,7 +54,7 @@ defineExpose({ blur });
 <template>
   <div
     ref="root"
-    class="relative flex:row-md flex:center-y rounded-lg border border-border bg-background text-xs"
+    class="relative flex:row-md flex:center-y rounded-lg border border-border bg-muted/60 text-xs"
   >
     <IconSearch
       class="pointer-events-none absolute left-2.5 top-1/2 z-0 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"

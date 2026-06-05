@@ -84,7 +84,7 @@ function insertAtMention() {
     <TextQuote class="w-5 h-5" />
     <!-- <Icon name="fa-quote-right" class="w-5 h-5" /> -->
   </Button>
-  <Separator orientation="vertical" class="h-8 bg-zinc-300" />
+  <Separator orientation="vertical" class="h-8 bg-border" />
   <Button
     variant="ghost"
     size="icon"
@@ -135,7 +135,7 @@ function insertAtMention() {
   >
     <Code class="w-5 h-5" />
   </Button>
-  <Separator orientation="vertical" class="h-8 bg-zinc-300" />
+  <Separator orientation="vertical" class="h-8 bg-border" />
   <Button
     variant="ghost"
     size="icon"

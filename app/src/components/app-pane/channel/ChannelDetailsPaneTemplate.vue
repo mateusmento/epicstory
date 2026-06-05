@@ -101,7 +101,7 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
 
 <template>
   <!--   -->
-  <aside class="flex flex-col h-full w-96 min-h-0 border-l border-zinc-300/60">
+  <aside class="flex flex-col h-full w-96 min-h-0 border-l border-border">
     <div class="flex:row-lg flex:center-y px-2 min-h-10 whitespace-nowrap">
       <IconChannel class="overflow-visible" />
       <div class="text-sm">Channel</div>

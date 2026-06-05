@@ -138,7 +138,7 @@ export function useCodeBlockCardModel(opts: CodeBlockCardModelOptions) {
       "leading-relaxed",
       "hljs",
       "!p-0",
-      "bg-transparent",
+      "!bg-transparent",
       "whitespace-pre",
       "py-3",
       "pr-3",

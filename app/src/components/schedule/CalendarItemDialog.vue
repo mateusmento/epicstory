@@ -19,7 +19,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
 <template>
   <Dialog :open="form.showEventDialog" @update:open="dialog.handleDialogOpenChange">
     <DialogContent class="!p-0 sm:max-w-[560px]">
-      <div class="rounded-lg bg-white !p-0">
+      <div class="rounded-lg bg-card !p-0">
         <DialogHeader class="px-3 pt-3 pb-1">
           <DialogTitle class="text-sm font-medium text-muted-foreground">
             {{
@@ -62,7 +62,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
             placeholder="Add description…"
           />
 
-          <div v-if="form.itemType === 'event'" class="mt-2.5 rounded-md border bg-zinc-50 p-2.5">
+          <div v-if="form.itemType === 'event'" class="mt-2.5 rounded-md border bg-muted p-2.5">
             <RecurrenceFields
               v-model:frequency="form.eventRecurrenceFrequency"
               v-model:interval="form.eventRecurrenceInterval"
@@ -71,7 +71,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
             />
           </div>
 
-          <div v-if="form.itemType === 'meeting'" class="mt-2.5 rounded-md border bg-zinc-50 p-2.5">
+          <div v-if="form.itemType === 'meeting'" class="mt-2.5 rounded-md border bg-muted p-2.5">
             <p v-if="form.editingEvent" class="mb-2 text-xs text-muted-foreground">
               Channel and participant list are set when the meeting was created; other fields below can be
               updated.
@@ -81,7 +81,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
                 Channel (optional)
                 <select
                   v-model.number="form.meetingChannelId"
-                  class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm"
+                  class="mt-1 w-full h-8 rounded-md border bg-background px-2 text-sm"
                   :disabled="Boolean(form.editingEvent)"
                 >
                   <option :value="null">No channel</option>
@@ -97,7 +97,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
                   v-model.number="form.meetingNotifyMinutesBefore"
                   type="number"
                   min="0"
-                  class="mt-1 w-full h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                  class="mt-1 w-full h-8 rounded-md border bg-background px-2 text-sm outline-none"
                 />
               </label>
             </div>
@@ -120,7 +120,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
               <div class="text-xs text-muted-foreground">Participants (notified)</div>
               <ul
                 v-if="form.meetingParticipantUsers.length"
-                class="flex max-h-32 flex-col gap-1.5 overflow-y-auto rounded-md border bg-white p-2"
+                class="flex max-h-32 flex-col gap-1.5 overflow-y-auto rounded-md border bg-background p-2"
               >
                 <li
                   v-for="p in form.meetingParticipantUsers"
@@ -178,7 +178,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
                 id="time"
                 v-model="form.eventTime"
                 type="time"
-                class="h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                class="h-8 rounded-md border bg-background px-2 text-sm outline-none"
                 required
               />
               <label for="endTime" class="sr-only">End time</label>
@@ -186,7 +186,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
                 id="endTime"
                 v-model="form.eventEndTime"
                 type="time"
-                class="h-8 rounded-md border bg-white px-2 text-sm outline-none"
+                class="h-8 rounded-md border bg-background px-2 text-sm outline-none"
                 required
               />
             </div>

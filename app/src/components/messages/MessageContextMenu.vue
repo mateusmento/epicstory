@@ -74,7 +74,7 @@ async function copyMessage() {
         <SmilePlusIcon class="size-4 text-muted-foreground" />
         <span>React with emoji</span>
       </MenuSubTrigger>
-      <MenuSubContent class="bg-white z-[80] shadow-sm border border-secondary rounded-lg font-dmSans">
+      <MenuSubContent class="bg-popover z-[80] shadow-sm border border-secondary rounded-lg font-dmSans">
         <MenuInput placeholder="Search emoji…" class="text-lg" />
         <MenuSeparator />
         <ScrollArea class="h-80 flex-1 min-h-0 p-0">

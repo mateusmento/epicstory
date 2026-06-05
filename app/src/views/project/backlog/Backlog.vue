@@ -272,10 +272,10 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
 </script>
 
 <template>
-  <div class="w-full h-full min-h-0 bg-white">
-    <div class="flex flex-col w-full h-full min-h-0 bg-white overflow-hidden">
+  <div class="w-full h-full min-h-0 bg-card">
+    <div class="flex flex-col w-full h-full min-h-0 bg-card overflow-hidden">
       <!-- Header -->
-      <div class="sticky top-0 z-10 bg-white/90 backdrop-blur border-b pl-3 pr-6 py-1.5">
+      <div class="sticky top-0 z-10 bg-card/90 backdrop-blur border-b pl-3 pr-6 py-1.5">
         <div class="flex items-center justify-between gap-4">
           <div class="grid gap-x-4 items-center flex-1 min-w-0" :class="GRID_COLS">
             <div />
@@ -332,7 +332,7 @@ const BacklogHeadCell: FC<Props, Emits> = ({ show, order, label }, { emit, slots
             <template v-for="group of groupedItems" :key="group.id">
               <button
                 type="button"
-                class="w-full flex items-center justify-between px-3 py-2 bg-zinc-50 hover:bg-zinc-100"
+                class="w-full flex items-center justify-between px-3 py-2 bg-muted/50 hover:bg-muted"
                 @click="toggleGroup(group.id)"
               >
                 <div class="flex items-center gap-2 text-sm">

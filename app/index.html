@@ -5,6 +5,16 @@
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Epicstory</title>
+    <script>
+      (function () {
+        var storageKey = "epicstory-color-scheme";
+        var stored = localStorage.getItem(storageKey);
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var isDark = stored === "dark" || ((!stored || stored === "auto") && prefersDark);
+        if (isDark) document.documentElement.classList.add("dark");
+        document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

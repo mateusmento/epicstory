@@ -35,7 +35,7 @@ function onTrigger(v: string, props: any) {
       <CollapsibleContent
         as="aside"
         transition="horizontal"
-        class="h-full w-fit border-r border-r-zinc-300/60"
+        class="h-full w-fit border-r border-border"
         :class="$props.class"
       >
         <slot />

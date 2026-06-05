@@ -21,7 +21,7 @@ const progressPct = computed(() => {
 });
 
 const progressStyle = computed(() => ({
-  background: `conic-gradient(#6366F1 ${progressPct.value}%, #E4E4E7 0)`,
+  background: `conic-gradient(#6366F1 ${progressPct.value}%, hsl(var(--muted)) 0)`,
 }));
 </script>
 
