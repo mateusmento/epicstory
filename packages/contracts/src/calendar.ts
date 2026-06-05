@@ -31,6 +31,7 @@ export type CreateCalendarEventData = {
   type: "event" | "meeting";
   title: string;
   description?: string;
+  /** Ignored for type "event"; meetings use top-level channelId instead. */
   payload?: Record<string, unknown>;
   startsAt: Date;
   endsAt: Date;

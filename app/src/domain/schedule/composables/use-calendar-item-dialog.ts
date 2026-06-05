@@ -259,15 +259,12 @@ export function useCalendarItemDialog(
           form.meetingRecurrenceByWeekday,
           startsAt,
         );
-        const payload = { type: "calendar_event" };
-
         if (form.editingEvent) {
           await calendarEventApi.updateCalendarEvent({
             id: form.editingEvent.id,
             type: "meeting",
             title: form.eventTitle.trim(),
             description: form.eventDescription?.trim() || "",
-            payload,
             startsAt,
             endsAt,
             isPublic: form.meetingIsPublic,
@@ -281,7 +278,6 @@ export function useCalendarItemDialog(
             type: "meeting",
             title: form.eventTitle.trim(),
             description: form.eventDescription?.trim() || "",
-            payload,
             startsAt,
             endsAt,
             isPublic: form.meetingIsPublic,
@@ -308,7 +304,6 @@ export function useCalendarItemDialog(
             type: "event",
             title: form.eventTitle.trim(),
             description: form.eventDescription?.trim() || "",
-            payload: { type: "calendar_event" },
             startsAt,
             endsAt,
             recurrence,
@@ -319,7 +314,6 @@ export function useCalendarItemDialog(
             type: "event",
             title: form.eventTitle.trim(),
             description: form.eventDescription?.trim() || "",
-            payload: { type: "calendar_event" },
             startsAt,
             endsAt,
             recurrence,

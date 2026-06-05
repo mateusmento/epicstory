@@ -68,7 +68,6 @@ describe('RemoveCalendarEvent', () => {
         title: 'E',
         startsAt: new Date(Date.now() + 60_000),
         endsAt: new Date(Date.now() + 120_000),
-        payload: {},
         participantIds: [u.id],
       }),
     );

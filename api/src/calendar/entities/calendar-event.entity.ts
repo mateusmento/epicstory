@@ -15,7 +15,7 @@ import { UUID } from 'crypto';
 import { cached, patch, patchEntity } from 'src/core/objects';
 import { Workspace } from 'src/workspace/domain/entities';
 import { User } from 'src/auth/domain/entities';
-import type { CalendarEventPayload } from '../types';
+import type { StoredCalendarEventPayload } from '../types';
 import { pickBy } from 'lodash';
 import { ScheduledJob } from 'src/scheduling/entities';
 import { differenceInMilliseconds } from 'date-fns';
@@ -73,7 +73,7 @@ export class CalendarEvent {
   participants: User[];
 
   @Column({ type: 'jsonb' })
-  payload: CalendarEventPayload;
+  payload: StoredCalendarEventPayload;
 
   @Column()
   workspaceId: number;
@@ -126,8 +126,7 @@ export class CalendarEvent {
 
   #duration = cached((startsAt: Date, endsAt: Date) => {
     if (!endsAt) return;
-    const durationMs = Math.max(0, differenceInMilliseconds(endsAt, startsAt));
-    return durationMs;
+    return Math.max(0, differenceInMilliseconds(endsAt, startsAt));
   });
 
   duration() {

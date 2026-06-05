@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ChannelNotFound } from 'src/channel/application/exceptions';
 import {
   Channel,
   ChannelType,
@@ -13,6 +14,18 @@ export class ChannelRepository extends Repository<Channel> {
     repo: Repository<Channel>,
   ) {
     super(repo.target, repo.manager, repo.queryRunner);
+  }
+
+  async requiresChannel(
+    { channelId, workspaceId }: { channelId: number; workspaceId: number },
+    relations?: FindOptionsRelations<Channel>,
+  ) {
+    const channel = await this.findOne({
+      where: { id: channelId, workspaceId },
+      relations,
+    });
+    if (!channel) throw new ChannelNotFound();
+    return channel;
   }
 
   findChannel(id: number, relations?: FindOptionsRelations<Channel>) {

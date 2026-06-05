@@ -12,6 +12,7 @@ import {
   IsString,
 } from 'class-validator';
 import { uniq } from 'lodash';
+import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { ScheduledJobTypes } from 'src/scheduling/constants';
 import { ScheduledJob } from 'src/scheduling/entities';
@@ -21,7 +22,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { CalendarEvent } from '../entities';
 import type { CalendarEventType } from '../entities/calendar-event.entity';
 import { CalendarEventRepository } from '../repositories';
-import { buildCalendarEventPayload, type CalendarEventPayload } from '../types';
+import { buildCalendarEventPayload } from '../types';
 import { mapCalendarRecurrenceToJob } from '../utils/map-calendar-recurrence-to-job';
 
 export class CreateCalendarEvent {
@@ -40,10 +41,6 @@ export class CreateCalendarEvent {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsObject()
-  @Transform(({ value }) => value ?? {})
-  payload: Partial<CalendarEventPayload>;
 
   @IsDate()
   startsAt: Date;
@@ -90,12 +87,14 @@ export class CreateCalendarEventCommand
     private calendarEventRepo: CalendarEventRepository,
     private workspaceRepo: WorkspaceRepository,
     private scheduledJobRepo: ScheduledJobRepository,
+    private channelRepo: ChannelRepository,
   ) {}
 
   async execute({
     workspaceId,
     channelId,
     issuerId,
+    participantIds,
     ...command
   }: CreateCalendarEvent): Promise<CalendarEvent> {
     const member = await this.workspaceRepo.findMember(workspaceId, issuerId, {
@@ -103,7 +102,12 @@ export class CreateCalendarEventCommand
     });
     if (!member) throw new Error('Issuer is not a workspace member');
 
-    const userIds = uniq([issuerId, ...(command.participantIds ?? [])]);
+    const channelPeerIds: number[] = channelId
+      ? await this.findChannelMembers(channelId, workspaceId)
+      : [];
+
+    const userIds = uniq([issuerId, participantIds, channelPeerIds].flat());
+
     const participants = await this.workspaceRepo.findMembers(
       { workspaceId, userIds },
       { user: true },
@@ -113,10 +117,7 @@ export class CreateCalendarEventCommand
 
     const type = command.type ?? 'event';
 
-    const payload: CalendarEventPayload = buildCalendarEventPayload(type, {
-      ...command.payload,
-      ...(channelId ? { channelId } : {}),
-    });
+    const payload = buildCalendarEventPayload(type, { channelId });
 
     const event = await this.calendarEventRepo.save(
       CalendarEvent.create({
@@ -143,6 +144,14 @@ export class CreateCalendarEventCommand
     }
 
     return event;
+  }
+
+  async findChannelMembers(channelId: number, workspaceId: number) {
+    const channel = await this.channelRepo.requiresChannel(
+      { channelId, workspaceId },
+      { peers: true },
+    );
+    return channel.peers.map((peer) => peer.id);
   }
 
   private async ensureMeetingJobs(event: CalendarEvent) {

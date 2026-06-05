@@ -1,8 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import {
+  ChannelMemberRemovedEvent,
+  type ChannelMemberRemovedPayload,
+} from '../contracts/channel-member-removed.event';
 import { ChannelActivityService } from '../services/channel-activity.service';
 import { enrichChannelForPreview } from '../utils/enrich-channel';
 
@@ -24,6 +29,7 @@ export class RemoveChannelMemberCommand
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private channelActivityService: ChannelActivityService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async execute({ channelId, userId, issuerId }: RemoveChannelMember) {
@@ -46,6 +52,13 @@ export class RemoveChannelMemberCommand
       actorId: issuerId,
       subjectUserId: userId,
     });
+
+    const payload: ChannelMemberRemovedPayload = {
+      channelId,
+      workspaceId: channel.workspaceId,
+      userId,
+    };
+    this.eventEmitter.emit(ChannelMemberRemovedEvent, payload);
 
     return enrichChannelForPreview(channel, issuerId);
   }

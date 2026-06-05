@@ -21,4 +21,18 @@ export class CalendarEventRepository extends Repository<CalendarEvent> {
       })
       .getMany();
   }
+
+  findByChannelId(channelId: number, now: Date = new Date()) {
+    return this.createQueryBuilder('event')
+      .leftJoinAndSelect('event.participants', 'participant')
+      .where(`(event.payload->>'channelId')::int = :channelId`, { channelId })
+      .andWhere(
+        `(
+          COALESCE(event.recurrence->>'frequency', 'once') != 'once'
+          OR event.endsAt >= :now
+        )`,
+        { now },
+      )
+      .getMany();
+  }
 }

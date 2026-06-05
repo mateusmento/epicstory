@@ -5,10 +5,7 @@ import { addMilliseconds, addMinutes } from 'date-fns';
 import { concat, uniq } from 'lodash';
 import { CalendarEvent } from 'src/calendar/entities';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
-import {
-  ChannelRepository,
-  MeetingRepository,
-} from 'src/channel/infrastructure';
+import { MeetingRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { NotificationService } from 'src/notifications/services/notification.service';
 import { DataSource } from 'typeorm';
@@ -36,7 +33,6 @@ export class SendScheduledMeetingReminderHandler
   constructor(
     private notificationService: NotificationService,
     private meetingRepo: MeetingRepository,
-    private channelRepo: ChannelRepository,
     private dataSource: DataSource,
   ) {}
 
@@ -60,15 +56,8 @@ export class SendScheduledMeetingReminderHandler
       ? addMilliseconds(occurrenceAt, event.duration())
       : null;
 
-    const channel = channelId
-      ? await this.channelRepo.findChannel(channelId, { peers: true })
-      : null;
-    const channelMembers = channel ? channel.peers.map((u) => u.id) : [];
-
     const participantIds = event.participants?.map((u) => u.id) ?? [];
-    const recipientIds = uniq(
-      concat(channelMembers, participantIds, [event.createdById]),
-    );
+    const recipientIds = uniq(concat(participantIds, [event.createdById]));
 
     let meeting = await this.meetingRepo.findScheduled(event.id, occurrenceAt);
 

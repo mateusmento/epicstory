@@ -31,7 +31,7 @@ function buildDraftEvent(
     notifyEnabled: false,
     notifyMinutesBefore: 0,
     recurrence: { frequency: "once" },
-    payload: { type: "calendar_event" },
+    payload: { type: "event" },
   };
 }
 
