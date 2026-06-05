@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
-import { IsDate, IsString } from 'class-validator';
+import { IsDate, IsOptional, IsString } from 'class-validator';
 import { addMilliseconds } from 'date-fns';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { MeetingRepository } from 'src/channel/infrastructure';
@@ -11,14 +11,16 @@ import { DataSource } from 'typeorm';
 import { CalendarEventRepository } from '../repositories';
 import { ScheduledMeetingPayload } from '../types';
 import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
+import { resolveCalendarOccurrenceAt } from '../utils/assert-calendar-occurrence';
 
 export class EnsureCalendarMeetingSession {
   @IsString()
   calendarEventId: string;
 
+  @IsOptional()
   @Type(() => Date)
   @IsDate()
-  occurrenceAt: Date;
+  occurrenceAt?: Date;
 
   issuerId: number;
 
@@ -55,7 +57,10 @@ export class EnsureCalendarMeetingSessionCommand
       event,
     });
 
-    const occurrenceAt = command.occurrenceAt;
+    const occurrenceAt = resolveCalendarOccurrenceAt(
+      event,
+      command.occurrenceAt,
+    );
 
     const occurrenceEndsAt = event.duration()
       ? addMilliseconds(occurrenceAt, event.duration())

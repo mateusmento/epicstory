@@ -114,6 +114,10 @@ export class CalendarEvent {
     });
   }
 
+  isNonRecurrent() {
+    return (this.recurrence?.frequency ?? 'once') === 'once';
+  }
+
   hasParticipant(userId: number) {
     if (!this.isPublic) {
       const isParticipant =

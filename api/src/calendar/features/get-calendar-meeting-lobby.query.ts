@@ -9,6 +9,7 @@ import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { DataSource } from 'typeorm';
 import { CalendarEvent } from '../entities';
+import { resolveCalendarOccurrenceAt } from '../utils/assert-calendar-occurrence';
 import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
 
 export class GetCalendarMeetingLobby {
@@ -79,21 +80,23 @@ export class GetCalendarMeetingLobbyHandler
       event,
     });
 
+    const occurrenceAt = resolveCalendarOccurrenceAt(event, query.occurrenceAt);
+
     const meeting = await meetingRepo.findOne({
       where: {
         calendarEventId: event.id,
-        scheduledStartsAt: query.occurrenceAt,
+        scheduledStartsAt: occurrenceAt,
       },
       relations: { attendees: { user: true }, channel: true },
     });
 
     return {
       calendarEvent: event,
-      occurrenceAt: query.occurrenceAt,
+      occurrenceAt,
       meeting,
       joinable: this.isJoinable({
         event,
-        occurrenceAt: query.occurrenceAt,
+        occurrenceAt,
         meeting,
       }),
     };

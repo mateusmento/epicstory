@@ -1,10 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsDate, IsString, IsUUID } from 'class-validator';
+import {
+  IsBoolean,
+  IsDate,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { UUID } from 'crypto';
 import { addMilliseconds, isFuture } from 'date-fns';
 import { CalendarEvent } from 'src/calendar/entities';
+import { resolveCalendarOccurrenceAt } from 'src/calendar/utils/assert-calendar-occurrence';
 import { assertCalendarMeetingAccess } from 'src/calendar/utils/assert-calendar-meeting-access';
 import { Meeting } from 'src/channel/domain';
 import { MeetingRepository } from 'src/channel/infrastructure';
@@ -28,9 +35,10 @@ export class JoinScheduledMeeting {
   @IsUUID()
   calendarEventId: UUID;
 
+  @IsOptional()
   @Type(() => Date)
   @IsDate()
-  occurrenceAt: Date; // occurrence start timestamp
+  occurrenceAt?: Date; // required for recurring; ignored for one-off events
 
   @IsString()
   remoteId: string;
@@ -59,7 +67,7 @@ export class JoinScheduledMeetingHandler
   ) {}
 
   async execute(command: JoinScheduledMeeting): Promise<Meeting> {
-    const { issuerId, calendarEventId, occurrenceAt } = command;
+    const { issuerId, calendarEventId } = command;
 
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);
     const event = await calendarRepo.findOne({
@@ -75,6 +83,11 @@ export class JoinScheduledMeetingHandler
       issuerId,
       event,
     });
+
+    const occurrenceAt = resolveCalendarOccurrenceAt(
+      event,
+      command.occurrenceAt,
+    );
 
     let meeting = await this.meetingRepo.findScheduled(event.id, occurrenceAt, {
       channel: true,
