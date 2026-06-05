@@ -51,8 +51,11 @@ function goToMeetingLobby(event: ICalendarEvent) {
   if (!workspace.value?.id) return;
   router.push({
     name: "meeting-lobby",
-    params: { workspaceId: workspace.value.id, calendarEventId: event.id },
-    query: { occurrenceAt: new Date(event.startsAt).toISOString() },
+    params: { workspaceId: workspace.value.id },
+    query: {
+      calendarEventId: event.id,
+      occurrenceAt: new Date(event.startsAt).toISOString(),
+    },
   });
 }
 </script>

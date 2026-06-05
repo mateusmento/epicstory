@@ -110,8 +110,11 @@ async function openNotification(notification: Notification) {
     if (workspaceId && payload?.calendarEventId && payload?.occurrenceAt) {
       router.push({
         name: "meeting-lobby",
-        params: { workspaceId, calendarEventId: payload.calendarEventId },
-        query: { occurrenceAt: payload.occurrenceAt },
+        params: { workspaceId },
+        query: {
+          calendarEventId: payload.calendarEventId,
+          occurrenceAt: payload.occurrenceAt,
+        },
       });
     }
     return;

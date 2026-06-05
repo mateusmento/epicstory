@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { UserAvatar } from "@/components/user";
 import { useDependency } from "@/core/dependency-injection";
+import { parseDate } from "@/utils";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { CalendarEventApi } from "@epicstory/api-client";
-import { useMeeting, useMeetingMediaDevicesStore } from "@/domain/meetings";
+import {
+  isMeetingEnded,
+  isScheduledMeetingOccurrenceJoinable,
+  useMeeting,
+  useMeetingMediaDevicesStore,
+} from "@/domain/meetings";
 import MeetingDeviceMenu from "@/components/meeting/MeetingDeviceMenu.vue";
+import { useNow } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -23,9 +30,8 @@ const calendarEventId = computed(() =>
 );
 const occurrenceAt = computed(() => {
   const raw = route.query.occurrenceAt;
-  const str = Array.isArray(raw) ? raw[0] : raw;
-  const d = str ? new Date(String(str)) : null;
-  return d && !Number.isNaN(d.getTime()) ? d : null;
+  const occurrenceAt = Array.isArray(raw) ? raw[0] : raw;
+  return occurrenceAt && parseDate(occurrenceAt);
 });
 
 const isLoading = ref(false);
@@ -35,6 +41,7 @@ const previewStream = ref<MediaStream | null>(null);
 const videoEl = ref<HTMLVideoElement | null>(null);
 
 const canPreview = ref(true);
+const now = useNow({ interval: 1000 });
 
 async function fetchMeeting() {
   isLoading.value = true;
@@ -105,7 +112,38 @@ function toggleMic() {
   track.enabled = isMicrophoneOn.value;
 }
 
+const lobbyScheduledStartsAt = computed(() => {
+  const fromMeeting = parseDate(lobby.value?.meeting?.scheduledStartsAt);
+  if (fromMeeting) return fromMeeting;
+  const fromLobby = parseDate(lobby.value?.occurrenceAt);
+  return fromLobby ?? occurrenceAt.value;
+});
+
+const canJoinLobby = computed(() => {
+  if (!lobby.value) return false;
+
+  if (meetingId.value && !lobbyScheduledStartsAt.value) {
+    return lobby.value.meeting ? !isMeetingEnded(lobby.value.meeting, now.value) : true;
+  }
+
+  return isScheduledMeetingOccurrenceJoinable({
+    scheduledStartsAt: lobbyScheduledStartsAt.value,
+    meeting: lobby.value.meeting,
+    calendarEvent: lobby.value.calendarEvent,
+    now: now.value,
+  });
+});
+
+const waitingForStart = computed(() => {
+  const startsAt = lobbyScheduledStartsAt.value;
+  return Boolean(startsAt && startsAt.getTime() > now.value.getTime());
+});
+
+const meetingHasEnded = computed(() => Boolean(lobby.value && !waitingForStart.value && !canJoinLobby.value));
+
 async function join() {
+  if (!canJoinLobby.value) return;
+
   const meeting = await (() => {
     if (occurrenceAt.value && calendarEventId.value) {
       return joinScheduledMeeting({
@@ -133,8 +171,15 @@ async function cancelSeries() {
   }
 }
 
+watch(
+  [meetingId, calendarEventId, occurrenceAt],
+  () => {
+    fetchMeeting();
+  },
+  { immediate: true },
+);
+
 onMounted(async () => {
-  await fetchMeeting();
   await meetingDevices.ensurePermissionAndLabels();
   await setupPreview();
 });
@@ -151,7 +196,7 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
 <template>
   <div class="w-full h-full px-6 py-6 overflow-auto bg-muted/20">
     <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-      <div class="rounded-xl border bg-white p-4">
+      <div class="rounded-xl border bg-card p-4">
         <div class="flex items-start justify-between gap-4">
           <div>
             <div class="text-xs text-muted-foreground">Scheduled meeting</div>
@@ -197,19 +242,20 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
             <Button
               size="sm"
               @click="join"
-              :disabled="isLoading || (!occurrenceAt && !meetingId) || !lobby?.joinable"
+              :disabled="isLoading || (!occurrenceAt && !meetingId) || !canJoinLobby"
             >
               Join meeting
             </Button>
           </div>
         </div>
 
-        <div v-if="!lobby?.joinable" class="mt-2 text-xs text-muted-foreground">
+        <div v-if="meetingHasEnded" class="mt-2 text-xs text-muted-foreground">This meeting has ended.</div>
+        <div v-else-if="waitingForStart" class="mt-2 text-xs text-muted-foreground">
           Meeting will be joinable at the scheduled start time.
         </div>
       </div>
 
-      <div class="rounded-xl border bg-white p-4">
+      <div class="rounded-xl border bg-card p-4">
         <div class="text-sm font-semibold">Participants</div>
         <div class="mt-2 flex flex-wrap gap-2">
           <div
