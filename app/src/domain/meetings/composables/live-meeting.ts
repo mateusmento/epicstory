@@ -4,6 +4,7 @@ import { useWorkspace } from "@/domain/workspace";
 import { onUnmounted, ref, watch } from "vue";
 import { MeetingApi } from "@epicstory/api-client";
 import type { LiveScheduledMeeting } from "@epicstory/contracts";
+import { isLiveJoinableMeeting } from "../utils/meeting-ended";
 import { useMeetingSocket } from "./meeting-socket";
 
 export function useLiveMeeting() {
@@ -25,7 +26,8 @@ export function useLiveMeeting() {
 
     isLoadingLiveScheduledMeeting.value = true;
     try {
-      liveScheduledMeeting.value = await meetingApi.findLiveScheduledMeeting(workspaceId);
+      const result = await meetingApi.findLiveScheduledMeeting(workspaceId);
+      liveScheduledMeeting.value = result?.meeting && !isLiveJoinableMeeting(result.meeting) ? null : result;
     } finally {
       isLoadingLiveScheduledMeeting.value = false;
     }

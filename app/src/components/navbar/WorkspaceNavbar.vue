@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { UserProfile } from "@/components/user";
+import { ThemePicker } from "@/components/theme";
 import {
   Button,
   MenuContent,
@@ -14,7 +15,7 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import { useLiveMeeting, useMeeting } from "@/domain/meetings";
+import { useLiveMeeting, useMeeting, isLiveJoinableMeeting } from "@/domain/meetings";
 import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
 import {
@@ -46,7 +47,8 @@ const { liveScheduledMeeting } = useLiveMeeting();
 const { unseenCount } = useNotifications();
 
 const showHuddleCard = computed(() => {
-  return Boolean(!currentMeeting.value && liveScheduledMeeting.value?.meeting?.ongoing);
+  const meeting = liveScheduledMeeting.value?.meeting;
+  return Boolean(!currentMeeting.value && meeting && isLiveJoinableMeeting(meeting));
 });
 
 const huddlePeers = computed(() => {
@@ -58,17 +60,17 @@ onMounted(() => {
 });
 
 async function onJoinLiveScheduledMeeting() {
-  if (!liveScheduledMeeting.value?.meeting) return;
+  const meeting = liveScheduledMeeting.value?.meeting;
+  if (!meeting || !isLiveJoinableMeeting(meeting)) return;
   const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
-  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt;
-  // if (!calendarEventId || !occurrenceAt) return;
+  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt as unknown as string;
   router.push({
     name: "meeting-lobby",
     params: { workspaceId: String(workspace.value.id) },
     query: {
-      ...(occurrenceAt != null ? { occurrenceAt: occurrenceAt.toISOString() } : {}),
+      ...(occurrenceAt != null ? { occurrenceAt: occurrenceAt } : {}),
       ...(calendarEventId != null ? { calendarEventId: String(calendarEventId) } : {}),
-      meetingId: String(liveScheduledMeeting.value.meeting.id),
+      meetingId: String(liveScheduledMeeting.value?.meeting.id),
     },
   });
 }
@@ -80,10 +82,10 @@ async function onJoinLiveScheduledMeeting() {
       <div class="flex:row-auto flex:center-y">
         <div class="text-xs text-secondary-foreground">Workspace</div>
         <div class="flex:row-md flex:center-y h-fit">
-          <Button variant="outline" size="icon" class="bg-white">
+          <Button variant="outline" size="icon" class="bg-card">
             <ArrowLeft class="w-4 h-4 text-secondary-foreground" />
           </Button>
-          <Button variant="outline" size="icon" class="bg-white">
+          <Button variant="outline" size="icon" class="bg-card">
             <ArrowRight class="w-4 h-4 text-secondary-foreground" />
           </Button>
         </div>
@@ -193,6 +195,11 @@ async function onJoinLiveScheduledMeeting() {
             <span>Settings</span>
             <MenuShortcut>⌘S</MenuShortcut>
           </MenuItem>
+
+          <MenuSeparator />
+
+          <MenuLabel class="text-xs text-muted-foreground px-2 py-1.5">Appearance</MenuLabel>
+          <ThemePicker variant="menu" />
 
           <MenuSeparator />
 
