@@ -2,15 +2,15 @@ import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import { IsDate, IsString } from 'class-validator';
+import { addMilliseconds } from 'date-fns';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { MeetingRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { DataSource } from 'typeorm';
 import { CalendarEventRepository } from '../repositories';
-import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
 import { ScheduledMeetingPayload } from '../types';
-import { addMilliseconds, differenceInMilliseconds } from 'date-fns';
+import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
 
 export class EnsureCalendarMeetingSession {
   @IsString()
@@ -50,11 +50,9 @@ export class EnsureCalendarMeetingSessionCommand
     const channelId = payload.channelId;
 
     await assertCalendarMeetingAccess({
-      dataSource: this.dataSource,
       workspaceRepo: this.workspaceRepo,
       issuerId: command.issuerId,
       event,
-      channelId,
     });
 
     const occurrenceAt = command.occurrenceAt;

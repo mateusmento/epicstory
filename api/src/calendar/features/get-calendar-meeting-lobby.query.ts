@@ -1,23 +1,15 @@
 import { BadRequestException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
-import {
-  IsDate,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsDate, IsNumber, IsOptional, IsUUID } from 'class-validator';
 import { UUID } from 'crypto';
-import { isFuture } from 'date-fns';
+import { addMilliseconds, isBefore, isFuture } from 'date-fns';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { DataSource } from 'typeorm';
 import { CalendarEvent } from '../entities';
 import { assertCalendarMeetingAccess } from '../utils/assert-calendar-meeting-access';
-import { ScheduledMeetingPayload } from '../types';
-import { IsUndefinedIgnored } from 'src/core/validation';
 
 export class GetCalendarMeetingLobby {
   @IsOptional()
@@ -56,7 +48,7 @@ export class GetCalendarMeetingLobbyHandler
     if (query.meetingId) {
       const meeting = await meetingRepo.findOne({
         where: { id: query.meetingId },
-        relations: { attendees: { user: true } },
+        relations: { attendees: { user: true }, channel: true },
       });
 
       const event = await calendarRepo.findOne({
@@ -64,11 +56,14 @@ export class GetCalendarMeetingLobbyHandler
         relations: { participants: true },
       });
 
+      const occurrenceAt =
+        meeting.scheduledStartsAt ?? meeting.occurrenceAt ?? query.occurrenceAt;
+
       return {
         calendarEvent: event,
-        occurrenceAt: query.occurrenceAt,
+        occurrenceAt,
         meeting,
-        joinable: !isFuture(query.occurrenceAt),
+        joinable: this.isJoinable({ event, occurrenceAt, meeting }),
       };
     }
 
@@ -78,15 +73,10 @@ export class GetCalendarMeetingLobbyHandler
     });
     if (!event) throw new BadRequestException('Calendar event not found');
 
-    const channelId =
-      (event.payload as ScheduledMeetingPayload)?.channelId ?? null;
-
     await assertCalendarMeetingAccess({
-      dataSource: this.dataSource,
       workspaceRepo: this.workspaceRepo,
       issuerId: query.issuerId,
       event,
-      channelId,
     });
 
     const meeting = await meetingRepo.findOne({
@@ -94,14 +84,48 @@ export class GetCalendarMeetingLobbyHandler
         calendarEventId: event.id,
         scheduledStartsAt: query.occurrenceAt,
       },
-      relations: { attendees: { user: true } },
+      relations: { attendees: { user: true }, channel: true },
     });
 
     return {
       calendarEvent: event,
       occurrenceAt: query.occurrenceAt,
       meeting,
-      joinable: !isFuture(query.occurrenceAt),
+      joinable: this.isJoinable({
+        event,
+        occurrenceAt: query.occurrenceAt,
+        meeting,
+      }),
     };
+  }
+
+  private isJoinable({
+    event,
+    occurrenceAt,
+    meeting,
+    now = new Date(),
+  }: {
+    event: CalendarEvent | null;
+    occurrenceAt?: Date | null;
+    meeting: Meeting | null;
+    now?: Date;
+  }) {
+    const scheduledStartsAt =
+      meeting?.scheduledStartsAt ?? meeting?.occurrenceAt ?? occurrenceAt;
+    if (!scheduledStartsAt || isFuture(scheduledStartsAt)) return false;
+
+    if (meeting) {
+      return !meeting.hasEnded(now);
+    }
+
+    if (event) {
+      const durationMs = event.duration();
+      if (durationMs) {
+        const scheduledEndsAt = addMilliseconds(scheduledStartsAt, durationMs);
+        if (isBefore(scheduledEndsAt, now)) return false;
+      }
+    }
+
+    return true;
   }
 }

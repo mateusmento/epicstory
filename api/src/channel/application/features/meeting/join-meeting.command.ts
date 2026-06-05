@@ -46,7 +46,7 @@ export class JoinMeetingHandler implements ICommandHandler<JoinMeeting> {
 
     let meeting = await this.meetingRepo.findOne({
       where: { id: meetingId },
-      relations: { attendees: { user: true } },
+      relations: { attendees: { user: true }, channel: true },
     });
 
     if (!meeting) throw new MeetingNotFoundException();

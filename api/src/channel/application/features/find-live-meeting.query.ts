@@ -57,12 +57,15 @@ export class FindLiveMeetingHandler implements IQueryHandler<FindLiveMeeting> {
     const qb = await this.meetingRepo
       .createQueryBuilder('m')
       .leftJoinAndSelect(CalendarEvent, 'ev', 'ev.id = m.calendar_event_id')
-      .leftJoin('m.channel', 'ch')
+      .leftJoinAndSelect('m.channel', 'ch')
       .andWhere('m.ongoing')
       .andWhere('m.endedAt IS NULL')
       .andWhere('(m.channel IS NULL or ch.type != :type)', { type: 'meeting' })
       .andWhere('m.workspaceId = :workspaceId', { workspaceId })
       .andWhere('m.startedAt <= :now', { now })
+      .andWhere('(m.scheduled_ends_at IS NULL OR m.scheduled_ends_at > :now)', {
+        now,
+      })
       .andWhere(
         `(
           (
@@ -96,7 +99,7 @@ export class FindLiveMeetingHandler implements IQueryHandler<FindLiveMeeting> {
 
     const meeting = await qb.getOne();
 
-    if (!meeting) return null;
+    if (!meeting || meeting.hasEnded(now)) return null;
 
     const calendarRepo = this.dataSource.getRepository(CalendarEvent);
     const event = meeting.calendarEventId

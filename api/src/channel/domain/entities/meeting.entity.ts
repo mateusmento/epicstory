@@ -1,4 +1,4 @@
-import { isFuture, isPast } from 'date-fns';
+import { isBefore, isFuture } from 'date-fns';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
 import { create, patch } from 'src/core/objects';
 import { Workspace } from 'src/workspace/domain/entities';
@@ -132,11 +132,19 @@ export class Meeting {
     return this.attendees.length === 0;
   }
 
-  hasEnded() {
-    return (
-      this.endedAt &&
-      isPast(this.endedAt) &&
-      (!this.channel || this.channel.type !== 'meeting')
-    );
+  hasEnded(now: Date = new Date()) {
+    if (this.channel?.type === 'meeting') {
+      return false;
+    }
+
+    if (this.endedAt && isBefore(this.endedAt, now)) {
+      return true;
+    }
+
+    if (this.scheduledEndsAt && isBefore(this.scheduledEndsAt, now)) {
+      return true;
+    }
+
+    return false;
   }
 }

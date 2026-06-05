@@ -4,7 +4,10 @@ import { Meeting } from 'src/channel/domain';
 import {
   FindOptionsRelations,
   FindOptionsWhere,
+  IsNull,
   LessThanOrEqual,
+  MoreThan,
+  Or,
   Repository,
 } from 'typeorm';
 
@@ -48,12 +51,14 @@ export class MeetingRepository extends Repository<Meeting> {
     filter: FindOptionsWhere<Meeting>,
     relations?: FindOptionsRelations<Meeting>,
   ) {
+    const now = new Date();
     return this.findOne({
       where: {
         ...filter,
         ongoing: true,
-        endedAt: null,
-        startedAt: LessThanOrEqual(new Date()),
+        endedAt: IsNull(),
+        startedAt: LessThanOrEqual(now),
+        scheduledEndsAt: Or(IsNull(), MoreThan(now)),
       },
       relations,
     });

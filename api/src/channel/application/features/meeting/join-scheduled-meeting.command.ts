@@ -11,7 +11,10 @@ import { MeetingRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { DataSource } from 'typeorm';
-import { MeetingHasntStartedException } from '../../exceptions';
+import {
+  MeetingHasEndedException,
+  MeetingHasntStartedException,
+} from '../../exceptions';
 import { JoinMeeting } from './join-meeting.command';
 import { StartMeeting } from './start-meeting.command';
 
@@ -68,14 +71,14 @@ export class JoinScheduledMeetingHandler
     const channelId = (event.payload as any)?.channelId ?? null;
 
     await assertCalendarMeetingAccess({
-      dataSource: this.dataSource,
       workspaceRepo: this.workspaceRepo,
       issuerId,
       event,
-      channelId,
     });
 
-    let meeting = await this.meetingRepo.findScheduled(event.id, occurrenceAt);
+    let meeting = await this.meetingRepo.findScheduled(event.id, occurrenceAt, {
+      channel: true,
+    });
 
     if (!meeting) {
       const scheduledEndsAt = event.duration()
@@ -102,6 +105,10 @@ export class JoinScheduledMeetingHandler
     // Joinability: never allow joining before the scheduled start timestamp.
     if (isFuture(occurrenceAt)) {
       throw new MeetingHasntStartedException();
+    }
+
+    if (meeting.hasEnded()) {
+      throw new MeetingHasEndedException();
     }
 
     // If start job didn't run (or user is the first to join), start now.
