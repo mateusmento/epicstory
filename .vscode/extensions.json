@@ -1,3 +1,9 @@
 {
-  "recommendations": ["firsttris.vscode-jest-runner", "orta.vscode-jest"]
+  "recommendations": [
+    "firsttris.vscode-jest-runner",
+    "orta.vscode-jest",
+    "0disoft.oklch-shade",
+    "naumovs.color-highlight",
+    "bradlc.vscode-tailwindcss"
+  ]
 }

@@ -1,0 +1,33 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@tailwind",
+      "description": "Insert Tailwind base, components, utilities, and variants."
+    },
+    {
+      "name": "@apply",
+      "description": "Inline Tailwind utility classes into custom CSS."
+    },
+    {
+      "name": "@layer",
+      "description": "Declare a cascade layer (base, components, utilities)."
+    },
+    {
+      "name": "@config",
+      "description": "Load a Tailwind config file (v4)."
+    },
+    {
+      "name": "@theme",
+      "description": "Define theme variables (Tailwind v4)."
+    },
+    {
+      "name": "@utility",
+      "description": "Define a custom utility (Tailwind v4)."
+    },
+    {
+      "name": "@variant",
+      "description": "Define a custom variant (Tailwind v4)."
+    }
+  ]
+}
