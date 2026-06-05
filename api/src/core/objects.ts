@@ -105,15 +105,20 @@ export function mapBy<T, K extends keyof T>(array: T[], key: K): Map<T[K], T> {
 export function cached<T extends (...args: any) => any>(
   fn: (...args: Parameters<T>) => ReturnType<T>,
 ) {
-  let cache = null;
+  let cache: [ReturnType<T>, ...Parameters<T>] | null = null;
   return (...args: Parameters<T>): ReturnType<T> => {
     const [cachedResult, ...cacheArgs] = cache ?? [];
+
     const isSameCachedArguments =
       args.length === cacheArgs.length &&
       args.every((v, i) => v === cacheArgs[i]);
-    const result =
-      !cachedResult || isSameCachedArguments ? fn(...args) : cachedResult;
-    if (!cachedResult || isSameCachedArguments) cache = [cachedResult, ...args];
+
+    if (cache !== null && !isSameCachedArguments) {
+      return cachedResult;
+    }
+
+    const result = fn(...args);
+    cache = [result, ...args] as [ReturnType<T>, ...Parameters<T>];
     return result;
   };
 }
