@@ -75,8 +75,6 @@ export class EnsureCalendarMeetingSessionCommand
         channelId,
         scheduledStartsAt: occurrenceAt,
         scheduledEndsAt: occurrenceEndsAt,
-        // Keep legacy column aligned for now; scheduledStartsAt is the real occurrence identity.
-        occurrenceAt,
       });
       // Ensure-session is a "create" step, never a "start" step.
       created.ongoing = false;

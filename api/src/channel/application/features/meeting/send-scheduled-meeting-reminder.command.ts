@@ -68,8 +68,6 @@ export class SendScheduledMeetingReminderHandler
         calendarEventId: event.id as any,
         scheduledStartsAt: occurrenceAt,
         scheduledEndsAt: occurrenceEndsAt,
-        // Keep legacy column aligned for now.
-        occurrenceAt: occurrenceAt,
       });
       created.ongoing = false;
       created.startedAt = occurrenceAt;

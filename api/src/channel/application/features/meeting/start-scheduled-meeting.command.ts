@@ -68,8 +68,6 @@ export class StartScheduledMeetingHandler
         calendarEventId: event.id as any,
         scheduledStartsAt: command.occurrenceAt,
         scheduledEndsAt,
-        // Keep legacy column aligned for now.
-        occurrenceAt: command.occurrenceAt,
       });
       created.ongoing = false;
       created.startedAt = command.occurrenceAt;

@@ -19,20 +19,6 @@ export class MeetingRepository extends Repository<Meeting> {
     super(repo.target, repo.manager, repo.queryRunner);
   }
 
-  findMeeting(
-    calendarEventId: UUID,
-    occurrenceAt: Date,
-    relations?: FindOptionsRelations<Meeting>,
-  ) {
-    return this.findOne({
-      where: {
-        calendarEventId,
-        occurrenceAt,
-      },
-      relations,
-    });
-  }
-
   findScheduled(
     calendarEventId: UUID,
     scheduledStartsAt: Date,

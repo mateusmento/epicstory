@@ -63,12 +63,13 @@ async function onJoinLiveScheduledMeeting() {
   const meeting = liveScheduledMeeting.value?.meeting;
   if (!meeting || !isLiveJoinableMeeting(meeting)) return;
   const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
-  const occurrenceAt = liveScheduledMeeting.value?.meeting.occurrenceAt as unknown as string;
+  const scheduledStartsAt = meeting.scheduledStartsAt;
+  const occurrenceAt = scheduledStartsAt != null ? new Date(scheduledStartsAt).toISOString() : undefined;
   router.push({
     name: "meeting-lobby",
     params: { workspaceId: String(workspace.value.id) },
     query: {
-      ...(occurrenceAt != null ? { occurrenceAt: occurrenceAt } : {}),
+      ...(occurrenceAt != null ? { occurrenceAt } : {}),
       ...(calendarEventId != null ? { calendarEventId: String(calendarEventId) } : {}),
       meetingId: String(liveScheduledMeeting.value?.meeting.id),
     },

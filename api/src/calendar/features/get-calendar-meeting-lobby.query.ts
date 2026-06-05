@@ -57,8 +57,7 @@ export class GetCalendarMeetingLobbyHandler
         relations: { participants: true },
       });
 
-      const occurrenceAt =
-        meeting.scheduledStartsAt ?? meeting.occurrenceAt ?? query.occurrenceAt;
+      const occurrenceAt = meeting.scheduledStartsAt ?? query.occurrenceAt;
 
       return {
         calendarEvent: event,
@@ -113,8 +112,7 @@ export class GetCalendarMeetingLobbyHandler
     meeting: Meeting | null;
     now?: Date;
   }) {
-    const scheduledStartsAt =
-      meeting?.scheduledStartsAt ?? meeting?.occurrenceAt ?? occurrenceAt;
+    const scheduledStartsAt = meeting?.scheduledStartsAt ?? occurrenceAt;
     if (!scheduledStartsAt || isFuture(scheduledStartsAt)) return false;
 
     if (meeting) {

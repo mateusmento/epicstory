@@ -27,7 +27,7 @@ import { StartMeeting } from './start-meeting.command';
 
 /**
  * Scheduled meeting = calendar-backed meeting occurrence.
- * Identity: (calendarEventId, occurrenceAt[start]).
+ * Identity: (calendarEventId, scheduledStartsAt).
  */
 export class JoinScheduledMeeting {
   issuerId: number;
@@ -105,8 +105,6 @@ export class JoinScheduledMeetingHandler
           calendarEventId: event.id as any,
           scheduledStartsAt: occurrenceAt,
           scheduledEndsAt,
-          // Keep legacy column aligned for now.
-          occurrenceAt,
         }),
       );
 

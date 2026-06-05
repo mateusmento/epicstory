@@ -85,7 +85,6 @@ export type IMeeting = {
   ongoing: boolean;
   startedAt: Date;
   endedAt: Date | null;
-  occurrenceAt?: Date | null;
   calendarEventId?: string | null;
   scheduledStartsAt?: Date | null;
   scheduledEndsAt?: Date | null;
