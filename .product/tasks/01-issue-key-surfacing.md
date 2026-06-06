@@ -31,7 +31,7 @@ Backend allocates stable keys (`EPV1-93`) and webhooks link branches by key, but
 - [x] Notifications: add `issueKey` to API payloads (`IssueAssigned`, `DueDate`, etc.) and UI
 - [x] Issue picker shows key
 - [x] GitHub branch name suggestion uses `issueKey` (not numeric id)
-- [ ] Activity feed entries reference key where relevant
+- [x] Activity feed entries reference key where relevant
 
 ## Decisions
 

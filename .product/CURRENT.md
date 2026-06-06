@@ -1,6 +1,6 @@
 # Current session
 
-**Updated:** 2026-05-28
+**Updated:** 2026-06-05
 
 ## Session question (60–90 min)
 
@@ -12,6 +12,7 @@
 - [x] Issue detail header shows the key with **copy to clipboard**.
 - [x] GitHub sidebar hints reference `{issueKey}-…` (not numeric `issue.id`).
 - [x] Sub-issues and filters use the key where the parent/child is labeled.
+- [x] Activity feed `parent_changed` entries use issue keys (never `#id`).
 - [ ] Manual check: copy key → create or push branch `KEY-slug` → linked branch appears (local stack).
 - [x] Notifications show `issueKey` (with `#id` fallback for older payloads).
 

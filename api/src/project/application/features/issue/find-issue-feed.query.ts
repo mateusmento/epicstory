@@ -15,11 +15,16 @@ import {
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
 import { parseStoredIssueActivityPayload } from 'src/project/domain/utils/issue-activity-payload-parse';
+import {
+  collectParentIssueIdsNeedingKeys,
+  enrichParentChangedPayload,
+} from 'src/project/domain/utils/parent-changed-activity-payload';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import type {
   IssueActivityPayload,
   IssueActivityType,
+  ParentChangedPayload,
 } from 'src/project/domain/types/issue-activity-payload.types';
 import { IsOptional, Max, Min, IsNumber } from 'class-validator';
 import { MessageReply } from 'src/channel/domain/entities';
@@ -140,6 +145,27 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
         : [];
     const actorById = new Map(actorRows.map((u) => [u.id, u]));
 
+    const parsedPayloads = rows.map((row) =>
+      row.type === 'parent_changed'
+        ? ((parseStoredIssueActivityPayload(
+            row.type,
+            (row.payload as Record<string, unknown> | null) ?? null,
+          ) ?? null) as ParentChangedPayload | null)
+        : null,
+    );
+    const parentIdsNeedingKeys =
+      collectParentIssueIdsNeedingKeys(parsedPayloads);
+    const parentKeyRows =
+      parentIdsNeedingKeys.length > 0
+        ? await this.issueRepo.find({
+            where: { id: In(parentIdsNeedingKeys) },
+            select: { id: true, issueKey: true },
+          })
+        : [];
+    const parentKeysByIssueId = new Map(
+      parentKeyRows.map((row) => [row.id, row.issueKey]),
+    );
+
     const items: IIssueFeedActivityItem[] = rows.map((a) => {
       const dto = a.messageId ? messagesById.get(a.messageId) : undefined;
       const replyPreviews = a.messageId
@@ -151,6 +177,19 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
 
       const actorUser =
         a.actorId != null ? actorById.get(a.actorId) : undefined;
+
+      let payload =
+        parseStoredIssueActivityPayload(
+          a.type,
+          (a.payload as Record<string, unknown> | null) ?? null,
+        ) ?? null;
+
+      if (a.type === 'parent_changed' && payload != null) {
+        payload = enrichParentChangedPayload(
+          payload as ParentChangedPayload,
+          parentKeysByIssueId,
+        );
+      }
 
       return {
         activityId: a.id,
@@ -168,11 +207,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
         createdAt: a.createdAt,
         messageId: a.messageId,
         attachmentId: a.attachmentId,
-        payload:
-          parseStoredIssueActivityPayload(
-            a.type,
-            (a.payload as Record<string, unknown> | null) ?? null,
-          ) ?? null,
+        payload,
         message: dto ?? null,
         replyPreviews: replyPreviews,
         repliesTotal: a.messageId != null ? repliesTotal : undefined,
