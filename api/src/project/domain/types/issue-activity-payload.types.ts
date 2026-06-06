@@ -49,6 +49,8 @@ export type LabelsChangedPayload = {
 export type ParentChangedPayload = {
   previousParentIssueId?: number | null;
   newParentIssueId?: number | null;
+  previousParentIssueKey?: string | null;
+  newParentIssueKey?: string | null;
 };
 export type EmptyPayload = Record<string, never>;
 

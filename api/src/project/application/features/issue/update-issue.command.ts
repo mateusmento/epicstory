@@ -21,7 +21,9 @@ import {
   TIPTAP_ISSUE_DESCRIPTION_ACTIVITY_EXCERPT_MAX,
 } from 'src/utils/tiptap-excerpt';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import { buildParentChangedPayload } from 'src/project/domain/utils/parent-changed-activity-payload';
 import { Transactional } from 'typeorm-transactional';
+import { In } from 'typeorm';
 import { ProjectGateway } from '../../gateways/project.gateway';
 import { syncIssueDueDateReminders } from './sync-issue-due-reminders';
 
@@ -215,6 +217,26 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
       data.parentIssueId !== undefined &&
       (savedIssue.parentIssueId ?? null) !== prevSnapshot.parentIssueId
     ) {
+      const previousParentIssueId = prevSnapshot.parentIssueId;
+      const newParentIssueId = savedIssue.parentIssueId ?? null;
+      const parentIds = [
+        ...new Set(
+          [previousParentIssueId, newParentIssueId].filter(
+            (id): id is number => id != null,
+          ),
+        ),
+      ];
+      const parentRows =
+        parentIds.length > 0
+          ? await this.issueRepo.find({
+              where: { id: In(parentIds) },
+              select: { id: true, issueKey: true },
+            })
+          : [];
+      const keysByIssueId = new Map(
+        parentRows.map((row) => [row.id, row.issueKey]),
+      );
+
       await this.issueActivities.save(
         this.issueActivities.create({
           issueId,
@@ -222,10 +244,11 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
           type: 'parent_changed',
           messageId: null,
           attachmentId: null,
-          payload: {
-            previousParentIssueId: prevSnapshot.parentIssueId,
-            newParentIssueId: savedIssue.parentIssueId ?? null,
-          },
+          payload: buildParentChangedPayload({
+            previousParentIssueId,
+            newParentIssueId,
+            keysByIssueId,
+          }),
         }),
       );
     }

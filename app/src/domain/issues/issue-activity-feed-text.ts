@@ -90,6 +90,30 @@ function resolveLabelNames(raw: unknown): string[] {
   return raw.filter((x): x is string => typeof x === "string" && x.trim() !== "");
 }
 
+function resolveParentIssueKey(
+  payload: Record<string, unknown> | null,
+  field: "previousParentIssueKey" | "newParentIssueKey",
+): string | null {
+  const raw = payload?.[field];
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  return trimmed || null;
+}
+
+function parentWasSet(payload: Record<string, unknown> | null): boolean {
+  return payload?.newParentIssueId != null;
+}
+
+function parentWasRemoved(payload: Record<string, unknown> | null): boolean {
+  return payload?.previousParentIssueId != null && payload?.newParentIssueId == null;
+}
+
+function parentWasChanged(payload: Record<string, unknown> | null): boolean {
+  const prev = payload?.previousParentIssueId;
+  const next = payload?.newParentIssueId;
+  return prev != null && next != null && prev !== next;
+}
+
 /** One plain sentence: "Ada changed status to Done", "Harry added Feature label". */
 export function formatIssueActivitySentence(
   item: IssueFeedItem,
@@ -160,14 +184,22 @@ export function formatIssueActivitySentence(
       return `${name} updated labels`;
     }
     case "parent_changed": {
-      const prevRaw = p?.previousParentIssueId;
-      const nextRaw = p?.newParentIssueId;
-      const prev = typeof prevRaw === "number" ? prevRaw : null;
-      const next = typeof nextRaw === "number" ? nextRaw : null;
-      if (next != null && prev != null && prev !== next)
-        return `${name} changed parent issue from #${prev} to #${next}`;
-      if (next != null) return `${name} set parent issue to #${next}`;
-      if (prev != null) return `${name} removed parent issue (was #${prev})`;
+      const prevKey = resolveParentIssueKey(p, "previousParentIssueKey");
+      const nextKey = resolveParentIssueKey(p, "newParentIssueKey");
+      if (parentWasChanged(p)) {
+        if (prevKey && nextKey) {
+          return `${name} changed parent issue from ${prevKey} to ${nextKey}`;
+        }
+        return `${name} changed the parent issue`;
+      }
+      if (parentWasSet(p)) {
+        if (nextKey) return `${name} set parent issue to ${nextKey}`;
+        return `${name} set a parent issue`;
+      }
+      if (parentWasRemoved(p)) {
+        if (prevKey) return `${name} removed parent issue (was ${prevKey})`;
+        return `${name} removed the parent issue`;
+      }
       return `${name} updated parent issue`;
     }
     case "attachment_added":
