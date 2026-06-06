@@ -12,6 +12,8 @@ type SegmentRecord = {
   kind: OverflowSegmentKind;
   order: number;
   widthPx: number;
+  segmentKey?: string;
+  pinned?: boolean;
 };
 
 export type OverflowEllipsisSlotProps = {
@@ -19,12 +21,19 @@ export type OverflowEllipsisSlotProps = {
   hiddenBefore: number;
   hiddenAfter: number;
   collapsed: boolean;
+  hiddenSegmentKeys: string[];
+};
+
+export type OverflowRegisterOptions = {
+  segmentKey?: string;
+  pinned?: boolean;
 };
 
 export type OverflowContextValue = {
-  registerSegment: (id: symbol, kind: OverflowSegmentKind) => void;
+  registerSegment: (id: symbol, kind: OverflowSegmentKind, options?: OverflowRegisterOptions) => void;
   unregisterSegment: (id: symbol) => void;
   setSegmentWidth: (id: symbol, widthPx: number) => void;
+  updateSegment: (id: symbol, options: OverflowRegisterOptions) => void;
   containerWidthPx: ComputedRef<number>;
   layoutReady: ComputedRef<boolean>;
   segmentEdge: (id: symbol) => OverflowEdge;
@@ -72,8 +81,22 @@ export function provideOverflowContext(options: {
       segments: list.map((segment) => ({
         kind: segment.kind,
         widthPx: segment.widthPx,
+        pinned: segment.pinned,
       })),
     });
+  });
+
+  const hiddenSegmentKeys = computed(() => {
+    const list = sortedSegments();
+    const keys: string[] = [];
+
+    list.forEach((segment, index) => {
+      if (segment.kind !== "item" || !segment.segmentKey) return;
+      if (layoutResult.value.visible[index]) return;
+      keys.push(segment.segmentKey);
+    });
+
+    return keys;
   });
 
   const segmentIndexById = computed(() => {
@@ -84,13 +107,22 @@ export function provideOverflowContext(options: {
     return map;
   });
 
-  function registerSegment(id: symbol, kind: OverflowSegmentKind) {
+  function registerSegment(id: symbol, kind: OverflowSegmentKind, options: OverflowRegisterOptions = {}) {
     segments.set(id, {
       id,
       kind,
       order: orderCounter++,
       widthPx: 0,
+      segmentKey: options.segmentKey,
+      pinned: options.pinned,
     });
+  }
+
+  function updateSegment(id: symbol, options: OverflowRegisterOptions) {
+    const segment = segments.get(id);
+    if (!segment) return;
+    if (options.segmentKey !== undefined) segment.segmentKey = options.segmentKey;
+    if (options.pinned !== undefined) segment.pinned = options.pinned;
   }
 
   function unregisterSegment(id: symbol) {
@@ -124,12 +156,14 @@ export function provideOverflowContext(options: {
     hiddenBefore: layoutResult.value.hiddenBefore,
     hiddenAfter: layoutResult.value.hiddenAfter,
     collapsed: layoutResult.value.collapsed,
+    hiddenSegmentKeys: hiddenSegmentKeys.value,
   }));
 
   const context: OverflowContextValue = {
     registerSegment,
     unregisterSegment,
     setSegmentWidth,
+    updateSegment,
     containerWidthPx: options.containerWidthPx,
     layoutReady,
     segmentEdge,

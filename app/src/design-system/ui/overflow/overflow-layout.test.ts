@@ -127,6 +127,23 @@ describe("computeOverflowLayout", () => {
     expect(result.hiddenAfter).toBe(1);
     expect(result.hiddenBefore).toBe(0);
   });
+
+  it("never hides pinned breadcrumb segments", () => {
+    const result = computeOverflowLayout({
+      containerWidthPx: 150,
+      gapPx: gap,
+      segments: [
+        { kind: "item", widthPx: 50, pinned: true },
+        { kind: "ellipsis", widthPx: 24 },
+        { kind: "item", widthPx: 80 },
+        { kind: "item", widthPx: 60, pinned: true },
+      ],
+    });
+
+    expect(result.visible).toEqual([true, true, false, true]);
+    expect(result.hiddenBefore).toBe(0);
+    expect(result.hiddenAfter).toBe(1);
+  });
 });
 
 function rowWidth(segments: OverflowSegment[], visible: boolean[], gapPx: number): number {

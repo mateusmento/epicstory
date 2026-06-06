@@ -7,4 +7,4 @@ export {
   type OverflowSegment,
   type OverflowSegmentKind,
 } from "./overflow-layout";
-export type { OverflowEllipsisSlotProps, OverflowEdge } from "./overflow-context";
+export type { OverflowEllipsisSlotProps, OverflowEdge, OverflowRegisterOptions } from "./overflow-context";
