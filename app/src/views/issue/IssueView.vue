@@ -8,7 +8,7 @@ import {
   IssueStatusDropdown,
 } from "@/components/issue";
 import IssueAttachmentsStrip from "@/components/issue/IssueAttachmentsStrip.vue";
-import { UserAvatar } from "@/components/user";
+import { UserAvatar, UserAvatarStack } from "@/components/user";
 import { WorkspaceMemberDropdown } from "@/components/workspace-members";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
@@ -395,24 +395,14 @@ watch(
                 #default="{ users }"
               >
                 <div class="flex min-w-0 w-full items-center cursor-pointer">
-                  <UserAvatar
-                    v-for="user in users"
-                    :key="user.id"
-                    :name="user.name"
-                    :picture="user.picture"
-                    size="mdLg"
-                    :title="user.name"
-                    class="border-2 border-white"
-                  />
-
-                  <!-- <UserAvatarStack
+                  <UserAvatarStack
                     v-if="users.length"
                     :users="users"
-                    size="mdLg"
+                    size="md"
                     :min="1"
-                    :overlap-px="12"
-                    avatar-class="border-2 border-white"
-                  /> -->
+                    :overlap-px="4"
+                    class="min-w-0 flex-1 basis-32"
+                  />
 
                   <Button
                     v-if="users.length === 0"

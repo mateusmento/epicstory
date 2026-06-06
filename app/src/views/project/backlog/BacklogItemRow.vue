@@ -147,14 +147,14 @@ function updateDueDate(dueDate: Date | null | undefined) {
         </Button>
       </div>
 
-      <div v-if="issue.labels?.length" class="mt-0.5 ml-auto flex flex-wrap gap-1 min-w-0">
-        <IssueLabelTags
-          :disabled="!issue"
-          :model-value="(issue?.labels ?? []).map((l) => l.id)"
-          @add-label="addLabel(issue.id, $event)"
-          @remove-label="removeLabel(issue.id, $event)"
-        />
-      </div>
+      <IssueLabelTags
+        v-if="issue.labels?.length"
+        class="flex flex-1 justify-end mt-0.5 min-w-0 shrink"
+        :disabled="!issue"
+        :model-value="(issue?.labels ?? []).map((l) => l.id)"
+        @add-label="addLabel(issue.id, $event)"
+        @remove-label="removeLabel(issue.id, $event)"
+      />
     </div>
 
     <!-- Priority -->
@@ -178,7 +178,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
             :users="users"
             size="sm"
             :min="1"
-            :overlap-px="10"
+            :overlap-px="4"
             avatar-class="cursor-pointer border border-background"
             class="min-w-0 w-full"
           />

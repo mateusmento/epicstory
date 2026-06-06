@@ -2,7 +2,8 @@
 import { cn } from "@/design-system/utils";
 import { useResizeObserver } from "@vueuse/core";
 import type { Component, HTMLAttributes } from "vue";
-import { computed, nextTick, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref, shallowRef } from "vue";
+import { resolveOverflowElement } from "./overflow-element-ref";
 import { provideOverflowContext } from "./overflow-context";
 
 const props = withDefaults(
@@ -17,11 +18,16 @@ const props = withDefaults(
   },
 );
 
-const containerEl = ref<HTMLElement | null>(null);
+const containerEl = shallowRef<HTMLElement | null>(null);
 const containerWidthPx = ref(0);
 
 function readContainerWidth() {
   containerWidthPx.value = containerEl.value?.getBoundingClientRect().width ?? 0;
+}
+
+function setContainerRef(value: unknown) {
+  containerEl.value = resolveOverflowElement(value);
+  readContainerWidth();
 }
 
 useResizeObserver(containerEl, (entries) => {
@@ -46,7 +52,7 @@ provideOverflowContext({
 <template>
   <component
     :is="as"
-    ref="containerEl"
+    :ref="setContainerRef"
     data-slot="overflow-container"
     :class="cn('flex w-full min-w-0 flex-row items-center overflow-hidden', props.class)"
     :style="{ gap: `${props.gap}px` }"

@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import { OverflowContainer, OverflowEllipsis, OverflowItem } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { ILabel } from "@epicstory/contracts";
 import { useLabels } from "@/domain/labels";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch, type HTMLAttributes } from "vue";
 import IssueLabelsDropdown from "./IssueLabelsDropdown.vue";
+import { cn } from "@/design-system/utils";
 
 const props = withDefaults(
   defineProps<{
     disabled?: boolean;
     placeholder?: string;
+    class?: HTMLAttributes["class"];
   }>(),
   {
     disabled: false,
@@ -49,32 +52,54 @@ const selectedLabels = computed(() => {
 </script>
 
 <template>
-  <IssueLabelsDropdown
-    v-for="label in selectedLabels"
-    :key="label.id"
-    :disabled="disabled"
-    v-model="modelValue"
-    @add-label="emit('add-label', $event)"
-    @remove-label="emit('remove-label', $event)"
-  >
-    <button class="flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs bg-card" title="Label">
-      <span class="h-2 w-2 rounded-full ring-1 ring-border" :style="{ backgroundColor: label.color }" />
-      <span class="max-w-32 text-secondary-foreground capitalize truncate">{{ label.name }}</span>
-    </button>
-  </IssueLabelsDropdown>
+  <OverflowContainer :gap="4" :class="cn('min-w-0 max-w-full', props.class)">
+    <OverflowItem v-for="label in selectedLabels" :key="label.id" :segment-key="String(label.id)">
+      <IssueLabelsDropdown
+        :disabled="disabled"
+        v-model="modelValue"
+        @add-label="emit('add-label', $event)"
+        @remove-label="emit('remove-label', $event)"
+      >
+        <button
+          type="button"
+          class="flex max-w-full items-center gap-2 rounded-full border bg-card px-2 py-0.5 text-xs"
+          title="Label"
+        >
+          <span
+            class="h-2 w-2 shrink-0 rounded-full ring-1 ring-border"
+            :style="{ backgroundColor: label.color }"
+          />
+          <span class="max-w-32 truncate capitalize text-secondary-foreground">{{ label.name }}</span>
+        </button>
+      </IssueLabelsDropdown>
+    </OverflowItem>
 
-  <IssueLabelsDropdown
-    :disabled="disabled"
-    v-model="modelValue"
-    @add-label="emit('add-label', $event)"
-    @remove-label="emit('remove-label', $event)"
-  >
-    <button
-      class="flex items-center gap-2 rounded-full border p-1 text-xs bg-card"
-      title="Label"
-      :disabled="disabled"
-    >
-      <Icon name="hi-plus" class="w-3 h-3 text-muted-foreground" />
-    </button>
-  </IssueLabelsDropdown>
+    <OverflowEllipsis v-slot="{ hiddenCount, collapsed }">
+      <span
+        v-if="collapsed"
+        class="rounded-full px-2 py-0.5 text-xs text-muted-foreground"
+        :title="`+${hiddenCount} more`"
+      >
+        +{{ hiddenCount }}
+      </span>
+    </OverflowEllipsis>
+
+    <OverflowItem pinned>
+      <IssueLabelsDropdown
+        :disabled="disabled"
+        v-model="modelValue"
+        @add-label="emit('add-label', $event)"
+        @remove-label="emit('remove-label', $event)"
+      >
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-full border bg-card p-1 text-xs"
+          title="Label"
+          :disabled="disabled"
+        >
+          <Icon name="hi-plus" class="h-3 w-3 text-muted-foreground" />
+        </button>
+      </IssueLabelsDropdown>
+    </OverflowItem>
+  </OverflowContainer>
 </template>
