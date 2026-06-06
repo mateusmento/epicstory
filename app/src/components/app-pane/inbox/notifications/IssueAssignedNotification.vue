@@ -42,13 +42,11 @@ function formatTime(date: string) {
 
       <Tooltip>
         <TooltipTrigger as-child>
-          <div class="w-full min-w-0 text-sm text-foreground font-lato">
-            <IssueNotificationLabel
-              :issue-key="payload.issueKey"
-              :issue-id="payload.issueId"
-              :title="payload.title"
-            />
-          </div>
+          <IssueNotificationLabel
+            :issue-key="payload.issueKey"
+            :issue-id="payload.issueId"
+            :title="payload.title"
+          />
         </TooltipTrigger>
         <TooltipContent>
           <IssueNotificationLabel
