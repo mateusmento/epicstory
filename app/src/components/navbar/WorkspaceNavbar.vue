@@ -1,38 +1,29 @@
 <script setup lang="ts">
-import { UserProfile } from "@/components/user";
 import { ThemePicker } from "@/components/theme";
+import { UserProfile } from "@/components/user";
 import {
   Button,
+  Menu,
   MenuContent,
   MenuGroup,
+  MenuItem,
   MenuLabel,
   MenuSeparator,
   MenuShortcut,
   MenuTrigger,
-  Menu,
-  MenuItem,
   NavTrigger,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import { useLiveMeeting, useMeeting, isLiveJoinableMeeting } from "@/domain/meetings";
+import { isLiveJoinableMeeting, useLiveMeeting, useMeeting } from "@/domain/meetings";
 import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BoxIcon,
-  LogOutIcon,
-  MonitorCogIcon,
-  SettingsIcon,
-  UserIcon,
-} from "lucide-vue-next";
+import { ArrowLeft, ArrowRight, LogOutIcon, MonitorCogIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
 import { computed, onMounted } from "vue";
-import { RouterLink } from "vue-router";
-import { useRouter } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
+import { NavListItem } from "../layout";
 import CurrentMeetingControlsCard from "./CurrentMeetingControlsCard.vue";
 import LiveMeetingJoinCard from "./LiveMeetingJoinCard.vue";
-import { NavListItem } from "../layout";
 
 defineProps<{ isAppPaneOpen: boolean }>();
 
