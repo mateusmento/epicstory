@@ -70,14 +70,20 @@ export class GithubIssueBranchLinkService {
     );
   }
 
-  async syncFromPushWebhookPayload(payload: unknown): Promise<void> {
+  private async resolvePushWebhookRepoContext(payload: unknown): Promise<{
+    workspaceId: number;
+    owner: string;
+    repoName: string;
+    fullName: string;
+    ref: string | null;
+  } | null> {
     const root = asObject(payload);
     const repo = asObject(root?.repository);
     const installation = asObject(root?.installation);
-    if (!repo || !installation) return;
+    if (!repo || !installation) return null;
 
     const ghInstallationId = installationIdString(installation);
-    if (ghInstallationId == null) return;
+    if (ghInstallationId == null) return null;
 
     const epicInstallation =
       await this.installationRepo.findByGithubInstallationId(ghInstallationId);
@@ -85,19 +91,72 @@ export class GithubIssueBranchLinkService {
       this.logger.debug(
         `push webhook: no workspace for GitHub installation ${ghInstallationId}`,
       );
+      return null;
+    }
+
+    const fullName =
+      typeof repo.full_name === 'string' ? repo.full_name.trim() : null;
+    if (!fullName) return null;
+    const slash = fullName.indexOf('/');
+    if (slash < 1 || slash >= fullName.length - 1) return null;
+
+    return {
+      workspaceId: epicInstallation.workspaceId,
+      owner: fullName.slice(0, slash),
+      repoName: fullName.slice(slash + 1),
+      fullName,
+      ref: typeof root?.ref === 'string' ? root.ref : null,
+    };
+  }
+
+  async unlinkFromBranchDeletePushWebhookPayload(
+    payload: unknown,
+  ): Promise<void> {
+    const ctx = await this.resolvePushWebhookRepoContext(payload);
+    if (!ctx) return;
+
+    const { workspaceId, owner, repoName, fullName, ref } = ctx;
+    const branchName = branchNameFromRef(ref);
+    if (!branchName) return;
+
+    const deleteResult = await this.branchLinkRepo.delete({
+      workspaceId,
+      owner,
+      repoName,
+      branchName,
+    });
+
+    const clearedSelections = await this.issueRepo
+      .createQueryBuilder()
+      .update(Issue)
+      .set({ githubBranch: null })
+      .where('workspace_id = :workspaceId', { workspaceId })
+      .andWhere(`github_branch->>'owner' = :owner`, { owner })
+      .andWhere(`github_branch->>'repoName' = :repoName`, { repoName })
+      .andWhere(`github_branch->>'branchName' = :branchName`, { branchName })
+      .execute();
+
+    const unlinkedCount = deleteResult.affected ?? 0;
+    const clearedCount = clearedSelections.affected ?? 0;
+    if (unlinkedCount === 0 && clearedCount === 0) {
+      this.logger.debug(
+        `push branch deleted ${fullName}#${branchName}: no issue links to remove`,
+      );
       return;
     }
 
-    const workspaceId = epicInstallation.workspaceId;
-    const fullName =
-      typeof repo.full_name === 'string' ? repo.full_name.trim() : null;
-    if (!fullName) return;
-    const slash = fullName.indexOf('/');
-    if (slash < 1 || slash >= fullName.length - 1) return;
-    const owner = fullName.slice(0, slash);
-    const repoName = fullName.slice(slash + 1);
+    this.logger.log(
+      `push branch deleted ${fullName}#${branchName}: unlinked ${unlinkedCount} issue link(s), cleared ${clearedCount} explicit branch selection(s)`,
+    );
+  }
 
-    const ref = typeof root?.ref === 'string' ? root.ref : null;
+  async syncFromPushWebhookPayload(payload: unknown): Promise<void> {
+    const ctx = await this.resolvePushWebhookRepoContext(payload);
+    if (!ctx) return;
+
+    const { workspaceId, owner, repoName, fullName, ref } = ctx;
+    const root = asObject(payload);
+    if (!root) return;
     const commits = Array.isArray(root?.commits) ? root.commits : [];
     const commitMessages = commits
       .map((c) => asObject(c))

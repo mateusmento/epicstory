@@ -220,9 +220,15 @@ export class GithubWebhookService {
     const del = deliveryId ?? '?';
 
     if (p?.deleted === true) {
-      this.logger.log(
-        `push webhook branch deleted repo=${fullName} ref=${ref} delivery=${del}`,
-      );
+      if (typeof p.ref === 'string' && p.ref.startsWith('refs/heads/')) {
+        await this.issueBranchLinks.unlinkFromBranchDeletePushWebhookPayload(
+          payload,
+        );
+      } else {
+        this.logger.debug(
+          `push webhook branch deleted skipped non-branch ref repo=${fullName} ref=${ref} delivery=${del}`,
+        );
+      }
       return;
     }
 
