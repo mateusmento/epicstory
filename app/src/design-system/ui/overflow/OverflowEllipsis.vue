@@ -1,18 +1,23 @@
 <script lang="ts" setup>
 import type { HTMLAttributes } from "vue";
-import { useResizeObserver } from "@vueuse/core";
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { cn } from "@/design-system/utils";
-import { useOverflowContext, useOverflowSegment } from "./overflow-context";
+import { Slot } from "reka-ui";
+import { computed, onBeforeMount, onBeforeUnmount } from "vue";
+import { useOverflowSegment } from "./overflow-context";
+import { useOverflowSegmentElement } from "./use-overflow-segment-element";
 
-const props = defineProps<{
-  class?: HTMLAttributes["class"];
-}>();
+const props = withDefaults(
+  defineProps<{
+    class?: HTMLAttributes["class"];
+    as?: string;
+  }>(),
+  {
+    as: "div",
+  },
+);
 
 const { id, context } = useOverflowSegment({ kind: "ellipsis" });
-const contentEl = ref<HTMLElement | null>(null);
 
-onMounted(() => {
+onBeforeMount(() => {
   context.registerSegment(id, "ellipsis");
 });
 
@@ -20,31 +25,26 @@ onBeforeUnmount(() => {
   context.unregisterSegment(id);
 });
 
-useResizeObserver(contentEl, (entries) => {
-  context.setSegmentWidth(id, entries[0]?.contentRect.width ?? 0);
+const { setRootEl, contentClass, edge, visible, outerClass } = useOverflowSegmentElement({
+  id,
+  context,
 });
 
-const edge = computed(() => context.segmentEdge(id));
-const visible = computed(() => context.isSegmentVisible(id));
-const layoutReady = computed(() => context.layoutReady.value);
+const rootClass = computed(() => outerClass(props.class));
 const slotProps = computed(() => context.ellipsisSlotProps.value);
-
-const outerClass = computed(() => {
-  if (!layoutReady.value) {
-    return cn(
-      "flex min-w-0",
-      edge.value === "leading" || edge.value === "trailing" ? "shrink-[0.000001]" : "shrink",
-      props.class,
-    );
-  }
-  return cn("flex min-w-0 shrink-0", props.class);
-});
 </script>
 
 <template>
-  <div v-show="visible" data-slot="overflow-ellipsis" :data-overflow-edge="edge" :class="outerClass">
-    <div ref="contentEl" class="inline-flex shrink-0">
+  <component
+    :is="as"
+    :ref="setRootEl"
+    v-show="visible"
+    data-slot="overflow-ellipsis"
+    :data-overflow-edge="edge"
+    :class="rootClass"
+  >
+    <Slot :class="contentClass">
       <slot v-bind="slotProps" />
-    </div>
-  </div>
+    </Slot>
+  </component>
 </template>

@@ -2,9 +2,9 @@
 import { useDependency } from "@/core/dependency-injection";
 import {
   Breadcrumb,
+  BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbList,
-  BreadcrumbSeparator,
   Button,
   Command,
   CommandEmpty,
@@ -19,9 +19,13 @@ import {
   DialogTrigger,
   Menu,
   MenuContent,
+  MenuItem,
   MenuRadioGroup,
   MenuRadioItem,
   MenuTrigger,
+  OverflowContainer,
+  OverflowEllipsis,
+  OverflowItem,
   Separator,
   ToggleGroup,
   ToggleGroupItem,
@@ -34,6 +38,7 @@ import { useMagicKeys, useStorage, whenever } from "@vueuse/core";
 import {
   Calculator,
   Calendar,
+  ChevronRight,
   CreditCard,
   Layers2Icon,
   Rows3Icon,
@@ -106,51 +111,115 @@ const GROUP_BY_OPTIONS = {
 } as const;
 
 type GroupBy = keyof typeof GROUP_BY_OPTIONS;
+
+type ProjectCrumb = {
+  key: string;
+  label: string;
+  to?: string;
+  pinned?: boolean;
+};
+
+const crumbs = computed<ProjectCrumb[]>(() => {
+  const items: ProjectCrumb[] = [
+    { key: "projects", label: "Project" },
+    {
+      key: "project",
+      label: project.value?.name ?? "Project",
+      to: `/${props.workspaceId}/project/${props.projectId}/backlog`,
+    },
+  ];
+
+  if (route.name === "project-board") {
+    items.push({
+      key: "board",
+      label: "Board",
+      to: `/${props.workspaceId}/project/${props.projectId}/board`,
+    });
+  } else if (route.name === "project-backlog") {
+    items.push({
+      key: "backlog",
+      label: "Backlog",
+      to: `/${props.workspaceId}/project/${props.projectId}/backlog`,
+    });
+  } else if (route.name === "project-issue" && props.issueId) {
+    items.push({
+      key: "issue",
+      label: issue.value?.title ?? "Issue",
+      to: `/${props.workspaceId}/project/${props.projectId}/issue/${props.issueId}`,
+    });
+  }
+
+  if (items.length > 0) {
+    items[0].pinned = true;
+    items[items.length - 1].pinned = true;
+  }
+
+  return items;
+});
+
+const headCrumb = computed(() => crumbs.value[0]);
+const tailCrumbs = computed(() => crumbs.value.slice(1));
+
+function crumbByKey(key: string): ProjectCrumb | undefined {
+  return crumbs.value.find((crumb) => crumb.key === key);
+}
 </script>
 
 <template>
   <div class="flex:col h-full min-h-0 w-full">
     <div class="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-1.5 h-10">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>Project</BreadcrumbItem>
+      <div class="min-w-0">
+        <Breadcrumb class="min-w-0">
+          <OverflowContainer
+            :as="BreadcrumbList"
+            :gap="6"
+            class="flex-nowrap items-center break-words text-sm text-muted-foreground"
+          >
+            <OverflowItem v-if="headCrumb" as="li" :segment-key="headCrumb.key" :pinned="headCrumb.pinned">
+              <BreadcrumbItem>{{ headCrumb.label }}</BreadcrumbItem>
+            </OverflowItem>
 
-          <BreadcrumbSeparator />
+            <OverflowEllipsis v-if="tailCrumbs.length > 0" v-slot="{ collapsed, hiddenSegmentKeys }">
+              <BreadcrumbItem>
+                <ChevronRight v-if="collapsed" class="size-3.5" aria-hidden="true" />
+                <Menu v-if="collapsed">
+                  <MenuTrigger as-child>
+                    <button
+                      type="button"
+                      class="inline-flex items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      :aria-label="`${hiddenSegmentKeys.length} hidden breadcrumb items`"
+                    >
+                      <BreadcrumbEllipsis class="size-5" />
+                    </button>
+                  </MenuTrigger>
+                  <MenuContent align="start">
+                    <MenuItem v-for="key in hiddenSegmentKeys" :key="key" as-child>
+                      <RouterLink :to="crumbByKey(key)?.to ?? '#'" class="w-full cursor-pointer text-xs">
+                        {{ crumbByKey(key)?.label }}
+                      </RouterLink>
+                    </MenuItem>
+                  </MenuContent>
+                </Menu>
+              </BreadcrumbItem>
+            </OverflowEllipsis>
 
-          <BreadcrumbItem>
-            <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`">
-              {{ project?.name }}
-            </RouterLink>
-          </BreadcrumbItem>
-
-          <template v-if="route.name === 'project-board'">
-            <BreadcrumbSeparator />
-
-            <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}/board`"> Board </RouterLink>
-            </BreadcrumbItem>
-          </template>
-
-          <template v-else-if="route.name === 'project-backlog'">
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`"> Backlog </RouterLink>
-            </BreadcrumbItem>
-          </template>
-
-          <template v-if="route.name === 'project-issue'">
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <RouterLink
-                :to="`/${workspaceId}/project/${projectId}/issue/${issueId}`"
-                class="truncate max-w-60"
-              >
-                {{ issue?.title }}
-              </RouterLink>
-            </BreadcrumbItem>
-          </template>
-        </BreadcrumbList>
-      </Breadcrumb>
+            <OverflowItem
+              v-for="crumb in tailCrumbs"
+              :key="crumb.key"
+              :segment-key="crumb.key"
+              :pinned="crumb.pinned"
+            >
+              <BreadcrumbItem>
+                <ChevronRight class="size-3.5" aria-hidden="true" />
+                <RouterLink v-if="crumb.to" :to="crumb.to" class="truncate max-w-60">
+                  {{ crumb.label }}
+                </RouterLink>
+                <span v-else class="truncate max-w-60">{{ crumb.label }}</span>
+              </BreadcrumbItem>
+            </OverflowItem>
+          </OverflowContainer>
+        </Breadcrumb>
+      </div>
 
       <Dialog>
         <DialogTrigger as-child>

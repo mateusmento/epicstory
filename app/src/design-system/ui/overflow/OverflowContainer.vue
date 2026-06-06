@@ -1,16 +1,18 @@
 <script lang="ts" setup>
-import type { HTMLAttributes } from "vue";
-import { useResizeObserver } from "@vueuse/core";
-import { computed, nextTick, onMounted, ref } from "vue";
 import { cn } from "@/design-system/utils";
+import { useResizeObserver } from "@vueuse/core";
+import type { Component, HTMLAttributes } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { provideOverflowContext } from "./overflow-context";
 
 const props = withDefaults(
   defineProps<{
     class?: HTMLAttributes["class"];
+    as?: Component | string;
     gap?: number;
   }>(),
   {
+    as: "div",
     gap: 4,
   },
 );
@@ -42,12 +44,13 @@ provideOverflowContext({
 </script>
 
 <template>
-  <div
+  <component
+    :is="as"
     ref="containerEl"
     data-slot="overflow-container"
-    :class="cn('flex min-w-0 flex-row items-center overflow-hidden', props.class)"
+    :class="cn('flex w-full min-w-0 flex-row items-center overflow-hidden', props.class)"
     :style="{ gap: `${props.gap}px` }"
   >
     <slot />
-  </div>
+  </component>
 </template>

@@ -3,6 +3,7 @@ export type OverflowSegmentKind = "item" | "ellipsis";
 export type OverflowSegment = {
   kind: OverflowSegmentKind;
   widthPx: number;
+  pinned?: boolean;
 };
 
 export type OverflowLayoutResult = {
@@ -31,6 +32,25 @@ function rowWidth(segments: OverflowSegment[], visible: boolean[], gapPx: number
 
 function findEllipsisIndex(segments: OverflowSegment[]): number {
   return segments.findIndex((segment) => segment.kind === "ellipsis");
+}
+
+function canHide(index: number, segments: OverflowSegment[], visible: boolean[]): boolean {
+  const segment = segments[index];
+  return visible[index] && segment.kind === "item" && !segment.pinned;
+}
+
+function hideLeftmost(indices: number[], segments: OverflowSegment[], visible: boolean[]): boolean {
+  const index = indices.find((candidate) => canHide(candidate, segments, visible));
+  if (index === undefined) return false;
+  visible[index] = false;
+  return true;
+}
+
+function hideRightmost(indices: number[], segments: OverflowSegment[], visible: boolean[]): boolean {
+  const index = [...indices].reverse().find((candidate) => canHide(candidate, segments, visible));
+  if (index === undefined) return false;
+  visible[index] = false;
+  return true;
 }
 
 /**
@@ -72,9 +92,7 @@ export function computeOverflowLayout(options: {
       leftIndices.some((index) => visible[index]) &&
       rowWidth(segments, visible, gapPx) > containerWidthPx
     ) {
-      const trailing = leftIndices.filter((index) => visible[index]).at(-1);
-      if (trailing === undefined) break;
-      visible[trailing] = false;
+      if (!hideRightmost(leftIndices, segments, visible)) break;
     }
 
     const hiddenCount = itemIndices.filter((index) => !visible[index]).length;
@@ -123,28 +141,24 @@ export function computeOverflowLayout(options: {
 
     if (leftCount === 0 && rightCount === 0) break;
 
+    let hid = false;
+
     if (leftCount > rightCount) {
-      const leftmost = leftIndices.find((index) => visible[index]);
-      if (leftmost !== undefined) visible[leftmost] = false;
+      hid = hideLeftmost(leftIndices, segments, visible);
     } else if (rightCount > leftCount) {
-      const rightmost = [...rightIndices].reverse().find((index) => visible[index]);
-      if (rightmost !== undefined) visible[rightmost] = false;
+      hid = hideRightmost(rightIndices, segments, visible);
     } else if (leftCount > 0 && rightCount > 0) {
-      if (hideFromLeft) {
-        const leftmost = leftIndices.find((index) => visible[index]);
-        if (leftmost !== undefined) visible[leftmost] = false;
-      } else {
-        const rightmost = [...rightIndices].reverse().find((index) => visible[index]);
-        if (rightmost !== undefined) visible[rightmost] = false;
-      }
+      hid = hideFromLeft
+        ? hideLeftmost(leftIndices, segments, visible)
+        : hideRightmost(rightIndices, segments, visible);
       hideFromLeft = !hideFromLeft;
     } else if (leftCount > 0) {
-      const leftmost = leftIndices.find((index) => visible[index]);
-      if (leftmost !== undefined) visible[leftmost] = false;
+      hid = hideLeftmost(leftIndices, segments, visible);
     } else {
-      const rightmost = [...rightIndices].reverse().find((index) => visible[index]);
-      if (rightmost !== undefined) visible[rightmost] = false;
+      hid = hideRightmost(rightIndices, segments, visible);
     }
+
+    if (!hid) break;
   }
 
   const hiddenBefore = leftIndices.filter((index) => !visible[index]).length;
