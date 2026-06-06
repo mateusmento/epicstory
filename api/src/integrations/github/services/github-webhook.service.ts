@@ -217,8 +217,24 @@ export class GithubWebhookService {
     const ref = p && typeof p.ref === 'string' ? p.ref : '?';
     const fullName =
       repo && typeof repo.full_name === 'string' ? repo.full_name : '?';
+    const del = deliveryId ?? '?';
+
+    if (p?.deleted === true) {
+      this.logger.log(
+        `push webhook branch deleted repo=${fullName} ref=${ref} delivery=${del}`,
+      );
+      return;
+    }
+
+    if (typeof p?.ref !== 'string' || !p.ref.startsWith('refs/heads/')) {
+      this.logger.debug(
+        `push webhook skipped non-branch ref repo=${fullName} ref=${ref} delivery=${del}`,
+      );
+      return;
+    }
+
     this.logger.log(
-      `push webhook received repo=${fullName} ref=${ref} delivery=${deliveryId ?? '?'}`,
+      `push webhook received repo=${fullName} ref=${ref} delivery=${del}`,
     );
     await this.issueBranchLinks.syncFromPushWebhookPayload(payload);
   }
