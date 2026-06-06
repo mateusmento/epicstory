@@ -106,8 +106,7 @@ function openIssue(issue: IIssue) {
           :users="item.issue.assignees"
           size="md"
           :min="1"
-          :overlap-px="10"
-          avatar-class="border-2 border-white"
+          :overlap-px="4"
           class="min-w-0 flex-1 basis-32"
         />
 

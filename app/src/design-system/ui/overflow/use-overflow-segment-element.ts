@@ -1,24 +1,8 @@
 import { cn } from "@/design-system/utils";
 import { useResizeObserver } from "@vueuse/core";
-import {
-  computed,
-  nextTick,
-  onMounted,
-  ref,
-  watch,
-  type ComponentPublicInstance,
-  type HTMLAttributes,
-} from "vue";
+import { computed, nextTick, onMounted, ref, watch, type HTMLAttributes } from "vue";
 import type { OverflowContextValue } from "./overflow-context";
-
-function resolveMeasureElement(value: unknown): HTMLElement | null {
-  if (value instanceof HTMLElement) return value;
-  if (value && typeof value === "object" && "$el" in value) {
-    const el = (value as ComponentPublicInstance).$el;
-    return el instanceof HTMLElement ? el : null;
-  }
-  return null;
-}
+import { resolveOverflowElement } from "./overflow-element-ref";
 
 export function useOverflowSegmentElement(options: { id: symbol; context: OverflowContextValue }) {
   const rootEl = ref<HTMLElement | null>(null);
@@ -40,7 +24,7 @@ export function useOverflowSegmentElement(options: { id: symbol; context: Overfl
   }
 
   function setRootEl(el: unknown) {
-    rootEl.value = resolveMeasureElement(el);
+    rootEl.value = resolveOverflowElement(el);
     nextTick(() => {
       remeasure();
     });
