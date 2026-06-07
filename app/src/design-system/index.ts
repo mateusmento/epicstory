@@ -9,6 +9,7 @@ export * from "./ui/combobox";
 export * from "./ui/command";
 export * from "./ui/content-editable";
 export * from "./ui/dialog";
+export * from "./ui/dot-pattern";
 export * from "./ui/drawer";
 export * from "./ui/form";
 export * from "./ui/hover-card";
