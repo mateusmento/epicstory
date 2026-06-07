@@ -95,23 +95,23 @@ async function copyMessage() {
       </MenuSubContent>
     </MenuSub>
 
-    <MenuItem @click="emit('toggle-discussion')">
-      <IconReplies class="text-muted-foreground" />
-      <span>Reply message</span>
-    </MenuItem>
-
-    <MenuItem @click="copyMessage">
-      <CopyIcon class="text-muted-foreground" />
-      <span>Copy message</span>
-    </MenuItem>
     <MenuItem v-if="canEditHere" @click="emit('edit')">
       <SquarePen class="text-muted-foreground" />
       <span>Edit message</span>
     </MenuItem>
+    <MenuItem @click="copyMessage">
+      <CopyIcon class="text-muted-foreground" />
+      <span>Copy text</span>
+    </MenuItem>
+
+    <MenuItem @click="emit('toggle-discussion')">
+      <IconReplies class="text-muted-foreground" />
+      <span>Reply</span>
+    </MenuItem>
 
     <MenuItem v-if="props.allowQuote" @click="emit('quote')">
       <MessageSquareShareIcon class="text-muted-foreground" />
-      <span>Forward message</span>
+      <span>Forward</span>
     </MenuItem>
 
     <MenuItem v-if="props.allowQuote" @click="emit('quote')">
