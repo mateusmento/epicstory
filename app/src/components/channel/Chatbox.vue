@@ -15,10 +15,12 @@ import {
 import { channelComposerQuotedMessageId, useChannel, useWorkspaceOnline } from "@/domain/channels";
 import type { ChatTimelineItem } from "@/domain/channels/utils/build-chat-timeline";
 import { chatTimelineRowCount } from "@/domain/channels/utils/build-chat-timeline";
+import { isLiveJoinableMeeting } from "@/domain/meetings";
 import { enumerateNames } from "@/utils";
 import { ChannelApi } from "@epicstory/api-client";
 import type {
   IChannel,
+  IChannelActivity,
   CreateScheduledMessageBody as ICreateScheduledMessageBody,
   IMessage,
   MessagePollBody,
@@ -53,13 +55,27 @@ const props = defineProps<{
   channel: IChannel;
 }>();
 
-const emit = defineEmits([
-  "join-meeting",
-  "start-meeting",
-  "schedule-meeting",
-  "more-details",
-  "message-deleted",
-]);
+const emit = defineEmits<{
+  (e: "join-meeting", meetingId: number): void;
+  (e: "join-channel-meeting"): void;
+  (e: "start-meeting"): void;
+  (e: "schedule-meeting"): void;
+  (e: "more-details"): void;
+  (e: "message-deleted", messageId: number): void;
+}>();
+
+function canJoinMeetingFromActivity(activity: IChannelActivity) {
+  if (activity.type !== "meeting_started") return false;
+  const meetingId = activity.meetingId;
+  const live = props.channel.meeting;
+  if (!live || !meetingId || live.id !== meetingId) return false;
+  return isLiveJoinableMeeting(live);
+}
+
+function meetingAttendeesFromActivity(activity: IChannelActivity) {
+  if (!canJoinMeetingFromActivity(activity)) return [];
+  return props.channel.meeting?.attendees.map((a) => a.user) ?? [];
+}
 
 const quotedMessage = ref<IMessage | null>(null);
 const editingMessage = ref<IMessage | null>(null);
@@ -369,7 +385,7 @@ defineExpose({
         <Button
           size="icon"
           variant="outline"
-          @click="emit('join-meeting')"
+          @click="emit('join-channel-meeting')"
           class="p-1 text-muted-foreground"
           title="Join meeting"
         >
@@ -478,7 +494,9 @@ defineExpose({
                 :activity="activityRow(virtualRow.index)!.activity"
                 :channel-display-name="channel.name"
                 :me-id="meId"
-                @join-meeting="emit('join-meeting')"
+                :can-join-meeting="canJoinMeetingFromActivity(activityRow(virtualRow.index)!.activity)"
+                :meeting-attendees="meetingAttendeesFromActivity(activityRow(virtualRow.index)!.activity)"
+                @join-meeting="emit('join-meeting', $event)"
               />
             </div>
           </div>

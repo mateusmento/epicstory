@@ -6,8 +6,6 @@ import type {
   CreateScheduledMessageBody,
   IChannel,
   IChannelActivity,
-  IChannelActivityMeetingSummary,
-  IMeeting,
   IMessage,
   IReply,
   IUser,
@@ -28,21 +26,6 @@ const CHANNEL_ACTIVITIES_PAGE_SIZE = 50;
 /** Shared across all `useChannel()` callers */
 const typingActivity = ref(new Map<number, number>());
 let typingPruneTimer: ReturnType<typeof setInterval> | null = null;
-
-function meetingSummaryFromLive(m: IMeeting): IChannelActivityMeetingSummary {
-  const started = m.startedAt;
-  const attendeeNames =
-    m.attendees
-      ?.map((a) => a.user?.name)
-      .filter((n): n is string => typeof n === "string" && n.trim() !== "") ?? [];
-  return {
-    id: m.id,
-    channelId: m.channelId ?? null,
-    ongoing: m.ongoing,
-    startedAt: started instanceof Date ? started.toISOString() : started ? String(started) : null,
-    ...(attendeeNames.length > 0 ? { attendeeNames } : {}),
-  };
-}
 
 export const useChannelStore = defineStore("channel", () => {
   const channel = ref<IChannel | null>(null);
@@ -259,26 +242,16 @@ export function useChannel() {
   function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
     if (channelId && store.channel?.id === channelId) {
       store.channel.meeting = meeting;
-      store.activities = store.activities.map((a) =>
-        a.meetingId === meeting.id ? { ...a, meeting: meetingSummaryFromLive(meeting) } : a,
-      );
     }
   }
 
   function onMeetingEnded({ meetingId }: MeetingEndedPayload) {
     if (store.channel?.meeting?.id === meetingId) store.channel.meeting = null;
-    store.activities = store.activities.map((a) =>
-      a.meetingId === meetingId && a.meeting ? { ...a, meeting: { ...a.meeting, ongoing: false } } : a,
-    );
   }
 
   function subscribeMeetings() {
     meetingSocket.emitSubscribeMeetings(workspace.value.id);
-
-    meetingSocket.offIncomingMeeting(onIncomingMeeting);
     meetingSocket.onIncomingMeeting(onIncomingMeeting);
-
-    meetingSocket.offMeetingEnded(onMeetingEnded);
     meetingSocket.onMeetingEnded(onMeetingEnded);
   }
 

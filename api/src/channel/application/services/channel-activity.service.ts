@@ -2,9 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type {
   ChannelActivityType,
   IChannelActivity,
-  IChannelActivityMeetingSummary,
 } from '@epicstory/contracts';
-import { uniq } from 'lodash';
 import { ChannelActivity } from 'src/channel/domain/entities/channel-activity.entity';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { ChannelActivityRepository } from 'src/channel/infrastructure/repositories/channel-activity.repository';
@@ -12,10 +10,8 @@ import { MeetingRepository } from 'src/channel/infrastructure/repositories/meeti
 import { create } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { In } from 'typeorm';
 import {
   type IChannelActivityClient,
-  meetingToChannelActivityMeetingSummary,
   userToSummary,
 } from '../dtos/channel-activity-client.dto';
 import { ChannelNotFound, IssuerIsNotChannelMember } from '../exceptions';
@@ -88,24 +84,15 @@ export class ChannelActivityService {
       .filter((r) => r.type === 'message_sent' && r.messageId != null)
       .map((r) => r.messageId!);
 
-    const meetingIds = uniq(
-      pageRows
-        .filter((r) => r.type === 'meeting_started' && r.meetingId != null)
-        .map((r) => r.meetingId!),
-    );
-
     const messagesMap = await this.messageService.findMessagesByIdsForChannel(
       channelId,
       messageIds,
       viewerId,
     );
 
-    const meetingsMap = await this.loadMeetingSummaries(meetingIds);
-
     const items = pageRows.map((r) =>
       this.rowToClient(r, {
         messagesMap,
-        meetingsMap,
       }),
     );
 
@@ -120,19 +107,6 @@ export class ChannelActivityService {
       hasPrevious: hasCursor,
       total: 0,
     });
-  }
-
-  private async loadMeetingSummaries(
-    meetingIds: number[],
-  ): Promise<Map<number, IChannelActivityMeetingSummary>> {
-    if (meetingIds.length === 0) return new Map();
-    const meetings = await this.meetingRepo.find({
-      where: { id: In(meetingIds) },
-      relations: { attendees: { user: true } },
-    });
-    return new Map(
-      meetings.map((m) => [m.id, meetingToChannelActivityMeetingSummary(m)]),
-    );
   }
 
   async publishMessageSent(options: {
@@ -255,7 +229,6 @@ export class ChannelActivityService {
   }): Promise<void> {
     const meeting = await this.meetingRepo.findOne({
       where: { id: options.meetingId },
-      relations: { attendees: { user: true } },
     });
 
     if (!meeting?.channelId) return;
@@ -275,8 +248,7 @@ export class ChannelActivityService {
       relations: { actor: true, subjectUser: true },
     });
 
-    const meetingsMap = await this.loadMeetingSummaries([meeting.id]);
-    const client = this.rowToClient(full!, { meetingsMap });
+    const client = this.rowToClient(full!, {});
     this.messageGateway.emitIncomingChannelActivity(client);
   }
 
@@ -284,23 +256,13 @@ export class ChannelActivityService {
     row: ChannelActivity,
     ctx: {
       messagesMap?: Map<number, IMessagePayload>;
-      meetingsMap?: Map<number, IChannelActivityMeetingSummary>;
     },
   ): IChannelActivityClient {
-    const { messagesMap, meetingsMap } = ctx;
+    const { messagesMap } = ctx;
 
     let message: IChannelActivityClient['message'] = null;
     if (row.type === 'message_sent' && row.messageId != null && messagesMap) {
       message = messagesMap.get(row.messageId) ?? null;
-    }
-
-    let meeting: IChannelActivityClient['meeting'];
-    if (
-      row.type === 'meeting_started' &&
-      row.meetingId != null &&
-      meetingsMap
-    ) {
-      meeting = meetingsMap.get(row.meetingId) ?? null;
     }
 
     return {
@@ -316,7 +278,6 @@ export class ChannelActivityService {
         ? { subjectUser: userToSummary(row.subjectUser) }
         : {}),
       ...(message ? { message } : {}),
-      ...(meeting !== undefined ? { meeting } : {}),
     };
   }
 }

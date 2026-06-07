@@ -14,14 +14,6 @@ export type ChannelActivityUserSummary = {
   picture?: string | null;
 };
 
-export type IChannelActivityMeetingSummary = {
-  id: number;
-  channelId?: number | null;
-  ongoing: boolean;
-  startedAt?: string | null;
-  attendeeNames?: string[];
-};
-
 export type IChannelActivity = {
   id: number;
   channelId: number;
@@ -31,7 +23,6 @@ export type IChannelActivity = {
   messageId: number | null;
   meetingId: number | null;
   payload: Record<string, unknown> | null;
-  meeting?: IChannelActivityMeetingSummary | null;
   subjectUser?: ChannelActivityUserSummary | null;
   message?: IMessage | null;
 };

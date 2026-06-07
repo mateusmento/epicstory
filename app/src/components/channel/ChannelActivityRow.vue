@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { UserAvatar } from "@/components/user";
 import { Button } from "@/design-system";
-import type { IChannelActivity } from "@epicstory/contracts";
+import type { IChannelActivity, IUser } from "@epicstory/contracts";
 import { HeadphonesIcon } from "lucide-vue-next";
 import { computed } from "vue";
 
@@ -9,10 +9,12 @@ const props = defineProps<{
   activity: IChannelActivity;
   channelDisplayName: string;
   meId: number;
+  canJoinMeeting?: boolean;
+  meetingAttendees?: IUser[];
 }>();
 
 const emit = defineEmits<{
-  (e: "join-meeting"): void;
+  (e: "join-meeting", meetingId: number): void;
 }>();
 
 const avatarUser = computed(() => {
@@ -67,16 +69,10 @@ const summaryLines = computed(() => {
   }
 });
 
-const meetingAttendees = computed(() => props.activity.meeting?.attendeeNames ?? []);
-
 const showHeadphoneIcon = computed(() => props.activity.type === "meeting_started");
 
-const meetingOngoing = computed(() => props.activity.meeting?.ongoing === true);
-
 const rowClass = computed(() =>
-  props.activity.type === "meeting_started" && meetingOngoing.value
-    ? "rounded-lg border border-green-600/30 bg-green-600/10 px-3 py-2"
-    : "py-1",
+  props.canJoinMeeting ? "rounded-lg border border-green-600/30 bg-green-600/10 px-3 py-2" : "py-1",
 );
 </script>
 
@@ -98,13 +94,14 @@ const rowClass = computed(() =>
       <div v-for="(line, i) of summaryLines" :key="i" class="text-muted-foreground">
         {{ line }}
       </div>
-      <div v-if="activity.type === 'meeting_started'" class="mt-2">
-        <Button size="sm" variant="outline" class="gap-2" @click="emit('join-meeting')">
+      <div v-if="canJoinMeeting && activity.meetingId" class="mt-2">
+        <Button size="sm" variant="outline" class="gap-2" @click="emit('join-meeting', activity.meetingId)">
           <span class="flex -space-x-1.5">
             <UserAvatar
-              v-for="(name, idx) of meetingAttendees.slice(0, 4)"
-              :key="idx"
-              :name
+              v-for="attendee of meetingAttendees?.slice(0, 4)"
+              :key="attendee.id"
+              :name="attendee.name"
+              :picture="attendee.picture"
               size="base"
               class="ring-2 ring-background"
             />

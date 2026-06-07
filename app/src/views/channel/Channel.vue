@@ -15,7 +15,7 @@ const { user } = useAuth();
 const { workspace } = useWorkspace();
 const { channel, chatTimeline, sendMessage, sendScheduledMessage, deleteMessage, updateMessage } =
   useSyncedChannel();
-const { currentMeeting, joinChannelMeeting } = useMeeting();
+const { currentMeeting, joinMeeting, joinChannelMeeting } = useMeeting();
 
 function onScheduleMeetingForChannel() {
   if (!channel.value) return;
@@ -64,7 +64,8 @@ function onMessageDeleted(messageId: number) {
       :send-scheduled-message="sendScheduledMessage"
       :update-message="updateMessage"
       :channel="channel"
-      @join-meeting="joinChannelMeeting({ channelId: channel.id })"
+      @join-meeting="joinMeeting({ meetingId: $event })"
+      @join-channel-meeting="joinChannelMeeting({ channelId: channel.id })"
       @start-meeting="joinChannelMeeting({ channelId: channel.id })"
       @schedule-meeting="onScheduleMeetingForChannel"
       @more-details="viewContent('channel')"
