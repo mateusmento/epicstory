@@ -21,6 +21,11 @@ const openRoutes = defineRoutes({
       name: "error",
       component: () => import("@/views/error/ErrorView.vue"),
     },
+    {
+      path: "/demo/connect-integration",
+      name: "connect-integration-demo",
+      component: () => import("@/views/demo/ConnectIntegrationDemo.vue"),
+    },
   ],
 });
 
