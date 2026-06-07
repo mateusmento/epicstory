@@ -12,6 +12,7 @@ import { patch } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { BacklogItemRepository } from 'src/project/infrastructure/repositories';
 import {
+  Brackets,
   Equal,
   ILike,
   In,
@@ -25,7 +26,7 @@ import {
 
 const operators = {
   eq: { sql: '=', findOperator: Equal },
-  neq: { sql: '!=', findOperator: Not },
+  neq: { sql: '<>', findOperator: Not },
   gt: { sql: '>', findOperator: MoreThan },
   gte: { sql: '>=', findOperator: MoreThanOrEqual },
   lt: { sql: '<', findOperator: LessThan },
@@ -172,9 +173,7 @@ export class FindBacklogItemsQuery implements IQueryHandler<FindBacklogItems> {
           if (!value) return;
           baseQb.andWhere(
             `issue.dueDate ${operators[operator].sql} :${param}`,
-            {
-              [param]: value,
-            },
+            { [param]: value },
           );
           return;
         }
@@ -194,9 +193,7 @@ export class FindBacklogItemsQuery implements IQueryHandler<FindBacklogItems> {
           if (!Number.isFinite(n)) return;
           baseQb.andWhere(
             `issue.priority ${operators[operator].sql} :${param}`,
-            {
-              [param]: n,
-            },
+            { [param]: n },
           );
           return;
         }
@@ -217,12 +214,21 @@ export class FindBacklogItemsQuery implements IQueryHandler<FindBacklogItems> {
           if (!['eq', 'neq'].includes(operator)) return;
           const id = typeof value === 'number' ? value : Number(value);
           if (!Number.isFinite(id)) return;
-          baseQb.andWhere(
-            `issue.parentIssueId ${operators[operator].sql} :${param}`,
-            {
-              [param]: id,
-            },
-          );
+          if (operator === 'neq') {
+            baseQb.andWhere(
+              new Brackets((qb) =>
+                qb
+                  .where(`issue.parentIssueId != :${param}`)
+                  .orWhere('issue.parentIssueId IS NULL'),
+              ),
+              { [param]: id },
+            );
+          } else {
+            baseQb.andWhere(
+              `issue.parentIssueId ${operators[operator].sql} :${param}`,
+              { [param]: id },
+            );
+          }
           return;
         }
 
