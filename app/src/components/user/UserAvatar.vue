@@ -13,6 +13,8 @@ const props = withDefaults(
     title?: string;
     /** Extra classes on the root (e.g. stacked `-ml-3 border-2 border-white`). */
     class?: string;
+    /** Extra classes on the profile image when a picture is shown. */
+    imgClass?: string;
   }>(),
   {
     picture: null,
@@ -41,7 +43,7 @@ const sizeClass = computed(() => {
     base: "w-8 h-8 min-w-8 min-h-8",
     lg: "w-10 h-10 min-w-10 min-h-10",
     xl: "w-11 h-11 min-w-11 min-h-11",
-    "2xl": "w-12 h-12 min-w-12 min-h-12",
+    "2xl": "w-9 h-9 min-w-9 min-h-9",
     "3xl": "w-14 h-14 min-w-14 min-h-14",
     tile: "w-16 h-16 min-w-16 min-h-16",
     tileLg: "w-20 h-20 min-w-20 min-h-20",
@@ -59,7 +61,7 @@ const textClass = computed(() => {
     base: "text-xs leading-none",
     lg: "text-sm leading-none",
     xl: "text-sm leading-none",
-    "2xl": "text-base leading-none",
+    "2xl": "text-sm leading-none",
     "3xl": "text-lg leading-none",
     tile: "text-2xl leading-none",
     tileLg: "text-2xl leading-none",
@@ -106,7 +108,7 @@ const ariaLabel = computed(() => props.title ?? props.name);
       v-if="hasPicture"
       :src="picture!"
       :alt="ariaLabel"
-      class="h-full w-full object-cover"
+      :class="cn('h-full w-full object-cover', imgClass)"
       @error="emit('error')"
     />
     <span v-else :class="textClass" class="w-full h-full flex items-center justify-center">{{

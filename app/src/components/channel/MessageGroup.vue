@@ -18,10 +18,16 @@ function formatMessageDate(date: Date | string) {
 
 <template>
   <div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
-    <UserAvatar :name="sender.name" :picture="sender.picture" size="2xl" class="flex-shrink-0" />
+    <UserAvatar
+      :name="sender.name"
+      :picture="sender.picture"
+      size="2xl"
+      class="flex-shrink-0"
+      img-class="rounded-full border border-black"
+    />
     <div class="flex:col min-w-0">
       <div class="flex:row-lg items-baseline ml-5">
-        <div class="font-dmSans font-medium text-lg" :class="{ 'order-0': sender.id === meId }">
+        <div class="font-dmSans font-medium text-[15px]" :class="{ 'order-0': sender.id === meId }">
           {{ sender?.name }}
         </div>
         <div class="text-sm text-secondary-foreground/70 font-dmSans">

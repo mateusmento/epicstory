@@ -9,7 +9,7 @@ const DIAMETER_PX: Record<UserAvatarSize, number> = {
   base: 32,
   lg: 40,
   xl: 44,
-  "2xl": 48,
+  "2xl": 36,
   "3xl": 56,
   tile: 64,
   tileLg: 80,
