@@ -4,14 +4,15 @@ import type { ICalendarEvent } from "@epicstory/contracts";
 import { getHours, isSameDay } from "date-fns";
 import { computed, onMounted, provide, ref } from "vue";
 import { SCHEDULE_DIALOG_KEY } from "../schedule-context";
-import { SCHEDULE_DRAFT_EVENT_ID, SCHEDULE_HOURS } from "../constants";
 import {
   computeActiveMonthAnchor,
   computeMonthGridDays,
   computeMonthWeekdayLabels,
   computeWeekDays,
   normalizeScheduleDay,
-} from "../schedule-date";
+  SCHEDULE_DRAFT_EVENT_ID,
+  SCHEDULE_HOURS,
+} from "@/lib/schedule";
 import { useCalendarEventCreateDrag } from "./use-calendar-event-create-drag";
 import { useCalendarEventPan } from "./use-calendar-event-pan";
 import { useCalendarEventResize } from "./use-calendar-event-resize";

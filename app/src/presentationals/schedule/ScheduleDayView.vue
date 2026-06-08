@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { format } from "date-fns";
-import CalendarEventContextMenu from "@/presentationals/schedule/CalendarEventContextMenu.vue";
+import CalendarEventContextMenu from "./CalendarEventContextMenu.vue";
 import CalendarTimedEventBlock from "./CalendarTimedEventBlock.vue";
 import Separator from "@/design-system/ui/separator/Separator.vue";
 import { cn } from "@/design-system/utils.js";
-import { SCHEDULE_HOUR_SLOT_HEIGHT_CLASS } from "@/domain/schedule/constants.js";
+import { SCHEDULE_HOUR_SLOT_HEIGHT_CLASS } from "@/lib/schedule";
 
 const props = defineProps<{
   day: Date;

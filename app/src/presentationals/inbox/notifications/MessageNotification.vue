@@ -1,28 +1,13 @@
 <script lang="tsx" setup>
 import { UserAvatar } from "@/presentationals/user";
 import { IconChats } from "@/design-system/icons";
-import { useAuth } from "@/domain/auth";
-import type { DirectMessageNotificationPayload } from "@/domain/notifications";
-import type { IUser } from "@epicstory/contracts";
+import type { DirectMessageNotificationPayload } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
-import { computed } from "vue";
 
-const props = defineProps<{
+defineProps<{
   payload: DirectMessageNotificationPayload;
   createdAt: string;
 }>();
-
-const { user: me } = useAuth();
-
-const channelName = computed(() => {
-  if (props.payload.channel.type === "multi-direct") {
-    return props.payload.channel.peers
-      .filter((peer: IUser) => peer.id !== me?.value?.id)
-      .map((peer: IUser) => peer.name)
-      .join(", ");
-  }
-  return props.payload.sender?.name;
-});
 
 function formatTime(date: string) {
   return formatDistanceToNow(new Date(date), { addSuffix: true });
@@ -36,7 +21,6 @@ function formatTime(date: string) {
         <div class="text-sm text-secondary-foreground font-dmSans">
           <IconChats class="w-4 h-4 inline-block" />
           sent you a message
-          <!-- <div v-if="channelName" class="ml-5 text-foreground font-lato">and to {{ channelName }}</div> -->
         </div>
 
         <div class="ml-auto text-xs text-secondary-foreground font-dmSans whitespace-nowrap">

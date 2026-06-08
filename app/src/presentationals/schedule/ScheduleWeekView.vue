@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import CalendarEventContextMenu from "./CalendarEventContextMenu.vue";
-import CalendarTimedEventBlock from "@/containers/schedule/CalendarTimedEventBlock.vue";
+import CalendarTimedEventBlock from "./CalendarTimedEventBlock.vue";
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { format, isSameDay } from "date-fns";
 const props = defineProps<{

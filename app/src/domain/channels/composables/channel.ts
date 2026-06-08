@@ -337,6 +337,30 @@ export function useChannel() {
     return updated;
   }
 
+  const votingPollOptionId = ref<string | null>(null);
+  const votingPollMessageId = ref<number | null>(null);
+
+  async function voteMessagePoll(messageId: number, optionId: string) {
+    if (votingPollOptionId.value) return;
+    votingPollOptionId.value = optionId;
+    votingPollMessageId.value = messageId;
+    try {
+      const { poll } = await channelApi.voteMessagePoll(messageId, optionId);
+      const i = store.activities.findIndex((a) => a.type === "message_sent" && a.messageId === messageId);
+      if (i >= 0) {
+        const act = store.activities[i];
+        const msg = act.message!;
+        const next = [...store.activities];
+        next[i] = { ...act, message: { ...msg, poll } };
+        store.activities = next;
+      }
+      return poll;
+    } finally {
+      votingPollOptionId.value = null;
+      votingPollMessageId.value = null;
+    }
+  }
+
   return {
     ...storeToRefs(store),
     chatTimeline,
@@ -357,6 +381,9 @@ export function useChannel() {
     removeMember,
     deleteMessage,
     updateMessage,
+    voteMessagePoll,
+    votingPollOptionId,
+    votingPollMessageId,
   };
 }
 

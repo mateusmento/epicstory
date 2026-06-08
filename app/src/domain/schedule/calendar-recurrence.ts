@@ -1,6 +1,4 @@
-import type { ICalendarEvent, ICalendarEventRecurrence } from "@epicstory/contracts";
-
-export type RecurrenceFrequency = "once" | "daily" | "weekly";
+import type { ICalendarEvent, ICalendarEventRecurrence, RecurrenceFrequency } from "@epicstory/contracts";
 
 export type ParsedRecurrence = {
   frequency: RecurrenceFrequency;

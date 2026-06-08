@@ -1,6 +1,11 @@
 <script lang="ts" setup>
-import {CalendarItemDialog, ScheduleDayView, ScheduleToolbar} from "@/containers/schedule"
-import {ScheduleMonthView, ScheduleWeekView} from "@/presentationals/schedule";
+import { CalendarItemDialog } from "@/containers/schedule";
+import {
+  ScheduleDayView,
+  ScheduleMonthView,
+  ScheduleToolbar,
+  ScheduleWeekView,
+} from "@/presentationals/schedule";
 import { useSchedulePage } from "@/domain/schedule";
 import { useWorkspace } from "@/domain/workspace";
 import type { ICalendarEvent } from "@epicstory/contracts";

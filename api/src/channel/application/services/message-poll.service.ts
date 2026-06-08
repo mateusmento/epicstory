@@ -74,18 +74,18 @@ export class MessagePollService {
     messageIds: number[],
     viewerId: number,
   ): Promise<Map<number, MessagePollSummary>> {
-    const map = new Map<number, MessagePollSummary>();
-    if (messageIds.length === 0) return map;
+    const summaryMap = new Map<number, MessagePollSummary>();
+    if (messageIds.length === 0) return summaryMap;
 
-    for (const id of messageIds) {
-      map.set(id, {
+    for (const messageId of messageIds) {
+      summaryMap.set(messageId, {
         optionVotes: {},
         totalVotes: 0,
         myOptionId: null,
       });
     }
 
-    const rows = await this.pollVoteRepo
+    const votes = await this.pollVoteRepo
       .createQueryBuilder('v')
       .select('v.message_id', 'messageId')
       .addSelect('v.option_id', 'optionId')
@@ -99,22 +99,20 @@ export class MessagePollService {
       where: { messageId: In(messageIds), userId: viewerId },
     });
 
-    for (const v of mine) {
-      const cur = map.get(v.messageId);
-      if (cur) cur.myOptionId = v.optionId;
+    for (const vote of mine) {
+      const summary = summaryMap.get(vote.messageId);
+      if (summary) summary.myOptionId = vote.optionId;
     }
 
-    for (const r of rows) {
-      const mid = Number(r.messageId);
-      const cnt = Number(r.cnt);
-      const oid = String(r.optionId);
-      const cur = map.get(mid);
-      if (!cur) continue;
-      cur.optionVotes[oid] = cnt;
-      cur.totalVotes += cnt;
+    for (const vote of votes) {
+      const count = +vote.cnt;
+      const summary = summaryMap.get(+vote.messageId);
+      if (!summary) continue;
+      summary.optionVotes[vote.optionId] = count;
+      summary.totalVotes += count;
     }
 
-    return map;
+    return summaryMap;
   }
 
   async mergePollForClient(

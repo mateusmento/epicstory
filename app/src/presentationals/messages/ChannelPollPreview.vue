@@ -1,21 +1,20 @@
 <script lang="ts" setup>
 import { cn } from "@/design-system/utils";
-import { useDependency } from "@/core/dependency-injection";
-import { useChannelStore } from "@/domain/channels";
-import type { MessagePollClient as IMessagePollClient } from "@epicstory/contracts";
-import { ChannelApi } from "@epicstory/api-client";
+import type { MessagePollClient } from "@epicstory/contracts";
 import { Check } from "lucide-vue-next";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
-const props = defineProps<{
-  messageId: number;
-  poll: IMessagePollClient;
+const props = withDefaults(
+  defineProps<{
+    poll: MessagePollClient;
+    votingOptionId?: string | null;
+  }>(),
+  { votingOptionId: null },
+);
+
+const emit = defineEmits<{
+  pick: [optionId: string];
 }>();
-
-const channelApi = useDependency(ChannelApi);
-const channelStore = useChannelStore();
-
-const votingOptionId = ref<string | null>(null);
 
 const question = computed(() => props.poll.question.trim() || "Poll");
 
@@ -36,23 +35,9 @@ function countFor(optionId: string): number {
 
 const myOptionId = computed(() => props.poll.myOptionId ?? null);
 
-async function onPick(optionId: string) {
-  if (votingOptionId.value) return;
-  votingOptionId.value = optionId;
-  try {
-    const res = await channelApi.voteMessagePoll(props.messageId, optionId);
-    const poll = res.poll;
-    const acts = [...channelStore.activities];
-    const i = acts.findIndex((a) => a.type === "message_sent" && a.messageId === props.messageId);
-    if (i >= 0) {
-      const act = acts[i];
-      const msg = act.message!;
-      acts[i] = { ...act, message: { ...msg, poll } };
-      channelStore.activities = acts;
-    }
-  } finally {
-    votingOptionId.value = null;
-  }
+function onPick(optionId: string) {
+  if (props.votingOptionId != null) return;
+  emit("pick", optionId);
 }
 
 function rowClasses(optionId: string): string {

@@ -3,7 +3,7 @@ import { UserAvatar } from "@/presentationals/user";
 import type {
   MessageReactionNotificationPayload,
   ReplyReactionNotificationPayload,
-} from "@/domain/notifications";
+} from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 import { UserIcon } from "lucide-vue-next";
 import { computed } from "vue";

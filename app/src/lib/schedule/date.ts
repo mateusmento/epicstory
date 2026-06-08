@@ -4,11 +4,11 @@ import {
   startOfWeek as dateFnsStartOfWeek,
   eachDayOfInterval,
   endOfDay,
-  format,
   startOfDay,
   startOfMonth,
 } from "date-fns";
-import { SCHEDULE_MONTH_GRID_DAYS, SCHEDULE_WEEK_STARTS_ON, type ScheduleViewType } from "./constants";
+import { SCHEDULE_MONTH_GRID_DAYS, SCHEDULE_WEEK_STARTS_ON } from "./constants";
+import type { ScheduleViewType } from "./types";
 
 /** Normalize to local midnight — schedule state always uses day-level dates. */
 export function normalizeScheduleDay(date: Date): Date {
@@ -47,27 +47,10 @@ export function computeMonthGridDays(range: { start: Date; end: Date }): Date[] 
   return eachDayOfInterval({ start: range.start, end: range.end });
 }
 
-export function computeMonthWeekdayLabels(): string[] {
-  const base = dateFnsStartOfWeek(new Date(), { weekStartsOn: SCHEDULE_WEEK_STARTS_ON });
-  return Array.from({ length: 7 }, (_, i) => format(addDays(base, i), "EEE"));
-}
-
 export function computeWeekDays(currentDate: Date): Date[] {
   const date = normalizeScheduleDay(currentDate);
   const weekStart = dateFnsStartOfWeek(date, { weekStartsOn: SCHEDULE_WEEK_STARTS_ON });
   return eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
-}
-
-export function formatScheduleHeader(view: ScheduleViewType, currentDate: Date): string {
-  const date = normalizeScheduleDay(currentDate);
-  if (view === "month") {
-    return format(date, "MMMM yyyy");
-  }
-  if (view === "week") {
-    const days = computeWeekDays(date);
-    return `${format(days[0], "MMM d")} - ${format(days[6], "MMM d, yyyy")}`;
-  }
-  return format(date, "EEEE, MMMM d, yyyy");
 }
 
 export function shiftScheduleDate(view: ScheduleViewType, currentDate: Date, direction: -1 | 1): Date {

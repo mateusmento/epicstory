@@ -4,8 +4,7 @@ import { CalendarEventApi } from "@epicstory/api-client";
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { startOfDay } from "date-fns";
 import { onMounted, onUnmounted, ref, type Ref } from "vue";
-import { SCHEDULE_DRAFT_EVENT_ID, type ScheduleViewType } from "../constants";
-import { getEventEndTime } from "../calendar-event-layout";
+import { getEventEndTime, SCHEDULE_DRAFT_EVENT_ID, type ScheduleViewType } from "@/lib/schedule";
 import {
   didSchedulePointerMove,
   getScheduleDayFromPointer,

@@ -1,6 +1,5 @@
 import { addMinutes, format, isSameDay, startOfDay } from "date-fns";
-import { SCHEDULE_HOUR_SLOT_PX } from "./constants";
-import { normalizeScheduleDay } from "./schedule-date";
+import { normalizeScheduleDay, SCHEDULE_HOUR_SLOT_PX } from "@/lib/schedule";
 
 export const SCHEDULE_TIME_QUARTER_MINUTES = 15;
 export const SCHEDULE_DAY_COLUMN_ATTR = "data-schedule-day";

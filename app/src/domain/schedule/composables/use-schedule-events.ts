@@ -5,8 +5,7 @@ import { CalendarEventApi } from "@epicstory/api-client";
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { format, getHours, isSameDay } from "date-fns";
 import { computed, onMounted, ref, watch } from "vue";
-import { SCHEDULE_MAX_EVENTS_PER_DAY_CELL } from "../constants";
-import { computeDateRange } from "../schedule-date";
+import { computeDateRange, SCHEDULE_MAX_EVENTS_PER_DAY_CELL } from "@/lib/schedule";
 import type { ScheduleNavigationRefs } from "./use-schedule-navigation";
 
 export function useScheduleEvents(navigation: ScheduleNavigationRefs) {

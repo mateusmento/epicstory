@@ -8,12 +8,16 @@ export type ICalendarEventRecurrence =
       until?: string;
     };
 
+export type RecurrenceFrequency = ICalendarEventRecurrence["frequency"];
+
+export type CalendarEventType = "event" | "meeting";
+
 export type ICalendarEvent = {
   id: string;
   occurrenceId: string;
   workspaceId: number;
   createdById: number;
-  type: "event" | "meeting";
+  type: CalendarEventType;
   startsAt: string;
   endsAt: string;
   title: string;

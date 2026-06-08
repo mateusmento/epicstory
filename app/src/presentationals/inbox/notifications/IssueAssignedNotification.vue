@@ -2,7 +2,7 @@
 import { UserAvatar } from "@/presentationals/user";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { IssueNotificationLabel } from "@/presentationals/issue";
-import type { IssueAssignedNotificationPayload } from "@/domain/notifications";
+import type { IssueAssignedNotificationPayload } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 import { SquareUser } from "lucide-vue-next";
 

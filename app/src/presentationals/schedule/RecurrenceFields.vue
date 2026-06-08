@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { RecurrenceFrequency } from "@/domain/schedule";
+import type { RecurrenceFrequency } from "@epicstory/contracts";
 
 const frequency = defineModel<RecurrenceFrequency>("frequency", { required: true });
 const interval = defineModel<number>("interval", { required: true });

@@ -1,6 +1,6 @@
 import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { SCHEDULE_CHANNEL_ID_QUERY_KEY } from "../constants";
+import { SCHEDULE_CHANNEL_ID_QUERY_KEY } from "@/lib/schedule";
 import type { CalendarItemDialogController } from "./use-calendar-item-dialog";
 import { omit } from "lodash";
 

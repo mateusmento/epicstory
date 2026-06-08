@@ -2,7 +2,7 @@
 import { UserAvatar } from "@/presentationals/user";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { IconReplies } from "@/design-system/icons";
-import type { ReplyNotificationPayload } from "@/domain/notifications";
+import type { ReplyNotificationPayload } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 
 defineProps<{

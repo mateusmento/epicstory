@@ -1,6 +1,6 @@
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { onMounted, onUnmounted, ref, type Ref } from "vue";
-import { SCHEDULE_DRAFT_EVENT_ID } from "../constants";
+import { SCHEDULE_DRAFT_EVENT_ID } from "@/lib/schedule";
 import {
   endTimeFromDragDelta,
   formatScheduleTimeRange,
