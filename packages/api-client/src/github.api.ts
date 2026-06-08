@@ -1,22 +1,23 @@
 import type {
+  IGithubCatalogRepository,
   IGithubCreateIssueBranchResponse,
   IGithubIntegrationStatus,
   IGithubIssueBranchLink,
   IGithubIssuePullRequestLink,
   IGithubRepositoryBranchesPage,
-  IGithubRepositoryCatalogPage,
+  Page,
 } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
 import { Axios as AxiosImport } from "axios";
 import { inject, injectable } from "tsyringe";
 
 export type {
+  IGithubCatalogRepository,
   IGithubCreateIssueBranchResponse,
   IGithubIntegrationStatus,
   IGithubIssueBranchLink,
   IGithubIssuePullRequestLink,
   IGithubRepositoryBranchesPage,
-  IGithubRepositoryCatalogPage,
 } from "@epicstory/contracts";
 
 @injectable()
@@ -47,13 +48,12 @@ export class GithubIntegrationApi {
 
   listRepositories(
     workspaceId: number,
-    params?: { page?: number; perPage?: number },
+    params?: { page?: number; count?: number },
   ) {
     return this.axios
-      .get<IGithubRepositoryCatalogPage>(
-        `/integrations/github/workspaces/${workspaceId}/repositories`,
-        { params },
-      )
+      .get<
+        Page<IGithubCatalogRepository>
+      >(`/integrations/github/workspaces/${workspaceId}/repositories`, { params })
       .then((r) => r.data);
   }
 

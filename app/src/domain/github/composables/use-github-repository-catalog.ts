@@ -2,22 +2,11 @@ import { useDependency } from "@/core/dependency-injection";
 import { createPaginatedListEngine, createPaginatedListState } from "@/domain/async";
 import { githubApiErrorMessage } from "@/domain/github/github-api-errors";
 import { GithubIntegrationApi } from "@epicstory/api-client";
-import type { IGithubCatalogRepository, IGithubRepositoryCatalogPage, Page } from "@epicstory/contracts";
+import type { IGithubCatalogRepository } from "@epicstory/contracts";
 import { toReactive } from "@vueuse/core";
 import { markRaw, ref, toRefs } from "vue";
 
 const DEFAULT_PAGE_SIZE = 30;
-
-function catalogPageToPage(catalog: IGithubRepositoryCatalogPage): Page<IGithubCatalogRepository> {
-  return {
-    content: catalog.repositories,
-    page: catalog.page,
-    count: catalog.perPage,
-    hasNext: catalog.hasNextPage,
-    hasPrevious: catalog.page > 1,
-    total: catalog.totalCount,
-  };
-}
 
 export type UseGithubRepositoryCatalogOptions = {
   pageSize?: number;
@@ -42,12 +31,12 @@ export function useGithubRepositoryCatalog(options: UseGithubRepositoryCatalogOp
     isContextReady: (workspaceId: number) => !!workspaceId,
     getItemId: (repo) => repo.githubRepoId,
     fetchPage: async (workspaceId, _q, pageIndex, size) => {
-      const catalog = await githubApi.listRepositories(workspaceId, {
-        page: pageIndex + 1,
-        perPage: size,
+      const page = await githubApi.listRepositories(workspaceId, {
+        page: pageIndex,
+        count: size,
       });
-      totalCount.value = catalog.totalCount;
-      return catalogPageToPage(catalog);
+      totalCount.value = page.total;
+      return page;
     },
   });
 

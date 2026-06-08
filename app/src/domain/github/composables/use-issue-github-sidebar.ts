@@ -400,8 +400,8 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     workspaceGhReposLoading.value = true;
     workspaceGhReposError.value = null;
     try {
-      const page = await githubIntegrationApi.listRepositories(+wid, { page: 1, perPage: 100 });
-      workspaceGhRepos.value = page.repositories;
+      const page = await githubIntegrationApi.listRepositories(+wid, { page: 0, count: 100 });
+      workspaceGhRepos.value = page.content;
     } catch (e: unknown) {
       workspaceGhRepos.value = [];
       workspaceGhReposError.value = githubApiErrorMessage(e, "Could not load repositories from GitHub");

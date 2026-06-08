@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { IGithubCatalogRepository } from '@epicstory/contracts';
 import { AppConfig } from 'src/core/app.config';
 import { signGithubAppJwt } from '../lib/github-app-jwt';
 import {
@@ -52,16 +53,6 @@ export type GithubRepoDetailsForLink = {
   name: string;
   fullName: string;
   defaultBranch: string | null;
-};
-
-export type GithubCatalogRepo = {
-  githubRepoId: string;
-  name: string;
-  fullName: string;
-  owner: string;
-  defaultBranch: string | null;
-  private: boolean;
-  htmlUrl: string;
 };
 
 @Injectable()
@@ -235,8 +226,8 @@ export class GithubApiService {
     perPage: number,
     workspaceId?: number,
   ): Promise<{
-    totalCount: number;
-    repositories: GithubCatalogRepo[];
+    total: number;
+    content: IGithubCatalogRepository[];
   }> {
     const cached = await this.githubCache.getRepoListPage(
       installationId,
@@ -245,8 +236,8 @@ export class GithubApiService {
     );
     if (cached) {
       return {
-        totalCount: cached.totalCount,
-        repositories: cached.repositories,
+        total: cached.total,
+        content: cached.content,
       };
     }
 
@@ -272,7 +263,7 @@ export class GithubApiService {
     const totalCount =
       typeof body.total_count === 'number' ? body.total_count : raw.length;
 
-    const repositories: GithubCatalogRepo[] = raw.map((r) => ({
+    const repositories: IGithubCatalogRepository[] = raw.map((r) => ({
       githubRepoId: String(r.id),
       name: r.name,
       fullName: r.full_name,
@@ -282,7 +273,7 @@ export class GithubApiService {
       htmlUrl: r.html_url ?? '',
     }));
 
-    const pagePayload = { totalCount, repositories };
+    const pagePayload = { total: totalCount, content: repositories };
     await this.githubCache.setRepoListPage(
       installationId,
       page,

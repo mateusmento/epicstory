@@ -4,7 +4,12 @@ import {
   Injectable,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import type { IGithubInstallationRemoteVerification } from '@epicstory/contracts';
+import type {
+  IGithubCatalogRepository,
+  IGithubIntegrationStatus,
+  IGithubInstallationRemoteVerification,
+} from '@epicstory/contracts';
+import { Page } from 'src/core/page';
 import { AppConfig } from 'src/core/app.config';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
@@ -16,39 +21,6 @@ import {
 import { GithubApiService } from './github-api.service';
 import { GithubCacheService } from './github-cache.service';
 import { GithubWorkspaceInstallationService } from './github-workspace-installation.service';
-
-export type GithubIntegrationStatusResult = {
-  appConfigured: boolean;
-  installation: {
-    id: number;
-    githubInstallationId: string;
-    accountLogin: string;
-    accountType: string;
-    suspendedAt: string | null;
-  } | null;
-  user: {
-    githubUserId: string;
-    githubLogin: string;
-  } | null;
-  installationRemoteVerification: IGithubInstallationRemoteVerification;
-  installationRemoteVerificationDetail: string | null;
-};
-
-export type GithubRepositoryCatalogResult = {
-  page: number;
-  perPage: number;
-  totalCount: number;
-  hasNextPage: boolean;
-  repositories: {
-    githubRepoId: string;
-    name: string;
-    fullName: string;
-    owner: string;
-    defaultBranch: string | null;
-    private: boolean;
-    htmlUrl: string;
-  }[];
-};
 
 @Injectable()
 export class GithubWorkspaceIntegrationService {
@@ -65,7 +37,7 @@ export class GithubWorkspaceIntegrationService {
   async getIntegrationStatus(
     workspaceId: number,
     userId: number,
-  ): Promise<GithubIntegrationStatusResult> {
+  ): Promise<IGithubIntegrationStatus> {
     const isMember = await this.workspaceRepo.memberExists(workspaceId, userId);
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
 
@@ -130,8 +102,8 @@ export class GithubWorkspaceIntegrationService {
     workspaceId: number,
     userId: number,
     page: number,
-    perPageRaw: number,
-  ): Promise<GithubRepositoryCatalogResult> {
+    countRaw: number,
+  ): Promise<Page<IGithubCatalogRepository>> {
     const isMember = await this.workspaceRepo.memberExists(workspaceId, userId);
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
 
@@ -143,33 +115,19 @@ export class GithubWorkspaceIntegrationService {
       );
     }
 
-    const perPage = Math.min(100, Math.max(1, perPageRaw));
-    const safePage = Math.max(1, page);
+    const count = Math.min(100, Math.max(1, countRaw));
+    const safePage = Math.max(0, page);
 
     try {
-      const { totalCount, repositories } =
+      const { total, content } =
         await this.githubApi.listInstallationRepositoriesPage(
           installation.githubInstallationId,
-          safePage,
-          perPage,
+          safePage + 1,
+          count,
           workspaceId,
         );
 
-      return {
-        page: safePage,
-        perPage,
-        totalCount,
-        hasNextPage: safePage * perPage < totalCount,
-        repositories: repositories.map((r) => ({
-          githubRepoId: r.githubRepoId,
-          name: r.name,
-          fullName: r.fullName,
-          owner: r.owner,
-          defaultBranch: r.defaultBranch,
-          private: r.private,
-          htmlUrl: r.htmlUrl,
-        })),
-      };
+      return Page.fromResult(content, total, { page: safePage, count });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes('GITHUB_APP_PRIVATE_KEY') && msg.includes('required')) {

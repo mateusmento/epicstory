@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { IGithubCatalogRepository } from '@epicstory/contracts';
 import { AppConfig } from 'src/core/app.config';
 import { RedisService } from 'src/core/redis.service';
 type CachedInstallationToken = {
@@ -6,19 +7,9 @@ type CachedInstallationToken = {
   expiresAtMs: number;
 };
 
-type CachedCatalogRepo = {
-  githubRepoId: string;
-  name: string;
-  fullName: string;
-  owner: string;
-  defaultBranch: string | null;
-  private: boolean;
-  htmlUrl: string;
-};
-
 type CachedRepoListPage = {
-  totalCount: number;
-  repositories: CachedCatalogRepo[];
+  total: number;
+  content: IGithubCatalogRepository[];
 };
 
 @Injectable()
