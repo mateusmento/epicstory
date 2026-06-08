@@ -1,4 +1,4 @@
-import { useRouteQueryRef } from "@/composables";
+import { useRouteQueryRef } from "@/core/composables";
 import { computed, ref, type Ref } from "vue";
 import { SCHEDULE_DEFAULT_VIEW, SCHEDULE_VIEW_QUERY_KEY, type ScheduleViewType } from "../constants";
 import { formatScheduleHeader, shiftScheduleDate, todayInLocalTz } from "../schedule-date";

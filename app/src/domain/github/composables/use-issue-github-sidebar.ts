@@ -439,7 +439,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
   );
 
   watch(
-    () => selectedGhRepo.value?.id,
+    () => selectedGhRepo.value?.githubRepoId,
     () => {
       githubRepoBranches.value = [];
       githubRepoBranchesHasMore.value = false;

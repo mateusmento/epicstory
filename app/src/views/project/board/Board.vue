@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import BoardColumn from "@/components/board/BoardColumn.vue";
-import BoardItem from "@/components/board/BoardItem.vue";
+import BoardColumn from "@/presentationals/board/BoardColumn.vue";
+import BoardItem from "@/presentationals/board/BoardItem.vue";
 import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
 import type { IIssue, IBacklogItem } from "@epicstory/contracts";
 import { useProjectFilters } from "@/domain/project";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import IssueCard from "./IssueCard.vue";
+import IssueCard from "@/containers/views/project/board/IssueCard.vue";
 import { ScrollArea } from "@/design-system";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();

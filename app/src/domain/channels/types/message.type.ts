@@ -2,13 +2,7 @@ import type { IAggregatedReaction, IMessage, IReply, MessagePollClient, IUser } 
 
 export type IMessagePollClient = MessagePollClient;
 
-export type IMessageGroup<M extends IMessage | IReply = IMessage> = {
-  id: number;
-  senderId: number;
-  sender: IUser;
-  sentAt: Date;
-  messages: M[];
-};
+export type { IMessageGroup } from "@/lib/chat-timeline";
 
 /** @deprecated NOT USED ANYWHERE AND CAN BE REMOVED */
 export type IMessageAggregation = {

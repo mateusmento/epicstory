@@ -1,5 +1,6 @@
 <script lang="tsx" setup>
-import { IssueContextMenu, issueStatusDotClass } from "@/components/issue";
+import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
+import { IssueContextMenu } from "@/containers/issue";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
@@ -18,12 +19,12 @@ import {
   type FunctionalComponent as FC,
 } from "vue";
 import { useRouter } from "vue-router";
-import BacklogItemRow from "./BacklogItemRow.vue";
-import { provideBacklogRowContext } from "./backlog-row.context";
-import Signal1Bar from "./priority-toggler/Signal1Bar.vue";
-import Signal2Bars from "./priority-toggler/Signal2Bars.vue";
-import Signal3Bars from "./priority-toggler/Signal3Bars.vue";
-import UrgentIcon from "./priority-toggler/Urgent.vue";
+import BacklogItemRow from "@/containers/views/project/backlog/BacklogItemRow.vue";
+import { provideBacklogRowContext } from "@/containers/views/project/backlog/backlog-row.context";
+import Signal1Bar from "@/presentationals/views/project/backlog/priority-toggler/Signal1Bar.vue";
+import Signal2Bars from "@/presentationals/views/project/backlog/priority-toggler/Signal2Bars.vue";
+import Signal3Bars from "@/presentationals/views/project/backlog/priority-toggler/Signal3Bars.vue";
+import UrgentIcon from "@/presentationals/views/project/backlog/priority-toggler/Urgent.vue";
 import { useProjectFilters } from "@/domain/project";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();

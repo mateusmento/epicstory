@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UserAvatar } from "@/components/user";
+import { UserAvatar } from "@/presentationals/user";
 import { useDependency } from "@/core/dependency-injection";
 import { parseDate } from "@/utils";
 import { Button } from "@/design-system";
@@ -11,7 +11,7 @@ import {
   useMeeting,
   useMeetingMediaDevicesStore,
 } from "@/domain/meetings";
-import MeetingDeviceMenu from "@/components/meeting/MeetingDeviceMenu.vue";
+import MeetingDeviceMenu from "@/containers/meeting/MeetingDeviceMenu.vue";
 import { useNow } from "@vueuse/core";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";

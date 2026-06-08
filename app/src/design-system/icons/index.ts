@@ -21,3 +21,4 @@ export { default as IconVerticallyExpand } from "./IconVerticallyExpand.vue";
 export { default as IconSendMessage } from "./IconSendMessage.vue";
 export { default as IconChats } from "./IconChats.vue";
 export { default as IconReplies } from "./IconReplies.vue";
+export * from "./meeting";
