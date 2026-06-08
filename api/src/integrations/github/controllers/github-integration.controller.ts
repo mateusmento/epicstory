@@ -35,16 +35,16 @@ export class GithubIntegrationController {
   @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
   async listRepositories(
     @Param('workspaceId', ParseIntPipe) workspaceId: number,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('perPage', new DefaultValuePipe(30), ParseIntPipe)
-    perPageRaw: number,
+    @Query('page', new DefaultValuePipe(0), ParseIntPipe) page: number,
+    @Query('count', new DefaultValuePipe(30), ParseIntPipe)
+    countRaw: number,
     @Auth() issuer: Issuer,
   ) {
     return this.service.listInstallationRepositoryCatalog(
       workspaceId,
       issuer.id,
       page,
-      perPageRaw,
+      countRaw,
     );
   }
 

@@ -45,6 +45,7 @@ export type IGithubIntegrationStatus = {
   installationRemoteVerificationDetail: string | null;
 };
 
+/** GitHub App installation repository visible in workspace catalogues and issue repo pickers. */
 export type IGithubCatalogRepository = {
   githubRepoId: string;
   name: string;
@@ -53,15 +54,6 @@ export type IGithubCatalogRepository = {
   defaultBranch: string | null;
   private: boolean;
   htmlUrl: string;
-};
-
-/** GET `/integrations/github/workspaces/:workspaceId/repositories` */
-export type IGithubRepositoryCatalogPage = {
-  page: number;
-  perPage: number;
-  totalCount: number;
-  hasNextPage: boolean;
-  repositories: IGithubCatalogRepository[];
 };
 
 /** Persisted on `project.issue.github_branch` (jsonb). */
