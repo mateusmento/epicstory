@@ -9,7 +9,7 @@ import {
   isPresentationLikeVideoTrack,
   meetingTileVisualStreams,
   partitionMeetingVideoTracks,
-} from "@/domain/meetings";
+} from "@/lib/meetings";
 import { Monitor, Pin } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useMediaStreamVideo } from "@/presentationals/meeting/composables/useMediaStreamVideo";
