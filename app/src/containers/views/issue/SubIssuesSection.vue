@@ -4,7 +4,8 @@ import { BacklogApi, IssueApi } from "@epicstory/api-client";
 import type { IIssue } from "@epicstory/contracts";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import SubIssueRow from "@/containers/views/issue/sub-issues/SubIssueRow.vue";
+import { IssueContextMenu } from "@/containers/issue";
+import SubIssueRow from "@/presentationals/views/issue/sub-issues/SubIssueRow.vue";
 import SubIssuesCreateRow from "@/presentationals/views/issue/sub-issues/SubIssuesCreateRow.vue";
 import SubIssuesHeader from "@/presentationals/views/issue/sub-issues/SubIssuesHeader.vue";
 
@@ -99,15 +100,15 @@ function focusNewInput() {
       />
 
       <!-- List -->
-      <SubIssueRow
-        v-for="sub in subIssues"
-        :key="sub.id"
-        :sub="sub"
-        :disabled="disabled"
-        @open="openSubIssue"
-        @toggle-done="toggleDone"
-        @remove="removeSubIssue"
-      />
+      <IssueContextMenu v-for="sub in subIssues" :key="sub.id" :issue="sub" :disabled="disabled">
+        <SubIssueRow
+          :sub="sub"
+          :disabled="disabled"
+          @open="openSubIssue"
+          @toggle-done="toggleDone"
+          @remove="removeSubIssue"
+        />
+      </IssueContextMenu>
 
       <div v-if="subIssues.length === 0" class="px-3 py-4 text-sm text-muted-foreground">
         No sub-issues yet
