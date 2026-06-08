@@ -26,6 +26,7 @@ import { useThrottleFn } from "@vueuse/core";
 import { CalendarClockIcon, ChevronDownIcon, HashIcon, HeadphonesIcon } from "lucide-vue-next";
 import type { VNodeRef } from "vue";
 import { computed, nextTick, onUnmounted, ref, watch } from "vue";
+import type { OlderPageState } from "@/lib/async";
 import ChannelActivityRow from "@/presentationals/channel/ChannelActivityRow.vue";
 import MessageGroup from "@/presentationals/channel/MessageGroup.vue";
 
@@ -48,8 +49,7 @@ const props = defineProps<{
   channelId: number;
   channel: IChannel;
   typingUserIds: number[];
-  hasMoreOlder: boolean;
-  loadingOlderActivities: boolean;
+  olderPage: OlderPageState;
   loadOlderActivitiesPage: () => Promise<void>;
   isUserOnline: (userId: number) => boolean;
   isMeetingJoinable: (meeting: NonNullable<IChannel["meeting"]>) => boolean;
@@ -161,7 +161,7 @@ watch(
 const prependBusy = ref(false);
 
 async function loadOlderWithScrollPreserve() {
-  if (prependBusy.value || !props.hasMoreOlder || props.loadingOlderActivities) return;
+  if (prependBusy.value || !props.olderPage.hasOlder || props.olderPage.loadingOlder) return;
   prependBusy.value = true;
   const el = scrollAreaRef.value?.getScrollElement();
   if (!el) {
@@ -191,7 +191,7 @@ const NEAR_TOP_PX = 200;
 const onViewportScroll = useThrottleFn(() => {
   const el = scrollAreaRef.value?.getScrollElement();
   if (!el || el.scrollTop > NEAR_TOP_PX) return;
-  if (!props.hasMoreOlder || props.loadingOlderActivities || prependBusy.value) return;
+  if (!props.olderPage.hasOlder || props.olderPage.loadingOlder || prependBusy.value) return;
   loadOlderWithScrollPreserve();
 }, 100);
 

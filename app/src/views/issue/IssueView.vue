@@ -30,28 +30,22 @@ const { user } = useAuth();
 
 const { issue, fetchIssue, updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useIssue();
 
-const {
-  members: workspaceMemberRowsForMentions,
-  search: searchWorkspaceMembersForMentions,
-  loadMore: loadMoreWorkspaceMembersForMentions,
-  hasMore: hasMoreWorkspaceMembersForMentions,
-  isFetchingMore: isFetchingMoreWorkspaceMembersForMentions,
-} = useScopedWorkspaceMemberSearch();
+const memberSearch = useScopedWorkspaceMemberSearch();
 
 watch(
   () => issue.value?.workspaceId,
   (wid) => {
-    if (wid != null) searchWorkspaceMembersForMentions(wid, "");
+    if (wid != null) memberSearch.search(wid, "");
   },
   { immediate: true },
 );
 
-const workspaceMentionUsers = computed(() => workspaceMemberRowsForMentions.value.map((m) => m.user));
+const workspaceMentionUsers = computed(() => memberSearch.items.map((m) => m.user));
 
 async function onWorkspaceMentionListReachedBottom() {
   const wid = issue.value?.workspaceId;
   if (wid == null) return;
-  await loadMoreWorkspaceMembersForMentions(wid);
+  await memberSearch.loadMore(wid);
 }
 
 const issueApi = useDependency(IssueApi);
@@ -294,8 +288,8 @@ watch(
           :mentionables="workspaceMentionUsers"
           :me-id="user?.id"
           :on-mention-list-reached-bottom="onWorkspaceMentionListReachedBottom"
-          :mention-list-has-more="hasMoreWorkspaceMembersForMentions"
-          :mention-list-loading-more="isFetchingMoreWorkspaceMembersForMentions"
+          :mention-list-has-more="memberSearch.hasMore"
+          :mention-list-loading-more="memberSearch.loadingMore"
           @save-description="onSaveDescription"
         />
 
@@ -331,8 +325,8 @@ watch(
           :workspace-mention-users="workspaceMentionUsers"
           :me-id="user.id"
           :on-mention-list-reached-bottom="onWorkspaceMentionListReachedBottom"
-          :mention-list-has-more="hasMoreWorkspaceMembersForMentions"
-          :mention-list-loading-more="isFetchingMoreWorkspaceMembersForMentions"
+          :mention-list-has-more="memberSearch.hasMore"
+          :mention-list-loading-more="memberSearch.loadingMore"
           :resolve-comment-attachments="resolveCommentAttachments"
           :sync-issue-attachments="ingestFromActivity"
           @issue-attachment-removed="onComposerAttachmentRemoved"

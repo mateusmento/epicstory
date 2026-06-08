@@ -10,16 +10,18 @@ import {
   DialogTitle,
   Input,
 } from "@/design-system";
+import { emptyPaginatedListView, type PaginatedListView } from "@/lib/async";
 
-defineProps<{
-  open: boolean;
-  selectedRepoGithubId: string | null;
-  repositories: IGithubCatalogRepository[];
-  loading: boolean;
-  loadingMore: boolean;
-  error: string | null;
-  hasNextPage: boolean;
-}>();
+withDefaults(
+  defineProps<{
+    open: boolean;
+    selectedRepoGithubId: string | null;
+    list?: PaginatedListView<IGithubCatalogRepository>;
+  }>(),
+  {
+    list: () => emptyPaginatedListView<IGithubCatalogRepository>(),
+  },
+);
 
 const searchQuery = defineModel<string>("searchQuery", { default: "" });
 
@@ -46,14 +48,14 @@ const emit = defineEmits<{
           v-model="searchQuery"
           size="sm"
           placeholder="Search by owner or repository name…"
-          :disabled="loading"
+          :disabled="list.loading"
         />
 
-        <div v-if="error" class="text-sm text-destructive">
-          {{ error }}
+        <div v-if="list.error" class="text-sm text-destructive">
+          {{ list.error }}
         </div>
-        <div v-else-if="loading" class="text-sm text-muted-foreground">Loading repositories…</div>
-        <div v-else-if="repositories.length === 0" class="text-sm text-muted-foreground">
+        <div v-else-if="list.loading" class="text-sm text-muted-foreground">Loading repositories…</div>
+        <div v-else-if="list.items.length === 0" class="text-sm text-muted-foreground">
           {{
             searchQuery.trim()
               ? "No repositories match your search."
@@ -65,7 +67,7 @@ const emit = defineEmits<{
           class="flex flex-col gap-1 min-h-0 overflow-y-auto max-h-[min(24rem,50vh)] border rounded-md divide-y m-0 p-0 list-none"
         >
           <li
-            v-for="repo in repositories"
+            v-for="repo in list.items"
             :key="repo.githubRepoId"
             class="flex items-center justify-between gap-2 px-3 py-2 text-sm"
           >
@@ -87,15 +89,15 @@ const emit = defineEmits<{
           </li>
         </ul>
         <Button
-          v-if="hasNextPage && !loading"
+          v-if="list.hasMore && !list.loading"
           variant="ghost"
           size="sm"
           type="button"
           class="self-start"
-          :disabled="loadingMore"
+          :disabled="list.loadingMore"
           @click="emit('load-more')"
         >
-          {{ loadingMore ? "Loading…" : "Load more repositories" }}
+          {{ list.loadingMore ? "Loading…" : "Load more repositories" }}
         </Button>
       </div>
 
