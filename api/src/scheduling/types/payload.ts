@@ -1,4 +1,4 @@
-import type { MessagePoll } from 'src/channel/domain/types/message-poll.types';
+import type { MessagePollBody } from '@epicstory/contracts';
 import type { JSONContent } from '@tiptap/core';
 import {
   IsBoolean,
@@ -143,7 +143,7 @@ export class ScheduledMessagePayload {
   quotedMessageId?: number;
 
   @IsOptional()
-  poll?: MessagePoll;
+  poll?: MessagePollBody;
 
   constructor(data: Partial<ScheduledMessagePayload>) {
     patch(this, data);

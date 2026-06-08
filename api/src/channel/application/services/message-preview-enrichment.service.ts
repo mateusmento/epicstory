@@ -24,10 +24,8 @@ import { AttachmentService } from 'src/workspace/application/services/attachment
 import { In } from 'typeorm';
 import { messageEntityToIMessageCore } from '../utils/message-entity-to-imessage';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import {
-  MessagePollService,
-  type MessagePollSummary,
-} from './message-poll.service';
+import { MessagePollService } from './message-poll.service';
+import type { MessagePollSummary } from '@epicstory/contracts';
 
 @Injectable()
 export class MessagePreviewEnrichmentService {

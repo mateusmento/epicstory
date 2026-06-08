@@ -1,6 +1,4 @@
-import type { IAggregatedReaction, IMessage, IReply, MessagePollClient, IUser } from "@epicstory/contracts";
-
-export type IMessagePollClient = MessagePollClient;
+import type { IAggregatedReaction, IMessage, IReply, IUser } from "@epicstory/contracts";
 
 export type { IMessageGroup } from "@/lib/chat-timeline";
 

@@ -1,3 +1,7 @@
+import type {
+  MessagePollBody as MessagePollBodyContract,
+  MessagePollOptionBody as MessagePollOptionBodyContract,
+} from '@epicstory/contracts';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -9,7 +13,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-export class MessagePollOptionBody {
+export class MessagePollOptionBody implements MessagePollOptionBodyContract {
   @IsString()
   @IsNotEmpty()
   @MaxLength(64)
@@ -21,7 +25,7 @@ export class MessagePollOptionBody {
   label: string;
 }
 
-export class MessagePollBody {
+export class MessagePollBody implements MessagePollBodyContract {
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)

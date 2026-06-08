@@ -12,7 +12,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import type { MessagePoll } from '../types/message-poll.types';
+import type { MessagePollBody } from '@epicstory/contracts';
 import { Channel } from './channel.entity';
 import { MessageReply } from './message-reply.entity';
 
@@ -26,7 +26,7 @@ export class Message {
   content: JSONContent;
 
   @Column({ type: 'jsonb', nullable: true })
-  poll?: MessagePoll | null;
+  poll?: MessagePollBody | null;
 
   @CreateDateColumn()
   sentAt: Date;

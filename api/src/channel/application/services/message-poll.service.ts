@@ -1,26 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import type {
+  MessagePollBody,
+  MessagePollClient,
+  MessagePollSummary,
+} from '@epicstory/contracts';
 import {
   ChannelRepository,
   MessagePollVoteRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
-import type { MessagePoll } from 'src/channel/domain/types/message-poll.types';
 import {
   ChannelNotFound,
   IssuerIsNotChannelMember,
   MessageNotFound,
 } from '../exceptions';
-import type { MessagePollBody } from '../dtos/message-poll.dto';
+import type { MessagePollBody as MessagePollBodyDto } from '../dtos/message-poll.dto';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
-
-export type MessagePollSummary = {
-  optionVotes: Record<string, number>;
-  totalVotes: number;
-  myOptionId: string | null;
-};
-
-export type IMessagePollClient = MessagePoll & MessagePollSummary;
 
 @Injectable()
 export class MessagePollService {
@@ -30,7 +26,7 @@ export class MessagePollService {
     private readonly channelRepo: ChannelRepository,
   ) {}
 
-  normalizePollBody(body: MessagePollBody): MessagePoll {
+  normalizePollBody(body: MessagePollBodyDto): MessagePollBody {
     const options = body.options.map((o) => ({
       id: o.id.trim(),
       label: o.label.trim(),
@@ -45,12 +41,14 @@ export class MessagePollService {
     };
   }
 
-  pollPlainSnippet(poll: MessagePoll): string {
+  pollPlainSnippet(poll: MessagePollBody): string {
     const lines = poll.options.map((o) => `• ${o.label}`).join('\n');
     return `Poll: ${poll.question}\n${lines}`;
   }
 
-  messagePollFingerprint(poll: MessagePoll | null | undefined): string | null {
+  messagePollFingerprint(
+    poll: MessagePollBody | null | undefined,
+  ): string | null {
     if (!poll?.options?.length) return null;
     return JSON.stringify({
       q: poll.question.trim(),
@@ -59,9 +57,9 @@ export class MessagePollService {
   }
 
   mergePersistedPollWithSummary(
-    persisted: MessagePoll,
+    persisted: MessagePollBody,
     summary?: MessagePollSummary,
-  ): IMessagePollClient {
+  ): MessagePollClient {
     const s = summary ?? {
       optionVotes: {},
       totalVotes: 0,
@@ -117,9 +115,9 @@ export class MessagePollService {
 
   async mergePollForClient(
     messageId: number,
-    persisted: MessagePoll | null | undefined,
+    persisted: MessagePollBody | null | undefined,
     viewerId: number,
-  ): Promise<IMessagePollClient | undefined> {
+  ): Promise<MessagePollClient | undefined> {
     if (!persisted) return undefined;
     const map = await this.findPollSummariesForMessages([messageId], viewerId);
     const summary = map.get(messageId) ?? {
@@ -139,7 +137,7 @@ export class MessagePollService {
     messageId: number,
     issuerId: number,
     optionId: string,
-  ): Promise<{ channelId: number; poll: IMessagePollClient }> {
+  ): Promise<{ channelId: number; poll: MessagePollClient }> {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
     });
