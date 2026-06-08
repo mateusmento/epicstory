@@ -1,1 +1,1 @@
-export { default as ConfirmDialogProvider } from "./ConfirmDialogProvider.vue";
+export { ConfirmDialogProvider } from "@/presentationals/confirm-dialog";
