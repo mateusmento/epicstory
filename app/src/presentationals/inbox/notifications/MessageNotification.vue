@@ -2,16 +2,29 @@
 import { UserAvatar } from "@/presentationals/user";
 import { IconChats } from "@/design-system/icons";
 import type { DirectMessageNotificationPayload } from "@epicstory/contracts";
+import type { IUser } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
+import { computed } from "vue";
 
-defineProps<{
+const props = defineProps<{
   payload: DirectMessageNotificationPayload;
   createdAt: string;
+  meId?: number | null;
 }>();
 
 function formatTime(date: string) {
   return formatDistanceToNow(new Date(date), { addSuffix: true });
 }
+
+const channelName = computed(() => {
+  if (props.payload.channel.type === "multi-direct") {
+    return props.payload.channel.peers
+      .filter((peer: IUser) => peer.id !== props.meId)
+      .map((peer: IUser) => peer.name)
+      .join(", ");
+  }
+  return props.payload.sender?.name;
+});
 </script>
 
 <template>
@@ -37,7 +50,7 @@ function formatTime(date: string) {
         />
 
         <div class="flex:col flex:center-y min-w-0">
-          <span class="text-sm truncate text-foreground font-lato">{{ payload.sender.name }}</span>
+          <span class="text-sm truncate text-foreground font-lato">{{ channelName }}</span>
           <div class="w-full min-w-0 text-sm truncate text-secondary-foreground font-lato">
             {{ payload.message.displayContent ?? payload.message.content }}
           </div>

@@ -24,6 +24,7 @@ import {
 
 defineProps<{
   notification: Notification;
+  meId?: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -58,7 +59,8 @@ function notificationTypeLabel(n: Notification): string {
     <MessageNotification
       v-else-if="notification.type === 'direct_message'"
       :payload="notification.payload as DirectMessageNotificationPayload"
-      :createdAt="notification.createdAt"
+      :created-at="notification.createdAt"
+      :me-id="meId"
     />
     <DueDateNotification
       v-else-if="notification.type === 'issue_due_date'"
