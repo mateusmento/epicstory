@@ -1,7 +1,13 @@
 import { useRouteQueryRef } from "@/core/composables";
 import { computed, ref, type Ref } from "vue";
-import { SCHEDULE_DEFAULT_VIEW, SCHEDULE_VIEW_QUERY_KEY, type ScheduleViewType } from "../constants";
-import { formatScheduleHeader, shiftScheduleDate, todayInLocalTz } from "../schedule-date";
+import {
+  formatScheduleHeader,
+  SCHEDULE_DEFAULT_VIEW,
+  SCHEDULE_VIEW_QUERY_KEY,
+  shiftScheduleDate,
+  todayInLocalTz,
+  type ScheduleViewType,
+} from "@/lib/schedule";
 import { isValidScheduleViewQuery, parseScheduleViewQuery } from "../schedule-view-query";
 
 export function useScheduleNavigation() {

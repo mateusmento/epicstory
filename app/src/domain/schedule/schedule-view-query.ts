@@ -1,5 +1,5 @@
 import type { LocationQueryValue } from "vue-router";
-import { SCHEDULE_DEFAULT_VIEW, type ScheduleViewType } from "./constants";
+import { SCHEDULE_DEFAULT_VIEW, type ScheduleViewType } from "@/lib/schedule";
 
 const VALID_VIEWS: ScheduleViewType[] = ["month", "week", "day"];
 

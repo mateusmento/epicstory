@@ -6,7 +6,7 @@ import { Icon } from "@/design-system/icons";
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
 import { SCHEDULE_DIALOG_KEY } from "@/domain/schedule";
 import { inject } from "vue";
-import RecurrenceFields from "./RecurrenceFields.vue";
+import { RecurrenceFields } from "@/presentationals/schedule";
 
 const dialog = inject(SCHEDULE_DIALOG_KEY);
 if (!dialog) {
@@ -14,10 +14,20 @@ if (!dialog) {
 }
 
 const { form, formattedDate, channelList, currentUser } = dialog;
+
+const {
+  handleDialogOpenChange,
+  saveEvent,
+  toggleEventWeekday,
+  toggleMeetingWeekday,
+  removeMeetingParticipant,
+  removeEvent,
+  closeDialog,
+} = dialog;
 </script>
 
 <template>
-  <Dialog :open="form.showEventDialog" @update:open="dialog.handleDialogOpenChange">
+  <Dialog :open="form.showEventDialog" @update:open="handleDialogOpenChange">
     <DialogContent class="!p-0 sm:max-w-[560px]">
       <div class="rounded-lg bg-card !p-0">
         <DialogHeader class="px-3 pt-3 pb-1">
@@ -34,7 +44,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
           </DialogTitle>
         </DialogHeader>
 
-        <form class="px-3 pb-3" @submit.prevent="dialog.saveEvent">
+        <form class="px-3 pb-3" @submit.prevent="saveEvent">
           <div class="mt-1 flex items-center justify-between gap-2">
             <div class="text-[11px] text-muted-foreground">Type</div>
             <ToggleGroup v-model="form.itemType" type="single" :disabled="Boolean(form.editingEvent)">
@@ -67,7 +77,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
               v-model:frequency="form.eventRecurrenceFrequency"
               v-model:interval="form.eventRecurrenceInterval"
               v-model:by-weekday="form.eventRecurrenceByWeekday"
-              @toggle-weekday="dialog.toggleEventWeekday"
+              @toggle-weekday="toggleEventWeekday"
             />
           </div>
 
@@ -113,7 +123,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
               v-model:frequency="form.meetingRecurrenceFrequency"
               v-model:interval="form.meetingRecurrenceInterval"
               v-model:by-weekday="form.meetingRecurrenceByWeekday"
-              @toggle-weekday="dialog.toggleMeetingWeekday"
+              @toggle-weekday="toggleMeetingWeekday"
             />
 
             <div v-if="!form.meetingChannelId" class="mt-2 space-y-2">
@@ -140,7 +150,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
                     size="icon-sm"
                     variant="ghost"
                     title="Remove"
-                    @click="dialog.removeMeetingParticipant(p.id)"
+                    @click="removeMeetingParticipant(p.id)"
                   >
                     <Icon name="io-close" class="h-4 w-4" />
                   </Button>
@@ -200,7 +210,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
               size="sm"
               class="mr-auto"
               :disabled="form.isCreating"
-              @click="dialog.removeEvent"
+              @click="removeEvent"
             >
               Remove
             </Button>
@@ -209,7 +219,7 @@ const { form, formattedDate, channelList, currentUser } = dialog;
               variant="outline"
               size="sm"
               :disabled="form.isCreating"
-              @click="dialog.closeDialog"
+              @click="closeDialog"
             >
               Cancel
             </Button>

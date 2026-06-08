@@ -1,9 +1,9 @@
-import { resolveCalendarReminderStartsInLabel } from "./event-starts-in";
 import type {
   MessageReactionNotificationPayload,
   Notification,
   ReplyReactionNotificationPayload,
-} from "./types";
+} from "@epicstory/contracts";
+import { resolveCalendarReminderStartsInLabel } from "@/lib/notifications";
 
 function formatCalendarOccurrenceSubtitle(occurrenceAt: unknown): string | undefined {
   if (occurrenceAt == null || occurrenceAt === "") return undefined;

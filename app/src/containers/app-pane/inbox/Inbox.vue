@@ -2,7 +2,7 @@
 import { Icon } from "@/design-system/icons";
 import { ScrollArea, Separator } from "@/design-system";
 import { useNotifications } from "@/domain/notifications";
-import type { Notification } from "@/domain/notifications";
+import { InboxNotificationRow } from "@/presentationals/inbox";
 import type {
   CalendarEventReminderNotificationPayload,
   CalendarMeetingReminderNotificationPayload,
@@ -11,14 +11,14 @@ import type {
   IssueDueDateNotificationPayload,
   MentionNotificationPayload,
   MessageReactionNotificationPayload,
+  Notification,
   ReplyNotificationPayload,
   ReplyReactionNotificationPayload,
-} from "@/domain/notifications";
+} from "@epicstory/contracts";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import type { VNodeRef } from "vue";
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import InboxNotificationRow from "./InboxNotificationRow.vue";
 
 const { notifications, isLoading, isLoadingMore, hasMore, markAsSeen, fetchMoreNotifications } =
   useNotifications();

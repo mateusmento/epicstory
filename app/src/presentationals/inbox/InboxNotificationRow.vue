@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import type { Notification } from "@/domain/notifications";
 import type {
   CalendarEventReminderNotificationPayload,
   CalendarMeetingReminderNotificationPayload,
@@ -8,17 +7,20 @@ import type {
   IssueDueDateNotificationPayload,
   MentionNotificationPayload,
   MessageReactionNotificationPayload,
+  Notification,
   ReplyNotificationPayload,
   ReplyReactionNotificationPayload,
-} from "@/domain/notifications";
-import MentionNotification from "./notifications/MentionNotification.vue";
-import ReplyNotification from "./notifications/ReplyNotification.vue";
-import MessageNotification from "./notifications/MessageNotification.vue";
-import MessageReactionNotification from "./notifications/MessageReactionNotification.vue";
-import DueDateNotification from "./notifications/DueDateNotification.vue";
-import IssueAssignedNotification from "./notifications/IssueAssignedNotification.vue";
-import CalendarMeetingReminderNotification from "./notifications/CalendarMeetingReminderNotification.vue";
-import CalendarEventReminderNotification from "./notifications/CalendarEventReminderNotification.vue";
+} from "@epicstory/contracts";
+import {
+  CalendarEventReminderNotification,
+  CalendarMeetingReminderNotification,
+  DueDateNotification,
+  IssueAssignedNotification,
+  MentionNotification,
+  MessageNotification,
+  MessageReactionNotification,
+  ReplyNotification,
+} from "./notifications";
 
 defineProps<{
   notification: Notification;

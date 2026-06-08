@@ -6,7 +6,6 @@ export * from "./issue";
 export * from "./meeting";
 export * from "./messages";
 export * from "./navbar";
-export * from "./rich-text";
 export * from "./schedule";
 export * from "./user";
 export * from "./workspace-members";

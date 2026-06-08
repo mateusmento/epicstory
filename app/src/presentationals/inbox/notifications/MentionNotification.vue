@@ -1,6 +1,6 @@
 <script lang="tsx" setup>
 import { UserAvatar } from "@/presentationals/user";
-import type { MentionNotificationPayload } from "@/domain/notifications";
+import type { MentionNotificationPayload } from "@epicstory/contracts";
 import type { IUser } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 import { AtSignIcon } from "lucide-vue-next";

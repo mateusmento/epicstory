@@ -4,18 +4,22 @@ import { useChannels } from "@/domain/channels";
 import { useMeetingSocket } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
 import { CalendarEventApi } from "@epicstory/api-client";
-import type { ICalendarEvent, IChannel, IUser } from "@epicstory/contracts";
+import type {
+  ICalendarEvent,
+  IChannel,
+  IUser,
+  RecurrenceFrequency,
+  CalendarEventType,
+} from "@epicstory/contracts";
 import { format, startOfDay } from "date-fns";
 import { computed, reactive } from "vue";
-import { getEventEndTime } from "../calendar-event-layout";
+import { getEventEndTime } from "@/lib/schedule";
 import {
   buildRecurrencePayload,
   parseRecurrenceFromEvent,
   toggleWeekdayInList,
-  type RecurrenceFrequency,
 } from "../calendar-recurrence";
-import { type CalendarItemType } from "../constants";
-import { normalizeScheduleDay, todayInLocalTz } from "../schedule-date";
+import { normalizeScheduleDay, todayInLocalTz } from "@/lib/schedule";
 import type { ScheduleEvents } from "./use-schedule-events";
 
 export type CalendarItemForm = {
@@ -26,7 +30,7 @@ export type CalendarItemForm = {
   eventDateTime: Date;
   eventTime: string;
   eventEndTime: string;
-  itemType: CalendarItemType;
+  itemType: CalendarEventType;
   meetingChannelId: number | null;
   meetingIsPublic: boolean;
   meetingNotifyMinutesBefore: number;

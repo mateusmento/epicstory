@@ -12,11 +12,13 @@ export type MessagePollBody = {
   options: MessagePollOptionBody[];
 };
 
-export type MessagePollClient = MessagePollBody & {
+export type MessagePollSummary = {
   optionVotes: Record<string, number>;
   totalVotes: number;
   myOptionId: string | null;
 };
+
+export type MessagePollClient = MessagePollBody & MessagePollSummary;
 
 export type IQuotedMessagePreview = {
   id: number;

@@ -23,7 +23,8 @@ const message = defineModel<IMessage>("message", { required: true });
 const emit = defineEmits(["message-deleted", "close"]);
 
 const channelApi = useDependency(ChannelApi);
-const { channel, deleteMessage, updateMessage } = useChannel();
+const { channel, deleteMessage, updateMessage, voteMessagePoll, votingPollMessageId, votingPollOptionId } =
+  useChannel();
 
 const composerAttachmentHandlers = computed(() =>
   channelMessageComposerAttachmentHandlers({
@@ -45,6 +46,15 @@ const {
 } = useMessageThread(message, { onMessageDeleted: () => emit("close") });
 
 const replyGroups = computed(() => groupMessages(replies.value));
+
+const pollVotingOptionId = computed(() =>
+  votingPollMessageId.value === message.value.id ? votingPollOptionId.value : null,
+);
+
+async function onPollVoted(optionId: string) {
+  const poll = await voteMessagePoll(message.value.id, optionId);
+  if (poll) message.value = { ...message.value, poll };
+}
 
 function groupRowKey(group: IMessageGroup<IReply>) {
   return `g-${group.id}`;
@@ -285,10 +295,12 @@ function onEditTarget(m: IMessage | IReply) {
                 :message="message"
                 :meId="meId"
                 :allow-quote="false"
+                :poll-voting-option-id="pollVotingOptionId"
                 @reaction-toggled="toggleReaction($event)"
                 @message-deleted="onMessageDeleted"
                 @quote="onQuoteTarget"
                 @edit="onEditTarget"
+                @poll-voted="onPollVoted"
                 hide-replies-count
               />
             </MessageGroup>

@@ -10,52 +10,144 @@ Intent defines the layer, not file size. See also `frontend-ux.mdc`.
 
 ## Layers
 
-| Layer | Path | Role |
-|-------|------|------|
-| **Design system** | `@/design-system` | Domain-agnostic atoms/molecules: `Button`, `Input`, `Menu`, `Tabs`, `Calendar` |
-| **Presentationals** | `@/presentationals` | Presentation, a11y, UI-local state, animations; domain vocabulary OK (`UserAvatar`, `IssueKey`) |
-| **Containers** | `@/containers` | Wire presentationals to `@/domain`, API clients, stores |
-| **Views** | `@/views` | Route screens; thin when reusable containers exist |
-| **Domain** | `@/domain` | Composables, stores, pure utils — no Vue SFCs |
+| Layer               | Path                | Role                                                                                                     |
+| ------------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Design system**   | `@/design-system`   | Domain-agnostic atoms/molecules: `Button`, `Input`, `Menu`, `Tabs`, `Calendar`                           |
+| **Shared lib**      | `@/lib/<feature>`   | Cross-layer types and pure helpers (no Vue SFCs, no API). Precedent: `lib/chat-timeline`, `lib/schedule` |
+| **Presentationals** | `@/presentationals` | Presentation, a11y, UI-local state, animations; domain vocabulary OK (`UserAvatar`, `IssueKey`)          |
+| **Containers**      | `@/containers`      | Wire presentationals to `@/domain`, API clients, stores                                                  |
+| **Views**           | `@/views`           | Route screens; thin when reusable containers exist                                                       |
+| **Domain**          | `@/domain`          | Composables, stores, orchestration — no Vue SFCs                                                         |
+
+## Layer classification
+
+**Classify by behavior, not imports.** A type import from `@/domain` does not make a component a container.
+
+| Question                           | Presentational | Container                   |
+| ---------------------------------- | -------------- | --------------------------- |
+| Calls domain composables / API?    | No             | Yes                         |
+| Maps store state → UI?             | No             | Yes                         |
+| Owns markup, a11y, UI-local state? | Yes            | Delegates to presentational |
+
+Do **not** place a presentational in `containers/` just to satisfy import rules. Prefer `@epicstory/contracts` for API-aligned vocabulary; use `@/lib/<feature>` for display-only shared types.
 
 ## Molecules vs organisms (intent)
 
-**Presentationals (molecules):** props + events; may use domain **types** and **vocabulary** but not business wiring.
+**Presentationals:** props + events (+ slots, `v-model`); may use feature vocabulary **types** from `@epicstory/contracts` (preferred), `@/lib`, or `@/domain` (`import type` only) but not business wiring.
 
-- Examples: `Input`, `UserAvatar`, `IssueKey`, `Chatbox` (UI only)
+- Examples: `Input`, `UserAvatar`, `IssueKey`, `Chatbox` (UI shell), `ScheduleToolbar`
 - Allowed local state: open/closed, hover, keyboard nav, clipboard feedback
 
-**Containers (organisms):** query, transform, mutate via domain composables and APIs; delegate markup to presentationals.
+**Containers:** query, transform, mutate via domain composables and APIs; delegate markup to presentationals.
 
-- Examples: `Chatbox` (container), `ChannelDetailsPane`, `IssueGithubSidebar`, `UserListPanel`
+- Examples: `Chatbox` (container), `ChannelDetailsPane`, `IssueGithubSidebarSection`, `CalendarItemDialog`
 
-**Same name, two layers:** `IssueDetails` as presentational (props/events) and `IssueDetails` as container (wires `useIssue`) — resolved by import path (`@/presentationals/issue` vs `@/containers/issue`).
+**Same name, two layers:** resolved by import path (`@/presentationals/issue` vs `@/containers/issue`).
+
+## Presentational ↔ container contracts
+
+Default: **props in, events out**, plus **`v-model`** for controlled UI state.
+
+### View-model slices (avoid giant prop bags)
+
+When one UI section needs many related fields, group into cohesive objects:
+
+```ts
+type GithubPrView = {
+  loading: boolean;
+  error: string | null;
+  groups: GithubPullRequestGroup[];
+};
+// Presentational: props { pr: GithubPrView } — not 8 flat props
+```
+
+Container maps from domain composables; presentational API stays small.
+
+### Scoped slots (wiring-heavy subtrees)
+
+Use when a region is a whole wired subsystem and drilling props through the tree is worse than composition.
+
+- Presentational defines slot + slot props (data and UI callbacks the shell already has).
+- Container fills the slot with wired children.
+- Example: `Chatbox` `#message` / `#composer`; `ChannelDetailsPane` `#schedules`.
+
+Prefer slots over prop drilling; prefer props/events over slots for small, stable leaf APIs.
+
+### Callback props
+
+Async work invoked inline by a UI shell (scroll preservation, send message) may be **callback props** (`sendMessage`, `loadOlderActivitiesPage`) rather than emits.
+
+### Do not dual-split prematurely
+
+Keep container-only until a natural UI subsection appears. Split when a block is reused, has a distinct contract, or a presentational imports a container (fix immediately).
 
 ## Import boundaries
 
 **Presentationals must NOT:**
-- import `@/domain/*`
+
+- import **runtime** from `@/domain/*` (composables, stores, orchestration functions)
+- import `@/containers/*`
 - import `@epicstory/api-client` or call `useDependency(*Api)`
 - own fetch/mutate orchestration
 
 **Presentationals MAY:**
-- import `@/design-system`, `@epicstory/contracts`
+
+- `import type` from `@/domain/*` when the type has no contracts home yet
+- import `@/design-system`, `@epicstory/contracts`, `@/lib/*`
 - colocate UI-only composables under the same folder
 
+### Where types live
+
+| Kind | Home | Example |
+| ---- | ---- | ------- |
+| API / backend-shared vocabulary | `@epicstory/contracts` | `RecurrenceFrequency`, `ICalendarEvent` |
+| Cross-layer display/layout (no API) | `@/lib/<feature>` | `ScheduleViewType`, `getEventLayoutMode` |
+| Form/parsing shapes used only by domain composables | `@/domain` (private to feature) | `ParsedRecurrence` |
+| Presentational-only view models | colocate `*.types.ts` with presentational | `GithubPrView` |
+
+If a type names a value in the API contract or UI options matching backend unions, put it in **contracts** — not `domain`. Presentationals import it from `@epicstory/contracts`; that does not make them containers.
+
 **Containers:**
-- import `@/presentationals`, `@/domain`, API clients
-- stay thin: map domain state to props and events — no large inline templates
+
+- import `@/presentationals`, `@/domain`, `@/lib`, API clients
+- stay thin: map domain state to props, events, and slot content
+
+**Domain:**
+
+- orchestration, business rules, fetch/mutate composables
+- may import `@/lib/*` and `@epicstory/contracts`
+- must not own API-aligned vocabulary types (→ `@epicstory/contracts`), display layout constants, or layout/format pure functions (→ `@/lib/<feature>`)
+
+**Shared lib (`@/lib/<feature>`):**
+
+- types used across layers (`ScheduleViewType`, `ChatTimelineItem`)
+- pure layout/format/date helpers with no I/O
+- importable by presentationals, containers, and domain
+- precedent: `lib/chat-timeline.ts`, `lib/schedule/`
 
 **Design system:**
+
 - stay domain-agnostic; no `@/domain` or feature-specific API calls
+
+## Domain folder hygiene
+
+Suspect misplaced code when exports:
+
+- are named for views/layout/display (`ScheduleViewType`, `getEventLayoutMode`)
+- reference Tailwind classes or pixel constants tied to CSS
+- are pure transforms with no stores/API (move to `@/lib/<feature>`)
+
+`@/domain` re-exports from `@/lib` are acceptable during migration; new shared types/helpers go in `lib/` first.
 
 ## Where to put new code
 
 1. Generic, reusable outside Epicstory? → `design-system`
-2. Domain vocabulary, props + events only? → `presentationals/<domain>`
-3. Wires domain/API to presentationals? → `containers/<domain>`
-4. Route params and one-off page glue? → `views`
-5. Business state and sync? → `domain/<area>/composables`
+2. API-aligned vocabulary type? → `@epicstory/contracts`
+3. Cross-layer display type or pure helper (no Vue, no API)? → `lib/<feature>`
+4. Domain vocabulary, props + events only? → `presentationals/<domain>`
+5. Wires domain/API to presentationals? → `containers/<domain>`
+6. Route params and one-off page glue? → `views`
+7. Business state and sync? → `domain/<area>/composables`
 
 Build **presentational first** (props/events), then **container** that wires domain.
 
@@ -66,4 +158,4 @@ Build **presentational first** (props/events), then **container** that wires dom
 
 ## Deprecated
 
-`@/components` is deprecated — use `@/presentationals`, `@/containers`, or `@/design-system`.
+`@/components` is deprecated — use `@/presentationals`, `@/containers`, `@/design-system`, or `@/lib`.

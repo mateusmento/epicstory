@@ -1,3 +1,4 @@
+export { default as ChannelPollPreview } from "./ChannelPollPreview.vue";
 export { default as AttachmentMediaTile } from "./AttachmentMediaTile.vue";
 export { default as AttachmentTilesList } from "./AttachmentTilesList.vue";
 export { default as EmojiPicker } from "./EmojiPicker.vue";

@@ -2,8 +2,8 @@
 import { formatDistanceToNow } from "date-fns";
 import { Video } from "lucide-vue-next";
 import { computed } from "vue";
-import { resolveCalendarReminderStartsInLabel } from "@/domain/notifications";
-import type { CalendarMeetingReminderNotificationPayload } from "@/domain/notifications";
+import type { CalendarMeetingReminderNotificationPayload } from "@epicstory/contracts";
+import { resolveCalendarReminderStartsInLabel } from "@/lib/notifications";
 import { formatTime } from "@/utils";
 
 const props = defineProps<{

@@ -1,4 +1,4 @@
-import type { Notification } from "./types";
+import type { Notification } from "@epicstory/contracts";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 

@@ -2,7 +2,7 @@
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
-import type { ScheduleViewType } from "@/domain/schedule";
+import type { ScheduleViewType } from "@/lib/schedule";
 
 defineProps<{
   headerLabel: string;

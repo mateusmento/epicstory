@@ -3,8 +3,7 @@ import { useAuth } from "@/domain/auth";
 import { CalendarEventApi } from "@epicstory/api-client";
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { onMounted, onUnmounted, ref, type Ref } from "vue";
-import { getEventEndTime } from "../calendar-event-layout";
-import { SCHEDULE_DRAFT_EVENT_ID, SCHEDULE_HOUR_SLOT_PX } from "../constants";
+import { getEventEndTime, SCHEDULE_DRAFT_EVENT_ID, SCHEDULE_HOUR_SLOT_PX } from "@/lib/schedule";
 
 export function useCalendarEventResize(options: {
   events: Ref<ICalendarEvent[]>;

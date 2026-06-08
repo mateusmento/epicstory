@@ -22,7 +22,7 @@ import {
   truncatePlainText,
 } from "@epicstory/tiptap";
 import { computed, ref, watch } from "vue";
-import ChannelPollPreview from "@/containers/rich-text/ChannelPollPreview.vue";
+import ChannelPollPreview from "./ChannelPollPreview.vue";
 import MessageActions from "./MessageActions.vue";
 import MessageAttachments from "./MessageAttachments.vue";
 import MessageContextMenu from "./MessageContextMenu.vue";
@@ -34,8 +34,9 @@ const props = withDefaults(
     hideRepliesCount?: boolean;
     /** Thread root should not be quotable as a reply-to-reply reference. */
     allowQuote?: boolean;
+    pollVotingOptionId?: string | null;
   }>(),
-  { allowQuote: true },
+  { allowQuote: true, pollVotingOptionId: null },
 );
 
 const emit = defineEmits<{
@@ -44,6 +45,7 @@ const emit = defineEmits<{
   (e: "reaction-toggled", emoji: string): void;
   (e: "quote", message: IMessage | IReply): void;
   (e: "edit", message: IMessage | IReply): void;
+  (e: "poll-voted", optionId: string): void;
 }>();
 
 const messageActionsRef = ref<InstanceType<typeof MessageActions>>();
@@ -115,8 +117,9 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
               />
               <ChannelPollPreview
                 v-if="'poll' in props.message && props.message.poll && !('messageId' in props.message)"
-                :message-id="props.message.id"
                 :poll="props.message.poll"
+                :voting-option-id="pollVotingOptionId"
+                @pick="emit('poll-voted', $event)"
               />
               <MessageAttachments v-if="bubbleAttachmentTiles.length > 0" :files="bubbleAttachmentTiles" />
               <div

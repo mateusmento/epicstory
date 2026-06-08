@@ -1,6 +1,6 @@
 <script lang="tsx" setup>
 import { IssueNotificationLabel } from "@/presentationals/issue";
-import type { IssueDueDateNotificationPayload } from "@/domain/notifications";
+import type { IssueDueDateNotificationPayload } from "@epicstory/contracts";
 import { formatDate, formatDistanceToNow } from "date-fns";
 import { Calendar } from "lucide-vue-next";
 

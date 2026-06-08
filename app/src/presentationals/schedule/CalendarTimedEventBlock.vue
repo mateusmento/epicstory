@@ -6,7 +6,7 @@ import {
   getEventLayoutMode,
   getEventTopOffset,
   SCHEDULE_HOUR_SLOT_PX,
-} from "@/domain/schedule";
+} from "@/lib/schedule";
 import type { ICalendarEvent } from "@epicstory/contracts";
 import { format } from "date-fns";
 import { defineComponent, withModifiers, type PropType } from "vue";
@@ -42,7 +42,7 @@ const ResizeHandle = defineComponent({
   emits: {
     resizeStart: (mouseEvent: MouseEvent) => mouseEvent instanceof MouseEvent,
   },
-  setup(handleProps, { emit }) {
+  setup(handleProps, { emit: emitHandle }) {
     return () => (
       <div
         class={cn(
@@ -50,7 +50,7 @@ const ResizeHandle = defineComponent({
           handleProps.edge === "start" ? "top-0 rounded-t" : "bottom-0 rounded-b",
           handleProps.active && "bg-blue-400",
         )}
-        onMousedown={withModifiers((e) => emit("resizeStart", e as MouseEvent), ["stop", "prevent"])}
+        onMousedown={withModifiers((e) => emitHandle("resizeStart", e as MouseEvent), ["stop", "prevent"])}
         onClick={withModifiers(() => {}, ["stop"])}
       />
     );
