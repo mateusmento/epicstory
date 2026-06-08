@@ -38,7 +38,7 @@ const emit = defineEmits<{
     <div v-else-if="pr.error" class="text-xs text-red-600">
       {{ pr.error }}
     </div>
-    <div v-else-if="pr.count === 0" class="text-xs text-muted-foreground">
+    <div v-else-if="(pr.data?.length ?? 0) === 0" class="text-xs text-muted-foreground">
       None synced yet (open a PR from a branch named
       <span class="font-mono">{{ issue.issueKey }}-…</span> on a linked repo).
     </div>
@@ -132,13 +132,16 @@ const emit = defineEmits<{
           <div v-else-if="workflow.linkedBranches.loading" class="text-xs text-muted-foreground">
             Loading linked branches…
           </div>
-          <div v-else-if="workflow.linkedBranches.items.length === 0" class="text-xs text-muted-foreground">
+          <div
+            v-else-if="(workflow.linkedBranches.data?.length ?? 0) === 0"
+            class="text-xs text-muted-foreground"
+          >
             No linked branches yet. Create one, or push a branch whose name/commit message contains the issue
             key.
           </div>
           <ul v-else class="flex flex-col gap-1 m-0 p-0 list-none">
             <li
-              v-for="b in workflow.linkedBranches.items"
+              v-for="b in workflow.linkedBranches.data ?? []"
               :key="b.id"
               class="flex items-center justify-between gap-2"
             >

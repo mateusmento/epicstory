@@ -1,7 +1,6 @@
 import type {
   IIssueGithubBranch,
   IIssueGithubBranchStored,
-  IGithubRepositoryBranchesPage,
 } from '@epicstory/contracts';
 import {
   BadRequestException,
@@ -17,10 +16,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { IssueGithubBranch } from '../entities/issue-github-branch.entity';
 import { githubHttpConfigFromApp } from '../lib/github-http-client';
-import {
-  githubListRepoBranches,
-  githubRepoBranchExists,
-} from '../lib/github-user-api-rest';
+import { githubRepoBranchExists } from '../lib/github-user-api-rest';
 import { GithubUserConnectionRepository } from '../repositories';
 import { GithubUserOAuthService } from './github-user-oauth.service';
 import { GithubWorkspaceRepoAccessService } from './github-workspace-repo-access.service';
@@ -130,39 +126,6 @@ export class GithubIssueBranchService {
     }
 
     return { ...norm, fullName, htmlUrl, existsOnGithub };
-  }
-
-  async listRepositoryBranches(params: {
-    workspaceId: number;
-    userId: number;
-    owner: string;
-    repoName: string;
-    page: number;
-    sizeRaw: number;
-  }): Promise<IGithubRepositoryBranchesPage> {
-    const owner = params.owner.trim();
-    const repoName = params.repoName.trim();
-    await this.assertWorkspaceInstallationRepo(
-      params.workspaceId,
-      owner,
-      repoName,
-    );
-    const token = await this.resolveMemberAccessToken(
-      params.workspaceId,
-      params.userId,
-    );
-    const httpConfig = githubHttpConfigFromApp(this.config);
-    const size = Math.min(100, Math.max(1, params.sizeRaw));
-    const page = Math.max(1, params.page);
-    const { branches, hasNextPage } = await githubListRepoBranches({
-      token,
-      owner,
-      repo: repoName,
-      page,
-      perPage: size,
-      httpConfig,
-    });
-    return { page, size, hasNextPage, branches };
   }
 
   async validateBranchSelectionForIssue(params: {

@@ -1,26 +1,17 @@
-import type { AsyncMutationState } from "@/lib/async";
+import type { AsyncDataView, AsyncMutationState } from "@/lib/async";
+import type { GithubPullRequestGroup, GithubPrStatusFilter } from "@/lib/github";
 import type { IGithubIssueBranchLink, IGithubIssuePullRequestLink } from "@epicstory/contracts";
 import type { RouteLocationRaw } from "vue-router";
 
-export type GithubPrStatusFilter = "all" | "open" | "merged" | "closed";
+export type { GithubPrStatusFilter };
 
-export type GithubPrGroupView = {
-  fullName: string;
-  pullRequests: IGithubIssuePullRequestLink[];
-};
+export type GithubPrGroupView = GithubPullRequestGroup;
 
-export type GithubPrView = {
-  loading: boolean;
-  error: string | null;
-  count: number;
+export type GithubPrView = AsyncDataView<IGithubIssuePullRequestLink[]> & {
   groups: GithubPrGroupView[];
 };
 
-export type GithubLinkedBranchesView = {
-  items: IGithubIssueBranchLink[];
-  loading: boolean;
-  error: string | null;
-};
+export type GithubLinkedBranchesView = AsyncDataView<IGithubIssueBranchLink[]>;
 
 export type GithubWorkflowMutationView = AsyncMutationState & {
   statusMessage: string | null;
