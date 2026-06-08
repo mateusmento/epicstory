@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import type { IMessage } from '@epicstory/contracts';
 import {
   enrichMentionLabels,
   extractMentionIds,
   normalizeTiptapDoc,
   tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
-import type { IMessage } from '@epicstory/contracts';
+import { Injectable } from '@nestjs/common';
 import type { JSONContent } from '@tiptap/core';
 import { uniq } from 'lodash';
 import { UserRepository } from 'src/auth';
@@ -19,6 +19,7 @@ import {
   buildQuotedMessagePreview,
   mapReactions,
 } from 'src/channel/domain/utils';
+import type { QuotedMessagePreview } from 'src/channel/domain/utils/message-quote-display';
 import {
   ChannelRepository,
   MessageReactionRepository,
@@ -26,24 +27,19 @@ import {
 } from 'src/channel/infrastructure';
 import { create, mapBy } from 'src/core/objects';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import type { MessagePollBody } from '../dtos/message-poll.dto';
 import { MessageNotFound } from '../exceptions';
 import { messageEntityToIMessageCore } from '../utils/message-entity-to-imessage';
 import { rethrowQuotedRuleAsBadRequest } from '../utils/rethrow-quoted-rule-as-bad-request';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import type { QuotedMessagePreview } from 'src/channel/domain/utils/message-quote-display';
 import { MessagePollService } from './message-poll.service';
 import { MessagePreviewEnrichmentService } from './message-preview-enrichment.service';
 import { ReplyService } from './reply.service';
 
 export type { IMessage } from '@epicstory/contracts';
 export type { IMessage as IMessagePayload } from '@epicstory/contracts';
-export type {
-  IMessagePollClient,
-  MessagePollSummary,
-} from './message-poll.service';
 export type { QuotedMessagePreview } from 'src/channel/domain/utils/message-quote-display';
 
 @Injectable()

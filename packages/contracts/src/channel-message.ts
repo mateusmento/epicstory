@@ -7,11 +7,13 @@ export type MessagePollOptionBody = {
   label: string;
 };
 
+/** Poll question/options on create/update and persisted on `messages.poll` (jsonb). */
 export type MessagePollBody = {
   question: string;
   options: MessagePollOptionBody[];
 };
 
+/** Vote tallies merged onto {@link MessagePollBody} for message API responses. */
 export type MessagePollSummary = {
   optionVotes: Record<string, number>;
   totalVotes: number;

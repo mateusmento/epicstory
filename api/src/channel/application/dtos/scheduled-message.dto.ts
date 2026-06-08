@@ -1,4 +1,4 @@
-import type { MessagePoll } from 'src/channel/domain/types/message-poll.types';
+import type { MessagePollBody } from '@epicstory/contracts';
 import type { JSONContent } from '@tiptap/core';
 import { ScheduledJob } from 'src/scheduling/entities';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
@@ -13,7 +13,7 @@ export class IScheduledMessage {
   senderId: number;
   content: JSONContent;
   quotedMessageId?: number;
-  poll?: MessagePoll;
+  poll?: MessagePollBody;
 
   dueAt: Date;
   recurrence: ScheduledJobRecurrence;
