@@ -24,7 +24,7 @@ import { useMessageComposerAttachments } from "@/presentationals/messages/compos
 import { useMessageComposerEditingBody } from "@/presentationals/messages/composables/message-composer-editing-body";
 import type { ResolvedSchedule } from "@/presentationals/messages/schedule-builders";
 import { useMessageComposerScreenRecording } from "@/presentationals/messages/composables/message-composer-screen-recording";
-import type { MessageComposerAttachmentHandlers } from "@/containers/messages/message-composer-attachment-handlers";
+import type { MessageComposerAttachmentHandlers } from "@/presentationals/messages/message-composer.types";
 import AttachmentTilesList from "@/presentationals/messages/AttachmentTilesList.vue";
 import MessageComposerActions from "@/presentationals/messages/MessageComposerActions.vue";
 

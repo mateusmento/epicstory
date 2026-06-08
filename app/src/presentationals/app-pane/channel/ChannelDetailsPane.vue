@@ -4,12 +4,9 @@ import { IconClose } from "@/design-system/icons/meeting";
 import { Button, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
 import type { UploadedAttachment } from "@epicstory/contracts";
-import type { IUser as IUser } from "@epicstory/contracts";
 import { type FunctionalComponent as FC } from "vue";
-import ChannelMembers from "./ChannelMembers.vue";
 
-const props = defineProps<{
-  members: (IUser & { role?: string; online?: boolean })[];
+defineProps<{
   channelId?: number;
   meId?: number;
   channelFiles: UploadedAttachment[];
@@ -19,19 +16,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "add-member", userId: number): void;
-  (e: "remove-member", userId: number): void;
   (e: "close"): void;
   (e: "remove-file", attachmentId: number): void;
 }>();
-
-function addMember(userId: number) {
-  emit("add-member", userId);
-}
-
-function removeMember(userId: number) {
-  emit("remove-member", userId);
-}
 </script>
 
 <script lang="tsx">
@@ -76,7 +63,7 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
           value="members"
           class="min-h-0 flex-1 overflow-y-auto p-xl mt-0 data-[state=inactive]:hidden"
         >
-          <ChannelMembers :members @add="addMember" @remove="removeMember" />
+          <slot name="members" />
         </TabsContent>
         <TabsContent
           value="files"

@@ -1,13 +1,9 @@
 import { ChannelApi } from "@epicstory/api-client";
-import type { UploadedAttachment } from "@epicstory/contracts";
 import type { IssueApi } from "@epicstory/api-client";
+import type { UploadedAttachment } from "@epicstory/contracts";
+import type { MessageComposerAttachmentHandlers } from "@/presentationals/messages/message-composer.types";
 
-/** Injected into {@link MessageComposer}; built with helpers below so parents avoid prop drilling. */
-export type MessageComposerAttachmentHandlers = {
-  uploadOne: (file: File) => Promise<UploadedAttachment>;
-  uploadFiles: (files: File[]) => Promise<UploadedAttachment[]>;
-  removeLinkedAttachment: (attachmentId: number) => Promise<void>;
-};
+export type { MessageComposerAttachmentHandlers } from "@/presentationals/messages/message-composer.types";
 
 /**
  * Standard channel / thread composer: stage via `POST /channels/:id/attachments`;

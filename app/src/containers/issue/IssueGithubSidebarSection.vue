@@ -1,6 +1,8 @@
 <script lang="ts" setup>
-import type { IGithubIssueBranchLink, IIssue } from "@epicstory/contracts";
+import type { IGithubCatalogRepository, IGithubIssueBranchLink, IIssue } from "@epicstory/contracts";
+import IssueCreateGithubBranchDialog from "@/presentationals/issue/IssueCreateGithubBranchDialog.vue";
 import IssueGithubSidebarView from "@/presentationals/issue/IssueGithubSidebar.vue";
+import IssueSelectGithubRepoDialog from "./IssueSelectGithubRepoDialog.vue";
 import { computed, ref, toRef, watch } from "vue";
 import { useIssueGithubSidebar } from "@/domain/github";
 import { useDependency } from "@/core/dependency-injection";
@@ -55,6 +57,8 @@ const linkedBranchesError = ref<string | null>(null);
 const selectedLinkedBranchId = ref<number | null>(null);
 const createBranchDialogOpen = ref(false);
 const createBranchDialogError = ref<string | null>(null);
+const repoPickerOpen = ref(false);
+const selectedRepoForCreate = ref<IGithubCatalogRepository | null>(null);
 
 const selectedLinkedBranch = computed(() => {
   const id = selectedLinkedBranchId.value;
@@ -116,6 +120,12 @@ async function createBranchFromDialog(payload: {
   }
 }
 
+watch(createBranchDialogOpen, (isOpen) => {
+  if (!isOpen) {
+    selectedRepoForCreate.value = null;
+  }
+});
+
 watch(
   () => props.issue.id,
   async () => {
@@ -164,5 +174,23 @@ watch(
     v-model:create-branch-dialog-open="createBranchDialogOpen"
     @open-github-pull="openGithubPull"
     @create-branch="createBranchFromDialog"
-  />
+  >
+    <template #create-branch-dialog>
+      <IssueCreateGithubBranchDialog
+        v-model:open="createBranchDialogOpen"
+        :selected-repo="selectedRepoForCreate"
+        :initial-branch-name="headBranchLeaf"
+        :busy="ghWorkflowBusy"
+        :error="createBranchDialogError ?? ghWorkflowError"
+        @open-repo-picker="repoPickerOpen = true"
+        @create="createBranchFromDialog"
+      />
+      <IssueSelectGithubRepoDialog
+        v-model:open="repoPickerOpen"
+        :workspace-id="workspaceId"
+        :selected-repo-github-id="selectedGhRepoId"
+        @selected="selectedRepoForCreate = $event"
+      />
+    </template>
+  </IssueGithubSidebarView>
 </template>

@@ -1,5 +1,8 @@
 import daiana from "@/assets/images/daiana.png";
 import sean from "@/assets/images/sean.png";
+import { Button } from "@/design-system";
+import { Icon } from "@/design-system/icons";
+import WorkspaceMemberDropdown from "@/presentationals/workspace-members/WorkspaceMemberDropdown.vue";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { h } from "vue";
 import ChannelMembers from "./ChannelMembers.vue";
@@ -16,8 +19,8 @@ const meta = {
         cellSize: 20,
         opacity: 0.5,
         cellAmount: 5,
-        offsetX: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
-        offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+        offsetX: 16,
+        offsetY: 16,
       },
     },
   },
@@ -32,11 +35,28 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const storyMembers = [
+  { id: 1, name: "Sean", picture: sean, email: "sean@gmail.com", role: "admin" },
+  { id: 2, name: "Daiana", picture: daiana, email: "daiana@gmail.com", role: "member", online: true },
+];
+
 export const Default: Story = {
   args: {
-    members: [
-      { id: 1, name: "Sean", picture: sean, email: "sean@gmail.com", role: "admin" },
-      { id: 1, name: "Daiana", picture: daiana, email: "daiana@gmail.com", role: "member", online: true },
-    ],
+    members: storyMembers,
   },
+  render: (args) => ({
+    components: { ChannelMembers, WorkspaceMemberDropdown, Button, Icon },
+    setup: () => ({ args }),
+    template: `
+      <ChannelMembers v-bind="args">
+        <template #add-member>
+          <WorkspaceMemberDropdown :search-users="[]">
+            <Button variant="ghost" size="icon">
+              <Icon name="hi-plus" class="text-secondary-foreground w-4 h-4" />
+            </Button>
+          </WorkspaceMemberDropdown>
+        </template>
+      </ChannelMembers>
+    `,
+  }),
 };

@@ -11,13 +11,10 @@ import {
   DialogTitle,
   Input,
 } from "@/design-system";
-import IssueSelectGithubRepoDialog from "@/containers/issue/IssueSelectGithubRepoDialog.vue";
 
 const props = defineProps<{
   open: boolean;
-  workspaceId: string;
-  /** Preselected repo for convenience (optional). */
-  selectedRepoGithubId: string | null;
+  selectedRepo: IGithubCatalogRepository | null;
   /** Initial branch name suggestion (optional). */
   initialBranchName?: string;
   busy?: boolean;
@@ -26,31 +23,23 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   "update:open": [value: boolean];
+  "open-repo-picker": [];
   create: [payload: { repo: IGithubCatalogRepository; branchName: string }];
 }>();
 
-const repoPickerOpen = ref(false);
-const selectedRepo = ref<IGithubCatalogRepository | null>(null);
 const branchName = ref("");
 
 const createDisabled = computed(() => {
   if (props.busy) return true;
-  if (!selectedRepo.value) return true;
+  if (!props.selectedRepo) return true;
   return branchName.value.trim().length === 0;
 });
 
-function onRepoSelected(repo: IGithubCatalogRepository): void {
-  selectedRepo.value = repo;
-  if (!branchName.value.trim() && props.initialBranchName?.trim()) {
-    branchName.value = props.initialBranchName.trim();
-  }
-}
-
 function onSubmit(): void {
-  if (!selectedRepo.value) return;
+  if (!props.selectedRepo) return;
   const name = branchName.value.trim();
   if (!name) return;
-  emit("create", { repo: selectedRepo.value, branchName: name });
+  emit("create", { repo: props.selectedRepo, branchName: name });
 }
 
 watch(
@@ -58,7 +47,6 @@ watch(
   (isOpen) => {
     if (!isOpen) return;
     branchName.value = props.initialBranchName?.trim() ?? "";
-    selectedRepo.value = null;
   },
 );
 </script>
@@ -81,7 +69,13 @@ watch(
               {{ selectedRepo?.fullName ?? "None selected" }}
             </div>
           </div>
-          <Button variant="outline" size="sm" type="button" :disabled="busy" @click="repoPickerOpen = true">
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            :disabled="busy"
+            @click="emit('open-repo-picker')"
+          >
             {{ selectedRepo ? "Change…" : "Select…" }}
           </Button>
         </div>
@@ -111,11 +105,4 @@ watch(
       </DialogFooter>
     </DialogContent>
   </Dialog>
-
-  <IssueSelectGithubRepoDialog
-    v-model:open="repoPickerOpen"
-    :workspace-id="workspaceId"
-    :selected-repo-github-id="props.selectedRepoGithubId"
-    @selected="onRepoSelected"
-  />
 </template>
