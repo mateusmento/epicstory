@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { Chatbox } from "@/components/channel";
-import Meeting from "@/components/meeting/Meeting.vue";
+import { Chatbox } from "@/containers/channel";
+import Meeting from "@/containers/meeting/Meeting.vue";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { useAuth } from "@/domain/auth";
 import { useSyncedChannel } from "@/domain/channels";

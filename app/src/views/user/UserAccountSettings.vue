@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Button, Field, Form, Separator } from "@/design-system";
-import { ThemePicker } from "@/components/theme";
-import UserPictureUpload from "./UserPictureUpload.vue";
+import { ThemePicker } from "@/presentationals/theme";
+import UserPictureUpload from "@/containers/views/user/UserPictureUpload.vue";
 import { useUser } from "@/domain/user";
 import { ref } from "vue";
 

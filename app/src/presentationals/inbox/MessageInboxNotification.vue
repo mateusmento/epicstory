@@ -1,0 +1,44 @@
+<script setup lang="ts">
+import { UserAvatar } from "@/presentationals/user";
+import { formatDate, isThisYear, isToday } from "date-fns";
+
+const props = defineProps<{
+  senderPicture: string;
+  senderName: string;
+  message: string;
+  seen: boolean;
+  unseenMessageCount: number;
+  sentAt: Date | string;
+}>();
+
+function formatMessageDate(date: Date | string) {
+  if (date === undefined || date === null || date === "") return;
+  const d = typeof date === "string" || typeof date === "number" ? new Date(date) : date;
+  return isToday(d)
+    ? formatDate(d, "H:mm a")
+    : isThisYear(d)
+      ? formatDate(d, "MMM d")
+      : formatDate(d, "MMM d, yyyy");
+}
+</script>
+
+<template>
+  <div class="grid grid-cols-[auto_1fr_auto] grid-rows-[auto_1fr] gap-x-2">
+    <UserAvatar :name="senderName" :picture="senderPicture" size="base" class="row-start-1 col-span-1" />
+    <div class="row-start-1 col-start-2 text-base font-medium font-dmSans text-foreground">
+      {{ senderName }}
+    </div>
+    <div class="row-start-2 col-start-2 text-xs text-secondary-foreground/70 font-dmSans">
+      {{ message }}
+    </div>
+    <div
+      v-if="!seen"
+      class="row-start-1 col-start-3 flex flex:center w-fit h-fit px-1 py-0.5 rounded-md bg-unseenMessageCount"
+    >
+      <span class="text-xs text-unseenMessageCount-foreground">{{ unseenMessageCount }}</span>
+    </div>
+    <div class="row-start-2 col-start-3 text-xs text-secondary-foreground/70 font-dmSans">
+      {{ formatMessageDate(sentAt) }}
+    </div>
+  </div>
+</template>

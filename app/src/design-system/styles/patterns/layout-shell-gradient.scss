@@ -26,23 +26,13 @@
 
   /* Brand indigo-blue — bottom-left */
   &::before {
-    background: radial-gradient(
-      ellipse 90% 75% at 0% 100%,
-      $blue-mid 0%,
-      $blue-fade 38%,
-      transparent 72%
-    );
+    background: radial-gradient(ellipse 90% 75% at 0% 100%, $blue-mid 0%, $blue-fade 38%, transparent 72%);
     filter: blur($blur);
   }
 
   /* Cyan / sky — top-right */
   &::after {
-    background: radial-gradient(
-      ellipse 85% 70% at 100% 0%,
-      $cyan-mid 0%,
-      $cyan-fade 36%,
-      transparent 70%
-    );
+    background: radial-gradient(ellipse 85% 70% at 100% 0%, $cyan-mid 0%, $cyan-fade 36%, transparent 70%);
     filter: blur($blur);
   }
 

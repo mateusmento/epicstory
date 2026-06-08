@@ -1,15 +1,9 @@
 <script lang="ts" setup>
-import {
-  IssueDescriptionEditor,
-  IssueGithubSidebarSection,
-  IssueKey,
-  IssueLabelTags,
-  issueStatusDotClass,
-  IssueStatusDropdown,
-} from "@/components/issue";
-import IssueAttachmentsStrip from "@/components/issue/IssueAttachmentsStrip.vue";
-import { UserAvatar, UserAvatarStack } from "@/components/user";
-import { WorkspaceMemberDropdown } from "@/components/workspace-members";
+import { IssueDescriptionEditor, IssueGithubSidebarSection, IssueLabelTags } from "@/containers/issue";
+import IssueAttachmentsStrip from "@/containers/issue/IssueAttachmentsStrip.vue";
+import IssueActivitySection from "@/containers/views/issue/IssueActivitySection.vue";
+import SubIssuesSection from "@/containers/views/issue/SubIssuesSection.vue";
+import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
@@ -17,13 +11,14 @@ import { useAuth } from "@/domain/auth";
 import { useIssue, useIssueAttachments } from "@/domain/issues";
 import type { Project } from "@/domain/project";
 import { useScopedWorkspaceMemberSearch } from "@/domain/workspace";
-import { DueDatePicker } from "@/views/project/backlog/date-picker";
-import { PriorityToggler } from "@/views/project/backlog/priority-toggler";
+import { IssueKey, IssueStatusDropdown } from "@/presentationals/issue";
+import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
+import { UserAvatarStack } from "@/presentationals/user";
+import { DueDatePicker } from "@/presentationals/views/project/backlog/date-picker";
+import { PriorityToggler } from "@/presentationals/views/project/backlog/priority-toggler";
 import { IssueApi, ProjectApi } from "@epicstory/api-client";
 import type { IMessage, IReply, IUser } from "@epicstory/contracts";
 import { computed, onMounted, reactive, ref, watch } from "vue";
-import IssueActivitySection from "./IssueActivitySection.vue";
-import SubIssuesSection from "./SubIssuesSection.vue";
 
 const props = defineProps<{
   workspaceId: string;

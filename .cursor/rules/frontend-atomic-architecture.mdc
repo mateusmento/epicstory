@@ -1,0 +1,69 @@
+---
+description: Vue app — presentationals, containers, design system layer boundaries
+globs: app/**/*
+alwaysApply: false
+---
+
+# Frontend atomic architecture (app/)
+
+Intent defines the layer, not file size. See also `frontend-ux.mdc`.
+
+## Layers
+
+| Layer | Path | Role |
+|-------|------|------|
+| **Design system** | `@/design-system` | Domain-agnostic atoms/molecules: `Button`, `Input`, `Menu`, `Tabs`, `Calendar` |
+| **Presentationals** | `@/presentationals` | Presentation, a11y, UI-local state, animations; domain vocabulary OK (`UserAvatar`, `IssueKey`) |
+| **Containers** | `@/containers` | Wire presentationals to `@/domain`, API clients, stores |
+| **Views** | `@/views` | Route screens; thin when reusable containers exist |
+| **Domain** | `@/domain` | Composables, stores, pure utils — no Vue SFCs |
+
+## Molecules vs organisms (intent)
+
+**Presentationals (molecules):** props + events; may use domain **types** and **vocabulary** but not business wiring.
+
+- Examples: `Input`, `UserAvatar`, `IssueKey`, `Chatbox` (UI only)
+- Allowed local state: open/closed, hover, keyboard nav, clipboard feedback
+
+**Containers (organisms):** query, transform, mutate via domain composables and APIs; delegate markup to presentationals.
+
+- Examples: `Chatbox` (container), `ChannelDetailsPane`, `IssueGithubSidebar`, `UserListPanel`
+
+**Same name, two layers:** `IssueDetails` as presentational (props/events) and `IssueDetails` as container (wires `useIssue`) — resolved by import path (`@/presentationals/issue` vs `@/containers/issue`).
+
+## Import boundaries
+
+**Presentationals must NOT:**
+- import `@/domain/*`
+- import `@epicstory/api-client` or call `useDependency(*Api)`
+- own fetch/mutate orchestration
+
+**Presentationals MAY:**
+- import `@/design-system`, `@epicstory/contracts`
+- colocate UI-only composables under the same folder
+
+**Containers:**
+- import `@/presentationals`, `@/domain`, API clients
+- stay thin: map domain state to props and events — no large inline templates
+
+**Design system:**
+- stay domain-agnostic; no `@/domain` or feature-specific API calls
+
+## Where to put new code
+
+1. Generic, reusable outside Epicstory? → `design-system`
+2. Domain vocabulary, props + events only? → `presentationals/<domain>`
+3. Wires domain/API to presentationals? → `containers/<domain>`
+4. Route params and one-off page glue? → `views`
+5. Business state and sync? → `domain/<area>/composables`
+
+Build **presentational first** (props/events), then **container** that wires domain.
+
+## Composables
+
+- Business logic, stores, API orchestration → `domain/`
+- UI-only (virtualizer layout, local animation) → colocate with `presentationals/`
+
+## Deprecated
+
+`@/components` is deprecated — use `@/presentationals`, `@/containers`, or `@/design-system`.

@@ -12,6 +12,8 @@ Act as a senior fullstack engineer: ship **concise** UIs with strong **UX**, and
 1. **Top-down first**: Start from the most abstract slice—problem framing, domain concepts, public API or user flow—then refine layer by layer until behavior is fully specified.
 2. **Bottom-up at the leaves**: Once at implementation, favor **small, pure, reusable** pieces (functions, types, utilities) that **compose** into the higher layers.
 3. **Meet in the middle**: The top should stay **thin and declarative**; heavy lifting lives in **composable** building blocks, not in sprawling orchestration.
+4. **Minimal API Surface and YAGNI**: At every new addition of feature, we need to add a minimal surfaces of exportable code following a YAGNI principle. That means deciding whats not a reusable feature of module and making internal/private. Either use a composable that returns only public data and functions or make functions internal to a file and do not export it. However, contract of exportable code, such as return type of a function and parameters, should be exported.
+5. **Reduce Code Duplication and DRY + SRP**: At every new addition of feature, we need to review code and inspect for possible duplication code to reduce it into reusable abstractions. If a new feature requires the same functionality/processes that another module requires, we need to make that a new abstraction. However it needs to decide whats reusable and whats valid duplication based on SRP (Single Responsibility Principal) that states that different reasons of change should render different abstractions.
 
 ## Domain & composability
 

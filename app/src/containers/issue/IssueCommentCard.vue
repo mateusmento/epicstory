@@ -1,0 +1,249 @@
+<script lang="ts" setup>
+import { emojis } from "@/presentationals/channel/emojis";
+import { MessageAttachments } from "@/presentationals/messages";
+import { RichTextPreview } from "@/presentationals/rich-text";
+import { UserAvatar } from "@/presentationals/user";
+import { useDependency } from "@/core/dependency-injection";
+import {
+  Button,
+  Menu,
+  MenuContent,
+  MenuInput,
+  MenuSeparator,
+  MenuTrigger,
+  ScrollArea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/design-system";
+import { cn } from "@/design-system/utils";
+import type { IAggregatedReaction, IMessage, IReply } from "@epicstory/contracts";
+import type { IMessageAttachment } from "@epicstory/contracts";
+import { ChannelApi } from "@epicstory/api-client";
+import { excludeInlineImageAttachmentsFromBubbleTiles } from "@epicstory/tiptap";
+import { formatDistanceToNow } from "date-fns";
+import { SmilePlusIcon } from "lucide-vue-next";
+import { computed, ref, watch } from "vue";
+import MessageContextDropdown from "@/presentationals/messages/MessageContextDropdown.vue";
+
+const props = withDefaults(
+  defineProps<{
+    message: IMessage | IReply;
+    meId: number;
+    variant?: "default" | "threadSegment";
+    segmentDivider?: boolean;
+    /** When set, overrides `message.attachments` (e.g. issue attachment store). */
+    attachments?: IMessageAttachment[];
+  }>(),
+  {
+    variant: "default",
+    segmentDivider: false,
+  },
+);
+
+const emit = defineEmits<{
+  (e: "message-deleted"): void;
+  (e: "emoji-selected", emoji: string): void;
+  (e: "toggle-discussion"): void;
+  (e: "quote"): void;
+  (e: "edit"): void;
+}>();
+
+const channelApi = useDependency(ChannelApi);
+
+const reactions = ref<IAggregatedReaction[]>([...(props.message.reactions ?? [])]);
+const reacting = ref(false);
+
+watch(
+  () => props.message.reactions,
+  (r) => {
+    reactions.value = [...(r ?? [])];
+  },
+  { deep: true },
+);
+
+const isReplyEntity = computed(() => "messageId" in props.message && props.message.messageId != null);
+
+const rawAttachments = computed(() => props.attachments ?? props.message.attachments ?? []);
+
+const displayAttachments = computed(() =>
+  excludeInlineImageAttachmentsFromBubbleTiles(props.message.content, rawAttachments.value),
+);
+
+const mostUsedEmojis = ["👍", "🙌", "❤️", "🔥", "🎉"];
+
+function timeLabel(sentAt: Date | string) {
+  try {
+    const d = typeof sentAt === "string" || typeof sentAt === "number" ? new Date(sentAt) : sentAt;
+    return formatDistanceToNow(d, { addSuffix: true });
+  } catch {
+    return String(sentAt);
+  }
+}
+
+const rmMeId = () => props.meId ?? 0;
+
+function reactedByMe(reaction: IAggregatedReaction) {
+  return reaction.reactedByMe || reaction.reactedBy.some((u) => u.id === props.meId);
+}
+
+function pillClass(reaction: IAggregatedReaction) {
+  return cn(
+    "h-8 min-h-8 gap-1 rounded-full border px-2.5 text-[13px] font-medium",
+    "text-muted-foreground border-border hover:bg-muted transition-colors",
+    reactedByMe(reaction) ? "bg-muted" : "bg-card",
+  );
+}
+
+async function toggleReaction(emoji: string) {
+  if (reacting.value) return;
+  reacting.value = true;
+  try {
+    const { reactions: next } = isReplyEntity.value
+      ? await channelApi.toggleReplyReaction(props.message.id, emoji)
+      : await channelApi.toggleMessageReaction(props.message.id, emoji);
+    reactions.value = next;
+  } catch {
+    /* non-blocking */
+  } finally {
+    reacting.value = false;
+  }
+}
+
+const avatarSize = computed(() => (props.variant === "threadSegment" ? "md" : "base"));
+
+const rootClass = computed(() =>
+  props.variant === "threadSegment"
+    ? cn("flex gap-3", "px-4 py-3.5", props.segmentDivider ? "border-t border-border/75" : "")
+    : cn(
+        "flex gap-3",
+        "rounded-lg border border-border bg-card px-4 py-3.5",
+        "shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+      ),
+);
+</script>
+
+<template>
+  <MessageContextDropdown
+    :message
+    :meId
+    :senderId="message.sender.id"
+    :allow-quote="false"
+    @message-deleted="emit('message-deleted')"
+    @emoji-selected="toggleReaction($event)"
+    @toggle-discussion="emit('toggle-discussion')"
+    @quote="emit('quote')"
+    @edit="emit('edit')"
+  >
+    <article :class="rootClass">
+      <UserAvatar
+        class="shrink-0"
+        :name="message.sender.name"
+        :picture="message.sender.picture"
+        :size="avatarSize"
+      />
+      <div class="min-w-0 flex-1 flex flex-col gap-1.5">
+        <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0">
+          <span class="text-[13px] font-semibold leading-tight text-foreground">{{
+            message.sender.name
+          }}</span>
+          <time
+            class="text-[12px] tabular-nums font-normal text-muted-foreground"
+            :datetime="typeof message.sentAt === 'string' ? message.sentAt : message.sentAt.toISOString()"
+          >
+            {{ timeLabel(message.sentAt) }}
+          </time>
+        </div>
+        <div class="prose prose-sm max-w-none leading-relaxed text-foreground">
+          <RichTextPreview
+            :content="message.content"
+            :mentioned-users="message.mentionedUsers"
+            :me-id="rmMeId()"
+          />
+        </div>
+        <MessageAttachments v-if="displayAttachments.length > 0" :files="displayAttachments" />
+        <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <Tooltip v-for="reaction in reactions" :key="reaction.emoji">
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="px-0 font-lato"
+                :class="pillClass(reaction)"
+                :disabled="reacting"
+                @click="toggleReaction(reaction.emoji)"
+              >
+                <span>{{ reaction.emoji }}</span>
+                <span class="tabular-nums">{{ reaction.reactedBy.length }}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent class="max-w-xs">
+              <div class="flex flex-col items-center gap-1 text-center">
+                <span class="text-2xl">{{ reaction.emoji }}</span>
+                <p class="text-xs">
+                  Reacted by
+                  {{
+                    reaction.reactedBy
+                      .map((u) => u.name)
+                      .filter(Boolean)
+                      .join(", ")
+                  }}
+                </p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+
+          <Menu type="dropdown-menu">
+            <MenuTrigger as-child>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                title="Add reaction"
+                aria-label="Add reaction"
+                class="h-8 w-8 shrink-0 rounded-full border-dashed border-border bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                :disabled="reacting"
+              >
+                <SmilePlusIcon class="size-4" />
+              </Button>
+            </MenuTrigger>
+            <MenuContent align="start" class="z-[90] w-[min(20rem,90vw)] font-dmSans">
+              <div class="flex justify-center gap-0.5 py-1">
+                <Button
+                  v-for="emoji in mostUsedEmojis"
+                  :key="emoji"
+                  variant="ghost"
+                  size="icon"
+                  class="size-9 text-lg"
+                  :disabled="reacting"
+                  @click="toggleReaction(emoji)"
+                >
+                  {{ emoji }}
+                </Button>
+              </div>
+              <MenuSeparator />
+              <MenuInput placeholder="Search emoji…" class="text-base" />
+              <MenuSeparator />
+              <ScrollArea class="h-72 max-h-[50vh] min-h-0 p-0">
+                <div class="grid grid-cols-8 gap-1 p-2">
+                  <Button
+                    v-for="emoji in emojis"
+                    :key="emoji"
+                    variant="ghost"
+                    size="icon"
+                    class="size-10 text-lg"
+                    :title="emoji"
+                    :disabled="reacting"
+                    @click="toggleReaction(emoji)"
+                  >
+                    {{ emoji }}
+                  </Button>
+                </div>
+              </ScrollArea>
+            </MenuContent>
+          </Menu>
+        </div>
+      </div>
+    </article>
+  </MessageContextDropdown>
+</template>

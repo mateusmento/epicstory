@@ -1,18 +1,18 @@
 <script setup lang="ts">
+import { Issues } from "@/presentationals/app-pane/issues";
 import {
   ChannelDetailsPane,
   Channels,
   Inbox,
-  Issues,
   Projects,
   Team,
   Teams,
   WorkspaceMembers,
-} from "@/components/app-pane";
-import ThreadDrawer from "@/components/channel/ThreadDrawer.vue";
-import { ConfirmDialogProvider } from "@/components/confirm-dialog";
-import { AppLayout, DrawerPaneContent, NavbarContent } from "@/components/layout";
-import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/components/navbar";
+} from "@/containers/app-pane";
+import ThreadDrawer from "@/containers/channel/ThreadDrawer.vue";
+import { ConfirmDialogProvider } from "@/containers/confirm-dialog";
+import { AppLayout, DrawerPaneContent, NavbarContent } from "@/presentationals/layout";
+import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/containers/navbar";
 import { NotFoundException, UnauthorizedException } from "@/core/axios";
 import { useWorkspacePresence } from "@/domain/channels";
 import { useNotificationIncomingAlerts, useNotifications } from "@/domain/notifications";
@@ -39,7 +39,7 @@ const workspaceId = computed(() => +route.params.workspaceId);
 
 const { fetchWorkspace } = useWorkspace();
 
-useNotifications({ manageConnection: true, limit: 100 });
+useNotifications({ manageConnection: true, pageSize: 100 });
 useNotificationIncomingAlerts();
 useWorkspacePresence();
 

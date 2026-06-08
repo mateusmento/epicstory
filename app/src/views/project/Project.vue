@@ -51,9 +51,9 @@ import {
 } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
-import NewIssueModal from "./NewIssueModal.vue";
-import ProjectFilterDropdown from "./filters/ProjectFilterDropdown.vue";
-import ProjectFiltersBar from "./filters/ProjectFiltersBar.vue";
+import NewIssueModal from "@/containers/views/project/NewIssueModal.vue";
+import ProjectFilterDropdown from "@/containers/views/project/filters/ProjectFilterDropdown.vue";
+import ProjectFiltersBar from "@/containers/views/project/filters/ProjectFiltersBar.vue";
 
 const props = defineProps<{ workspaceId: string; projectId: string; issueId?: string }>();
 
