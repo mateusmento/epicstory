@@ -1,21 +1,9 @@
 import { useAuth } from "@/domain/auth";
-import type { IUser as IUser } from "@epicstory/contracts";
-import { compositeLocalMeetingMedia } from "../utils/meeting-screen-share";
+import { compositeLocalMeetingMedia, type MeetingParticipant } from "@/lib/meetings";
 import { computed } from "vue";
 import { useMeeting } from "./meeting";
 
-export type MeetingParticipant = {
-  id: string; // remoteId or "local"
-  stream: MediaStream | null;
-  user: IUser | null;
-  isLocal: boolean;
-  isCameraOn: boolean;
-  isMicrophoneOn: boolean;
-  /** From signaling; remotes need this for presentation aspect (WebRTC hides displaySurface). */
-  isScreenSharing: boolean;
-  /** Bumps when a remote MediaStream’s tracks change (renegotiation / screen share). */
-  streamEpoch: number;
-};
+export type { MeetingParticipant } from "@/lib/meetings";
 
 export function useMeetingLayout() {
   const { user } = useAuth();

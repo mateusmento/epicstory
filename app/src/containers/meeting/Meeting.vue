@@ -3,9 +3,7 @@ import { Button, Separator } from "@/design-system";
 import { useMeeting, useMeetingLayout, useMeetingMediaDevicesStore } from "@/domain/meetings";
 import { storeToRefs } from "pinia";
 import { computed, onMounted } from "vue";
-import MeetingControls from "@/presentationals/meeting/MeetingControls.vue";
-import MeetingGrid from "./MeetingGrid.vue";
-import MeetingSpeakerView from "./MeetingSpeakerView.vue";
+import { MeetingControls, MeetingGrid, MeetingSpeakerView } from "@/presentationals/meeting";
 
 const {
   isCameraOn,
