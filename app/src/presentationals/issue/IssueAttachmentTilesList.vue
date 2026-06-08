@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import AttachmentTilesList from "@/presentationals/messages/AttachmentTilesList.vue";
 import type { AttachmentTileRow } from "@/presentationals/messages/attachment-tile-rows";
-import type { IssueAttachmentTileRow } from "@/domain/issues";
+import type { IssueAttachmentTileRow } from "@/lib/issues";
 import { computed } from "vue";
 
 const props = withDefaults(
