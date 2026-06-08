@@ -141,33 +141,48 @@ watch(
   () => selectedLinkedBranch.value?.id,
   () => applySelectedBranchToWorkflow(),
 );
+
+const pr = computed(() => ({
+  loading: githubPullRequestsLoading.value,
+  error: githubPullRequestsError.value,
+  count: githubPullRequests.value.length,
+  groups: githubPullRequestGroups.value,
+}));
+
+const access = computed(() => ({
+  adminNeedsWorkspaceInstall: githubAdminNeedsWorkspaceInstall.value,
+  memberNeedsAccountLink: githubMemberNeedsAccountLink.value,
+  settingsRoute: githubSettingsRoute.value,
+}));
+
+const workflow = computed(() => ({
+  formVisible: githubWorkflowFormVisible.value,
+  linkedBranches: {
+    items: linkedBranches.value,
+    loading: linkedBranchesLoading.value,
+    error: linkedBranchesError.value,
+  },
+  mutation: {
+    busy: ghWorkflowBusy.value,
+    error: ghWorkflowError.value,
+    statusMessage: ghWorkflowStatusMessage.value,
+    reconnectSuggested: ghWorkflowReconnectSuggested.value,
+    installationMissingOnGithub: githubInstallationMissingOnGithub.value,
+    createBranchDialogError: createBranchDialogError.value,
+  },
+  selectedLinkedBranch: selectedLinkedBranch.value,
+  selectedGhRepoId: selectedGhRepoId.value,
+  headBranchLeaf: headBranchLeaf.value,
+}));
 </script>
 
 <template>
   <IssueGithubSidebarView
     :issue="issue"
-    :workspace-id="workspaceId"
     :show-github-section="showGithubSection"
-    :github-pull-requests-loading="githubPullRequestsLoading"
-    :github-pull-requests-error="githubPullRequestsError"
-    :github-pull-requests-count="githubPullRequests.length"
-    :github-pull-request-groups="githubPullRequestGroups"
-    :github-settings-route="githubSettingsRoute"
-    :github-admin-needs-workspace-install="githubAdminNeedsWorkspaceInstall"
-    :github-member-needs-account-link="githubMemberNeedsAccountLink"
-    :github-workflow-form-visible="githubWorkflowFormVisible"
-    :linked-branches="linkedBranches"
-    :linked-branches-loading="linkedBranchesLoading"
-    :linked-branches-error="linkedBranchesError"
-    :selected-linked-branch="selectedLinkedBranch"
-    :gh-workflow-busy="ghWorkflowBusy"
-    :github-installation-missing-on-github="githubInstallationMissingOnGithub"
-    :gh-workflow-reconnect-suggested="ghWorkflowReconnectSuggested"
-    :gh-workflow-error="ghWorkflowError"
-    :gh-workflow-status-message="ghWorkflowStatusMessage"
-    :selected-gh-repo-id="selectedGhRepoId"
-    :head-branch-leaf="headBranchLeaf"
-    :create-branch-dialog-error="createBranchDialogError"
+    :pr="pr"
+    :access="access"
+    :workflow="workflow"
     v-model:pr-status-filter="prStatusFilter"
     v-model:selected-linked-branch-id="selectedLinkedBranchId"
     v-model:open-pr-as-draft="openPrAsDraft"

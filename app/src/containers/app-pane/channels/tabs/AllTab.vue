@@ -2,20 +2,18 @@
 import { UserAvatar } from "@/presentationals/user";
 import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/design-system";
 import { cn } from "@/design-system/utils";
-import { useDependency } from "@/core/dependency-injection";
-import type { Page } from "@/core/types";
-import { useChannel, useWorkspaceOnline } from "@/domain/channels";
+import { useChannel, useChannelGroupsLists, useWorkspaceOnline } from "@/domain/channels";
 import {
   useMeeting,
   useMeetingSocket,
   type IncomingMeetingPayload,
   type MeetingEndedPayload,
 } from "@/domain/meetings";
-import { ChannelApi } from "@epicstory/api-client";
 import type { IChannel } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
+import { toPaginatedListView, type PaginatedListView } from "@/lib/async";
 import { HashIcon, HeadphonesIcon, PlusIcon } from "lucide-vue-next";
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, reactive, watch } from "vue";
 import CreateChannel from "../CreateChannel.vue";
 import ChannelContextMenu from "@/presentationals/app-pane/channels/ChannelContextMenu.vue";
 import ChannelContextMenuProvider from "../ChannelContextMenuProvider.vue";
@@ -27,102 +25,24 @@ const props = defineProps<{
 const { openChannel } = useChannel();
 const { joinMeeting, joinChannelMeeting } = useMeeting();
 const { workspace } = useWorkspace();
-const channelApi = useDependency(ChannelApi);
 const meetingSocket = useMeetingSocket();
 const { isUserOnline } = useWorkspaceOnline();
+const channelGroups = useChannelGroupsLists();
 
-type ChannelPage = Page<IChannel>;
-
-const groupChannels = ref<ChannelPage | null>(null);
-const meetingChannels = ref<ChannelPage | null>(null);
-const directChannels = ref<ChannelPage | null>(null);
-
-const loadingGroup = ref(false);
-const loadingMeeting = ref(false);
-const loadingDirect = ref(false);
-
-const GROUP_COUNT = 20;
 const createDialogOpen = reactive({
   group: false,
   meeting: false,
   direct: false,
 });
 
-function mergePages<T>(previous: Page<T> | null, next: Page<T>): Page<T> {
-  return previous ? { ...next, content: [...previous.content, ...next.content] } : next;
-}
-
-async function fetchInitial() {
-  const result = await channelApi.findChannelGroups(workspace.value.id, {
-    groupPage: 1,
-    meetingPage: 1,
-    directPage: 1,
-    count: GROUP_COUNT,
-  });
-  groupChannels.value = result.groupChannels;
-  meetingChannels.value = result.meetingChannels;
-  directChannels.value = result.directChannels;
-}
-
-async function loadMoreGroup() {
-  if (!groupChannels.value?.hasNext || loadingGroup.value) return;
-  loadingGroup.value = true;
-  try {
-    const nextPage = groupChannels.value.page + 1;
-    const result = await channelApi.findChannelGroups(workspace.value.id, {
-      groupPage: nextPage,
-      count: GROUP_COUNT,
-    });
-    groupChannels.value = mergePages(groupChannels.value, result.groupChannels);
-  } finally {
-    loadingGroup.value = false;
-  }
-}
-
-async function loadMoreMeetings() {
-  if (!meetingChannels.value?.hasNext || loadingMeeting.value) return;
-  loadingMeeting.value = true;
-  try {
-    const nextPage = meetingChannels.value.page + 1;
-    const result = await channelApi.findChannelGroups(workspace.value.id, {
-      meetingPage: nextPage,
-      count: GROUP_COUNT,
-    });
-    meetingChannels.value = mergePages(meetingChannels.value, result.meetingChannels);
-  } finally {
-    loadingMeeting.value = false;
-  }
-}
-
-async function loadMoreDirect() {
-  if (!directChannels.value?.hasNext || loadingDirect.value) return;
-  loadingDirect.value = true;
-  try {
-    const nextPage = directChannels.value.page + 1;
-    const result = await channelApi.findChannelGroups(workspace.value.id, {
-      directPage: nextPage,
-      count: GROUP_COUNT,
-    });
-    directChannels.value = mergePages(directChannels.value, result.directChannels);
-  } finally {
-    loadingDirect.value = false;
-  }
-}
-
-function updateChannelMeeting(channelId: number, meeting: any | null) {
-  const find = (page: ChannelPage | null) => page?.content.find((c) => c.id === channelId);
-  const channel = find(groupChannels.value) ?? find(meetingChannels.value) ?? find(directChannels.value);
-  if (channel) channel.meeting = meeting;
-}
-
 function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
   if (!channelId) return;
-  updateChannelMeeting(channelId, meeting);
+  channelGroups.updateChannelMeeting(channelId, meeting);
 }
 
 function onMeetingEnded({ channelId }: MeetingEndedPayload) {
   if (!channelId) return;
-  updateChannelMeeting(channelId, null);
+  channelGroups.updateChannelMeeting(channelId, null);
 }
 
 function subscribeMeetingEvents() {
@@ -136,35 +56,40 @@ function unsubscribeMeetingEvents() {
   meetingSocket.offMeetingEnded(onMeetingEnded);
 }
 
-const items = computed(() => [
+type ChannelSectionItem = {
+  title: string;
+  createKey: "group" | "meeting" | "direct";
+  createTitle: string;
+  list: PaginatedListView<IChannel>;
+  onLoadMore: () => Promise<void>;
+};
+
+const items = computed((): ChannelSectionItem[] => [
   {
     title: "Channels",
-    createKey: "group" as const,
+    createKey: "group",
     createTitle: "Create channel",
-    page: groupChannels.value,
-    onLoadMore: loadMoreGroup,
-    loading: loadingGroup.value,
+    list: toPaginatedListView(channelGroups.group),
+    onLoadMore: () => channelGroups.group.loadMore(workspace.value.id),
   },
   {
     title: "Meetings",
-    createKey: "meeting" as const,
+    createKey: "meeting",
     createTitle: "Create meeting channel",
-    page: meetingChannels.value,
-    onLoadMore: loadMoreMeetings,
-    loading: loadingMeeting.value,
+    list: toPaginatedListView(channelGroups.meeting),
+    onLoadMore: () => channelGroups.meeting.loadMore(workspace.value.id),
   },
   {
     title: "Direct messages",
-    createKey: "direct" as const,
+    createKey: "direct",
     createTitle: "Start a direct message",
-    page: directChannels.value,
-    onLoadMore: loadMoreDirect,
-    loading: loadingDirect.value,
+    list: toPaginatedListView(channelGroups.direct),
+    onLoadMore: () => channelGroups.direct.loadMore(workspace.value.id),
   },
 ]);
 
 onMounted(async () => {
-  await fetchInitial();
+  await channelGroups.loadAll(workspace.value.id);
   subscribeMeetingEvents();
 });
 
@@ -173,18 +98,18 @@ onUnmounted(() => {
 });
 
 watch(workspace, async () => {
-  await fetchInitial();
+  await channelGroups.loadAll(workspace.value.id);
 });
 
 async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct" }) {
   createDialogOpen[item.createKey] = false;
-  await fetchInitial();
+  await channelGroups.loadAll(workspace.value.id);
 }
 </script>
 
 <template>
   <div :class="cn('flex:col-md m-2 flex-1', props.class)">
-    <ChannelContextMenuProvider :refresh="fetchInitial">
+    <ChannelContextMenuProvider :refresh="() => channelGroups.loadAll(workspace.id)">
       <template v-for="item in items" :key="item.title">
         <div class="mt-2 ml-2 flex items-center justify-between gap-2">
           <div class="text-xs text-secondary-foreground">{{ item.title }}</div>
@@ -205,7 +130,7 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
           </Dialog>
         </div>
 
-        <ChannelContextMenu v-for="channel of item.page?.content ?? []" :key="channel.id" :channel="channel">
+        <ChannelContextMenu v-for="channel of item.list.items" :key="channel.id" :channel="channel">
           <div class="flex:row-sm">
             <div
               class="flex:row-lg flex:center-y flex-1 p-1.5 rounded-lg hover:bg-secondary cursor-pointer"
@@ -250,11 +175,11 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
         </ChannelContextMenu>
 
         <Button
-          v-if="item.page?.hasNext"
+          v-if="item.list.hasMore"
           size="icon"
           variant="ghost"
           class="w-fit ml-2 text-xs text-muted-foreground"
-          :disabled="item.loading"
+          :disabled="item.list.loadingMore"
           @click="item.onLoadMore"
         >
           Load more

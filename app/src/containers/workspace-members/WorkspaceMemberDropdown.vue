@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import WorkspaceMemberDropdownView from "@/presentationals/workspace-members/WorkspaceMemberDropdown.vue";
 import { useWorkspaceMemberSearch, useWorkspace } from "@/domain/workspace";
+import { toPaginatedListView } from "@/lib/async";
 import type { IUser as IUser } from "@epicstory/contracts";
 import { computed } from "vue";
 
@@ -24,20 +25,23 @@ const emit = defineEmits<{
 }>();
 
 const { workspaceId } = useWorkspace();
-const { members, search, loadMore, isFetchingMore, hasMore } = useWorkspaceMemberSearch();
+const memberSearch = useWorkspaceMemberSearch();
 
-const searchUsers = computed(() => {
+const list = computed(() => {
   const exclude = new Set([...users.value.map((u) => u.id), ...props.excludeUserIds]);
-  return members.value.map((m) => m.user).filter((u) => !exclude.has(u.id));
+  return toPaginatedListView({
+    ...memberSearch,
+    items: memberSearch.items.map((m) => m.user).filter((u) => !exclude.has(u.id)),
+  });
 });
 
 function onSearch(query: string) {
-  search(workspaceId.value, query);
+  memberSearch.search(workspaceId.value, query);
 }
 
 async function onLoadMore() {
   if (props.disabled) return;
-  await loadMore(workspaceId.value);
+  await memberSearch.loadMore(workspaceId.value);
 }
 </script>
 
@@ -45,9 +49,7 @@ async function onLoadMore() {
   <WorkspaceMemberDropdownView
     v-model:users="users"
     :disabled="disabled"
-    :search-users="searchUsers"
-    :is-fetching-more="isFetchingMore"
-    :has-more="hasMore"
+    :list="list"
     :selected-label="selectedLabel"
     :search-placeholder="searchPlaceholder"
     @add="emit('add', $event)"

@@ -3,9 +3,8 @@ import { config } from "@/config";
 import { Button } from "@/design-system";
 import { useDependency } from "@/core/dependency-injection";
 import { GithubIntegrationApi } from "@epicstory/api-client";
-import type { IGithubRepositoryCatalogPage } from "@epicstory/contracts";
 import { useAuth } from "@/domain/auth";
-import { clearGithubIssueWorkflowPendingForWorkspace } from "@/domain/github";
+import { clearGithubIssueWorkflowPendingForWorkspace, useGithubRepositoryCatalog } from "@/domain/github";
 import { useWorkspace } from "@/domain/workspace";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
@@ -30,9 +29,7 @@ const canManageGithubInstallation = computed(() => {
 const loading = ref(false);
 const status = ref<Awaited<ReturnType<typeof api.getStatus>>>();
 
-const catalogLoading = ref(false);
-const catalog = ref<IGithubRepositoryCatalogPage | null>(null);
-const catalogError = ref<string | null>(null);
+const catalog = useGithubRepositoryCatalog({ pageSize: 20 });
 const catalogSectionEl = ref<HTMLElement | null>(null);
 
 const oauthBannerError = ref<string | null>(null);
@@ -92,24 +89,6 @@ watch(
   () => consumeGithubOAuthQueryParams(),
 );
 
-function extractApiError(e: unknown, fallback: string) {
-  const msg =
-    e &&
-    typeof e === "object" &&
-    "response" in e &&
-    e.response &&
-    typeof e.response === "object" &&
-    "data" in e.response &&
-    e.response.data &&
-    typeof e.response.data === "object" &&
-    "message" in e.response.data
-      ? (e.response.data as { message: unknown }).message
-      : e instanceof Error
-        ? e.message
-        : fallback;
-  return Array.isArray(msg) ? msg.join(", ") : String(msg);
-}
-
 function installStartUrl() {
   const redirect = `/${workspaceId.value}/settings/integrations/github`;
   const url = new URL(`${config.API_URL}/integrations/github/install/start`);
@@ -138,56 +117,21 @@ async function refresh() {
   loading.value = true;
   try {
     status.value = await api.getStatus(workspaceId.value);
-    catalog.value = null;
-    catalogError.value = null;
+    catalog.reset();
   } finally {
     loading.value = false;
   }
 }
 
 watch(workspaceId, async () => {
-  catalog.value = null;
+  catalog.reset();
   await refresh();
 });
 
-async function loadCatalog(page = 1) {
-  catalogLoading.value = true;
-  catalogError.value = null;
-  try {
-    catalog.value = await api.listRepositories(workspaceId.value, {
-      page,
-      perPage: 20,
-    });
-  } catch (e: unknown) {
-    catalogError.value = extractApiError(e, "Could not load repositories.");
-    catalog.value = null;
+async function reloadCatalog() {
+  await catalog.load(workspaceId.value, "Could not load repositories.");
+  if (catalog.error) {
     nextTick(() => catalogSectionEl.value?.focus({ preventScroll: true }));
-  } finally {
-    catalogLoading.value = false;
-  }
-}
-
-async function loadMoreCatalog() {
-  if (!catalog.value?.hasNextPage) return;
-  catalogLoading.value = true;
-  catalogError.value = null;
-  try {
-    const prev = catalog.value;
-    const next = await api.listRepositories(workspaceId.value, {
-      page: prev.page + 1,
-      perPage: prev.perPage,
-    });
-    catalog.value = {
-      totalCount: next.totalCount,
-      page: next.page,
-      perPage: next.perPage,
-      hasNextPage: next.hasNextPage,
-      repositories: [...prev.repositories, ...next.repositories],
-    };
-  } catch (e: unknown) {
-    catalogError.value = e instanceof Error ? e.message : "Load failed.";
-  } finally {
-    catalogLoading.value = false;
   }
 }
 
@@ -198,7 +142,7 @@ async function disconnectInstallation() {
     resetOauthBannerState();
     await api.disconnectInstallation(workspaceId.value);
     clearGithubIssueWorkflowPendingForWorkspace(String(workspaceId.value));
-    catalog.value = null;
+    catalog.reset();
     await refresh();
   } finally {
     loading.value = false;
@@ -221,8 +165,8 @@ async function disconnectUser() {
 watch(
   () => status.value?.installation,
   (installed) => {
-    if (installed && catalog.value == null && !catalogLoading.value) {
-      loadCatalog(1);
+    if (installed && catalog.items.length === 0 && !catalog.loading) {
+      catalog.load(workspaceId.value, "Could not load repositories.");
     }
   },
 );
@@ -231,7 +175,7 @@ onMounted(async () => {
   consumeGithubOAuthQueryParams();
   await Promise.all([refresh(), fetchWorkspaceMembers()]);
   if (status.value?.installation) {
-    await loadCatalog(1);
+    await catalog.load(workspaceId.value, "Could not load repositories.");
   }
 });
 </script>
@@ -375,21 +319,26 @@ onMounted(async () => {
     >
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="text-sm font-medium">Workspace repositories</div>
-        <Button variant="outline" size="sm" :disabled="catalogLoading" @click="loadCatalog(1)">
-          {{ catalog ? "Reload" : "Load repositories" }}
+        <Button variant="outline" size="sm" :disabled="catalog.loading" @click="reloadCatalog">
+          {{ catalog.items.length > 0 ? "Reload" : "Load repositories" }}
         </Button>
       </div>
       <p class="text-xs text-secondary-foreground mt-1">
         Repositories your GitHub App can access for this workspace (org or personal account). Members pick a
         repo on each issue when creating branches or pull requests.
       </p>
-      <div v-if="catalogError" class="mt-3 text-sm text-destructive">
-        {{ catalogError }}
+      <div v-if="catalog.error" class="mt-3 text-sm text-destructive">
+        {{ catalog.error }}
       </div>
-      <div v-if="catalogLoading && !catalog" class="mt-3 text-sm text-secondary-foreground">Loading…</div>
-      <ul v-if="catalog?.repositories.length" class="mt-3 border rounded-md divide-y max-h-72 overflow-auto">
+      <div
+        v-if="catalog.loading && catalog.items.length === 0"
+        class="mt-3 text-sm text-secondary-foreground"
+      >
+        Loading…
+      </div>
+      <ul v-if="catalog.items.length" class="mt-3 border rounded-md divide-y max-h-72 overflow-auto">
         <li
-          v-for="r in catalog.repositories"
+          v-for="r in catalog.items"
           :key="r.githubRepoId"
           class="px-3 py-2 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
         >
@@ -407,12 +356,20 @@ onMounted(async () => {
           </div>
         </li>
       </ul>
-      <div v-if="catalog && !catalog.repositories.length" class="mt-3 text-sm text-secondary-foreground">
+      <div
+        v-if="catalog.hasLoaded && !catalog.loading && catalog.items.length === 0 && !catalog.error"
+        class="mt-3 text-sm text-secondary-foreground"
+      >
         No repositories returned (check app repository permissions on GitHub).
       </div>
-      <div v-if="catalog?.hasNextPage" class="mt-3">
-        <Button variant="ghost" size="sm" :disabled="catalogLoading" @click="loadMoreCatalog">
-          Load more ({{ catalog.repositories.length }} / {{ catalog.totalCount }})
+      <div v-if="catalog.hasMore" class="mt-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          :disabled="catalog.loadingMore"
+          @click="catalog.loadMore(workspaceId, 'Load failed.')"
+        >
+          Load more ({{ catalog.items.length }} / {{ catalog.totalCount }})
         </Button>
       </div>
     </div>

@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { Menu, MenuContent, MenuTrigger } from "@/design-system";
+import { emptyPaginatedListView, type PaginatedListView } from "@/lib/async";
 import type { IUser as IUser } from "@epicstory/contracts";
 import WorkspaceMemberMenu from "./WorkspaceMemberMenu.vue";
 
-defineProps<{
-  disabled?: boolean;
-  searchUsers: IUser[];
-  isFetchingMore?: boolean;
-  hasMore?: boolean;
-  selectedLabel?: string;
-  searchPlaceholder?: string;
-}>();
+withDefaults(
+  defineProps<{
+    disabled?: boolean;
+    list?: PaginatedListView<IUser>;
+    selectedLabel?: string;
+    searchPlaceholder?: string;
+  }>(),
+  {
+    list: () => emptyPaginatedListView<IUser>(),
+  },
+);
 
 const users = defineModel<IUser[]>("users", { default: () => [] });
 
@@ -32,9 +36,7 @@ const emit = defineEmits<{
       <WorkspaceMemberMenu
         v-model:users="users"
         :disabled="disabled"
-        :search-users="searchUsers"
-        :is-fetching-more="isFetchingMore"
-        :has-more="hasMore"
+        :list="list"
         :selected-label="selectedLabel"
         :search-placeholder="searchPlaceholder"
         @add="emit('add', $event)"

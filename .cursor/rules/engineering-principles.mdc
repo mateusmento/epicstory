@@ -20,6 +20,7 @@ Act as a senior fullstack engineer: ship **concise** UIs with strong **UX**, and
 - Model the domain with **precise types and explicit data**; names should read like the business vocabulary.
 - Prefer **composition** (pass data in, return data out) over deep inheritance or singletons.
 - Reuse through **stable, narrow interfaces**—not copy-paste variants of the same logic.
+- Repeated async list contracts → shared view-model types in `@/lib/async`; repeated forward-list fetch orchestration → `createPaginatedListEngine` in `@/domain/async`.
 
 ## Functional style (TypeScript-friendly)
 

@@ -1,92 +1,34 @@
 import { useDependency } from "@/core/dependency-injection";
-import { defineStore, storeToRefs } from "pinia";
-import { debounce } from "lodash";
-import type { Ref } from "vue";
-import { ref } from "vue";
+import { createPaginatedListEngine, createPaginatedListState, type PaginatedListState } from "@/domain/async";
 import { WorkspaceApi } from "@epicstory/api-client";
 import type { WorkspaceMember } from "@epicstory/contracts";
+import { toReactive } from "@vueuse/core";
+import { markRaw, toRefs } from "vue";
 
 const CHUNK = 20;
 
-export const useWorkspaceMemberSearchStore = defineStore("workspaceMemberSearch", () => {
-  const members = ref<WorkspaceMember[]>([]);
-  const isSearching = ref(false);
-  const isFetchingMore = ref(false);
-  const hasMore = ref(true);
-  const page = ref(0);
-  const count = ref(CHUNK);
-  const currentQ = ref("");
-
-  return {
-    members,
-    isSearching,
-    isFetchingMore,
-    hasMore,
-    page,
-    count,
-    currentQ,
-  };
-});
-
-type WorkspaceMemberSearchRefs = {
-  members: Ref<WorkspaceMember[]>;
-  isSearching: Ref<boolean>;
-  isFetchingMore: Ref<boolean>;
-  hasMore: Ref<boolean>;
-  page: Ref<number>;
-  count: Ref<number>;
-  currentQ: Ref<string>;
-};
-
-function createWorkspaceMemberSearchEngine(workspaceApi: WorkspaceApi, r: WorkspaceMemberSearchRefs) {
-  const search = debounce(async (workspaceId: number, q: string) => {
-    if (!workspaceId) {
-      r.isSearching.value = false;
-      return;
-    }
-    r.currentQ.value = q;
-    r.page.value = 0;
-    r.hasMore.value = true;
-    r.isSearching.value = true;
-    try {
-      const result = await workspaceApi.findMembers(workspaceId, {
-        page: 0,
-        count: r.count.value,
+function createWorkspaceMemberSearchEngine(
+  workspaceApi: WorkspaceApi,
+  state: PaginatedListState<WorkspaceMember>,
+) {
+  return createPaginatedListEngine({
+    state,
+    searchDebounceMs: 200,
+    isContextReady: (workspaceId: number) => !!workspaceId,
+    getItemId: (member) => member.id,
+    fetchPage: (workspaceId, q, page, pageSize) =>
+      workspaceApi.findMembers(workspaceId, {
+        page,
+        count: pageSize,
         q: q.trim() || undefined,
-      });
-      r.members.value = result.content;
-      r.hasMore.value = result.hasNext;
-    } finally {
-      r.isSearching.value = false;
-    }
-  }, 200);
-
-  async function loadMore(workspaceId: number) {
-    if (r.isFetchingMore.value) return;
-    if (!r.hasMore.value) return;
-    if (!workspaceId) return;
-
-    r.isFetchingMore.value = true;
-    try {
-      const next = r.page.value + 1;
-      const result = await workspaceApi.findMembers(workspaceId, {
-        page: next,
-        count: r.count.value,
-        q: r.currentQ.value.trim() || undefined,
-      });
-      const existing = new Set(r.members.value.map((m) => m.id));
-      for (const m of result.content) {
-        if (!existing.has(m.id)) r.members.value.push(m);
-      }
-      r.page.value = next;
-      r.hasMore.value = result.hasNext;
-    } finally {
-      r.isFetchingMore.value = false;
-    }
-  }
-
-  return { search, loadMore };
+      }),
+  });
 }
+
+const workspaceMemberSearchState = createPaginatedListState<WorkspaceMember>({
+  pageSize: CHUNK,
+  hasMore: true,
+});
 
 /**
  * Global workspace member search (debounced `q`, chunked pages). Used by menus such as
@@ -94,19 +36,15 @@ function createWorkspaceMemberSearchEngine(workspaceApi: WorkspaceApi, r: Worksp
  * assignee pickers will overwrite results; use {@link useScopedWorkspaceMemberSearch} instead.
  */
 export function useWorkspaceMemberSearch() {
-  const store = useWorkspaceMemberSearchStore();
-  const refs = storeToRefs(store);
+  const state = workspaceMemberSearchState;
   const workspaceApi = useDependency(WorkspaceApi);
-  const { search, loadMore } = createWorkspaceMemberSearchEngine(workspaceApi, refs);
+  const { search, loadMore } = createWorkspaceMemberSearchEngine(workspaceApi, state);
 
-  return {
-    members: refs.members,
-    isSearching: refs.isSearching,
-    isFetchingMore: refs.isFetchingMore,
-    hasMore: refs.hasMore,
-    search,
-    loadMore,
-  };
+  return toReactive({
+    ...toRefs(state),
+    search: markRaw(search),
+    loadMore: markRaw(loadMore),
+  });
 }
 
 /**
@@ -118,29 +56,15 @@ export function useWorkspaceMemberSearch() {
  */
 export function useScopedWorkspaceMemberSearch(options?: { initialPageSize?: number }) {
   const workspaceApi = useDependency(WorkspaceApi);
-  const members = ref<WorkspaceMember[]>([]);
-  const isSearching = ref(false);
-  const isFetchingMore = ref(false);
-  const hasMore = ref(true);
-  const page = ref(0);
-  const count = ref(options?.initialPageSize ?? CHUNK);
-  const currentQ = ref("");
-  const { search, loadMore } = createWorkspaceMemberSearchEngine(workspaceApi, {
-    members,
-    isSearching,
-    isFetchingMore,
-    hasMore,
-    page,
-    count,
-    currentQ,
+  const state = createPaginatedListState<WorkspaceMember>({
+    pageSize: options?.initialPageSize ?? CHUNK,
+    hasMore: true,
   });
+  const { search, loadMore } = createWorkspaceMemberSearchEngine(workspaceApi, state);
 
-  return {
-    members,
-    isSearching,
-    isFetchingMore,
-    hasMore,
-    search,
-    loadMore,
-  };
+  return toReactive({
+    ...toRefs(state),
+    search: markRaw(search),
+    loadMore: markRaw(loadMore),
+  });
 }

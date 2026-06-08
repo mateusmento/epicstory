@@ -79,6 +79,36 @@ type GithubPrView = {
 // Presentational: props { pr: GithubPrView } — not 8 flat props
 ```
 
+**Repeated fetch flag clusters** — even when fewer than 8 props — use shared types from `@/lib/async` instead of flat `items` + `loading` + `hasMore` props:
+
+| Pattern | Type | When |
+| ---- | ---- | ---- |
+| Forward paginated list (search / scroll load) | `PaginatedListView<T>` | `items`, `loading`, `loadingMore`, `hasMore` (+ optional `error`) |
+| Single fetch | `AsyncDataView<T>` | `data`, `loading`, `error` |
+| Command in flight | `AsyncMutationState` | `busy`, `error` |
+| Prepend older items | `OlderPageState` | `hasOlder`, `loadingOlder` — items stay in parent timeline |
+
+- Domain fetch orchestration uses `Page<T>` from `@epicstory/contracts`; containers map refs → view-models via `toPaginatedListView()` (or equivalent).
+- Repeated forward-list fetch logic → `createPaginatedListEngine` in `@/domain/async`.
+- **Commands stay events** (`@search`, `@load-more`, `@retry`) — not embedded in the view-model.
+
+Example (workspace member picker):
+
+```ts
+// Presentational
+list: PaginatedListView<IUser>;
+// @search and @load-more remain emits
+
+// Container
+const memberSearch = useWorkspaceMemberSearch();
+const list = computed(() =>
+  toPaginatedListView({
+    ...memberSearch,
+    items: memberSearch.members.map((m) => m.user).filter(/* exclude selected */),
+  }),
+);
+```
+
 **Slots** when the presentational owns layout but **does not** need to know how a wired child works — lift composition to the container instead of drilling through.
 
 ### Scoped slots (wiring-heavy subtrees)
@@ -143,7 +173,7 @@ Keep container-only until a natural UI subsection appears. Split when a block is
 | Kind | Home | Example |
 | ---- | ---- | ------- |
 | API / backend-shared vocabulary | `@epicstory/contracts` | `RecurrenceFrequency`, `ICalendarEvent` |
-| Cross-layer display/layout (no API) | `@/lib/<feature>` | `ScheduleViewType`, `getEventLayoutMode` |
+| Cross-layer display/layout (no API) | `@/lib/<feature>` | `ScheduleViewType`, `PaginatedListView`, `getEventLayoutMode` |
 | Form/parsing shapes used only by domain composables | `@/domain` (private to feature) | `ParsedRecurrence` |
 | Presentational-only view models | colocate `*.types.ts` with presentational | `GithubPrView` |
 

@@ -13,6 +13,7 @@ import type {
   MessagePollBody,
 } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
+import { toOlderPageState } from "@/lib/async";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -46,6 +47,13 @@ const emit = defineEmits<{
 
 const { typingUserIds, hasMoreOlder, loadingOlderActivities, loadOlderActivitiesPage } = useChannel();
 const { isUserOnline } = useWorkspaceOnline();
+
+const olderPage = computed(() =>
+  toOlderPageState({
+    hasOlder: hasMoreOlder.value,
+    loadingOlder: loadingOlderActivities.value,
+  }),
+);
 const channelApi = useDependency(ChannelApi);
 
 const composerAttachmentHandlers = computed(() =>
@@ -72,8 +80,7 @@ function isMeetingJoinable(meeting: NonNullable<IChannel["meeting"]>) {
     :channel-id="channelId"
     :channel="channel"
     :typing-user-ids="typingUserIds"
-    :has-more-older="hasMoreOlder"
-    :loading-older-activities="loadingOlderActivities"
+    :older-page="olderPage"
     :load-older-activities-page="loadOlderActivitiesPage"
     :is-user-online="isUserOnline"
     :is-meeting-joinable="isMeetingJoinable"

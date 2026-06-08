@@ -2,22 +2,20 @@
 import { UserAvatar } from "@/presentationals/user";
 import { Button, MenuInput, MenuItem, MenuSeparator, ScrollArea } from "@/design-system";
 import { Icon } from "@/design-system/icons";
+import { emptyPaginatedListView, type PaginatedListView } from "@/lib/async";
 import type { IUser as IUser } from "@epicstory/contracts";
 import { computed, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
     disabled?: boolean;
-    searchUsers: IUser[];
-    isFetchingMore?: boolean;
-    hasMore?: boolean;
+    list?: PaginatedListView<IUser>;
     selectedLabel?: string;
     searchPlaceholder?: string;
   }>(),
   {
     disabled: false,
-    isFetchingMore: false,
-    hasMore: true,
+    list: () => emptyPaginatedListView<IUser>(),
     selectedLabel: "Members",
     searchPlaceholder: "Search workspace members…",
   },
@@ -96,7 +94,7 @@ function onLoadMore() {
     <ScrollArea class="h-40 min-h-0" @reached-bottom="onLoadMore">
       <div class="!block">
         <MenuItem
-          v-for="user of searchUsers"
+          v-for="user of list.items"
           :key="user.id"
           class="flex:row-lg flex:center-y"
           :disabled="disabled"
@@ -113,11 +111,11 @@ function onLoadMore() {
             <div v-if="user.email" class="truncate text-xs text-muted-foreground">{{ user.email }}</div>
           </div>
         </MenuItem>
-        <div v-if="isFetchingMore" class="ml-2 my-2 text-xs text-muted-foreground">Loading…</div>
-        <div v-else-if="searchUsers.length === 0" class="ml-2 my-2 text-xs text-muted-foreground">
+        <div v-if="list.loadingMore" class="ml-2 my-2 text-xs text-muted-foreground">Loading…</div>
+        <div v-else-if="list.items.length === 0" class="ml-2 my-2 text-xs text-muted-foreground">
           No members found
         </div>
-        <div v-else-if="!hasMore" class="ml-2 my-2 text-xs text-muted-foreground">End of results</div>
+        <div v-else-if="!list.hasMore" class="ml-2 my-2 text-xs text-muted-foreground">End of results</div>
       </div>
     </ScrollArea>
   </div>
