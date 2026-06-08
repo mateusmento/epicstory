@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { Icon } from "@/design-system/icons";
 import { ScrollArea, Separator } from "@/design-system";
+import { useAuth } from "@/domain/auth";
 import { useNotifications } from "@/domain/notifications";
 import { InboxNotificationRow } from "@/presentationals/inbox";
 import type {
@@ -20,6 +21,7 @@ import type { VNodeRef } from "vue";
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+const { user } = useAuth();
 const { notifications, isLoading, isLoadingMore, hasMore, markAsSeen, fetchMoreNotifications } =
   useNotifications();
 
@@ -178,6 +180,7 @@ async function openNotification(notification: Notification) {
           >
             <InboxNotificationRow
               :notification="notifications[virtualRow.index]!"
+              :me-id="user?.id ?? null"
               @select="openNotification"
             />
           </div>
