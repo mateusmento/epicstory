@@ -2,18 +2,20 @@ import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { GithubIntegrationApi } from "@epicstory/api-client";
 import type {
-  IGithubIntegrationStatus,
-  IGithubIssuePullRequestLink,
   IGithubCatalogRepository,
+  IGithubIntegrationStatus,
+  IGithubIssueBranchLink,
+  IGithubIssuePullRequestLink,
   IIssue,
-  IIssueGithubBranch,
 } from "@epicstory/contracts";
-import type { ComputedRef, Ref } from "vue";
-import { computed, ref, watch } from "vue";
+import { toAsyncDataView } from "@/lib/async";
+import { groupGithubPullRequests, type GithubPrStatusFilter } from "@/lib/github";
+import { toReactive } from "@vueuse/core";
+import type { Ref } from "vue";
+import { computed, markRaw, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { suggestGithubBranchLeaf } from "../github-branch-name";
 import { githubApiErrorMessage, githubApiParseError } from "../github-api-errors";
-import { useGithubWorkspaceAccess } from "./use-github-workspace-access";
 import {
   clearGithubIssueWorkflowPending,
   issueGithubReturnPath,
@@ -22,6 +24,10 @@ import {
   saveGithubIssueWorkflowPending,
   type GithubIssueWorkflowPendingAction,
 } from "../github-issue-workflow-pending";
+import { useGithubRepositoryCatalog } from "./use-github-repository-catalog";
+import { useGithubWorkspaceAccess } from "./use-github-workspace-access";
+
+export type { GithubPrStatusFilter };
 
 /** Server tells the client to complete Integrations → GitHub linking before retrying. */
 const GITHUB_WORKFLOW_MEMBER_RECONNECT_CODES = new Set<string>([
@@ -31,8 +37,6 @@ const GITHUB_WORKFLOW_MEMBER_RECONNECT_CODES = new Set<string>([
   "GITHUB_MEMBER_TOKEN_DECRYPT_FAILED",
 ]);
 
-export type GithubPrStatusFilter = "all" | "open" | "merged" | "closed";
-
 type GithubWorkflowPrerequisite =
   | { kind: "ready"; repo: IGithubCatalogRepository }
   | { kind: "installation_gone" }
@@ -41,116 +45,55 @@ type GithubWorkflowPrerequisite =
   | { kind: "select_repo" }
   | { kind: "status_unavailable" };
 
-function matchesGithubPrFilter(pr: IGithubIssuePullRequestLink, filter: GithubPrStatusFilter): boolean {
-  if (filter === "all") return true;
-  if (filter === "merged") return pr.merged === true;
-  if (filter === "closed") return pr.merged === false && pr.state === "closed";
-  return pr.merged === false && pr.state === "open";
-}
-
 export type UseIssueGithubSidebarParams = {
   workspaceId: Ref<string>;
   projectId: Ref<string>;
-  /** Current issue loaded in the shell (undefined while loading). */
   issue: Ref<IIssue | undefined>;
-  /** Called after branch/PR mutations so the timeline can refresh (parent owns the activity section ref). */
   reloadIssueActivityFeed: () => Promise<void>;
-  /** Refetch issue so persisted `githubBranch` is loaded after create/select. */
   reloadIssue: () => Promise<void>;
 };
 
-export type UseIssueGithubSidebarReturn = {
-  githubPullRequests: Ref<IGithubIssuePullRequestLink[]>;
-  githubPullRequestsLoading: Ref<boolean>;
-  githubPullRequestsError: Ref<string | null>;
-
-  workspaceGhRepos: Ref<IGithubCatalogRepository[]>;
-  workspaceGhReposLoading: Ref<boolean>;
-  workspaceGhReposError: Ref<string | null>;
-
-  selectedGhRepoId: Ref<string | null>;
-  selectedGhRepo: ComputedRef<IGithubCatalogRepository | null>;
-
-  ghWorkflowBusy: Ref<boolean>;
-  ghWorkflowStatusMessage: Ref<string | null>;
-  ghWorkflowError: Ref<string | null>;
-  ghWorkflowReconnectSuggested: ComputedRef<boolean>;
-  /** Shown when workspace has no GitHub App installation (non-members do not see the section). */
-  showGithubSection: ComputedRef<boolean>;
-  canManageGithubSetup: ComputedRef<boolean>;
-  githubWorkspaceEnabled: ComputedRef<boolean>;
-  githubWorkflowFormVisible: ComputedRef<boolean>;
-  githubNeedsRepoSelection: ComputedRef<boolean>;
-  githubAdminNeedsWorkspaceInstall: ComputedRef<boolean>;
-  githubMemberNeedsAccountLink: ComputedRef<boolean>;
-
-  githubInstallationMissingOnGithub: ComputedRef<boolean>;
-  githubIntegrationStatusError: Ref<string | null>;
-  selectGithubRepoDialogOpen: Ref<boolean>;
-  githubBranchPickerOpen: Ref<boolean>;
-  githubBranchSearch: Ref<string>;
-  githubRepoBranchesLoading: Ref<boolean>;
-  githubRepoBranchesError: Ref<string | null>;
-  githubRepoBranchesHasMore: Ref<boolean>;
-  filteredGithubRepoBranches: ComputedRef<{ name: string }[]>;
-  githubRepoBranchesLoadingMore: Ref<boolean>;
-  createBranchPickerDisabled: ComputedRef<boolean>;
-  createBranchPickerLabel: ComputedRef<string>;
-  githubBranchTriggerLabel: ComputedRef<string | null>;
-  /** Persisted active branch from issue fetch (verified against GitHub on load). */
-  activeGithubBranch: ComputedRef<IIssueGithubBranch | null | undefined>;
-  headBranchLeaf: Ref<string>;
-  openPrAsDraft: Ref<boolean>;
-
-  prStatusFilter: Ref<GithubPrStatusFilter>;
-  githubPullRequestGroups: ComputedRef<{ fullName: string; pullRequests: IGithubIssuePullRequestLink[] }[]>;
-
-  openSelectGithubRepoDialog: () => void;
-  onGithubBranchPickerOpenChange: (open: boolean) => Promise<void>;
-  loadMoreGithubRepoBranches: () => Promise<void>;
-  createGithubBranchFromPicker: () => Promise<void>;
-  onWorkspaceGithubRepoSelected: (repo: IGithubCatalogRepository) => Promise<void>;
-  openGithubPull: (opts?: { owner: string; repoName: string; branchName: string }) => Promise<void>;
-};
-
-export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseIssueGithubSidebarReturn {
+export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams) {
   const route = useRoute();
   const router = useRouter();
   const githubIntegrationApi = useDependency(GithubIntegrationApi);
+  const catalog = useGithubRepositoryCatalog({ pageSize: 100 });
 
-  const githubPullRequests = ref<IGithubIssuePullRequestLink[]>([]);
-  const githubPullRequestsLoading = ref(false);
-  const githubPullRequestsError = ref<string | null>(null);
+  const pr = reactive({
+    data: null as IGithubIssuePullRequestLink[] | null,
+    loading: false,
+    error: null as string | null,
+  });
 
-  const workspaceGhRepos = ref<IGithubCatalogRepository[]>([]);
-  const workspaceGhReposLoading = ref(false);
-  const workspaceGhReposError = ref<string | null>(null);
+  const linkedBranches = reactive({
+    data: null as IGithubIssueBranchLink[] | null,
+    loading: false,
+    error: null as string | null,
+  });
+
+  const integrationStatus = reactive({
+    data: null as IGithubIntegrationStatus | null,
+    loading: false,
+    error: null as string | null,
+  });
+
+  const workflowMutation = reactive({
+    busy: false,
+    error: null as string | null,
+    statusMessage: null as string | null,
+    createBranchDialogError: null as string | null,
+  });
+
   const selectedGhRepoId = ref<string | null>(null);
-
-  const ghWorkflowBusy = ref(false);
-  const ghWorkflowStatusMessage = ref<string | null>(null);
-  const ghWorkflowError = ref<string | null>(null);
   const ghWorkflowGithubErrorCode = ref<string | undefined>(undefined);
   const headBranchLeaf = ref("");
   const openPrAsDraft = ref(false);
-  const githubBranchPickerOpen = ref(false);
-  const githubBranchSearch = ref("");
-  const githubRepoBranches = ref<{ name: string }[]>([]);
-  const githubRepoBranchesLoading = ref(false);
-  const githubRepoBranchesLoadingMore = ref(false);
-  const githubRepoBranchesError = ref<string | null>(null);
-  const githubRepoBranchesHasMore = ref(false);
-  const githubRepoBranchesPage = ref(1);
-  const GITHUB_REPO_BRANCHES_PAGE_SIZE = 30;
   const prStatusFilter = ref<GithubPrStatusFilter>("all");
-
-  const githubIntegrationStatus = ref<IGithubIntegrationStatus | null>(null);
-  const githubIntegrationStatusLoading = ref(false);
-  const githubIntegrationStatusError = ref<string | null>(null);
-  /** Suppress repeated auto-resume for the same pending + integration/repo snapshot (not loading flags). */
+  const selectedLinkedBranchId = ref<number | null>(null);
+  const createBranchDialogOpen = ref(false);
   const lastAutoResumeAttemptKey = ref<string | null>(null);
+  const selectGithubRepoDialogOpen = ref(false);
 
-  /** Prefer issue entity ids so repo/status match the issue's project (not only the route). */
   const effectiveWorkspaceId = computed(() => {
     const fromIssue = params.issue.value?.workspaceId;
     if (fromIssue != null) return String(fromIssue);
@@ -165,14 +108,12 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
 
   const { canManageGithubSetup } = useGithubWorkspaceAccess(effectiveWorkspaceId);
 
-  const selectGithubRepoDialogOpen = ref(false);
+  const githubWorkspaceEnabled = computed(() => Boolean(integrationStatus.data?.installation));
 
-  const activeGithubBranch = computed(() => params.issue.value?.githubBranch ?? null);
-
-  const githubWorkspaceEnabled = computed(() => Boolean(githubIntegrationStatus.value?.installation));
+  const githubMemberAccountLinked = computed(() => integrationStatus.data?.user != null);
 
   const showGithubSection = computed(() => {
-    if (githubIntegrationStatusLoading.value) return true;
+    if (integrationStatus.loading) return true;
     return githubWorkspaceEnabled.value;
   });
 
@@ -187,8 +128,8 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
   const githubAdminNeedsWorkspaceInstall = computed(
     () =>
       canManageGithubSetup.value &&
-      !githubIntegrationStatusLoading.value &&
-      githubIntegrationStatus.value != null &&
+      !integrationStatus.loading &&
+      integrationStatus.data != null &&
       !githubWorkspaceEnabled.value,
   );
 
@@ -196,13 +137,129 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     () => githubWorkspaceEnabled.value && !githubMemberAccountLinked.value,
   );
 
+  const githubInstallationMissingOnGithub = computed(
+    () => integrationStatus.data?.installationRemoteVerification === "missing_on_github",
+  );
+
+  const workflowReconnectSuggested = computed(() =>
+    Boolean(
+      ghWorkflowGithubErrorCode.value &&
+        GITHUB_WORKFLOW_MEMBER_RECONNECT_CODES.has(ghWorkflowGithubErrorCode.value),
+    ),
+  );
+
+  const prGroups = computed(() => groupGithubPullRequests(pr.data ?? [], prStatusFilter.value));
+
+  const prView = computed(() => ({
+    ...toAsyncDataView(pr),
+    groups: prGroups.value,
+  }));
+
+  const access = computed(() => ({
+    adminNeedsWorkspaceInstall: githubAdminNeedsWorkspaceInstall.value,
+    memberNeedsAccountLink: githubMemberNeedsAccountLink.value,
+    settingsRoute: {
+      name: "github-integration-settings" as const,
+      params: { workspaceId: effectiveWorkspaceId.value },
+    },
+  }));
+
+  const selectedLinkedBranch = computed(() => {
+    const items = linkedBranches.data ?? [];
+    const id = selectedLinkedBranchId.value;
+    if (id == null) return items[0] ?? null;
+    return items.find((b) => b.id === id) ?? items[0] ?? null;
+  });
+
+  const workflowMutationView = computed(() => ({
+    busy: workflowMutation.busy,
+    error: workflowMutation.error,
+    statusMessage: workflowMutation.statusMessage,
+    createBranchDialogError: workflowMutation.createBranchDialogError,
+    reconnectSuggested: workflowReconnectSuggested.value,
+    installationMissingOnGithub: githubInstallationMissingOnGithub.value,
+  }));
+
+  const workflowView = computed(() => ({
+    formVisible: githubWorkflowFormVisible.value,
+    linkedBranches: toAsyncDataView(linkedBranches),
+    mutation: workflowMutationView.value,
+    selectedLinkedBranch: selectedLinkedBranch.value,
+    selectedGhRepoId: selectedGhRepoId.value,
+    headBranchLeaf: headBranchLeaf.value,
+  }));
+
+  const selectedGhRepo = computed(
+    () => catalog.items.find((r) => r.githubRepoId === selectedGhRepoId.value) ?? null,
+  );
+
   function openSelectGithubRepoDialog(): void {
     selectGithubRepoDialogOpen.value = true;
   }
 
+  async function refreshLinkedBranches(issueId: number): Promise<void> {
+    linkedBranches.loading = true;
+    linkedBranches.error = null;
+    try {
+      linkedBranches.data = await githubIntegrationApi.listIssueGithubBranches(issueId);
+      if (selectedLinkedBranchId.value == null && linkedBranches.data.length > 0) {
+        selectedLinkedBranchId.value = linkedBranches.data[0].id;
+      }
+    } catch (e: unknown) {
+      linkedBranches.data = [];
+      linkedBranches.error = githubApiErrorMessage(e, "Could not load linked branches.");
+    } finally {
+      linkedBranches.loading = false;
+    }
+  }
+
+  function applySelectedBranchToWorkflow(): void {
+    const branch = selectedLinkedBranch.value;
+    if (!branch) return;
+    headBranchLeaf.value = branch.branchName;
+    selectedGhRepoId.value = `${branch.owner}/${branch.repoName}`;
+  }
+
+  async function createBranchFromDialog(payload: {
+    repo: { owner: string; name: string; githubRepoId: string };
+    branchName: string;
+  }): Promise<void> {
+    const iss = params.issue.value;
+    if (!iss) return;
+
+    workflowMutation.createBranchDialogError = null;
+    try {
+      await githubIntegrationApi.createIssueGithubBranch(+effectiveWorkspaceId.value, iss.id, {
+        owner: payload.repo.owner,
+        name: payload.repo.name,
+        branchName: payload.branchName,
+      });
+
+      await refreshLinkedBranches(iss.id);
+      const newlyLinked =
+        linkedBranches.data?.find(
+          (b) =>
+            b.owner === payload.repo.owner &&
+            b.repoName === payload.repo.name &&
+            b.branchName === payload.branchName,
+        ) ?? null;
+      if (newlyLinked) {
+        selectedLinkedBranchId.value = newlyLinked.id;
+      }
+      applySelectedBranchToWorkflow();
+      createBranchDialogOpen.value = false;
+      await params.reloadIssueActivityFeed();
+    } catch (e: unknown) {
+      workflowMutation.createBranchDialogError = githubApiErrorMessage(
+        e,
+        "Could not create branch on GitHub",
+      );
+    }
+  }
+
   async function onWorkspaceGithubRepoSelected(repo: IGithubCatalogRepository): Promise<void> {
-    if (!workspaceGhRepos.value.some((r) => r.githubRepoId === repo.githubRepoId)) {
-      workspaceGhRepos.value = [...workspaceGhRepos.value, repo];
+    if (!catalog.items.some((r) => r.githubRepoId === repo.githubRepoId)) {
+      catalog.items.push(repo);
     }
     selectedGhRepoId.value = repo.githubRepoId;
     await tryResumePendingGithubWorkflow();
@@ -212,7 +269,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     const gb = iss.githubBranch;
     if (gb) {
       headBranchLeaf.value = gb.branchName;
-      const match = workspaceGhRepos.value.find((r) => r.owner === gb.owner && r.name === gb.repoName);
+      const match = catalog.items.find((r) => r.owner === gb.owner && r.name === gb.repoName);
       if (match) selectedGhRepoId.value = match.githubRepoId;
       return;
     }
@@ -221,233 +278,41 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     }
   }
 
-  const filteredGithubRepoBranches = computed(() => {
-    const q = githubBranchSearch.value.trim().toLowerCase();
-    if (!q) return githubRepoBranches.value;
-    return githubRepoBranches.value.filter((b) => b.name.toLowerCase().includes(q));
-  });
-
-  const createBranchTargetName = computed(() => {
-    const iss = params.issue.value;
-    const q = githubBranchSearch.value.trim();
-    return q || (iss ? suggestGithubBranchLeaf(iss.issueKey, iss.title ?? "") : "");
-  });
-
-  const createBranchPickerLabel = computed(() => {
-    const name = createBranchTargetName.value || "branch";
-    return `Create branch "${name}"`;
-  });
-
-  const createBranchPickerDisabled = computed(() => {
-    const target = createBranchTargetName.value;
-    if (!target) return false;
-    return githubRepoBranches.value.some((b) => b.name === target);
-  });
-
-  const githubBranchTriggerLabel = computed((): string | null => {
-    const b = activeGithubBranch.value;
-    if (!b?.branchName) return null;
-    if (!b.existsOnGithub) return `${b.branchName} (not on GitHub)`;
-    return b.branchName;
-  });
-
-  async function loadGithubRepoBranches(reset: boolean): Promise<void> {
-    const repo = selectedGhRepo.value;
-    const wid = effectiveWorkspaceId.value;
-    if (!repo || !wid) return;
-
-    if (reset) {
-      githubRepoBranchesPage.value = 1;
-      githubRepoBranches.value = [];
-    }
-
-    if (reset) {
-      githubRepoBranchesLoading.value = true;
-    } else {
-      githubRepoBranchesLoadingMore.value = true;
-    }
-    githubRepoBranchesError.value = null;
+  async function refreshGithubIssuePullRequests(issueNumericId: number): Promise<void> {
+    pr.loading = true;
+    pr.error = null;
     try {
-      const res = await githubIntegrationApi.listRepositoryBranches(+wid, repo.owner, repo.name, {
-        page: githubRepoBranchesPage.value,
-        size: GITHUB_REPO_BRANCHES_PAGE_SIZE,
-      });
-      if (reset) {
-        githubRepoBranches.value = res.branches;
-      } else {
-        githubRepoBranches.value = [...githubRepoBranches.value, ...res.branches];
-      }
-      githubRepoBranchesHasMore.value = res.hasNextPage;
+      pr.data = await githubIntegrationApi.listIssueGithubPullRequests(issueNumericId);
     } catch (e: unknown) {
-      if (reset) githubRepoBranches.value = [];
-      githubRepoBranchesError.value = githubApiErrorMessage(e, "Could not load branches from GitHub");
+      pr.data = [];
+      pr.error = githubApiErrorMessage(e, "Could not load GitHub pull requests");
     } finally {
-      if (reset) {
-        githubRepoBranchesLoading.value = false;
-      } else {
-        githubRepoBranchesLoadingMore.value = false;
-      }
+      pr.loading = false;
     }
   }
 
-  async function onGithubBranchPickerOpenChange(open: boolean): Promise<void> {
-    githubBranchPickerOpen.value = open;
-    if (!open) return;
-    githubBranchSearch.value = "";
-    await loadGithubRepoBranches(true);
-  }
-
-  async function loadMoreGithubRepoBranches(): Promise<void> {
-    if (
-      !githubRepoBranchesHasMore.value ||
-      githubRepoBranchesLoading.value ||
-      githubRepoBranchesLoadingMore.value
-    ) {
-      return;
-    }
-    githubRepoBranchesPage.value += 1;
-    await loadGithubRepoBranches(false);
-  }
-
-  // Legacy single-branch selection (issue.githubBranch) was removed; branch linking is now based on
-  // `integration.issue_github_branches` + GitHub workflow endpoints.
-
-  async function createGithubBranchFromPicker(): Promise<void> {
-    const iss = params.issue.value;
-    if (!iss || !selectedGhRepo.value) return;
-
-    const raw = githubBranchSearch.value.trim();
-    headBranchLeaf.value = raw || suggestGithubBranchLeaf(iss.issueKey, iss.title ?? "");
-    githubBranchPickerOpen.value = false;
-
-    const prereq = await resolveGithubWorkflowPrerequisites();
-    if (prereq.kind !== "ready") {
-      handleGithubWorkflowPrerequisiteFailure(prereq, iss.id, "create_branch");
-      return;
-    }
-    await executeCreateGithubBranch(iss, prereq.repo, { prerequisitesResolved: true });
-  }
-
-  watch(
-    () => params.issue.value?.id,
-    () => {
-      headBranchLeaf.value = "";
-      selectedGhRepoId.value = null;
-    },
-  );
-
-  watch(
-    [() => params.issue.value, () => workspaceGhRepos.value],
-    ([iss]) => {
-      if (!iss) return;
-      applyIssueGithubBranchToForm(iss);
-    },
-    { immediate: true, deep: true },
-  );
-
-  function pendingAutoResumeGateKey(): string {
-    return [
-      githubIntegrationStatus.value?.user?.githubLogin ?? "",
-      String(workspaceGhRepos.value.length),
-      String(route.query.github_oauth_success ?? ""),
-    ].join("|");
-  }
-
-  watch(
-    () => effectiveWorkspaceId.value,
-    async (wid) => {
-      githubIntegrationStatus.value = null;
-      githubIntegrationStatusError.value = null;
-      if (!wid) return;
-      await refreshGithubIntegrationStatus();
-    },
-    { immediate: true },
-  );
-
-  const githubMemberAccountLinked = computed(() => githubIntegrationStatus.value?.user != null);
-
-  const githubInstallationMissingOnGithub = computed(() => {
-    return githubIntegrationStatus.value?.installationRemoteVerification === "missing_on_github";
-  });
-
-  const ghWorkflowReconnectSuggested = computed(() =>
-    Boolean(
-      ghWorkflowGithubErrorCode.value &&
-        GITHUB_WORKFLOW_MEMBER_RECONNECT_CODES.has(ghWorkflowGithubErrorCode.value),
-    ),
-  );
-
-  const githubPullRequestGroups = computed(() => {
-    const filtered = githubPullRequests.value.filter((pr) => matchesGithubPrFilter(pr, prStatusFilter.value));
-    const byRepo = new Map<string, IGithubIssuePullRequestLink[]>();
-    for (const pr of filtered) {
-      const key = pr.fullName;
-      const list = byRepo.get(key);
-      if (list) list.push(pr);
-      else byRepo.set(key, [pr]);
-    }
-    return [...byRepo.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([fullName, pullRequests]) => ({
-        fullName,
-        pullRequests: pullRequests.sort((x, y) => y.prNumber - x.prNumber),
-      }));
-  });
-
-  async function refreshWorkspaceGhRepos(): Promise<void> {
+  async function refreshGithubIntegrationStatus(): Promise<boolean> {
     const wid = effectiveWorkspaceId.value;
-    if (!wid) return;
-    workspaceGhReposLoading.value = true;
-    workspaceGhReposError.value = null;
+    if (!wid) return false;
+    integrationStatus.loading = true;
+    integrationStatus.error = null;
     try {
-      const page = await githubIntegrationApi.listRepositories(+wid, { page: 0, count: 100 });
-      workspaceGhRepos.value = page.content;
+      integrationStatus.data = await githubIntegrationApi.getStatus(+wid);
+      return true;
     } catch (e: unknown) {
-      workspaceGhRepos.value = [];
-      workspaceGhReposError.value = githubApiErrorMessage(e, "Could not load repositories from GitHub");
+      integrationStatus.data = null;
+      integrationStatus.error = githubApiErrorMessage(e, "Could not load GitHub integration status");
+      return false;
     } finally {
-      workspaceGhReposLoading.value = false;
+      integrationStatus.loading = false;
     }
   }
 
-  watch(
-    () => effectiveWorkspaceId.value,
-    async (wid) => {
-      workspaceGhRepos.value = [];
-      workspaceGhReposError.value = null;
-      selectedGhRepoId.value = null;
-      if (!wid) return;
-      if (githubIntegrationStatus.value?.installation) {
-        await refreshWorkspaceGhRepos();
-      }
-    },
-  );
-
-  watch(
-    () => githubIntegrationStatus.value?.installation?.id,
-    async (installationId) => {
-      if (installationId == null) {
-        workspaceGhRepos.value = [];
-        return;
-      }
-      await refreshWorkspaceGhRepos();
-    },
-  );
-
-  const selectedGhRepo = computed(
-    () => workspaceGhRepos.value.find((r) => r.githubRepoId === selectedGhRepoId.value) ?? null,
-  );
-
-  watch(
-    () => selectedGhRepo.value?.githubRepoId,
-    () => {
-      githubRepoBranches.value = [];
-      githubRepoBranchesHasMore.value = false;
-      if (githubBranchPickerOpen.value) {
-        loadGithubRepoBranches(true);
-      }
-    },
-  );
+  async function loadWorkspaceCatalog(): Promise<void> {
+    const wid = effectiveWorkspaceId.value;
+    if (!wid || !integrationStatus.data?.installation) return;
+    await catalog.load(+wid);
+  }
 
   function resolveWorkflowRepo(): IGithubCatalogRepository | null {
     const selected = selectedGhRepo.value;
@@ -456,7 +321,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     const iss = params.issue.value;
     const gb = iss?.githubBranch;
     if (gb?.owner && gb.repoName) {
-      const inCatalog = workspaceGhRepos.value.find((r) => r.owner === gb.owner && r.name === gb.repoName);
+      const inCatalog = catalog.items.find((r) => r.owner === gb.owner && r.name === gb.repoName);
       if (inCatalog) return inCatalog;
       return {
         githubRepoId: `${gb.owner}/${gb.repoName}`,
@@ -469,60 +334,14 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       };
     }
 
-    return workspaceGhRepos.value[0] ?? null;
+    return catalog.items[0] ?? null;
   }
-
-  async function refreshGithubIssuePullRequests(issueNumericId: number): Promise<void> {
-    githubPullRequestsLoading.value = true;
-    githubPullRequestsError.value = null;
-    try {
-      githubPullRequests.value = await githubIntegrationApi.listIssueGithubPullRequests(issueNumericId);
-    } catch (e: unknown) {
-      githubPullRequests.value = [];
-      githubPullRequestsError.value = githubApiErrorMessage(e, "Could not load GitHub pull requests");
-    } finally {
-      githubPullRequestsLoading.value = false;
-    }
-  }
-
-  watch(
-    () => params.issue.value?.id,
-    (id) => {
-      if (id == null) {
-        githubPullRequests.value = [];
-        githubPullRequestsError.value = null;
-        return;
-      }
-      refreshGithubIssuePullRequests(id);
-    },
-    { immediate: true },
-  );
 
   function memberOAuthStartUrl(returnPath: string): string {
     const url = new URL(`${config.API_URL}/integrations/github/user/start`);
     url.searchParams.set("workspaceId", effectiveWorkspaceId.value);
     url.searchParams.set("redirect", returnPath);
     return url.toString();
-  }
-
-  async function refreshGithubIntegrationStatus(): Promise<boolean> {
-    const wid = effectiveWorkspaceId.value;
-    if (!wid) return false;
-    githubIntegrationStatusLoading.value = true;
-    githubIntegrationStatusError.value = null;
-    try {
-      githubIntegrationStatus.value = await githubIntegrationApi.getStatus(+wid);
-      return true;
-    } catch (e: unknown) {
-      githubIntegrationStatus.value = null;
-      githubIntegrationStatusError.value = githubApiErrorMessage(
-        e,
-        "Could not load GitHub integration status",
-      );
-      return false;
-    } finally {
-      githubIntegrationStatusLoading.value = false;
-    }
   }
 
   function redirectToGithubIntegrations(): void {
@@ -534,7 +353,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
 
   function redirectToMemberGithubLink(issueId: number): void {
     const returnPath = issueGithubReturnPath(effectiveWorkspaceId.value, effectiveProjectId.value, issueId);
-    ghWorkflowStatusMessage.value = "Redirecting to link your GitHub account…";
+    workflowMutation.statusMessage = "Redirecting to link your GitHub account…";
     window.location.assign(memberOAuthStartUrl(returnPath));
   }
 
@@ -544,21 +363,26 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     openPrAsDraft.value = pending.openPrAsDraft;
     if (
       pending.selectedRepoGithubId != null &&
-      (workspaceGhRepos.value.some((r) => r.githubRepoId === pending.selectedRepoGithubId) ||
+      (catalog.items.some((r) => r.githubRepoId === pending.selectedRepoGithubId) ||
         pending.selectedRepoGithubId.includes("/"))
     ) {
       selectedGhRepoId.value = pending.selectedRepoGithubId;
     }
   }
 
+  function pendingAutoResumeGateKey(): string {
+    return [
+      integrationStatus.data?.user?.githubLogin ?? "",
+      String(catalog.items.length),
+      String(route.query.github_oauth_success ?? ""),
+    ].join("|");
+  }
+
   type ResolveGithubWorkflowPrerequisitesOptions = {
-    /** When false, skip reloading the workspace catalogue (auto-resume). */
     refreshWorkspaceRepos?: boolean;
-    /** When provided, use this repo instead of requiring a selected repo. */
     repoOverride?: { owner: string; repoName: string };
   };
 
-  /** Fresh status + repo list before any branch/PR API call or resume. */
   async function resolveGithubWorkflowPrerequisites(
     options?: ResolveGithubWorkflowPrerequisitesOptions,
   ): Promise<GithubWorkflowPrerequisite> {
@@ -568,15 +392,15 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     }
 
     const refreshWorkspaceRepos = options?.refreshWorkspaceRepos ?? true;
-    if (refreshWorkspaceRepos && (workspaceGhReposLoading.value || !workspaceGhRepos.value.length)) {
-      await refreshWorkspaceGhRepos();
+    if (refreshWorkspaceRepos && (catalog.loading || catalog.items.length === 0)) {
+      await loadWorkspaceCatalog();
     }
 
     if (githubInstallationMissingOnGithub.value) {
       return { kind: "installation_gone" };
     }
 
-    const s = githubIntegrationStatus.value;
+    const s = integrationStatus.data;
     if (!s?.installation) {
       return { kind: "workspace_install" };
     }
@@ -589,7 +413,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     if (override?.owner?.trim() && override?.repoName?.trim()) {
       const owner = override.owner.trim();
       const name = override.repoName.trim();
-      const inCatalog = workspaceGhRepos.value.find((r) => r.owner === owner && r.name === name);
+      const inCatalog = catalog.items.find((r) => r.owner === owner && r.name === name);
       const repo: IGithubCatalogRepository =
         inCatalog ??
         ({
@@ -615,22 +439,22 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     action: GithubIssueWorkflowPendingAction,
   ): void {
     if (prereq.kind === "status_unavailable") {
-      ghWorkflowError.value =
-        githubIntegrationStatusError.value ?? "Could not load GitHub integration status. Try again.";
+      workflowMutation.error =
+        integrationStatus.error ?? "Could not load GitHub integration status. Try again.";
       return;
     }
     if (prereq.kind === "installation_gone") {
-      ghWorkflowError.value =
+      workflowMutation.error =
         "GitHub no longer has this workspace installation. Ask an admin to reinstall the app.";
       return;
     }
     if (prereq.kind === "workspace_install") {
       if (canManageGithubSetup.value) {
-        ghWorkflowError.value =
+        workflowMutation.error =
           "Install the GitHub App for this workspace before creating branches from issues.";
         redirectToGithubIntegrations();
       } else {
-        ghWorkflowError.value =
+        workflowMutation.error =
           "GitHub is not enabled for this workspace yet. Ask a workspace admin to install the GitHub App under Integrations.";
       }
       return;
@@ -643,7 +467,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       openSelectGithubRepoDialog();
       return;
     }
-    ghWorkflowError.value =
+    workflowMutation.error =
       action === "create_branch"
         ? "Could not create branch — check GitHub setup and linked repo."
         : "Could not open pull request — check GitHub setup and linked repo.";
@@ -669,12 +493,11 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       redirectToMemberGithubLink(issueId);
       return;
     }
-    ghWorkflowError.value = parsed.message;
+    workflowMutation.error = parsed.message;
     ghWorkflowGithubErrorCode.value = parsed.githubErrorCode;
   }
 
   type ExecuteGithubWorkflowOptions = {
-    /** Caller already ran {@link resolveGithubWorkflowPrerequisites} (begin/resume). */
     prerequisitesResolved?: boolean;
   };
 
@@ -694,9 +517,9 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     }
 
     const ws = effectiveWorkspaceId.value;
-    ghWorkflowBusy.value = true;
-    ghWorkflowStatusMessage.value = "Creating branch on GitHub…";
-    ghWorkflowError.value = null;
+    workflowMutation.busy = true;
+    workflowMutation.statusMessage = "Creating branch on GitHub…";
+    workflowMutation.error = null;
     ghWorkflowGithubErrorCode.value = undefined;
     try {
       const branchName = headBranchLeaf.value.trim();
@@ -709,6 +532,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       clearGithubIssueWorkflowPending();
       await params.reloadIssue();
       await refreshGithubIssuePullRequests(iss.id);
+      await refreshLinkedBranches(iss.id);
       await params.reloadIssueActivityFeed();
     } catch (e: unknown) {
       const parsed = githubApiParseError(e, "Could not create branch");
@@ -716,13 +540,13 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       if (existingBranch?.[1]) {
         headBranchLeaf.value = existingBranch[1];
         clearGithubIssueWorkflowPending();
-        ghWorkflowError.value = parsed.message;
+        workflowMutation.error = parsed.message;
         return;
       }
       handleGithubWorkflowApiError(e, "Could not create branch", iss.id, "create_branch");
     } finally {
-      ghWorkflowBusy.value = false;
-      ghWorkflowStatusMessage.value = null;
+      workflowMutation.busy = false;
+      workflowMutation.statusMessage = null;
     }
   }
 
@@ -743,14 +567,14 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
 
     const head = headBranchLeaf.value.trim();
     if (!head) {
-      ghWorkflowError.value = "Set a branch name (create a branch first, or paste the head branch).";
+      workflowMutation.error = "Set a branch name (create a branch first, or paste the head branch).";
       return;
     }
 
     const ws = effectiveWorkspaceId.value;
-    ghWorkflowBusy.value = true;
-    ghWorkflowStatusMessage.value = "Opening pull request on GitHub…";
-    ghWorkflowError.value = null;
+    workflowMutation.busy = true;
+    workflowMutation.statusMessage = "Opening pull request on GitHub…";
+    workflowMutation.error = null;
     ghWorkflowGithubErrorCode.value = undefined;
     try {
       await githubIntegrationApi.createIssueGithubPull(+ws, iss.id, {
@@ -766,19 +590,14 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     } catch (e: unknown) {
       handleGithubWorkflowApiError(e, "Could not open pull request", iss.id, "open_pull");
     } finally {
-      ghWorkflowBusy.value = false;
-      ghWorkflowStatusMessage.value = null;
+      workflowMutation.busy = false;
+      workflowMutation.statusMessage = null;
     }
   }
 
   async function tryResumePendingGithubWorkflow(): Promise<void> {
     const iss = params.issue.value;
-    if (
-      !iss ||
-      ghWorkflowBusy.value ||
-      workspaceGhReposLoading.value ||
-      githubIntegrationStatusLoading.value
-    ) {
+    if (!iss || workflowMutation.busy || catalog.loading || integrationStatus.loading) {
       return;
     }
 
@@ -800,7 +619,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     }
 
     const prereq = await resolveGithubWorkflowPrerequisites({
-      refreshWorkspaceRepos: workspaceGhRepos.value.length === 0,
+      refreshWorkspaceRepos: catalog.items.length === 0,
     });
     if (prereq.kind !== "ready") {
       lastAutoResumeAttemptKey.value = attemptKey;
@@ -817,18 +636,6 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     }
   }
 
-  watch(
-    () => ({
-      issueId: params.issue.value?.id,
-      dataReady: !workspaceGhReposLoading.value && !githubIntegrationStatusLoading.value,
-      resumeGate: pendingAutoResumeGateKey(),
-    }),
-    ({ issueId, dataReady }) => {
-      if (issueId == null || !dataReady) return;
-      tryResumePendingGithubWorkflow();
-    },
-  );
-
   async function beginGithubWorkflow(
     action: GithubIssueWorkflowPendingAction,
     opts?: { repoOverride?: { owner: string; repoName: string } },
@@ -836,7 +643,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     const iss = params.issue.value;
     const wid = effectiveWorkspaceId.value;
     const pj = effectiveProjectId.value;
-    if (!iss || !wid || !pj || ghWorkflowBusy.value || githubInstallationMissingOnGithub.value) {
+    if (!iss || !wid || !pj || workflowMutation.busy || githubInstallationMissingOnGithub.value) {
       return;
     }
 
@@ -850,9 +657,9 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
       selectedRepoGithubId: selectedGhRepoId.value,
     });
 
-    ghWorkflowBusy.value = true;
-    ghWorkflowStatusMessage.value = "Checking GitHub setup…";
-    ghWorkflowError.value = null;
+    workflowMutation.busy = true;
+    workflowMutation.statusMessage = "Checking GitHub setup…";
+    workflowMutation.error = null;
     ghWorkflowGithubErrorCode.value = undefined;
 
     let prereq: GithubWorkflowPrerequisite;
@@ -861,9 +668,9 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
         repoOverride: opts?.repoOverride,
       });
     } finally {
-      ghWorkflowBusy.value = false;
-      if (ghWorkflowStatusMessage.value === "Checking GitHub setup…") {
-        ghWorkflowStatusMessage.value = null;
+      workflowMutation.busy = false;
+      if (workflowMutation.statusMessage === "Checking GitHub setup…") {
+        workflowMutation.statusMessage = null;
       }
     }
 
@@ -893,7 +700,7 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     }
 
     if (!headBranchLeaf.value.trim()) {
-      ghWorkflowError.value = "Select or create a branch before opening a pull request.";
+      workflowMutation.error = "Select or create a branch before opening a pull request.";
       return;
     }
 
@@ -903,50 +710,92 @@ export function useIssueGithubSidebar(params: UseIssueGithubSidebarParams): UseI
     });
   }
 
-  return {
-    githubPullRequests,
-    githubPullRequestsLoading,
-    githubPullRequestsError,
-    workspaceGhRepos,
-    workspaceGhReposLoading,
-    workspaceGhReposError,
-    selectedGhRepoId,
-    selectedGhRepo,
-    ghWorkflowBusy,
-    ghWorkflowStatusMessage,
-    ghWorkflowError,
-    ghWorkflowReconnectSuggested,
+  watch(
+    () => params.issue.value?.id,
+    (id) => {
+      headBranchLeaf.value = "";
+      selectedGhRepoId.value = null;
+      selectedLinkedBranchId.value = null;
+      workflowMutation.createBranchDialogError = null;
+      if (id == null) {
+        pr.data = [];
+        pr.error = null;
+        linkedBranches.data = [];
+        linkedBranches.error = null;
+        return;
+      }
+      refreshGithubIssuePullRequests(id);
+      refreshLinkedBranches(id).then(() => applySelectedBranchToWorkflow());
+    },
+    { immediate: true },
+  );
+
+  watch(
+    [() => params.issue.value, () => catalog.items],
+    ([iss]) => {
+      if (!iss) return;
+      applyIssueGithubBranchToForm(iss);
+    },
+    { immediate: true, deep: true },
+  );
+
+  watch(
+    () => selectedLinkedBranch.value?.id,
+    () => applySelectedBranchToWorkflow(),
+  );
+
+  watch(
+    () => effectiveWorkspaceId.value,
+    async (wid) => {
+      integrationStatus.data = null;
+      integrationStatus.error = null;
+      catalog.reset();
+      selectedGhRepoId.value = null;
+      if (!wid) return;
+      await refreshGithubIntegrationStatus();
+    },
+    { immediate: true },
+  );
+
+  watch(
+    () => integrationStatus.data?.installation?.id,
+    async (installationId) => {
+      if (installationId == null) {
+        catalog.reset();
+        return;
+      }
+      await loadWorkspaceCatalog();
+    },
+  );
+
+  watch(
+    () => ({
+      issueId: params.issue.value?.id,
+      dataReady: !catalog.loading && !integrationStatus.loading,
+      resumeGate: pendingAutoResumeGateKey(),
+    }),
+    ({ issueId, dataReady }) => {
+      if (issueId == null || !dataReady) return;
+      tryResumePendingGithubWorkflow();
+    },
+  );
+
+  return toReactive({
+    prView,
+    access,
+    workflowView,
     showGithubSection,
-    canManageGithubSetup,
-    githubWorkspaceEnabled,
-    githubWorkflowFormVisible,
-    githubNeedsRepoSelection,
-    githubAdminNeedsWorkspaceInstall,
-    githubMemberNeedsAccountLink,
-    githubInstallationMissingOnGithub,
-    githubIntegrationStatusError,
-    selectGithubRepoDialogOpen,
-    githubBranchPickerOpen,
-    githubBranchSearch,
-    githubRepoBranchesLoading,
-    githubRepoBranchesError,
-    githubRepoBranchesHasMore,
-    filteredGithubRepoBranches,
-    githubRepoBranchesLoadingMore,
-    createBranchPickerDisabled,
-    createBranchPickerLabel,
-    githubBranchTriggerLabel,
-    activeGithubBranch,
-    headBranchLeaf,
-    openPrAsDraft,
     prStatusFilter,
-    githubPullRequestGroups,
-    openSelectGithubRepoDialog,
-    onGithubBranchPickerOpenChange,
-    loadMoreGithubRepoBranches,
-    // selectGithubBranch removed (legacy).
-    createGithubBranchFromPicker,
-    onWorkspaceGithubRepoSelected,
-    openGithubPull,
-  };
+    selectedLinkedBranchId,
+    createBranchDialogOpen,
+    openPrAsDraft,
+    headBranchLeaf,
+    selectedGhRepoId,
+    openGithubPull: markRaw(openGithubPull),
+    createBranchFromDialog: markRaw(createBranchFromDialog),
+    onWorkspaceGithubRepoSelected: markRaw(onWorkspaceGithubRepoSelected),
+    openSelectGithubRepoDialog: markRaw(openSelectGithubRepoDialog),
+    selectGithubRepoDialogOpen,
+    githubNeedsRepoSelection,
+  });
 }

@@ -83,18 +83,6 @@ export type IGithubIssueBranchLink = {
   lastPushedAt: string;
 };
 
-/** GET `.../repos/:owner/:repoName/branches` */
-export type IGithubRepositoryBranchListItem = {
-  name: string;
-};
-
-export type IGithubRepositoryBranchesPage = {
-  page: number;
-  size: number;
-  hasNextPage: boolean;
-  branches: IGithubRepositoryBranchListItem[];
-};
-
 /** POST `/integrations/github/workspaces/:workspaceId/issues/:issueId/branches` */
 export type IGithubCreateIssueBranchResponse = {
   branchName: string;
