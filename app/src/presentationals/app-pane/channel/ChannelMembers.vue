@@ -1,38 +1,22 @@
 <script lang="ts" setup>
 import { UserAvatar } from "@/presentationals/user";
-import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
 import { Button, Menu, MenuContent, MenuGroup, MenuItem, MenuTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { IUser as IUser } from "@epicstory/contracts";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { Trash2Icon } from "lucide-vue-next";
-import { ref, watch } from "vue";
 
-const props = defineProps<{
+defineProps<{
   members: (IUser & { role?: string; online?: boolean })[];
 }>();
 
 const emit = defineEmits<{
-  (e: "add", userId: number): void;
   (e: "remove", userId: number): void;
 }>();
 
 function removeMember(user: IUser) {
   emit("remove", user.id);
 }
-
-function addMember(user: IUser) {
-  emit("add", user.id);
-}
-
-const memberUsers = ref<IUser[]>([]);
-watch(
-  () => props.members,
-  (m) => {
-    memberUsers.value = m ? [...m] : [];
-  },
-  { immediate: true, deep: true },
-);
 </script>
 
 <template>
@@ -44,11 +28,7 @@ watch(
         <div class="text-secondary-foreground/70 text-sm ml-xl">{{ members.length }}</div>
       </h1>
 
-      <WorkspaceMemberDropdown v-model:users="memberUsers" @add="addMember" @remove="removeMember">
-        <Button variant="ghost" size="icon">
-          <Icon name="hi-plus" class="text-secondary-foreground w-4 h-4" />
-        </Button>
-      </WorkspaceMemberDropdown>
+      <slot name="add-member" />
     </div>
 
     <div class="flex:col-md">

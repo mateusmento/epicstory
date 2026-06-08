@@ -6,7 +6,7 @@ import type { Ref } from "vue";
 import { computed, ref, shallowRef, watch } from "vue";
 import type { ReadonlyRefOrGetter } from "@/utils";
 import { toValue } from "@/utils";
-import type { MessageComposerAttachmentHandlers } from "@/containers/messages/message-composer-attachment-handlers";
+import type { MessageComposerAttachmentHandlers } from "@/presentationals/messages/message-composer.types";
 import type { ResolvedSchedule } from "../schedule-builders";
 
 type EditingMessage = {

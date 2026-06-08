@@ -4,6 +4,7 @@ import { useMeeting, useMeetingLayout, useMeetingMediaDevicesStore } from "@/dom
 import { storeToRefs } from "pinia";
 import { computed, onMounted } from "vue";
 import { MeetingControls, MeetingGrid, MeetingSpeakerView } from "@/presentationals/meeting";
+import MeetingDeviceMenu from "./MeetingDeviceMenu.vue";
 
 const {
   isCameraOn,
@@ -119,7 +120,16 @@ onMounted(() => {
         @apply-input-devices="onMeetingInputDevicesChange"
         @leave-meeting="leaveMeeting"
         @end-meeting="endMeeting"
-      />
+      >
+        <template #device-menu>
+          <MeetingDeviceMenu
+            trigger-variant="control-circle"
+            content-side="top"
+            content-align="center"
+            @input-devices-change="onMeetingInputDevicesChange"
+          />
+        </template>
+      </MeetingControls>
     </div>
   </section>
 </template>

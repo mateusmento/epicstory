@@ -1,16 +1,7 @@
 <script lang="ts" setup>
 import type { IGithubCatalogRepository } from "@epicstory/contracts";
 import { computed, ref, watch } from "vue";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-} from "@/design-system";
+import IssueSelectGithubRepoDialogView from "@/presentationals/issue/IssueSelectGithubRepoDialog.vue";
 import { useDependency } from "@/core/dependency-injection";
 import { GithubIntegrationApi } from "@epicstory/api-client";
 import { githubApiErrorMessage } from "@/domain/github";
@@ -79,7 +70,7 @@ async function loadMoreCatalog(): Promise<void> {
   await loadCatalog(catalog.value.page + 1);
 }
 
-function pickRepo(repo: IGithubCatalogRepository): void {
+function onSelected(repo: IGithubCatalogRepository): void {
   emit("selected", repo);
   emit("update:open", false);
 }
@@ -96,77 +87,17 @@ watch(
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="max-w-lg max-h-[85vh] flex flex-col gap-0">
-      <DialogHeader>
-        <DialogTitle>Select GitHub repository</DialogTitle>
-        <DialogDescription>
-          Choose a repository from this workspace&apos;s GitHub App installation. Branches and pull requests
-          on the issue will use the repo you pick here.
-        </DialogDescription>
-      </DialogHeader>
-
-      <div class="py-3 flex flex-col gap-3 min-h-0 flex-1">
-        <Input
-          v-model="searchQuery"
-          size="sm"
-          placeholder="Search by owner or repository name…"
-          :disabled="catalogLoading"
-        />
-
-        <div v-if="catalogError" class="text-sm text-destructive">
-          {{ catalogError }}
-        </div>
-        <div v-else-if="catalogLoading" class="text-sm text-muted-foreground">Loading repositories…</div>
-        <div v-else-if="filteredRepositories.length === 0" class="text-sm text-muted-foreground">
-          {{
-            searchQuery.trim()
-              ? "No repositories match your search."
-              : "No repositories available on this installation."
-          }}
-        </div>
-        <ul
-          v-else
-          class="flex flex-col gap-1 min-h-0 overflow-y-auto max-h-[min(24rem,50vh)] border rounded-md divide-y m-0 p-0 list-none"
-        >
-          <li
-            v-for="repo in filteredRepositories"
-            :key="repo.githubRepoId"
-            class="flex items-center justify-between gap-2 px-3 py-2 text-sm"
-          >
-            <div class="min-w-0">
-              <div class="font-medium truncate">{{ repo.fullName }}</div>
-              <div class="text-xs text-muted-foreground truncate">
-                default: {{ repo.defaultBranch ?? "—" }}
-              </div>
-            </div>
-            <Button
-              size="sm"
-              :variant="selectedRepoGithubId === repo.githubRepoId ? 'default' : 'outline'"
-              type="button"
-              class="shrink-0"
-              @click="pickRepo(repo)"
-            >
-              {{ selectedRepoGithubId === repo.githubRepoId ? "Selected" : "Select" }}
-            </Button>
-          </li>
-        </ul>
-        <Button
-          v-if="catalog?.hasNextPage && !catalogLoading"
-          variant="ghost"
-          size="sm"
-          type="button"
-          class="self-start"
-          :disabled="catalogLoadingMore"
-          @click="loadMoreCatalog"
-        >
-          {{ catalogLoadingMore ? "Loading…" : "Load more repositories" }}
-        </Button>
-      </div>
-
-      <DialogFooter>
-        <Button variant="outline" type="button" @click="emit('update:open', false)">Cancel</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+  <IssueSelectGithubRepoDialogView
+    :open="open"
+    :selected-repo-github-id="selectedRepoGithubId"
+    :repositories="filteredRepositories"
+    :loading="catalogLoading"
+    :loading-more="catalogLoadingMore"
+    :error="catalogError"
+    :has-next-page="catalog?.hasNextPage ?? false"
+    v-model:search-query="searchQuery"
+    @update:open="emit('update:open', $event)"
+    @selected="onSelected"
+    @load-more="loadMoreCatalog"
+  />
 </template>

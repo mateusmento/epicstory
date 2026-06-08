@@ -48,9 +48,27 @@ Do **not** place a presentational in `containers/` just to satisfy import rules.
 
 Default: **props in, events out**, plus **`v-model`** for controlled UI state.
 
-### View-model slices (avoid giant prop bags)
+### Choose the mechanism
 
-When one UI section needs many related fields, group into cohesive objects:
+| Situation | Prefer |
+| --------- | ------ |
+| Few serializable values or discrete commands on a leaf | Props + events / `v-model` |
+| 8+ related fields for **one UI section** the component renders | View-model slice prop |
+| Wired child only used in one shell; middle layers would just forward | **Scoped slot** at the shell seam |
+| Whole tab/region is a subsystem (list + picker + API) | Slot at organism boundary; container composes inside |
+| Async work the shell invokes inline (scroll, send) | Callback prop on the shell |
+
+**Order of preference:** props/events → view-model slice → slot. Slots trade an explicit prop API for composition — use at **subsystem seams**, not for every child.
+
+### Prop drilling and giant prop bags (smells)
+
+Refactor when:
+
+- A presentational forwards props/events it does not use (forwarding-only middle layer).
+- Adding wiring forces 2+ new props through multiple presentationals.
+- The props list reads like a flat store dump (`searchUsers`, `hasMore`, `isFetchingMore`…).
+
+**View-model slices** shrink the surface when the presentational **does** render that data — group by UI section, not API shape:
 
 ```ts
 type GithubPrView = {
@@ -61,17 +79,41 @@ type GithubPrView = {
 // Presentational: props { pr: GithubPrView } — not 8 flat props
 ```
 
-Container maps from domain composables; presentational API stays small.
+**Slots** when the presentational owns layout but **does not** need to know how a wired child works — lift composition to the container instead of drilling through.
 
 ### Scoped slots (wiring-heavy subtrees)
 
-Use when a region is a whole wired subsystem and drilling props through the tree is worse than composition.
+- Presentational defines the slot at the **lowest shell that owns the surrounding layout**.
+- Container fills the slot with wired children (containers or presentationals + domain).
+- Optional: pass **slot props** for data/callbacks the shell already holds (`Chatbox` `#message` / `#composer`).
 
-- Presentational defines slot + slot props (data and UI callbacks the shell already has).
-- Container fills the slot with wired children.
-- Example: `Chatbox` `#message` / `#composer`; `ChannelDetailsPane` `#schedules`.
+Prefer slots over drilling; prefer props/events over slots for small, stable leaf APIs.
 
-Prefer slots over prop drilling; prefer props/events over slots for small, stable leaf APIs.
+### Canonical example: `ChannelDetailsPane`
+
+Reference pair: `@/presentationals/app-pane/channel/ChannelDetailsPane` + `@/containers/app-pane/channel/ChannelDetailsPane`.
+
+**Anti-pattern (drilling):** container passes `members`, `memberSearchUsers`, fetch flags, and search handlers → presentational pane → `ChannelMembers` → `WorkspaceMemberDropdown`. Middle layers become forwarding pipes.
+
+**Pattern (nested slots):** presentational pane keeps a small API (`channelFiles`, `meId`, `@remove-file`). Container composes wired regions at each seam:
+
+```
+containers/ChannelDetailsPane
+  └─ presentationals/ChannelDetailsPane
+       ├─ #members → presentationals/ChannelMembers
+       │              └─ #add-member → containers/WorkspaceMemberDropdown
+       └─ #schedules → containers/ChannelSchedulesTab
+```
+
+| Slot | Presentational owns | Container fills |
+| ---- | ------------------- | --------------- |
+| `#members` | Members tab layout | `ChannelMembers` + member list/remove |
+| `#add-member` (on `ChannelMembers`) | Header row + list markup | `WorkspaceMemberDropdown` (search API, `excludeUserIds`, `@add`) |
+| `#schedules` | Schedules tab shell | `ChannelSchedulesTab` |
+
+Presentationals at each level stay dumb: `ChannelMembers` only needs `members` + `@remove`; it does not import dropdown search props. Reuse this **nested slot** pattern when a molecule has one wired control embedded in an otherwise pure block.
+
+Other slot precedents: `Chatbox` `#message` / `#composer`; `MeetingControls` `#device-menu`; `IssueGithubSidebar` `#create-branch-dialog`.
 
 ### Callback props
 
@@ -79,7 +121,7 @@ Async work invoked inline by a UI shell (scroll preservation, send message) may 
 
 ### Do not dual-split prematurely
 
-Keep container-only until a natural UI subsection appears. Split when a block is reused, has a distinct contract, or a presentational imports a container (fix immediately).
+Keep container-only until a natural UI subsection appears. Split when a block is reused, has a distinct contract, or a presentational imports a container (fix immediately — usually slot or presentational sibling + wire in container).
 
 ## Import boundaries
 

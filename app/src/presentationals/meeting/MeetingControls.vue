@@ -8,8 +8,6 @@ import {
   IconMicrophoneOff,
   IconMicrophoneOn,
 } from "@/design-system/icons/meeting";
-import MeetingDeviceMenu from "@/containers/meeting/MeetingDeviceMenu.vue";
-
 withDefaults(
   defineProps<{
     isCameraOn: boolean;
@@ -56,13 +54,7 @@ const controlBtnClass =
     >
       <Monitor class="h-5 w-5" />
     </button>
-    <MeetingDeviceMenu
-      v-if="showDeviceMenu"
-      trigger-variant="control-circle"
-      content-side="top"
-      content-align="center"
-      @input-devices-change="emit('apply-input-devices')"
-    />
+    <slot v-if="showDeviceMenu" name="device-menu" />
     <button type="button" :class="controlBtnClass" @click="emit('leave-meeting')">
       <!-- <IconRefuseCall /> -->
       <ExitIcon class="w-5 h-5" />

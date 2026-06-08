@@ -1,12 +1,16 @@
 <script lang="ts" setup>
 import { useConfirmDialog } from "@/presentationals/confirm-dialog";
 import ChannelDetailsPaneView from "@/presentationals/app-pane/channel/ChannelDetailsPane.vue";
+import ChannelMembers from "@/presentationals/app-pane/channel/ChannelMembers.vue";
+import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
+import { Button } from "@/design-system";
+import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 import { useChannel } from "@/domain/channels";
 import { useDependency } from "@/core/dependency-injection";
 import type { UploadedAttachment } from "@epicstory/contracts";
 import { ChannelApi } from "@epicstory/api-client";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import ChannelSchedulesTab from "./ChannelSchedulesTab.vue";
 
 const { user } = useAuth();
@@ -16,6 +20,8 @@ const emit = defineEmits<{
 }>();
 
 const { members, addMember, removeMember, channel } = useChannel();
+
+const memberIds = computed(() => members.value.map((m) => m.id));
 
 const channelApi = useDependency(ChannelApi);
 const confirmDialog = useConfirmDialog();
@@ -78,16 +84,24 @@ async function removeChannelFile(attachmentId: number) {
   <ChannelDetailsPaneView
     :channel-id="channel?.id"
     :me-id="user?.id"
-    :members
     :channel-files="channelFiles"
     :channel-files-loading="channelFilesLoading"
     :channel-files-error="channelFilesError"
     :removing-channel-file-id="removingChannelFileId"
-    @add-member="addMember"
-    @remove-member="removeMember"
     @remove-file="removeChannelFile"
     @close="emit('close')"
   >
+    <template #members>
+      <ChannelMembers :members @remove="removeMember">
+        <template #add-member>
+          <WorkspaceMemberDropdown :exclude-user-ids="memberIds" @add="(user) => addMember(user.id)">
+            <Button variant="ghost" size="icon">
+              <Icon name="hi-plus" class="text-secondary-foreground w-4 h-4" />
+            </Button>
+          </WorkspaceMemberDropdown>
+        </template>
+      </ChannelMembers>
+    </template>
     <template #schedules>
       <ChannelSchedulesTab :channel-id="channel?.id" :members="members" />
     </template>

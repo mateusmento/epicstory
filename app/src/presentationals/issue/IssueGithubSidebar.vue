@@ -3,7 +3,6 @@ import type { IIssue, IGithubIssueBranchLink } from "@epicstory/contracts";
 import type { RouteLocationRaw } from "vue-router";
 import { RouterLink } from "vue-router";
 import { Button } from "@/design-system";
-import IssueCreateGithubBranchDialog from "./IssueCreateGithubBranchDialog.vue";
 
 type PrStatusFilter = "all" | "open" | "merged" | "closed";
 
@@ -230,14 +229,6 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <IssueCreateGithubBranchDialog
-      v-model:open="createBranchDialogOpen"
-      :workspace-id="workspaceId"
-      :selected-repo-github-id="selectedGhRepoId"
-      :initial-branch-name="headBranchLeaf"
-      :busy="ghWorkflowBusy"
-      :error="createBranchDialogError ?? ghWorkflowError"
-      @create="emit('create-branch', $event)"
-    />
+    <slot name="create-branch-dialog" />
   </div>
 </template>
