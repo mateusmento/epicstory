@@ -1,3 +1,5 @@
+export { default as IssueAttachmentTilesList } from "./IssueAttachmentTilesList.vue";
+export { default as IssueAttachmentsStrip } from "./IssueAttachmentsStrip.vue";
 export { default as IssueCreateGithubBranchDialog } from "./IssueCreateGithubBranchDialog.vue";
 export { default as IssueDeleteDialog } from "./IssueDeleteDialog.vue";
 export { default as IssueDueDateMenu } from "./IssueDueDateMenu.vue";

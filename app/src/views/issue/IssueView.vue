@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { IssueDescriptionEditor, IssueGithubSidebarSection, IssueLabelTags } from "@/containers/issue";
-import IssueAttachmentsStrip from "@/containers/issue/IssueAttachmentsStrip.vue";
+import { IssueAttachmentsStrip } from "@/presentationals/issue";
 import IssueActivitySection from "@/containers/views/issue/IssueActivitySection.vue";
 import SubIssuesSection from "@/containers/views/issue/SubIssuesSection.vue";
 import { WorkspaceMemberDropdown } from "@/containers/workspace-members";

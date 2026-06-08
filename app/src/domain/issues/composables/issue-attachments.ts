@@ -3,7 +3,10 @@ import type { IMessageAttachment } from "@epicstory/contracts";
 import { computed, shallowRef, toValue, type MaybeRefOrGetter } from "vue";
 import type { IssueApi } from "@epicstory/api-client";
 import type { IIssueAttachmentListItem } from "@epicstory/contracts";
+import type { IssueAttachmentTileRow } from "@/lib/issues";
 import type { IssueFeedItem } from "../types";
+
+export type { IssueAttachmentTileRow } from "@/lib/issues";
 
 export type IssueAttachmentAnchorKey = `message:${number}` | `reply:${number}` | `issue:${number}`;
 
@@ -18,24 +21,6 @@ export type IssueAttachmentPendingEntry =
   | {
       clientId: string;
       status: "failed";
-      file: File;
-      previewUrl: string;
-      message?: string;
-    };
-
-export type IssueAttachmentTileRow =
-  | { key: string; kind: "persisted"; item: IIssueAttachmentListItem }
-  | {
-      key: string;
-      kind: "uploading";
-      clientId: string;
-      file: File;
-      previewUrl: string;
-    }
-  | {
-      key: string;
-      kind: "failed";
-      clientId: string;
       file: File;
       previewUrl: string;
       message?: string;

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useConfirmDialog } from "@/presentationals/confirm-dialog";
-import IssueAttachmentTilesList from "@/containers/issue/IssueAttachmentTilesList.vue";
-import type { IssueAttachmentTileRow } from "@/domain/issues";
+import IssueAttachmentTilesList from "./IssueAttachmentTilesList.vue";
+import type { IssueAttachmentTileRow } from "@/lib/issues";
 import { computed, ref } from "vue";
 
 function dragHasFiles(dt: DataTransfer | null): boolean {
