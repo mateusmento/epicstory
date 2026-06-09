@@ -4,7 +4,6 @@ import type { OlderPageState } from "@/lib/async";
 import type { ChatTimelineItem } from "@/lib/chat-timeline";
 import { chatTimelineRowCount } from "@/lib/chat-timeline";
 import MessageGroup from "@/presentationals/channel/MessageGroup.vue";
-import type { IChannelActivity } from "@epicstory/contracts";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import { useThrottleFn } from "@vueuse/core";
 import type { VNodeRef } from "vue";
@@ -236,7 +235,7 @@ defineExpose({
           <slot
             v-else-if="activityRow(virtualRow.index)"
             name="activity"
-            :activity="activityRow(virtualRow.index)!.activity as IChannelActivity"
+            :activity="activityRow(virtualRow.index)!.activity"
             :me-id="meId"
           />
         </div>

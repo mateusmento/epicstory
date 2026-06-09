@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type {
+  ChannelActivityPayload,
   ChannelActivityType,
   IChannelActivity,
 } from '@epicstory/contracts';
@@ -270,9 +271,9 @@ export class ChannelActivityService {
       actor: row.actor ? userToIUser(row.actor) : null,
       messageId: row.messageId,
       meetingId: row.meetingId,
-      payload: row.payload,
+      payload: (row.payload as ChannelActivityPayload | null) ?? null,
       ...(row.subjectUser ? { subjectUser: userToIUser(row.subjectUser) } : {}),
       ...(message ? { message } : {}),
-    };
+    } as IChannelActivity;
   }
 }

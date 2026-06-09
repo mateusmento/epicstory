@@ -42,8 +42,8 @@ const summaryLines = computed(() => {
 
   switch (a.type) {
     case "channel_renamed": {
-      const prev = a.payload?.previousName as string | undefined;
-      const next = a.payload?.newName as string | undefined;
+      const prev = a.payload?.previousName;
+      const next = a.payload?.newName;
       if (prev != null && next != null) {
         return [`Renamed channel ${prev} to ${next}`];
       }
