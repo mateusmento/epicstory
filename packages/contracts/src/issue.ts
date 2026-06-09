@@ -2,8 +2,14 @@ import type { JSONContent } from "@tiptap/core";
 import type { IIssueGithubBranch, IIssueGithubBranchStored } from "./github";
 import type { ILabel } from "./label";
 import type { IUser } from "./user";
+import type { Project } from "./workspace";
 
 export type { IIssueGithubBranch, IIssueGithubBranchStored };
+
+export type IIssueProject = Pick<
+  Project,
+  "id" | "name" | "workspaceId" | "issueKeyPrefix"
+>;
 
 export type IIssue = {
   id: number;
@@ -14,6 +20,7 @@ export type IIssue = {
   description: JSONContent;
   workspaceId: number;
   projectId: number;
+  project?: IIssueProject | null;
   createdById: number;
   createdAt: string;
   status: string;

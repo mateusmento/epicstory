@@ -1,9 +1,10 @@
-import type { IMessage, IReply } from "@epicstory/contracts";
-import type { IMessageAttachment } from "@epicstory/contracts";
-import { computed, shallowRef, toValue, type MaybeRefOrGetter } from "vue";
-import type { IssueApi } from "@epicstory/api-client";
-import type { IIssueAttachmentListItem } from "@epicstory/contracts";
+import { useDependency } from "@/core/dependency-injection";
+import type { AsyncDataView } from "@/lib/async";
 import type { IssueAttachmentTileRow } from "@/lib/issues";
+import type { ReadonlyRefOrGetter } from "@/utils";
+import { IssueApi } from "@epicstory/api-client";
+import type { IIssueAttachmentListItem, IMessage, IMessageAttachment, IReply } from "@epicstory/contracts";
+import { computed, reactive, shallowRef, toValue, watch } from "vue";
 import type { IssueFeedItem } from "../types";
 
 export type { IssueAttachmentTileRow } from "@/lib/issues";
@@ -40,7 +41,9 @@ function mergePreferExisting(
   };
 }
 
-export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRefOrGetter<number> }) {
+export function useIssueAttachments({ issueId }: { issueId: ReadonlyRefOrGetter<number> }) {
+  const issueApi = useDependency(IssueApi);
+
   const byId = shallowRef(new Map<number, IIssueAttachmentListItem>());
   const pendingUploads = shallowRef<IssueAttachmentPendingEntry[]>([]);
 
@@ -93,6 +96,41 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
 
   const attachmentsUploading = computed(() => pendingUploads.value.some((p) => p.status === "uploading"));
 
+  const listState = reactive({
+    loading: false,
+    error: null as string | null,
+  });
+
+  const attachments = computed(
+    (): AsyncDataView<IssueAttachmentTileRow[]> => ({
+      data: attachmentTileRows.value,
+      loading: listState.loading,
+      error: listState.error,
+    }),
+  );
+
+  async function loadAttachments(): Promise<void> {
+    const id = toValue(issueId);
+    if (!id) return;
+    listState.loading = true;
+    listState.error = null;
+    try {
+      await refreshAttachments();
+    } catch (e: unknown) {
+      listState.error = e instanceof Error ? e.message : "Could not load attachments";
+    } finally {
+      listState.loading = false;
+    }
+  }
+
+  watch(
+    () => toValue(issueId),
+    (id) => {
+      if (id) loadAttachments();
+    },
+    { immediate: true },
+  );
+
   const byAnchor = computed(() => {
     const map = new Map<IssueAttachmentAnchorKey, IIssueAttachmentListItem[]>();
     for (const a of flatList.value) {
@@ -109,9 +147,9 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
   });
 
   async function refreshAttachments() {
-    const id = toValue(deps.issueId);
+    const id = toValue(issueId);
     if (!id) return;
-    const list = await deps.issueApi.listIssueAttachments(id);
+    const list = await issueApi.listIssueAttachments(id);
     replaceMap((m) => {
       m.clear();
       for (const item of list) {
@@ -157,32 +195,42 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
   }
 
   function ingestFromActivity(payload: IssueAttachmentActivitySyncPayload) {
-    const issueId = toValue(deps.issueId);
-    if (!issueId) return;
+    const id = toValue(issueId);
+    if (!id) return;
     if (payload.feedItems) {
       for (const item of payload.feedItems) {
         if (item.type !== "comment_created") continue;
-        mergeMessageAttachments(item.message, issueId);
+        mergeMessageAttachments(item.message, id);
         for (const r of item.replyPreviews ?? []) {
-          mergeReplyAttachments(r, issueId);
+          mergeReplyAttachments(r, id);
         }
       }
     }
     if (payload.topLevelMessages) {
-      for (const m of payload.topLevelMessages) mergeMessageAttachments(m, issueId);
+      for (const m of payload.topLevelMessages) mergeMessageAttachments(m, id);
     }
     if (payload.replies) {
-      for (const r of payload.replies) mergeReplyAttachments(r, issueId);
+      for (const r of payload.replies) mergeReplyAttachments(r, id);
     }
   }
 
   async function removeAttachment(attachmentId: number) {
-    const id = toValue(deps.issueId);
+    const id = toValue(issueId);
     if (!id) return;
-    await deps.issueApi.deleteIssueAttachment(id, attachmentId);
+    await issueApi.deleteIssueAttachment(id, attachmentId);
     replaceMap((m) => {
       m.delete(attachmentId);
     });
+  }
+
+  async function removePersistedAttachment(attachmentId: number): Promise<void> {
+    listState.error = null;
+    try {
+      await removeAttachment(attachmentId);
+    } catch (e: unknown) {
+      listState.error = e instanceof Error ? e.message : "Could not remove attachment";
+      await loadAttachments();
+    }
   }
 
   function dismissPendingUpload(clientId: string) {
@@ -193,8 +241,10 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
     files: File[],
     options?: { reloadFeed?: () => Promise<void> },
   ): Promise<void> {
-    const issueId = toValue(deps.issueId);
-    if (!issueId || files.length === 0) return;
+    const id = toValue(issueId);
+    if (!id || files.length === 0) return;
+
+    listState.error = null;
 
     const additions: IssueAttachmentPendingEntry[] = files.map((file) => ({
       clientId: crypto.randomUUID(),
@@ -208,11 +258,11 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
     await Promise.all(
       additions.map(async (entry) => {
         try {
-          const dto = await deps.issueApi.uploadAttachment(issueId, entry.file);
+          const dto = await issueApi.uploadAttachment(id, entry.file);
           replaceMap((m) => {
             m.set(dto.id, {
               ...dto,
-              issueId,
+              issueId: id,
               messageId: null,
               messageReplyId: null,
             });
@@ -233,8 +283,8 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
   }
 
   function resolveAttachmentsForEntity(entity: IMessage | IReply): IMessageAttachment[] {
-    const issueId = toValue(deps.issueId);
-    if (!issueId) return entity.attachments ?? [];
+    const id = toValue(issueId);
+    if (!id) return entity.attachments ?? [];
     const key: IssueAttachmentAnchorKey =
       "messageId" in entity && entity.messageId != null ? `reply:${entity.id}` : `message:${entity.id}`;
     const fromStore = byAnchor.value.get(key);
@@ -245,11 +295,14 @@ export function useIssueAttachments(deps: { issueApi: IssueApi; issueId: MaybeRe
   return {
     flatList,
     attachmentTileRows,
+    attachments,
     attachmentsUploading,
     byAnchor,
     refreshAttachments,
+    loadAttachments,
     ingestFromActivity,
     removeAttachment,
+    removePersistedAttachment,
     dismissPendingUpload,
     uploadIssueAttachmentFiles,
     resolveAttachmentsForEntity,
