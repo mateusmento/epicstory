@@ -1,6 +1,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
+import { toMessageSummary } from "@/lib/channel";
 import { ChannelApi } from "@epicstory/api-client";
 import type {
   CreateScheduledMessageBody,
@@ -110,7 +111,7 @@ export function useChannel() {
     if (store.channel && store.channel.id === channelId) {
       insertActivity(activity);
       if (activity.type === "message_sent" && activity.message) {
-        store.channel.lastMessage = activity.message;
+        store.channel.lastMessage = toMessageSummary(activity.message);
       }
     }
   }
@@ -281,7 +282,7 @@ export function useChannel() {
       poll,
     );
     insertActivity(activity);
-    if (store.channel) store.channel.lastMessage = message;
+    if (store.channel) store.channel.lastMessage = toMessageSummary(message);
     return message;
   }
 

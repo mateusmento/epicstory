@@ -14,10 +14,12 @@ import {
   IsOptional,
   Min,
 } from 'class-validator';
-import { ReplyMessage } from 'src/channel/application/features';
+import { ReplyService } from 'src/channel/application/services/reply.service';
+import { dispatchNotificationsForReplySent } from 'src/channel/application/utils/dispatch-reply-notifications';
 import { MessageRepository } from 'src/channel/infrastructure/repositories';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
+import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
@@ -52,6 +54,8 @@ export class ReplyToIssueCommentCommand
     private issueRepo: IssueRepository,
     private workspaceRepo: WorkspaceRepository,
     private messageRepo: MessageRepository,
+    private replyService: ReplyService,
+    private attachmentService: AttachmentService,
     private commandBus: CommandBus,
   ) {}
 
@@ -87,15 +91,36 @@ export class ReplyToIssueCommentCommand
       throw new ForbiddenException('Comment is not part of this issue thread');
     }
 
-    return this.commandBus.execute(
-      new ReplyMessage({
-        messageId: parentMessageId,
-        senderId: issuer.id,
-        content,
-        quotedReplyId: undefined,
-        attachmentIds,
-        matchedIssueId: issue.id,
-      }),
+    const { reply, parentMessage } = await this.replyService.createReply({
+      messageId: parentMessageId,
+      senderId: issuer.id,
+      content,
+    });
+
+    const channel = parentMessage.channel;
+
+    await this.attachmentService.linkStagingToReply({
+      workspaceId: issue.workspaceId,
+      channelId: commentChannelId,
+      uploadedById: issuer.id,
+      messageReplyId: reply.id,
+      attachmentIds,
+      matchedIssueId: issue.id,
+    });
+
+    reply.attachments = await this.attachmentService.listAnchoredForReply(
+      issue.workspaceId,
+      reply.id,
     );
+
+    await dispatchNotificationsForReplySent(
+      this.commandBus,
+      channel,
+      parentMessage,
+      reply,
+      issuer.id,
+    );
+
+    return reply;
   }
 }

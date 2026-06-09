@@ -66,8 +66,8 @@ export type IChannel = {
   workspaceId: number;
   teamId?: number;
   createdAt: Date;
-  directPeer?: IUser /** direct channels */;
-  lastMessage?: IMessage;
+  directPeer?: IUser;
+  lastMessage?: IMessageSummary;
   unreadMessagesCount: number;
   meeting: IMeeting | null;
   peers: IUser[];
@@ -118,6 +118,20 @@ export type IMessage = {
   poll?: MessagePollClient;
 };
 
+export type IMessageSummary = Pick<
+  IMessage,
+  | "id"
+  | "content"
+  | "displayContent"
+  | "quotedMessageId"
+  | "editedAt"
+  | "isScheduled"
+  | "sentAt"
+  | "senderId"
+  | "sender"
+  | "channelId"
+>;
+
 export type IReply = {
   id: number;
   content: JSONContent;
@@ -132,7 +146,6 @@ export type IReply = {
   channelId: number;
   channel?: IChannel;
   messageId: number;
-  message: IMessage;
   repliesCount: number;
   repliers: { user: IUser; repliesCount: number }[];
   reactions: IAggregatedReaction[];

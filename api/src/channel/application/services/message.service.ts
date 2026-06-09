@@ -1,4 +1,4 @@
-import type { IMessage } from '@epicstory/contracts';
+import type { IMessage, IQuotedMessagePreview } from '@epicstory/contracts';
 import {
   enrichMentionLabels,
   extractMentionIds,
@@ -19,7 +19,6 @@ import {
   buildQuotedMessagePreview,
   mapReactions,
 } from 'src/channel/domain/utils';
-import type { QuotedMessagePreview } from 'src/channel/domain/utils/message-quote-display';
 import {
   ChannelRepository,
   MessageReactionRepository,
@@ -37,10 +36,6 @@ import { rethrowQuotedRuleAsBadRequest } from '../utils/rethrow-quoted-rule-as-b
 import { MessagePollService } from './message-poll.service';
 import { MessagePreviewEnrichmentService } from './message-preview-enrichment.service';
 import { ReplyService } from './reply.service';
-
-export type { IMessage } from '@epicstory/contracts';
-export type { IMessage as IMessagePayload } from '@epicstory/contracts';
-export type { QuotedMessagePreview } from 'src/channel/domain/utils/message-quote-display';
 
 @Injectable()
 export class MessageService {
@@ -136,13 +131,13 @@ export class MessageService {
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
 
-    let quotedPreview: QuotedMessagePreview | undefined;
+    let quotedMessage: IQuotedMessagePreview | undefined;
     if (resolvedQuote) {
       const q = await this.messageRepo.findOne({
         where: { id: resolvedQuote },
         relations: { sender: true },
       });
-      quotedPreview = buildQuotedMessagePreview(q, peerUsersMap);
+      quotedMessage = buildQuotedMessagePreview(q, peerUsersMap);
     }
 
     const pollDto =
@@ -158,12 +153,12 @@ export class MessageService {
       ...messageEntityToIMessageCore(message!),
       mentionedUsers,
       displayContent,
-      quotedMessage: quotedPreview,
+      quotedMessage,
       attachments: [],
       repliesCount: 0,
       repliers: [],
       reactions: [],
-      ...(pollDto ? { poll: pollDto } : {}),
+      poll: pollDto,
     } satisfies IMessage;
   }
 

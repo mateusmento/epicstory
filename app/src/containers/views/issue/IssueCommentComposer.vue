@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import type { IUser as IUser } from "@epicstory/contracts";
 import {
   clearChannelDraft,
   composerQuoteRef,
@@ -9,24 +8,31 @@ import {
   useChannelMessageDraft,
   useWorkspaceOnline,
 } from "@/domain/channels";
-import type { IMessage, IMessageAttachment, IReply } from "@epicstory/contracts";
+import AttachmentTilesList from "@/presentationals/messages/AttachmentTilesList.vue";
+import { useMessageComposerAttachments } from "@/presentationals/messages/composables/message-composer-attachments";
+import { useMessageComposerEditingBody } from "@/presentationals/messages/composables/message-composer-editing-body";
+import { useMessageComposerScreenRecording } from "@/presentationals/messages/composables/message-composer-screen-recording";
+import type { MessageComposerAttachmentHandlers } from "@/presentationals/messages/message-composer.types";
+import MessageComposerActions from "@/presentationals/messages/MessageComposerActions.vue";
+import type { ResolvedSchedule } from "@/presentationals/messages/schedule-builders";
+import { RichTextComposer } from "@/presentationals/rich-text";
+import type {
+  IMessage,
+  IReply,
+  IUser,
+  ReplyMessageBody,
+  SendMessageBody,
+  UpdateChannelMessageBody,
+} from "@epicstory/contracts";
 import {
   collectImageAttachmentIdsFromDoc,
   docContainsImageNodes,
   stripImageNodesFromDoc,
   tiptapToPlainText,
 } from "@epicstory/tiptap";
-import type { Editor, JSONContent } from "@tiptap/core";
+import type { Editor } from "@tiptap/core";
 import { Paperclip } from "lucide-vue-next";
 import { computed, ref, shallowRef, watch } from "vue";
-import { RichTextComposer } from "@/presentationals/rich-text";
-import { useMessageComposerAttachments } from "@/presentationals/messages/composables/message-composer-attachments";
-import { useMessageComposerEditingBody } from "@/presentationals/messages/composables/message-composer-editing-body";
-import type { ResolvedSchedule } from "@/presentationals/messages/schedule-builders";
-import { useMessageComposerScreenRecording } from "@/presentationals/messages/composables/message-composer-screen-recording";
-import type { MessageComposerAttachmentHandlers } from "@/presentationals/messages/message-composer.types";
-import AttachmentTilesList from "@/presentationals/messages/AttachmentTilesList.vue";
-import MessageComposerActions from "@/presentationals/messages/MessageComposerActions.vue";
 
 const { isUserOnline } = useWorkspaceOnline();
 
@@ -36,11 +42,7 @@ const props = withDefaults(
     meId?: number;
     channelId: number;
     placeholder?: string;
-    editingMessage?: {
-      id: number;
-      content: JSONContent;
-      attachments?: IMessageAttachment[];
-    } | null;
+    editingMessage?: (IMessage | IReply) | null;
     quotedMessage?: (IMessage | IReply) | null;
     attachmentHandlers: MessageComposerAttachmentHandlers;
     onMentionListReachedBottom?: () => void | Promise<void>;
@@ -56,16 +58,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (
-    e: "send-message",
-    value: {
-      content: JSONContent;
-      quotedMessageId?: number;
-      quotedReplyId?: number;
-      attachmentIds?: number[];
-    },
-  ): void;
-  (e: "submit-edit", value: { messageId: number; content: JSONContent; attachmentIds?: number[] }): void;
+  (e: "send-message", value: ReplyMessageBody | SendMessageBody): void;
+  (e: "submit-edit", value: UpdateChannelMessageBody): void;
   (e: "existing-attachment-removed"): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
@@ -187,7 +181,6 @@ function onSendMessage() {
     const inlineIds = collectImageAttachmentIdsFromDoc(doc);
     const attachmentIds = [...new Set([...stagedIds, ...inlineIds])];
     emit("submit-edit", {
-      messageId: props.editingMessage.id,
       content: doc,
       ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
     });

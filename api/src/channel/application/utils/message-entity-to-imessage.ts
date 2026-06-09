@@ -1,4 +1,5 @@
-import type { IMessage } from '@epicstory/contracts';
+import type { IMessage, IMessageSummary } from '@epicstory/contracts';
+import type { User } from 'src/auth';
 import type { Message } from 'src/channel/domain';
 
 export type IMessageCoreFields = Pick<
@@ -28,5 +29,23 @@ export function messageEntityToIMessageCore(
     senderId: message.senderId,
     sender: message.sender,
     channelId: message.channelId,
+  };
+}
+
+/** Loaded {@link Message} row → {@link IMessageSummary} for channel list previews. */
+export function messageEntityToIMessageSummary(
+  message: Message,
+  options?: {
+    displayContent?: string;
+    sender?: User;
+  },
+): IMessageSummary {
+  const core = messageEntityToIMessageCore(message);
+  return {
+    ...core,
+    sender: options?.sender ?? core.sender,
+    ...(options?.displayContent !== undefined
+      ? { displayContent: options.displayContent }
+      : {}),
   };
 }

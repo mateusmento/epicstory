@@ -1,6 +1,5 @@
 import type { User } from 'src/auth';
-import type { ChannelActivityType } from '@epicstory/contracts';
-import type { IMessagePayload } from '../services/message.service';
+import type { ChannelActivityType, IMessage } from '@epicstory/contracts';
 
 /** Client shape for channel timeline activities (HTTP + WebSocket). */
 export type ChannelActivityUserSummary = {
@@ -21,7 +20,7 @@ export type IChannelActivityClient = {
   /** Subject user for member add/remove when resolvable. */
   subjectUser?: ChannelActivityUserSummary | null;
   /** Present for `message_sent` when loaded for the requesting viewer (HTTP). */
-  message?: IMessagePayload | null;
+  message?: IMessage | null;
 };
 
 export function userToSummary(u: User): ChannelActivityUserSummary {

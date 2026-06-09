@@ -1,10 +1,17 @@
-import { normalizeTiptapDoc } from '@epicstory/tiptap';
-import type { JSONContent } from '@tiptap/core';
+import type { IReply } from '@epicstory/contracts';
+import {
+  enrichMentionLabels,
+  extractMentionIds,
+  normalizeTiptapDoc,
+  tiptapDocToPlainDisplayText,
+} from '@epicstory/tiptap';
 import { Injectable } from '@nestjs/common';
+import type { JSONContent } from '@tiptap/core';
 import { uniq } from 'lodash';
 import { User, UserRepository } from 'src/auth';
 import { Channel, assertQuotedReplyInThread } from 'src/channel/domain';
 import {
+  Message,
   MessageReply,
   MessageReplyReaction,
 } from 'src/channel/domain/entities';
@@ -23,11 +30,12 @@ import { groupBy, mapBy } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { excerptFromTiptapDocWithWorkspaceMembers } from 'src/utils/tiptap-excerpt';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import { MessageNotFound } from '../exceptions';
+import { replyEntityToIReplyCore } from '../utils/reply-entity-to-ireply';
 import { rethrowQuotedRuleAsBadRequest } from '../utils/rethrow-quoted-rule-as-bad-request';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ReplyPreviewEnrichmentService } from './reply-preview-enrichment.service';
 
 export type { QuotedReplyPreview } from 'src/channel/domain/utils';
@@ -124,6 +132,77 @@ export class ReplyService {
     peerUsersMap: Map<number, User>,
   ): QuotedReplyPreview | undefined {
     return buildQuotedReplyPreview(r, peerUsersMap);
+  }
+
+  @Transactional()
+  async createReply(params: {
+    messageId: number;
+    senderId: number;
+    content: JSONContent;
+    quotedReplyId?: number | null;
+  }): Promise<{ reply: IReply; parentMessage: Message }> {
+    const parentMessage = await this.messageRepo.findOne({
+      where: { id: params.messageId },
+      relations: { channel: { peers: true } },
+    });
+    if (!parentMessage) throw new MessageNotFound();
+
+    const normalizedContent = normalizeTiptapDoc(params.content);
+    const resolvedQuote = await this.resolveQuotedReplyId(
+      params.quotedReplyId,
+      params.messageId,
+      parentMessage.channelId,
+    );
+
+    const { id: replyId } = await this.replyRepo.save({
+      content: normalizedContent,
+      channelId: parentMessage.channelId,
+      messageId: params.messageId,
+      senderId: params.senderId,
+      sentAt: new Date(),
+      quotedReplyId: resolvedQuote,
+    });
+
+    const reply = await this.replyRepo.findOne({
+      where: { id: replyId },
+      relations: { sender: true, allReactions: { user: true } },
+    });
+    if (!reply) throw new MessageNotFound();
+
+    const extractedMentionIds = extractMentionIds(normalizedContent);
+    const peerUsersMap = await this.workspaceRepo.findMembersMap(
+      parentMessage.channel.workspaceId,
+      uniq(extractedMentionIds),
+    );
+    const mentionedUsers = extractedMentionIds
+      .filter((id) => id !== params.senderId && peerUsersMap.has(id))
+      .map((id) => peerUsersMap.get(id))
+      .filter((user): user is User => user != null);
+    const displayContent = tiptapDocToPlainDisplayText(
+      enrichMentionLabels(normalizedContent, peerUsersMap),
+    );
+
+    let quotedMessage: QuotedReplyPreview | undefined;
+    if (resolvedQuote) {
+      const quoted = await this.replyRepo.findOne({
+        where: { id: resolvedQuote },
+        relations: { sender: true },
+      });
+      quotedMessage = this.buildQuotedPreviewFromReply(quoted, peerUsersMap);
+    }
+
+    const ireply = {
+      ...replyEntityToIReplyCore(reply),
+      displayContent,
+      mentionedUsers,
+      ...(quotedMessage ? { quotedMessage } : {}),
+      repliesCount: 0,
+      repliers: [],
+      reactions: [],
+      attachments: [],
+    } satisfies IReply;
+
+    return { reply: ireply, parentMessage };
   }
 
   async getReplySidebarForMessage(messageId: number): Promise<{

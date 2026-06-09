@@ -20,16 +20,14 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import type { IChannelActivityClient } from '../dtos/channel-activity-client.dto';
 import { ChannelActivityService } from '../services/channel-activity.service';
-import {
-  MessageService,
-  type IMessagePayload,
-} from '../services/message.service';
+import { MessageService } from '../services/message.service';
+import type { IMessage } from '@epicstory/contracts';
 import { dispatchNotificationsForMessageSent } from '../utils/dispatch-message-notifications';
 import { Transactional } from 'typeorm-transactional';
 import { MessagePollBody } from '../dtos/message-poll.dto';
 
 export type SendMessageResult = {
-  message: IMessagePayload;
+  message: IMessage;
   activity: IChannelActivityClient;
 };
 

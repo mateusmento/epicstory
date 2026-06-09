@@ -16,7 +16,7 @@ import {
 } from '../dtos/channel-activity-client.dto';
 import { ChannelNotFound, IssuerIsNotChannelMember } from '../exceptions';
 import { MessageGateway } from '../gateways/message.gateway';
-import type { IMessagePayload } from './message.service';
+import type { IMessage } from '@epicstory/contracts';
 import { MessageService } from './message.service';
 
 @Injectable()
@@ -255,7 +255,7 @@ export class ChannelActivityService {
   private rowToClient(
     row: ChannelActivity,
     ctx: {
-      messagesMap?: Map<number, IMessagePayload>;
+      messagesMap?: Map<number, IMessage>;
     },
   ): IChannelActivityClient {
     const { messagesMap } = ctx;

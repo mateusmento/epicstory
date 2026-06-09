@@ -102,11 +102,10 @@ const {
   onSyncReplies: (replies) => props.syncIssueAttachments?.({ replies }),
 });
 
-const { editing, editingMessagePayload, startEdit, cancelEdit, submitEdit, clearIfEditingEntity } =
-  useIssueCommentEditing({
-    updateIssueComment,
-    onAfterSave: reloadAfterComment,
-  });
+const { editing, startEdit, cancelEdit, submitEdit, clearIfEditingEntity } = useIssueCommentEditing({
+  updateIssueComment,
+  onAfterSave: reloadAfterComment,
+});
 
 function onComposerIssueAttachmentRemoved() {
   emit("issueAttachmentRemoved");
@@ -239,7 +238,7 @@ defineExpose({
                 :on-mention-list-reached-bottom="onMentionListReachedBottom"
                 :mention-list-has-more="mentionListHasMore"
                 :mention-list-loading-more="mentionListLoadingMore"
-                :editing-message="editingMessagePayload"
+                :editing-message="editing"
                 class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
                 @submit-edit="submitEdit"
                 @cancel-edit="cancelEdit"
@@ -293,7 +292,7 @@ defineExpose({
                   :on-mention-list-reached-bottom="onMentionListReachedBottom"
                   :mention-list-has-more="mentionListHasMore"
                   :mention-list-loading-more="mentionListLoadingMore"
-                  :editing-message="editingMessagePayload"
+                  :editing-message="editing"
                   class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
                   @submit-edit="submitEdit"
                   @cancel-edit="cancelEdit"
@@ -386,7 +385,7 @@ defineExpose({
             :on-mention-list-reached-bottom="onMentionListReachedBottom"
             :mention-list-has-more="mentionListHasMore"
             :mention-list-loading-more="mentionListLoadingMore"
-            :editing-message="editingMessagePayload"
+            :editing-message="editing"
             class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
             @submit-edit="submitEdit"
             @cancel-edit="cancelEdit"
