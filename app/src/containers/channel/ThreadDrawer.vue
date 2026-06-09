@@ -1,22 +1,20 @@
 <script setup lang="tsx">
-import { channelMessageComposerAttachmentHandlers } from "@/containers/messages";
-import { MessageComposer } from "@/containers/messages";
-import { MessageBox } from "@/presentationals/messages";
+import { channelMessageComposerAttachmentHandlers, MessageComposer } from "@/containers/messages";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, ScrollArea, Separator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { groupMessages, useChannel, useMessageThread } from "@/domain/channels";
 import type { IMessageGroup } from "@/domain/channels/types/message.type";
+import MessageGroup from "@/presentationals/channel/MessageGroup.vue";
+import { MessageBox } from "@/presentationals/messages";
 import { ChannelApi } from "@epicstory/api-client";
-import type { IMessage, IReply } from "@epicstory/contracts";
+import type { IMessage, IReply, ReplyMessageBody, UpdateChannelMessageBody } from "@epicstory/contracts";
 import { useVirtualizer } from "@tanstack/vue-virtual";
-import type { JSONContent } from "@tiptap/core";
 import { useThrottleFn } from "@vueuse/core";
 import type { VNodeRef } from "vue";
 import { computed, nextTick, onUnmounted, ref, watch } from "vue";
-import MessageGroup from "@/presentationals/channel/MessageGroup.vue";
 
-defineProps<{ meId: number }>();
+const props = defineProps<{ meId: number }>();
 
 const message = defineModel<IMessage>("message", { required: true });
 
@@ -227,29 +225,15 @@ async function onMessageDeleted() {
   emit("close");
 }
 
-async function onSendReply(payload: {
-  content: JSONContent;
-  quotedMessageId?: number;
-  quotedReplyId?: number;
-  attachmentIds?: number[];
-}) {
-  await sendReply({
-    content: payload.content,
-    quotedReplyId: payload.quotedReplyId,
-    attachmentIds: payload.attachmentIds,
-  });
+async function onSendReply(payload: ReplyMessageBody) {
+  await sendReply(payload);
   scrollAreaRef.value?.scrollToBottom();
   quotedMessage.value = null;
 }
 
-async function onSubmitEdit(payload: { messageId: number; content: JSONContent; attachmentIds?: number[] }) {
-  const updated = await updateMessage(payload.messageId, {
-    content: payload.content,
-    ...(payload.attachmentIds != null && payload.attachmentIds.length > 0
-      ? { attachmentIds: payload.attachmentIds }
-      : {}),
-  });
-  if (message.value.id === payload.messageId) {
+async function onSubmitEdit(messageId: number, payload: UpdateChannelMessageBody) {
+  const updated = await updateMessage(messageId, payload);
+  if (message.value.id === messageId) {
     Object.assign(message.value, updated);
   }
   editingMessage.value = null;

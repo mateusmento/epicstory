@@ -1,46 +1,11 @@
 <script lang="ts" setup>
 import { Chatbox } from "@/containers/channel";
 import Meeting from "@/containers/meeting/Meeting.vue";
-import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
-import { useAuth } from "@/domain/auth";
 import { useSyncedChannel } from "@/domain/channels";
 import { useMeeting } from "@/domain/meetings";
-import { useWorkspace } from "@/domain/workspace";
-import { SCHEDULE_CHANNEL_ID_QUERY_KEY } from "@/domain/schedule";
-import { computed } from "vue";
-import { useRouter } from "vue-router";
 
-const router = useRouter();
-const { user } = useAuth();
-const { workspace } = useWorkspace();
-const { channel, chatTimeline, sendMessage, sendScheduledMessage, deleteMessage, updateMessage } =
-  useSyncedChannel();
-const { currentMeeting, joinMeeting, joinChannelMeeting } = useMeeting();
-
-function onScheduleMeetingForChannel() {
-  if (!channel.value) return;
-  router.push({
-    name: "schedule",
-    params: { workspaceId: String(workspace.value.id) },
-    query: { [SCHEDULE_CHANNEL_ID_QUERY_KEY]: String(channel.value.id) },
-  });
-}
-
-const emit = defineEmits<{
-  (e: "message-deleted", messageId: number): void;
-}>();
-
-const picture = computed(() => {
-  if (!channel.value) return "";
-  return channel.value?.type === "direct" ? channel.value?.directPeer?.picture : "/images/hashtag.svg";
-});
-
-const { viewContent } = useNavTrigger("details-pane");
-
-function onMessageDeleted(messageId: number) {
-  deleteMessage(messageId);
-  emit("message-deleted", messageId);
-}
+const { channel } = useSyncedChannel();
+const { currentMeeting } = useMeeting();
 </script>
 
 <template>
@@ -51,26 +16,6 @@ function onMessageDeleted(messageId: number) {
       :meetingId="currentMeeting.id"
       :key="1"
     />
-    <Chatbox
-      v-if="user"
-      v-show="!currentMeeting || currentMeeting.channelId !== channel.id"
-      class="flex-1"
-      :chat-title="channel.name"
-      :chat-picture="picture"
-      :chat-timeline="chatTimeline"
-      :me-id="user.id"
-      :channel-id="channel.id"
-      :send-message="sendMessage"
-      :send-scheduled-message="sendScheduledMessage"
-      :update-message="updateMessage"
-      :channel="channel"
-      @join-meeting="joinMeeting({ meetingId: $event })"
-      @join-channel-meeting="joinChannelMeeting({ channelId: channel.id })"
-      @start-meeting="joinChannelMeeting({ channelId: channel.id })"
-      @schedule-meeting="onScheduleMeetingForChannel"
-      @more-details="viewContent('channel')"
-      @message-deleted="onMessageDeleted"
-      :key="2"
-    />
+    <Chatbox v-show="!currentMeeting || currentMeeting.channelId !== channel.id" class="flex-1" :key="2" />
   </TransitionGroup>
 </template>

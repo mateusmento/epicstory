@@ -6,5 +6,6 @@ export * from "./composer-quote-text";
 export * from "./draft";
 export * from "./message-thread";
 export * from "./typing";
+export * from "./use-chatbox-composer-session";
 export * from "./workspace-presence";
 export * from "./workspace-presence-handlers";
