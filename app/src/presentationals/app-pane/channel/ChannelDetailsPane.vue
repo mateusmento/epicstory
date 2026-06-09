@@ -1,4 +1,5 @@
 <script lang="tsx" setup>
+import type { AsyncDataView } from "@/lib/async";
 import { MessageAttachments } from "@/presentationals/messages";
 import { IconClose } from "@/design-system/icons/meeting";
 import { Button, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system";
@@ -9,15 +10,13 @@ import { type FunctionalComponent as FC } from "vue";
 defineProps<{
   channelId?: number;
   meId?: number;
-  channelFiles: UploadedAttachment[];
-  channelFilesLoading: boolean;
-  channelFilesError: string | null;
-  removingChannelFileId: number | null;
+  channelAttachments: AsyncDataView<UploadedAttachment[]>;
+  removingChannelAttachmentId: number | null;
 }>();
 
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "remove-file", attachmentId: number): void;
+  (e: "remove-attachment", attachmentId: number): void;
 }>();
 </script>
 
@@ -56,7 +55,7 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
       <Tabs default-value="members" class="flex flex-col min-h-0 flex-1">
         <TabsList class="mx-2 mt-1 shrink-0 w-auto justify-start">
           <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
+          <TabsTrigger value="attachments">Attachments</TabsTrigger>
           <TabsTrigger value="schedules">Schedules</TabsTrigger>
         </TabsList>
         <TabsContent
@@ -66,21 +65,25 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
           <slot name="members" />
         </TabsContent>
         <TabsContent
-          value="files"
+          value="attachments"
           class="min-h-0 flex-1 overflow-y-auto p-xl mt-0 data-[state=inactive]:hidden"
         >
-          <div v-if="channelFilesError" class="text-sm text-red-600">{{ channelFilesError }}</div>
-          <p v-else-if="channelFilesLoading" class="text-sm text-muted-foreground">Loading files…</p>
-          <p v-else-if="channelFiles.length === 0" class="text-sm text-muted-foreground">
-            No files linked in messages yet.
+          <div v-if="channelAttachments.error" class="text-sm text-red-600">
+            {{ channelAttachments.error }}
+          </div>
+          <p v-else-if="channelAttachments.loading" class="text-sm text-muted-foreground">
+            Loading attachments…
+          </p>
+          <p v-else-if="(channelAttachments.data?.length ?? 0) === 0" class="text-sm text-muted-foreground">
+            No attachments linked in messages yet.
           </p>
           <div v-else class="max-h-[min(70vh,36rem)] overflow-y-auto overscroll-contain pr-1">
             <MessageAttachments
               removable
               :me-id="meId ?? null"
-              :disabled="removingChannelFileId !== null"
-              :files="channelFiles"
-              @remove="emit('remove-file', $event)"
+              :disabled="removingChannelAttachmentId !== null"
+              :files="channelAttachments.data ?? []"
+              @remove="emit('remove-attachment', $event)"
             />
           </div>
         </TabsContent>

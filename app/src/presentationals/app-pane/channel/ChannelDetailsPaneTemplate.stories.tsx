@@ -44,10 +44,8 @@ const storyMembers = [
 export const Default: Story = {
   args: {
     channelId: 1,
-    channelFiles: [],
-    channelFilesLoading: false,
-    channelFilesError: null,
-    removingChannelFileId: null,
+    channelAttachments: { data: [], loading: false, error: null },
+    removingChannelAttachmentId: null,
   },
   render: (args) => ({
     components: { ChannelDetailsPane, ChannelMembers, WorkspaceMemberDropdown, Button, Icon },
