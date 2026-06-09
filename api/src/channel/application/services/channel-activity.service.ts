@@ -10,10 +10,7 @@ import { MeetingRepository } from 'src/channel/infrastructure/repositories/meeti
 import { create } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import {
-  type IChannelActivityClient,
-  userToSummary,
-} from '../dtos/channel-activity-client.dto';
+import { userToIUser } from 'src/auth';
 import { ChannelNotFound, IssuerIsNotChannelMember } from '../exceptions';
 import { MessageGateway } from '../gateways/message.gateway';
 import type { IMessage } from '@epicstory/contracts';
@@ -100,7 +97,7 @@ export class ChannelActivityService {
       options.beforeCreatedAt != null && options.beforeId != null;
 
     return new Page({
-      content: items as unknown as IChannelActivity[],
+      content: items,
       page: 0,
       count: Math.min(Math.max(1, options.limit), 100),
       hasNext: hasMoreOlder,
@@ -114,7 +111,7 @@ export class ChannelActivityService {
     senderId: number;
     messageId: number;
     websocket?: { excludeUserId?: number; includeIssuer?: boolean };
-  }): Promise<IChannelActivityClient> {
+  }): Promise<IChannelActivity> {
     const row = await this.activityRepo.save(
       create(ChannelActivity, {
         channelId: options.channelId,
@@ -257,10 +254,10 @@ export class ChannelActivityService {
     ctx: {
       messagesMap?: Map<number, IMessage>;
     },
-  ): IChannelActivityClient {
+  ): IChannelActivity {
     const { messagesMap } = ctx;
 
-    let message: IChannelActivityClient['message'] = null;
+    let message: IChannelActivity['message'] = null;
     if (row.type === 'message_sent' && row.messageId != null && messagesMap) {
       message = messagesMap.get(row.messageId) ?? null;
     }
@@ -270,13 +267,11 @@ export class ChannelActivityService {
       channelId: row.channelId,
       type: row.type as ChannelActivityType,
       createdAt: row.createdAt.toISOString(),
-      actor: row.actor ? userToSummary(row.actor) : null,
+      actor: row.actor ? userToIUser(row.actor) : null,
       messageId: row.messageId,
       meetingId: row.meetingId,
       payload: row.payload,
-      ...(row.subjectUser
-        ? { subjectUser: userToSummary(row.subjectUser) }
-        : {}),
+      ...(row.subjectUser ? { subjectUser: userToIUser(row.subjectUser) } : {}),
       ...(message ? { message } : {}),
     };
   }

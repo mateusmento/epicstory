@@ -1,5 +1,5 @@
 import { PROJECT_SCHEMA } from 'src/project/constants';
-import type { IssueActivityType } from 'src/project/domain/types/issue-activity-payload.types';
+import type { IssueFeedActivityType } from '@epicstory/contracts';
 import {
   Column,
   CreateDateColumn,
@@ -19,7 +19,7 @@ export class IssueActivity {
   actorId: number | null;
 
   @Column()
-  type: IssueActivityType;
+  type: IssueFeedActivityType;
 
   @CreateDateColumn()
   createdAt: Date;

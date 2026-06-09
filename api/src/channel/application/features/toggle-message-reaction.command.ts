@@ -1,5 +1,5 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserRepository } from 'src/auth';
+import { UserRepository, userToIUser } from 'src/auth';
 import { patch } from 'src/core/objects';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { getChannelLabelForNotification } from '../utils/enrich-channel';
@@ -85,12 +85,7 @@ export class ToggleMessageReactionCommand
     ) {
       const reactor = await this.userRepo.findOne({ where: { id: issuerId } });
       const reactorDto = reactor
-        ? {
-            id: reactor.id,
-            name: reactor.name,
-            email: reactor.email,
-            picture: reactor.picture ?? '',
-          }
+        ? userToIUser(reactor)
         : {
             id: issuerId,
             name: 'Someone',

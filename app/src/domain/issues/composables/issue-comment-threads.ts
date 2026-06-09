@@ -1,7 +1,7 @@
 import { ChannelApi } from "@epicstory/api-client";
 import type { IReply } from "@epicstory/contracts";
 import { reactive, toValue, watch, type MaybeRefOrGetter, type Ref } from "vue";
-import type { IssueFeed, IssueFeedItem } from "../types";
+import type { IIssueFeed, IIssueFeedItem } from "@epicstory/contracts";
 
 export type IssueCommentThreadState = {
   loading: boolean;
@@ -10,7 +10,7 @@ export type IssueCommentThreadState = {
 };
 
 export function useIssueCommentThreads(options: {
-  feed: Ref<IssueFeed | null>;
+  feed: Ref<IIssueFeed | null>;
   tab: Ref<"all" | "comments">;
   issueId: MaybeRefOrGetter<number>;
   channelApi: ChannelApi;
@@ -32,29 +32,29 @@ export function useIssueCommentThreads(options: {
     return created;
   }
 
-  function messageRootId(item: IssueFeedItem): number | null {
+  function messageRootId(item: IIssueFeedItem): number | null {
     return item.message?.id ?? null;
   }
 
-  function isLoadingThread(item: IssueFeedItem): boolean {
+  function isLoadingThread(item: IIssueFeedItem): boolean {
     const rootId = messageRootId(item);
     if (rootId == null) return false;
     return ensureThreadState(rootId).loading;
   }
 
-  function isExpandedThread(item: IssueFeedItem): boolean {
+  function isExpandedThread(item: IIssueFeedItem): boolean {
     const rootId = messageRootId(item);
     if (rootId == null) return false;
     return ensureThreadState(rootId).expanded;
   }
 
-  function hiddenReplyCount(item: IssueFeedItem): number {
+  function hiddenReplyCount(item: IIssueFeedItem): number {
     const total = item.repliesTotal ?? 0;
     const previewLen = item.replyPreviews?.length ?? 0;
     return Math.max(0, total - previewLen);
   }
 
-  function displayedRepliesForItem(item: IssueFeedItem): IReply[] {
+  function displayedRepliesForItem(item: IIssueFeedItem): IReply[] {
     const previews = item.replyPreviews ?? [];
     const rootId = messageRootId(item);
     if (rootId == null) return previews;
@@ -65,7 +65,7 @@ export function useIssueCommentThreads(options: {
     return previews;
   }
 
-  async function toggleThreadReplies(item: IssueFeedItem) {
+  async function toggleThreadReplies(item: IIssueFeedItem) {
     const rootId = messageRootId(item);
     if (rootId == null || !item.hasMoreOlder) return;
 

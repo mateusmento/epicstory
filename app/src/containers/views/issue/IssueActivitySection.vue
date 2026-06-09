@@ -11,7 +11,7 @@ import {
   resolveIssueActivityActor,
 } from "@/domain/issues";
 import type { JSONContent } from "@tiptap/core";
-import type { IssueFeedItem } from "@/domain/issues";
+import type { IIssueFeedItem } from "@epicstory/contracts";
 import type { IMessage, IReply } from "@epicstory/contracts";
 import type { IMessageAttachment } from "@epicstory/contracts";
 import type { IUser as IUser } from "@epicstory/contracts";
@@ -140,7 +140,7 @@ async function onDelete(entity: IMessage | IReply) {
   await reloadAfterComment();
 }
 
-function itemByRootId(rootId: number): IssueFeedItem | null {
+function itemByRootId(rootId: number): IIssueFeedItem | null {
   const items = filteredFeedItems.value;
   for (const it of items) {
     if (it.type === "comment_created" && it.message?.id === rootId) return it;

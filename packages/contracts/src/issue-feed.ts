@@ -1,33 +1,37 @@
 import type { IMessage, IReply } from "./channel-message";
+import type {
+  IssueActivityPayloadFor,
+  IssueFeedActivityType,
+} from "./issue-activity-payload";
+import type { IUser } from "./user";
 
-export type IssueFeedActivityType =
-  | "issue_created"
-  | "comment_created"
-  | "title_changed"
-  | "description_changed"
-  | "status_changed"
-  | "priority_changed"
-  | "due_date_changed"
-  | "assignees_changed"
-  | "labels_changed"
-  | "parent_changed"
-  | "attachment_added";
+export type { IssueFeedActivityType } from "./issue-activity-payload";
 
-export type IIssueFeedItem = {
+export type IIssueFeedItemBase = {
   activityId: number;
   issueId: number;
-  type: IssueFeedActivityType;
   actorId: number | null;
-  actor?: { id: number; name: string; picture: string | null } | null;
+  actor?: IUser | null;
   createdAt: string;
   messageId: number | null;
   attachmentId: number | null;
-  payload: Record<string, unknown> | null;
   message: IMessage | null;
   replyPreviews: IReply[];
   repliesTotal?: number;
   hasMoreOlder?: boolean;
 };
+
+/** One feed row for a specific activity `type` — payload is narrowed to match. */
+export type IIssueFeedItemFor<T extends IssueFeedActivityType> =
+  IIssueFeedItemBase & {
+    type: T;
+    payload: IssueActivityPayloadFor<T>;
+  };
+
+/** Discriminated union: switch on `item.type` narrows `item.payload` automatically. */
+export type IIssueFeedItem = {
+  [K in IssueFeedActivityType]: IIssueFeedItemFor<K>;
+}[IssueFeedActivityType];
 
 export type IIssueFeed = {
   commentChannelId: number | null;
