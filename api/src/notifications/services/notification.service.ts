@@ -21,26 +21,12 @@ export class NotificationService {
     workspaceId: number;
     payload: Record<string, any>;
   }) {
-    // Defensive fallback: some callers may still omit workspaceId. Try to infer it from common payload shapes.
-    const inferredWorkspaceId =
-      workspaceId ??
-      payload?.workspaceId ??
-      payload?.channel?.workspaceId ??
-      payload?.message?.channel?.workspaceId ??
-      payload?.reply?.channel?.workspaceId;
-
     payload.type = type ?? payload?.type;
-
-    if (inferredWorkspaceId === undefined || inferredWorkspaceId === null) {
-      throw new Error(
-        `NotificationService.sendNotification requires workspaceId (type=${type}, userId=${userId})`,
-      );
-    }
 
     const notification = new Notification({
       type,
       userId,
-      workspaceId: inferredWorkspaceId,
+      workspaceId,
       payload,
       seen: false,
       createdAt: new Date(),
