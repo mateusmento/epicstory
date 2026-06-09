@@ -27,6 +27,7 @@ export class FindChannelQuery implements IQueryHandler<FindChannel> {
       .createQueryBuilder('c')
       .leftJoinAndSelect('c.peers', 'p')
       .leftJoinAndSelect('c.lastMessage', 'msg')
+      .leftJoinAndSelect('msg.sender', 'lastMsgSender')
       .leftJoinAndMapOne(
         'c.meeting',
         Meeting,

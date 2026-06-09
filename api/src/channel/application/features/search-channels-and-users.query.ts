@@ -198,6 +198,7 @@ export class SearchChannelsAndUsersQuery
         'm.channel_id = c.id AND m.ongoing = true',
       )
       .leftJoinAndSelect('c.lastMessage', 'msg')
+      .leftJoinAndSelect('msg.sender', 'lastMsgSender')
       .where('c.id IN (:...channelIds)', { channelIds })
       .getMany();
 

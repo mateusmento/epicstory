@@ -44,6 +44,7 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
         'm.channel_id = c.id AND m.ongoing = true',
       )
       .leftJoinAndSelect('c.lastMessage', 'msg')
+      .leftJoinAndSelect('msg.sender', 'lastMsgSender')
       .where('c.workspaceId = :workspaceId', { workspaceId })
       .andWhere(teamId ? 'c.teamId = :teamId' : 'TRUE', { teamId })
       .andWhere('c.type <> :type', { type: 'workspace_open' as ChannelType })

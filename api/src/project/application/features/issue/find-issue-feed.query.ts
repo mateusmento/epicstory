@@ -3,10 +3,8 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { uniq } from 'lodash';
 import { UserRepository } from 'src/auth';
 import { In } from 'typeorm';
-import {
-  IMessagePayload,
-  MessageService,
-} from 'src/channel/application/services/message.service';
+import { MessageService } from 'src/channel/application/services/message.service';
+import type { IMessage } from '@epicstory/contracts';
 import { ReplyService } from 'src/channel/application/services/reply.service';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
@@ -51,7 +49,7 @@ export type IIssueFeedActivityItem = {
   messageId: number | null;
   attachmentId: number | null;
   payload: IssueActivityPayload | null;
-  /** Populated when `type === comment_created` — same shape as channel `IMessagePayload`. */
+  /** Populated when `type === comment_created` — same shape as channel `IMessage`. */
   message: unknown | null;
   replyPreviews: unknown[];
   repliesTotal?: number;
@@ -125,7 +123,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
             commentIds,
             issuer.id,
           )
-        : new Map<number, IMessagePayload>();
+        : new Map<number, IMessage>();
 
     const { repliesByParentId } =
       issue.commentChannelId != null && commentIds.length > 0

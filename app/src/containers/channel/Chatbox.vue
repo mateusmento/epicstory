@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import Message from "./Message.vue";
 import { channelMessageComposerAttachmentHandlers, MessageComposer } from "@/containers/messages";
-import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { useDependency } from "@/core/dependency-injection";
+import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { useAuth } from "@/domain/auth";
 import {
   chatTimelineMessageIds,
@@ -16,26 +15,25 @@ import { useWorkspace } from "@/domain/workspace";
 import { toOlderPageState } from "@/lib/async";
 import {
   ChannelActivityRow,
-  Chatbox as ChatboxShell,
   ChatboxHeader,
   ChatboxIntro,
   ChatboxMeetingActions,
   ChatboxPresenceStrip,
+  Chatbox as ChatboxShell,
   ChatboxTimeline,
   ChatboxTypingBanner,
 } from "@/presentationals/channel";
 import { ChannelApi } from "@epicstory/api-client";
 import type {
+  CreateScheduledMessageBody,
   IChannel,
   IChannelActivity,
-  CreateScheduledMessageBody,
-  MessagePollBody,
   SendMessageBody,
   UpdateChannelMessageBody,
 } from "@epicstory/contracts";
-import type { JSONContent } from "@tiptap/core";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
+import Message from "./Message.vue";
 
 const { user } = useAuth();
 const { workspace } = useWorkspace();

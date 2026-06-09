@@ -8,24 +8,13 @@ import {
   IsOptional,
   Min,
 } from 'class-validator';
-import {
-  MessageReplyRepository,
-  MessageRepository,
-} from 'src/channel/infrastructure';
-import { uniq } from 'lodash';
+import { MessageRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
-import { SendNotification } from 'src/notifications/features/send-notification.command';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ReplyService } from '../services/reply.service';
 import type { JSONContent } from '@tiptap/core';
-import {
-  enrichMentionLabels,
-  extractMentionIds,
-  normalizeTiptapDoc,
-  tiptapDocToPlainDisplayText,
-} from '@epicstory/tiptap';
+import { dispatchNotificationsForReplySent } from '../utils/dispatch-reply-notifications';
 import { Transactional } from 'typeorm-transactional';
 
 export class ReplyMessage {
@@ -48,12 +37,6 @@ export class ReplyMessage {
   @Min(1, { each: true })
   attachmentIds?: number[];
 
-  /** When replying in an issue comment thread, staged rows may be tagged with this issue. */
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  matchedIssueId?: number;
-
   constructor(data: Partial<ReplyMessage> = {}) {
     patch(this, data);
   }
@@ -62,10 +45,8 @@ export class ReplyMessage {
 @CommandHandler(ReplyMessage)
 export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
   constructor(
-    private messageReplyRepo: MessageReplyRepository,
     private messageRepo: MessageRepository,
     private replyService: ReplyService,
-    private workspaceRepo: WorkspaceRepository,
     private commandBus: CommandBus,
     private attachmentService: AttachmentService,
   ) {}
@@ -77,7 +58,6 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     messageId,
     quotedReplyId,
     attachmentIds,
-    matchedIssueId,
   }: ReplyMessage) {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
@@ -93,109 +73,35 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
       throw new SenderIsNotChannelMember();
     }
 
-    const normalizedContent = normalizeTiptapDoc(content);
-
-    const resolvedQuote = await this.replyService.resolveQuotedReplyId(
-      quotedReplyId,
-      messageId,
-      message.channelId,
-    );
-
-    const { id: replyId } = await this.messageReplyRepo.save({
-      content: normalizedContent,
-      channelId: message.channelId,
+    const { reply, parentMessage } = await this.replyService.createReply({
       messageId,
       senderId,
-      sentAt: new Date(),
-      quotedReplyId: resolvedQuote,
+      content,
+      quotedReplyId,
     });
+
+    const channel = parentMessage.channel;
 
     await this.attachmentService.linkStagingToReply({
-      workspaceId: message.channel.workspaceId,
-      channelId: message.channelId,
+      workspaceId: channel.workspaceId,
+      channelId: channel.id,
       uploadedById: senderId,
-      messageReplyId: replyId,
+      messageReplyId: reply.id,
       attachmentIds,
-      ...(matchedIssueId != null ? { matchedIssueId } : {}),
     });
 
-    const reply = await this.messageReplyRepo.findOne({
-      where: { id: replyId },
-      relations: { sender: true, allReactions: { user: true } },
-    });
-
-    reply.setReactions(senderId);
-
-    const extractedMentionIds = extractMentionIds(normalizedContent);
-    const peerUsersMap = await this.workspaceRepo.findMembersMap(
-      message.channel.workspaceId,
-      uniq(extractedMentionIds),
-    );
-    const finalMentionIds = extractedMentionIds.filter(
-      (id) => id !== senderId && peerUsersMap.has(id),
-    );
-    const mentionedUsers = finalMentionIds
-      .map((id) => peerUsersMap.get(id))
-      .filter(Boolean);
-    const displayContent = tiptapDocToPlainDisplayText(
-      enrichMentionLabels(normalizedContent, peerUsersMap),
+    reply.attachments = await this.attachmentService.listAnchoredForReply(
+      channel.workspaceId,
+      reply.id,
     );
 
-    (reply as any).mentionedUsers = mentionedUsers;
-    (reply as any).displayContent = displayContent;
-
-    if (resolvedQuote) {
-      const q = await this.messageReplyRepo.findOne({
-        where: { id: resolvedQuote },
-        relations: { sender: true },
-      });
-      (reply as any).quotedMessage =
-        this.replyService.buildQuotedPreviewFromReply(q, peerUsersMap);
-    }
-
-    if (finalMentionIds.length > 0) {
-      await this.commandBus.execute(
-        new SendNotification({
-          type: 'mention',
-          userIds: finalMentionIds,
-          workspaceId: message.channel.workspaceId,
-          payload: {
-            channel: message.channel,
-            sender: reply.sender,
-            message: displayContent,
-            reply,
-            mentionedUsers,
-          },
-        }),
-      );
-    }
-
-    // If the original sender is mentioned, don't also send a reply notification.
-    const shouldSendReplyNotification =
-      message.senderId !== senderId &&
-      !finalMentionIds.includes(message.senderId);
-
-    if (shouldSendReplyNotification) {
-      await this.commandBus.execute(
-        new SendNotification({
-          userIds: [message.senderId],
-          type: 'reply',
-          workspaceId: message.channel.workspaceId,
-          payload: {
-            reply,
-            message,
-            channel: message.channel,
-            sender: reply.sender,
-          },
-        }),
-      );
-    }
-
-    (reply as any).attachments =
-      await this.attachmentService.listAnchoredForReply(
-        message.channel.workspaceId,
-        reply.id,
-      );
+    await dispatchNotificationsForReplySent(
+      this.commandBus,
+      channel,
+      parentMessage,
+      reply,
+      senderId,
+    );
 
     return reply;
   }

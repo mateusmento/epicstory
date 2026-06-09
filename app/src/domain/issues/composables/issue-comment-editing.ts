@@ -1,7 +1,6 @@
-import type { IMessage, IReply } from "@epicstory/contracts";
-import type { IMessageAttachment } from "@epicstory/contracts";
+import type { IMessage, IReply, UpdateChannelMessageBody } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 
 type UpdateIssueCommentFn = (
   entity: IMessage | IReply,
@@ -15,39 +14,19 @@ export function useIssueCommentEditing(options: {
 }) {
   const { updateIssueComment, onAfterSave } = options;
 
-  const editing = ref<{
-    entity: IMessage | IReply;
-    id: number;
-    content: JSONContent;
-    attachments: IMessageAttachment[];
-  } | null>(null);
-
-  const editingMessagePayload = computed(() =>
-    editing.value
-      ? {
-          id: editing.value.id,
-          content: editing.value.content,
-          attachments: editing.value.attachments,
-        }
-      : null,
-  );
+  const editing = ref<(IMessage | IReply) | null>(null);
 
   function startEdit(entity: IMessage | IReply) {
-    editing.value = {
-      entity,
-      id: entity.id,
-      content: entity.content as JSONContent,
-      attachments: [...(entity.attachments ?? [])],
-    };
+    editing.value = entity;
   }
 
   function cancelEdit() {
     editing.value = null;
   }
 
-  async function submitEdit(value: { messageId: number; content: JSONContent; attachmentIds?: number[] }) {
+  async function submitEdit(value: UpdateChannelMessageBody) {
     if (!editing.value) return;
-    await updateIssueComment(editing.value.entity, value.content, value.attachmentIds);
+    await updateIssueComment(editing.value, value.content, value.attachmentIds);
     editing.value = null;
     await onAfterSave();
   }
@@ -58,10 +37,11 @@ export function useIssueCommentEditing(options: {
 
   return {
     editing,
-    editingMessagePayload,
     startEdit,
     cancelEdit,
     submitEdit,
     clearIfEditingEntity,
   };
 }
+
+export type IssueCommentEditing = ReturnType<typeof useIssueCommentEditing>;

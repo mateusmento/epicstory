@@ -1,6 +1,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
+import { toMessageSummary } from "@/lib/channel";
 import { useWorkspace } from "@/domain/workspace";
 import { defineStore, storeToRefs } from "pinia";
 import { onMounted, onUnmounted, ref, watch } from "vue";
@@ -49,7 +50,9 @@ export function useChannels() {
     channelId: number;
   }) {
     if (activity.type === "message_sent" && activity.message) {
-      store.updateChannel(channelId, { lastMessage: activity.message });
+      store.updateChannel(channelId, {
+        lastMessage: toMessageSummary(activity.message),
+      });
     }
   }
 

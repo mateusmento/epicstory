@@ -27,8 +27,7 @@ export class NotificationService {
       payload?.workspaceId ??
       payload?.channel?.workspaceId ??
       payload?.message?.channel?.workspaceId ??
-      payload?.reply?.channel?.workspaceId ??
-      payload?.reply?.message?.channel?.workspaceId;
+      payload?.reply?.channel?.workspaceId;
 
     payload.type = type ?? payload?.type;
 
