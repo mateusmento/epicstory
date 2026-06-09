@@ -51,3 +51,10 @@ export type UpdateChannelMessageBody = {
   attachmentIds?: number[];
   poll?: MessagePollBody | null;
 };
+
+export type ReplyMessageBody = {
+  content: JSONContent;
+  quotedReplyId?: number;
+  attachmentIds?: number[];
+  matchedIssueId?: number;
+};

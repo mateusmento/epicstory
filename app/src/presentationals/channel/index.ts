@@ -1,4 +1,10 @@
 export { default as ChannelActivityRow } from "./ChannelActivityRow.vue";
 export { default as Chatbox } from "./Chatbox.vue";
+export { default as ChatboxHeader } from "./ChatboxHeader.vue";
+export { default as ChatboxIntro } from "./ChatboxIntro.vue";
+export { default as ChatboxMeetingActions } from "./ChatboxMeetingActions.vue";
+export { default as ChatboxPresenceStrip } from "./ChatboxPresenceStrip.vue";
+export { default as ChatboxTimeline } from "./ChatboxTimeline.vue";
+export { default as ChatboxTypingBanner } from "./ChatboxTypingBanner.vue";
 export { default as MessageGroup } from "./MessageGroup.vue";
 export * from "./emojis";

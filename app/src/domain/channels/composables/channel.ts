@@ -10,6 +10,7 @@ import type {
   IReply,
   IUser,
   MessagePollBody,
+  UpdateChannelMessageBody,
 } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
 import { last } from "lodash";
@@ -318,14 +319,7 @@ export function useChannel() {
     );
   }
 
-  async function updateMessage(
-    messageId: number,
-    body: {
-      content: JSONContent;
-      attachmentIds?: number[];
-      poll?: MessagePollBody | null;
-    },
-  ) {
+  async function updateMessage(messageId: number, body: UpdateChannelMessageBody) {
     const updated = await channelApi.updateMessage(messageId, body);
     const i = store.activities.findIndex((a) => a.type === "message_sent" && a.messageId === messageId);
     if (i >= 0) {

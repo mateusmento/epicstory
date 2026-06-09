@@ -10,24 +10,6 @@ import {
   useChannelTypingPulse,
   useWorkspaceOnline,
 } from "@/domain/channels";
-import type {
-  IMessage,
-  IMessageAttachment,
-  IReply,
-  ScheduledMessageRecurrence as IScheduledMessageRecurrence,
-  IUser,
-  MessagePollBody,
-} from "@epicstory/contracts";
-import {
-  collectImageAttachmentIdsFromDoc,
-  docContainsImageNodes,
-  stripImageNodesFromDoc,
-  tiptapToPlainText,
-} from "@epicstory/tiptap";
-import type { Editor, JSONContent } from "@tiptap/core";
-import { ChevronDown, Paperclip } from "lucide-vue-next";
-import { computed, ref, shallowRef, watch } from "vue";
-import { RichTextComposer } from "@/presentationals/rich-text";
 import AttachmentTilesList from "@/presentationals/messages/AttachmentTilesList.vue";
 import { useMessageComposerAttachments } from "@/presentationals/messages/composables/message-composer-attachments";
 import { useMessageComposerEditingBody } from "@/presentationals/messages/composables/message-composer-editing-body";
@@ -38,6 +20,27 @@ import MessageComposerActions from "@/presentationals/messages/MessageComposerAc
 import MessageComposerPollSection from "@/presentationals/messages/MessageComposerPollSection.vue";
 import ScheduleMessageCustomDialog from "@/presentationals/messages/ScheduleMessageCustomDialog.vue";
 import ScheduleMessageDropdown from "@/presentationals/messages/ScheduleMessageDropdown.vue";
+import { RichTextComposer } from "@/presentationals/rich-text";
+import type {
+  CreateScheduledMessageBody,
+  IMessage,
+  IMessageAttachment,
+  IReply,
+  IUser,
+  MessagePollBody,
+  ReplyMessageBody,
+  SendMessageBody,
+  UpdateChannelMessageBody,
+} from "@epicstory/contracts";
+import {
+  collectImageAttachmentIdsFromDoc,
+  docContainsImageNodes,
+  stripImageNodesFromDoc,
+  tiptapToPlainText,
+} from "@epicstory/tiptap";
+import type { Editor, JSONContent } from "@tiptap/core";
+import { ChevronDown, Paperclip } from "lucide-vue-next";
+import { computed, ref, shallowRef, watch } from "vue";
 
 const { isUserOnline } = useWorkspaceOnline();
 
@@ -66,35 +69,9 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (
-    e: "send-message",
-    value: {
-      content: JSONContent;
-      quotedMessageId?: number;
-      quotedReplyId?: number;
-      attachmentIds?: number[];
-      poll?: MessagePollBody;
-    },
-  ): void;
-  (
-    e: "send-scheduled-message",
-    value: {
-      content: JSONContent;
-      quotedMessageId?: number;
-      dueAt: string;
-      recurrence: IScheduledMessageRecurrence;
-      poll?: MessagePollBody;
-    },
-  ): void;
-  (
-    e: "submit-edit",
-    value: {
-      messageId: number;
-      content: JSONContent;
-      attachmentIds?: number[];
-      poll?: MessagePollBody | null;
-    },
-  ): void;
+  (e: "send-message", value: ReplyMessageBody | SendMessageBody): void;
+  (e: "send-scheduled-message", value: CreateScheduledMessageBody): void;
+  (e: "submit-edit", messageId: number, value: UpdateChannelMessageBody): void;
   (e: "existing-attachment-removed"): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
@@ -320,8 +297,7 @@ function onSendMessage() {
     const inlineIds = collectImageAttachmentIdsFromDoc(doc);
     const attachmentIds = [...new Set([...stagedIds, ...inlineIds])];
     const pollPatch = pollPayloadForEdit();
-    emit("submit-edit", {
-      messageId: props.editingMessage.id,
+    emit("submit-edit", props.editingMessage.id, {
       content: doc,
       ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
       ...(pollPatch !== undefined ? { poll: pollPatch } : {}),
@@ -336,12 +312,12 @@ function onSendMessage() {
   const stagedIds = pendingAttachments.value.map((a) => a.id);
   const inlineIds = collectImageAttachmentIdsFromDoc(doc);
   const attachmentIds = activeSchedule.value ? [] : [...new Set([...stagedIds, ...inlineIds])];
-  const scheduledQuote = props.quotedMessage ? composerQuoteRef(props.quotedMessage) : {};
+  const quoteRef = props.quotedMessage ? composerQuoteRef(props.quotedMessage) : {};
 
   if (activeSchedule.value) {
     emit("send-scheduled-message", {
       content: doc,
-      ...scheduledQuote,
+      ...quoteRef,
       dueAt: activeSchedule.value.dueAt.toISOString(),
       recurrence: activeSchedule.value.recurrence,
       ...(pollPayload ? { poll: pollPayload } : {}),
@@ -350,7 +326,7 @@ function onSendMessage() {
   } else {
     emit("send-message", {
       content: doc,
-      ...scheduledQuote,
+      ...quoteRef,
       ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
       ...(pollPayload ? { poll: pollPayload } : {}),
     });
