@@ -2,6 +2,7 @@
 import { useConfirmDialog } from "@/presentationals/confirm-dialog";
 import IssueAttachmentTilesList from "./IssueAttachmentTilesList.vue";
 import type { IssueAttachmentTileRow } from "@/lib/issues";
+import type { AsyncDataView } from "@/lib/async";
 import { computed, ref } from "vue";
 
 function dragHasFiles(dt: DataTransfer | null): boolean {
@@ -11,9 +12,7 @@ function dragHasFiles(dt: DataTransfer | null): boolean {
 
 const props = withDefaults(
   defineProps<{
-    rows: IssueAttachmentTileRow[];
-    loading?: boolean;
-    error?: string | null;
+    attachments: AsyncDataView<IssueAttachmentTileRow[]>;
     compact?: boolean;
     hideHeading?: boolean;
     meId?: number | null;
@@ -25,8 +24,6 @@ const props = withDefaults(
     dismissPendingUpload: (clientId: string) => void;
   }>(),
   {
-    loading: false,
-    error: null,
     compact: false,
     hideHeading: false,
     meId: null,
@@ -140,16 +137,22 @@ const shellClass = computed(() =>
         <h3 class="text-xs font-semibold uppercase tracking-wide text-foreground">Files</h3>
         <span v-if="uploadInProgress" class="text-xs text-muted-foreground"> Uploading… </span>
       </div>
-      <div v-if="error" class="text-xs text-red-600">{{ error }}</div>
-      <div v-else-if="loading && rows.length === 0" class="text-xs text-muted-foreground">
+      <div v-if="attachments.error" class="text-xs text-red-600">{{ attachments.error }}</div>
+      <div
+        v-else-if="attachments.loading && (attachments.data?.length ?? 0) === 0"
+        class="text-xs text-muted-foreground"
+      >
         Loading attachments…
       </div>
-      <div v-else-if="rows.length" class="max-h-[min(40vh,28rem)] overflow-y-auto overscroll-contain pr-0.5">
+      <div
+        v-else-if="(attachments.data?.length ?? 0) > 0"
+        class="max-h-[min(40vh,28rem)] overflow-y-auto overscroll-contain pr-0.5"
+      >
         <IssueAttachmentTilesList
           removable
           :me-id="meId ?? null"
           :disabled="removingId !== null || uploadInProgress"
-          :rows="rows"
+          :rows="attachments.data ?? []"
           @remove="removeAttachment($event)"
           @dismiss-pending="dismissPendingUpload($event)"
         />

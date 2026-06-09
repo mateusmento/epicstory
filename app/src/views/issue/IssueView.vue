@@ -1,23 +1,19 @@
 <script lang="ts" setup>
 import { IssueDescriptionEditor, IssueGithubSidebarSection, IssueLabelTags } from "@/containers/issue";
-import { IssueAttachmentsStrip } from "@/presentationals/issue";
 import IssueActivitySection from "@/containers/views/issue/IssueActivitySection.vue";
 import SubIssuesSection from "@/containers/views/issue/SubIssuesSection.vue";
 import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
-import { useDependency } from "@/core/dependency-injection";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 import { useIssue, useIssueAttachments } from "@/domain/issues";
-import type { Project } from "@/domain/project";
 import { useScopedWorkspaceMemberSearch } from "@/domain/workspace";
-import { IssueKey, IssueStatusDropdown } from "@/presentationals/issue";
+import { IssueAttachmentsStrip, IssueKey, IssueStatusDropdown } from "@/presentationals/issue";
 import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
 import { UserAvatarStack } from "@/presentationals/user";
 import { DueDatePicker } from "@/presentationals/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/presentationals/views/project/backlog/priority-toggler";
-import { IssueApi, ProjectApi } from "@epicstory/api-client";
-import type { IMessage, IReply, IUser } from "@epicstory/contracts";
+import type { IMessage, IReply, IUser, UpdateIssueData } from "@epicstory/contracts";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -28,7 +24,8 @@ const props = defineProps<{
 
 const { user } = useAuth();
 
-const { issue, fetchIssue, updateIssue, addAssignee, removeAssignee, addLabel, removeLabel } = useIssue();
+const { issue, patchMutation, fetchIssue, patchIssue, addAssignee, removeAssignee, addLabel, removeLabel } =
+  useIssue();
 
 const memberSearch = useScopedWorkspaceMemberSearch();
 
@@ -48,18 +45,16 @@ async function onWorkspaceMentionListReachedBottom() {
   await memberSearch.loadMore(wid);
 }
 
-const issueApi = useDependency(IssueApi);
 const {
-  attachmentTileRows,
+  attachments,
   attachmentsUploading,
-  refreshAttachments,
-  removeAttachment,
+  loadAttachments,
+  removePersistedAttachment,
   resolveAttachmentsForEntity,
   ingestFromActivity,
   dismissPendingUpload,
   uploadIssueAttachmentFiles,
 } = useIssueAttachments({
-  issueApi,
   issueId: () => issue.value?.id ?? 0,
 });
 
@@ -70,37 +65,12 @@ async function reloadIssueActivityFeed() {
 }
 
 async function onIssueAttachmentsDropped(files: File[]) {
-  attachmentsError.value = null;
   await uploadIssueAttachmentFiles(files, {
     reloadFeed: async () => {
       await activitySectionRef.value?.reloadFeed?.();
     },
   });
 }
-
-const attachmentsLoading = ref(false);
-const attachmentsError = ref<string | null>(null);
-
-async function loadIssueAttachments() {
-  if (!issue.value?.id) return;
-  attachmentsLoading.value = true;
-  attachmentsError.value = null;
-  try {
-    await refreshAttachments();
-  } catch (e: unknown) {
-    attachmentsError.value = e instanceof Error ? e.message : "Could not load files";
-  } finally {
-    attachmentsLoading.value = false;
-  }
-}
-
-watch(
-  () => issue.value?.id,
-  (id) => {
-    if (id) loadIssueAttachments();
-  },
-  { immediate: true },
-);
 
 const assigneeUsers = ref<IUser[]>([]);
 watch(
@@ -111,30 +81,14 @@ watch(
   { immediate: true, deep: true },
 );
 
-const projectApi = useDependency(ProjectApi);
-const project = ref<Project | null>(null);
-
-const isSaving = ref(false);
-const saveError = ref<string | null>(null);
-
 const titleEl = ref<HTMLInputElement | null>(null);
-
-async function removeIssueAttachmentFile(attachmentId: number) {
-  attachmentsError.value = null;
-  try {
-    await removeAttachment(attachmentId);
-  } catch (e: unknown) {
-    attachmentsError.value = e instanceof Error ? e.message : "Could not remove file";
-    await loadIssueAttachments();
-  }
-}
 
 function resolveCommentAttachments(entity: IMessage | IReply) {
   return resolveAttachmentsForEntity(entity);
 }
 
 async function onComposerAttachmentRemoved() {
-  await loadIssueAttachments();
+  await loadAttachments();
 }
 
 const isEditingTitle = ref(false);
@@ -152,19 +106,6 @@ watch(
   { immediate: true },
 );
 
-async function savePatch(data: Parameters<typeof updateIssue>[0]) {
-  if (!issue.value) return;
-  isSaving.value = true;
-  saveError.value = null;
-  try {
-    await updateIssue(data);
-  } catch (e: any) {
-    saveError.value = e?.message ?? "Failed to save changes";
-  } finally {
-    isSaving.value = false;
-  }
-}
-
 watch(
   () => props.issueId,
   () => refreshIssue(),
@@ -177,10 +118,10 @@ async function refreshIssue() {
 
 function saveMainFields() {
   if (!issue.value) return;
-  const data: any = {};
+  const data: Pick<UpdateIssueData, "title"> = {};
   if (form.title !== issue.value.title) data.title = form.title;
   if (Object.keys(data).length === 0) return;
-  savePatch(data);
+  patchIssue(data);
 }
 
 function startEditTitle() {
@@ -204,21 +145,13 @@ function finishEditTitle() {
 
 async function onSaveDescription(description: any) {
   if (!issue.value) return;
-  await savePatch({ description });
-  await loadIssueAttachments();
+  await patchIssue({ description });
+  await loadAttachments();
 }
 
 onMounted(() => {
   refreshIssue();
 });
-
-watch(
-  () => props.projectId,
-  async (projectId) => {
-    project.value = await projectApi.findProject(+projectId);
-  },
-  { immediate: true },
-);
 </script>
 
 <template>
@@ -226,7 +159,7 @@ watch(
     <div class="flex:row-xl flex:center-y">
       <div class="flex:col-sm">
         <div class="text-xs text-secondary-foreground">
-          <span class="font-medium">{{ project?.name ?? "Project" }}</span>
+          <span class="font-medium">{{ issue?.project?.name ?? "Project" }}</span>
           <span class="mx-2">/</span>
           <IssueKey
             v-if="issue?.issueKey"
@@ -242,14 +175,14 @@ watch(
       <div class="flex-1" />
 
       <div class="flex:row-md flex:center-y">
-        <div v-if="isSaving" class="text-xs text-secondary-foreground">Saving…</div>
-        <Button variant="outline" size="sm" :disabled="!issue || isSaving" @click="saveMainFields"
+        <div v-if="patchMutation.busy" class="text-xs text-secondary-foreground">Saving…</div>
+        <Button variant="outline" size="sm" :disabled="!issue || patchMutation.busy" @click="saveMainFields"
           >Save</Button
         >
       </div>
     </div>
 
-    <div v-if="saveError" class="text-sm text-red-600">{{ saveError }}</div>
+    <div v-if="patchMutation.error" class="text-sm text-red-600">{{ patchMutation.error }}</div>
 
     <div class="grid grid-cols-[1fr_280px] items-start gap-6">
       <!-- Main -->
@@ -284,7 +217,7 @@ watch(
           :description="issue?.description ?? { type: 'doc', content: [{ type: 'paragraph', content: [] }] }"
           :issue-id="+props.issueId"
           :disabled="!issue"
-          :is-saving="isSaving"
+          :is-saving="patchMutation.busy"
           :mentionables="workspaceMentionUsers"
           :me-id="user?.id"
           :on-mention-list-reached-bottom="onWorkspaceMentionListReachedBottom"
@@ -305,14 +238,12 @@ watch(
 
         <IssueAttachmentsStrip
           v-if="issue && user"
-          :rows="attachmentTileRows"
-          :loading="attachmentsLoading"
-          :error="attachmentsError"
+          :attachments="attachments"
           :me-id="user.id"
           droppable
           :upload-in-progress="attachmentsUploading"
           class="mt-8"
-          :remove-file="removeIssueAttachmentFile"
+          :remove-file="removePersistedAttachment"
           :dismiss-pending-upload="dismissPendingUpload"
           @files-dropped="onIssueAttachmentsDropped"
         />
@@ -341,7 +272,7 @@ watch(
           <div class="flex:col-sm">
             <div class="text-xs text-secondary-foreground">Status</div>
 
-            <IssueStatusDropdown :value="issue?.status ?? 'todo'" @select="savePatch({ status: $event })">
+            <IssueStatusDropdown :value="issue?.status ?? 'todo'" @select="patchIssue({ status: $event })">
               <div class="flex items-center gap-2 min-w-0">
                 <button
                   type="button"
@@ -363,11 +294,11 @@ watch(
               <Tooltip>
                 <TooltipTrigger>
                   <div class="text-sm font-medium text-foreground truncate">
-                    {{ project?.name ?? `#${props.projectId}` }}
+                    {{ issue?.project?.name ?? `#${props.projectId}` }}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {{ project?.name ?? `#${props.projectId}` }}
+                  {{ issue?.project?.name ?? `#${props.projectId}` }}
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -413,7 +344,7 @@ watch(
               <div class="min-w-0">
                 <PriorityToggler
                   :value="issue?.priority ?? 0"
-                  @update:value="savePatch({ priority: $event })"
+                  @update:value="patchIssue({ priority: $event })"
                 />
               </div>
             </div>
@@ -427,8 +358,8 @@ watch(
                   variant="ghost"
                   size="xs"
                   class="text-xs"
-                  :disabled="isSaving"
-                  @click="savePatch({ dueDate: null })"
+                  :disabled="patchMutation.busy"
+                  @click="patchIssue({ dueDate: null })"
                 >
                   Clear
                 </Button>
@@ -438,7 +369,7 @@ watch(
                   :model-value="issue?.dueDate ?? undefined"
                   size="badge"
                   :disabled="!issue"
-                  @update:model-value="savePatch({ dueDate: $event })"
+                  @update:model-value="patchIssue({ dueDate: $event })"
                 />
               </div>
             </div>
@@ -467,15 +398,13 @@ watch(
 
           <IssueAttachmentsStrip
             v-if="issue && user"
-            :rows="attachmentTileRows"
-            :loading="attachmentsLoading"
-            :error="attachmentsError"
+            :attachments="attachments"
             :me-id="user.id"
             compact
             droppable
             :upload-in-progress="attachmentsUploading"
             class="mt-2 border-t border-border pt-4"
-            :remove-file="removeIssueAttachmentFile"
+            :remove-file="removePersistedAttachment"
             :dismiss-pending-upload="dismissPendingUpload"
             @files-dropped="onIssueAttachmentsDropped"
           />

@@ -1,27 +1,49 @@
 import { useDependency } from "@/core/dependency-injection";
+import type { AsyncMutationState } from "@/lib/async";
 import { defineStore, storeToRefs } from "pinia";
-import { ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { ChannelApi, IssueApi } from "@epicstory/api-client";
 import type { IIssue, IMessage, IReply, UpdateIssueData } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
 
 export const useIssueStore = defineStore("issue", () => {
   const issue = ref<IIssue>();
-  return { issue };
+  const patchState = reactive({
+    busy: false,
+    error: null as string | null,
+  });
+  return { issue, patchState };
 });
 
 export function useIssue() {
   const store = useIssueStore();
+  const { issue } = storeToRefs(store);
   const issueApi = useDependency(IssueApi);
   const channelApi = useDependency(ChannelApi);
 
+  const patchMutation = computed(
+    (): AsyncMutationState => ({
+      busy: store.patchState.busy,
+      error: store.patchState.error,
+    }),
+  );
+
   async function fetchIssue(issueId: number) {
+    store.patchState.error = null;
     store.issue = await issueApi.fetchIssue(issueId);
   }
 
-  async function updateIssue(data: UpdateIssueData) {
+  async function patchIssue(data: UpdateIssueData) {
     if (!store.issue) return;
-    store.issue = await issueApi.updateIssue(store.issue.id, data);
+    store.patchState.busy = true;
+    store.patchState.error = null;
+    try {
+      store.issue = await issueApi.updateIssue(store.issue.id, data);
+    } catch (e: unknown) {
+      store.patchState.error = e instanceof Error ? e.message : "Failed to save changes";
+    } finally {
+      store.patchState.busy = false;
+    }
   }
 
   async function addAssignee(userId: number) {
@@ -68,9 +90,10 @@ export function useIssue() {
   }
 
   return {
-    ...storeToRefs(store),
+    issue,
+    patchMutation,
     fetchIssue,
-    updateIssue,
+    patchIssue,
     addAssignee,
     removeAssignee,
     addLabel,
