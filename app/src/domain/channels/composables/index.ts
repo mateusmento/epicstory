@@ -1,4 +1,5 @@
 export * from "./channel";
+export * from "./channel-attachments";
 export * from "./channel-groups-lists";
 export * from "./channels";
 export * from "./composer-quote-text";
