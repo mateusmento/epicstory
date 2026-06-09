@@ -9,7 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { Message } from 'src/channel/domain';
 import { MessageReply } from 'src/channel/domain/entities';
 import { ChannelRepository } from 'src/channel/infrastructure';
-import type { IChannelActivityClient } from '../dtos/channel-activity-client.dto';
+import type { IChannelActivity } from '@epicstory/contracts';
 import { MessageService } from '../services/message.service';
 import { ReplyService } from '../services/reply.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -44,7 +44,7 @@ export class MessageGateway {
   }
 
   emitIncomingChannelActivity(
-    activity: IChannelActivityClient,
+    activity: IChannelActivity,
     options?: { excludeUserId?: number; includeIssuer?: boolean },
   ) {
     if (!this.server) return;

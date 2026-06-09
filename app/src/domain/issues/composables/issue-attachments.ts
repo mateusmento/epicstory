@@ -5,14 +5,14 @@ import type { ReadonlyRefOrGetter } from "@/utils";
 import { IssueApi } from "@epicstory/api-client";
 import type { IIssueAttachmentListItem, IMessage, IMessageAttachment, IReply } from "@epicstory/contracts";
 import { computed, reactive, shallowRef, toValue, watch } from "vue";
-import type { IssueFeedItem } from "../types";
+import type { IIssueFeedItem } from "@epicstory/contracts";
 
 export type { IssueAttachmentTileRow } from "@/lib/issues";
 
 export type IssueAttachmentAnchorKey = `message:${number}` | `reply:${number}` | `issue:${number}`;
 
 export type IssueAttachmentActivitySyncPayload = {
-  feedItems?: IssueFeedItem[];
+  feedItems?: IIssueFeedItem[];
   topLevelMessages?: IMessage[];
   replies?: IReply[];
 };

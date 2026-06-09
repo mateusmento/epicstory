@@ -1,5 +1,9 @@
-import type { IUser as IUser } from "@epicstory/contracts";
-import type { IssueFeedItem } from "./types";
+import type {
+  AssigneesChangedPayload,
+  IIssueFeedItem,
+  IUser,
+  ParentChangedPayload,
+} from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 
 /** Board / filter labels — keep in sync with project views. */
@@ -39,12 +43,6 @@ function formatDueIso(iso: string | null | undefined): string | null {
   }
 }
 
-function readPayload(item: IssueFeedItem): Record<string, unknown> | null {
-  const raw = item.payload;
-  if (raw == null || typeof raw !== "object") return null;
-  return raw as Record<string, unknown>;
-}
-
 function joinEnglishList(parts: string[]): string {
   const xs = parts.filter((s) => s.trim() !== "");
   if (xs.length === 0) return "";
@@ -54,44 +52,38 @@ function joinEnglishList(parts: string[]): string {
 }
 
 function resolveAddedAssigneeNames(
-  p: Record<string, unknown> | null,
+  p: AssigneesChangedPayload | null,
   peersById: ReadonlyMap<number, IUser>,
 ): string[] {
   if (!p) return [];
-  const fromPayload = (p.addedUserNames as unknown[] | undefined)?.filter(
-    (x): x is string => typeof x === "string" && x.trim() !== "",
-  );
+  const fromPayload = p.addedUserNames?.filter((x) => x.trim() !== "");
   if (fromPayload?.length) return fromPayload;
-  const ids = (p.addedUserIds as unknown[] | undefined)?.filter((x): x is number => typeof x === "number");
-  if (!ids?.length) return [];
-  return ids
+  if (!p.addedUserIds.length) return [];
+  return p.addedUserIds
     .map((id) => peersById.get(id)?.name)
     .filter((n): n is string => typeof n === "string" && n !== "");
 }
 
 function resolveRemovedAssigneeNames(
-  p: Record<string, unknown> | null,
+  p: AssigneesChangedPayload | null,
   peersById: ReadonlyMap<number, IUser>,
 ): string[] {
   if (!p) return [];
-  const fromPayload = (p.removedUserNames as unknown[] | undefined)?.filter(
-    (x): x is string => typeof x === "string" && x.trim() !== "",
-  );
+  const fromPayload = p.removedUserNames?.filter((x) => x.trim() !== "");
   if (fromPayload?.length) return fromPayload;
-  const ids = (p.removedUserIds as unknown[] | undefined)?.filter((x): x is number => typeof x === "number");
-  if (!ids?.length) return [];
-  return ids
+  if (!p.removedUserIds.length) return [];
+  return p.removedUserIds
     .map((id) => peersById.get(id)?.name)
     .filter((n): n is string => typeof n === "string" && n !== "");
 }
 
-function resolveLabelNames(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((x): x is string => typeof x === "string" && x.trim() !== "");
+function resolveLabelNames(names: string[] | undefined): string[] {
+  if (!names?.length) return [];
+  return names.filter((x) => x.trim() !== "");
 }
 
 function resolveParentIssueKey(
-  payload: Record<string, unknown> | null,
+  payload: ParentChangedPayload | null,
   field: "previousParentIssueKey" | "newParentIssueKey",
 ): string | null {
   const raw = payload?.[field];
@@ -100,15 +92,15 @@ function resolveParentIssueKey(
   return trimmed || null;
 }
 
-function parentWasSet(payload: Record<string, unknown> | null): boolean {
+function parentWasSet(payload: ParentChangedPayload | null): boolean {
   return payload?.newParentIssueId != null;
 }
 
-function parentWasRemoved(payload: Record<string, unknown> | null): boolean {
+function parentWasRemoved(payload: ParentChangedPayload | null): boolean {
   return payload?.previousParentIssueId != null && payload?.newParentIssueId == null;
 }
 
-function parentWasChanged(payload: Record<string, unknown> | null): boolean {
+function parentWasChanged(payload: ParentChangedPayload | null): boolean {
   const prev = payload?.previousParentIssueId;
   const next = payload?.newParentIssueId;
   return prev != null && next != null && prev !== next;
@@ -116,12 +108,11 @@ function parentWasChanged(payload: Record<string, unknown> | null): boolean {
 
 /** One plain sentence: "Ada changed status to Done", "Harry added Feature label". */
 export function formatIssueActivitySentence(
-  item: IssueFeedItem,
+  item: IIssueFeedItem,
   peersById: ReadonlyMap<number, IUser>,
 ): string {
   const actor = resolveIssueActivityActor(item, peersById);
   const name = actor.name;
-  const p = readPayload(item);
 
   switch (item.type) {
     case "issue_created":
@@ -129,39 +120,42 @@ export function formatIssueActivitySentence(
     case "comment_created":
       return `${name} posted a comment`;
     case "title_changed": {
-      const nextRaw = p?.newTitle;
-      const prevRaw = p?.previousTitle;
-      const next = typeof nextRaw === "string" ? nextRaw : null;
-      const prev = typeof prevRaw === "string" ? prevRaw : null;
+      const p = item.payload;
+      const next = p?.newTitle ?? null;
+      const prev = p?.previousTitle ?? null;
       if (next && prev && next !== prev) return `${name} changed title from “${prev}” to “${next}”`;
       if (next) return `${name} changed title to “${next}”`;
       return `${name} changed the title`;
     }
     case "description_changed": {
+      const p = item.payload;
       if (p?.changeKind === "cleared") return `${name} cleared the description`;
-      const ex = typeof p?.excerpt === "string" ? p.excerpt.trim() : "";
+      const ex = p?.excerpt?.trim() ?? "";
       if (ex) return `${name} updated the description — ${ex.length > 160 ? `${ex.slice(0, 160)}…` : ex}`;
       return `${name} updated the description`;
     }
     case "status_changed": {
-      const next = formatStatusKey(typeof p?.newStatus === "string" ? p.newStatus : null);
+      const next = formatStatusKey(item.payload?.newStatus ?? null);
       if (next) return `${name} changed status to ${next}`;
       return `${name} changed status`;
     }
     case "priority_changed": {
-      const next = typeof p?.newPriority === "number" ? formatPriorityValue(p.newPriority) : null;
+      const next =
+        typeof item.payload?.newPriority === "number" ? formatPriorityValue(item.payload.newPriority) : null;
       if (next) return `${name} changed priority to ${next}`;
       return `${name} changed priority`;
     }
     case "due_date_changed": {
-      const prev = formatDueIso(typeof p?.previousDueDate === "string" ? p.previousDueDate : null);
-      const next = formatDueIso(typeof p?.newDueDate === "string" ? p.newDueDate : null);
+      const p = item.payload;
+      const prev = formatDueIso(p?.previousDueDate ?? null);
+      const next = formatDueIso(p?.newDueDate ?? null);
       if (next && prev && prev !== next) return `${name} changed due date to ${next}`;
       if (next && !prev) return `${name} set due date to ${next}`;
       if (!next && prev) return `${name} removed the due date`;
       return `${name} updated the due date`;
     }
     case "assignees_changed": {
+      const p = item.payload;
       const added = resolveAddedAssigneeNames(p, peersById);
       const removed = resolveRemovedAssigneeNames(p, peersById);
       if (added.length && removed.length)
@@ -173,6 +167,7 @@ export function formatIssueActivitySentence(
       return `${name} updated assignees`;
     }
     case "labels_changed": {
+      const p = item.payload;
       const added = resolveLabelNames(p?.addedLabelNames);
       const removed = resolveLabelNames(p?.removedLabelNames);
       if (added.length && removed.length)
@@ -184,6 +179,7 @@ export function formatIssueActivitySentence(
       return `${name} updated labels`;
     }
     case "parent_changed": {
+      const p = item.payload;
       const prevKey = resolveParentIssueKey(p, "previousParentIssueKey");
       const nextKey = resolveParentIssueKey(p, "newParentIssueKey");
       if (parentWasChanged(p)) {
@@ -218,7 +214,7 @@ export function formatIssueActivityWhen(iso: string): string {
 }
 
 export function resolveIssueActivityActor(
-  item: IssueFeedItem,
+  item: IIssueFeedItem,
   peersById: ReadonlyMap<number, IUser>,
 ): { name: string; picture: string | null } {
   const normPic = (pic: string | null | undefined) => (pic?.trim() ? pic : null);

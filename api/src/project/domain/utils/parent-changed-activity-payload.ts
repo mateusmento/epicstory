@@ -1,4 +1,4 @@
-import type { ParentChangedPayload } from '../types/issue-activity-payload.types';
+import type { ParentChangedPayload } from '@epicstory/contracts';
 
 export type ParentIssueKeyLookup = ReadonlyMap<number, string>;
 

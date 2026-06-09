@@ -38,8 +38,6 @@ import { replyEntityToIReplyCore } from '../utils/reply-entity-to-ireply';
 import { rethrowQuotedRuleAsBadRequest } from '../utils/rethrow-quoted-rule-as-bad-request';
 import { ReplyPreviewEnrichmentService } from './reply-preview-enrichment.service';
 
-export type { QuotedReplyPreview } from 'src/channel/domain/utils';
-
 @Injectable()
 export class ReplyService {
   constructor(

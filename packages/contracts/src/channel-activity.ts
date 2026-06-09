@@ -1,4 +1,5 @@
 import type { IMessage } from "./channel-message";
+import type { IUser } from "./user";
 
 export type ChannelActivityType =
   | "message_sent"
@@ -8,22 +9,16 @@ export type ChannelActivityType =
   | "user_removed"
   | "channel_renamed";
 
-export type ChannelActivityUserSummary = {
-  id: number;
-  name: string;
-  picture?: string | null;
-};
-
 export type IChannelActivity = {
   id: number;
   channelId: number;
   type: ChannelActivityType;
   createdAt: string;
-  actor: ChannelActivityUserSummary | null;
+  actor: IUser | null;
   messageId: number | null;
   meetingId: number | null;
   payload: Record<string, unknown> | null;
-  subjectUser?: ChannelActivityUserSummary | null;
+  subjectUser?: IUser | null;
   message?: IMessage | null;
 };
 

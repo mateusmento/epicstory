@@ -1,5 +1,5 @@
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserRepository } from 'src/auth';
+import { UserRepository, userToIUser } from 'src/auth';
 import { IsNotEmpty, IsString } from 'class-validator';
 import {
   ChannelRepository,
@@ -78,12 +78,7 @@ export class ToggleReplyReactionCommand
     ) {
       const reactor = await this.userRepo.findOne({ where: { id: issuerId } });
       const reactorDto = reactor
-        ? {
-            id: reactor.id,
-            name: reactor.name,
-            email: reactor.email,
-            picture: reactor.picture ?? '',
-          }
+        ? userToIUser(reactor)
         : {
             id: issuerId,
             name: 'Someone',

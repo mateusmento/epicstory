@@ -1,66 +1,37 @@
+import type {
+  IIssueFeed,
+  IIssueFeedItem,
+  IMessage,
+  IReply,
+  IssueActivityPayload,
+  IUser,
+  ParentChangedPayload,
+} from '@epicstory/contracts';
 import { NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { IsNumber, IsOptional, Max, Min } from 'class-validator';
 import { uniq } from 'lodash';
-import { UserRepository } from 'src/auth';
-import { In } from 'typeorm';
+import { UserRepository, userToIUser } from 'src/auth';
 import { MessageService } from 'src/channel/application/services/message.service';
-import type { IMessage } from '@epicstory/contracts';
 import { ReplyService } from 'src/channel/application/services/reply.service';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import {
-  IssueActivityRepository,
-  IssueRepository,
-} from 'src/project/infrastructure/repositories';
-import { parseStoredIssueActivityPayload } from 'src/project/domain/utils/issue-activity-payload-parse';
-import {
   collectParentIssueIdsNeedingKeys,
   enrichParentChangedPayload,
 } from 'src/project/domain/utils/parent-changed-activity-payload';
+import {
+  IssueActivityRepository,
+  IssueRepository,
+} from 'src/project/infrastructure/repositories';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import type {
-  IssueActivityPayload,
-  IssueActivityType,
-  ParentChangedPayload,
-} from 'src/project/domain/types/issue-activity-payload.types';
-import { IsOptional, Max, Min, IsNumber } from 'class-validator';
-import { MessageReply } from 'src/channel/domain/entities';
+import { In } from 'typeorm';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
 /** Last K replies per comment card preview (aligned with Section D.1 plan). */
 const REPLY_PREVIEW_LIMIT = 3;
-
-export type IIssueFeedActor = {
-  id: number;
-  name: string;
-  picture: string | null;
-};
-
-export type IIssueFeedActivityItem = {
-  activityId: number;
-  issueId: number;
-  type: IssueActivityType;
-  actorId: number | null;
-  /** Hydrated from `users` — not all actors are comment-channel peers. */
-  actor: IIssueFeedActor | null;
-  createdAt: Date;
-  messageId: number | null;
-  attachmentId: number | null;
-  payload: IssueActivityPayload | null;
-  /** Populated when `type === comment_created` — same shape as channel `IMessage`. */
-  message: unknown | null;
-  replyPreviews: unknown[];
-  repliesTotal?: number;
-  /** True when more replies exist than `replyPreviews` (pagination / “show more”). */
-  hasMoreOlder?: boolean;
-};
-
-export type IIssueFeedQueryResult = {
-  commentChannelId: number | null;
-  items: IIssueFeedActivityItem[];
-};
 
 export class FindIssueFeed {
   issuer: Issuer;
@@ -92,7 +63,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
     issueId,
     issuer,
     limit,
-  }: FindIssueFeed): Promise<IIssueFeedQueryResult> {
+  }: FindIssueFeed): Promise<IIssueFeed> {
     const issue = await this.issueRepo.findOne({ where: { id: issueId } });
     if (!issue) throw new NotFoundException('Issue not found');
 
@@ -132,7 +103,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
             REPLY_PREVIEW_LIMIT,
             issuer.id,
           )
-        : { repliesByParentId: new Map<number, MessageReply[]>() };
+        : { repliesByParentId: new Map<number, IReply[]>() };
 
     const actorIds = uniq(
       rows.map((r) => r.actorId).filter((id): id is number => id != null),
@@ -145,10 +116,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
 
     const parsedPayloads = rows.map((row) =>
       row.type === 'parent_changed'
-        ? ((parseStoredIssueActivityPayload(
-            row.type,
-            (row.payload as Record<string, unknown> | null) ?? null,
-          ) ?? null) as ParentChangedPayload | null)
+        ? ((row.payload as ParentChangedPayload | null) ?? null)
         : null,
     );
     const parentIdsNeedingKeys =
@@ -164,7 +132,7 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
       parentKeyRows.map((row) => [row.id, row.issueKey]),
     );
 
-    const items: IIssueFeedActivityItem[] = rows.map((a) => {
+    const items: IIssueFeedItem[] = rows.map((a) => {
       const dto = a.messageId ? messagesById.get(a.messageId) : undefined;
       const replyPreviews = a.messageId
         ? (repliesByParentId.get(a.messageId) ?? [])
@@ -176,46 +144,34 @@ export class FindIssueFeedQuery implements IQueryHandler<FindIssueFeed> {
       const actorUser =
         a.actorId != null ? actorById.get(a.actorId) : undefined;
 
-      let payload =
-        parseStoredIssueActivityPayload(
-          a.type,
-          (a.payload as Record<string, unknown> | null) ?? null,
-        ) ?? null;
+      const payload: IssueActivityPayload | null =
+        a.type === 'parent_changed' && a.payload != null
+          ? enrichParentChangedPayload(a.payload, parentKeysByIssueId)
+          : (a.payload ?? null);
 
-      if (a.type === 'parent_changed' && payload != null) {
-        payload = enrichParentChangedPayload(
-          payload as ParentChangedPayload,
-          parentKeysByIssueId,
-        );
-      }
+      const actor: IUser | null =
+        actorUser != null ? userToIUser(actorUser) : null;
 
       return {
         activityId: a.id,
         issueId: a.issueId,
         type: a.type,
         actorId: a.actorId,
-        actor:
-          actorUser != null
-            ? {
-                id: actorUser.id,
-                name: actorUser.name,
-                picture: actorUser.picture?.trim() ? actorUser.picture : null,
-              }
-            : null,
-        createdAt: a.createdAt,
+        actor,
+        createdAt: a.createdAt.toISOString(),
         messageId: a.messageId,
         attachmentId: a.attachmentId,
         payload,
         message: dto ?? null,
-        replyPreviews: replyPreviews,
+        replyPreviews,
         repliesTotal: a.messageId != null ? repliesTotal : undefined,
         hasMoreOlder: a.messageId != null ? hasMoreOlder : undefined,
-      };
+      } as IIssueFeedItem;
     });
 
     return {
       commentChannelId: issue.commentChannelId ?? null,
       items,
-    };
+    } satisfies IIssueFeed;
   }
 }

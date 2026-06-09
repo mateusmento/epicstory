@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
+import type { IIssueFeedItem, ParentChangedPayload } from "@epicstory/contracts";
 import { formatIssueActivitySentence } from "./issue-activity-feed-text";
-import type { IssueFeedItem } from "./types";
 
 const peersById = new Map();
 
-function parentChangedItem(payload: Record<string, unknown>): IssueFeedItem {
+function parentChangedItem(payload: ParentChangedPayload): IIssueFeedItem {
   return {
     activityId: 1,
     issueId: 1,
     type: "parent_changed",
     actorId: 1,
-    actor: { id: 1, name: "Ada", picture: null },
+    actor: { id: 1, name: "Ada", email: "ada@example.com" },
     createdAt: new Date().toISOString(),
     messageId: null,
     attachmentId: null,

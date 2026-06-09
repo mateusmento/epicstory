@@ -18,7 +18,7 @@ import { AttachmentService } from 'src/workspace/application/services/attachment
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
-import type { IChannelActivityClient } from '../dtos/channel-activity-client.dto';
+import type { IChannelActivity } from '@epicstory/contracts';
 import { ChannelActivityService } from '../services/channel-activity.service';
 import { MessageService } from '../services/message.service';
 import type { IMessage } from '@epicstory/contracts';
@@ -28,7 +28,7 @@ import { MessagePollBody } from '../dtos/message-poll.dto';
 
 export type SendMessageResult = {
   message: IMessage;
-  activity: IChannelActivityClient;
+  activity: IChannelActivity;
 };
 
 export class SendMessage {

@@ -3,7 +3,7 @@ import { ChannelApi } from "@epicstory/api-client";
 import type { IMessage } from "@epicstory/contracts";
 import type { IssueApi } from "@epicstory/api-client";
 import type { IssueAttachmentActivitySyncPayload } from "./issue-attachments";
-import type { IssueFeed } from "../types";
+import type { IIssueFeed } from "@epicstory/contracts";
 import { computed, ref, toValue, watch, type MaybeRefOrGetter, type Ref } from "vue";
 
 export function useIssueActivityFeed(options: {
@@ -16,7 +16,7 @@ export function useIssueActivityFeed(options: {
 }) {
   const { issueApi, channelApi, tab, onSyncAttachments } = options;
 
-  const feed = ref<IssueFeed | null>(null);
+  const feed = ref<IIssueFeed | null>(null);
   const commentMessages = ref<IMessage[]>([]);
   const channelPeers = ref<IUser[]>([]);
   const loading = ref(false);
