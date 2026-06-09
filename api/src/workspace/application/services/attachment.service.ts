@@ -7,6 +7,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import type {
+  IIssueAttachmentListItem,
+  UploadedAttachment,
+} from '@epicstory/contracts';
 import { randomUUID } from 'crypto';
 import { createReadStream } from 'fs';
 import { unlink } from 'fs/promises';
@@ -18,22 +22,6 @@ import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
 import { Attachment } from '../../domain/entities/attachment.entity';
 import { isEmpty, uniq } from 'lodash';
 import { Readable } from 'stream';
-
-export type ICreatedAttachment = {
-  id: number;
-  url: string;
-  mimeType: string;
-  originalFilename: string;
-  byteSize: number;
-  uploadedById: number;
-};
-
-/** Issue aggregate list (`GET /issues/:id/attachments`) — includes anchor columns for client filtering. */
-export type IIssueAttachmentListItem = ICreatedAttachment & {
-  issueId: number | null;
-  messageId: number | null;
-  messageReplyId: number | null;
-};
 
 @Injectable()
 export class AttachmentService {
@@ -54,7 +42,7 @@ export class AttachmentService {
     messageId?: number | null;
     uploadedById: number;
     file: Express.Multer.File;
-  }): Promise<ICreatedAttachment> {
+  }): Promise<UploadedAttachment> {
     const { workspaceId, uploadedById, file } = params;
     const safeBase = basename(file.originalname || 'file')
       .replace(/[^a-zA-Z0-9._-]+/g, '_')
@@ -111,7 +99,7 @@ export class AttachmentService {
         originalFilename: row.originalFilename,
         byteSize: file.size,
         uploadedById: uploadedById,
-      };
+      } satisfies UploadedAttachment;
     } finally {
       if (!isEmpty(tempPath)) {
         await unlink(tempPath).catch(() => {});
@@ -123,7 +111,7 @@ export class AttachmentService {
   async listAnchoredForMessage(
     workspaceId: number,
     messageId: number,
-  ): Promise<ICreatedAttachment[]> {
+  ): Promise<UploadedAttachment[]> {
     const rows = await this.attachments.find({
       where: { workspaceId, messageId },
       order: { id: 'ASC' },
@@ -135,7 +123,7 @@ export class AttachmentService {
   async listAnchoredForReply(
     workspaceId: number,
     replyId: number,
-  ): Promise<ICreatedAttachment[]> {
+  ): Promise<UploadedAttachment[]> {
     const rows = await this.attachments.find({
       where: { workspaceId, messageReplyId: replyId },
       order: { id: 'ASC' },
@@ -146,14 +134,14 @@ export class AttachmentService {
   async listAnchoredForMessages(
     workspaceId: number,
     messageIds: number[],
-  ): Promise<Map<number, ICreatedAttachment[]>> {
+  ): Promise<Map<number, UploadedAttachment[]>> {
     const ids = uniq(messageIds.filter(Boolean));
     if (ids.length === 0) return new Map();
     const rows = await this.attachments.find({
       where: { workspaceId, messageId: In(ids) },
       order: { id: 'ASC' },
     });
-    const map = new Map<number, ICreatedAttachment[]>();
+    const map = new Map<number, UploadedAttachment[]>();
     for (const r of rows) {
       if (r.messageId == null) continue;
       const list = map.get(r.messageId) ?? [];
@@ -166,14 +154,14 @@ export class AttachmentService {
   async listAnchoredForReplies(
     workspaceId: number,
     replyIds: number[],
-  ): Promise<Map<number, ICreatedAttachment[]>> {
+  ): Promise<Map<number, UploadedAttachment[]>> {
     const ids = uniq(replyIds.filter(Boolean));
     if (ids.length === 0) return new Map();
     const rows = await this.attachments.find({
       where: { workspaceId, messageReplyId: In(ids) },
       order: { id: 'ASC' },
     });
-    const map = new Map<number, ICreatedAttachment[]>();
+    const map = new Map<number, UploadedAttachment[]>();
     for (const r of rows) {
       if (r.messageReplyId == null) continue;
       const list = map.get(r.messageReplyId) ?? [];
@@ -187,7 +175,7 @@ export class AttachmentService {
     workspaceId: number,
     channelId: number,
     limit = 100,
-  ): Promise<ICreatedAttachment[]> {
+  ): Promise<UploadedAttachment[]> {
     const rows = await this.attachments
       .createQueryBuilder('a')
       .where('a.workspace_id = :ws', { ws: workspaceId })
@@ -196,14 +184,7 @@ export class AttachmentService {
       .orderBy('a.created_at', 'DESC')
       .take(Math.min(limit, 100))
       .getMany();
-    return rows.map((r) => ({
-      id: r.id,
-      url: r.publicUrl,
-      mimeType: r.mimeType,
-      originalFilename: r.originalFilename,
-      byteSize: Number(r.byteSize),
-      uploadedById: r.uploadedById,
-    }));
+    return rows.map((r) => this.toDto(r));
   }
 
   /**
@@ -548,7 +529,7 @@ export class AttachmentService {
     }
   }
 
-  private toDto(r: Attachment): ICreatedAttachment {
+  private toDto(r: Attachment): UploadedAttachment {
     return {
       id: r.id,
       url: r.publicUrl,
@@ -556,7 +537,7 @@ export class AttachmentService {
       originalFilename: r.originalFilename,
       byteSize: Number(r.byteSize),
       uploadedById: r.uploadedById,
-    };
+    } satisfies UploadedAttachment;
   }
 
   private toIssueListItemDto(r: Attachment): IIssueAttachmentListItem {

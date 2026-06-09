@@ -9,7 +9,7 @@ import { Channel } from 'src/channel/domain';
 import { MessageReply } from 'src/channel/domain/entities';
 import { MessageReplyRepository } from 'src/channel/infrastructure';
 import { mapBy } from 'src/core/objects';
-import type { ICreatedAttachment } from 'src/workspace/application/services/attachment.service';
+import type { UploadedAttachment } from '@epicstory/contracts';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { In } from 'typeorm';
 import { buildQuotedReplyPreview } from 'src/channel/domain/utils';
@@ -57,7 +57,7 @@ export class ReplyPreviewEnrichmentService {
             channel.workspaceId,
             replyIds,
           )
-        : new Map<number, ICreatedAttachment[]>();
+        : new Map<number, UploadedAttachment[]>();
 
     for (const reply of replies) {
       reply.setReactions(senderId);
