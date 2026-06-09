@@ -3,8 +3,7 @@ import { createPaginatedListEngine, createPaginatedListState } from "@/domain/as
 import { githubApiErrorMessage } from "@/domain/github/github-api-errors";
 import { GithubIntegrationApi } from "@epicstory/api-client";
 import type { IGithubCatalogRepository } from "@epicstory/contracts";
-import { toReactive } from "@vueuse/core";
-import { markRaw, ref, toRefs } from "vue";
+import { markRaw, reactive, ref, toRefs } from "vue";
 
 const DEFAULT_PAGE_SIZE = 30;
 
@@ -74,7 +73,7 @@ export function useGithubRepositoryCatalog(options: UseGithubRepositoryCatalogOp
     hasLoaded.value = false;
   }
 
-  return toReactive({
+  return reactive({
     ...toRefs(state),
     hasLoaded,
     totalCount,

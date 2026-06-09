@@ -7,7 +7,7 @@ import { toPaginatedListView } from "@/lib/async";
 
 const props = defineProps<{
   open: boolean;
-  workspaceId: string;
+  workspaceId: number;
   selectedRepoGithubId: string | null;
 }>();
 
@@ -21,8 +21,9 @@ const catalog = useGithubRepositoryCatalog({ pageSize: 30 });
 
 const filteredRepositories = computed(() => {
   const q = searchQuery.value.trim().toLowerCase();
-  if (!q) return catalog.items;
-  return catalog.items.filter((repo) => {
+  const items = catalog.items;
+  if (!q) return items;
+  return items.filter((repo) => {
     const haystack = `${repo.fullName} ${repo.owner} ${repo.name}`.toLowerCase();
     return haystack.includes(q);
   });
@@ -30,8 +31,11 @@ const filteredRepositories = computed(() => {
 
 const list = computed(() =>
   toPaginatedListView({
-    ...catalog,
     items: filteredRepositories.value,
+    loading: catalog.loading,
+    loadingMore: catalog.loadingMore,
+    hasMore: catalog.hasMore,
+    error: catalog.error ?? null,
   }),
 );
 
@@ -41,7 +45,7 @@ function onSelected(repo: IGithubCatalogRepository): void {
 }
 
 async function onLoadMore(): Promise<void> {
-  await catalog.loadMore(+props.workspaceId);
+  await catalog.loadMore(props.workspaceId);
 }
 
 watch(
@@ -50,7 +54,7 @@ watch(
     if (!isOpen) return;
     searchQuery.value = "";
     catalog.reset();
-    await catalog.load(+props.workspaceId);
+    await catalog.load(props.workspaceId);
   },
 );
 </script>
