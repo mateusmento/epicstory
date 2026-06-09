@@ -19,7 +19,7 @@ import {
   MessageRepository,
 } from 'src/channel/infrastructure';
 import { groupBy, mapBy } from 'src/core/objects';
-import type { ICreatedAttachment } from 'src/workspace/application/services/attachment.service';
+import type { UploadedAttachment } from '@epicstory/contracts';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { In } from 'typeorm';
 import { messageEntityToIMessageCore } from '../utils/message-entity-to-imessage';
@@ -137,7 +137,7 @@ export class MessagePreviewEnrichmentService {
           channel.workspaceId,
           messageIds,
         )
-      : new Map<number, ICreatedAttachment[]>();
+      : new Map<number, UploadedAttachment[]>();
 
     const pollMessageIds = messages
       .filter((m) => m.poll != null)

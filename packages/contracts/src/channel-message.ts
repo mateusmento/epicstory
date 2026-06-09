@@ -1,3 +1,4 @@
+import type { UploadedAttachment } from "./attachment";
 import type { JSONContent } from "@tiptap/core";
 import type { Page } from "./page";
 import type { IUser } from "./user";
@@ -29,14 +30,7 @@ export type IQuotedMessagePreview = {
   displayContent?: string;
 };
 
-export type IMessageAttachment = {
-  id: number;
-  url: string;
-  mimeType: string;
-  originalFilename: string;
-  byteSize: number;
-  uploadedById?: number;
-};
+export type IMessageAttachment = UploadedAttachment;
 
 export type IReaction = {
   emoji: string;
