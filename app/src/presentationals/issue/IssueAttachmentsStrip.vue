@@ -20,8 +20,8 @@ const props = withDefaults(
     droppable?: boolean;
     /** Disables drop UI while uploads run (from composable). */
     uploadInProgress?: boolean;
-    removeFile: (attachmentId: number) => Promise<void>;
-    dismissPendingUpload: (clientId: string) => void;
+    /** Attachment id being removed (container tracks async mutation). */
+    removingAttachmentId?: number | null;
   }>(),
   {
     compact: false,
@@ -29,15 +29,17 @@ const props = withDefaults(
     meId: null,
     droppable: false,
     uploadInProgress: false,
+    removingAttachmentId: null,
   },
 );
 
 const emit = defineEmits<{
+  remove: [attachmentId: number];
+  dismissPending: [clientId: string];
   filesDropped: [files: File[]];
 }>();
 
 const confirmDialog = useConfirmDialog();
-const removingId = ref<number | null>(null);
 const dragDepth = ref(0);
 
 const dropBlocked = computed(() => props.uploadInProgress || !props.droppable);
@@ -90,14 +92,7 @@ async function removeAttachment(id: number) {
   if (!confirmed) {
     return;
   }
-  removingId.value = id;
-  try {
-    await props.removeFile(id);
-  } catch {
-    /* parent surfaces errors */
-  } finally {
-    removingId.value = null;
-  }
+  emit("remove", id);
 }
 
 const shellClass = computed(() =>
@@ -151,10 +146,10 @@ const shellClass = computed(() =>
         <IssueAttachmentTilesList
           removable
           :me-id="meId ?? null"
-          :disabled="removingId !== null || uploadInProgress"
+          :disabled="removingAttachmentId != null || uploadInProgress"
           :rows="attachments.data ?? []"
           @remove="removeAttachment($event)"
-          @dismiss-pending="dismissPendingUpload($event)"
+          @dismiss-pending="emit('dismissPending', $event)"
         />
       </div>
       <p v-else class="text-xs text-muted-foreground">
