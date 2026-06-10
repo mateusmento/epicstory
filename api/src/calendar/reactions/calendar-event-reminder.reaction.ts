@@ -57,18 +57,17 @@ export class CalendarEventReminderReaction {
         userId,
         workspaceId: event.workspaceId,
         payload: {
-          calendarEventId: event.id,
-          occurrenceAt: occurrenceStartsAt,
+          calendarEventId: String(event.id),
+          occurrenceAt: occurrenceStartsAt.toISOString(),
           title: event.title,
           description: event.description ?? '',
           notifyMinutesBefore,
           calendarEventType: event.type,
-          startsAt: occurrenceStartsAt,
-          endsAt: occurrenceEndsAt,
+          startsAt: occurrenceStartsAt.toISOString(),
+          endsAt: occurrenceEndsAt.toISOString(),
           isPublic: event.isPublic,
           notifyEnabled: event.notifyEnabled,
           channelId,
-          eventPayload: event.payload,
         },
       });
     }

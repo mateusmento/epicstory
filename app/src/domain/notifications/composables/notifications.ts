@@ -5,10 +5,10 @@ import { storeToRefs } from "pinia";
 import { computed, onUnmounted, watch } from "vue";
 import { INBOX_NOTIFICATION_PAGE_SIZE } from "../constants";
 import { useNotificationFeedStore } from "../notification-feed.store";
-import type { Notification } from "@epicstory/contracts";
+import type { INotification } from "@epicstory/contracts";
 import { NotificationApi } from "@epicstory/api-client";
 
-type IncomingListener = (notification: Notification) => void;
+type IncomingListener = (notification: INotification) => void;
 
 const incomingListeners = new Set<IncomingListener>();
 
@@ -17,13 +17,13 @@ export function registerNotificationIncomingListener(listener: IncomingListener)
   return () => incomingListeners.delete(listener);
 }
 
-function notifyIncomingListeners(notification: Notification) {
+function notifyIncomingListeners(notification: INotification) {
   incomingListeners.forEach((fn) => fn(notification));
 }
 
-function isValidNotification(notification: unknown): notification is Notification {
+function isValidNotification(notification: unknown): notification is INotification {
   if (!notification || typeof notification !== "object") return false;
-  const n = notification as Notification;
+  const n = notification as INotification;
   if (!n.id || !n.type || !n.payload) return false;
   return typeof n.payload === "object";
 }
@@ -49,7 +49,7 @@ export function useNotifications(options?: UseNotificationsOptions) {
 
   const unseenCount = computed(() => notifications.value.filter((n) => !n.seen).length);
 
-  function handleIncomingNotification(notification: Notification) {
+  function handleIncomingNotification(notification: INotification) {
     const exists = notifications.value.some((n) => n.id === notification.id);
     if (exists || !isValidNotification(notification)) return;
     notifications.value.unshift(notification);

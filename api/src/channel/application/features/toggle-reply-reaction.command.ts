@@ -1,5 +1,5 @@
 import type { ToggleReactionResponse } from '@epicstory/contracts';
-import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNotEmpty, IsString } from 'class-validator';
 import { UserRepository, userToIUser } from 'src/auth';
 import {
@@ -7,7 +7,7 @@ import {
   MessageReplyRepository,
 } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
-import { SendNotification } from 'src/notifications/features/send-notification.command';
+import { NotificationService } from 'src/notifications/services/notification.service';
 import {
   ChannelNotFound,
   IssuerIsNotChannelMember,
@@ -38,7 +38,7 @@ export class ToggleReplyReactionCommand
     private channelRepo: ChannelRepository,
     private messageReplyRepo: MessageReplyRepository,
     private userRepo: UserRepository,
-    private commandBus: CommandBus,
+    private notificationService: NotificationService,
   ) {}
 
   async execute({
@@ -99,23 +99,21 @@ export class ToggleReplyReactionCommand
           reply,
           channel,
         );
-      await this.commandBus.execute(
-        new SendNotification({
-          userIds: [reply.senderId],
-          type: 'reply_reaction',
-          workspaceId: channel.workspaceId,
-          payload: {
-            type: 'reply_reaction',
-            replyId,
-            channelId: channel.id,
-            channelName: channelLabel,
-            emoji,
-            reactorUserId: issuerId,
-            reactor: reactorDto,
-            messageExcerpt,
-          },
-        }),
-      );
+
+      await this.notificationService.sendNotification({
+        userId: reply.senderId,
+        type: 'reply_reaction',
+        workspaceId: channel.workspaceId,
+        payload: {
+          replyId,
+          channelId: channel.id,
+          channelName: channelLabel,
+          emoji,
+          reactorUserId: issuerId,
+          reactor: reactorDto,
+          messageExcerpt,
+        },
+      });
     }
 
     return {

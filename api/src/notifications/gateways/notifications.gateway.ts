@@ -1,8 +1,8 @@
 import type {
-  Notification as NotificationContract,
   SubscribeNotificationsBody,
   UnsubscribeNotificationsBody,
 } from '@epicstory/contracts';
+import { notificationEntityToClient } from '../utils/notification-entity-to-client';
 import {
   ConnectedSocket,
   MessageBody,
@@ -24,10 +24,7 @@ export class NotificationGateway {
     if (!this.server) return;
     this.server
       .to(`user:${userId}:notifications`)
-      .emit(
-        'incoming-notification',
-        notification as unknown as NotificationContract,
-      );
+      .emit('incoming-notification', notificationEntityToClient(notification));
   }
 
   @SubscribeMessage('subscribe-notifications')

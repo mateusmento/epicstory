@@ -1,16 +1,17 @@
 import { NotFoundException } from '@nestjs/common';
-import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNumber } from 'class-validator';
 import { UserRepository } from 'src/auth';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
-import { SendNotification } from 'src/notifications/features/send-notification.command';
+import { NotificationService } from 'src/notifications/services';
 import { PROJECT_SCHEMA } from 'src/project/constants';
-import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import {
   IssueActivityRepository,
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
+import { ScheduledJobRepository } from 'src/scheduling/repositories';
+import { excerptFromTiptapDocWithWorkspaceMembers } from 'src/utils/tiptap-excerpt';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { syncIssueDueDateReminders } from './sync-issue-due-reminders';
@@ -34,9 +35,9 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
     private issueRepo: IssueRepository,
     private workspaceRepo: WorkspaceRepository,
     private userRepo: UserRepository,
-    private commandBus: CommandBus,
     private issueActivities: IssueActivityRepository,
     private scheduledJobRepo: ScheduledJobRepository,
+    private notificationService: NotificationService,
   ) {}
 
   async execute({ issuer, issueId, userId }: AddAssignee) {
@@ -92,21 +93,23 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
     }
 
     if (userId !== issuer.id) {
-      await this.commandBus.execute(
-        new SendNotification({
-          userIds: [userId],
-          type: 'issue_assigned',
-          workspaceId: issue.workspaceId,
-          payload: {
-            issueId: updated.id,
-            issueKey: updated.issueKey,
-            projectId: updated.projectId,
-            title: updated.title,
-            description: updated.description,
-            issuer: issuerUser ?? issuer,
-          },
-        }),
-      );
+      await this.notificationService.sendNotification({
+        userId,
+        type: 'issue_assigned',
+        workspaceId: issue.workspaceId,
+        payload: {
+          issueId: updated.id,
+          issueKey: updated.issueKey,
+          projectId: updated.projectId,
+          title: updated.title,
+          description: await excerptFromTiptapDocWithWorkspaceMembers(
+            this.workspaceRepo,
+            issue.workspaceId,
+            updated.description,
+          ),
+          issuer: issuerUser ?? issuer,
+        },
+      });
     }
 
     return updated;

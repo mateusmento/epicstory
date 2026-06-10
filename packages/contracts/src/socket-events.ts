@@ -34,7 +34,7 @@ import type {
   MeetingMediaToggledEvent,
   SubscribeMeetingsBody,
 } from "./meeting-socket-events";
-import type { Notification } from "./notification";
+import type { INotification } from "./notification";
 import type {
   SubscribeWorkspacePresenceBody,
   UnsubscribeWorkspacePresenceBody,
@@ -140,7 +140,7 @@ export interface ServerToClientEvents {
   "screen-share-toggled": (payload: MeetingMediaToggledWireEvent) => void;
   "current-meeting-ended": (payload: CurrentMeetingEndedEvent) => void;
 
-  "incoming-notification": (payload: Notification) => void;
+  "incoming-notification": (payload: INotification) => void;
 
   "issue-updated": (payload: IssueUpdatedEvent) => void;
 }

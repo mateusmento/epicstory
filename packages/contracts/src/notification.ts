@@ -2,7 +2,6 @@ import type { IChannel, IMessage, IReply } from "./channel-message";
 import type { IUser } from "./user";
 
 export type MentionNotificationPayload = {
-  type: "mention";
   channel: IChannel;
   message: IMessage;
   sender: IUser;
@@ -11,7 +10,6 @@ export type MentionNotificationPayload = {
 };
 
 export type ReplyNotificationPayload = {
-  type: "reply";
   reply: IReply;
   message: IMessage;
   channel: IChannel;
@@ -19,14 +17,12 @@ export type ReplyNotificationPayload = {
 };
 
 export type DirectMessageNotificationPayload = {
-  type: "direct_message";
   message: IMessage;
   channel: IChannel;
   sender: IUser;
 };
 
 export type IssueDueDateNotificationPayload = {
-  type: "issue_due_date";
   title: string;
   description: string;
   issueId: number;
@@ -38,7 +34,6 @@ export type IssueDueDateNotificationPayload = {
 };
 
 export type IssueAssignedNotificationPayload = {
-  type: "issue_assigned";
   title: string;
   description: string;
   issueId: number;
@@ -49,7 +44,6 @@ export type IssueAssignedNotificationPayload = {
 };
 
 export type CalendarMeetingReminderNotificationPayload = {
-  type: "calendar_meeting_reminder";
   calendarEventId: string;
   occurrenceAt: string;
   meetingId: number;
@@ -62,11 +56,9 @@ export type CalendarMeetingReminderNotificationPayload = {
   endsAt?: string;
   isPublic?: boolean;
   notifyEnabled?: boolean;
-  eventPayload?: Record<string, unknown>;
 };
 
 export type CalendarEventReminderNotificationPayload = {
-  type: "calendar_event_reminder";
   calendarEventId: string;
   occurrenceAt: string;
   channelId?: number | null;
@@ -78,11 +70,9 @@ export type CalendarEventReminderNotificationPayload = {
   endsAt?: string;
   isPublic?: boolean;
   notifyEnabled?: boolean;
-  eventPayload?: Record<string, unknown>;
 };
 
 export type MessageReactionNotificationPayload = {
-  type?: "message_reaction";
   messageId: number;
   channelId: number;
   emoji: string;
@@ -93,7 +83,6 @@ export type MessageReactionNotificationPayload = {
 };
 
 export type ReplyReactionNotificationPayload = {
-  type?: "reply_reaction";
   replyId: number;
   channelId: number;
   emoji: string;
@@ -131,11 +120,19 @@ export type NotificationWithPayload =
   | { type: "message_reaction"; payload: MessageReactionNotificationPayload }
   | { type: "reply_reaction"; payload: ReplyReactionNotificationPayload };
 
-export type Notification = NotificationWithPayload & {
+export type NotificationBase = {
   id: string;
-  type: string;
   userId: number;
-  payload: NotificationPayload;
   createdAt: string;
   seen: boolean;
 };
+
+/** switch on notification.type narrows notification.payload */
+export type INotification = NotificationBase & NotificationWithPayload;
+
+export type NotificationType = NotificationWithPayload["type"];
+
+export type NotificationPayloadFor<T extends NotificationType> = Extract<
+  NotificationWithPayload,
+  { type: T }
+>["payload"];

@@ -1,9 +1,9 @@
-import type { Notification } from "@epicstory/contracts";
+import type { INotification } from "@epicstory/contracts";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
 export const useNotificationFeedStore = defineStore("notification-feed", () => {
-  const notifications = ref<Notification[]>([]);
+  const notifications = ref<INotification[]>([]);
   const isLoading = ref(false);
   const isLoadingMore = ref(false);
   const hasMore = ref(true);

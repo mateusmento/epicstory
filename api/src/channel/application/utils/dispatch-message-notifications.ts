@@ -1,6 +1,6 @@
 import type { CommandBus } from '@nestjs/cqrs';
 import type { Channel } from 'src/channel/domain/entities/channel.entity';
-import type { IMessage } from '@epicstory/contracts';
+import type { IMessage, NotificationPayload } from '@epicstory/contracts';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 
 /** Shared by `SendMessage` and issue `CreateIssueComment` orchestration. */
@@ -25,7 +25,7 @@ export async function dispatchNotificationsForMessageSent(
           message,
           sender: message.sender,
           mentionedUsers: message.mentionedUsers,
-        },
+        } as unknown as NotificationPayload,
       }),
     );
   }
@@ -48,7 +48,7 @@ export async function dispatchNotificationsForMessageSent(
           message,
           channel,
           sender: message.sender,
-        },
+        } as unknown as NotificationPayload,
       }),
     );
   }

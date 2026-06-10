@@ -1,7 +1,7 @@
 import { onUnmounted } from "vue";
 import { toast } from "vue-sonner";
 import { getNotificationToastDescription, getNotificationToastTitle } from "../notification-preview";
-import type { Notification } from "@epicstory/contracts";
+import type { INotification } from "@epicstory/contracts";
 import { registerNotificationIncomingListener } from "./notifications";
 
 function shouldMirrorToSystemNotification(): boolean {
@@ -28,7 +28,7 @@ function showBrowserNotification(title: string, body: string, tag: string) {
  * the tab is hidden or the window does not have focus (so in-page toasts are easy to miss).
  */
 export function useNotificationIncomingAlerts() {
-  async function handleIncoming(notification: Notification) {
+  async function handleIncoming(notification: INotification) {
     const title = getNotificationToastTitle(notification);
     const description = getNotificationToastDescription(notification);
 
