@@ -13,6 +13,7 @@ import {
 } from '../exceptions';
 import { ReplyService } from '../services/reply.service';
 import { getChannelLabelForNotification } from '../utils/enrich-channel';
+import type { ToggleReactionResponse } from '@epicstory/contracts';
 import { SendNotification } from 'src/notifications/features/send-notification.command';
 
 export class ToggleReplyReaction {
@@ -30,7 +31,7 @@ export class ToggleReplyReaction {
 
 @CommandHandler(ToggleReplyReaction)
 export class ToggleReplyReactionCommand
-  implements ICommandHandler<ToggleReplyReaction>
+  implements ICommandHandler<ToggleReplyReaction, ToggleReactionResponse>
 {
   constructor(
     private replyService: ReplyService,
@@ -40,7 +41,11 @@ export class ToggleReplyReactionCommand
     private commandBus: CommandBus,
   ) {}
 
-  async execute({ replyId, emoji, issuerId }: ToggleReplyReaction) {
+  async execute({
+    replyId,
+    emoji,
+    issuerId,
+  }: ToggleReplyReaction): Promise<ToggleReactionResponse> {
     const reply = await this.messageReplyRepo.findOne({
       where: { id: replyId },
       relations: { sender: true },
@@ -113,14 +118,6 @@ export class ToggleReplyReactionCommand
       );
     }
 
-    return {
-      success: true,
-      channelId: channel.id,
-      replyId,
-      emoji,
-      issuerId,
-      action: result.action,
-      reactions,
-    };
+    return { success: true, reactions } satisfies ToggleReactionResponse;
   }
 }

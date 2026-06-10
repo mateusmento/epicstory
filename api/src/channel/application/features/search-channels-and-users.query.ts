@@ -1,4 +1,7 @@
-import type { IChannel } from '@epicstory/contracts';
+import type {
+  IChannel,
+  ISearchChannelsAndUsersItem,
+} from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import {
   IsInt,
@@ -8,8 +11,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { User } from 'src/auth';
-import { UserRepository } from 'src/auth/infrastructure/repositories/user.repository';
+import { UserRepository, userToIUser } from 'src/auth';
+import type { User } from 'src/auth';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
 import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { enrichChannelsForPreview } from 'src/channel/application/utils/enrich-channel';
@@ -29,10 +32,6 @@ import {
   searchUnionKind,
   type SearchUnionRow,
 } from './search-channels-and-users.union';
-
-export type SearchChannelsAndUsersItem =
-  | { kind: 'channel'; channel: IChannel }
-  | { kind: 'user'; user: User };
 
 export class SearchChannelsAndUsers {
   workspaceId: number;
@@ -64,7 +63,8 @@ export class SearchChannelsAndUsers {
 
 @QueryHandler(SearchChannelsAndUsers)
 export class SearchChannelsAndUsersQuery
-  implements IQueryHandler<SearchChannelsAndUsers>
+  implements
+    IQueryHandler<SearchChannelsAndUsers, Page<ISearchChannelsAndUsersItem>>
 {
   constructor(
     private workspaceRepo: WorkspaceRepository,
@@ -73,7 +73,9 @@ export class SearchChannelsAndUsersQuery
     private userRepo: UserRepository,
   ) {}
 
-  async execute(query: SearchChannelsAndUsers) {
+  async execute(
+    query: SearchChannelsAndUsers,
+  ): Promise<Page<ISearchChannelsAndUsersItem>> {
     const { issuer, workspaceId, teamId } = query;
     const member = await this.workspaceRepo.findMember(workspaceId, issuer.id);
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
@@ -158,7 +160,7 @@ export class SearchChannelsAndUsersQuery
   private async hydrateInRowOrder(
     rows: SearchUnionRow[],
     viewerUserId: number,
-  ): Promise<SearchChannelsAndUsersItem[]> {
+  ): Promise<ISearchChannelsAndUsersItem[]> {
     const channelIds = rows
       .filter((r) => Number(r.kind) === searchUnionKind.channel)
       .map((r) => Number(r.ref_id));
@@ -169,14 +171,14 @@ export class SearchChannelsAndUsersQuery
     const channelById = await this.loadChannelsById(channelIds, viewerUserId);
     const userById = await this.loadUsersById(userIds);
 
-    const items: SearchChannelsAndUsersItem[] = [];
+    const items: ISearchChannelsAndUsersItem[] = [];
     for (const row of rows) {
       if (Number(row.kind) === searchUnionKind.channel) {
         const channel = channelById.get(Number(row.ref_id));
         if (channel) items.push({ kind: 'channel', channel });
       } else {
         const user = userById.get(Number(row.ref_id));
-        if (user) items.push({ kind: 'user', user });
+        if (user) items.push({ kind: 'user', user: userToIUser(user) });
       }
     }
     return items;

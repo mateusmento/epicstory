@@ -1,4 +1,4 @@
-import type { IChannel } from '@epicstory/contracts';
+import type { ChannelGroupsPage, IChannel } from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
@@ -10,12 +10,6 @@ import { mapBy, patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { enrichChannelsForPreview } from '../utils/enrich-channel';
-
-export type ChannelGroupsPage = {
-  groupChannels: Page<IChannel>;
-  meetingChannels: Page<IChannel>;
-  directChannels: Page<IChannel>;
-};
 
 export class FindChannelGroups {
   workspaceId: number;
@@ -96,7 +90,11 @@ export class FindChannelGroupsQuery
       }),
     ]);
 
-    return { groupChannels, meetingChannels, directChannels };
+    return {
+      groupChannels,
+      meetingChannels,
+      directChannels,
+    } satisfies ChannelGroupsPage;
   }
 
   private async fetchChannelPage({
