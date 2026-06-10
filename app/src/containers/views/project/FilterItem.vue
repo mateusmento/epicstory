@@ -16,13 +16,8 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useIssues } from "@/domain/issues";
-import {
-  FIELD_ALLOWED_OPERATORS,
-  FILTER_FIELDS,
-  FILTER_OPERATORS,
-  type ProjectFilter,
-  type ProjectFilterOperator,
-} from "@/domain/project";
+import { FIELD_ALLOWED_OPERATORS, FILTER_FIELDS, FILTER_OPERATORS } from "@/domain/project";
+import type { IssueFilter, IssueFilterOperator } from "@epicstory/contracts";
 import { parseDate } from "@/utils";
 import { formatDate, isDate, isThisYear, isToday } from "date-fns";
 import { isEmpty } from "lodash";
@@ -36,11 +31,11 @@ const props = defineProps<{
   projectId: number;
 }>();
 
-const modelValue = defineModel<ProjectFilter>({ required: true });
+const modelValue = defineModel<IssueFilter>({ required: true });
 
 const operatorOptions = computed(() => FIELD_ALLOWED_OPERATORS[modelValue.value.field]);
 
-function setOperator(op: ProjectFilterOperator) {
+function setOperator(op: IssueFilterOperator) {
   modelValue.value = { ...modelValue.value, operator: op };
 }
 
@@ -136,7 +131,7 @@ const parentPreview = computed(() => {
       <MenuContent class="w-56">
         <MenuRadioGroup
           :model-value="modelValue.operator"
-          @update:model-value="setOperator($event as ProjectFilterOperator)"
+          @update:model-value="setOperator($event as IssueFilterOperator)"
         >
           <MenuRadioItem v-for="op in operatorOptions" :key="op" :value="op">
             {{ FILTER_OPERATORS[op] }}

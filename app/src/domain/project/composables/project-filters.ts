@@ -1,34 +1,35 @@
+import type { IssueFilter } from "@epicstory/contracts";
 import { useStorage } from "@vueuse/core";
 import type { MaybeRefOrGetter } from "vue";
 import { computed, toValue } from "vue";
-import { createDefaultFilter, type ProjectFilter } from "../types";
-import { isDate, isValid } from "date-fns";
+import { createDefaultFilter } from "../issue-filter-ui";
+import { issueFilterHasValue } from "../issue-filters-for-query";
 
 export function useProjectFilters(projectId: MaybeRefOrGetter<number>) {
-  const filtersMap = useStorage<Record<number, ProjectFilter[]>>(`backlog.filters`, [], localStorage, {
+  const filtersMap = useStorage<Record<number, IssueFilter[]>>(`backlog.filters`, [], localStorage, {
     listenToStorageChanges: true,
   });
 
-  const filters = computed<ProjectFilter[]>({
+  const filters = computed<IssueFilter[]>({
     get: () => filtersMap.value[toValue(projectId)] ?? [],
     set: (value) => (filtersMap.value[toValue(projectId)] = value),
   });
 
-  function setFilters(next: ProjectFilter[]) {
-    filters.value = next.filter(hasValue);
+  function setFilters(next: IssueFilter[]) {
+    filters.value = next.filter(issueFilterHasValue);
   }
 
-  function addFilter(field: ProjectFilter["field"]) {
+  function addFilter(field: IssueFilter["field"]) {
     if (filters.value.some((f) => f.field === field)) return;
     filters.value = [...filters.value, createDefaultFilter(field)];
   }
 
-  function removeFilter(field: ProjectFilter["field"]) {
+  function removeFilter(field: IssueFilter["field"]) {
     filters.value = filters.value.filter((f) => f.field !== field);
   }
 
-  function updateFilter(field: ProjectFilter["field"], next: ProjectFilter) {
-    const normalized = hasValue(next) ? next : null;
+  function updateFilter(field: IssueFilter["field"], next: IssueFilter) {
+    const normalized = issueFilterHasValue(next) ? next : null;
     const current = filters.value ?? [];
     if (!normalized) return removeFilter(field);
     filters.value = current.map((f) => (f.field === field ? normalized : f));
@@ -41,14 +42,4 @@ export function useProjectFilters(projectId: MaybeRefOrGetter<number>) {
     removeFilter,
     updateFilter,
   };
-}
-
-function hasValue(f: ProjectFilter) {
-  const v: ProjectFilter["value"] = f.value;
-  if (f.field === "labels") return Array.isArray(v) && v.length > 0;
-  if (v === null || v === undefined) return false;
-  if (isDate(v)) return isValid(v);
-  if (typeof v === "string") return v.trim().length > 0;
-  if (typeof v === "number") return Number.isFinite(v);
-  return true;
 }

@@ -25,7 +25,7 @@ import Signal1Bar from "@/presentationals/views/project/backlog/priority-toggler
 import Signal2Bars from "@/presentationals/views/project/backlog/priority-toggler/Signal2Bars.vue";
 import Signal3Bars from "@/presentationals/views/project/backlog/priority-toggler/Signal3Bars.vue";
 import UrgentIcon from "@/presentationals/views/project/backlog/priority-toggler/Urgent.vue";
-import { useProjectFilters } from "@/domain/project";
+import { issueFiltersForQuery, useProjectFilters } from "@/domain/project";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
@@ -92,7 +92,7 @@ onMounted(async () => {
     orderBy: orderBy.value,
     page: 0,
     count: 150,
-    filters: activeFilters.value as any,
+    filters: issueFiltersForQuery(activeFilters.value),
   });
 
   setupDragAndDrop();
@@ -107,7 +107,7 @@ watch(
       orderBy: orderBy.value,
       page: 0,
       count: 150,
-      filters: activeFilters.value as any,
+      filters: issueFiltersForQuery(activeFilters.value),
     });
   },
 );

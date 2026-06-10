@@ -31,7 +31,7 @@ import {
   ToggleGroupItem,
 } from "@/design-system";
 import { Icon, IconSearch } from "@/design-system/icons";
-import type { Project } from "@/domain/project";
+import type { Project } from "@epicstory/contracts";
 import { IssueApi, ProjectApi } from "@epicstory/api-client";
 import type { IIssue } from "@epicstory/contracts";
 import { useMagicKeys, useStorage, whenever } from "@vueuse/core";

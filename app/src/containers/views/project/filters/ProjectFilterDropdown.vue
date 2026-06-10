@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
-import { FILTER_FIELDS, type ProjectFilterField, useProjectFilters } from "@/domain/project";
+import { FILTER_FIELDS, useProjectFilters } from "@/domain/project";
+import type { IssueFilterField } from "@epicstory/contracts";
 
 const props = defineProps<{
   projectId: number;
@@ -8,7 +9,7 @@ const props = defineProps<{
 
 const { filters, addFilter } = useProjectFilters(+props.projectId);
 
-const ALL_FIELDS = Object.keys(FILTER_FIELDS) as ProjectFilterField[];
+const ALL_FIELDS = Object.keys(FILTER_FIELDS) as IssueFilterField[];
 
 function availableFields() {
   const selected = new Set(filters.value.map((f) => f.field));
