@@ -5,6 +5,7 @@ export * from "./collect-preview-images";
 export * from "./composer";
 export * from "./mention-suggestion-bump";
 export * from "./mention-suggestion.types";
+export * from "./mention.types";
 export * from "./node-views";
 export * from "./preview";
 export * from "./segments";

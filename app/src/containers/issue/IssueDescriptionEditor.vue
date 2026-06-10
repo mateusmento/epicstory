@@ -4,13 +4,10 @@ import { RichTextComposer, RichTextPreview } from "@/presentationals/rich-text";
 import { useDependency } from "@/core/dependency-injection";
 import { Button } from "@/design-system";
 import { IssueApi } from "@epicstory/api-client";
-import type { IUser as IUser } from "@epicstory/contracts";
 import { normalizeTiptapDoc, tiptapToPlainText } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
-import { useWorkspaceOnline } from "@/domain/channels";
+import type { MentionComposerView } from "@/presentationals/rich-text/mention.types";
 import { computed, ref, shallowRef, watch } from "vue";
-
-const { isUserOnline } = useWorkspaceOnline();
 
 const INLINE_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
@@ -20,21 +17,15 @@ const props = withDefaults(
     issueId: number;
     disabled?: boolean;
     isSaving?: boolean;
-    mentionables?: IUser[];
+    mention?: MentionComposerView;
     meId?: number;
-    onMentionListReachedBottom?: () => void | Promise<void>;
-    mentionListHasMore?: boolean;
-    mentionListLoadingMore?: boolean;
   }>(),
-  {
-    mentionables: () => [],
-    mentionListHasMore: true,
-    mentionListLoadingMore: false,
-  },
+  {},
 );
 
 const emit = defineEmits<{
   saveDescription: [doc: JSONContent];
+  "mention-load-more": [];
 }>();
 
 const isEditingDescription = ref(false);
@@ -136,7 +127,11 @@ async function onInlineImageFilesSelected(e: Event) {
         title="Double-click to edit"
       >
         <div v-if="!descriptionIsEmpty" class="text-sm text-foreground leading-relaxed">
-          <RichTextPreview :content="description" :mentioned-users="mentionables" :me-id="meId ?? 0" />
+          <RichTextPreview
+            :content="description"
+            :mentioned-users="mention?.mentionables"
+            :me-id="meId ?? 0"
+          />
         </div>
         <div v-else class="text-sm text-secondary-foreground">Add a description…</div>
       </div>
@@ -149,13 +144,10 @@ async function onInlineImageFilesSelected(e: Event) {
     >
       <div class="min-h-[12rem] min-w-0 mb-2">
         <RichTextComposer
-          :mentionables="mentionables"
+          :mention="mention"
           :me-id="meId"
-          :is-user-online="isUserOnline"
           placeholder="Write a description…"
-          :on-mention-list-reached-bottom="onMentionListReachedBottom"
-          :mention-list-has-more="mentionListHasMore"
-          :mention-list-loading-more="mentionListLoadingMore"
+          @mention-load-more="emit('mention-load-more')"
           @update:editor="onComposerEditorUpdate"
           @pasted-files="onRichTextPastedFiles"
           @submit="finishEditDescription"

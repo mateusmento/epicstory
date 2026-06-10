@@ -5,6 +5,7 @@ import {
   IssueGithubSidebarSection,
   IssueLabelTags,
 } from "@/containers/issue";
+import { mapIssueMentionView, onlineUserIdsFrom } from "@/containers/issue/map-issue-mention-view";
 import { provideIssueAttachmentsContext } from "@/containers/issue/issue-attachments.context";
 import IssueActivitySection from "@/containers/views/issue/IssueActivitySection.vue";
 import SubIssuesSection from "@/containers/views/issue/SubIssuesSection.vue";
@@ -12,6 +13,7 @@ import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
 import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
+import { useWorkspaceOnline } from "@/domain/channels";
 import { useIssue, useIssueAttachments } from "@/domain/issues";
 import { useScopedWorkspaceMemberSearch } from "@/domain/workspace";
 import { IssueKey, IssueStatusDropdown } from "@/presentationals/issue";
@@ -40,6 +42,8 @@ const issueAttachments = useIssueAttachments({
 
 provideIssueAttachmentsContext(issueAttachments);
 
+const { isUserOnline } = useWorkspaceOnline();
+
 const memberSearch = useScopedWorkspaceMemberSearch();
 
 watch(
@@ -51,6 +55,16 @@ watch(
 );
 
 const workspaceMentionUsers = computed(() => memberSearch.items.map((m) => m.user));
+
+const issueMentionView = computed(() =>
+  mapIssueMentionView({
+    mentionables: workspaceMentionUsers.value,
+    loading: memberSearch.loading,
+    loadingMore: memberSearch.loadingMore,
+    hasMore: memberSearch.hasMore,
+    onlineUserIds: onlineUserIdsFrom(workspaceMentionUsers.value, isUserOnline),
+  }),
+);
 
 async function onWorkspaceMentionListReachedBottom() {
   const wid = issue.value?.workspaceId;
@@ -211,11 +225,9 @@ onMounted(() => {
           :issue-id="+props.issueId"
           :disabled="!issue"
           :is-saving="patchMutation.busy"
-          :mentionables="workspaceMentionUsers"
+          :mention="issueMentionView"
           :me-id="user?.id"
-          :on-mention-list-reached-bottom="onWorkspaceMentionListReachedBottom"
-          :mention-list-has-more="memberSearch.hasMore"
-          :mention-list-loading-more="memberSearch.loadingMore"
+          @mention-load-more="onWorkspaceMentionListReachedBottom"
           @save-description="onSaveDescription"
         />
 
@@ -236,11 +248,9 @@ onMounted(() => {
           ref="activitySectionRef"
           :issue-id="issue.id"
           :comment-channel-id="issue.commentChannelId"
-          :workspace-mention-users="workspaceMentionUsers"
+          :mention="issueMentionView"
           :me-id="user.id"
-          :on-mention-list-reached-bottom="onWorkspaceMentionListReachedBottom"
-          :mention-list-has-more="memberSearch.hasMore"
-          :mention-list-loading-more="memberSearch.loadingMore"
+          @mention-load-more="onWorkspaceMentionListReachedBottom"
         />
       </div>
 

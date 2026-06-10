@@ -22,7 +22,7 @@ export function buildMentionSuggestion(
     getOnMentionListReachedBottom?: () => (() => void | Promise<void>) | undefined;
     getMentionListHasMore?: () => boolean;
     getMentionListLoadingMore?: () => boolean;
-    getIsUserOnline?: () => ((userId: number) => boolean) | undefined;
+    getOnlineUserIds?: () => ReadonlySet<number> | undefined;
   },
 ) {
   return createFloatingSuggestion({
@@ -39,7 +39,7 @@ export function buildMentionSuggestion(
       onReachedBottom: options?.getOnMentionListReachedBottom?.(),
       hasMore: options?.getMentionListHasMore?.() ?? true,
       isLoadingMore: options?.getMentionListLoadingMore?.() ?? false,
-      isUserOnline: options?.getIsUserOnline?.(),
+      onlineUserIds: options?.getOnlineUserIds?.(),
     }),
     placement: "bottom-start",
     mainAxisOffset: 8,
@@ -60,13 +60,13 @@ export function createRichTextComposerExtensions(args: {
   getOnMentionListReachedBottom?: () => (() => void | Promise<void>) | undefined;
   getMentionListHasMore?: () => boolean;
   getMentionListLoadingMore?: () => boolean;
-  getIsUserOnline?: () => ((userId: number) => boolean) | undefined;
+  getOnlineUserIds?: () => ReadonlySet<number> | undefined;
 }): any[] {
   const mentionSuggestion = buildMentionSuggestion(args.mentionablesForSuggestion, {
     getOnMentionListReachedBottom: args.getOnMentionListReachedBottom,
     getMentionListHasMore: args.getMentionListHasMore,
     getMentionListLoadingMore: args.getMentionListLoadingMore,
-    getIsUserOnline: args.getIsUserOnline,
+    getOnlineUserIds: args.getOnlineUserIds,
   });
   const base = [
     ...createRichTextExtensions({

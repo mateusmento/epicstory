@@ -6,7 +6,6 @@ import {
   composerQuoteRef,
   quotedMessageExcerpt,
   useChannelMessageDraft,
-  useWorkspaceOnline,
 } from "@/domain/channels";
 import AttachmentTilesList from "@/presentationals/messages/AttachmentTilesList.vue";
 import { useMessageComposerAttachments } from "@/presentationals/messages/composables/message-composer-attachments";
@@ -16,10 +15,10 @@ import type { MessageComposerAttachmentHandlers } from "@/presentationals/messag
 import MessageComposerActions from "@/presentationals/messages/MessageComposerActions.vue";
 import type { ResolvedSchedule } from "@/presentationals/messages/schedule-builders";
 import { RichTextComposer } from "@/presentationals/rich-text";
+import type { MentionComposerView } from "@/presentationals/rich-text/mention.types";
 import type {
   IMessage,
   IReply,
-  IUser,
   ReplyMessageBody,
   SendMessageBody,
   UpdateChannelMessageBody,
@@ -34,26 +33,19 @@ import type { Editor } from "@tiptap/core";
 import { Paperclip } from "lucide-vue-next";
 import { computed, ref, shallowRef, watch } from "vue";
 
-const { isUserOnline } = useWorkspaceOnline();
-
 const props = withDefaults(
   defineProps<{
-    mentionables?: IUser[];
+    mention?: MentionComposerView;
     meId?: number;
     channelId: number;
     placeholder?: string;
     editingMessage?: (IMessage | IReply) | null;
     quotedMessage?: (IMessage | IReply) | null;
     attachmentHandlers: MessageComposerAttachmentHandlers;
-    onMentionListReachedBottom?: () => void | Promise<void>;
-    mentionListHasMore?: boolean;
-    mentionListLoadingMore?: boolean;
   }>(),
   {
     editingMessage: null,
     quotedMessage: null,
-    mentionListHasMore: true,
-    mentionListLoadingMore: false,
   },
 );
 
@@ -63,6 +55,7 @@ const emit = defineEmits<{
   (e: "existing-attachment-removed"): void;
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
+  (e: "mention-load-more"): void;
 }>();
 
 const composerPlaceholder = computed(() =>
@@ -239,13 +232,10 @@ function onCancelEdit() {
     </div>
     <div class="min-h-0 min-w-0 flex-auto overflow-y-auto overflow-x-auto py-0.5 font-lato">
       <RichTextComposer
-        :mentionables="mentionables"
+        :mention="mention"
         :me-id="meId"
-        :is-user-online="isUserOnline"
         :placeholder="composerPlaceholder"
-        :on-mention-list-reached-bottom="onMentionListReachedBottom"
-        :mention-list-has-more="mentionListHasMore"
-        :mention-list-loading-more="mentionListLoadingMore"
+        @mention-load-more="emit('mention-load-more')"
         @update:editor="onRichTextEditorUpdate"
         @pasted-files="onRichTextPastedFiles"
         @submit="onSendMessage"
