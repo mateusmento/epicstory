@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { IBacklogItem } from "@epicstory/contracts";
 import { useDraggable } from "@vue-dnd-kit/core";
 import { pointerSensor } from "./sensor";
 import { applySortableTransferById } from "./sortable";
@@ -6,7 +7,7 @@ import { useDeferredPointerDrag } from "./deferred-pointer-drag";
 
 const props = defineProps<{
   group: string;
-  source: any[];
+  source: IBacklogItem[];
   itemId: string | number;
 }>();
 

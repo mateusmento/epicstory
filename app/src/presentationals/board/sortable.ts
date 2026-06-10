@@ -1,4 +1,11 @@
 import { DnDOperations, type IDnDStore } from "@vue-dnd-kit/core";
+import {
+  findItemIndexById,
+  readElementClientRect,
+  readPointerPosition,
+  resolveSortableList,
+  type SortableListItem,
+} from "./board-dnd-types";
 
 const DEBUG_SORTABLE = true;
 
@@ -8,15 +15,8 @@ const lastMoveByActive = new Map<string | number, { x: number; y: number; t: num
 const MOVE_COOLDOWN_MS = 120;
 const MOVE_MIN_POINTER_DELTA_PX = 6;
 
-function resolveList(source: any): any[] {
-  if (Array.isArray(source)) return source;
-  if (source && Array.isArray(source.value)) return source.value; // ref/reactive
-  if (typeof source === "function") {
-    const v = source();
-    if (Array.isArray(v)) return v;
-    if (v && Array.isArray(v.value)) return v.value;
-  }
-  return [];
+function listHasItemWithId(list: SortableListItem[], id: string | number): boolean {
+  return findItemIndexById(list, id) >= 0;
 }
 
 /**
@@ -35,24 +35,20 @@ export function applySortableTransferById(store: IDnDStore) {
   const activeId = dragging?.id;
   if (activeId === undefined || activeId === null) return;
 
-  let draggingSource = resolveList(dragging?.data?.source);
-  if (!draggingSource.some((x: any) => x?.id === activeId)) {
+  let draggingSource = resolveSortableList(dragging?.data?.source);
+  if (!listHasItemWithId(draggingSource, activeId)) {
     draggingSource =
       [...store.zonesMap.value.values()]
-        .map((x) => resolveList(x.data?.source))
-        .find((x) => Array.isArray(x) && x.some((y: any) => y?.id === activeId)) ?? [];
+        .map((zone) => resolveSortableList(zone.data?.source))
+        .find((list) => listHasItemWithId(list, activeId)) ?? [];
   }
 
   // If we are over an element, insert before that element in its source list.
   if (overEl) {
     const overEntry = store?.elementsMap?.value?.get?.(overEl);
     const overId = overEntry?.id;
-    const list = resolveList(overEntry?.data?.source);
+    const list = resolveSortableList(overEntry?.data?.source);
 
-    if (!Array.isArray(list)) {
-      console.log("skipping because list is not an array", { list });
-      return;
-    }
     if (overId === undefined || overId === null) {
       console.log("skipping because overId is undefined or null", { overId });
       return;
@@ -62,15 +58,11 @@ export function applySortableTransferById(store: IDnDStore) {
       return;
     }
 
-    const fromIndex = draggingSource?.findIndex((x: any) => x?.id === activeId);
-    const toIndex = list.findIndex((x: any) => x?.id === overId);
+    const fromIndex = findItemIndexById(draggingSource, activeId);
+    const toIndex = findItemIndexById(list, overId);
 
-    // Decide whether we should insert before or after the hovered element, based on pointer Y.
-    const pointer = (store as any)?.pointerPosition?.current?.value ?? null;
-    const overRect =
-      typeof (overEl as any)?.getBoundingClientRect === "function"
-        ? (overEl as any).getBoundingClientRect()
-        : null;
+    const pointer = readPointerPosition(store);
+    const overRect = readElementClientRect(overEl);
 
     // Hard stabilization against "ping-pong" oscillation:
     // After we mutate arrays (move), the DOM under the pointer can change and flip `overId`
@@ -141,11 +133,11 @@ export function applySortableTransferById(store: IDnDStore) {
       console.log({ shouldSkip, fromIndex, toIndex, insertIndex, side, pointer, overRect, overEl });
       console.log(
         "draggingSource ids:",
-        draggingSource?.map?.((x: any) => x?.id),
+        draggingSource.map((item) => item.id),
       );
       console.log(
         "target list ids:",
-        list?.map?.((x: any) => x?.id),
+        list.map((item) => item.id),
       );
       console.groupEnd();
     } else {
@@ -181,11 +173,11 @@ export function applySortableTransferById(store: IDnDStore) {
         console.groupCollapsed(`[board-sortable] after move active=${String(activeId)} (pointer=${x},${y})`);
         console.log(
           "draggingSource ids:",
-          draggingSource?.map?.((v: any) => v?.id),
+          draggingSource.map((item) => item.id),
         );
         console.log(
           "target list ids:",
-          list?.map?.((v: any) => v?.id),
+          list.map((item) => item.id),
         );
         if (typeof x === "number" && typeof y === "number") {
           const els = document.elementsFromPoint(x, y).filter((el) => !el.closest?.("#vue-dnd-kit-overlay"));
@@ -200,12 +192,11 @@ export function applySortableTransferById(store: IDnDStore) {
   // If we are over the zone but not any element, move to the end of that zone list.
   if (overZone) {
     const zoneEntry = store?.zonesMap?.value?.get?.(overZone);
-    const list = resolveList(zoneEntry?.data?.source);
-    if (!Array.isArray(list)) return;
+    const list = resolveSortableList(zoneEntry?.data?.source);
     if (draggingSource === list) return;
 
-    const fromIndex = draggingSource?.findIndex((x: any) => x?.id === activeId);
-    const toIndex = list.length; // end
+    const fromIndex = findItemIndexById(draggingSource, activeId);
+    const toIndex = list.length;
 
     const shouldDrag = fromIndex < 0;
     console.log("overZone", { shouldDrag, fromIndex, toIndex });

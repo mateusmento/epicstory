@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { useDroppable } from "@vue-dnd-kit/core";
+import type { IBacklogItem } from "@epicstory/contracts";
+import { useDroppable, type IDnDPayload, type IDnDStore } from "@vue-dnd-kit/core";
 import { flyToPlaceTransition } from "./transition";
 import { applySortableTransferById } from "./sortable";
 
@@ -8,10 +9,10 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  drop: [args: { store: any; payload: any }];
+  drop: [args: { store: IDnDStore; payload: IDnDPayload }];
 }>();
 
-const items = defineModel<any[]>({ required: true });
+const items = defineModel<IBacklogItem[]>({ required: true });
 
 const { elementRef } = useDroppable({
   groups: [props.group],

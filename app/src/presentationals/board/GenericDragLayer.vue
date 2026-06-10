@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from "vue";
+import type { DragOverlayData } from "./board-dnd-types";
 import RenderVNode from "./RenderVNode.vue";
 
 /**
@@ -14,7 +15,7 @@ const props = withDefaults(
   defineProps<{
     id?: string | number;
     node?: HTMLElement | Element | null;
-    data?: any;
+    data?: DragOverlayData | null;
   }>(),
   {
     id: "",
