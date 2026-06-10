@@ -127,6 +127,16 @@ function finishEditTitle() {
   saveMainFields();
 }
 
+function onTitleKeydown(event: KeyboardEvent) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    finishEditTitle();
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    cancelEditTitle();
+  }
+}
+
 async function onSaveDescription(description: any) {
   if (!issue.value) return;
   await patchIssue({ description });
@@ -190,8 +200,7 @@ onMounted(() => {
               class="font-semibold border-transparent shadow-none bg-transparent px-2 -mx-2 focus-visible:ring-0 focus-visible:ring-offset-0"
               :disabled="!issue"
               @blur="finishEditTitle"
-              @keydown.enter.prevent="finishEditTitle"
-              @keydown.esc.prevent="cancelEditTitle"
+              @keydown="onTitleKeydown"
             />
           </div>
         </div>
