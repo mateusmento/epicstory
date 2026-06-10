@@ -1,32 +1,27 @@
 <script lang="ts" setup>
+import { useIssueAttachmentsContext } from "@/containers/issue/issue-attachments.context";
 import IssueCommentCard from "@/containers/issue/IssueCommentCard.vue";
-import { Icon } from "@/design-system/icons";
-import { UserAvatar } from "@/presentationals/user";
+import { issueActivityMessageComposerAttachmentHandlers } from "@/containers/messages";
+import IssueCommentComposer from "@/containers/views/issue/IssueCommentComposer.vue";
 import { useDependency } from "@/core/dependency-injection";
-import { ChannelApi, IssueApi } from "@epicstory/api-client";
+import { Icon } from "@/design-system/icons";
+import { cn } from "@/design-system/utils";
 import {
+  formatIssueActivitySentence,
+  formatIssueActivityWhen,
+  resolveIssueActivityActor,
+  useIssue,
   useIssueActivityFeed,
   useIssueCommentEditing,
   useIssueCommentSocketSync,
   useIssueCommentThreads,
 } from "@/domain/issues";
 import { useWorkspace } from "@/domain/workspace";
-import {
-  formatIssueActivitySentence,
-  formatIssueActivityWhen,
-  resolveIssueActivityActor,
-} from "@/domain/issues";
+import { UserAvatar } from "@/presentationals/user";
+import { ChannelApi, IssueApi } from "@epicstory/api-client";
+import type { IIssueFeedItem, IMessage, IReply, IUser } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
-import type { IIssueFeedItem } from "@epicstory/contracts";
-import type { IMessage, IReply } from "@epicstory/contracts";
-import type { IMessageAttachment } from "@epicstory/contracts";
-import type { IUser as IUser } from "@epicstory/contracts";
 import { computed, nextTick, ref } from "vue";
-import { cn } from "@/design-system/utils";
-import { issueActivityMessageComposerAttachmentHandlers } from "@/containers/messages";
-import { useIssue } from "@/domain/issues";
-import type { IssueAttachmentActivitySyncPayload } from "@/domain/issues";
-import IssueCommentComposer from "@/containers/views/issue/IssueCommentComposer.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -39,8 +34,6 @@ const props = withDefaults(
     onMentionListReachedBottom?: () => void | Promise<void>;
     mentionListHasMore?: boolean;
     mentionListLoadingMore?: boolean;
-    resolveCommentAttachments?: (entity: IMessage | IReply) => IMessageAttachment[];
-    syncIssueAttachments?: (payload: IssueAttachmentActivitySyncPayload) => void;
   }>(),
   {
     mentionListHasMore: true,
@@ -48,10 +41,11 @@ const props = withDefaults(
   },
 );
 
-const emit = defineEmits<{
-  /** Fired when an attachment is removed from a comment/reply while editing (strip + feed sync). */
-  issueAttachmentRemoved: [];
-}>();
+const {
+  loadAttachments,
+  resolveAttachmentsForEntity: resolveCommentAttachments,
+  ingestFromActivity: syncIssueAttachments,
+} = useIssueAttachmentsContext();
 
 const issueApi = useDependency(IssueApi);
 const channels = useDependency(ChannelApi);
@@ -84,7 +78,7 @@ const {
   tab,
   issueApi,
   channelApi: channels,
-  onSyncAttachments: (p) => props.syncIssueAttachments?.(p),
+  onSyncAttachments: syncIssueAttachments,
 });
 
 const composerMentionables = computed(() => {
@@ -107,7 +101,7 @@ const {
   tab,
   issueId: () => props.issueId,
   channelApi: channels,
-  onSyncReplies: (replies) => props.syncIssueAttachments?.({ replies }),
+  onSyncReplies: (replies) => syncIssueAttachments({ replies }),
 });
 
 useIssueCommentSocketSync({
@@ -124,7 +118,7 @@ const { editing, startEdit, cancelEdit, submitEdit, clearIfEditingEntity } = use
 });
 
 function onComposerIssueAttachmentRemoved() {
-  emit("issueAttachmentRemoved");
+  loadAttachments();
 }
 
 async function onPostIssueComment(payload: { content: JSONContent; attachmentIds?: number[] }) {
@@ -235,7 +229,7 @@ defineExpose({
             <IssueCommentCard
               :message="item.message"
               :me-id="meId"
-              :attachments="resolveCommentAttachments?.(item.message)"
+              :attachments="resolveCommentAttachments(item.message)"
               variant="threadSegment"
               @message-deleted="onDelete(item.message)"
               @toggle-discussion="onToggleDiscussion(item.message)"
@@ -288,7 +282,7 @@ defineExpose({
               <IssueCommentCard
                 :message="rep"
                 :me-id="meId"
-                :attachments="resolveCommentAttachments?.(rep)"
+                :attachments="resolveCommentAttachments(rep)"
                 variant="threadSegment"
                 segment-divider
                 @message-deleted="onDelete(rep)"
@@ -383,7 +377,7 @@ defineExpose({
         <IssueCommentCard
           :message="msg"
           :me-id="meId"
-          :attachments="resolveCommentAttachments?.(msg)"
+          :attachments="resolveCommentAttachments(msg)"
           @message-deleted="onDelete(msg)"
           @toggle-discussion="onToggleDiscussion(msg)"
           @edit="startEdit(msg)"

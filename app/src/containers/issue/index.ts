@@ -1,3 +1,4 @@
+export { default as IssueAttachmentsStrip } from "./IssueAttachmentsStrip.vue";
 export { default as IssueCommentCard } from "./IssueCommentCard.vue";
 export { default as IssueContextMenu } from "./IssueContextMenu.vue";
 export { default as IssueDescriptionEditor } from "./IssueDescriptionEditor.vue";

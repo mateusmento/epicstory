@@ -1,5 +1,11 @@
 <script lang="ts" setup>
-import { IssueDescriptionEditor, IssueGithubSidebarSection, IssueLabelTags } from "@/containers/issue";
+import {
+  IssueAttachmentsStrip,
+  IssueDescriptionEditor,
+  IssueGithubSidebarSection,
+  IssueLabelTags,
+} from "@/containers/issue";
+import { provideIssueAttachmentsContext } from "@/containers/issue/issue-attachments.context";
 import IssueActivitySection from "@/containers/views/issue/IssueActivitySection.vue";
 import SubIssuesSection from "@/containers/views/issue/SubIssuesSection.vue";
 import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
@@ -8,12 +14,12 @@ import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 import { useIssue, useIssueAttachments } from "@/domain/issues";
 import { useScopedWorkspaceMemberSearch } from "@/domain/workspace";
-import { IssueAttachmentsStrip, IssueKey, IssueStatusDropdown } from "@/presentationals/issue";
+import { IssueKey, IssueStatusDropdown } from "@/presentationals/issue";
 import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
 import { UserAvatarStack } from "@/presentationals/user";
 import { DueDatePicker } from "@/presentationals/views/project/backlog/date-picker";
 import { PriorityToggler } from "@/presentationals/views/project/backlog/priority-toggler";
-import type { IMessage, IReply, IUser, UpdateIssueData } from "@epicstory/contracts";
+import type { IUser, UpdateIssueData } from "@epicstory/contracts";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -26,6 +32,13 @@ const { user } = useAuth();
 
 const { issue, patchMutation, fetchIssue, patchIssue, addAssignee, removeAssignee, addLabel, removeLabel } =
   useIssue();
+
+const issueAttachments = useIssueAttachments({
+  issueId: () => +props.issueId,
+  reloadFeed: reloadIssueActivityFeed,
+});
+
+provideIssueAttachmentsContext(issueAttachments);
 
 const memberSearch = useScopedWorkspaceMemberSearch();
 
@@ -45,31 +58,10 @@ async function onWorkspaceMentionListReachedBottom() {
   await memberSearch.loadMore(wid);
 }
 
-const {
-  attachments,
-  attachmentsUploading,
-  loadAttachments,
-  removePersistedAttachment,
-  resolveAttachmentsForEntity,
-  ingestFromActivity,
-  dismissPendingUpload,
-  uploadIssueAttachmentFiles,
-} = useIssueAttachments({
-  issueId: () => issue.value?.id ?? 0,
-});
-
 const activitySectionRef = ref<{ reloadFeed: () => Promise<void> } | null>(null);
 
 async function reloadIssueActivityFeed() {
   await activitySectionRef.value?.reloadFeed?.();
-}
-
-async function onIssueAttachmentsDropped(files: File[]) {
-  await uploadIssueAttachmentFiles(files, {
-    reloadFeed: async () => {
-      await activitySectionRef.value?.reloadFeed?.();
-    },
-  });
 }
 
 const assigneeUsers = ref<IUser[]>([]);
@@ -82,14 +74,6 @@ watch(
 );
 
 const titleEl = ref<HTMLInputElement | null>(null);
-
-function resolveCommentAttachments(entity: IMessage | IReply) {
-  return resolveAttachmentsForEntity(entity);
-}
-
-async function onComposerAttachmentRemoved() {
-  await loadAttachments();
-}
 
 const isEditingTitle = ref(false);
 
@@ -146,7 +130,7 @@ function finishEditTitle() {
 async function onSaveDescription(description: any) {
   if (!issue.value) return;
   await patchIssue({ description });
-  await loadAttachments();
+  await issueAttachments.loadAttachments();
 }
 
 onMounted(() => {
@@ -236,17 +220,7 @@ onMounted(() => {
           @changed="refreshIssue"
         />
 
-        <IssueAttachmentsStrip
-          v-if="issue && user"
-          :attachments="attachments"
-          :me-id="user.id"
-          droppable
-          :upload-in-progress="attachmentsUploading"
-          class="mt-8"
-          :remove-file="removePersistedAttachment"
-          :dismiss-pending-upload="dismissPendingUpload"
-          @files-dropped="onIssueAttachmentsDropped"
-        />
+        <IssueAttachmentsStrip v-if="issue && user" :me-id="user.id" droppable class="mt-8" />
 
         <IssueActivitySection
           v-if="issue && user"
@@ -258,9 +232,6 @@ onMounted(() => {
           :on-mention-list-reached-bottom="onWorkspaceMentionListReachedBottom"
           :mention-list-has-more="memberSearch.hasMore"
           :mention-list-loading-more="memberSearch.loadingMore"
-          :resolve-comment-attachments="resolveCommentAttachments"
-          :sync-issue-attachments="ingestFromActivity"
-          @issue-attachment-removed="onComposerAttachmentRemoved"
         />
       </div>
 
@@ -398,15 +369,10 @@ onMounted(() => {
 
           <IssueAttachmentsStrip
             v-if="issue && user"
-            :attachments="attachments"
             :me-id="user.id"
             compact
             droppable
-            :upload-in-progress="attachmentsUploading"
             class="mt-2 border-t border-border pt-4"
-            :remove-file="removePersistedAttachment"
-            :dismiss-pending-upload="dismissPendingUpload"
-            @files-dropped="onIssueAttachmentsDropped"
           />
         </div>
       </div>

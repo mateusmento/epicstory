@@ -41,7 +41,13 @@ function mergePreferExisting(
   };
 }
 
-export function useIssueAttachments({ issueId }: { issueId: ReadonlyRefOrGetter<number> }) {
+export function useIssueAttachments({
+  issueId,
+  reloadFeed,
+}: {
+  issueId: ReadonlyRefOrGetter<number>;
+  reloadFeed?: () => Promise<void>;
+}) {
   const issueApi = useDependency(IssueApi);
 
   const byId = shallowRef(new Map<number, IIssueAttachmentListItem>());
@@ -237,10 +243,7 @@ export function useIssueAttachments({ issueId }: { issueId: ReadonlyRefOrGetter<
     revokeAndDropPending(clientId);
   }
 
-  async function uploadIssueAttachmentFiles(
-    files: File[],
-    options?: { reloadFeed?: () => Promise<void> },
-  ): Promise<void> {
+  async function uploadIssueAttachmentFiles(files: File[]): Promise<void> {
     const id = toValue(issueId);
     if (!id || files.length === 0) return;
 
@@ -279,7 +282,7 @@ export function useIssueAttachments({ issueId }: { issueId: ReadonlyRefOrGetter<
       }),
     );
 
-    await options?.reloadFeed?.();
+    await reloadFeed?.();
   }
 
   function resolveAttachmentsForEntity(entity: IMessage | IReply): IMessageAttachment[] {
