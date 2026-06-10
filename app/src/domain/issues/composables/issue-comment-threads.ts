@@ -135,6 +135,7 @@ export function useIssueCommentThreads(options: {
   }
 
   return {
+    threadByRootId,
     ensureThreadState,
     messageRootId,
     isLoadingThread,

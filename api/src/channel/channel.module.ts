@@ -34,6 +34,7 @@ import { CalendarModule } from 'src/calendar/calendar.module';
   exports: [
     ...Object.values(repositories),
     gateways.MeetingGateway,
+    gateways.MessageGateway,
     services.MessageService,
     services.ReplyService,
   ],
