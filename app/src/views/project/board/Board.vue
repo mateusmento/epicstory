@@ -5,6 +5,7 @@ import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
 import type { IIssue, IBacklogItem } from "@epicstory/contracts";
 import { issueFiltersForQuery, useProjectFilters } from "@/domain/project";
+import type { IDnDPayload } from "@vue-dnd-kit/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import IssueCard from "@/containers/views/project/board/IssueCard.vue";
@@ -50,9 +51,9 @@ const counts = computed(() => ({
   done: done.value.length,
 }));
 
-async function onColumnDrop(targetStatus: ColumnStatus, args: { payload: any }) {
-  const activeId = args?.payload?.items?.[0]?.id as number | undefined;
-  if (!activeId) return;
+async function onColumnDrop(targetStatus: ColumnStatus, args: { payload: IDnDPayload }) {
+  const activeId = args.payload.items[0]?.id;
+  if (typeof activeId !== "number") return;
 
   const all = [...todo.value, ...doing.value, ...done.value];
   const item = all.find((x) => x.id === activeId);

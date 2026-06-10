@@ -19,7 +19,7 @@ export function flyToPlaceTransition(store: IDnDStore, payload: IDnDPayload): Pr
           const node = (entry?.node ?? key) as Element | null;
           if (!node) continue;
           // avoid measuring detached nodes (often yield 0,0,0,0 rect)
-          if ((node as any).isConnected === false) continue;
+          if (node instanceof Element && !node.isConnected) continue;
           return node;
         }
         return null;
