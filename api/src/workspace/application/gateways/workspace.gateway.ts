@@ -1,8 +1,6 @@
 import type {
   SubscribeWorkspacePresenceBody,
   UnsubscribeWorkspacePresenceBody,
-  UserPresenceEvent,
-  UserPresenceStoppedEvent,
   WorkspacePresencePulseBody,
   WorkspacePresenceStopBody,
 } from '@epicstory/contracts';
@@ -15,8 +13,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { uniq } from 'lodash';
-import { Server } from 'socket.io';
-import { AuthenticatedSocket } from 'src/core';
+import { AuthenticatedSocket, EpicstoryServer } from 'src/core';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories/workspace-member.repository';
 
 const workspacePresenceRoom = (workspaceId: number) =>
@@ -31,7 +28,7 @@ export interface WorkspacePresenceSocket extends AuthenticatedSocket {
 @WebSocketGateway()
 export class WorkspaceGateway implements OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server: EpicstoryServer;
 
   constructor(
     private readonly workspaceMemberRepo: WorkspaceMemberRepository,
@@ -60,8 +57,7 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
     );
     if (hasAnotherSocketForSameUser) return;
 
-    const payload: UserPresenceStoppedEvent = { workspaceId, userId };
-    this.server.to(room).emit('user-presence-stopped', payload);
+    this.server.to(room).emit('user-presence-stopped', { workspaceId, userId });
   }
 
   private async isUserInWorkspace(
@@ -145,10 +141,9 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
     const ok = await this.isUserInWorkspace(userId, workspaceId);
     if (!ok) return { ok: false };
 
-    const payload: UserPresenceEvent = { workspaceId, userId };
     socket
       .to(workspacePresenceRoom(workspaceId))
-      .emit('user-presence', payload);
+      .emit('user-presence', { workspaceId, userId });
 
     return { ok: true };
   }
@@ -167,10 +162,9 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
     const ok = await this.isUserInWorkspace(userId, workspaceId);
     if (!ok) return { ok: false };
 
-    const payload: UserPresenceStoppedEvent = { workspaceId, userId };
     socket
       .to(workspacePresenceRoom(workspaceId))
-      .emit('user-presence-stopped', payload);
+      .emit('user-presence-stopped', { workspaceId, userId });
 
     return { ok: true };
   }

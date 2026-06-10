@@ -1,5 +1,5 @@
 import { useWebSockets } from "@/core/websockets";
-import type { IncomingMeetingEvent, MeetingEndedEvent } from "@epicstory/contracts";
+import type { IncomingMeetingEvent, MeetingEndedEvent, SubscribeMeetingsBody } from "@epicstory/contracts";
 
 export type IncomingMeetingPayload = IncomingMeetingEvent;
 export type MeetingEndedPayload = MeetingEndedEvent;
@@ -14,7 +14,8 @@ export function useMeetingSocket() {
   const sockets = useWebSockets();
 
   function emitSubscribeMeetings(workspaceId: number) {
-    sockets.websocket?.emit("subscribe-meetings", { workspaceId });
+    const body = { workspaceId } satisfies SubscribeMeetingsBody;
+    sockets.websocket?.emit("subscribe-meetings", body);
   }
 
   function onIncomingMeeting(handler: Handler<IncomingMeetingEvent>) {

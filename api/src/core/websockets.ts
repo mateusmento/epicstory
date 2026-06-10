@@ -1,16 +1,26 @@
+import type {
+  ClientToServerEvents,
+  ServerToClientEvents,
+} from '@epicstory/contracts';
 import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import * as cookie from 'cookie';
 import { RedisClientOptions, createClient } from 'redis';
-import { ServerOptions, Socket } from 'socket.io';
+import { DefaultEventsMap, Server, ServerOptions, Socket } from 'socket.io';
 
-export type AuthenticatedSocket = Socket & {
-  data: {
-    userId: number;
-  };
-};
+export type EpicstoryServer = Server<
+  ClientToServerEvents,
+  ServerToClientEvents
+>;
+
+export type AuthenticatedSocket = Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  DefaultEventsMap,
+  { userId: number }
+>;
 
 export class SocketIoAdapter extends IoAdapter {
   constructor(

@@ -1,3 +1,8 @@
+import type {
+  IIssue,
+  SubscribeProjectBody,
+  UnsubscribeProjectBody,
+} from '@epicstory/contracts';
 import {
   ConnectedSocket,
   MessageBody,
@@ -5,18 +10,19 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
+import { EpicstoryServer } from 'src/core';
 
 const projectRoom = (projectId: number) => `project:${projectId}`;
 
 @WebSocketGateway()
 export class ProjectGateway {
   @WebSocketServer()
-  server: Server;
+  server: EpicstoryServer;
 
   @SubscribeMessage('subscribe-project')
   async subscribeProject(
-    @MessageBody() { projectId }: { projectId: number },
+    @MessageBody() { projectId }: SubscribeProjectBody,
     @ConnectedSocket() socket: Socket,
   ) {
     socket.join(projectRoom(projectId));
@@ -25,16 +31,16 @@ export class ProjectGateway {
 
   @SubscribeMessage('unsubscribe-project')
   async unsubscribeProject(
-    @MessageBody() { projectId }: { projectId: number },
+    @MessageBody() { projectId }: UnsubscribeProjectBody,
     @ConnectedSocket() socket: Socket,
   ) {
     socket.leave(projectRoom(projectId));
     return { success: true, projectId };
   }
 
-  emitIssueUpdated(projectId: number, issue: any) {
+  emitIssueUpdated(projectId: number, issue: unknown) {
     this.server.to(projectRoom(projectId)).emit('issue-updated', {
-      issue,
+      issue: issue as IIssue,
       projectId,
     });
   }

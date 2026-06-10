@@ -1,8 +1,20 @@
 import daianaPhoto from "@/assets/images/daiana.png";
 import seanPhoto from "@/assets/images/sean.png";
 import type { IMessageGroup } from "@/domain/channels";
-import { EMPTY_TIPTAP_DOC } from "@epicstory/tiptap";
+import type { JSONContent } from "@tiptap/core";
 import { ref } from "vue";
+
+function tiptapDoc(text: string): JSONContent {
+  return {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: text ? [{ type: "text", text }] : [],
+      },
+    ],
+  };
+}
 
 export const messageGroup = ref<IMessageGroup>({
   id: 2,
@@ -17,7 +29,7 @@ export const messageGroup = ref<IMessageGroup>({
   messages: [
     {
       id: 3,
-      content: EMPTY_TIPTAP_DOC,
+      content: tiptapDoc("Yeah, I'll send you the updates later."),
       displayContent: "Yeah, I'll send you the updates later.",
       sentAt: new Date(),
       senderId: 2,
@@ -37,7 +49,7 @@ export const messageGroup = ref<IMessageGroup>({
         directPeer: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
         lastMessage: {
           id: 1,
-          content: EMPTY_TIPTAP_DOC,
+          content: tiptapDoc("Hello there!"),
           displayContent: "Hello there!",
           sentAt: new Date(),
           senderId: 1,
@@ -77,7 +89,7 @@ export const messageGroups = ref<IMessageGroup[]>([
     messages: [
       {
         id: 1,
-        content: EMPTY_TIPTAP_DOC,
+        content: tiptapDoc("Hello there!"),
         displayContent: "Hello there!",
         sentAt: new Date(),
         senderId: 1,
@@ -105,7 +117,7 @@ export const messageGroups = ref<IMessageGroup[]>([
       },
       {
         id: 2,
-        content: EMPTY_TIPTAP_DOC,
+        content: tiptapDoc("Any updates?"),
         displayContent: "Any updates?",
         sentAt: new Date(),
         senderId: 1,

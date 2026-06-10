@@ -1,3 +1,15 @@
+import type {
+  EndMeetingBody,
+  IMeeting,
+  IMeetingAttendee,
+  JoinChannelMeetingBody,
+  JoinMeetingBody,
+  JoinScheduledMeetingBody,
+  LeaveMeetingBody,
+  MeetingHeartbeatBody,
+  MeetingMediaToggleBody,
+  SubscribeMeetingsBody,
+} from '@epicstory/contracts';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import {
@@ -9,12 +21,12 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { UUID } from 'crypto';
 import { isDate } from 'date-fns';
-import { Server, Socket } from 'socket.io';
 import { CalendarEventRepository } from 'src/calendar/repositories';
-import { AuthenticatedSocket } from 'src/core';
 import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
+import { AuthenticatedSocket, EpicstoryServer } from 'src/core';
 import { RedisService } from 'src/core/redis.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import { MeetingNotFoundException } from '../exceptions';
@@ -33,7 +45,7 @@ const userRoom = (userId) => `user:${userId}` as const;
 @WebSocketGateway()
 export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
-  server: Server;
+  server: EpicstoryServer;
 
   private readonly socketMeetingTtlSeconds = 60 * 60 * 12; // 12h
   private readonly socketMeetingTtlRefreshEveryMs = 60 * 60 * 1000; // 1h
@@ -92,11 +104,16 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   }
 
   emitIncomingMeeting(meeting: Meeting, issuerId?: number) {
+    const meetingPayload = meeting as unknown as IMeeting;
+
     if (meeting.channelId) {
       this.server
         .to(channelMeetingRoom(meeting.channelId))
         .except(issuerId ? userRoom(issuerId) : [])
-        .emit('incoming-meeting', { meeting, channelId: meeting.channelId });
+        .emit('incoming-meeting', {
+          meeting: meetingPayload,
+          channelId: meeting.channelId,
+        });
     }
 
     if (meeting.calendarEventId) {
@@ -104,23 +121,28 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
         .to(scheduledMeetingRoom(meeting.calendarEventId))
         .except(issuerId ? userRoom(issuerId) : [])
         .emit('incoming-meeting', {
-          meeting,
+          meeting: meetingPayload,
           calendarEventId: meeting.calendarEventId,
         });
     }
   }
 
   emitAttendeeJoined(meeting: Meeting, attendee: MeetingAttendee) {
+    const joined = {
+      attendee: attendee as unknown as IMeetingAttendee,
+      meeting: meeting as unknown as IMeeting,
+    };
+
     this.server
       .to(meetingRoom(meeting.id))
       .except(userRoom(attendee.userId))
-      .emit('attendee-joined', { attendee, meeting });
+      .emit('attendee-joined', joined);
 
     if (meeting.channelId) {
       this.server
         .to(channelMeetingRoom(meeting.channelId))
         .except(userRoom(attendee.userId))
-        .emit('incoming-attendee', { attendee, meeting });
+        .emit('incoming-attendee', joined);
     }
   }
 
@@ -192,8 +214,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
   @SubscribeMessage('meeting-heartbeat')
   async meetingHeartbeat(
-    @MessageBody() { meetingId }: any,
-    @ConnectedSocket() socket: Socket,
+    @MessageBody() { meetingId }: MeetingHeartbeatBody,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
     const data = await this.getSocketMeetingAttendee(socket.id);
     if (!data) return;
@@ -203,7 +225,7 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
   @SubscribeMessage('subscribe-meetings')
   async subscribeMeetings(
-    @MessageBody() { workspaceId }: any,
+    @MessageBody() { workspaceId }: SubscribeMeetingsBody,
     @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
     const { userId } = socket.data;
@@ -239,7 +261,7 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   @SubscribeMessage('join-meeting')
   async joinMeeting(
     @MessageBody()
-    { meetingId, remoteId, isCameraOn, isMicrophoneOn }: any,
+    { meetingId, remoteId, isCameraOn, isMicrophoneOn }: JoinMeetingBody,
     @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
     const { userId: issuerId } = socket.data;
@@ -272,7 +294,7 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
       remoteId,
       isCameraOn,
       isMicrophoneOn,
-    }: any,
+    }: JoinScheduledMeetingBody,
     @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
     const { userId: issuerId } = socket.data;
@@ -292,7 +314,7 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
     const meeting: Meeting = await this.commandBus.execute(
       new JoinScheduledMeeting({
-        calendarEventId,
+        calendarEventId: calendarEventId as UUID,
         occurrenceAt: d,
         issuerId,
         remoteId,
@@ -306,7 +328,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
   @SubscribeMessage('join-channel-meeting')
   async joinChannelMeeting(
-    @MessageBody() { channelId, remoteId, isCameraOn, isMicrophoneOn }: any,
+    @MessageBody()
+    { channelId, remoteId, isCameraOn, isMicrophoneOn }: JoinChannelMeetingBody,
     @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
     const { userId: issuerId } = socket.data;
@@ -329,7 +352,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   }
 
   @SubscribeMessage('camera-toggled')
-  async cameraToggled(@MessageBody() { meetingId, remoteId, enabled }: any) {
+  async cameraToggled(@MessageBody() body: MeetingMediaToggleBody) {
+    const { meetingId, remoteId, enabled } = body;
     const { channelId } = await this.meetingService.findMeeting({ meetingId });
     await this.meetingService.updateAttendee(meetingId, remoteId, {
       isCameraOn: enabled,
@@ -345,9 +369,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   }
 
   @SubscribeMessage('microphone-toggled')
-  async microphoneToggled(
-    @MessageBody() { meetingId, remoteId, enabled }: any,
-  ) {
+  async microphoneToggled(@MessageBody() body: MeetingMediaToggleBody) {
+    const { meetingId, remoteId, enabled } = body;
     const { channelId } = await this.meetingService.findMeeting({ meetingId });
     await this.meetingService.updateAttendee(meetingId, remoteId, {
       isMicrophoneOn: enabled,
@@ -366,9 +389,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   }
 
   @SubscribeMessage('screen-share-toggled')
-  async screenShareToggled(
-    @MessageBody() { meetingId, remoteId, enabled }: any,
-  ) {
+  async screenShareToggled(@MessageBody() body: MeetingMediaToggleBody) {
+    const { meetingId, remoteId, enabled } = body;
     const { channelId } = await this.meetingService.findMeeting({ meetingId });
     await this.meetingService.updateAttendee(meetingId, remoteId, {
       isScreenSharing: enabled,
@@ -390,7 +412,7 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
   @SubscribeMessage('leave-meeting')
   async leaveMeeting(
-    @MessageBody() { meetingId, remoteId }: any,
+    @MessageBody() { meetingId, remoteId }: LeaveMeetingBody,
     @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
     const { userId } = socket.data;
@@ -432,8 +454,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
   @SubscribeMessage('end-meeting')
   async endMeeting(
-    @MessageBody() { meetingId }: any,
-    @ConnectedSocket() socket: Socket,
+    @MessageBody() { meetingId }: EndMeetingBody,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
     const meeting = await this.meetingService.findMeeting({ meetingId });
     if (!meeting) throw new MeetingNotFoundException();
@@ -459,20 +481,26 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   }
 
   async emitMeetingEnded(meeting: Meeting) {
-    const data = { meetingId: meeting.id, channelId: meeting.channelId };
+    const ended = {
+      meetingId: meeting.id,
+      channelId: meeting.channelId ?? undefined,
+    };
 
-    this.server.to(meetingRoom(meeting.id)).emit('current-meeting-ended', data);
+    this.server.to(meetingRoom(meeting.id)).emit('current-meeting-ended', {
+      meetingId: meeting.id,
+      channelId: meeting.channelId,
+    });
 
     if (meeting.channelId) {
       this.server
         .to(channelMeetingRoom(meeting.channelId))
-        .emit('meeting-ended', data);
+        .emit('meeting-ended', ended);
     } else if (meeting.calendarEventId) {
       this.server
         .to(scheduledMeetingRoom(meeting.calendarEventId))
-        .emit('meeting-ended', data);
+        .emit('meeting-ended', ended);
     } else {
-      this.server.to(meetingRoom(meeting.id)).emit('meeting-ended', data);
+      this.server.to(meetingRoom(meeting.id)).emit('meeting-ended', ended);
     }
   }
 }
