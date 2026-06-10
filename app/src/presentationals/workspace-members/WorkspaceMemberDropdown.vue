@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { Menu, MenuContent, MenuTrigger } from "@/design-system";
 import { emptyPaginatedListView, type PaginatedListView } from "@/lib/async";
-import type { IUser as IUser } from "@epicstory/contracts";
+import type { IUser, WorkspaceMember } from "@epicstory/contracts";
 import WorkspaceMemberMenu from "./WorkspaceMemberMenu.vue";
 
 withDefaults(
   defineProps<{
     disabled?: boolean;
-    list?: PaginatedListView<IUser>;
+    list?: PaginatedListView<WorkspaceMember>;
+    excludeUserIds?: number[];
     selectedLabel?: string;
     searchPlaceholder?: string;
   }>(),
   {
-    list: () => emptyPaginatedListView<IUser>(),
+    list: () => emptyPaginatedListView<WorkspaceMember>(),
+    excludeUserIds: () => [],
   },
 );
 
@@ -37,6 +39,7 @@ const emit = defineEmits<{
         v-model:users="users"
         :disabled="disabled"
         :list="list"
+        :exclude-user-ids="excludeUserIds"
         :selected-label="selectedLabel"
         :search-placeholder="searchPlaceholder"
         @add="emit('add', $event)"
