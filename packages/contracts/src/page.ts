@@ -1,5 +1,5 @@
 /** Pagination envelope returned by many list endpoints. */
-export type Page<T> = {
+export type IPage<T> = {
   content: T[];
   page: number;
   count: number;
@@ -8,7 +8,7 @@ export type Page<T> = {
   total: number;
 };
 
-export type PageQuery = {
+export type IPageQuery = {
   orderBy?: string;
   order?: string;
   page: number;

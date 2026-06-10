@@ -1,4 +1,4 @@
-import type { Page } from "@epicstory/contracts";
+import type { IPage } from "@epicstory/contracts";
 import { debounce } from "lodash";
 import { reactive } from "vue";
 
@@ -13,7 +13,12 @@ export type PaginatedListState<T> = {
   error?: string | null;
 };
 
-export type FetchPage<T, Ctx> = (ctx: Ctx, query: string, page: number, pageSize: number) => Promise<Page<T>>;
+export type FetchPage<T, Ctx> = (
+  ctx: Ctx,
+  query: string,
+  page: number,
+  pageSize: number,
+) => Promise<IPage<T>>;
 
 const DEFAULT_PAGE_SIZE = 20;
 

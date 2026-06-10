@@ -1,4 +1,4 @@
-/** UI-shaped forward-pagination list state (distinct from API `Page<T>` in contracts). */
+/** UI-shaped forward-pagination list state (distinct from wire `IPage<T>` in contracts). */
 export type PaginatedListView<T> = {
   items: T[];
   loading: boolean;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDependency } from "@/core/dependency-injection";
-import type { Page } from "@/core/types";
+import type { IPage } from "@/core/types";
 import { useChannel, useSyncedChannels } from "@/domain/channels";
 import { ChannelApi } from "@epicstory/api-client";
 import type { ISearchChannelsAndUsersItem } from "@epicstory/contracts";
@@ -12,9 +12,9 @@ import ChannelSearchResult from "@/presentationals/app-pane/channels/ChannelSear
 
 const SEARCH_LIMIT = 20;
 const normalizeQuery = (value: string) => value.trim() || undefined;
-const hasMoreResults = (result: Page<ISearchChannelsAndUsersItem> | null) => !!result?.hasNext;
+const hasMoreResults = (result: IPage<ISearchChannelsAndUsersItem> | null) => !!result?.hasNext;
 
-function appendSearchResults<T>(previous: Page<T> | null, next: Page<T>): Page<T> {
+function appendSearchResults<T>(previous: IPage<T> | null, next: IPage<T>): IPage<T> {
   return previous ? { ...next, content: [...previous.content, ...next.content] } : next;
 }
 
@@ -29,7 +29,7 @@ const searchQuery = ref("");
 const searchFocused = ref(false);
 const searchReady = ref(false);
 const searchLoading = ref(false);
-const searchResult = ref<Page<ISearchChannelsAndUsersItem> | null>(null);
+const searchResult = ref<IPage<ISearchChannelsAndUsersItem> | null>(null);
 const searchPage = ref(1);
 const searchBar = ref<{ blur: () => void } | null>(null);
 

@@ -1,4 +1,4 @@
-import type { INotification, Page as ContractPage } from '@epicstory/contracts';
+import type { INotification, IPage } from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 import { notificationEntityToClient } from '../utils/notification-entity-to-client';
@@ -47,9 +47,7 @@ export class FindNotificationsHandler
     private readonly notificationRepository: NotificationRepository,
   ) {}
 
-  async execute(
-    query: FindNotifications,
-  ): Promise<ContractPage<INotification>> {
+  async execute(query: FindNotifications): Promise<IPage<INotification>> {
     const total = await this.notificationRepository.count({
       where: { userId: query.userId, type: query.type, seen: query.seen },
     });
@@ -66,19 +64,9 @@ export class FindNotificationsHandler
       take: query.count,
     });
 
-    const page = Page.fromResult(
-      rows.map(notificationEntityToClient),
-      total,
-      query,
-    );
-
-    return {
-      content: page.content,
-      page: page.page,
-      count: page.count,
-      hasNext: page.hasNext,
-      hasPrevious: page.hasPrevious,
-      total: page.total,
-    };
+    return Page.fromResult(rows.map(notificationEntityToClient), total, {
+      page: query.page,
+      count: query.count,
+    });
   }
 }

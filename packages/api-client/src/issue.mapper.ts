@@ -1,4 +1,4 @@
-import type { IIssue, Page, UpdateIssueData } from "@epicstory/contracts";
+import type { IIssue, IPage, UpdateIssueData } from "@epicstory/contracts";
 import { isValid } from "date-fns";
 
 export type UpdateIssueDataWire = Omit<UpdateIssueData, "dueDate"> & {
@@ -37,7 +37,7 @@ export function mapIssue(apiIssue: IIssueWire): IIssue {
   };
 }
 
-export function mapPageIssues(page: Page<IIssueWire>): Page<IIssue> {
+export function mapPageIssues(page: IPage<IIssueWire>): IPage<IIssue> {
   return { ...page, content: page.content.map(mapIssue) };
 }
 

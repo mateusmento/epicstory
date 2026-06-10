@@ -1,6 +1,6 @@
 import type {
-  Page,
-  PageQuery,
+  IPage,
+  IPageQuery,
   Project,
   Team,
   IWorkspace,
@@ -54,7 +54,7 @@ export class WorkspaceApi {
   ) {
     return this.axios
       .get<
-        Page<WorkspaceMember>
+        IPage<WorkspaceMember>
       >(`workspaces/${workspaceId}/members`, { params: query })
       .then((res) => res.data);
   }
@@ -82,11 +82,11 @@ export class WorkspaceApi {
 
   findProjects(
     workspaceId: number,
-    query?: Partial<PageQuery> & { teamId?: number },
+    query?: Partial<IPageQuery> & { teamId?: number },
   ) {
     return this.axios
       .get<
-        Page<Project>
+        IPage<Project>
       >(`workspaces/${workspaceId}/projects`, { params: query })
       .then((res) => res.data);
   }

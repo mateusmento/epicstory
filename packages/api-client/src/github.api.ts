@@ -4,7 +4,7 @@ import type {
   IGithubIntegrationStatus,
   IGithubIssueBranchLink,
   IGithubIssuePullRequestLink,
-  Page,
+  IPage,
 } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
 import { Axios as AxiosImport } from "axios";
@@ -36,7 +36,7 @@ export class GithubIntegrationApi {
   ) {
     return this.axios
       .get<
-        Page<IGithubCatalogRepository>
+        IPage<IGithubCatalogRepository>
       >(`/integrations/github/workspaces/${workspaceId}/repositories`, { params })
       .then((r) => r.data);
   }

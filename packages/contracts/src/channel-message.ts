@@ -1,6 +1,6 @@
 import type { JSONContent } from "@tiptap/core";
 import type { UploadedAttachment } from "./attachment";
-import type { Page } from "./page";
+import type { IPage } from "./page";
 import type { IUser } from "./user";
 
 export type MessagePollOptionBody = {
@@ -180,7 +180,7 @@ export type ISearchChannelsAndUsersItem =
   | { kind: "user"; user: IUser };
 
 export type ChannelGroupsPage = {
-  groupChannels: Page<IChannel>;
-  meetingChannels: Page<IChannel>;
-  directChannels: Page<IChannel>;
+  groupChannels: IPage<IChannel>;
+  meetingChannels: IPage<IChannel>;
+  directChannels: IPage<IChannel>;
 };

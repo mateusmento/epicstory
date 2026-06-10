@@ -18,7 +18,7 @@ import type {
   IScheduledMessage,
   ISearchChannelsAndUsersItem,
   IUser,
-  Page,
+  IPage,
   ReplyMessageBody,
   SearchChannelsAndUsersQuery,
   SendChannelMessageResponse,
@@ -53,7 +53,7 @@ export class ChannelApi {
   ) {
     return this.axios
       .get<
-        Page<ISearchChannelsAndUsersItem>
+        IPage<ISearchChannelsAndUsersItem>
       >(`/workspaces/${workspaceId}/channels/search`, { params })
       .then((res) => res.data);
   }
@@ -239,7 +239,7 @@ export class ChannelApi {
             ),
           );
     return this.axios
-      .get<Page<IReply>>(`/messages/${messageId}/replies`, {
+      .get<IPage<IReply>>(`/messages/${messageId}/replies`, {
         ...(Object.keys(query ?? {}).length > 0 ? { params: query } : {}),
       })
       .then((res) => res.data);
@@ -299,7 +299,7 @@ export class ChannelApi {
             ),
           );
     return this.axios
-      .get<Page<IChannelActivity>>(`/channels/${channelId}/activities`, {
+      .get<IPage<IChannelActivity>>(`/channels/${channelId}/activities`, {
         ...(Object.keys(query ?? {}).length > 0 ? { params: query } : {}),
       })
       .then((res) => res.data);
