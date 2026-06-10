@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { IUser } from "@epicstory/contracts";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
-import { computed, nextTick, onBeforeUnmount, reactive, ref, shallowRef, useSlots, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, reactive, useSlots, watch } from "vue";
 import { createRichTextComposerExtensions, EPICSTORY_RICH_TEXT_COMPOSER } from "./composer";
 import { bumpActiveMentionSuggestionQuery } from "./mention-suggestion-bump";
+import type { MentionComposerView } from "./mention.types";
 
 defineSlots<{
   bubbleMenu?: (props: { editor: Editor }) => unknown;
@@ -28,71 +28,27 @@ const emit = defineEmits<{
   /** Clipboard paste or editor drop of files → shell staging upload (includes images). */
   "pasted-files": [files: File[]];
   "update:editor": [editor: Editor | null];
+  "mention-load-more": [];
 }>();
 
 const props = withDefaults(
   defineProps<{
-    mentionables?: IUser[];
+    mention?: MentionComposerView;
     meId?: number;
     placeholder?: string;
-    /** Workspace-style pagination: scroll list to bottom → load more mention candidates. */
-    onMentionListReachedBottom?: () => void | Promise<void>;
-    mentionListHasMore?: boolean;
-    mentionListLoadingMore?: boolean;
-    isUserOnline?: (userId: number) => boolean;
   }>(),
   {
-    mentionables: () => [],
     placeholder: "",
-    mentionListHasMore: true,
-    mentionListLoadingMore: false,
   },
-);
-
-const mentionListHasMoreRef = ref(props.mentionListHasMore);
-const mentionListLoadingMoreRef = ref(props.mentionListLoadingMore);
-const onMentionListReachedBottomRef = shallowRef(props.onMentionListReachedBottom);
-const isUserOnlineRef = shallowRef(props.isUserOnline);
-
-watch(
-  () => props.mentionListHasMore,
-  (v) => {
-    mentionListHasMoreRef.value = v ?? true;
-  },
-  { immediate: true },
-);
-
-watch(
-  () => props.mentionListLoadingMore,
-  (v) => {
-    mentionListLoadingMoreRef.value = v ?? false;
-  },
-  { immediate: true },
-);
-
-watch(
-  () => props.onMentionListReachedBottom,
-  (fn) => {
-    onMentionListReachedBottomRef.value = fn;
-  },
-  { immediate: true },
-);
-
-watch(
-  () => props.isUserOnline,
-  (fn) => {
-    isUserOnlineRef.value = fn;
-  },
-  { immediate: true },
 );
 
 const mentionablesForSuggestion = computed(() => {
-  const list = props.mentionables ?? [];
+  const list = props.mention?.mentionables ?? [];
   const meId = props.meId;
   return list.filter((u) => (meId ? u.id !== meId : true));
 });
 
-const mentionablesById = computed(() => new Map((props.mentionables ?? []).map((u) => [u.id, u])));
+const mentionablesById = computed(() => new Map((props.mention?.mentionables ?? []).map((u) => [u.id, u])));
 
 const mentionContext = reactive<{ meId: number | undefined }>({ meId: props.meId });
 watch(
@@ -142,10 +98,11 @@ const editor = useEditor({
     mentionContext,
     mentionablesById,
     mentionablesForSuggestion,
-    getOnMentionListReachedBottom: () => onMentionListReachedBottomRef.value,
-    getMentionListHasMore: () => mentionListHasMoreRef.value,
-    getMentionListLoadingMore: () => mentionListLoadingMoreRef.value,
-    getIsUserOnline: () => isUserOnlineRef.value,
+    getOnMentionListReachedBottom: () =>
+      props.mention?.list.hasMore ? () => emit("mention-load-more") : undefined,
+    getMentionListHasMore: () => props.mention?.list.hasMore ?? false,
+    getMentionListLoadingMore: () => props.mention?.list.loadingMore ?? false,
+    getOnlineUserIds: () => props.mention?.onlineUserIds,
   }),
   content: "",
   editorProps: {
@@ -180,9 +137,9 @@ const editor = useEditor({
 });
 
 watch(
-  () => props.mentionables?.length ?? 0,
+  () => props.mention?.list.items.length ?? 0,
   (len, prevLen) => {
-    if (onMentionListReachedBottomRef.value == null) return;
+    if (!props.mention?.list.hasMore) return;
     if (prevLen === undefined || len <= prevLen) return;
     void nextTick(() => bumpActiveMentionSuggestionQuery(editor.value ?? undefined));
   },

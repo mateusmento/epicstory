@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { staticMentionView } from "@/containers/issue/map-issue-mention-view";
 import { useIssueAttachmentsContext } from "@/containers/issue/issue-attachments.context";
 import IssueCommentCard from "@/containers/issue/IssueCommentCard.vue";
 import { issueActivityMessageComposerAttachmentHandlers } from "@/containers/messages";
@@ -19,7 +20,8 @@ import {
 import { useWorkspace } from "@/domain/workspace";
 import { UserAvatar } from "@/presentationals/user";
 import { ChannelApi, IssueApi } from "@epicstory/api-client";
-import type { IIssueFeedItem, IMessage, IReply, IUser } from "@epicstory/contracts";
+import type { MentionComposerView } from "@/presentationals/rich-text/mention.types";
+import type { IIssueFeedItem, IMessage, IReply } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
 import { computed, nextTick, ref } from "vue";
 
@@ -28,18 +30,14 @@ const props = withDefaults(
     issueId: number;
     commentChannelId: number;
     meId: number;
-    /** Workspace roster for @mentions (parent-loaded to avoid duplicate fetches). */
-    workspaceMentionUsers?: IUser[];
-    /** Paginated workspace mentions: scroll mention list to bottom → load more. */
-    onMentionListReachedBottom?: () => void | Promise<void>;
-    mentionListHasMore?: boolean;
-    mentionListLoadingMore?: boolean;
+    mention?: MentionComposerView;
   }>(),
-  {
-    mentionListHasMore: true,
-    mentionListLoadingMore: false,
-  },
+  {},
 );
+
+const emit = defineEmits<{
+  "mention-load-more": [];
+}>();
 
 const {
   loadAttachments,
@@ -81,10 +79,12 @@ const {
   onSyncAttachments: syncIssueAttachments,
 });
 
-const composerMentionables = computed(() => {
-  const ws = props.workspaceMentionUsers ?? [];
-  if (ws.length > 0) return ws;
-  return channelPeers.value;
+const composerMention = computed((): MentionComposerView | undefined => {
+  if (props.mention?.mentionables.length) return props.mention;
+  if (channelPeers.value.length > 0) {
+    return staticMentionView(channelPeers.value, props.mention?.onlineUserIds);
+  }
+  return props.mention;
 });
 
 const {
@@ -243,11 +243,9 @@ defineExpose({
                 :key="`edit-${item.message.id}`"
                 :channel-id="commentChannelId"
                 :attachment-handlers="composerAttachmentHandlers"
-                :mentionables="composerMentionables"
+                :mention="composerMention"
                 :me-id="meId"
-                :on-mention-list-reached-bottom="onMentionListReachedBottom"
-                :mention-list-has-more="mentionListHasMore"
-                :mention-list-loading-more="mentionListLoadingMore"
+                @mention-load-more="emit('mention-load-more')"
                 :editing-message="editing"
                 class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
                 @submit-edit="submitEdit"
@@ -297,11 +295,9 @@ defineExpose({
                   :key="`edit-reply-${rep.id}`"
                   :channel-id="commentChannelId"
                   :attachment-handlers="composerAttachmentHandlers"
-                  :mentionables="composerMentionables"
+                  :mention="composerMention"
                   :me-id="meId"
-                  :on-mention-list-reached-bottom="onMentionListReachedBottom"
-                  :mention-list-has-more="mentionListHasMore"
-                  :mention-list-loading-more="mentionListLoadingMore"
+                  @mention-load-more="emit('mention-load-more')"
                   :editing-message="editing"
                   class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
                   @submit-edit="submitEdit"
@@ -315,11 +311,9 @@ defineExpose({
                 :key="`reply-${item.activityId}-${item.message.id}`"
                 :channel-id="commentChannelId"
                 :attachment-handlers="composerAttachmentHandlers"
-                :mentionables="composerMentionables"
+                :mention="composerMention"
                 :me-id="meId"
-                :on-mention-list-reached-bottom="onMentionListReachedBottom"
-                :mention-list-has-more="mentionListHasMore"
-                :mention-list-loading-more="mentionListLoadingMore"
+                @mention-load-more="emit('mention-load-more')"
                 placeholder="Leave a reply…"
                 class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
                 @send-message="onReplyInThread(item.message.id, $event)"
@@ -390,11 +384,9 @@ defineExpose({
             :key="`edit-comments-${msg.id}`"
             :channel-id="commentChannelId"
             :attachment-handlers="composerAttachmentHandlers"
-            :mentionables="composerMentionables"
+            :mention="composerMention"
             :me-id="meId"
-            :on-mention-list-reached-bottom="onMentionListReachedBottom"
-            :mention-list-has-more="mentionListHasMore"
-            :mention-list-loading-more="mentionListLoadingMore"
+            @mention-load-more="emit('mention-load-more')"
             :editing-message="editing"
             class="max-h-[min(36vh,20rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-none"
             @submit-edit="submitEdit"
@@ -410,11 +402,9 @@ defineExpose({
       <IssueCommentComposer
         :channel-id="commentChannelId"
         :attachment-handlers="composerAttachmentHandlers"
-        :mentionables="composerMentionables"
+        :mention="composerMention"
         :me-id="meId"
-        :on-mention-list-reached-bottom="onMentionListReachedBottom"
-        :mention-list-has-more="mentionListHasMore"
-        :mention-list-loading-more="mentionListLoadingMore"
+        @mention-load-more="emit('mention-load-more')"
         placeholder="Leave a comment…"
         class="max-h-[min(40vh,22rem)] w-full max-w-full shrink-0 rounded-lg border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
         @send-message="onPostIssueComment"

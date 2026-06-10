@@ -14,6 +14,7 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
+import { staticMentionView } from "@/containers/issue/map-issue-mention-view";
 import { RichTextComposer } from "@/presentationals/rich-text";
 import { useAuth } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
@@ -35,6 +36,8 @@ const title = ref("");
 const descriptionEditor = shallowRef<Editor | null>(null);
 
 const mentionables = computed<IUser[]>(() => members.value.map((m) => m.user));
+
+const mentionView = computed(() => staticMentionView(mentionables.value));
 
 function setDescriptionEditor(ed: Editor | null) {
   descriptionEditor.value = ed;
@@ -154,7 +157,7 @@ async function onCreateIssue() {
         class="mt-1.5 w-full resize-none text-sm text-foreground outline-none [&_.ProseMirror]:min-h-[4.5rem]"
       >
         <RichTextComposer
-          :mentionables="mentionables"
+          :mention="mentionView"
           :me-id="authUser?.id"
           placeholder="Add description…"
           @update:editor="setDescriptionEditor"

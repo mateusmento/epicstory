@@ -20,6 +20,7 @@ import MessageComposerActions from "@/presentationals/messages/MessageComposerAc
 import MessageComposerPollSection from "@/presentationals/messages/MessageComposerPollSection.vue";
 import ScheduleMessageCustomDialog from "@/presentationals/messages/ScheduleMessageCustomDialog.vue";
 import ScheduleMessageDropdown from "@/presentationals/messages/ScheduleMessageDropdown.vue";
+import { onlineUserIdsFrom, staticMentionView } from "@/containers/issue/map-issue-mention-view";
 import { RichTextComposer } from "@/presentationals/rich-text";
 import type {
   CreateScheduledMessageBody,
@@ -76,6 +77,10 @@ const emit = defineEmits<{
   (e: "clear-quote"): void;
   (e: "cancel-edit"): void;
 }>();
+
+const mentionView = computed(() =>
+  staticMentionView(props.mentionables ?? [], onlineUserIdsFrom(props.mentionables ?? [], isUserOnline)),
+);
 
 const composerPollBody = ref<MessagePollBody | null>(null);
 
@@ -391,9 +396,8 @@ function toggleComposerPoll() {
     </div>
     <div class="min-h-0 min-w-0 flex-auto overflow-y-auto overflow-x-auto py-0.5 font-lato">
       <RichTextComposer
-        :mentionables="mentionables"
+        :mention="mentionView"
         :me-id="meId"
-        :is-user-online="isUserOnline"
         :placeholder="composerPlaceholder"
         @update:editor="onRichTextEditorUpdate"
         @pasted-files="onRichTextPastedFiles"

@@ -2,6 +2,7 @@
 import ScheduleMessageCustomDialog from "@/presentationals/messages/ScheduleMessageCustomDialog.vue";
 import { formatScheduleSummary, type ResolvedSchedule } from "@/presentationals/messages/schedule-builders";
 import MessageComposerPollSection from "@/presentationals/messages/MessageComposerPollSection.vue";
+import { staticMentionView } from "@/containers/issue/map-issue-mention-view";
 import RichTextComposer from "@/presentationals/rich-text/RichTextComposer.vue";
 import { useDependency } from "@/core/dependency-injection";
 import {
@@ -57,6 +58,8 @@ const channelApi = useDependency(ChannelApi);
 const scheduleDialogOpen = ref(false);
 const scheduleOverride = ref<ResolvedSchedule | null>(null);
 const meId = computed(() => authUser.value?.id);
+
+const mentionView = computed(() => staticMentionView(props.mentionables));
 const editor = ref<Editor | null>(null);
 const composerPollBody = ref<MessagePollBody | null>(null);
 
@@ -175,7 +178,7 @@ async function save() {
           <div class="p-2">
             <RichTextComposer
               placeholder="Message…"
-              :mentionables="props.mentionables"
+              :mention="mentionView"
               :me-id="meId"
               @update:editor="editor = $event"
             />

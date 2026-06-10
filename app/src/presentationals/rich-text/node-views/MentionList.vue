@@ -13,7 +13,7 @@ const props = withDefaults(
     /** When false, further loads are skipped (parent-driven pagination). */
     hasMore?: boolean;
     isLoadingMore?: boolean;
-    isUserOnline?: (userId: number) => boolean;
+    onlineUserIds?: ReadonlySet<number>;
   }>(),
   {
     hasMore: true,
@@ -83,7 +83,7 @@ defineExpose({ onKeyDown });
           <div class="text-sm text-foreground font-lato min-w-0 truncate">
             {{ item.label }}
           </div>
-          <div v-if="isUserOnline?.(item.id)" class="w-2 h-2 shrink-0 bg-green-400 rounded-full"></div>
+          <div v-if="onlineUserIds?.has(item.id)" class="w-2 h-2 shrink-0 bg-green-400 rounded-full"></div>
         </button>
 
         <div v-if="isLoadingMore" class="px-3 py-2 text-xs text-muted-foreground">Loading…</div>
