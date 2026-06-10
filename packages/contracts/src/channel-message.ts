@@ -158,6 +158,23 @@ export type FindMessageReplies = {
   beforeId?: number;
 };
 
+/** GET /workspaces/:id/channels/search query params. */
+export type SearchChannelsAndUsersQuery = {
+  q?: string;
+  page?: number;
+  count?: number;
+  teamId?: number;
+};
+
+/** GET /workspaces/:id/channels/groups query params. */
+export type FindChannelGroupsQuery = {
+  teamId?: number;
+  groupPage?: number;
+  meetingPage?: number;
+  directPage?: number;
+  count?: number;
+};
+
 export type ISearchChannelsAndUsersItem =
   | { kind: "channel"; channel: IChannel }
   | { kind: "user"; user: IUser };

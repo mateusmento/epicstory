@@ -321,7 +321,7 @@ export function useChannel() {
     votingPollOptionId.value = optionId;
     votingPollMessageId.value = messageId;
     try {
-      const { poll } = await channelApi.voteMessagePoll(messageId, optionId);
+      const { poll } = await channelApi.voteMessagePoll(messageId, { optionId });
       const i = store.activities.findIndex((a) => a.type === "message_sent" && a.messageId === messageId);
       if (i >= 0) {
         const act = store.activities[i];
