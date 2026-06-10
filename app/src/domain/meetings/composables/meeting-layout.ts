@@ -68,15 +68,10 @@ export function useMeetingLayout() {
     return others.value.slice(meeting.topDockMax.value);
   });
 
-  function isSpeaking(id: string) {
-    return meeting.speakingIds.value?.has?.(id) ?? false;
-  }
-
   return {
     participants,
     featured,
     topDockPeers,
     rightDockPeers,
-    isSpeaking,
   };
 }

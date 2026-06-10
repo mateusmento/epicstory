@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button, Separator } from "@/design-system";
 import { useMeeting, useMeetingLayout, useMeetingMediaDevicesStore } from "@/domain/meetings";
+import type { MeetingGridLayoutView, MeetingSpeakerLayoutView } from "@/lib/meetings";
 import { storeToRefs } from "pinia";
 import { computed, onMounted } from "vue";
 import { MeetingControls, MeetingGrid, MeetingSpeakerView } from "@/presentationals/meeting";
@@ -22,7 +23,7 @@ const {
   layoutMode,
   setLayoutMode,
   gridPage,
-  setGridPage,
+  speakingIds,
   applySelectedInputDevices,
 } = useMeeting();
 
@@ -31,12 +32,28 @@ function toggleScreenShare() {
   else startScreenShare();
 }
 
-const { participants, featured, topDockPeers, rightDockPeers, isSpeaking } = useMeetingLayout();
+const { participants, featured, topDockPeers, rightDockPeers } = useMeetingLayout();
 
 const mediaDevices = useMeetingMediaDevicesStore();
 const { selectedSpeakerId } = storeToRefs(mediaDevices);
 
 const canEndMeeting = computed(() => currentMeetingChannelType.value !== "meeting");
+
+const gridLayout = computed<MeetingGridLayoutView>(() => ({
+  participants: participants.value,
+  speakingIds: speakingIds.value,
+  pinnedId: pinnedSpeakerId.value,
+  audioOutputDeviceId: selectedSpeakerId.value,
+}));
+
+const speakerLayout = computed<MeetingSpeakerLayoutView>(() => ({
+  featured: featured.value,
+  topDockPeers: topDockPeers.value,
+  rightDockPeers: rightDockPeers.value,
+  speakingIds: speakingIds.value,
+  pinnedId: pinnedSpeakerId.value,
+  audioOutputDeviceId: selectedSpeakerId.value,
+}));
 
 async function onMeetingInputDevicesChange() {
   await applySelectedInputDevices();
@@ -85,25 +102,16 @@ onMounted(() => {
       <MeetingSpeakerView
         v-if="layoutMode === 'speaker'"
         class="h-full"
-        :featured="featured"
-        :topDockPeers="topDockPeers"
-        :rightDockPeers="rightDockPeers"
-        :isSpeaking="isSpeaking"
-        :pinnedId="pinnedSpeakerId"
-        :onTogglePin="togglePinSpeaker"
-        :remote-audio-output-device-id="selectedSpeakerId"
+        :layout="speakerLayout"
+        @toggle-pin="togglePinSpeaker"
       />
 
       <MeetingGrid
         v-else
+        v-model:page="gridPage"
         class="h-full"
-        :participants="participants"
-        :isSpeaking="isSpeaking"
-        :pinnedId="pinnedSpeakerId"
-        :onTogglePin="togglePinSpeaker"
-        :page="gridPage"
-        :onSetPage="setGridPage"
-        :remote-audio-output-device-id="selectedSpeakerId"
+        :layout="gridLayout"
+        @toggle-pin="togglePinSpeaker"
       />
     </div>
 
