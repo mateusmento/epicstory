@@ -1,23 +1,21 @@
 <script setup lang="ts">
 import { Button } from "@/design-system";
 import { cn } from "@/design-system/utils";
-import type { MeetingParticipant } from "@/lib/meetings";
+import type { MeetingGridLayoutView, MeetingParticipant } from "@/lib/meetings";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
 import MeetingTile from "./MeetingTile.vue";
 import { useGridPagination } from "@/presentationals/meeting/composables/useGridPagination";
 
 const props = defineProps<{
-  participants: MeetingParticipant[];
-  isSpeaking: (id: string) => boolean;
-  pinnedId: string | null;
-  onTogglePin: (id: string) => void;
-
-  page: number;
-  onSetPage: (page: number) => void;
-
-  remoteAudioOutputDeviceId?: string | null;
+  layout: MeetingGridLayoutView;
   class?: string;
+}>();
+
+const page = defineModel<number>("page", { required: true });
+
+const emit = defineEmits<{
+  "toggle-pin": [participantId: string];
 }>();
 
 const containerEl = ref<HTMLElement | null>(null);
@@ -26,9 +24,9 @@ const MIN_TILE_WIDTH = 240;
 const GAP_PX = 12;
 const RESERVED_BOTTOM_PX = 96; // meeting controls overlay area
 
-const { layout } = useGridPagination(
+const { layout: pagination } = useGridPagination(
   containerEl,
-  computed(() => props.participants.length),
+  computed(() => props.layout.participants.length),
   {
     minTileWidthPx: MIN_TILE_WIDTH,
     gapPx: GAP_PX,
@@ -38,24 +36,27 @@ const { layout } = useGridPagination(
   },
 );
 
-const totalPages = computed(() => Math.max(1, Math.ceil(props.participants.length / layout.value.pageSize)));
-const page = computed(() => Math.max(1, Math.min(props.page, totalPages.value)));
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(props.layout.participants.length / pagination.value.pageSize)),
+);
+const clampedPage = computed(() => Math.max(1, Math.min(page.value, totalPages.value)));
 
 const visibleParticipants = computed(() => {
-  const start = (page.value - 1) * layout.value.pageSize;
-  return props.participants.slice(start, start + layout.value.pageSize);
+  const start = (clampedPage.value - 1) * pagination.value.pageSize;
+  return props.layout.participants.slice(start, start + pagination.value.pageSize);
 });
 
 const disableAspectRatio = computed(
-  () => props.participants.length <= 3 && layout.value.pageSize === props.participants.length,
+  () =>
+    props.layout.participants.length <= 3 && pagination.value.pageSize === props.layout.participants.length,
 );
 
-watch([() => props.participants.length, totalPages], () => {
-  if (props.page > totalPages.value) props.onSetPage(totalPages.value);
+watch([() => props.layout.participants.length, totalPages], () => {
+  if (page.value > totalPages.value) page.value = totalPages.value;
 });
 
 const rows = computed(() => {
-  const cols = Math.max(1, layout.value.cols);
+  const cols = Math.max(1, pagination.value.cols);
   const list = visibleParticipants.value;
   const out: MeetingParticipant[][] = [];
   for (let i = 0; i < list.length; i += cols) out.push(list.slice(i, i + cols));
@@ -63,11 +64,11 @@ const rows = computed(() => {
 });
 
 function prevPage() {
-  props.onSetPage(Math.max(1, page.value - 1));
+  page.value = Math.max(1, clampedPage.value - 1);
 }
 
 function nextPage() {
-  props.onSetPage(Math.min(totalPages.value, page.value + 1));
+  page.value = Math.min(totalPages.value, clampedPage.value + 1);
 }
 </script>
 
@@ -86,8 +87,8 @@ function nextPage() {
           class="shrink-0"
           :style="
             disableAspectRatio
-              ? { width: `${layout.tileW}px`, height: `${layout.tileH}px` }
-              : { width: `${layout.tileW}px` }
+              ? { width: `${pagination.tileW}px`, height: `${pagination.tileH}px` }
+              : { width: `${pagination.tileW}px` }
           "
         >
           <MeetingTile
@@ -95,11 +96,11 @@ function nextPage() {
             variant="grid"
             :class="disableAspectRatio ? 'w-full h-full rounded-2xl' : 'w-full aspect-video rounded-2xl'"
             :participant="p"
-            :audio-output-device-id="remoteAudioOutputDeviceId"
-            :speaking="isSpeaking(p.id)"
-            :pinned="pinnedId === p.id"
-            :title="pinnedId === p.id ? 'Unpin' : 'Pin (switches to Speaker focus)'"
-            @click="onTogglePin(p.id)"
+            :audio-output-device-id="layout.audioOutputDeviceId"
+            :speaking="layout.speakingIds.has(p.id)"
+            :pinned="layout.pinnedId === p.id"
+            :title="layout.pinnedId === p.id ? 'Unpin' : 'Pin (switches to Speaker focus)'"
+            @click="emit('toggle-pin', p.id)"
           />
         </div>
       </div>
@@ -109,13 +110,13 @@ function nextPage() {
       <div
         class="mx-auto w-fit flex items-center gap-2 bg-black/60 text-white backdrop-blur border border-white/10 rounded-full px-2 py-1"
       >
-        <Button size="icon" variant="ghost" :disabled="page <= 1" @click="prevPage">
+        <Button size="icon" variant="ghost" :disabled="clampedPage <= 1" @click="prevPage">
           <ChevronLeft class="w-4 h-4" />
         </Button>
         <div class="text-xs text-muted-foreground tabular-nums px-1 select-none">
-          Page {{ page }} / {{ totalPages }}
+          Page {{ clampedPage }} / {{ totalPages }}
         </div>
-        <Button size="icon" variant="ghost" :disabled="page >= totalPages" @click="nextPage">
+        <Button size="icon" variant="ghost" :disabled="clampedPage >= totalPages" @click="nextPage">
           <ChevronRight class="w-4 h-4" />
         </Button>
       </div>
