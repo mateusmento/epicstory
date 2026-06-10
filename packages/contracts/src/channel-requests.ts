@@ -4,6 +4,7 @@ import type {
   MessagePollBody,
   MessagePollClient,
 } from "./channel-message";
+import type { ReactionToggleAction } from "./channel-socket-events";
 
 export type CreateDirectChannel = {
   type: "direct";
@@ -27,6 +28,12 @@ export type CreateMeetingChannel = {
   members?: number[];
 };
 
+export type CreateChannelBody =
+  | CreateDirectChannel
+  | CreateDirectOrMultiDirectChannel
+  | CreateGroupChannel
+  | CreateMeetingChannel;
+
 export type VoteMessagePollResponse = {
   success?: boolean;
   channelId?: number;
@@ -34,14 +41,23 @@ export type VoteMessagePollResponse = {
   poll: MessagePollClient;
 };
 
+export type ToggleReactionBody = {
+  emoji: string;
+};
+
 export type ToggleReactionResponse = {
   success?: boolean;
+  channelId?: number;
+  messageId?: number;
+  replyId?: number;
+  emoji?: string;
+  action?: ReactionToggleAction;
   reactions: IAggregatedReaction[];
 };
 
 export type SendMessageBody = {
   content: JSONContent;
-  quotedMessageId?: number;
+  quotedMessageId?: number | null;
   attachmentIds?: number[];
   poll?: MessagePollBody;
 };
@@ -52,8 +68,19 @@ export type UpdateChannelMessageBody = {
   poll?: MessagePollBody | null;
 };
 
+export type UpdateReplyBody = {
+  content: JSONContent;
+  attachmentIds?: number[];
+};
+
 export type ReplyMessageBody = {
   content: JSONContent;
   quotedReplyId?: number;
   attachmentIds?: number[];
+};
+
+export type SendDirectMessageBody = {
+  senderId: number;
+  peers: number[];
+  content: JSONContent;
 };

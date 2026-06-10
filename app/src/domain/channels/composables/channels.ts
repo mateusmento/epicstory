@@ -1,22 +1,22 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
-import { toMessageSummary } from "@/lib/channel";
+import { useMeetingSocket } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
+import { toMessageSummary } from "@/lib/channel";
+import { ChannelApi } from "@epicstory/api-client";
+import type {
+  CreateChannelBody,
+  IChannel,
+  IncomingChannelActivityEvent,
+  IncomingMeetingEvent,
+  MeetingEndedEvent,
+  SubscribeMessagesBody,
+} from "@epicstory/contracts";
+import { assign } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { ChannelApi } from "@epicstory/api-client";
-import type {
-  CreateDirectChannel,
-  CreateDirectOrMultiDirectChannel,
-  CreateGroupChannel,
-  CreateMeetingChannel,
-  IChannel,
-  IChannelActivity,
-} from "@epicstory/contracts";
-import { assign } from "lodash";
-import { useMeetingSocket } from "@/domain/meetings";
 import { useChannelStore } from "./channel";
 
 const useChannelsStore = defineStore("channels", () => {
@@ -42,13 +42,7 @@ export function useChannels() {
 
   const channelApi = useDependency(ChannelApi);
 
-  function onReceiveChannelActivity({
-    activity,
-    channelId,
-  }: {
-    activity: IChannelActivity;
-    channelId: number;
-  }) {
+  function onReceiveChannelActivity({ activity, channelId }: IncomingChannelActivityEvent) {
     if (activity.type === "message_sent" && activity.message) {
       store.updateChannel(channelId, {
         lastMessage: toMessageSummary(activity.message),
@@ -57,9 +51,8 @@ export function useChannels() {
   }
 
   function subscribeMessages() {
-    sockets.websocket?.emit("subscribe-messages", {
-      workspaceId: workspace.value.id,
-    });
+    const subscribeBody = { workspaceId: workspace.value.id } satisfies SubscribeMessagesBody;
+    sockets.websocket?.emit("subscribe-messages", subscribeBody);
 
     sockets.websocket.off("incoming-channel-activity", onReceiveChannelActivity);
     sockets.websocket?.on("incoming-channel-activity", onReceiveChannelActivity);
@@ -69,12 +62,12 @@ export function useChannels() {
     sockets.websocket.off("incoming-channel-activity", onReceiveChannelActivity);
   }
 
-  function onIncomingMeeting({ meeting, channelId }: any) {
-    store.updateChannel(channelId, { meeting });
+  function onIncomingMeeting({ meeting, channelId }: IncomingMeetingEvent) {
+    if (channelId != null) store.updateChannel(channelId, { meeting });
   }
 
-  function onMeetingEnded({ channelId }: any) {
-    store.updateChannel(channelId, { meeting: null });
+  function onMeetingEnded({ channelId }: MeetingEndedEvent) {
+    if (channelId != null) store.updateChannel(channelId, { meeting: null });
   }
 
   function subscribeMeetings() {
@@ -93,9 +86,7 @@ export function useChannels() {
     store.channels = await channelApi.findChannels(workspace.value.id);
   }
 
-  async function createChannel(
-    data: CreateDirectChannel | CreateDirectOrMultiDirectChannel | CreateGroupChannel | CreateMeetingChannel,
-  ) {
+  async function createChannel(data: CreateChannelBody) {
     let channel;
     if (data.type === "direct") {
       channel =

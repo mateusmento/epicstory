@@ -1,22 +1,22 @@
+import type { ToggleReactionResponse } from '@epicstory/contracts';
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { UserRepository, userToIUser } from 'src/auth';
-import { patch } from 'src/core/objects';
-import { SendNotification } from 'src/notifications/features/send-notification.command';
-import { getChannelLabelForNotification } from '../utils/enrich-channel';
-import { MessageService } from '../services/message.service';
-import { excerptFromTiptapDocWithWorkspaceMembers } from 'src/utils/tiptap-excerpt';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
   ChannelRepository,
   MessageRepository,
 } from 'src/channel/infrastructure';
+import { patch } from 'src/core/objects';
+import { SendNotification } from 'src/notifications/features/send-notification.command';
+import { excerptFromTiptapDocWithWorkspaceMembers } from 'src/utils/tiptap-excerpt';
+import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
   ChannelNotFound,
   IssuerIsNotChannelMember,
   MessageNotFound,
 } from '../exceptions';
-import type { ToggleReactionResponse } from '@epicstory/contracts';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { MessageService } from '../services/message.service';
+import { getChannelLabelForNotification } from '../utils/enrich-channel';
 
 export class ToggleMessageReaction {
   messageId: number;
@@ -125,6 +125,13 @@ export class ToggleMessageReactionCommand
       );
     }
 
-    return { success: true, reactions } satisfies ToggleReactionResponse;
+    return {
+      success: true,
+      channelId: channel.id,
+      messageId,
+      emoji,
+      action: result.action,
+      reactions,
+    };
   }
 }

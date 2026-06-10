@@ -15,16 +15,19 @@ import type {
   IScheduledMessage,
   ISearchChannelsAndUsersItem,
   IUser,
-  MessagePollBody,
   Page,
+  ReplyMessageBody,
   SendChannelMessageResponse,
+  SendDirectMessageBody,
+  SendMessageBody,
+  ToggleReactionBody,
   ToggleReactionResponse,
   UpdateChannelMessageBody,
+  UpdateReplyBody,
   UpdateScheduledMessageBody,
   UploadedAttachment,
   VoteMessagePollResponse,
 } from "@epicstory/contracts";
-import type { JSONContent } from "@tiptap/core";
 import type { AxiosInstance } from "axios";
 import { Axios as AxiosImport } from "axios";
 import { inject, injectable } from "tsyringe";
@@ -145,22 +148,9 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  sendMessage(
-    channelId: number,
-    content: JSONContent,
-    quotedMessageId?: number | null,
-    attachmentIds?: number[],
-    poll?: MessagePollBody,
-  ) {
+  sendMessage(channelId: number, body: SendMessageBody) {
     return this.axios
-      .post<SendChannelMessageResponse>(`channels/${channelId}/messages`, {
-        content,
-        ...(quotedMessageId != null ? { quotedMessageId } : {}),
-        ...(attachmentIds != null && attachmentIds.length > 0
-          ? { attachmentIds }
-          : {}),
-        ...(poll ? { poll } : {}),
-      })
+      .post<SendChannelMessageResponse>(`channels/${channelId}/messages`, body)
       .then((res) => res.data);
   }
 
@@ -200,20 +190,11 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  sendDirectMessage(
-    workspaceId: number,
-    senderId: number,
-    peers: number[],
-    content: JSONContent,
-  ) {
+  sendDirectMessage(workspaceId: number, body: SendDirectMessageBody) {
     return this.axios
       .post<SendChannelMessageResponse>(
         `workspaces/${workspaceId}/channels/direct/message`,
-        {
-          senderId,
-          peers,
-          content,
-        },
+        body,
       )
       .then((res) => res.data);
   }
@@ -228,10 +209,7 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  updateReply(
-    replyId: number,
-    body: { content: JSONContent; attachmentIds?: number[] },
-  ) {
+  updateReply(replyId: number, body: UpdateReplyBody) {
     return this.axios
       .patch<IReply>(`/replies/${replyId}`, body)
       .then((res) => res.data);
@@ -243,11 +221,9 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  toggleMessageReaction(messageId: number, emoji: string) {
+  toggleMessageReaction(messageId: number, body: ToggleReactionBody) {
     return this.axios
-      .post<ToggleReactionResponse>(`/messages/${messageId}/reactions`, {
-        emoji,
-      })
+      .post<ToggleReactionResponse>(`/messages/${messageId}/reactions`, body)
       .then((res) => res.data);
   }
 
@@ -275,20 +251,9 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  replyMessage(
-    messageId: number,
-    content: JSONContent,
-    quotedReplyId?: number | null,
-    attachmentIds?: number[],
-  ) {
+  replyMessage(messageId: number, body: ReplyMessageBody) {
     return this.axios
-      .post<IReply>(`/messages/${messageId}/replies`, {
-        content,
-        ...(quotedReplyId != null ? { quotedReplyId } : {}),
-        ...(attachmentIds != null && attachmentIds.length > 0
-          ? { attachmentIds }
-          : {}),
-      })
+      .post<IReply>(`/messages/${messageId}/replies`, body)
       .then((res) => res.data);
   }
 
@@ -308,9 +273,9 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  toggleReplyReaction(replyId: number, emoji: string) {
+  toggleReplyReaction(replyId: number, body: ToggleReactionBody) {
     return this.axios
-      .post<ToggleReactionResponse>(`/replies/${replyId}/reactions`, { emoji })
+      .post<ToggleReactionResponse>(`/replies/${replyId}/reactions`, body)
       .then((res) => res.data);
   }
 

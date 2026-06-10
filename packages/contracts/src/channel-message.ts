@@ -1,5 +1,5 @@
-import type { UploadedAttachment } from "./attachment";
 import type { JSONContent } from "@tiptap/core";
+import type { UploadedAttachment } from "./attachment";
 import type { Page } from "./page";
 import type { IUser } from "./user";
 
@@ -43,6 +43,11 @@ export type IAggregatedReaction = {
   /** Same as persistence / domain: ISO timestamps are applied at the transport layer only. */
   firstReactedAt: Date;
   reactedByMe: boolean;
+};
+
+export type IMessageReplier = {
+  user: IUser;
+  repliesCount: number;
 };
 
 export type ChannelType =
@@ -106,7 +111,7 @@ export type IMessage = {
   /** Omitted in some list payloads to avoid heavy circular nesting. */
   channel?: IChannel;
   repliesCount: number;
-  repliers: { user: IUser; repliesCount: number }[];
+  repliers: IMessageReplier[];
   reactions: IAggregatedReaction[];
   attachments?: IMessageAttachment[];
   poll?: MessagePollClient;
@@ -141,7 +146,7 @@ export type IReply = {
   channel?: IChannel;
   messageId: number;
   repliesCount: number;
-  repliers: { user: IUser; repliesCount: number }[];
+  repliers: IMessageReplier[];
   reactions: IAggregatedReaction[];
   attachments?: IMessageAttachment[];
 };

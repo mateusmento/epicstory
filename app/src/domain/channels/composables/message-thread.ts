@@ -2,7 +2,18 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
 import { ChannelApi } from "@epicstory/api-client";
-import type { IAggregatedReaction, IMessage, IReply, IUser, ReplyMessageBody } from "@epicstory/contracts";
+import type {
+  IAggregatedReaction,
+  IMessage,
+  IReply,
+  IncomingMessageReactionEvent,
+  IncomingReplyEvent,
+  IncomingReplyReactionEvent,
+  MessageDeletedEvent,
+  ReplyDeletedEvent,
+  ReplyMessageBody,
+  ReplyUpdatedEvent,
+} from "@epicstory/contracts";
 import type { Ref } from "vue";
 import { onMounted, onUnmounted, ref } from "vue";
 
@@ -36,10 +47,11 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   const channelApi = useDependency(ChannelApi);
   const { websocket } = useWebSockets();
 
-  // Subscribe to incoming replies
   onMounted(() => {
     websocket?.off("incoming-reply", onIncomingReply);
     websocket?.on("incoming-reply", onIncomingReply);
+    websocket?.off("reply-updated", onReplyUpdated);
+    websocket?.on("reply-updated", onReplyUpdated);
     websocket?.off("reply-deleted", onReplyDeleted);
     websocket?.on("reply-deleted", onReplyDeleted);
 
@@ -49,6 +61,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
 
   onUnmounted(() => {
     websocket?.off("incoming-reply", onIncomingReply);
+    websocket?.off("reply-updated", onReplyUpdated);
     websocket?.off("reply-deleted", onReplyDeleted);
     websocket?.off("message-deleted", onMessageDeleted);
   });
@@ -66,24 +79,27 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     websocket?.off("incoming-reply-reaction", onIncomingReplyReaction);
   });
 
-  async function onIncomingReply({ reply, messageId }: { reply: IReply; messageId: number }) {
+  async function onIncomingReply({ reply, messageId }: IncomingReplyEvent) {
     if (options.ignoreIncomingReplies) return;
     if (messageId === message.value?.id) {
       addReply(reply);
+    }
+  }
 
-      // Fetch reactions for the new reply to prevent race conditions
-      // where incoming-reply-reaction event were received before the reply was added to the list
-      // await fetchReplyReactions(reply.id);
+  function onReplyUpdated({ reply, messageId }: ReplyUpdatedEvent) {
+    if (messageId !== message.value?.id) return;
+    const i = replies.value.findIndex((r) => r.id === reply.id);
+    if (i >= 0) {
+      const next = [...replies.value];
+      next[i] = { ...next[i], ...reply };
+      replies.value = next;
     }
   }
 
   function onIncomingMessageReaction({
     messageId,
     reactions,
-  }: {
-    messageId?: number;
-    reactions?: IAggregatedReaction[];
-  }) {
+  }: Pick<IncomingMessageReactionEvent, "messageId" | "reactions">) {
     if (messageId === message.value?.id && reactions) {
       message.value.reactions = reactions;
     }
@@ -92,22 +108,19 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   function onIncomingReplyReaction({
     replyId,
     reactions,
-  }: {
-    replyId?: number;
-    reactions?: IAggregatedReaction[];
-  }) {
+  }: Pick<IncomingReplyReactionEvent, "replyId" | "reactions">) {
     if (replyId && reactions) {
       updateReplyReactions(replyId, reactions);
     }
   }
 
-  function onReplyDeleted({ replyId, messageId }: { replyId?: number; messageId?: number }) {
+  function onReplyDeleted({ replyId, messageId }: Pick<ReplyDeletedEvent, "replyId" | "messageId">) {
     if (replyId && messageId === message.value?.id) {
       removeReply(replyId);
     }
   }
 
-  function onMessageDeleted({ messageId }: { messageId?: number }) {
+  function onMessageDeleted({ messageId }: Pick<MessageDeletedEvent, "messageId">) {
     if (messageId === message.value?.id) {
       options.onMessageDeleted?.();
     }
@@ -159,12 +172,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     if (!me.value) return;
 
     try {
-      const reply = await channelApi.replyMessage(
-        message.value?.id,
-        payload.content,
-        payload.quotedReplyId,
-        payload.attachmentIds,
-      );
+      const reply = await channelApi.replyMessage(message.value?.id, payload);
       addReply(reply);
     } catch (error) {
       console.error("Failed to send reply:", error);
@@ -173,7 +181,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
 
   async function toggleReaction(emoji: string) {
     try {
-      const { reactions } = await channelApi.toggleMessageReaction(message.value?.id, emoji);
+      const { reactions } = await channelApi.toggleMessageReaction(message.value?.id, { emoji });
       message.value.reactions = reactions;
     } catch (error) {
       console.error("Failed to toggle reaction:", error);
@@ -182,7 +190,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
 
   async function toggleReplyReaction(replyId: number, emoji: string) {
     try {
-      const { reactions } = await channelApi.toggleReplyReaction(replyId, emoji);
+      const { reactions } = await channelApi.toggleReplyReaction(replyId, { emoji });
       updateReplyReactions(replyId, reactions);
     } catch (error) {
       console.error("Failed to toggle reply reaction:", error);
@@ -203,11 +211,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     next.push(reply);
     replies.value = sortRepliesAsc(next);
     message.value.repliesCount++;
-    if (
-      !message.value.repliers.some(
-        (replier: { user: IUser; repliesCount: number }) => replier.user.id === reply.senderId,
-      )
-    )
+    if (!message.value.repliers.some((replier) => replier.user.id === reply.senderId))
       message.value.repliers.push({ user: reply.sender, repliesCount: 1 });
   }
 
@@ -215,9 +219,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     replies.value = replies.value.filter((reply) => reply.id !== replyId);
     message.value.repliesCount--;
     if (replies.value.filter((reply) => reply.senderId === me.value?.id).length === 0)
-      message.value.repliers = message.value.repliers.filter(
-        (replier: { user: IUser; repliesCount: number }) => replier.user.id !== me.value?.id,
-      );
+      message.value.repliers = message.value.repliers.filter((replier) => replier.user.id !== me.value?.id);
   }
 
   function updateReplyReactions(replyId: number, reactions: IAggregatedReaction[]) {

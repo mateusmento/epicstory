@@ -1,3 +1,23 @@
+import type {
+  ChannelTypingPulseBody,
+  IAggregatedReaction,
+  IChannelActivity,
+  IMessage,
+  IncomingChannelActivityEvent,
+  IncomingMessageReactionEvent,
+  IncomingReplyEvent,
+  IncomingReplyReactionEvent,
+  IReply,
+  MessageDeletedEvent,
+  MessagePollUpdatedEvent,
+  MessageUpdatedEvent,
+  ReactionToggleAction,
+  ReplyDeletedEvent,
+  ReplyUpdatedEvent,
+  SubscribeMessagesBody,
+  UserTypingEvent,
+  UserTypingStoppedEvent,
+} from '@epicstory/contracts';
 import {
   ConnectedSocket,
   MessageBody,
@@ -9,9 +29,6 @@ import { Server, Socket } from 'socket.io';
 import { Message } from 'src/channel/domain';
 import { MessageReply } from 'src/channel/domain/entities';
 import { ChannelRepository } from 'src/channel/infrastructure';
-import type { IChannelActivity } from '@epicstory/contracts';
-import { MessageService } from '../services/message.service';
-import { ReplyService } from '../services/reply.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 const channelMessagingRoom = (channelId) =>
@@ -24,24 +41,9 @@ export class MessageGateway {
   server: Server;
 
   constructor(
-    private messageService: MessageService,
-    private replyService: ReplyService,
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
   ) {}
-
-  /**
-   * @param options.includeSender — Set when the client did not already receive the message over HTTP
-   * (e.g. scheduled job delivery). Default behavior excludes the sender like an optimistic send + fan-out.
-   */
-  emitIncomingMessage(message: Message, options?: { includeSender?: boolean }) {
-    if (!this.server) return;
-    const room = this.server.to(channelMessagingRoom(message.channelId));
-    const target = options?.includeSender
-      ? room
-      : room.except(userRoom(message.senderId));
-    target.emit('incoming-message', { message, channelId: message.channelId });
-  }
 
   emitIncomingChannelActivity(
     activity: IChannelActivity,
@@ -55,22 +57,24 @@ export class MessageGateway {
         : options?.excludeUserId != null
           ? room.except(userRoom(options.excludeUserId))
           : room;
-    target.emit('incoming-channel-activity', {
+    const payload = {
       activity,
       channelId: activity.channelId,
-    });
+    } satisfies IncomingChannelActivityEvent;
+    target.emit('incoming-channel-activity', payload);
   }
 
   emitIncomingReply(reply: MessageReply) {
     if (!this.server) return;
+    const payload: IncomingReplyEvent = {
+      reply: reply as unknown as IReply,
+      messageId: reply.messageId,
+      channelId: reply.channelId,
+    };
     this.server
       .to(channelMessagingRoom(reply.channelId))
       .except(userRoom(reply.senderId))
-      .emit('incoming-reply', {
-        reply,
-        messageId: reply.messageId,
-        channelId: reply.channelId,
-      });
+      .emit('incoming-reply', payload);
   }
 
   emitIncomingMessageReaction(
@@ -78,20 +82,21 @@ export class MessageGateway {
     messageId: number,
     emoji: string,
     userId: number,
-    action: string,
-    reactions: { emoji: string; reactedBy: number[] }[],
+    action: ReactionToggleAction,
+    reactions: IAggregatedReaction[],
   ) {
     if (!this.server) return;
+    const payload = {
+      messageId,
+      emoji,
+      userId,
+      action,
+      reactions,
+    } satisfies IncomingMessageReactionEvent;
     this.server
       .to(channelMessagingRoom(channelId))
       .except(userRoom(userId))
-      .emit('incoming-message-reaction', {
-        messageId,
-        emoji,
-        userId,
-        action,
-        reactions,
-      });
+      .emit('incoming-message-reaction', payload);
   }
 
   emitIncomingReplyReaction(
@@ -99,31 +104,33 @@ export class MessageGateway {
     replyId: number,
     emoji: string,
     userId: number,
-    action: string,
-    reactions: { emoji: string; reactedBy: number[] }[],
+    action: ReactionToggleAction,
+    reactions: IAggregatedReaction[],
   ) {
     if (!this.server) return;
+    const payload = {
+      replyId,
+      emoji,
+      userId,
+      action,
+      reactions,
+    } satisfies IncomingReplyReactionEvent;
     this.server
       .to(channelMessagingRoom(channelId))
       .except(userRoom(userId))
-      .emit('incoming-reply-reaction', {
-        replyId,
-        emoji,
-        userId,
-        action,
-        reactions,
-      });
+      .emit('incoming-reply-reaction', payload);
   }
 
   emitMessageDeleted(channelId: number, messageId: number, userId: number) {
     if (!this.server) return;
+    const payload = {
+      messageId,
+      channelId,
+    } satisfies MessageDeletedEvent;
     this.server
       .to(channelMessagingRoom(channelId))
       .except(userRoom(userId))
-      .emit('message-deleted', {
-        messageId,
-        channelId,
-      });
+      .emit('message-deleted', payload);
   }
 
   emitMessageUpdated(
@@ -132,10 +139,14 @@ export class MessageGateway {
     editorUserId: number,
   ) {
     if (!this.server) return;
+    const payload: MessageUpdatedEvent = {
+      message: message as unknown as IMessage,
+      channelId,
+    };
     this.server
       .to(channelMessagingRoom(channelId))
       .except(userRoom(editorUserId))
-      .emit('message-updated', { message, channelId });
+      .emit('message-updated', payload);
   }
 
   emitReplyUpdated(
@@ -144,10 +155,15 @@ export class MessageGateway {
     editorUserId: number,
   ) {
     if (!this.server) return;
+    const payload: ReplyUpdatedEvent = {
+      reply: reply as unknown as IReply,
+      channelId,
+      messageId: reply.messageId,
+    };
     this.server
       .to(channelMessagingRoom(channelId))
       .except(userRoom(editorUserId))
-      .emit('reply-updated', { reply, channelId, messageId: reply.messageId });
+      .emit('reply-updated', payload);
   }
 
   emitReplyDeleted(
@@ -157,14 +173,15 @@ export class MessageGateway {
     issuerId: number,
   ) {
     if (!this.server) return;
+    const payload = {
+      replyId,
+      messageId,
+      channelId,
+    } satisfies ReplyDeletedEvent;
     this.server
       .to(channelMessagingRoom(channelId))
       .except(userRoom(issuerId))
-      .emit('reply-deleted', {
-        replyId,
-        messageId,
-        channelId,
-      });
+      .emit('reply-deleted', payload);
   }
 
   emitMessagePollUpdated(
@@ -176,14 +193,15 @@ export class MessageGateway {
     },
   ) {
     if (!this.server) return;
+    const payload = {
+      channelId,
+      messageId,
+      optionVotes: tallies.optionVotes,
+      totalVotes: tallies.totalVotes,
+    } satisfies MessagePollUpdatedEvent;
     this.server
       .to(channelMessagingRoom(channelId))
-      .emit('message-poll-updated', {
-        channelId,
-        messageId,
-        optionVotes: tallies.optionVotes,
-        totalVotes: tallies.totalVotes,
-      });
+      .emit('message-poll-updated', payload);
   }
 
   async isChannelMember(channelId: number, userId: number) {
@@ -200,7 +218,7 @@ export class MessageGateway {
 
   @SubscribeMessage('channel-typing-pulse')
   async channelTypingPulse(
-    @MessageBody() body: { channelId: number },
+    @MessageBody() body: ChannelTypingPulseBody,
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
@@ -211,19 +229,15 @@ export class MessageGateway {
 
     if (!(await this.isChannelMember(channelId, userId))) return { ok: false };
 
-    // Use the sender socket so delivery matches `socket.to(room)` semantics
-    // (notify everyone in the channel room except this socket). Avoids
-    // `server.to(room).except(userRoom)` edge cases with Redis adapter / room overlap.
-    socket
-      .to(channelMessagingRoom(channelId))
-      .emit('user-typing', { channelId, userId });
+    const payload = { channelId, userId } satisfies UserTypingEvent;
+    socket.to(channelMessagingRoom(channelId)).emit('user-typing', payload);
 
     return { ok: true };
   }
 
   @SubscribeMessage('channel-typing-stop')
   async channelTypingStop(
-    @MessageBody() body: { channelId: number },
+    @MessageBody() body: ChannelTypingPulseBody,
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
@@ -234,16 +248,17 @@ export class MessageGateway {
 
     if (!(await this.isChannelMember(channelId, userId))) return { ok: false };
 
+    const payload = { channelId, userId } satisfies UserTypingStoppedEvent;
     socket
       .to(channelMessagingRoom(channelId))
-      .emit('user-typing-stopped', { channelId, userId });
+      .emit('user-typing-stopped', payload);
 
     return { ok: true };
   }
 
   @SubscribeMessage('subscribe-messages')
   async subscribeMessages(
-    @MessageBody() body: { workspaceId: number },
+    @MessageBody() body: SubscribeMessagesBody,
     @ConnectedSocket() socket: Socket,
   ) {
     const user = (socket.request as any).user;
@@ -264,72 +279,6 @@ export class MessageGateway {
     for (const channel of channels) {
       socket.leave(channelMessagingRoom(channel.id));
       socket.join(channelMessagingRoom(channel.id));
-    }
-  }
-
-  @SubscribeMessage('toggle-reaction')
-  async toggleReaction(
-    @MessageBody() { messageId, messageReplyId, emoji, channelId }: any,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    const user = (socket.request as any).user;
-    const userId = +user?.id;
-    if (!Number.isFinite(userId)) return { ok: false };
-
-    if (!(await this.isChannelMember(channelId, userId))) return { ok: false };
-
-    if (messageReplyId) {
-      // Toggle reaction on a message reply
-      await this.replyService.toggleReplyReaction(
-        messageReplyId,
-        emoji,
-        userId,
-      );
-
-      const reactions = await this.replyService.findReplyReactions(
-        messageReplyId,
-        userId,
-      );
-
-      socket.to(channelMessagingRoom(channelId)).emit('incoming-reaction', {
-        messageReplyId,
-        emoji,
-        userId,
-        reactions,
-      });
-
-      socket.emit('incoming-reaction', {
-        messageReplyId,
-        emoji,
-        userId,
-        reactions,
-      });
-
-      return { messageReplyId, emoji, userId, reactions };
-    } else if (messageId) {
-      // Toggle reaction on a message
-      await this.messageService.toggleMessageReaction(messageId, emoji, userId);
-
-      const reactions = await this.messageService.findMessageReactions(
-        messageId,
-        userId,
-      );
-
-      socket.to(channelMessagingRoom(channelId)).emit('incoming-reaction', {
-        messageId,
-        emoji,
-        userId,
-        reactions,
-      });
-
-      socket.emit('incoming-reaction', {
-        messageId,
-        emoji,
-        userId,
-        reactions,
-      });
-
-      return { messageId, emoji, userId, reactions };
     }
   }
 }
