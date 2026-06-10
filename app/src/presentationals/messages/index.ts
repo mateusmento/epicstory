@@ -7,6 +7,7 @@ export { default as MessageAttachmentTileBody } from "./MessageAttachmentTileBod
 export { default as MessageAttachments } from "./MessageAttachments.vue";
 export { default as MessageBox } from "./MessageBox.vue";
 export { default as MessageComposerActions } from "./MessageComposerActions.vue";
+export { default as MessageComposerShell } from "./MessageComposerShell.vue";
 export { default as MessageComposerPollSection } from "./MessageComposerPollSection.vue";
 export { default as MessageContextDropdown } from "./MessageContextDropdown.vue";
 export { default as MessageContextMenu } from "./MessageContextMenu.vue";
