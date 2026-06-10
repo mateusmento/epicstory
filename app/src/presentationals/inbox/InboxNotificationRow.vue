@@ -1,16 +1,5 @@
 <script lang="ts" setup>
-import type {
-  CalendarEventReminderNotificationPayload,
-  CalendarMeetingReminderNotificationPayload,
-  DirectMessageNotificationPayload,
-  IssueAssignedNotificationPayload,
-  IssueDueDateNotificationPayload,
-  MentionNotificationPayload,
-  MessageReactionNotificationPayload,
-  Notification,
-  ReplyNotificationPayload,
-  ReplyReactionNotificationPayload,
-} from "@epicstory/contracts";
+import type { INotification } from "@epicstory/contracts";
 import {
   CalendarEventReminderNotification,
   CalendarMeetingReminderNotification,
@@ -23,15 +12,15 @@ import {
 } from "./notifications";
 
 defineProps<{
-  notification: Notification;
+  notification: INotification;
   meId?: number | null;
 }>();
 
 const emit = defineEmits<{
-  select: [notification: Notification];
+  select: [notification: INotification];
 }>();
 
-function notificationTypeLabel(n: Notification): string {
+function notificationTypeLabel(n: INotification): string {
   const t = (n as { type?: unknown }).type;
   return typeof t === "string" ? t : "unknown";
 }
@@ -48,50 +37,50 @@ function notificationTypeLabel(n: Notification): string {
   >
     <MentionNotification
       v-if="notification.type === 'mention'"
-      :payload="notification.payload as MentionNotificationPayload"
+      :payload="notification.payload"
       :createdAt="notification.createdAt"
     />
     <ReplyNotification
       v-else-if="notification.type === 'reply'"
-      :payload="notification.payload as ReplyNotificationPayload"
+      :payload="notification.payload"
       :createdAt="notification.createdAt"
     />
     <MessageNotification
       v-else-if="notification.type === 'direct_message'"
-      :payload="notification.payload as DirectMessageNotificationPayload"
+      :payload="notification.payload"
       :created-at="notification.createdAt"
       :me-id="meId"
     />
     <DueDateNotification
       v-else-if="notification.type === 'issue_due_date'"
-      :payload="notification.payload as IssueDueDateNotificationPayload"
+      :payload="notification.payload"
       :createdAt="notification.createdAt"
     />
     <IssueAssignedNotification
       v-else-if="notification.type === 'issue_assigned'"
-      :payload="notification.payload as IssueAssignedNotificationPayload"
+      :payload="notification.payload"
       :createdAt="notification.createdAt"
     />
     <CalendarMeetingReminderNotification
       v-else-if="notification.type === 'calendar_meeting_reminder'"
-      :payload="notification.payload as CalendarMeetingReminderNotificationPayload"
+      :payload="notification.payload"
       :createdAt="notification.createdAt"
     />
     <CalendarEventReminderNotification
       v-else-if="notification.type === 'calendar_event_reminder'"
-      :payload="notification.payload as CalendarEventReminderNotificationPayload"
+      :payload="notification.payload"
       :createdAt="notification.createdAt"
     />
     <MessageReactionNotification
       v-else-if="notification.type === 'message_reaction'"
       kind="message_reaction"
-      :payload="notification.payload as MessageReactionNotificationPayload"
+      :payload="notification.payload"
       :createdAt="notification.createdAt"
     />
     <MessageReactionNotification
       v-else-if="notification.type === 'reply_reaction'"
       kind="reply_reaction"
-      :payload="notification.payload as ReplyReactionNotificationPayload"
+      :payload="notification.payload"
       :createdAt="notification.createdAt"
     />
     <div v-else class="text-sm text-secondary-foreground">

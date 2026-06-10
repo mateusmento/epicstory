@@ -24,8 +24,13 @@ export class IssueDueDateReaction {
       userId,
       workspaceId,
       payload: {
-        type: 'issue_due_date',
-        ...job.payload,
+        title: job.payload.title,
+        description: job.payload.description,
+        issueId: job.payload.issueId,
+        issueKey: job.payload.issueKey,
+        projectId: job.payload.projectId,
+        workspaceId: job.payload.workspaceId,
+        dueDate: job.payload.dueDate.toISOString(),
       },
     });
   }

@@ -1,8 +1,9 @@
+import type { INotification, Page as ContractPage } from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { notificationEntityToClient } from '../utils/notification-entity-to-client';
 import { patch } from 'src/core/objects';
 import { Page } from 'src/core/page';
-import { Notification } from '../entities';
 import { NotificationRepository } from '../repositories';
 
 export class FindNotifications {
@@ -46,7 +47,9 @@ export class FindNotificationsHandler
     private readonly notificationRepository: NotificationRepository,
   ) {}
 
-  async execute(query: FindNotifications): Promise<Page<Notification>> {
+  async execute(
+    query: FindNotifications,
+  ): Promise<ContractPage<INotification>> {
     const total = await this.notificationRepository.count({
       where: { userId: query.userId, type: query.type, seen: query.seen },
     });
@@ -54,7 +57,7 @@ export class FindNotificationsHandler
     const orderBy = query.orderBy ?? 'createdAt';
     const orderDirection = (query.order ?? 'desc') as 'asc' | 'desc';
 
-    const content = await this.notificationRepository.find({
+    const rows = await this.notificationRepository.find({
       where: { userId: query.userId, type: query.type, seen: query.seen },
       order: {
         createdAt: orderBy === 'createdAt' ? orderDirection : undefined,
@@ -63,6 +66,19 @@ export class FindNotificationsHandler
       take: query.count,
     });
 
-    return Page.fromResult(content, total, query);
+    const page = Page.fromResult(
+      rows.map(notificationEntityToClient),
+      total,
+      query,
+    );
+
+    return {
+      content: page.content,
+      page: page.page,
+      count: page.count,
+      hasNext: page.hasNext,
+      hasPrevious: page.hasPrevious,
+      total: page.total,
+    };
   }
 }

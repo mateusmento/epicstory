@@ -12,7 +12,7 @@ import type {
   IssueDueDateNotificationPayload,
   MentionNotificationPayload,
   MessageReactionNotificationPayload,
-  Notification,
+  INotification,
   ReplyNotificationPayload,
   ReplyReactionNotificationPayload,
 } from "@epicstory/contracts";
@@ -48,7 +48,7 @@ function onReachedBottom() {
   fetchMoreNotifications();
 }
 
-async function openNotification(notification: Notification) {
+async function openNotification(notification: INotification) {
   await markAsSeen(notification.id);
   const workspaceId = route.params.workspaceId as string | undefined;
 

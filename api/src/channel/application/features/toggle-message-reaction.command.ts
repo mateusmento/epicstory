@@ -1,5 +1,5 @@
 import type { ToggleReactionResponse } from '@epicstory/contracts';
-import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsNotEmpty, IsString } from 'class-validator';
 import { UserRepository, userToIUser } from 'src/auth';
 import {
@@ -7,7 +7,7 @@ import {
   MessageRepository,
 } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
-import { SendNotification } from 'src/notifications/features/send-notification.command';
+import { NotificationService } from 'src/notifications/services';
 import { excerptFromTiptapDocWithWorkspaceMembers } from 'src/utils/tiptap-excerpt';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
@@ -41,7 +41,7 @@ export class ToggleMessageReactionCommand
     private messageRepo: MessageRepository,
     private channelRepo: ChannelRepository,
     private userRepo: UserRepository,
-    private commandBus: CommandBus,
+    private notificationService: NotificationService,
   ) {}
 
   async execute({
@@ -106,23 +106,21 @@ export class ToggleMessageReactionCommand
         channel.workspaceId,
         message.content,
       );
-      await this.commandBus.execute(
-        new SendNotification({
-          userIds: [message.senderId],
-          type: 'message_reaction',
-          workspaceId: channel.workspaceId,
-          payload: {
-            type: 'message_reaction',
-            messageId,
-            channelId: channel.id,
-            channelName: channelLabel,
-            emoji,
-            reactorUserId: issuerId,
-            reactor: reactorDto,
-            messageExcerpt,
-          },
-        }),
-      );
+
+      await this.notificationService.sendNotification({
+        userId: message.senderId,
+        type: 'message_reaction',
+        workspaceId: channel.workspaceId,
+        payload: {
+          messageId,
+          channelId: channel.id,
+          channelName: channelLabel,
+          emoji,
+          reactorUserId: issuerId,
+          reactor: reactorDto,
+          messageExcerpt,
+        },
+      });
     }
 
     return {

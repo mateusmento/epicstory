@@ -1,7 +1,9 @@
+import type { NotificationType } from '@epicstory/contracts';
 import { Injectable } from '@nestjs/common';
-import { NotificationRepository } from '../repositories';
-import { NotificationGateway } from '../gateways';
 import { Notification } from '../entities';
+import { NotificationGateway } from '../gateways';
+import { NotificationRepository } from '../repositories';
+import type { SendNotificationInput } from '../types/send-notification-input';
 
 @Injectable()
 export class NotificationService {
@@ -10,19 +12,10 @@ export class NotificationService {
     private readonly notificationGateway: NotificationGateway,
   ) {}
 
-  async sendNotification({
-    type,
-    userId,
-    workspaceId,
-    payload,
-  }: {
-    type: string;
-    userId: number;
-    workspaceId: number;
-    payload: Record<string, any>;
-  }) {
-    payload.type = type ?? payload?.type;
-
+  async sendNotification<T extends NotificationType>(
+    input: SendNotificationInput<T>,
+  ) {
+    const { type, userId, workspaceId, payload } = input;
     const notification = new Notification({
       type,
       userId,

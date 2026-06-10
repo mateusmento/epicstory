@@ -1,3 +1,8 @@
+import type {
+  NotificationPayload,
+  NotificationType,
+} from '@epicstory/contracts';
+import type { SendNotificationInput } from '../types/send-notification-input';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsArray, IsNumber, IsObject, IsString } from 'class-validator';
 import { patch } from 'src/core/objects';
@@ -12,10 +17,10 @@ export class SendNotification {
   workspaceId: number;
 
   @IsString()
-  type: string;
+  type: NotificationType;
 
   @IsObject()
-  payload: any;
+  payload: NotificationPayload;
 
   constructor(data: Partial<SendNotification>) {
     patch(this, data);
@@ -28,23 +33,20 @@ export class SendNotificationHandler
 {
   constructor(private readonly notificationService: NotificationService) {}
 
-  async execute(command: SendNotification): Promise<any> {
+  async execute(command: SendNotification): Promise<void> {
+    const toSend = (userId: number): SendNotificationInput => ({
+      type: command.type,
+      userId,
+      workspaceId: command.workspaceId,
+      payload: command.payload,
+    });
+
     if (Array.isArray(command.userIds)) {
       for (const userId of command.userIds) {
-        this.notificationService.sendNotification({
-          type: command.type,
-          userId,
-          workspaceId: command.workspaceId,
-          payload: command.payload,
-        });
+        await this.notificationService.sendNotification(toSend(userId));
       }
     } else {
-      await this.notificationService.sendNotification({
-        type: command.type,
-        userId: command.userIds,
-        workspaceId: command.workspaceId,
-        payload: command.payload,
-      });
+      await this.notificationService.sendNotification(toSend(command.userIds));
     }
   }
 }

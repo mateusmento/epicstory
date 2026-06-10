@@ -1,4 +1,4 @@
-import type { IReply } from '@epicstory/contracts';
+import type { IReply, NotificationPayload } from '@epicstory/contracts';
 import type { CommandBus } from '@nestjs/cqrs';
 import type { Channel } from 'src/channel/domain/entities/channel.entity';
 import type { Message } from 'src/channel/domain/entities/message.entity';
@@ -28,7 +28,7 @@ export async function dispatchNotificationsForReplySent(
           message: reply.displayContent,
           reply,
           mentionedUsers: reply.mentionedUsers,
-        },
+        } as unknown as NotificationPayload,
       }),
     );
   }
@@ -48,7 +48,7 @@ export async function dispatchNotificationsForReplySent(
           message: parentMessage,
           channel,
           sender: reply.sender,
-        },
+        } as unknown as NotificationPayload,
       }),
     );
   }

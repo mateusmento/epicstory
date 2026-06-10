@@ -80,19 +80,18 @@ export class SendScheduledMeetingReminderHandler
         userId,
         workspaceId: event.workspaceId,
         payload: {
-          calendarEventId: event.id as any,
-          occurrenceAt: occurrenceAt,
+          calendarEventId: String(event.id),
+          occurrenceAt: occurrenceAt.toISOString(),
           meetingId: meeting.id,
           title: event.title,
           description: event.description ?? '',
           notifyMinutesBefore: Math.max(0, command.notifyMinutesBefore ?? 0),
           calendarEventType: event.type,
-          startsAt: occurrenceAt,
-          endsAt: occurrenceEndsAt,
+          startsAt: occurrenceAt.toISOString(),
+          endsAt: occurrenceEndsAt.toISOString(),
           isPublic: event.isPublic,
           notifyEnabled: event.notifyEnabled,
           channelId,
-          eventPayload: event.payload,
         },
       });
     }
