@@ -25,8 +25,9 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { Message } from 'src/channel/domain';
+import { AuthenticatedSocket } from 'src/core';
 import { MessageReply } from 'src/channel/domain/entities';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -219,10 +220,9 @@ export class MessageGateway {
   @SubscribeMessage('channel-typing-pulse')
   async channelTypingPulse(
     @MessageBody() body: ChannelTypingPulseBody,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
-    const user = (socket.request as any).user;
-    const userId = +user?.id;
+    const { userId } = socket.data;
     const channelId = +body?.channelId;
     if (!Number.isFinite(userId) || !Number.isFinite(channelId))
       return { ok: false };
@@ -238,10 +238,9 @@ export class MessageGateway {
   @SubscribeMessage('channel-typing-stop')
   async channelTypingStop(
     @MessageBody() body: ChannelTypingPulseBody,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
-    const user = (socket.request as any).user;
-    const userId = +user?.id;
+    const { userId } = socket.data;
     const channelId = +body?.channelId;
     if (!Number.isFinite(userId) || !Number.isFinite(channelId))
       return { ok: false };
@@ -259,10 +258,9 @@ export class MessageGateway {
   @SubscribeMessage('subscribe-messages')
   async subscribeMessages(
     @MessageBody() body: SubscribeMessagesBody,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
-    const user = (socket.request as any).user;
-    const userId = +user?.id;
+    const { userId } = socket.data;
     const workspaceId = +body?.workspaceId;
 
     if (!Number.isFinite(userId) || !Number.isFinite(workspaceId))

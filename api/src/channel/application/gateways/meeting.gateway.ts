@@ -12,6 +12,7 @@ import {
 import { isDate } from 'date-fns';
 import { Server, Socket } from 'socket.io';
 import { CalendarEventRepository } from 'src/calendar/repositories';
+import { AuthenticatedSocket } from 'src/core';
 import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { RedisService } from 'src/core/redis.service';
@@ -138,7 +139,7 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     );
   }
 
-  async handleDisconnect(socket: Socket) {
+  async handleDisconnect(socket: AuthenticatedSocket) {
     try {
       const data = await this.getSocketMeetingAttendee(socket.id);
       if (!data) return;
@@ -203,10 +204,10 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   @SubscribeMessage('subscribe-meetings')
   async subscribeMeetings(
     @MessageBody() { workspaceId }: any,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
-    const user = (socket.request as any).user;
-    const userId = user?.id;
+    const { userId } = socket.data;
+    if (!Number.isFinite(userId)) return;
 
     const member = await this.workspaceRepo.findMember(workspaceId, userId);
     if (!member) return;
@@ -239,10 +240,10 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   async joinMeeting(
     @MessageBody()
     { meetingId, remoteId, isCameraOn, isMicrophoneOn }: any,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
-    const issuerId = (socket.request as any).user?.id;
-    if (!issuerId) throw new UnauthorizedException();
+    const { userId: issuerId } = socket.data;
+    if (!Number.isFinite(issuerId)) throw new UnauthorizedException();
 
     if (!meetingId) throw new Error('Invalid request: missing meetingId');
 
@@ -272,10 +273,10 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
       isCameraOn,
       isMicrophoneOn,
     }: any,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
-    const issuerId = (socket.request as any).user?.id;
-    if (!issuerId) throw new UnauthorizedException();
+    const { userId: issuerId } = socket.data;
+    if (!Number.isFinite(issuerId)) throw new UnauthorizedException();
 
     if (!calendarEventId || !occurrenceAt) {
       throw new Error(
@@ -306,10 +307,10 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   @SubscribeMessage('join-channel-meeting')
   async joinChannelMeeting(
     @MessageBody() { channelId, remoteId, isCameraOn, isMicrophoneOn }: any,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
-    const issuerId = (socket.request as any).user?.id;
-    if (!issuerId) throw new UnauthorizedException();
+    const { userId: issuerId } = socket.data;
+    if (!Number.isFinite(issuerId)) throw new UnauthorizedException();
 
     socket.leave(userRoom(issuerId));
     socket.join(userRoom(issuerId));
@@ -390,9 +391,9 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
   @SubscribeMessage('leave-meeting')
   async leaveMeeting(
     @MessageBody() { meetingId, remoteId }: any,
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
   ) {
-    const user = (socket.request as any).user;
+    const { userId } = socket.data;
 
     const meeting = await this.meetingService.findMeeting({ meetingId });
     if (!meeting) throw new Error('Meeting not found');
@@ -414,7 +415,7 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     if (channelId) {
       socket
         .to(channelMeetingRoom(channelId))
-        .emit('leaving-attendee', { meetingId, channelId, remoteId, user });
+        .emit('leaving-attendee', { meetingId, channelId, remoteId, userId });
     }
     socket.leave(meetingRoom(meetingId));
 
