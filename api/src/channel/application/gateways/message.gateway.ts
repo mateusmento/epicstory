@@ -64,10 +64,10 @@ export class MessageGateway {
     target.emit('incoming-channel-activity', payload);
   }
 
-  emitIncomingReply(reply: MessageReply) {
+  emitIncomingReply(reply: IReply) {
     if (!this.server) return;
     const payload: IncomingReplyEvent = {
-      reply: reply as unknown as IReply,
+      reply,
       messageId: reply.messageId,
       channelId: reply.channelId,
     };

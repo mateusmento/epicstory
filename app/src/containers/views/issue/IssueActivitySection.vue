@@ -4,7 +4,13 @@ import { Icon } from "@/design-system/icons";
 import { UserAvatar } from "@/presentationals/user";
 import { useDependency } from "@/core/dependency-injection";
 import { ChannelApi, IssueApi } from "@epicstory/api-client";
-import { useIssueActivityFeed, useIssueCommentEditing, useIssueCommentThreads } from "@/domain/issues";
+import {
+  useIssueActivityFeed,
+  useIssueCommentEditing,
+  useIssueCommentSocketSync,
+  useIssueCommentThreads,
+} from "@/domain/issues";
+import { useWorkspace } from "@/domain/workspace";
 import {
   formatIssueActivitySentence,
   formatIssueActivityWhen,
@@ -49,6 +55,7 @@ const emit = defineEmits<{
 
 const issueApi = useDependency(IssueApi);
 const channels = useDependency(ChannelApi);
+const { workspace } = useWorkspace();
 const { deleteIssueComment, updateIssueComment } = useIssue();
 
 const composerAttachmentHandlers = computed(() =>
@@ -87,6 +94,7 @@ const composerMentionables = computed(() => {
 });
 
 const {
+  threadByRootId,
   ensureThreadState,
   isLoadingThread,
   isExpandedThread,
@@ -100,6 +108,14 @@ const {
   issueId: () => props.issueId,
   channelApi: channels,
   onSyncReplies: (replies) => props.syncIssueAttachments?.({ replies }),
+});
+
+useIssueCommentSocketSync({
+  commentChannelId: () => props.commentChannelId,
+  workspaceId: () => workspace.value.id,
+  feed,
+  commentMessages,
+  threadByRootId,
 });
 
 const { editing, startEdit, cancelEdit, submitEdit, clearIfEditingEntity } = useIssueCommentEditing({

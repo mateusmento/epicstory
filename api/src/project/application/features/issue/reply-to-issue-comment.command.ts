@@ -1,10 +1,10 @@
-import type { JSONContent } from '@tiptap/core';
 import {
   ForbiddenException,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import type { JSONContent } from '@tiptap/core';
 import {
   ArrayMaxSize,
   IsArray,
@@ -14,15 +14,16 @@ import {
   IsOptional,
   Min,
 } from 'class-validator';
+import { MessageGateway } from 'src/channel/application/gateways/message.gateway';
 import { ReplyService } from 'src/channel/application/services/reply.service';
 import { dispatchNotificationsForReplySent } from 'src/channel/application/utils/dispatch-reply-notifications';
 import { MessageRepository } from 'src/channel/infrastructure/repositories';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
+import { IssueRepository } from 'src/project/infrastructure/repositories';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { IssueRepository } from 'src/project/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
 
 export class ReplyToIssueComment {
@@ -57,6 +58,7 @@ export class ReplyToIssueCommentCommand
     private replyService: ReplyService,
     private attachmentService: AttachmentService,
     private commandBus: CommandBus,
+    private messageGateway: MessageGateway,
   ) {}
 
   @Transactional()
@@ -120,6 +122,8 @@ export class ReplyToIssueCommentCommand
       reply,
       issuer.id,
     );
+
+    this.messageGateway.emitIncomingReply(reply);
 
     return reply;
   }
