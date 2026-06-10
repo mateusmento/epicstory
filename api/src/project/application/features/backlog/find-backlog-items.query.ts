@@ -1,3 +1,8 @@
+import type {
+  IssueFilter,
+  IssueFilterField,
+  IssueFilterOperator,
+} from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
@@ -58,26 +63,31 @@ const operators = {
   },
 };
 
-const columns = [
-  'title',
-  'description',
+const issueFilterFields: IssueFilterField[] = [
+  'dueDate',
   'status',
   'priority',
-  'dueDate',
-  'createdAt',
-  'createdById',
-  'workspaceId',
-  'projectId',
-  'parentIssueId',
-  'assignees',
   'labels',
+  'title',
+  'parentIssueId',
 ];
 
-class BacklogItemFieldFilter {
+const issueFilterOperators: IssueFilterOperator[] = [
+  'eq',
+  'neq',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'contains',
+  'notContains',
+];
+
+class IssueFilterDto implements IssueFilter {
   @IsString()
-  @IsIn(columns)
-  @Transform(({ value }) => value.split('.').pop() as string)
-  field: string;
+  @IsIn(issueFilterFields)
+  @Transform(({ value }) => value.split('.').pop() as IssueFilterField)
+  field: IssueFilterField;
 
   // The frontend sends `filters` as a JSON string; individual `value`s may be
   // strings, numbers, or arrays (e.g. labels).
@@ -98,8 +108,8 @@ class BacklogItemFieldFilter {
   value: any;
 
   @IsString()
-  @IsIn(Object.keys(operators))
-  operator: keyof typeof operators;
+  @IsIn(issueFilterOperators)
+  operator: IssueFilterOperator;
 }
 
 export class FindBacklogItems {
@@ -127,10 +137,10 @@ export class FindBacklogItems {
     // We must return typed instances here; otherwise ValidationPipe whitelist
     // may strip nested objects (turning them into `{}`).
     const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-    return plainToInstance(BacklogItemFieldFilter, parsed);
+    return plainToInstance(IssueFilterDto, parsed);
   })
-  @Type(() => BacklogItemFieldFilter)
-  filters?: BacklogItemFieldFilter[];
+  @Type(() => IssueFilterDto)
+  filters?: IssueFilterDto[];
 
   constructor(data: Partial<FindBacklogItems> = {}) {
     patch(this, data);

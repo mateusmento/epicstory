@@ -4,7 +4,7 @@ import BoardItem from "@/presentationals/board/BoardItem.vue";
 import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
 import type { IIssue, IBacklogItem } from "@epicstory/contracts";
-import { useProjectFilters } from "@/domain/project";
+import { issueFiltersForQuery, useProjectFilters } from "@/domain/project";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import IssueCard from "@/containers/views/project/board/IssueCard.vue";
@@ -87,8 +87,8 @@ onMounted(async () => {
     count: 200,
     orderBy: "manual",
     order: "asc",
-    filters: activeFilters.value as any,
-  } as any);
+    filters: issueFiltersForQuery(activeFilters.value),
+  });
 
   // The watch below will do the initial sync.
 });
@@ -107,8 +107,8 @@ watch(
       count: 200,
       orderBy: "manual",
       order: "asc",
-      filters: activeFilters.value as any,
-    } as any);
+      filters: issueFiltersForQuery(activeFilters.value),
+    });
   },
 );
 

@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import type { Project } from "../types";
+import type { Project } from "@epicstory/contracts";
 import { useDependency } from "@/core/dependency-injection";
 import { WorkspaceApi } from "@epicstory/api-client";
 

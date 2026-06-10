@@ -8,6 +8,7 @@ export * from "./attachment";
 export * from "./scheduled-message";
 export * from "./channel-requests";
 export * from "./issue";
+export * from "./issue-filter";
 export * from "./issue-key";
 export * from "./issue-activity-payload";
 export * from "./issue-feed";
