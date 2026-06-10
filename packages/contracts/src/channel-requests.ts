@@ -34,11 +34,24 @@ export type CreateChannelBody =
   | CreateGroupChannel
   | CreateMeetingChannel;
 
+/** POST /messages/:id/poll/vote body. */
+export type VoteMessagePollBody = {
+  optionId: string;
+};
+
 export type VoteMessagePollResponse = {
   success?: boolean;
   channelId?: number;
   messageId?: number;
   poll: MessagePollClient;
+};
+
+export type DeleteChannelResponse = {
+  channelId: number;
+};
+
+export type DeleteScheduledMessageResponse = {
+  success: true;
 };
 
 export type ToggleReactionBody = {

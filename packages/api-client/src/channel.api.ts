@@ -5,7 +5,10 @@ import type {
   CreateGroupChannel,
   CreateMeetingChannel,
   CreateScheduledMessageBody,
+  DeleteChannelResponse,
+  DeleteScheduledMessageResponse,
   FindChannelActivities,
+  FindChannelGroupsQuery,
   FindMessageReplies,
   IChannel,
   IChannelActivity,
@@ -17,6 +20,7 @@ import type {
   IUser,
   Page,
   ReplyMessageBody,
+  SearchChannelsAndUsersQuery,
   SendChannelMessageResponse,
   SendDirectMessageBody,
   SendMessageBody,
@@ -26,6 +30,7 @@ import type {
   UpdateReplyBody,
   UpdateScheduledMessageBody,
   UploadedAttachment,
+  VoteMessagePollBody,
   VoteMessagePollResponse,
 } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
@@ -44,7 +49,7 @@ export class ChannelApi {
 
   searchChannelsAndUsers(
     workspaceId: number,
-    params: { q?: string; page?: number; count?: number },
+    params?: SearchChannelsAndUsersQuery,
   ) {
     return this.axios
       .get<
@@ -53,16 +58,7 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  findChannelGroups(
-    workspaceId: number,
-    params?: {
-      teamId?: number;
-      groupPage?: number;
-      meetingPage?: number;
-      directPage?: number;
-      count?: number;
-    },
-  ) {
+  findChannelGroups(workspaceId: number, params?: FindChannelGroupsQuery) {
     return this.axios
       .get<ChannelGroupsPage>(`/workspaces/${workspaceId}/channels/groups`, {
         params,
@@ -84,7 +80,7 @@ export class ChannelApi {
 
   deleteChannel(channelId: number) {
     return this.axios
-      .delete<{ channelId: number }>(`/channels/${channelId}`)
+      .delete<DeleteChannelResponse>(`/channels/${channelId}`)
       .then((res) => res.data);
   }
 
@@ -184,9 +180,9 @@ export class ChannelApi {
 
   deleteScheduledMessage(channelId: number, scheduledMessageId: string) {
     return this.axios
-      .delete<{
-        success: boolean;
-      }>(`/channels/${channelId}/scheduled-messages/${scheduledMessageId}`)
+      .delete<DeleteScheduledMessageResponse>(
+        `/channels/${channelId}/scheduled-messages/${scheduledMessageId}`,
+      )
       .then((res) => res.data);
   }
 
@@ -227,11 +223,9 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  voteMessagePoll(messageId: number, optionId: string) {
+  voteMessagePoll(messageId: number, body: VoteMessagePollBody) {
     return this.axios
-      .post<VoteMessagePollResponse>(`/messages/${messageId}/poll/vote`, {
-        optionId,
-      })
+      .post<VoteMessagePollResponse>(`/messages/${messageId}/poll/vote`, body)
       .then((res) => res.data);
   }
 

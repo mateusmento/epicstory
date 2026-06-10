@@ -17,9 +17,9 @@ import {
   VoteMessagePoll,
   VoteMessagePollBody,
 } from '../features';
+import { ToggleMessageReaction } from '../features/toggle-message-reaction.command';
 import { MessageGateway } from '../gateways/message.gateway';
 import { MessageService } from '../services/message.service';
-import { ToggleMessageReaction } from '../features/toggle-message-reaction.command';
 
 @UseGuards(JwtAuthGuard)
 @Controller('channels/:channelId/messages')
