@@ -15,6 +15,7 @@ import {
   IssuerIsNotChannelMember,
   MessageNotFound,
 } from '../exceptions';
+import type { ToggleReactionResponse } from '@epicstory/contracts';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class ToggleMessageReaction {
@@ -32,7 +33,7 @@ export class ToggleMessageReaction {
 
 @CommandHandler(ToggleMessageReaction)
 export class ToggleMessageReactionCommand
-  implements ICommandHandler<ToggleMessageReaction>
+  implements ICommandHandler<ToggleMessageReaction, ToggleReactionResponse>
 {
   constructor(
     private messageService: MessageService,
@@ -43,7 +44,11 @@ export class ToggleMessageReactionCommand
     private commandBus: CommandBus,
   ) {}
 
-  async execute({ messageId, emoji, issuerId }: ToggleMessageReaction) {
+  async execute({
+    messageId,
+    emoji,
+    issuerId,
+  }: ToggleMessageReaction): Promise<ToggleReactionResponse> {
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
       relations: { sender: true },
@@ -120,14 +125,6 @@ export class ToggleMessageReactionCommand
       );
     }
 
-    return {
-      success: true,
-      channelId: channel.id,
-      messageId,
-      emoji,
-      issuerId,
-      action: result.action,
-      reactions,
-    };
+    return { success: true, reactions } satisfies ToggleReactionResponse;
   }
 }

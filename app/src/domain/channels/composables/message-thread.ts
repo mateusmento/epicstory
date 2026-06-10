@@ -2,8 +2,7 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
 import { ChannelApi } from "@epicstory/api-client";
-import type { IAggregatedReaction, IMessage, IReply, IUser } from "@epicstory/contracts";
-import type { JSONContent } from "@tiptap/core";
+import type { IAggregatedReaction, IMessage, IReply, IUser, ReplyMessageBody } from "@epicstory/contracts";
 import type { Ref } from "vue";
 import { onMounted, onUnmounted, ref } from "vue";
 
@@ -156,11 +155,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
     }
   }
 
-  async function sendReply(payload: {
-    content: JSONContent;
-    quotedReplyId?: number;
-    attachmentIds?: number[];
-  }) {
+  async function sendReply(payload: ReplyMessageBody) {
     if (!me.value) return;
 
     try {

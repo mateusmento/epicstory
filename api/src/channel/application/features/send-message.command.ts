@@ -18,18 +18,12 @@ import { AttachmentService } from 'src/workspace/application/services/attachment
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
-import type { IChannelActivity } from '@epicstory/contracts';
+import type { SendChannelMessageResponse } from '@epicstory/contracts';
 import { ChannelActivityService } from '../services/channel-activity.service';
 import { MessageService } from '../services/message.service';
-import type { IMessage } from '@epicstory/contracts';
 import { dispatchNotificationsForMessageSent } from '../utils/dispatch-message-notifications';
 import { Transactional } from 'typeorm-transactional';
 import { MessagePollBody } from '../dtos/message-poll.dto';
-
-export type SendMessageResult = {
-  message: IMessage;
-  activity: IChannelActivity;
-};
 
 export class SendMessage {
   channelId: number;
@@ -87,7 +81,7 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     markAsScheduled,
     attachmentIds,
     poll,
-  }: SendMessage): Promise<SendMessageResult> {
+  }: SendMessage): Promise<SendChannelMessageResponse> {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },
@@ -147,6 +141,6 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
           : { excludeUserId: senderId },
     });
 
-    return { message, activity };
+    return { message, activity } satisfies SendChannelMessageResponse;
   }
 }
