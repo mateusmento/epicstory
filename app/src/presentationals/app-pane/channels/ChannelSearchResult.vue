@@ -2,11 +2,11 @@
 import { UserAvatar } from "@/presentationals/user";
 import { ScrollArea, Separator } from "@/design-system";
 import type { ISearchChannelsAndUsersItem } from "@epicstory/contracts";
-import type { Page } from "@/core/types";
+import type { IPage } from "@/core/types";
 import { HashIcon, Loader2Icon } from "lucide-vue-next";
 
 const props = defineProps<{
-  page: Page<ISearchChannelsAndUsersItem>;
+  page: IPage<ISearchChannelsAndUsersItem>;
   loading: boolean;
 }>();
 

@@ -9,6 +9,7 @@ import type {
   IGithubIntegrationStatus,
   IGithubInstallationRemoteVerification,
 } from '@epicstory/contracts';
+import type { IPage } from '@epicstory/contracts';
 import { Page } from 'src/core/page';
 import { AppConfig } from 'src/core/app.config';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -103,7 +104,7 @@ export class GithubWorkspaceIntegrationService {
     userId: number,
     page: number,
     countRaw: number,
-  ): Promise<Page<IGithubCatalogRepository>> {
+  ): Promise<IPage<IGithubCatalogRepository>> {
     const isMember = await this.workspaceRepo.memberExists(workspaceId, userId);
     if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
 

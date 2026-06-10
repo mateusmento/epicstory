@@ -1,7 +1,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { createPaginatedListEngine, createPaginatedListState, type PaginatedListState } from "@/domain/async";
 import { ChannelApi } from "@epicstory/api-client";
-import type { ChannelGroupsPage, IChannel, Page } from "@epicstory/contracts";
+import type { ChannelGroupsPage, IChannel, IPage } from "@epicstory/contracts";
 import { toReactive } from "@vueuse/core";
 import { markRaw, toRefs } from "vue";
 
@@ -22,7 +22,7 @@ const SECTION_KEY: Record<ChannelGroupKind, keyof ChannelGroupsPage> = {
 };
 
 /** Maps API page (1-based) into engine page index (0-based). */
-function seedChannelListState(state: PaginatedListState<IChannel>, page: Page<IChannel>): void {
+function seedChannelListState(state: PaginatedListState<IChannel>, page: IPage<IChannel>): void {
   state.items = page.content;
   state.hasMore = page.hasNext;
   state.page = page.page - 1;

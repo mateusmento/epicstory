@@ -1,5 +1,5 @@
 import { useDependency } from "@/core/dependency-injection";
-import type { PageQuery } from "@/core/types";
+import type { IPageQuery } from "@/core/types";
 import { StorageSerializers, useStorage } from "@vueuse/core";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
@@ -58,7 +58,7 @@ export function useWorkspace() {
     await workspaceApi.sendMemberInvite(workspaceId.value, { invites });
   }
 
-  async function fetchProjects(pageQuery?: PageQuery) {
+  async function fetchProjects(pageQuery?: IPageQuery) {
     const page = await workspaceApi.findProjects(workspaceId.value, pageQuery);
     store.projects = page.content;
     store.projectsPage = page;

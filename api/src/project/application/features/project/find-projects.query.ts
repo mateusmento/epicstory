@@ -89,8 +89,6 @@ export class FindProjectsQuery implements IQueryHandler<FindProjects> {
     return Page.fromResult(content, total, {
       page: query.page ?? 0,
       count: query.count ?? 50,
-      orderBy,
-      order: orderDirection,
     });
   }
 }

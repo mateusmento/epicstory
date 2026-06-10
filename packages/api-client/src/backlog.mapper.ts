@@ -1,4 +1,4 @@
-import type { IBacklogItem, Page } from "@epicstory/contracts";
+import type { IBacklogItem, IPage } from "@epicstory/contracts";
 import { mapIssue, type IIssueWire } from "./issue.mapper";
 
 /** Wire backlog rows before nested issue dates are normalized. */
@@ -11,7 +11,7 @@ export function mapBacklogItem(item: IBacklogItemWire): IBacklogItem {
 }
 
 export function mapPageBacklogItems(
-  page: Page<IBacklogItemWire>,
-): Page<IBacklogItem> {
+  page: IPage<IBacklogItemWire>,
+): IPage<IBacklogItem> {
   return { ...page, content: page.content.map(mapBacklogItem) };
 }

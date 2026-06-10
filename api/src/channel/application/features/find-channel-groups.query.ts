@@ -1,4 +1,4 @@
-import type { ChannelGroupsPage, IChannel } from '@epicstory/contracts';
+import type { ChannelGroupsPage, IChannel, IPage } from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
@@ -111,7 +111,7 @@ export class FindChannelGroupsQuery
     types: Channel['type'][];
     page: number;
     count: number;
-  }): Promise<Page<IChannel>> {
+  }): Promise<IPage<IChannel>> {
     const safeCount = Math.min(50, Math.max(1, Math.floor(Number(count))));
     const safePage = Math.max(1, Math.floor(Number(page)));
     const offset = (safePage - 1) * safeCount;

@@ -1,4 +1,4 @@
-import type { INotification, Page, PageQuery } from "@epicstory/contracts";
+import type { INotification, IPage, IPageQuery } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
 import { Axios as AxiosImport } from "axios";
 import { inject, injectable } from "tsyringe";
@@ -9,10 +9,10 @@ export class NotificationApi {
 
   fetchNotifications(
     userId: number,
-    opts?: Pick<PageQuery, "page" | "count">,
-  ): Promise<Page<INotification>> {
+    opts?: Pick<IPageQuery, "page" | "count">,
+  ): Promise<IPage<INotification>> {
     return this.axios
-      .get<Page<INotification>>("/notifications", {
+      .get<IPage<INotification>>("/notifications", {
         params: {
           userId,
           page: opts?.page ?? 0,

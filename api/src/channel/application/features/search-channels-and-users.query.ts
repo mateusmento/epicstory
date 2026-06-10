@@ -1,6 +1,7 @@
 import type {
   IChannel,
   ISearchChannelsAndUsersItem,
+  IPage,
 } from '@epicstory/contracts';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import {
@@ -64,7 +65,7 @@ export class SearchChannelsAndUsers {
 @QueryHandler(SearchChannelsAndUsers)
 export class SearchChannelsAndUsersQuery
   implements
-    IQueryHandler<SearchChannelsAndUsers, Page<ISearchChannelsAndUsersItem>>
+    IQueryHandler<SearchChannelsAndUsers, IPage<ISearchChannelsAndUsersItem>>
 {
   constructor(
     private workspaceRepo: WorkspaceRepository,
@@ -75,7 +76,7 @@ export class SearchChannelsAndUsersQuery
 
   async execute(
     query: SearchChannelsAndUsers,
-  ): Promise<Page<ISearchChannelsAndUsersItem>> {
+  ): Promise<IPage<ISearchChannelsAndUsersItem>> {
     const { issuer, workspaceId, teamId } = query;
     const member = await this.workspaceRepo.findMember(workspaceId, issuer.id);
     if (!member) throw new IssuerUserIsNotWorkspaceMember();
@@ -154,7 +155,10 @@ export class SearchChannelsAndUsersQuery
     const content = await this.hydrateInRowOrder(rows, issuer.id);
     const total = channelTotal + userTotal;
 
-    return Page.fromResult(content, total, { page, count: remainingLimit });
+    return Page.fromResult(content, total, {
+      page,
+      count: remainingLimit,
+    });
   }
 
   private async hydrateInRowOrder(

@@ -3,6 +3,7 @@ import type {
   ChannelActivityPayload,
   ChannelActivityType,
   IChannelActivity,
+  IPage,
 } from '@epicstory/contracts';
 import { ChannelActivity } from 'src/channel/domain/entities/channel-activity.entity';
 import { ChannelRepository } from 'src/channel/infrastructure';
@@ -36,7 +37,7 @@ export class ChannelActivityService {
       beforeCreatedAt?: Date;
       beforeId?: number;
     },
-  ): Promise<Page<IChannelActivity>> {
+  ): Promise<IPage<IChannelActivity>> {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },

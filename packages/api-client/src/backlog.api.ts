@@ -1,7 +1,7 @@
 import type {
   FindBacklogItemsQuery,
   IBacklogItem,
-  Page,
+  IPage,
 } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
 import { Axios as AxiosImport } from "axios";
@@ -18,10 +18,10 @@ export type { IBacklogItem } from "@epicstory/contracts";
 export class BacklogApi {
   constructor(@inject(AxiosImport) protected readonly axios: AxiosInstance) {}
 
-  findAll(query: FindBacklogItemsQuery): Promise<Page<IBacklogItem>> {
+  findAll(query: FindBacklogItemsQuery): Promise<IPage<IBacklogItem>> {
     const { projectId, ...rest } = query;
     return this.axios
-      .get<Page<IBacklogItemWire>>(`/projects/${projectId}/backlog-items`, {
+      .get<IPage<IBacklogItemWire>>(`/projects/${projectId}/backlog-items`, {
         params: { ...rest, filters: JSON.stringify(rest.filters) },
       })
       .then((res) => mapPageBacklogItems(res.data));

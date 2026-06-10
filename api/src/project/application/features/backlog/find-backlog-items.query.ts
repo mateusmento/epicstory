@@ -291,11 +291,6 @@ export class FindBacklogItemsQuery implements IQueryHandler<FindBacklogItems> {
       dataQb.getMany(),
     ]);
 
-    return Page.fromResult(content, total, {
-      page,
-      count,
-      orderBy,
-      order: orderDirection.toLowerCase(),
-    });
+    return Page.fromResult(content, total, { page, count });
   }
 }

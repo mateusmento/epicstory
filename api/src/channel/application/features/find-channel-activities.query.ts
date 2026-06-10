@@ -1,10 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import type { IChannelActivity } from '@epicstory/contracts';
+import type { IChannelActivity, IPage } from '@epicstory/contracts';
 import { Type } from 'class-transformer';
 import { IsDateString, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { patch } from 'src/core/objects';
-import { Page } from 'src/core/page';
 import { ChannelActivityService } from '../services/channel-activity.service';
 
 export class FindChannelActivities {
@@ -38,7 +37,7 @@ export class FindChannelActivitiesQuery
 {
   constructor(private channelActivityService: ChannelActivityService) {}
 
-  execute(query: FindChannelActivities): Promise<Page<IChannelActivity>> {
+  execute(query: FindChannelActivities): Promise<IPage<IChannelActivity>> {
     const hasBeforeAt =
       query.beforeCreatedAt != null && query.beforeCreatedAt !== '';
     const hasBeforeId = query.beforeId != null;

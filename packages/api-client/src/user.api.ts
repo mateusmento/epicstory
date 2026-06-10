@@ -1,4 +1,4 @@
-import type { Page, IUser } from "@epicstory/contracts";
+import type { IPage, IUser } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
 import { Axios as AxiosImport } from "axios";
 import { inject, injectable } from "tsyringe";
@@ -10,7 +10,7 @@ export class UserApi {
   findUsers(username: string, opts?: { page?: number; count?: number }) {
     return this.axios
       .get<
-        Page<IUser>
+        IPage<IUser>
       >(`/auth/users`, { params: { username, page: opts?.page, count: opts?.count } })
       .then((res) => res.data);
   }
@@ -18,7 +18,7 @@ export class UserApi {
   findUsersByName(name: string, opts?: { page?: number; count?: number }) {
     return this.axios
       .get<
-        Page<IUser>
+        IPage<IUser>
       >(`/auth/users`, { params: { name, page: opts?.page, count: opts?.count } })
       .then((res) => res.data);
   }

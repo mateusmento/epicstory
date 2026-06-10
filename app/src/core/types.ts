@@ -1,1 +1,1 @@
-export type { Page, PageQuery } from "@epicstory/contracts";
+export type { IPage, IPageQuery } from "@epicstory/contracts";

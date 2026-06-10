@@ -3,7 +3,7 @@ import type {
   IIssue,
   IIssueAttachmentListItem,
   IIssueFeed,
-  Page,
+  IPage,
   UpdateIssueData,
   UploadedAttachment,
 } from "@epicstory/contracts";
@@ -22,10 +22,10 @@ import {
 export class IssueApi {
   constructor(@inject(AxiosImport) protected readonly axios: AxiosInstance) {}
 
-  fetchIssues(query: FindIssuesQuery): Promise<Page<IIssue>> {
+  fetchIssues(query: FindIssuesQuery): Promise<IPage<IIssue>> {
     const { projectId, ...params } = query;
     return this.axios
-      .get<Page<IIssueWire>>(`/projects/${projectId}/issues`, { params })
+      .get<IPage<IIssueWire>>(`/projects/${projectId}/issues`, { params })
       .then((res) => mapPageIssues(res.data));
   }
 

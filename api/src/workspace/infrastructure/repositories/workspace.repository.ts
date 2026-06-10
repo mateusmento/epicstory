@@ -133,7 +133,7 @@ export class WorkspaceRepository extends Repository<Workspace> {
     return Page.fromResult(content, total, {
       page,
       count,
-    }) as Page<WorkspaceMember>;
+    });
   }
 
   memberExists(workspaceId: number, userId: number) {
