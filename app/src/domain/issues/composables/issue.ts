@@ -1,10 +1,17 @@
 import { useDependency } from "@/core/dependency-injection";
 import type { AsyncMutationState } from "@/lib/async";
+import { ChannelApi, IssueApi } from "@epicstory/api-client";
+import type {
+  IIssue,
+  IMessage,
+  IReply,
+  UpdateChannelMessageBody,
+  UpdateIssueData,
+  UpdateReplyBody,
+} from "@epicstory/contracts";
+import type { JSONContent } from "@tiptap/core";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, reactive, ref } from "vue";
-import { ChannelApi, IssueApi } from "@epicstory/api-client";
-import type { IIssue, IMessage, IReply, UpdateIssueData } from "@epicstory/contracts";
-import type { JSONContent } from "@tiptap/core";
 
 export const useIssueStore = defineStore("issue", () => {
   const issue = ref<IIssue>();
@@ -79,7 +86,7 @@ export function useIssue() {
     content: JSONContent,
     attachmentIds?: number[],
   ) {
-    const body = {
+    const body: UpdateChannelMessageBody | UpdateReplyBody = {
       content,
       ...(attachmentIds != null && attachmentIds.length > 0 ? { attachmentIds } : {}),
     };

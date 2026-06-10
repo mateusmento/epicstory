@@ -1,5 +1,6 @@
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
+import { useMeetingSocket } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
 import { toMessageSummary } from "@/lib/channel";
 import { ChannelApi } from "@epicstory/api-client";
@@ -8,10 +9,19 @@ import type {
   IChannel,
   IChannelActivity,
   IMessage,
+  IncomingChannelActivityEvent,
+  IncomingMeetingEvent,
   IReply,
   IUser,
-  MessagePollBody,
+  MeetingEndedEvent,
+  MessageDeletedEvent,
+  MessagePollUpdatedEvent,
+  MessageUpdatedEvent,
+  SendMessageBody,
+  SubscribeMessagesBody,
   UpdateChannelMessageBody,
+  UserTypingEvent,
+  UserTypingStoppedEvent,
 } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
 import { last } from "lodash";
@@ -20,7 +30,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { IMessageGroup } from "../types/message.type";
 import { buildChatTimeline } from "../utils/build-chat-timeline";
-import { useMeetingSocket, type IncomingMeetingPayload, type MeetingEndedPayload } from "@/domain/meetings";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
 
 const CHANNEL_ACTIVITIES_PAGE_SIZE = 50;
@@ -101,13 +110,7 @@ export function useChannel() {
     }
   }
 
-  function onReceiveChannelActivity({
-    activity,
-    channelId,
-  }: {
-    activity: IChannelActivity;
-    channelId: number;
-  }) {
+  function onReceiveChannelActivity({ activity, channelId }: IncomingChannelActivityEvent) {
     if (store.channel && store.channel.id === channelId) {
       insertActivity(activity);
       if (activity.type === "message_sent" && activity.message) {
@@ -116,7 +119,7 @@ export function useChannel() {
     }
   }
 
-  function onMessageDeleted({ messageId, channelId }: { messageId: number; channelId: number }) {
+  function onMessageDeleted({ messageId, channelId }: MessageDeletedEvent) {
     if (store.channel && store.channel.id === channelId) {
       store.activities = store.activities.filter(
         (a) => !(a.type === "message_sent" && a.messageId === messageId),
@@ -124,7 +127,7 @@ export function useChannel() {
     }
   }
 
-  function onMessageUpdated({ message, channelId }: { message: IMessage; channelId: number }) {
+  function onMessageUpdated({ message, channelId }: MessageUpdatedEvent) {
     if (store.channel && store.channel.id === channelId) {
       const i = store.activities.findIndex((a) => a.type === "message_sent" && a.messageId === message.id);
       if (i >= 0) {
@@ -136,14 +139,14 @@ export function useChannel() {
     }
   }
 
-  function onUserTyping({ channelId, userId }: { channelId: number; userId: number }) {
+  function onUserTyping({ channelId, userId }: UserTypingEvent) {
     if (!store.channel || store.channel.id !== channelId) return;
     const next = new Map(typingActivity.value);
     next.set(userId, Date.now());
     typingActivity.value = next;
   }
 
-  function onUserTypingStopped({ channelId, userId }: { channelId: number; userId: number }) {
+  function onUserTypingStopped({ channelId, userId }: UserTypingStoppedEvent) {
     if (!store.channel || store.channel.id !== channelId) return;
     const next = new Map(typingActivity.value);
     next.delete(userId);
@@ -156,12 +159,7 @@ export function useChannel() {
     typingActivity.value = m;
   }
 
-  function onMessagePollUpdated(payload: {
-    channelId: number;
-    messageId: number;
-    optionVotes: Record<string, number>;
-    totalVotes: number;
-  }) {
+  function onMessagePollUpdated(payload: MessagePollUpdatedEvent) {
     if (!store.channel || store.channel.id !== payload.channelId) return;
     const i = store.activities.findIndex(
       (a) => a.type === "message_sent" && a.messageId === payload.messageId,
@@ -188,9 +186,8 @@ export function useChannel() {
   }
 
   function joinChannel() {
-    sockets.websocket?.emit("subscribe-messages", {
-      workspaceId: workspace.value.id,
-    });
+    const subscribeBody = { workspaceId: workspace.value.id } satisfies SubscribeMessagesBody;
+    sockets.websocket?.emit("subscribe-messages", subscribeBody);
 
     sockets.websocket.off("incoming-channel-activity", onReceiveChannelActivity);
     sockets.websocket?.on("incoming-channel-activity", onReceiveChannelActivity);
@@ -241,13 +238,13 @@ export function useChannel() {
     },
   );
 
-  function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
+  function onIncomingMeeting({ meeting, channelId }: IncomingMeetingEvent) {
     if (channelId && store.channel?.id === channelId) {
       store.channel.meeting = meeting;
     }
   }
 
-  function onMeetingEnded({ meetingId }: MeetingEndedPayload) {
+  function onMeetingEnded({ meetingId }: MeetingEndedEvent) {
     if (store.channel?.meeting?.id === meetingId) store.channel.meeting = null;
   }
 
@@ -262,25 +259,9 @@ export function useChannel() {
     meetingSocket.offMeetingEnded(onMeetingEnded);
   }
 
-  async function sendMessage({
-    content,
-    quotedMessageId,
-    attachmentIds,
-    poll,
-  }: {
-    content: JSONContent;
-    quotedMessageId?: number | null;
-    attachmentIds?: number[];
-    poll?: MessagePollBody;
-  }) {
+  async function sendMessage(body: SendMessageBody) {
     if (!store.channel) return;
-    const { message, activity } = await channelApi.sendMessage(
-      store.channel.id,
-      content,
-      quotedMessageId,
-      attachmentIds,
-      poll,
-    );
+    const { message, activity } = await channelApi.sendMessage(store.channel.id, body);
     insertActivity(activity);
     if (store.channel) store.channel.lastMessage = toMessageSummary(message);
     return message;
@@ -292,7 +273,7 @@ export function useChannel() {
   }
 
   function sendDirectMessage(workspaceId: number, senderId: number, peers: number[], content: JSONContent) {
-    return channelApi.sendDirectMessage(workspaceId, senderId, peers, content);
+    return channelApi.sendDirectMessage(workspaceId, { senderId, peers, content });
   }
 
   async function fetchMembers() {

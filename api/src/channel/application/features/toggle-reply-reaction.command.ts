@@ -1,11 +1,13 @@
+import type { ToggleReactionResponse } from '@epicstory/contracts';
 import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { UserRepository, userToIUser } from 'src/auth';
 import { IsNotEmpty, IsString } from 'class-validator';
+import { UserRepository, userToIUser } from 'src/auth';
 import {
   ChannelRepository,
   MessageReplyRepository,
 } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
+import { SendNotification } from 'src/notifications/features/send-notification.command';
 import {
   ChannelNotFound,
   IssuerIsNotChannelMember,
@@ -13,8 +15,6 @@ import {
 } from '../exceptions';
 import { ReplyService } from '../services/reply.service';
 import { getChannelLabelForNotification } from '../utils/enrich-channel';
-import type { ToggleReactionResponse } from '@epicstory/contracts';
-import { SendNotification } from 'src/notifications/features/send-notification.command';
 
 export class ToggleReplyReaction {
   replyId: number;
@@ -118,6 +118,13 @@ export class ToggleReplyReactionCommand
       );
     }
 
-    return { success: true, reactions } satisfies ToggleReactionResponse;
+    return {
+      success: true,
+      channelId: channel.id,
+      replyId,
+      emoji,
+      action: result.action,
+      reactions,
+    };
   }
 }

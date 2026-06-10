@@ -1,3 +1,4 @@
+import type { UpdateReplyBody } from '@epicstory/contracts';
 import {
   Body,
   Controller,
@@ -118,7 +119,7 @@ export class ReplyController {
   @Patch()
   async updateReply(
     @Param('replyId') replyId: number,
-    @Body() body: Pick<UpdateReply, 'content' | 'attachmentIds'>,
+    @Body() body: UpdateReplyBody,
     @Auth() issuer: Issuer,
   ) {
     const reply = await this.commandBus.execute(

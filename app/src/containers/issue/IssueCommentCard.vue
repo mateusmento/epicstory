@@ -1,8 +1,4 @@
 <script lang="ts" setup>
-import { emojis } from "@/presentationals/channel/emojis";
-import { MessageAttachments } from "@/presentationals/messages";
-import { RichTextPreview } from "@/presentationals/rich-text";
-import { UserAvatar } from "@/presentationals/user";
 import { useDependency } from "@/core/dependency-injection";
 import {
   Button,
@@ -17,14 +13,17 @@ import {
   TooltipTrigger,
 } from "@/design-system";
 import { cn } from "@/design-system/utils";
-import type { IAggregatedReaction, IMessage, IReply } from "@epicstory/contracts";
-import type { IMessageAttachment } from "@epicstory/contracts";
+import { emojis } from "@/presentationals/channel/emojis";
+import { MessageAttachments } from "@/presentationals/messages";
+import MessageContextDropdown from "@/presentationals/messages/MessageContextDropdown.vue";
+import { RichTextPreview } from "@/presentationals/rich-text";
+import { UserAvatar } from "@/presentationals/user";
 import { ChannelApi } from "@epicstory/api-client";
+import type { IAggregatedReaction, IMessage, IMessageAttachment, IReply } from "@epicstory/contracts";
 import { excludeInlineImageAttachmentsFromBubbleTiles } from "@epicstory/tiptap";
 import { formatDistanceToNow } from "date-fns";
 import { SmilePlusIcon } from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
-import MessageContextDropdown from "@/presentationals/messages/MessageContextDropdown.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -100,8 +99,8 @@ async function toggleReaction(emoji: string) {
   reacting.value = true;
   try {
     const { reactions: next } = isReplyEntity.value
-      ? await channelApi.toggleReplyReaction(props.message.id, emoji)
-      : await channelApi.toggleMessageReaction(props.message.id, emoji);
+      ? await channelApi.toggleReplyReaction(props.message.id, { emoji })
+      : await channelApi.toggleMessageReaction(props.message.id, { emoji });
     reactions.value = next;
   } catch {
     /* non-blocking */

@@ -7,3 +7,14 @@ export type LiveScheduledMeeting = {
   calendarEvent: ICalendarEvent;
   participantsPreview: IUser[];
 };
+
+export type IncomingMeetingEvent = {
+  meeting: IMeeting;
+  channelId?: number;
+  calendarEventId?: string;
+};
+
+export type MeetingEndedEvent = {
+  meetingId: number;
+  channelId?: number;
+};
