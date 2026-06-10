@@ -3,7 +3,25 @@ import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
 import { ChannelApi, MeetingApi } from "@epicstory/api-client";
-import type { ChannelType, IMeeting, IMeetingAttendee, IUser } from "@epicstory/contracts";
+import type {
+  AttendeeJoinedEvent,
+  AttendeeLeftEvent,
+  ChannelType,
+  CurrentMeetingEndedEvent,
+  EndMeetingBody,
+  IMeeting,
+  IMeetingAttendee,
+  IncomingMeetingEvent,
+  IUser,
+  JoinChannelMeetingBody,
+  JoinMeetingBody,
+  JoinMeetingMediaBody,
+  JoinScheduledMeetingBody,
+  LeaveMeetingBody,
+  MeetingEndedEvent,
+  MeetingMediaToggleBody,
+  MeetingMediaToggledEvent,
+} from "@epicstory/contracts";
 import Peer from "peerjs";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref, shallowRef, watch } from "vue";
@@ -310,10 +328,11 @@ const useMeetingStore = defineStore("meeting", () => {
     const meetingId = currentMeeting.value?.id;
     const remoteId = localRemoteId.value;
     if (meetingId == null || remoteId == null) return;
-    sockets.websocket.emit("screen-share-toggled", { meetingId, remoteId, enabled });
+    const body = { meetingId, remoteId, enabled } satisfies MeetingMediaToggleBody;
+    sockets.websocket.emit("screen-share-toggled", body);
   }
 
-  function onScreenShareToggled({ remoteId, enabled }: { remoteId: string; enabled: boolean }) {
+  function onScreenShareToggled({ remoteId, enabled }: MeetingMediaToggledEvent) {
     if (remoteId === localRemoteId.value) {
       if (isScreenSharing.value !== enabled) {
         isScreenSharing.value = enabled;
@@ -348,11 +367,7 @@ const useMeetingStore = defineStore("meeting", () => {
     }: {
       camera?: MediaStream;
     },
-    meetingFactory: (data: {
-      remoteId: string;
-      isCameraOn: boolean;
-      isMicrophoneOn: boolean;
-    }) => Promise<IMeeting>,
+    meetingFactory: (data: JoinMeetingMediaBody) => Promise<IMeeting>,
   ) {
     const camera = existingCamera ?? (await getCamera());
 
@@ -381,7 +396,7 @@ const useMeetingStore = defineStore("meeting", () => {
       remoteId: localRemoteId.value,
       isCameraOn: isCameraOn.value,
       isMicrophoneOn: isMicrophoneOn.value,
-    };
+    } satisfies JoinMeetingMediaBody;
 
     const meeting = await meetingFactory(data);
 
@@ -445,8 +460,9 @@ const useMeetingStore = defineStore("meeting", () => {
     incomingMeeting.value = null;
     return connectMeeting({ camera }, async (data) => {
       return await new Promise<IMeeting>((res) => {
-        console.log("join-meeting", { ...data, meetingId });
-        sockets.websocket.emit("join-meeting", { ...data, meetingId }, (m: IMeeting) => res(m));
+        const body = { ...data, meetingId } satisfies JoinMeetingBody;
+        console.log("join-meeting", body);
+        sockets.websocket.emit("join-meeting", body, (m: IMeeting) => res(m));
       });
     });
   }
@@ -462,13 +478,13 @@ const useMeetingStore = defineStore("meeting", () => {
   }) {
     incomingMeeting.value = null;
     return connectMeeting({ camera }, async (data) => {
-      const joinData = {
+      const body = {
         ...data,
         calendarEventId,
-        occurrenceAt: occurrenceAt ? occurrenceAt.toISOString() : undefined,
-      };
+        occurrenceAt: occurrenceAt.toISOString(),
+      } satisfies JoinScheduledMeetingBody;
       return await new Promise<IMeeting>((res) => {
-        sockets.websocket.emit("join-scheduled-meeting", joinData, (m: IMeeting) => res(m));
+        sockets.websocket.emit("join-scheduled-meeting", body, (m: IMeeting) => res(m));
       });
     });
   }
@@ -476,18 +492,18 @@ const useMeetingStore = defineStore("meeting", () => {
   function joinChannelMeeting({ channelId, camera }: { channelId: number; camera?: MediaStream }) {
     incomingMeeting.value = null;
     return connectMeeting({ camera }, async (data) => {
-      const joinData = { ...data, channelId };
+      const body = { ...data, channelId } satisfies JoinChannelMeetingBody;
       return await new Promise<IMeeting>((res) => {
-        sockets.websocket.emit("join-channel-meeting", joinData, (m: IMeeting) => res(m));
+        sockets.websocket.emit("join-channel-meeting", body, (m: IMeeting) => res(m));
       });
     });
   }
 
-  async function attendeeJoined({ attendee }: { attendee: IMeetingAttendee }) {
+  async function attendeeJoined({ attendee }: Pick<AttendeeJoinedEvent, "attendee">) {
     await session.value?.connect(attendee.remoteId);
   }
 
-  function attendeeLeft({ remoteId }: { remoteId: string }) {
+  function attendeeLeft({ remoteId }: AttendeeLeftEvent) {
     session.value?.disconnect(remoteId);
     attendees.value = attendees.value.filter((a) => a.remoteId !== remoteId);
     if (activeSpeakerId.value === remoteId) activeSpeakerId.value = null;
@@ -495,7 +511,7 @@ const useMeetingStore = defineStore("meeting", () => {
     syncDetectorSources();
   }
 
-  function onCameraToggled({ remoteId, enabled }: { remoteId: string; enabled: boolean }) {
+  function onCameraToggled({ remoteId, enabled }: MeetingMediaToggledEvent) {
     if (remoteId === localRemoteId.value) {
       isCameraOn.value = enabled;
       const track = mycamera.value?.getVideoTracks()[0];
@@ -510,7 +526,7 @@ const useMeetingStore = defineStore("meeting", () => {
     }
   }
 
-  function onMicrophoneToggled({ remoteId, enabled }: { remoteId: string; enabled: boolean }) {
+  function onMicrophoneToggled({ remoteId, enabled }: MeetingMediaToggledEvent) {
     if (remoteId === localRemoteId.value) {
       isMicrophoneOn.value = enabled;
       const track = mycamera.value?.getAudioTracks()[0];
@@ -525,17 +541,17 @@ const useMeetingStore = defineStore("meeting", () => {
     }
   }
 
-  function onIncomingMeeting({ meeting }: { meeting: IMeeting }) {
+  function onIncomingMeeting({ meeting }: IncomingMeetingEvent) {
     incomingMeeting.value = meeting;
   }
 
-  function onCurrentMeetingEnded({ meetingId }: { meetingId: number }) {
+  function onCurrentMeetingEnded({ meetingId }: CurrentMeetingEndedEvent) {
     if (currentMeeting.value?.id === meetingId) {
       closeMeeting();
     }
   }
 
-  function onMeetingEnded({ meetingId }: { meetingId: number }) {
+  function onMeetingEnded({ meetingId }: MeetingEndedEvent) {
     if (incomingMeeting.value?.id === meetingId) incomingMeeting.value = null;
   }
 
@@ -550,10 +566,14 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   async function leaveMeeting() {
-    sockets.websocket.emit("leave-meeting", {
-      meetingId: currentMeeting.value?.id,
-      remoteId: session.value?.localId,
-    });
+    const meetingId = currentMeeting.value?.id;
+    const remoteId = session.value?.localId;
+    if (meetingId == null || remoteId == null) {
+      closeMeeting();
+      return;
+    }
+    const body = { meetingId, remoteId } satisfies LeaveMeetingBody;
+    sockets.websocket.emit("leave-meeting", body);
     closeMeeting();
   }
 
@@ -563,7 +583,13 @@ const useMeetingStore = defineStore("meeting", () => {
       leaveMeeting();
       return;
     }
-    sockets.websocket.emit("end-meeting", { meetingId: currentMeeting.value?.id });
+    const meetingId = currentMeeting.value?.id;
+    if (meetingId == null) {
+      closeMeeting();
+      return;
+    }
+    const body = { meetingId } satisfies EndMeetingBody;
+    sockets.websocket.emit("end-meeting", body);
     closeMeeting();
   }
 
@@ -595,10 +621,15 @@ const useMeetingStore = defineStore("meeting", () => {
     isCameraOn.value = !isCameraOn.value;
     videoTrack.enabled = isCameraOn.value;
 
-    sockets.websocket.emit("camera-toggled", {
-      remoteId: localRemoteId.value,
+    const meetingId = currentMeeting.value?.id;
+    const remoteId = localRemoteId.value;
+    if (meetingId == null || remoteId == null) return;
+    const body = {
+      meetingId,
+      remoteId,
       enabled: isCameraOn.value,
-    });
+    } satisfies MeetingMediaToggleBody;
+    sockets.websocket.emit("camera-toggled", body);
   }
 
   function stopMicrophone() {
@@ -609,10 +640,15 @@ const useMeetingStore = defineStore("meeting", () => {
     isMicrophoneOn.value = !isMicrophoneOn.value;
     audioTrack.enabled = isMicrophoneOn.value;
 
-    sockets.websocket.emit("microphone-toggled", {
-      remoteId: localRemoteId.value,
+    const meetingId = currentMeeting.value?.id;
+    const remoteId = localRemoteId.value;
+    if (meetingId == null || remoteId == null) return;
+    const body = {
+      meetingId,
+      remoteId,
       enabled: isMicrophoneOn.value,
-    });
+    } satisfies MeetingMediaToggleBody;
+    sockets.websocket.emit("microphone-toggled", body);
   }
 
   // Keep detector inputs synced when local/remote streams change (camera reacquired, etc).

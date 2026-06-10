@@ -25,11 +25,10 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
 import { Message } from 'src/channel/domain';
-import { AuthenticatedSocket } from 'src/core';
 import { MessageReply } from 'src/channel/domain/entities';
 import { ChannelRepository } from 'src/channel/infrastructure';
+import { AuthenticatedSocket, EpicstoryServer } from 'src/core';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 
 const channelMessagingRoom = (channelId) =>
@@ -39,7 +38,7 @@ const userRoom = (userId) => `user:${userId}` as const;
 @WebSocketGateway()
 export class MessageGateway {
   @WebSocketServer()
-  server: Server;
+  server: EpicstoryServer;
 
   constructor(
     private channelRepo: ChannelRepository,
