@@ -1,21 +1,23 @@
 <script setup lang="ts">
-import { UserAvatar } from "@/presentationals/user";
 import { Button, MenuInput, MenuItem, MenuSeparator, ScrollArea } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { emptyPaginatedListView, type PaginatedListView } from "@/lib/async";
-import type { IUser as IUser } from "@epicstory/contracts";
+import { emptyPaginatedListView, toPaginatedListView, type PaginatedListView } from "@/lib/async";
+import { UserAvatar } from "@/presentationals/user";
+import type { IUser, WorkspaceMember } from "@epicstory/contracts";
 import { computed, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
     disabled?: boolean;
-    list?: PaginatedListView<IUser>;
+    list?: PaginatedListView<WorkspaceMember>;
+    excludeUserIds?: number[];
     selectedLabel?: string;
     searchPlaceholder?: string;
   }>(),
   {
     disabled: false,
-    list: () => emptyPaginatedListView<IUser>(),
+    list: () => emptyPaginatedListView<WorkspaceMember>(),
+    excludeUserIds: () => [],
     selectedLabel: "Members",
     searchPlaceholder: "Search workspace members…",
   },
@@ -41,6 +43,14 @@ watch(
 );
 
 const sortedUsers = computed(() => [...(users.value ?? [])].sort((a, b) => a.name.localeCompare(b.name)));
+
+const menuItems = computed(() => {
+  const exclude = new Set([...users.value.map((u) => u.id), ...props.excludeUserIds]);
+  return toPaginatedListView({
+    ...props.list,
+    items: props.list.items.map((m) => m.user).filter((u) => !exclude.has(u.id)),
+  });
+});
 
 function onAdd(user: IUser) {
   if (props.disabled) return;
@@ -94,7 +104,7 @@ function onLoadMore() {
     <ScrollArea class="h-40 min-h-0" @reached-bottom="onLoadMore">
       <div class="!block">
         <MenuItem
-          v-for="user of list.items"
+          v-for="user of menuItems.items"
           :key="user.id"
           class="flex:row-lg flex:center-y"
           :disabled="disabled"
@@ -111,11 +121,13 @@ function onLoadMore() {
             <div v-if="user.email" class="truncate text-xs text-muted-foreground">{{ user.email }}</div>
           </div>
         </MenuItem>
-        <div v-if="list.loadingMore" class="ml-2 my-2 text-xs text-muted-foreground">Loading…</div>
-        <div v-else-if="list.items.length === 0" class="ml-2 my-2 text-xs text-muted-foreground">
+        <div v-if="menuItems.loadingMore" class="ml-2 my-2 text-xs text-muted-foreground">Loading…</div>
+        <div v-else-if="menuItems.items.length === 0" class="ml-2 my-2 text-xs text-muted-foreground">
           No members found
         </div>
-        <div v-else-if="!list.hasMore" class="ml-2 my-2 text-xs text-muted-foreground">End of results</div>
+        <div v-else-if="!menuItems.hasMore" class="ml-2 my-2 text-xs text-muted-foreground">
+          End of results
+        </div>
       </div>
     </ScrollArea>
   </div>

@@ -1,9 +1,7 @@
 <script setup lang="ts">
+import { useWorkspace, useWorkspaceMemberSearch } from "@/domain/workspace";
 import WorkspaceMemberMenuView from "@/presentationals/workspace-members/WorkspaceMemberMenu.vue";
-import { useWorkspaceMemberSearch, useWorkspace } from "@/domain/workspace";
-import { toPaginatedListView } from "@/lib/async";
-import type { IUser as IUser } from "@epicstory/contracts";
-import { computed } from "vue";
+import type { IUser } from "@epicstory/contracts";
 
 const props = withDefaults(
   defineProps<{
@@ -29,14 +27,6 @@ const emit = defineEmits<{
 const { workspaceId } = useWorkspace();
 const memberSearch = useWorkspaceMemberSearch();
 
-const list = computed(() => {
-  const exclude = new Set([...users.value.map((u) => u.id), ...props.excludeUserIds]);
-  return toPaginatedListView({
-    ...memberSearch,
-    items: memberSearch.items.map((m) => m.user).filter((u) => !exclude.has(u.id)),
-  });
-});
-
 function onSearch(query: string) {
   memberSearch.search(workspaceId.value, query);
 }
@@ -51,7 +41,8 @@ async function onLoadMore() {
   <WorkspaceMemberMenuView
     v-model:users="users"
     :disabled="disabled"
-    :list="list"
+    :list="memberSearch"
+    :exclude-user-ids="excludeUserIds"
     :selected-label="selectedLabel"
     :search-placeholder="searchPlaceholder"
     @add="emit('add', $event)"
