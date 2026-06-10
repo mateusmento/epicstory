@@ -23,3 +23,4 @@ export * from "./team";
 export * from "./tiptap-excerpt";
 export * from "./user";
 export * from "./workspace";
+export * from "./workspace-socket-events";

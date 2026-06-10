@@ -1,3 +1,11 @@
+import type {
+  SubscribeWorkspacePresenceBody,
+  UnsubscribeWorkspacePresenceBody,
+  UserPresenceEvent,
+  UserPresenceStoppedEvent,
+  WorkspacePresencePulseBody,
+  WorkspacePresenceStopBody,
+} from '@epicstory/contracts';
 import {
   ConnectedSocket,
   MessageBody,
@@ -52,7 +60,8 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
     );
     if (hasAnotherSocketForSameUser) return;
 
-    this.server.to(room).emit('user-presence-stopped', { workspaceId, userId });
+    const payload: UserPresenceStoppedEvent = { workspaceId, userId };
+    this.server.to(room).emit('user-presence-stopped', payload);
   }
 
   private async isUserInWorkspace(
@@ -67,7 +76,7 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('subscribe-workspace-presence')
   async subscribeWorkspacePresence(
-    @MessageBody() body: { workspaceId: number },
+    @MessageBody() body: SubscribeWorkspacePresenceBody,
     @ConnectedSocket() socket: WorkspacePresenceSocket,
   ) {
     const { userId } = socket.data;
@@ -105,7 +114,7 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('unsubscribe-workspace-presence')
   async unsubscribeWorkspacePresence(
-    @MessageBody() body: { workspaceId: number },
+    @MessageBody() body: UnsubscribeWorkspacePresenceBody,
     @ConnectedSocket() socket: WorkspacePresenceSocket,
   ) {
     const userId = socket.data.userId;
@@ -124,7 +133,7 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('workspace-presence-pulse')
   async workspacePresencePulse(
-    @MessageBody() body: { workspaceId: number },
+    @MessageBody() body: WorkspacePresencePulseBody,
     @ConnectedSocket() socket: WorkspacePresenceSocket,
   ) {
     const userId = socket.data.userId;
@@ -136,16 +145,17 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
     const ok = await this.isUserInWorkspace(userId, workspaceId);
     if (!ok) return { ok: false };
 
+    const payload: UserPresenceEvent = { workspaceId, userId };
     socket
       .to(workspacePresenceRoom(workspaceId))
-      .emit('user-presence', { workspaceId, userId });
+      .emit('user-presence', payload);
 
     return { ok: true };
   }
 
   @SubscribeMessage('workspace-presence-stop')
   async workspacePresenceStop(
-    @MessageBody() body: { workspaceId: number },
+    @MessageBody() body: WorkspacePresenceStopBody,
     @ConnectedSocket() socket: WorkspacePresenceSocket,
   ) {
     const userId = socket.data.userId;
@@ -157,9 +167,10 @@ export class WorkspaceGateway implements OnGatewayDisconnect {
     const ok = await this.isUserInWorkspace(userId, workspaceId);
     if (!ok) return { ok: false };
 
+    const payload: UserPresenceStoppedEvent = { workspaceId, userId };
     socket
       .to(workspacePresenceRoom(workspaceId))
-      .emit('user-presence-stopped', { workspaceId, userId });
+      .emit('user-presence-stopped', payload);
 
     return { ok: true };
   }

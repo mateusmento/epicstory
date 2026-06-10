@@ -1,6 +1,14 @@
 import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
 import { useWorkspace } from "@/domain/workspace";
+import type {
+  SubscribeWorkspacePresenceBody,
+  UnsubscribeWorkspacePresenceBody,
+  UserPresenceEvent,
+  UserPresenceStoppedEvent,
+  WorkspacePresencePulseBody,
+  WorkspacePresenceStopBody,
+} from "@epicstory/contracts";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import {
   WORKSPACE_PRESENCE_PRUNE_INTERVAL_MS,
@@ -28,15 +36,35 @@ export function useWorkspaceOnline() {
   return { onlineUserIds, isUserOnline };
 }
 
+function useWorkspacePresenceSocket() {
+  const { websocket } = useWebSockets();
+
+  return {
+    subscribeWorkspacePresence(body: SubscribeWorkspacePresenceBody) {
+      websocket?.emit("subscribe-workspace-presence", body);
+    },
+    unsubscribeWorkspacePresence(body: UnsubscribeWorkspacePresenceBody) {
+      websocket?.emit("unsubscribe-workspace-presence", body);
+    },
+    presencePulse(body: WorkspacePresencePulseBody) {
+      websocket?.emit("workspace-presence-pulse", body);
+    },
+    presenceStop(body: WorkspacePresenceStopBody) {
+      websocket?.emit("workspace-presence-stop", body);
+    },
+  };
+}
+
 /**
  * Call once from the workspace layout (e.g. Dashboard) while the user is in the app.
  */
 export function useWorkspacePresence() {
   const { websocket } = useWebSockets();
+  const presenceSocket = useWorkspacePresenceSocket();
   const { workspace } = useWorkspace();
   const { user } = useAuth();
 
-  function onUserPresence({ workspaceId, userId }: { workspaceId: number; userId: number }) {
+  function onUserPresence({ workspaceId, userId }: UserPresenceEvent) {
     if (workspaceId !== workspace.value.id) return;
     const me = user.value?.id;
     if (me != null && userId === me) return;
@@ -45,7 +73,7 @@ export function useWorkspacePresence() {
     presenceActivity.value = next;
   }
 
-  function onUserPresenceStopped({ workspaceId, userId }: { workspaceId: number; userId: number }) {
+  function onUserPresenceStopped({ workspaceId, userId }: UserPresenceStoppedEvent) {
     if (workspaceId !== workspace.value.id) return;
     const next = new Map(presenceActivity.value);
     next.delete(userId);
@@ -71,11 +99,11 @@ export function useWorkspacePresence() {
   }
 
   function emitPresencePulse() {
-    websocket?.emit("workspace-presence-pulse", { workspaceId: workspace.value.id });
+    presenceSocket.presencePulse({ workspaceId: workspace.value.id });
   }
 
   function emitPresenceStop() {
-    websocket?.emit("workspace-presence-stop", { workspaceId: workspace.value.id });
+    presenceSocket.presenceStop({ workspaceId: workspace.value.id });
   }
 
   function clearPulseTimer() {
@@ -98,10 +126,10 @@ export function useWorkspacePresence() {
       presenceActivity.value = new Map();
       clearPulseTimer();
       if (oldId !== undefined) {
-        websocket?.emit("workspace-presence-stop", { workspaceId: oldId });
+        presenceSocket.presenceStop({ workspaceId: oldId });
       }
       if (workspaceId != null) {
-        websocket?.emit("subscribe-workspace-presence", { workspaceId });
+        presenceSocket.subscribeWorkspacePresence({ workspaceId });
         mergeOnlineUsersSnapshot(workspace.value?.onlineUsersSnapshot);
         startPulseLoop();
       }
@@ -119,7 +147,7 @@ export function useWorkspacePresence() {
   onMounted(() => {
     const wid = workspace.value?.id;
     if (wid != null) {
-      websocket?.emit("subscribe-workspace-presence", { workspaceId: wid });
+      presenceSocket.subscribeWorkspacePresence({ workspaceId: wid });
     }
     mergeOnlineUsersSnapshot(workspace.value?.onlineUsersSnapshot);
 
@@ -142,7 +170,7 @@ export function useWorkspacePresence() {
 
     const wid = workspace.value?.id;
     if (wid != null) {
-      websocket?.emit("unsubscribe-workspace-presence", { workspaceId: wid });
+      presenceSocket.unsubscribeWorkspacePresence({ workspaceId: wid });
     }
 
     websocket?.off("user-presence", onUserPresence);
