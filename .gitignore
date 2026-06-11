@@ -23,3 +23,5 @@ data/
 # Personal product session scratch (see .product/README.md)
 .product/local/*
 !.product/local/.gitignore
+
+storybook-static/
