@@ -32,10 +32,12 @@ export function isSortableListItem(value: unknown): value is SortableListItem {
 }
 
 export function resolveSortableList(source: unknown): SortableListItem[] {
-  if (Array.isArray(source)) return source.filter(isSortableListItem);
+  // Must return the original array reference (not a filtered copy) so DnDOperations.move
+  // mutates the same reactive list that Vue renders.
+  if (Array.isArray(source)) return source as SortableListItem[];
   if (source && typeof source === "object" && "value" in source) {
     const value = (source as Ref<unknown>).value;
-    return Array.isArray(value) ? value.filter(isSortableListItem) : [];
+    return Array.isArray(value) ? (value as SortableListItem[]) : [];
   }
   if (typeof source === "function") {
     return resolveSortableList(source());
