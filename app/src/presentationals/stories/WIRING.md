@@ -27,7 +27,7 @@ presentationals/
 ```
 
 - Never colocate `*.stories.*` next to `.vue` files.
-- Sidebar title: **`Presentational/<Domain>/<Component>`**.
+- Sidebar title: **`Presentational/<Domain>/<Component>`** for leaf components; composed redesign surfaces under `stories/hero/` use **`Product/Hero/<SliceName>`** (see `hero/README.md`).
 
 ## Harness naming
 
