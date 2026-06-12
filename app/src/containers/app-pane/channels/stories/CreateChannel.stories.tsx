@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import CreateChannel from "@/containers/app-pane/channels/CreateChannel.vue";
-import { StoryContainer } from "../channel/story-container";
+import { StoryContainer } from "@/presentationals/stories/story-container";
 import { h } from "vue";
 
 const meta = {
-  title: "Components/CreateChannel",
+  title: "Application/Containers/CreateChannel",
   component: CreateChannel,
   tags: ["autodocs"],
   parameters: {
@@ -14,8 +14,8 @@ const meta = {
         cellSize: 20,
         opacity: 0.5,
         cellAmount: 5,
-        offsetX: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
-        offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+        offsetX: 16,
+        offsetY: 16,
       },
     },
   },

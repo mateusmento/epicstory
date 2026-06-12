@@ -1,32 +1,21 @@
-import daianaPhoto from "@/assets/images/daiana.png";
-import seanPhoto from "@/assets/images/sean.png";
-import MessageComposer from "@/containers/messages/MessageComposer.vue";
-import { messageGroup, messageGroups } from "@/containers/channel/stories/message-groups.data";
 import type { ChatTimelineItem } from "@/lib/chat-timeline";
 import MessageBox from "@/presentationals/messages/MessageBox.vue";
-import type { IMessage } from "@epicstory/contracts";
+import MessageComposerShell from "@/presentationals/messages/MessageComposerShell.vue";
+import {
+  makeComposerAttachmentsView,
+  makeToolbarView,
+  tiptapDoc,
+} from "@/presentationals/messages/stories/message.fixtures";
+import { storyDirectChannel } from "@/presentationals/stories/fixtures";
+import { messageGroup, messageGroups } from "@/presentationals/stories/fixtures/message-groups";
+import { StoryContainer } from "@/presentationals/stories/story-container";
+import type { IMessage, IReply } from "@epicstory/contracts";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { map, max } from "lodash";
 import { computed, defineComponent, h, ref } from "vue";
-import { StoryContainer } from "../../app-pane/channel/story-container";
 import ChatboxShell from "../Chatbox.vue";
 import ChatboxIntro from "../ChatboxIntro.vue";
 import ChatboxTimeline from "../ChatboxTimeline.vue";
-
-const channel = {
-  id: 1,
-  name: "Daiana",
-  type: "direct" as const,
-  workspaceId: 1,
-  createdAt: new Date(),
-  directPeer: { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
-  unreadMessagesCount: 0,
-  meeting: null,
-  peers: [
-    { id: 1, name: "Daiana", picture: daianaPhoto, email: "daiana@example.com" },
-    { id: 2, name: "Jean", picture: seanPhoto, email: "jean@example.com" },
-  ],
-};
 
 function toChatTimeline(groups: typeof messageGroups.value): ChatTimelineItem[] {
   return groups.map((group) => ({ kind: "messages" as const, group }));
@@ -34,57 +23,86 @@ function toChatTimeline(groups: typeof messageGroups.value): ChatTimelineItem[] 
 
 const ChatboxStory = defineComponent({
   name: "ChatboxStory",
-  components: { ChatboxShell, ChatboxTimeline, ChatboxIntro, MessageBox, MessageComposer },
+  components: { ChatboxShell, ChatboxTimeline, ChatboxIntro, MessageBox, MessageComposerShell },
   setup() {
-    const quotedMessage = ref<IMessage | null>(null);
+    const quotedMessage = ref<IMessage | IReply | null>(null);
     const editingMessage = ref<IMessage | null>(null);
     const timeline = computed(() => toChatTimeline(messageGroups.value));
     const olderPage = { hasOlder: false, loadingOlder: false };
     const loadOlder = async () => {};
 
-    function onQuote(m: IMessage | undefined) {
+    const quote = computed(() => {
+      const q = quotedMessage.value;
+      if (!q) return null;
+      return {
+        senderName: q.sender.name,
+        excerpt: q.displayContent ?? "Quoted message",
+      };
+    });
+    const showQuote = computed(() => quote.value !== null);
+    const attachments = ref(makeComposerAttachmentsView());
+    const toolbar = computed(() =>
+      makeToolbarView({
+        isEditing: editingMessage.value !== null,
+        sendLabel: editingMessage.value ? "Save" : "Send",
+      }),
+    );
+    const sendCount = ref(0);
+
+    function onQuote(m: IMessage | IReply | undefined) {
       if (!m || "messageId" in m) return;
       quotedMessage.value = m;
       editingMessage.value = null;
     }
 
-    function onStartEdit(m: IMessage | undefined) {
+    function onStartEdit(m: IMessage | IReply | undefined) {
       if (!m || "messageId" in m) return;
       editingMessage.value = m;
       quotedMessage.value = null;
     }
 
-    async function onSendMessage(payload: { content: unknown }) {
+    function onSend() {
+      if (editingMessage.value) {
+        editingMessage.value = null;
+        sendCount.value += 1;
+        return;
+      }
       messageGroup.value.messages.push({
         id: (max(map(messageGroup.value.messages, "id")) ?? 0) + 1,
-        content: payload.content,
+        content: tiptapDoc("New message from story harness"),
+        displayContent: "New message from story harness",
         sentAt: new Date(),
         senderId: 2,
-        sender: {
-          id: 2,
-          name: "Jean",
-          picture: seanPhoto,
-          email: "jean@example.com",
-        },
-        channelId: 1,
-        channel,
+        sender: storyDirectChannel.peers[1]!,
+        channelId: storyDirectChannel.id,
+        channel: storyDirectChannel,
         repliesCount: 0,
         repliers: [],
         reactions: [],
       } as IMessage);
       quotedMessage.value = null;
+      sendCount.value += 1;
     }
 
     return {
-      channel,
+      channel: storyDirectChannel,
       timeline,
       olderPage,
       loadOlder,
-      quotedMessage,
-      editingMessage,
+      quote,
+      showQuote,
+      attachments,
+      toolbar,
+      sendCount,
       onQuote,
       onStartEdit,
-      onSendMessage,
+      onSend,
+      clearQuote: () => {
+        quotedMessage.value = null;
+      },
+      cancelEdit: () => {
+        editingMessage.value = null;
+      },
     };
   },
   template: `
@@ -105,33 +123,35 @@ const ChatboxStory = defineComponent({
               :message="message"
               :me-id="2"
               @quote="onQuote"
-              @start-edit="onStartEdit"
+              @edit="onStartEdit"
             />
           </template>
         </ChatboxTimeline>
       </template>
       <template #composer>
-        <MessageComposer
-          :channel-id="channel.id"
-          :mentionables="channel.peers"
-          :me-id="2"
-          :quoted-message="quotedMessage"
-          :editing-message="editingMessage"
-          @send-message="onSendMessage"
-          @clear-quote="quotedMessage = null"
-          @cancel-edit="editingMessage = null"
+        <MessageComposerShell
           class="m-4 mt-0"
+          :placeholder="'Message ' + channel.name"
+          :quote="quote"
+          :show-quote="showQuote"
+          :attachments="attachments"
+          :toolbar="toolbar"
+          :editor="null"
+          :me-id="2"
+          @send="onSend"
+          @clear-quote="clearQuote"
+          @cancel-edit="cancelEdit"
         />
+        <p v-if="sendCount" class="mx-4 text-xs text-muted-foreground">Sent/saved: {{ sendCount }}</p>
       </template>
     </ChatboxShell>
   `,
 });
 
 const meta = {
-  title: "Design System/Channel/Chatbox",
+  title: "Presentational/Channel/Chatbox",
   component: ChatboxShell,
   parameters: {
-    layout: "fullscreen",
     controls: { disable: true },
     backgrounds: {
       grid: {

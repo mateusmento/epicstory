@@ -1,15 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
-import MessageInboxNotification from "./MessageInboxNotification.vue";
-import { StoryContainer } from "../app-pane/channel/story-container";
-import seanPhoto from "@/assets/images/sean.png";
+import MessageInboxNotification from "../MessageInboxNotification.vue";
+import { StoryContainer } from "@/presentationals/stories/story-container";
+import { storyUsers } from "@/presentationals/stories/fixtures";
 import { h } from "vue";
 
 const meta = {
-  title: "Components/MessageInboxNotifications",
+  title: "Presentational/Inbox/MessageInboxNotification",
   component: MessageInboxNotification,
   tags: ["autodocs"],
   parameters: {
-    layout: "fullscreen",
     backgrounds: {
       grid: {
         cellSize: 20,
@@ -30,11 +29,19 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    senderPicture: seanPhoto,
-    senderName: "Sean",
+    senderPicture: storyUsers.sean.picture,
+    senderName: storyUsers.sean.name,
     message: "Hey, I'll send you the updates later.",
     seen: false,
     unseenMessageCount: 4,
     sentAt: "2025-11-01",
+  },
+};
+
+export const Seen: Story = {
+  args: {
+    ...Default.args,
+    seen: true,
+    unseenMessageCount: 0,
   },
 };

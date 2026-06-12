@@ -25,3 +25,4 @@
 - Project timeline page ([tasks/02-project-timeline.md](./tasks/02-project-timeline.md))
 - Notification payloads with `issueKey` ([tasks/01-issue-key-surfacing.md](./tasks/01-issue-key-surfacing.md) — follow-up)
 - GitHub OAuth tests, PR lifecycle comments, chat commands ([tasks index](./tasks/README.md))
+- UI redesign prep roadmap ([tasks/08-ui-redesign-foundation.md](./tasks/08-ui-redesign-foundation.md))

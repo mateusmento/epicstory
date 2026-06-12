@@ -4,17 +4,15 @@ import { Icon } from "@/design-system/icons";
 import ChannelDetailsPane from "@/presentationals/app-pane/channel/ChannelDetailsPane.vue";
 import ChannelMembers from "@/presentationals/app-pane/channel/ChannelMembers.vue";
 import WorkspaceMemberDropdown from "@/presentationals/workspace-members/WorkspaceMemberDropdown.vue";
-import sean from "@/assets/images/sean.png";
-import daiana from "@/assets/images/daiana.png";
+import { StoryContainer } from "@/presentationals/stories/story-container";
+import { storyMembers } from "@/presentationals/stories/fixtures";
 import { h } from "vue";
-import { StoryContainer } from "./story-container";
 
 const meta = {
-  title: "Components/ChannelDetailsPaneTemplate",
+  title: "Presentational/AppPane/ChannelDetailsPane",
   component: ChannelDetailsPane,
   tags: ["autodocs"],
   parameters: {
-    layout: "fullscreen",
     backgrounds: {
       grid: {
         cellSize: 20,
@@ -35,11 +33,6 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
-
-const storyMembers = [
-  { id: 1, name: "Sean", picture: sean, email: "sean@gmail.com", role: "admin" },
-  { id: 2, name: "Daiana", picture: daiana, email: "daiana@gmail.com", role: "member" },
-];
 
 export const Default: Story = {
   args: {

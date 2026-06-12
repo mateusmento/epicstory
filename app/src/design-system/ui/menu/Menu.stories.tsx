@@ -16,7 +16,7 @@ import {
   MenuSubTrigger,
   MenuTrigger,
 } from ".";
-import { StoryContainer } from "@/presentationals/app-pane/channel/story-container";
+import { StoryContainer } from "@/presentationals/stories/story-container";
 import { h } from "vue";
 import { Button } from "../button";
 
