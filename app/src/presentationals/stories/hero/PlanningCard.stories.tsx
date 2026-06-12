@@ -1,7 +1,7 @@
 import { withStoryContainer } from "@/presentationals/stories/story-container";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { ref } from "vue";
-import IssueCard from "@/presentationals/views/project/board/IssueCard.vue";
+import IssueCard from "@/presentationals/board/IssueCard.vue";
 import {
   heroPlanningCardDefault,
   heroPlanningCardDense,

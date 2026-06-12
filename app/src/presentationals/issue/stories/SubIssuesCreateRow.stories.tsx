@@ -1,10 +1,10 @@
 import { StoryContainer } from "@/presentationals/stories/story-container";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { h, ref } from "vue";
-import SubIssuesCreateRow from "../SubIssuesCreateRow.vue";
+import SubIssuesCreateRow from "../sub-issues/SubIssuesCreateRow.vue";
 
 const meta = {
-  title: "Presentational/Views/Issue/SubIssuesCreateRow",
+  title: "Presentational/Issue/SubIssuesCreateRow",
   component: SubIssuesCreateRow,
   decorators: [
     (story) => ({ render: () => <StoryContainer class="w-[760px] h-[220px] p-4">{h(story())}</StoryContainer> }),

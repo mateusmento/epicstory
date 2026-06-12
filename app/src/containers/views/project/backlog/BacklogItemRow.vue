@@ -11,8 +11,8 @@ import { useBacklog } from "@/domain/backlog";
 import type { IIssue, IUser as IUser } from "@epicstory/contracts";
 import { computed, ref, watch } from "vue";
 import { useBacklogRowContext } from "./backlog-row.context";
-import { DueDatePicker } from "@/presentationals/views/project/backlog/date-picker";
-import { PriorityToggler } from "@/presentationals/views/project/backlog/priority-toggler";
+import { DueDatePicker } from "@/presentationals/issue/due-date-picker";
+import { PriorityToggler } from "@/presentationals/issue/priority-toggler";
 
 const props = defineProps<{
   itemId: number;

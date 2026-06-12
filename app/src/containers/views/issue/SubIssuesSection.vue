@@ -5,9 +5,9 @@ import type { IIssue } from "@epicstory/contracts";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { IssueContextMenu } from "@/containers/issue";
-import SubIssueRow from "@/presentationals/views/issue/sub-issues/SubIssueRow.vue";
-import SubIssuesCreateRow from "@/presentationals/views/issue/sub-issues/SubIssuesCreateRow.vue";
-import SubIssuesHeader from "@/presentationals/views/issue/sub-issues/SubIssuesHeader.vue";
+import SubIssueRow from "@/presentationals/issue/sub-issues/SubIssueRow.vue";
+import SubIssuesCreateRow from "@/presentationals/issue/sub-issues/SubIssuesCreateRow.vue";
+import SubIssuesHeader from "@/presentationals/issue/sub-issues/SubIssuesHeader.vue";
 
 const props = defineProps<{
   workspaceId: string;

@@ -7,8 +7,8 @@ import {
 } from "@/presentationals/issue";
 import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
 import { UserAvatarStack } from "@/presentationals/user";
-import { DueDatePicker } from "@/presentationals/views/project/backlog/date-picker";
-import { PriorityToggler } from "@/presentationals/views/project/backlog/priority-toggler";
+import { DueDatePicker } from "@/presentationals/issue/due-date-picker";
+import { PriorityToggler } from "@/presentationals/issue/priority-toggler";
 import WorkspaceMemberDropdown from "@/presentationals/workspace-members/WorkspaceMemberDropdown.vue";
 import type { HeroIssueHeaderState } from "./hero.fixtures";
 import { heroWorkspaceMemberList } from "./hero.fixtures";

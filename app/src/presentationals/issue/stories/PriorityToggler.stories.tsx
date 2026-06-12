@@ -1,10 +1,10 @@
 import { StoryContainer } from "@/presentationals/stories/story-container";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { h, ref } from "vue";
-import PriorityToggler from "../PriorityToggler.vue";
+import PriorityToggler from "../priority-toggler/PriorityToggler.vue";
 
 const meta = {
-  title: "Presentational/Views/Issue/PriorityToggler",
+  title: "Presentational/Issue/PriorityToggler",
   component: PriorityToggler,
   decorators: [
     (story) => ({ render: () => <StoryContainer class="w-[420px] h-[280px] p-6">{h(story())}</StoryContainer> }),
