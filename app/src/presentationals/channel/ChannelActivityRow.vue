@@ -77,7 +77,7 @@ const rowClass = computed(() =>
 </script>
 
 <template>
-  <div :class="rowClass" class="flex gap-2 text-sm">
+  <div :class="rowClass" class="flex gap-2 text-sm my-1">
     <div class="mt-0.5 flex size-8 shrink-0 items-center justify-center">
       <UserAvatar
         v-if="!showHeadphoneIcon && avatarUser"

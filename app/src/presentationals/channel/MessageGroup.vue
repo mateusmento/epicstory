@@ -17,7 +17,7 @@ function formatMessageDate(date: Date | string) {
 </script>
 
 <template>
-  <div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
+  <div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] my-2">
     <UserAvatar
       :name="sender.name"
       :picture="sender.picture"
