@@ -11,6 +11,7 @@ Ordered by **impact on developer workflow** and **readiness** (backend vs greenf
 | [05](./05-github-chat-commands.md) | Chat / command palette + GitHub | Deferred | See `.tasks/github-integration/07` |
 | [06](./06-github-manual-smoke.md) | GitHub integration manual smoke | Ongoing | Document checklist per env |
 | [07](./07-user-avatar-stack-adoption.md) | `UserAvatarStack` adoption (stacked avatars) | Not started | EPV1-98; 6 locations still hand-rolled |
-| [08](./08-ui-redesign-foundation.md) | UI redesign foundation (Storybook + presentational layer) | **In progress** | Verdict + roadmap after presentational/Storybook refactor |
+| [08](./08-ui-redesign-foundation.md) | UI redesign foundation (Storybook + presentational layer) | **In progress** | Hero slices done; presentational catalog + dogfood remain |
+| [09](./09-design-tokens-ds-primitives.md) | Design tokens & DS primitives | Not started | Token canonicalization + Storybook primitives; depends on 08 |
 
 **GitHub integration spec:** [`.tasks/github-integration/`](../.tasks/github-integration/README.md)

@@ -94,7 +94,9 @@ Fixtures: `hero.fixtures.ts` + slice README at `presentationals/stories/hero/REA
 
 **Removed view/container stories:** `Dashboard.stories.ts`, `SignupView.stories.ts`, `Application/Containers/CreateChannel` (replaced by `Presentational/AppPane/CreateChannelForm`).
 
-**Deferred:** ComposerDock (optional 8th slice); full `IssueView` / activity feed; schedule views; DS primitives track.
+**Deferred:** ComposerDock (optional 8th slice); full `IssueView` / activity feed; schedule views.
+
+**Follow-up:** [09 — Design tokens & DS primitives](./09-design-tokens-ds-primitives.md)
 
 ### 4. Fixtures → design scenarios
 
@@ -109,8 +111,8 @@ Evolve fixtures beyond happy-path mocks. Name scenarios for redesign stress test
 
 ## Recommended order for redesign
 
-1. **Design tokens + DS primitives** in Storybook (spacing, type, color, core components).
-2. **Hero slices** — 5–8 stories mirroring real product surfaces (table above).
+1. [x] **Hero slices** — 9 stories mirroring real product surfaces (table above).
+2. **Design tokens + DS primitives** → [09 — Design tokens & DS primitives](./09-design-tokens-ds-primitives.md).
 3. **Redesign presentationals** against hero slices (not only isolated leaves).
 4. **Roll through containers/views** with minimal prop/API churn.
 
@@ -126,7 +128,7 @@ Evolve fixtures beyond happy-path mocks. Name scenarios for redesign stress test
 
 ## Done when (this task)
 
-- [ ] Design system primitives storied with token-aware variants
+- [ ] Design system primitives storied with token-aware variants → **moved to [09](./09-design-tokens-ds-primitives.md)**
 - [x] 9 hero slice stories documented and rendering (`Product/Hero/*`)
 - [ ] Presentational story catalog renders without provider/context errors
 - [x] Fixture scenarios cover empty / dense / overflow (`hero.fixtures.ts` + per-slice variants)
