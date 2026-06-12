@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
-import { messageGroup } from "@/containers/channel/stories/message-groups.data";
+import { messageGroup } from "@/presentationals/stories/fixtures/message-groups";
 import { MessageBox } from "../../messages";
 import MessageGroup from "../MessageGroup.vue";
 
 const meta = {
-  title: "Design System/Channel/MessageGroup",
+  title: "Presentational/Channel/MessageGroup",
   component: MessageGroup,
 } satisfies Meta<typeof MessageGroup>;
 

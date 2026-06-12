@@ -1,0 +1,48 @@
+/*
+ * Epicstory app shell (main.css) sets `html, body { overflow: hidden; height: 100% }`
+ * for the SPA layout. Storybook Docs renders many stories on one page — restore scroll.
+ */
+
+html,
+body,
+#root,
+#storybook-root,
+#storybook-docs,
+#app {
+  overflow: auto !important;
+  height: auto !important;
+  min-height: 100%;
+  max-height: none !important;
+}
+
+body.sb-main-padded,
+body.sb-main-fullscreen,
+body.sb-show-main {
+  overflow: auto !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* Docs embeds every story in one long document */
+.sbdocs,
+.sbdocs-wrapper,
+.sbdocs-content,
+.sbdocs-content > div,
+.docs-story,
+.sb-story,
+.sb-story > div,
+[data-testid="story-preview-container"] {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  contain: none !important;
+}
+
+.sb-story-frame,
+.sb-docs-frame {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  contain: none !important;
+}
