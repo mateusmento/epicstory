@@ -1,16 +1,16 @@
 # 08 — UI redesign foundation (Storybook + presentational layer)
 
-**Status:** In progress (foundation laid; prerequisites remain)  
+**Status:** In progress (foundation laid; prerequisites remain)
 **Session question:** Can we explore and ship a new Epicstory visual language in Storybook first—without breaking production wiring?
 
 ## Verdict (2026-06)
 
 The presentational/container refactor + Storybook rollout was **the right foundation for redesign**, but it gets us to **“safe to redesign in the open”**, not **“redesign is ready to ship.”**
 
-| Question | Answer |
-|----------|--------|
-| Was the refactor worth it for redesign? | **Yes** |
-| Can we start exploring new UI in Storybook now? | **Yes** — especially storied presentational domains |
+| Question                                                 | Answer                                                           |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| Was the refactor worth it for redesign?                  | **Yes**                                                          |
+| Can we start exploring new UI in Storybook now?          | **Yes** — especially storied presentational domains              |
 | Can we run a full product redesign from Storybook alone? | **Not yet** — strengthen design system + hero compositions first |
 
 ---
@@ -38,13 +38,13 @@ Stories should mirror **how containers/views wire** components (props, events, s
 
 ### 3. Shared story infra
 
-| Piece | Location | Role |
-|-------|----------|------|
-| Fixtures | `presentationals/stories/fixtures/` | Mock data in view-model shape |
-| `StoryContainer` / `withStoryContainer` | `presentationals/stories/story-container.tsx` | Canvas grid frame; compact frame on Docs |
-| `DropdownMenuPanel` | `presentationals/stories/harness/` | Menu panel fragments (`MenuInput`, `MenuItem`, …) |
-| Global providers | `.storybook/preview.ts` | `TooltipProvider`, `ConfirmDialogProvider` |
-| Docs scroll fix | `.storybook/preview.css` | Overrides app `html, body { overflow: hidden }` |
+| Piece                                   | Location                                      | Role                                              |
+| --------------------------------------- | --------------------------------------------- | ------------------------------------------------- |
+| Fixtures                                | `presentationals/stories/fixtures/`           | Mock data in view-model shape                     |
+| `StoryContainer` / `withStoryContainer` | `presentationals/stories/story-container.tsx` | Canvas grid frame; compact frame on Docs          |
+| `DropdownMenuPanel`                     | `presentationals/stories/harness/`            | Menu panel fragments (`MenuInput`, `MenuItem`, …) |
+| Global providers                        | `.storybook/preview.ts`                       | `TooltipProvider`, `ConfirmDialogProvider`        |
+| Docs scroll fix                         | `.storybook/preview.css`                      | Overrides app `html, body { overflow: hidden }`   |
 
 **Sidebar convention:** `Presentational/<Domain>/<Component>`
 
@@ -76,17 +76,21 @@ Before a big visual pass:
 
 ### 3. Composition stories matter as much as leaf stories
 
-Redesign is about **shells**, not only atoms. Need a small set of **canonical screen slices** (presentational composition, not full containers):
+Redesign is about **shells**, not only atoms. **7 hero slices** live under `app/src/presentationals/stories/hero/` with title `Product/Hero/<SliceName>`.
 
-| Hero slice | Existing story anchor | Notes |
-|------------|---------------------|-------|
-| Inbox / notification row | `InboxNotificationRow` | Many notification variants |
-| Chat column | `Chatbox` composite | Timeline + composer slots |
-| Channel details pane | `ChannelDetailsPane` | Nested slots |
-| Issue header / key / labels | `IssueKey`, `IssueLabelTags` | Combine into one slice later |
-| Meeting room | `MeetingGrid`, `MeetingControls` | Layout + controls |
-| Backlog / board row | `IssueCard`, backlog togglers | Dense data UI |
-| Message composer | `MessageComposerShell` | Rich text + attachments |
+| Hero slice           | Story                          | Variants                                            | Status |
+| -------------------- | ------------------------------ | --------------------------------------------------- | ------ |
+| **IssueHeader**      | `IssueHeader.stories.tsx`      | Default, Dense, Empty, Overflow, Interactive        | [x]    |
+| **PlanningCard**     | `PlanningCard.stories.tsx`     | Default, Dense, Overdue, Done                       | [x]    |
+| **InboxTriage**      | `InboxTriage.stories.tsx`      | Default, Dense, Interactive                         | [x]    |
+| **ChatColumn**       | `ChatColumn.stories.tsx`       | Default, Empty, Busy, QuoteEdit, Interactive        | [x]    |
+| **AppShell**         | `AppShell.stories.tsx`         | Default, AppPaneOnly, DetailsDrawerOpen, BothClosed | [x]    |
+| **IssueGithubPanel** | `IssueGithubPanel.stories.tsx` | Default, Empty, Loading, Interactive                | [x]    |
+| **MeetingRoom**      | `MeetingRoom.stories.tsx`      | Default, Dense, SpeakerMode, Interactive            | [x]    |
+
+Fixtures: `hero.fixtures.ts` + slice README at `presentationals/stories/hero/README.md`.
+
+**Deferred:** ComposerDock (optional 8th slice); full `IssueView` / activity feed; schedule views; DS primitives track.
 
 ### 4. Fixtures → design scenarios
 
@@ -119,9 +123,9 @@ Evolve fixtures beyond happy-path mocks. Name scenarios for redesign stress test
 ## Done when (this task)
 
 - [ ] Design system primitives storied with token-aware variants
-- [ ] 5–8 hero slice stories documented and rendering
+- [x] 7 hero slice stories documented and rendering (`Product/Hero/*`)
 - [ ] Presentational story catalog renders without provider/context errors
-- [ ] Fixture scenarios cover empty / loading / dense / overflow
+- [x] Fixture scenarios cover empty / dense / overflow (`hero.fixtures.ts` + per-slice variants)
 - [ ] First redesigned surface dogfooded in app via unchanged container contracts
 
 ## References
