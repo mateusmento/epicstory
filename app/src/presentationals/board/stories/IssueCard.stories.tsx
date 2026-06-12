@@ -21,7 +21,7 @@ const item = {
 } as IBacklogItem;
 
 const meta = {
-  title: "Presentational/Views/Issue/IssueCard",
+  title: "Presentational/Board/IssueCard",
   component: IssueCard,
   decorators: [
     (story) => ({ render: () => <StoryContainer class="w-[480px] h-[340px] p-4">{h(story())}</StoryContainer> }),

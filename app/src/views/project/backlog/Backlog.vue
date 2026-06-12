@@ -21,10 +21,10 @@ import {
 import { useRouter } from "vue-router";
 import BacklogItemRow from "@/containers/views/project/backlog/BacklogItemRow.vue";
 import { provideBacklogRowContext } from "@/containers/views/project/backlog/backlog-row.context";
-import Signal1Bar from "@/presentationals/views/project/backlog/priority-toggler/Signal1Bar.vue";
-import Signal2Bars from "@/presentationals/views/project/backlog/priority-toggler/Signal2Bars.vue";
-import Signal3Bars from "@/presentationals/views/project/backlog/priority-toggler/Signal3Bars.vue";
-import UrgentIcon from "@/presentationals/views/project/backlog/priority-toggler/Urgent.vue";
+import Signal1Bar from "@/presentationals/issue/priority-toggler/Signal1Bar.vue";
+import Signal2Bars from "@/presentationals/issue/priority-toggler/Signal2Bars.vue";
+import Signal3Bars from "@/presentationals/issue/priority-toggler/Signal3Bars.vue";
+import UrgentIcon from "@/presentationals/issue/priority-toggler/Urgent.vue";
 import { issueFiltersForQuery, useProjectFilters } from "@/domain/project";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();

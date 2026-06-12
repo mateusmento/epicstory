@@ -1,10 +1,10 @@
 import { StoryContainer } from "@/presentationals/stories/story-container";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { h, ref } from "vue";
-import DueDatePicker from "../DueDatePicker.vue";
+import DueDatePicker from "../due-date-picker/DueDatePicker.vue";
 
 const meta = {
-  title: "Presentational/Views/Issue/DueDatePicker",
+  title: "Presentational/Issue/DueDatePicker",
   component: DueDatePicker,
   decorators: [
     (story) => ({ render: () => <StoryContainer class="w-[420px] h-[260px] p-6">{h(story())}</StoryContainer> }),

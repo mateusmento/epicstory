@@ -3,7 +3,7 @@ import { storyLabels, storyMembers } from "@/presentationals/stories/fixtures";
 import type { IIssue } from "@epicstory/contracts";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { h, ref } from "vue";
-import SubIssueRow from "../SubIssueRow.vue";
+import SubIssueRow from "../sub-issues/SubIssueRow.vue";
 
 const sub = {
   id: 501,
@@ -15,7 +15,7 @@ const sub = {
 } as IIssue;
 
 const meta = {
-  title: "Presentational/Views/Issue/SubIssueRow",
+  title: "Presentational/Issue/SubIssueRow",
   component: SubIssueRow,
   decorators: [
     (story) => ({ render: () => <StoryContainer class="w-[900px] h-[220px] p-4">{h(story())}</StoryContainer> }),

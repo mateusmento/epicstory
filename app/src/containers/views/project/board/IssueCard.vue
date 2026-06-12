@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { IssueContextMenu, IssueLabelTags } from "@/containers/issue";
-import IssueCardView from "@/presentationals/views/project/board/IssueCard.vue";
+import IssueCardView from "@/presentationals/board/IssueCard.vue";
 import type { IBacklogItem, IIssue } from "@epicstory/contracts";
 
 defineProps<{ item: IBacklogItem }>();
