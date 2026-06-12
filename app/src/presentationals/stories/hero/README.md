@@ -11,6 +11,10 @@ Canonical Storybook compositions under `Product/Hero/*`. Each slice mirrors a re
 | **AppShell** | Workspace chrome — panes + drawer | `AppShell.stories.tsx` |
 | **IssueGithubPanel** | Git — PRs + branch workflow | `IssueGithubPanel.stories.tsx` |
 | **MeetingRoom** | Communication — live meeting | `MeetingRoom.stories.tsx` |
+| **AuthSignup** | Onboarding — sign-up page | `AuthSignup.stories.tsx` |
+| **AuthSignin** | Onboarding — sign-in page | `AuthSignin.stories.tsx` |
+
+**Note:** `Dashboard.vue` has no view-level story — use **AppShell** for workspace chrome redesign.
 
 ## Scenario variants
 
@@ -29,6 +33,7 @@ See [`../WIRING.md`](../WIRING.md). Reference containers for contracts only:
 - `IssueView.vue` → IssueHeader
 - `IssueCard` / board → PlanningCard
 - `Chatbox.vue` (container) → ChatColumn
-- `Dashboard.vue` / `AppLayout` → AppShell
+- `Dashboard.vue` / `AppLayout` → AppShell (no `Dashboard.stories.ts`)
+- `SignupView` / `SigninView` → AuthSignup / AuthSignin
 - `IssueGithubSidebarSection` → IssueGithubPanel
 - `Meeting.vue` → MeetingRoom

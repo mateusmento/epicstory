@@ -17,7 +17,7 @@ import { NotFoundException, UnauthorizedException } from "@/core/axios";
 import { useWorkspacePresence } from "@/domain/channels";
 import { useNotificationIncomingAlerts, useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { RouterView, useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
@@ -56,8 +56,13 @@ async function loadWorkspace() {
   }
 }
 
-await loadWorkspace();
-watch(workspaceId, loadWorkspace);
+onMounted(() => {
+  loadWorkspace();
+});
+
+watch(workspaceId, () => {
+  loadWorkspace();
+});
 </script>
 
 <template>

@@ -76,7 +76,7 @@ Before a big visual pass:
 
 ### 3. Composition stories matter as much as leaf stories
 
-Redesign is about **shells**, not only atoms. **7 hero slices** live under `app/src/presentationals/stories/hero/` with title `Product/Hero/<SliceName>`.
+Redesign is about **shells**, not only atoms. **9 hero slices** live under `app/src/presentationals/stories/hero/` with title `Product/Hero/<SliceName>`.
 
 | Hero slice           | Story                          | Variants                                            | Status |
 | -------------------- | ------------------------------ | --------------------------------------------------- | ------ |
@@ -87,8 +87,12 @@ Redesign is about **shells**, not only atoms. **7 hero slices** live under `app/
 | **AppShell**         | `AppShell.stories.tsx`         | Default, AppPaneOnly, DetailsDrawerOpen, BothClosed | [x]    |
 | **IssueGithubPanel** | `IssueGithubPanel.stories.tsx` | Default, Empty, Loading, Interactive                | [x]    |
 | **MeetingRoom**      | `MeetingRoom.stories.tsx`      | Default, Dense, SpeakerMode, Interactive            | [x]    |
+| **AuthSignup**       | `AuthSignup.stories.tsx`       | Default, Interactive                                | [x]    |
+| **AuthSignin**       | `AuthSignin.stories.tsx`       | Default, PrefilledEmail, Interactive                | [x]    |
 
 Fixtures: `hero.fixtures.ts` + slice README at `presentationals/stories/hero/README.md`.
+
+**Removed view/container stories:** `Dashboard.stories.ts`, `SignupView.stories.ts`, `Application/Containers/CreateChannel` (replaced by `Presentational/AppPane/CreateChannelForm`).
 
 **Deferred:** ComposerDock (optional 8th slice); full `IssueView` / activity feed; schedule views; DS primitives track.
 
@@ -123,7 +127,7 @@ Evolve fixtures beyond happy-path mocks. Name scenarios for redesign stress test
 ## Done when (this task)
 
 - [ ] Design system primitives storied with token-aware variants
-- [x] 7 hero slice stories documented and rendering (`Product/Hero/*`)
+- [x] 9 hero slice stories documented and rendering (`Product/Hero/*`)
 - [ ] Presentational story catalog renders without provider/context errors
 - [x] Fixture scenarios cover empty / dense / overflow (`hero.fixtures.ts` + per-slice variants)
 - [ ] First redesigned surface dogfooded in app via unchanged container contracts
