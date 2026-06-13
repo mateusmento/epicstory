@@ -1,6 +1,6 @@
 # 09 — Design tokens & design system primitives
 
-**Status:** Not started  
+**Status:** In progress (Phase 0 complete)  
 **Depends on:** [08 — UI redesign foundation](./08-ui-redesign-foundation.md) (Storybook infra, hero slices, presentational layer)  
 **Session question:** Can we change Epicstory’s visual language by editing tokens and primitives in Storybook—and see the impact on real product surfaces before touching container wiring?
 
@@ -40,10 +40,10 @@ Today:
 
 ### Hard gates (complete before changing token values)
 
-- [ ] **Storybook theme toolbar** — toggle `light` / `dark` (class on `html` or `body`) so both `:root` and `.dark` palettes are previewable
+- [x] **Storybook theme toolbar** — toggle `light` / `dark` (class on `document.documentElement`) so both `:root` and `.dark` palettes are previewable
 - [x] **Token source-of-truth decision** — **CSS custom properties in `main.css`** (+ `component-colors.ts` for Tailwind aliases) are canonical; demo drives brand tokens; new redesign tokens do not go into `variables.scss` (see **Visual reference spec** and **Legacy SCSS audit**)
 - [x] **Storybook “green” spot-check** — completed in [08](./08-ui-redesign-foundation.md); hero slices + presentational docs render without provider errors; docs scroll normally
-- [ ] **DS Storybook conventions** — agree folder + sidebar naming (see below)
+- [x] **DS Storybook conventions** — documented in [`design-system/stories/README.md`](../../app/src/design-system/stories/README.md)
 
 ### Soft gates (decide during exploration; block shipping merged token changes)
 
@@ -213,7 +213,7 @@ Active SCSS block (lines 10–20; **lines 1–8 are dead code** — delete) matc
 | Story files | `app/src/design-system/stories/**/*.stories.tsx` (not colocated with `.vue`) |
 | Token docs | `Design System/Tokens/<Name>` (e.g. `Colors`, `Typography`, `Spacing`) |
 | Primitives | `Design System/<Component>` (e.g. `Design System/Button`) |
-| Dark mode | Global toolbar decorator; stories show current theme |
+| Dark mode | Global toolbar decorator in `.storybook/preview.ts`; stories inherit current theme |
 | Regression | After token/primitive changes, spot-check `Product/Hero/*` slices |
 
 Migrate existing colocated DS stories (`ui/button/Button.stories.tsx`, etc.) when touching them.
@@ -250,9 +250,10 @@ Story **variants**, not every sub-part file (e.g. no separate story per `DialogH
 
 ### Phase 0 — Storybook readiness (~1 session)
 
-- [ ] Add **light/dark theme toggle** to `.storybook/preview.ts` (toolbar global or decorator on `document.documentElement`)
-- [ ] Document token conventions in `app/src/design-system/stories/README.md` (or extend `WIRING.md` with a DS section)
+- [x] Add **light/dark theme toggle** to `.storybook/preview.ts` (toolbar global + decorator on `document.documentElement`)
+- [x] Document token conventions in [`design-system/stories/README.md`](../../app/src/design-system/stories/README.md)
 - [x] Verify docs scroll + providers on high-variant docs pages — completed in [08](./08-ui-redesign-foundation.md)
+- [x] Smoke-check hero + DS stories in both themes (`Product/Hero/AuthSignup`, `Product/Hero/IssueHeader`, `Design System/Button`)
 
 ### Phase 1 — Token audit & canonicalization (~1–2 sessions)
 
@@ -495,7 +496,7 @@ Validate on hero slices: **`AuthSignup`**, **`AuthSignin`**, and any slice using
 
 ## Done when
 
-- [ ] Light/dark theme toggle works in Storybook for all DS and hero stories
+- [x] Light/dark theme toggle works in Storybook for all DS and hero stories
 - [ ] Token source of truth documented; no new tokens added to `variables.scss`
 - [ ] Demo Tier 1 semantic colors promoted to `main.css`; Tier 2 shadows/gradients in `tailwind.config.ts`
 - [ ] Token stories exist: Colors, Typography, Spacing, Radius (Elevation if applicable)

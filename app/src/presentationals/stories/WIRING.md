@@ -2,6 +2,8 @@
 
 > Can a developer browse Storybook and see each presentational component **wired the same way containers and views wire it**?
 
+Design system primitives and token stories: [`design-system/stories/README.md`](../../design-system/stories/README.md).
+
 ## Reference-first workflow
 
 1. **Find the reference** — grep `@/presentationals/.../ComponentName` under `containers/` and `views/`.

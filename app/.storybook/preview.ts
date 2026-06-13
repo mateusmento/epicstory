@@ -18,7 +18,30 @@ import * as icons from "@/app/icons";
 import router from "@/app/router";
 import { h, provide } from "vue";
 
+type StorybookTheme = "light" | "dark";
+
+function applyStorybookTheme(theme: StorybookTheme) {
+  if (typeof document === "undefined") {
+    return;
+  }
+  document.documentElement.classList.toggle("dark", theme === "dark");
+}
+
 const preview: Preview = {
+  globalTypes: {
+    theme: {
+      name: "Theme",
+      description: "Light / dark mode",
+      defaultValue: "light",
+      toolbar: {
+        icon: "circlehollow",
+        items: [
+          { value: "light", title: "Light" },
+          { value: "dark", title: "Dark" },
+        ],
+      },
+    },
+  },
   parameters: {
     controls: {
       matchers: {
@@ -38,6 +61,11 @@ const preview: Preview = {
     },
   },
   decorators: [
+    (story, context) => {
+      const theme = (context.globals.theme as StorybookTheme | undefined) ?? "light";
+      applyStorybookTheme(theme);
+      return story();
+    },
     (story, context) => ({
       setup() {
         provide(STORYBOOK_VIEW_MODE_KEY, context.viewMode === "docs" ? "docs" : "story");
