@@ -1,6 +1,6 @@
 # 08 — UI redesign foundation (Storybook + presentational layer)
 
-**Status:** In progress (foundation laid; prerequisites remain)
+**Status:** **Complete** — Storybook + presentational foundation shipped; tokens/redesign rollout in [09](./09-design-tokens-ds-primitives.md) / [10](./10-redesign-rollout.md)
 **Session question:** Can we explore and ship a new Epicstory visual language in Storybook first—without breaking production wiring?
 
 ## Verdict (2026-06)
@@ -58,23 +58,19 @@ Stories should mirror **how containers/views wire** components (props, events, s
 
 ---
 
-## Gaps before a confident redesign
+## Follow-ups (out of scope for this task)
 
-### 1. Design system is the real lever — still thin
+| Track | Task | Scope |
+| ----- | ---- | ----- |
+| Tokens + DS primitives | [09](./09-design-tokens-ds-primitives.md) | Canonical tokens, primitive Storybook, Button `brand`/`outline`, light/dark |
+| Redesign rollout | [10](./10-redesign-rollout.md) | Redesign presentationals, dogfood in app, fixture scenarios per surface |
 
-~6 DS stories vs ~175 DS `.vue` files. Redesign usually starts: **tokens → primitives → presentational organisms**.
+### Storybook “green” (completed)
 
-**Next:** Storybook coverage for `Button`, `Input`, spacing, typography, `Menu`, `Dialog`, etc.
+- [x] Every Tier A presentational story renders without context/provider errors
+- [x] Docs pages scroll through all story variants (fixed `preview.css`; verify per component with many stories)
 
-### 2. Storybook must be “green”
-
-Before a big visual pass:
-
-- [ ] Every Tier A presentational story renders without context/provider errors
-- [ ] Docs pages scroll through all story variants (fixed `preview.css`; verify per component with many stories)
-- [ ] Optional: run `app/scripts/scan-storybook-context.mjs` against a running Storybook
-
-### 3. Composition stories matter as much as leaf stories
+### Hero composition slices (completed)
 
 Redesign is about **shells**, not only atoms. **9 hero slices** live under `app/src/presentationals/stories/hero/` with title `Product/Hero/<SliceName>`.
 
@@ -96,16 +92,7 @@ Fixtures: `hero.fixtures.ts` + slice README at `presentationals/stories/hero/REA
 
 **Deferred:** ComposerDock (optional 8th slice); full `IssueView` / activity feed; schedule views.
 
-**Follow-up:** [09 — Design tokens & DS primitives](./09-design-tokens-ds-primitives.md)
-
-### 4. Fixtures → design scenarios
-
-Evolve fixtures beyond happy-path mocks. Name scenarios for redesign stress tests:
-
-- empty, loading, error
-- dense (many labels, long titles)
-- long text / overflow
-- many participants / avatars
+**Next:** [09 — Design tokens & DS primitives](./09-design-tokens-ds-primitives.md) → [10 — Redesign rollout](./10-redesign-rollout.md)
 
 ---
 
@@ -113,8 +100,7 @@ Evolve fixtures beyond happy-path mocks. Name scenarios for redesign stress test
 
 1. [x] **Hero slices** — 9 stories mirroring real product surfaces (table above).
 2. **Design tokens + DS primitives** → [09 — Design tokens & DS primitives](./09-design-tokens-ds-primitives.md).
-3. **Redesign presentationals** against hero slices (not only isolated leaves).
-4. **Roll through containers/views** with minimal prop/API churn.
+3. **Redesign rollout** — presentationals + app dogfood → [10 — Redesign rollout](./10-redesign-rollout.md).
 
 ---
 
@@ -128,11 +114,12 @@ Evolve fixtures beyond happy-path mocks. Name scenarios for redesign stress test
 
 ## Done when (this task)
 
-- [ ] Design system primitives storied with token-aware variants → **moved to [09](./09-design-tokens-ds-primitives.md)**
 - [x] 9 hero slice stories documented and rendering (`Product/Hero/*`)
-- [ ] Presentational story catalog renders without provider/context errors
+- [x] Presentational story catalog renders without provider/context errors
 - [x] Fixture scenarios cover empty / dense / overflow (`hero.fixtures.ts` + per-slice variants)
-- [ ] First redesigned surface dogfooded in app via unchanged container contracts
+- [x] Storybook docs scroll; no provider/context errors on Tier A stories
+- Design system primitives + token-aware variants → [09](./09-design-tokens-ds-primitives.md)
+- First redesigned surface dogfooded in app → [10](./10-redesign-rollout.md)
 
 ## References
 

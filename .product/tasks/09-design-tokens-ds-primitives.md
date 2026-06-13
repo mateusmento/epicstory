@@ -17,11 +17,14 @@ Today:
 | Semantic CSS variables (light + `.dark`) | `app/src/design-system/styles/main.css` | shadcn-style HSL tokens (`--background`, `--primary`, …) |
 | Tailwind mapping | `app/tailwind.config.ts` | Colors → `hsl(var(--*))`; custom `spacing.*`, `fontFamily` |
 | Semantic color aliases | `app/component-colors.ts` | `mention`, `button`, `dropdown`, … |
-| Legacy SCSS variables | `app/design-system/styles/variables.scss` | `$blue`, `$md`, … **overlaps / conflicts** with Tailwind |
+| Legacy SCSS variables | `app/src/design-system/styles/variables.scss` | `$blue`, `$md`, … **overlaps / conflicts** with Tailwind |
 | DS Vue primitives | `app/src/design-system/ui/` | ~175 files; **6 Storybook stories** today |
 | Hero regression slices | `app/src/presentationals/stories/hero/` | 9 compositions under `Product/Hero/*` |
+| **Redesign reference UI** | `app/src/views/demo/ConnectIntegrationDemo.vue` | Visual north star — tokens object + DS primitives + Tailwind layout |
 
 **Goal:** one canonical token layer + storied core primitives + light/dark preview—so redesign is iterative in Storybook and validated on hero slices before app rollout.
+
+**Visual north star:** [`ConnectIntegrationDemo.vue`](app/src/views/demo/ConnectIntegrationDemo.vue) is the redesign reference spec (same role Figma frames would play, but wired to real DS components). Extract tokens from it into `main.css` / `tailwind.config.ts`; do not copy the page wholesale into the app shell.
 
 ---
 
@@ -38,14 +41,14 @@ Today:
 ### Hard gates (complete before changing token values)
 
 - [ ] **Storybook theme toolbar** — toggle `light` / `dark` (class on `html` or `body`) so both `:root` and `.dark` palettes are previewable
-- [ ] **Token source-of-truth decision** — document and enforce: **CSS custom properties in `main.css`** (+ `component-colors.ts` for Tailwind aliases) are canonical; new redesign tokens do not go into `variables.scss`
-- [ ] **Storybook “green” spot-check** — hero slices + a sample of presentational docs pages render without provider errors; docs scroll through multi-story pages (e.g. `InboxNotificationRow`)
+- [x] **Token source-of-truth decision** — **CSS custom properties in `main.css`** (+ `component-colors.ts` for Tailwind aliases) are canonical; demo drives brand tokens; new redesign tokens do not go into `variables.scss` (see **Visual reference spec** and **Legacy SCSS audit**)
+- [x] **Storybook “green” spot-check** — completed in [08](./08-ui-redesign-foundation.md); hero slices + presentational docs render without provider errors; docs scroll normally
 - [ ] **DS Storybook conventions** — agree folder + sidebar naming (see below)
 
 ### Soft gates (decide during exploration; block shipping merged token changes)
 
-- [ ] **Brand direction** — neutral dev-tool vs warmer collab; overall density (compact vs airy)
-- [ ] **Semantic color model** — what `primary` means (today near-black; legacy SCSS has brand `#3b37ff`)
+- [x] **Brand direction** — **decided via demo:** warmer collab, slate text hierarchy, airy-but-compact form density (`h-10` controls, 13px labels). Page chrome (radial gradients, grid mask) is marketing/wizard — defer globally.
+- [x] **Semantic color model** — **decided:** `--primary` stays neutral (black CTA); brand blue from demo (`#5d5cff` → `#4a49e0`) via `--brand-*` tokens. Demo wins over legacy SCSS `$blue` (`#3b37ff`).
 - [ ] **Typography** — one UI font + one mono; resolve Tailwind `lato` / `dmSans` / `inter` / `jakartaSans` vs `body` font in `main.css`
 - [ ] **Spacing scale** — one scale only (Tailwind `spacing.md` = `0.375rem` vs SCSS `$md` redefined twice)
 - [ ] **Domain tokens** — `--mention`, `--code-block`, chart colors: stay in DS as “product primitives” or move to presentationals / `@/lib`?
@@ -70,6 +73,136 @@ presentationals/*            ← product vocabulary; may use domain display toke
 **Legacy:** `variables.scss` — inventory usages, migrate to CSS vars or delete; no new tokens there.
 
 **App shell caveat:** `main.css` sets `html, body { overflow: hidden; height: 100% }` for the SPA. Storybook overrides in `preview.css`; long-term optional split of “app shell” vs “design tokens” styles.
+
+---
+
+## Visual reference spec — ConnectIntegrationDemo
+
+**File:** [`app/src/views/demo/ConnectIntegrationDemo.vue`](app/src/views/demo/ConnectIntegrationDemo.vue)
+
+The demo encodes the intended redesign. Structure to follow elsewhere:
+
+| Layer | Demo pattern | Canonical home |
+| ----- | ------------ | -------------- |
+| Gradients / multi-layer shadows | `tokens` const + `v-bind` in scoped `.fx-*` classes | `main.css` HSL vars → `tailwind.config.ts` `backgroundImage` / `boxShadow` |
+| Layout / typography / colors | `styles` object via `cn()` + Tailwind utilities | Primitives + presentationals use semantic utilities |
+| Composition | DS `Input`, `Label`, `DotPattern` | `design-system/ui/*` + presentationals |
+
+### Redesign principles (extract from demo)
+
+1. **Density** — `h-10` controls, `text-[0.8125rem]` labels, tight field gaps (`gap-[0.4rem]`). Airy but not sparse.
+2. **Hierarchy** — slate scale for text (`900` → `500` → `400`), not flat gray.
+3. **Buttons** — brand = gradient + inset highlight + colored shadow; secondary = white + subtle elevation (not flat gray).
+4. **Surfaces** — soft border (`rgba(0,0,0,0.08)` / `border-black/8`), large radius (`1.35rem`), layered shadow.
+5. **Composition** — header illustration (DotPattern + brand tiles) is product vocabulary → presentationals, not global tokens.
+
+### Token extraction tiers
+
+#### Tier 1 — Promote to `main.css` + Tailwind (global semantic tokens)
+
+| Demo value | Role | Token proposal |
+| ---------- | ---- | -------------- |
+| `#0f172a` | Headings | `--foreground` (light) |
+| `#64748b` | Secondary text | `--muted-foreground` |
+| `#334155` | Labels | `--accent-foreground` or new `--label` |
+| `#94a3b8` | Placeholders | extend `--muted-foreground` or `--placeholder` |
+| `#e2e8f0` | Borders | `--border`, `--input` |
+| `#f8fafc` | Input prefix bg | `--muted` |
+| `#f4f4f6` | Page base | `--background` |
+| `#5d5cff` → `#4a49e0` | Brand CTA | `--brand`, `--brand-from/via/to` (HSL) |
+| `#3f3ec8` | Brand border | `--brand-border` |
+| `#6366f1` | Links | `--link` |
+| `1.35rem` | Card radius | `--radius-card` or `borderRadius.card-lg` |
+| `0.8125rem` (13px) | Form copy | typography token / `text-sm` extension |
+| Card shadow | Elevated surfaces | `shadow-card` in Tailwind |
+
+Convert recurring hex → **HSL in `main.css`** (keeps shadcn pattern). Demo `tokens` object stays as reference until globals exist, then slim to `v-bind` only where Tailwind cannot express the effect.
+
+#### Tier 2 — Tailwind extensions only (fed by CSS vars where useful)
+
+Named utilities in `tailwind.config.ts` — no component scoped CSS:
+
+- `backgroundImage`: `brand-gradient`, `brand-gradient-hover`, `brand-gradient-active` (52% mid-stop)
+- `boxShadow`: `btn-brand`, `btn-brand-hover`, `btn-brand-active`, `btn-outline`, `btn-outline-hover`, `btn-outline-active`, `card-elevated`
+- `colors.brand`: `DEFAULT`, `border`
+
+Used by Button `brand` / `outline` and eventually Card / Dialog.
+
+#### Tier 3 — Surface-specific (not global `:root` yet)
+
+Defer to layout patterns (`layout-shell`, wizard/auth shell):
+
+- 4-layer radial page background (peach, blue, violet, orange)
+- Grid overlay + elliptical `mask-image` fade
+- Frosted footer (`backdrop-blur-[14px]`, `rgba(255,255,255,0.38)`)
+- Tradier integration tile gradient — third-party brand, not Epicstory
+
+### Rollout order (demo → product)
+
+| Step | Demo source | Ship as |
+| ---- | ----------- | ------- |
+| 1 | `tokens.shadows.btnNext` / `btnCancel` + `styles.btnNext` / `btnCancel` | Button `brand` + `outline` via cva + Tailwind |
+| 2 | `styles.input`, `styles.label`, `styles.urlGroup` | Input + Label primitive defaults |
+| 3 | `tokens.shadows.card` + `styles.card` radius | Card / DialogContent defaults |
+| 4 | Slate semantic colors (Tier 1 table) | Update `main.css` `:root` |
+| 5 | Page chrome (Tier 3) | Auth shell / wizard layout pattern |
+| 6 | Light-only demo values | Re-derive slate + brand for `.dark` |
+
+### Regression targets
+
+- [ ] `Design System/Button` — Cancel + Next pair side-by-side matching demo
+- [ ] Optional hero slice: `Product/Hero/ConnectIntegration` (full demo composition)
+- [ ] After token pass: `Product/Hero/AuthSignup`, `AuthSignin`
+
+**Caveat:** Demo is **light-mode only** today. Dark palette must be derived before locking merged token changes.
+
+---
+
+## Legacy SCSS audit — `variables.scss` vs Tailwind
+
+**File:** [`app/src/design-system/styles/variables.scss`](app/src/design-system/styles/variables.scss)
+
+Both SCSS and Tailwind load (`main.scss` + `main.css` via `main.ts` / Storybook). Same names, different APIs — SCSS dominates usage today.
+
+### Spacing scale (values align; APIs differ)
+
+Active SCSS block (lines 10–20; **lines 1–8 are dead code** — delete) matches `tailwind.config.ts` `extend.spacing`:
+
+| Token | SCSS | Tailwind | px @ 16px |
+| ----- | ---- | -------- | --------- |
+| `th` | `1px` | `0.0625rem` | 1 |
+| `sm` | `2px` | `0.125rem` | 2 |
+| `md` | `6px` | `0.375rem` | 6 |
+| `lg` | `8px` | `0.5rem` | 8 |
+| `xl` | `12px` | `0.75rem` | 12 |
+| `2xl`–`7xl` | 16–80px | 1–5rem | 16–80 |
+| `8xl` | — | `6rem` | 96 (Tailwind only) |
+
+**Consumption:**
+
+- SCSS generates `flex:row-md`, `flex:col-2xl`, `g-lg` (~80+ Vue files) via `flex.scss`, `grid.scss`, `sizing.scss`
+- Tailwind `p-xl`, `gap-md`, etc. barely used (~4 files)
+
+**Footguns:**
+
+- Same px, different names: custom `p-2xl` (16px) vs Tailwind numeric `p-4`
+- `.w-md` / `.w-xl` in `sizing.scss` are **layout widths** (460px / 1080px), not spacing tokens — clash with `max-w-md` mental model
+- `borderRadius.sm` (4px) ≠ `spacing.sm` (2px)
+
+### Colors (conflict area — demo supersedes legacy hex)
+
+| Concept | SCSS / `:root` | Tailwind / `main.css` |
+| ------- | -------------- | --------------------- |
+| Body text | `$black` / `--black` `#2a2a2a` | `text-foreground` ~ `#27272a` |
+| Brand blue | `$blue` `#3b37ff` | Not in theme; Button legacy uses `var(--blue)` |
+| Muted border | `$grey-blue` `#dbd6e4` | `border-border` HSL |
+
+**Bugs / cleanup:**
+
+- `---dark-grey-blue` (triple dash) in `:root` — `var(--dark-grey-blue)` never resolves
+- `base/` (reset using `$black`, `$blue`) commented out in `main.scss`; patterns still use `$blue` directly
+
+**Decision:** Treat Tailwind `extend.spacing` + `main.css` HSL as canonical for new work. Migrate `flex:*` → `flex gap-*` over time. Brand colors from **demo**, not `$blue`.
 
 ---
 
@@ -119,16 +252,15 @@ Story **variants**, not every sub-part file (e.g. no separate story per `DialogH
 
 - [ ] Add **light/dark theme toggle** to `.storybook/preview.ts` (toolbar global or decorator on `document.documentElement`)
 - [ ] Document token conventions in `app/src/design-system/stories/README.md` (or extend `WIRING.md` with a DS section)
-- [ ] Verify docs scroll + providers on 2–3 high-variant docs pages (`InboxNotificationRow`, `IssueAttachmentsStrip`, one hero slice)
-- [ ] Optional: run `app/scripts/scan-storybook-context.mjs` against local Storybook; fix remaining context errors
+- [x] Verify docs scroll + providers on high-variant docs pages — completed in [08](./08-ui-redesign-foundation.md)
 
 ### Phase 1 — Token audit & canonicalization (~1–2 sessions)
 
-- [ ] Inventory **all token sources**: `main.css`, `tailwind.config.ts`, `component-colors.ts`, `variables.scss`
-- [ ] Produce **token reference table** (name → CSS var → Tailwind class → used in) as Storybook `Design System/Tokens/Colors` (and siblings)
-- [ ] List **conflicts** (spacing scale, font families, `primary` vs legacy `$blue`)
-- [ ] Decision log in this file (Open questions → Decision sections): canonical font, spacing scale, `primary` semantics
-- [ ] Mark `variables.scss` tokens as **legacy**; grep usages and plan migration list (no mass migration in this phase unless trivial)
+- [x] Inventory **all token sources**: `main.css`, `tailwind.config.ts`, `component-colors.ts`, `variables.scss` (see **Legacy SCSS audit** and **Token extraction tiers** above)
+- [ ] Produce **token reference table** (name → CSS var → Tailwind class → used in) as Storybook `Design System/Tokens/Colors` (and siblings); include demo → token mapping from Tier 1 table
+- [x] List **conflicts** (spacing dual API, font families, `primary` vs legacy `$blue` vs demo brand) — documented above
+- [ ] Decision log: canonical font, spacing migration plan (`flex:*` → Tailwind), dark-mode brand palette
+- [ ] Mark `variables.scss` tokens as **legacy**; grep usages and plan migration list. Quick wins: delete dead lines 1–8; fix `---dark-grey-blue` → `--dark-grey-blue`
 
 ### Phase 2 — Token stories (~1 session)
 
@@ -142,8 +274,8 @@ Story **variants**, not every sub-part file (e.g. no separate story per `DialogH
 
 - [ ] **Button** — variants `default` (neutral), `brand` (demo blue CTA), `outline` (demo cancel); see **Button variants** section; migrate 5 legacy call sites; remove `legacy` API
 - [ ] ~~**LegacyButton**~~ — **removed** after Button migration (do not extend)
-- [ ] **Input** — default, disabled, invalid, with label
-- [ ] **Label** — standalone + `for` association example
+- [ ] **Input** — default, disabled, invalid, with label; align to demo (`h-10`, `rounded-lg`, slate borders/placeholders)
+- [ ] **Label** — standalone + `for` association; align to demo (`text-[0.8125rem] font-semibold`)
 - [ ] **Badge** — variants
 - [ ] **Dialog** — trigger, open, destructive confirm pattern (aligns with `ConfirmDialog` presentational)
 - [ ] **Menu** — migrate/extend existing story to `design-system/stories/`
@@ -153,6 +285,7 @@ Story **variants**, not every sub-part file (e.g. no separate story per `DialogH
 ### Phase 4 — Validate on hero slices (~1 session)
 
 - [ ] After first token or Button/Input change in Storybook, review all **`Product/Hero/*`** slices in light + dark
+- [ ] Optional: add **`Product/Hero/ConnectIntegration`** hero slice from demo for full-form regression
 - [ ] Note breakpoints where tokens break (overflow, contrast, density); feed back into token decisions
 - [ ] Record “hero slice checklist” in `presentationals/stories/hero/README.md`
 
@@ -168,11 +301,13 @@ Story **variants**, not every sub-part file (e.g. no separate story per `DialogH
 
 | Question | Options | Decision |
 | -------- | ------- | -------- |
+| Redesign visual reference? | Figma / ad-hoc / demo page | **Decided: `ConnectIntegrationDemo.vue`** — extract tokens; demo guides rollout order |
 | Canonical UI font? | Inter only / DM Sans for UI / dual | _TBD_ |
 | `primary` color role? | **Neutral emphasis only** — keep `--primary` near-black for `default` variant; add `--brand-*` tokens for blue CTA | **Decided** (see Button section) |
+| Brand blue source? | Legacy `$blue` `#3b37ff` / demo `#5d5cff` | **Decided: demo palette** |
 | Domain tokens in DS? | Keep `--mention`, `--code-block` in DS / move to presentationals | _TBD_ |
 | Deprecate `LegacyButton`? | **Remove** — merge styles into `Button` variants; delete `legacy` prop + scoped SCSS + `LegacyButton.stories.tsx` | **Decided** |
-| SCSS `variables.scss`? | Delete after migration / keep for patterns only | _TBD_ |
+| SCSS `variables.scss`? | Delete after migration / keep for patterns only | **Decided: legacy only** — no new tokens; migrate `flex:*` over time |
 | Button CTA variant name? | `brand` (recommended) / `accent` / `cta` | **Decided: `brand`** |
 
 ---
@@ -208,13 +343,9 @@ Existing shadcn variants (`destructive`, `secondary`, `ghost`, `link`) stay unch
 
 Implement in **`buttonVariants` (cva) using Tailwind utilities** — no scoped CSS in `Button.vue`. Values that Tailwind cannot express cleanly get **named utilities in `tailwind.config.ts`** (not raw CSS in components).
 
+Demo maps to variants via `styles.btnCancel` + `tokens.shadows.btnCancel*` → **`outline`**; `styles.btnNext` + `tokens.gradients.btnNext*` + `tokens.shadows.btnNext*` → **`brand`**.
+
 See **Tailwind audit (ConnectIntegrationDemo)** below.
-
-**`outline`** ← `.connect-demo__btn--cancel`
-
-**`brand`** ← `.connect-demo__btn--next`
-
-**`default`** — keep current `bg-primary text-primary-foreground shadow hover:bg-primary/90` (shadcn). No demo change unless redesign updates `--primary`.
 
 ### Tailwind-first implementation (Button)
 
@@ -260,48 +391,48 @@ outline: [
 
 No `<style scoped>` in `Button.vue` after migration.
 
+**`default`** — keep current `bg-primary text-primary-foreground shadow hover:bg-primary/90` (shadcn). No demo change unless redesign updates `--primary`.
+
 ### Tailwind audit — ConnectIntegrationDemo
 
-Audit of [`ConnectIntegrationDemo.vue`](app/src/views/demo/ConnectIntegrationDemo.vue) scoped SCSS vs Tailwind v3 (project config). Legend: **OK** = stock utility · **arb** = arbitrary value `[…]` · **extend** = add to `tailwind.config.ts` · **CSS** = keep in `@layer` / demo-only (not for Button primitive).
+Audit of [`ConnectIntegrationDemo.vue`](app/src/views/demo/ConnectIntegrationDemo.vue): layout via `styles` + `cn()`; gradients/shadows via `tokens` const + scoped `.fx-*` classes with `v-bind`. Legend: **OK** = stock utility · **arb** = arbitrary value `[…]` · **extend** = add to `tailwind.config.ts` · **CSS** = keep in demo / layout pattern (not for Button primitive).
+
+#### Demo `tokens` object (promote to config)
+
+| Key | Purpose | Target |
+| --- | ------- | ------ |
+| `gradients.btnNext` / `btnNextHover` / `btnNextActive` | Brand CTA backgrounds | `backgroundImage.brand-gradient*` |
+| `shadows.btnNext` / `btnNextHover` / `btnNextActive` | Brand CTA elevation | `boxShadow.btn-brand*` |
+| `shadows.btnCancel` / `btnCancelHover` / `btnCancelActive` | Outline secondary | `boxShadow.btn-outline*` |
+| `shadows.card` | Elevated card | `boxShadow.card-elevated` |
+| `gradients.pageBackground` | Page chrome | **Tier 3** — defer |
+| `gradients.gridImage` / `gridMask` | Grid overlay | **Tier 3** — defer |
+| `gradients.brandTradier` | Third-party tile | **Tier 3** — defer |
 
 #### Buttons (in scope for `Button.vue`)
 
 | Demo rule | Value | Tailwind approach |
 | --------- | ----- | ----------------- |
-| Cancel height | `2.5rem` | **OK** `h-10` |
-| Cancel radius | `0.5rem` | **OK** `rounded-lg` |
-| Cancel border/bg/text | `#e5e7eb`, `#fff`, `#374151` | **OK** `border-gray-200 bg-white text-gray-700` |
-| Cancel shadow (default/hover/active) | 2-layer rgba stacks | **extend** `shadow-btn-outline`, `shadow-btn-outline-hover` — no single stock shadow matches |
-| Next radius | `0.75rem` | **OK** `rounded-xl` |
-| Next border | `#3f3ec8` | **extend** `border-brand-border` (or **arb** `border-[#3f3ec8]`) |
-| Next font | `600`, `-0.01em` tracking | **OK** `font-semibold` · **arb** `tracking-[-0.01em]` |
-| Next gradient | `180deg`, stops at **52%** | **extend** `bg-brand-gradient` — `from/via/to` alone awkward at 52%; named `backgroundImage` is cleaner |
-| Next hover/active gradients | different stop colors | **extend** `bg-brand-gradient-hover`, `bg-brand-gradient-active` |
-| Next shadow (default/hover/active) | **inset + 2 outer** layers | **extend** `shadow-btn-brand*` — Tailwind has no inset shadow utilities; must be custom boxShadow entries |
-| Shared transition | `background, box-shadow` | **OK** `transition-colors` + `transition-shadow` or `transition-[background,box-shadow]` **arb** |
+| Cancel (`styles.btnCancel`) | `border-[#e5e7eb] bg-white text-[#374151]` | **OK** `border-gray-200 bg-white text-gray-700` |
+| Cancel height / radius (`styles.btn`) | `h-10`, `rounded-lg` | **OK** |
+| Cancel shadow | `tokens.shadows.btnCancel*` | **extend** `shadow-btn-outline*` |
+| Next (`styles.btnNext`) | `rounded-xl border-[#3f3ec8] font-semibold tracking-[-0.01em] text-white` | **OK** + **extend** `border-brand-border` |
+| Next gradient | `tokens.gradients.btnNext*` (52% stop) | **extend** `bg-brand-gradient*` |
+| Next shadow | `tokens.shadows.btnNext*` (inset + outer) | **extend** `shadow-btn-brand*` |
+| Shared transition (`styles.btn`) | `transition-[background,box-shadow] duration-150` | **OK** / **arb** |
 
 **Button verdict:** Everything is achievable in Tailwind via **theme extensions**; nothing requires scoped CSS in `Button.vue`. Avoid long arbitrary `shadow-[…]` / `bg-[linear-gradient(…)]` in cva — put them in config once.
 
-#### Page chrome (demo-only — do not block Button work)
+#### Page chrome (Tier 3 — defer; see **Token extraction tiers**)
 
 | Demo rule | Value | Tailwind approach |
 | --------- | ----- | ----------------- |
-| Page background | **4 stacked** `radial-gradient(ellipse … at x y, …)` | **CSS** — no Tailwind primitive for multi radial stack. Options: `@layer components { .bg-connect-demo { … } }` or one **arb** `bg-[radial-gradient(...),…]` (unmaintainable). **Defer** unless demo page is converted. |
-| Grid overlay | `linear-gradient` grid + **`mask-image: radial-gradient(ellipse …)`** | **CSS** — `mask-image` with elliptical fade not in default Tailwind; plugin or component class |
-| Card width | `min(100%, 32rem)` | **OK** `w-full max-w-lg` |
-| Card radius | `1.35rem` | **arb** `rounded-[1.35rem]` or **extend** `borderRadius.card-lg` |
-| Card shadow | 2-layer | **extend** `shadow-card` or **arb** |
-| Card border | `rgba(0,0,0,0.08)` | **OK** `border-black/8` |
-| Header gap | `1.35rem` | **arb** `gap-[1.35rem]` |
-| Link badge margin | `-0.45rem` horizontal | **arb** `-mx-[0.45rem]` |
-| Title line-height | `1.35` | **arb** `leading-[1.35]` |
-| Label/input text | `0.8125rem` (13px) | **arb** `text-[0.8125rem]` — not on default type scale |
-| Disclaimer text | `0.6875rem` (11px) | **arb** `text-[11px]` |
-| Disclaimer line-height | `1.55`, `1.45` | **arb** `leading-[1.55]` |
-| Footer frosted glass | `rgba(255,255,255,0.38)` + **`blur(14px)`** | **arb** `bg-white/40 backdrop-blur-[14px]` — between `backdrop-blur-md` (12px) and `lg` (16px) |
-| Tradier tile gradient | `#5b8ba2` → `#4a768d` | **OK** `bg-gradient-to-b from-[#5b8ba2] to-[#4a768d]` or token |
-| Public icon radius | `0.45rem` | **arb** `rounded-[0.45rem]` |
-| Divider margins | `1.35rem`, `1.15rem` | **arb** |
+| Page background | `tokens.gradients.pageBackground` (4 radial layers) | **CSS** / layout pattern — defer |
+| Grid overlay | `tokens.gradients.gridImage` + `gridMask` | **CSS** — `mask-image` not in default Tailwind |
+| Card (`styles.card` + `.fx-card`) | `max-w-[32rem]`, `rounded-[1.35rem]`, `tokens.shadows.card` | **extend** `shadow-card-elevated`, `borderRadius.card-lg` |
+| Footer frosted glass | `bg-[rgba(255,255,255,0.38)] backdrop-blur-[14px]` | **arb** — between `backdrop-blur-md` and `lg` |
+| Form fields (`styles.input`, `styles.label`) | `h-10`, `text-[0.8125rem]`, slate borders | Promote to Input/Label primitives (Phase 3) |
+| Tradier tile | `tokens.gradients.brandTradier` | Third-party — not Epicstory brand |
 
 **Page verdict:** Layout/typography mostly **OK + arbitrary**. **Multi-layer radial backgrounds** and **mask-image grid fade** are the two features Tailwind does not support well — keep as a small component class if the demo page is ever migrated off SCSS.
 
@@ -340,10 +471,10 @@ Validate on hero slices: **`AuthSignup`**, **`AuthSignin`**, and any slice using
 
 ### Phase 3 addendum — Button (do before other primitives)
 
-- [ ] Add `--brand-*` HSL vars to `main.css` (light; dark TBD)
-- [ ] Extend `tailwind.config.ts`: `colors.brand`, `backgroundImage` (`brand-gradient*`), `boxShadow` (`btn-brand*`, `btn-outline*`)
+- [ ] Extract demo brand values into `--brand-*` HSL vars in `main.css` (light; dark TBD) — see **Tier 1** table
+- [ ] Extend `tailwind.config.ts`: `colors.brand`, `backgroundImage` (`brand-gradient*`), `boxShadow` (`btn-brand*`, `btn-outline*`, `card-elevated`)
 - [ ] Implement `variant="brand"` and refreshed `outline` in `buttonVariants` (cva) — **Tailwind classes only**, no scoped CSS in `Button.vue`
-- [ ] Storybook: `Design System/Button` — Default, Brand, Outline, sizes, disabled
+- [ ] Storybook: `Design System/Button` — Default, Brand, Outline (Cancel + Next pair matching demo), sizes, disabled
 - [ ] Migrate 5 call sites (table above)
 - [ ] Remove `legacy` API + scoped styles from `Button.vue`
 - [ ] Delete `LegacyButton.stories.tsx`
@@ -357,7 +488,7 @@ Validate on hero slices: **`AuthSignup`**, **`AuthSignin`**, and any slice using
 - Full presentational story catalog (continues in parallel; not blocking token work)
 - Container/view Storybook track (`Application/Containers/`, `Application/Views/`)
 - Migrating all SCSS `$` usages to CSS vars (separate cleanup task after audit)
-- Shipping redesigned UI to production app (follow-up: redesign presentationals against hero slices)
+- Redesigning presentationals and dogfooding in app → [10 — Redesign rollout](./10-redesign-rollout.md)
 - Figma / external design tool sync
 
 ---
@@ -366,21 +497,28 @@ Validate on hero slices: **`AuthSignup`**, **`AuthSignin`**, and any slice using
 
 - [ ] Light/dark theme toggle works in Storybook for all DS and hero stories
 - [ ] Token source of truth documented; no new tokens added to `variables.scss`
+- [ ] Demo Tier 1 semantic colors promoted to `main.css`; Tier 2 shadows/gradients in `tailwind.config.ts`
 - [ ] Token stories exist: Colors, Typography, Spacing, Radius (Elevation if applicable)
 - [ ] Tier A primitives storied: Button (with `brand` + demo-aligned `outline`), Input, Label, Badge, Dialog, Menu, Tooltip, Form (minimum)
 - [ ] Legacy button API removed; 5 call sites migrated to `variant="brand"`
+- [ ] `Design System/Button` Cancel + Next pair matches `ConnectIntegrationDemo`
 - [ ] Hero slices (`Product/Hero/*`) reviewed in both themes after at least one token change
 - [ ] Task 08 “Design system primitives storied with token-aware variants” can be checked off
+
+**Follow-up:** [10 — Redesign rollout](./10-redesign-rollout.md)
 
 ---
 
 ## References
 
 - Parent: [08 — UI redesign foundation](./08-ui-redesign-foundation.md)
+- Next: [10 — Redesign rollout](./10-redesign-rollout.md)
 - Architecture: `.cursor/rules/frontend-atomic-architecture.mdc`
 - Hero slices: `app/src/presentationals/stories/hero/README.md`
 - Tokens today: `app/src/design-system/styles/main.css`, `app/tailwind.config.ts`, `app/component-colors.ts`
-- Legacy SCSS: `app/src/design-system/styles/variables.scss`
-- Button reference UI: `app/src/views/demo/ConnectIntegrationDemo.vue` (`.connect-demo__btn--next`, `--cancel`)
+- Legacy SCSS: `app/src/design-system/styles/variables.scss` (audit in this file — **Legacy SCSS audit** section)
+- **Redesign reference UI:** `app/src/views/demo/ConnectIntegrationDemo.vue` — `tokens` object (gradients/shadows), `styles` + `cn()` (layout), `.fx-*` scoped classes
 - Legacy button usages: `SignupForm`, `SigninForm`, `SelectWorkspace`, `MemberInvite`, `MessagesTab`
 - Storybook preview: `app/.storybook/preview.ts`, `app/.storybook/preview.css`
+
+
