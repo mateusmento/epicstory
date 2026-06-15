@@ -1,6 +1,6 @@
 # 09 — Design tokens & design system primitives
 
-**Status:** In progress (Phase 0 complete)  
+**Status:** In progress (Phase 0–2 complete)  
 **Depends on:** [08 — UI redesign foundation](./08-ui-redesign-foundation.md) (Storybook infra, hero slices, presentational layer)  
 **Session question:** Can we change Epicstory’s visual language by editing tokens and primitives in Storybook—and see the impact on real product surfaces before touching container wiring?
 
@@ -258,18 +258,19 @@ Story **variants**, not every sub-part file (e.g. no separate story per `DialogH
 ### Phase 1 — Token audit & canonicalization (~1–2 sessions)
 
 - [x] Inventory **all token sources**: `main.css`, `tailwind.config.ts`, `component-colors.ts`, `variables.scss` (see **Legacy SCSS audit** and **Token extraction tiers** above)
-- [ ] Produce **token reference table** (name → CSS var → Tailwind class → used in) as Storybook `Design System/Tokens/Colors` (and siblings); include demo → token mapping from Tier 1 table
+- [x] Produce **token reference table** (name → CSS var → Tailwind class → used in) as Storybook `Design System/Tokens/Colors` (and siblings); include demo → token mapping from Tier 1 table
 - [x] List **conflicts** (spacing dual API, font families, `primary` vs legacy `$blue` vs demo brand) — documented above
 - [ ] Decision log: canonical font, spacing migration plan (`flex:*` → Tailwind), dark-mode brand palette
 - [ ] Mark `variables.scss` tokens as **legacy**; grep usages and plan migration list. Quick wins: delete dead lines 1–8; fix `---dark-grey-blue` → `--dark-grey-blue`
 
 ### Phase 2 — Token stories (~1 session)
 
-- [ ] `Design System/Tokens/Colors` — swatches for light + dark (`:root` / `.dark`)
-- [ ] `Design System/Tokens/Typography` — font families, sizes, weights used in app
-- [ ] `Design System/Tokens/Spacing` — Tailwind spacing scale + any layout tokens
-- [ ] `Design System/Tokens/Radius` — `--radius` + border-radius utilities
-- [ ] `Design System/Tokens/Elevation` — shadows (add tokens if missing; document current ad-hoc shadows)
+- [x] `Design System/Tokens/Colors` — swatches for light + dark (`:root` / `.dark`)
+- [x] `Design System/Tokens/Typography` — font families, sizes, weights used in app
+- [x] `Design System/Tokens/Spacing` — Tailwind spacing scale + any layout tokens
+- [x] `Design System/Tokens/Radius` — `--radius` + border-radius utilities
+- [x] `Design System/Tokens/Elevation` — shadows (add tokens if missing; document current ad-hoc shadows)
+- [x] `Design System/Tokens/DeferredPatterns` — Tier 3 surface patterns from demo inventory
 
 ### Phase 3 — Core primitive stories (~2–3 sessions)
 
@@ -499,7 +500,7 @@ Validate on hero slices: **`AuthSignup`**, **`AuthSignin`**, and any slice using
 - [x] Light/dark theme toggle works in Storybook for all DS and hero stories
 - [ ] Token source of truth documented; no new tokens added to `variables.scss`
 - [ ] Demo Tier 1 semantic colors promoted to `main.css`; Tier 2 shadows/gradients in `tailwind.config.ts`
-- [ ] Token stories exist: Colors, Typography, Spacing, Radius (Elevation if applicable)
+- [x] Token stories exist: Colors, Typography, Spacing, Radius, Elevation, DeferredPatterns
 - [ ] Tier A primitives storied: Button (with `brand` + demo-aligned `outline`), Input, Label, Badge, Dialog, Menu, Tooltip, Form (minimum)
 - [ ] Legacy button API removed; 5 call sites migrated to `variant="brand"`
 - [ ] `Design System/Button` Cancel + Next pair matches `ConnectIntegrationDemo`
