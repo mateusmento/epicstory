@@ -286,10 +286,10 @@ Story **variants**, not every sub-part file (e.g. no separate story per `DialogH
 
 ### Phase 4 — Validate on hero slices (~1 session)
 
-- [ ] After first token or Button/Input change in Storybook, review all **`Product/Hero/*`** slices in light + dark
-- [ ] Optional: add **`Product/Hero/ConnectIntegration`** hero slice from demo for full-form regression
-- [ ] Note breakpoints where tokens break (overflow, contrast, density); feed back into token decisions
-- [ ] Record “hero slice checklist” in `presentationals/stories/hero/README.md`
+- [x] After first token or Button/Input change in Storybook, review all **`Product/Hero/*`** slices in light + dark (10 slices — see [`hero/README.md`](../../app/src/presentationals/stories/hero/README.md) checklist)
+- [x] Add **`Product/Hero/ConnectIntegration`** hero slice from demo for full-form regression (Tier 3)
+- [x] Note breakpoints where tokens break (overflow, contrast, density); feed back into token decisions — deferred fixes logged in hero README
+- [x] Record “hero slice checklist” in `presentationals/stories/hero/README.md`
 
 ### Phase 5 — First token experiment (optional, same or follow-up session)
 
@@ -504,7 +504,7 @@ Validate on hero slices: **`AuthSignup`**, **`AuthSignin`**, and any slice using
 - [x] Tier A primitives storied: Button (with `brand` + demo-aligned `outline`), Input, Label, Badge, Dialog, Menu, Tooltip, Form (minimum)
 - [x] Legacy button API removed; 5 call sites migrated to `variant="brand"`
 - [x] `Design System/Button` Cancel + Next pair matches `ConnectIntegrationDemo`
-- [ ] Hero slices (`Product/Hero/*`) reviewed in both themes after at least one token change
+- [x] Hero slices (`Product/Hero/*`) reviewed in both themes after at least one token change — Phase 4 checklist in `hero/README.md`
 - [ ] Task 08 “Design system primitives storied with token-aware variants” can be checked off
 
 **Follow-up:** [10 — Redesign rollout](./10-redesign-rollout.md)

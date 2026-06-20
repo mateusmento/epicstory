@@ -24,7 +24,7 @@ function DeferredPatternsReference() {
         <TokenCallout>
           Source:{" "}
           <code>app/src/views/demo/ConnectIntegrationDemo.vue</code>. Regression target:{" "}
-          <code>Product/Hero/ConnectIntegration</code> (Phase 4).
+          <code>Product/Hero/ConnectIntegration</code> (Phase 4 — see hero README checklist).
         </TokenCallout>
       </TokenSection>
 
