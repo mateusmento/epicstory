@@ -79,8 +79,8 @@ export const Open: Story = {
             <DialogDescription>Review settings before connecting your workspace.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" @click="open = false">Cancel</Button>
-            <Button variant="brand" @click="open = false">Continue</Button>
+            <Button variant="outline" elevation="elevated" @click="open = false">Cancel</Button>
+            <Button variant="primary" elevation="elevated" @click="open = false">Continue</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

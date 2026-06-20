@@ -50,7 +50,14 @@ function onSubmit(data: SignupRequest) {
     </div>
 
     <div class="flex:col-2xl mt-3xl">
-      <Button type="submit" variant="brand" size="lg" class="w-full" data-testid="signup-button">
+      <Button
+        type="submit"
+        variant="primary"
+        elevation="elevated"
+        size="lg"
+        class="w-full"
+        data-testid="signup-button"
+      >
         Create account
       </Button>
     </div>

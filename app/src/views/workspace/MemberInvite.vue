@@ -130,7 +130,14 @@ async function acceptInvite() {
 
         <!-- Action Button -->
         <div v-if="!isSuccess" class="space-y-4">
-          <Button @click="acceptInvite" :disabled="isLoading" variant="brand" size="lg" class="w-full">
+          <Button
+            @click="acceptInvite"
+            :disabled="isLoading"
+            variant="primary"
+            elevation="elevated"
+            size="lg"
+            class="w-full"
+          >
             <span v-if="!isLoading" class="flex items-center justify-center space-x-2">
               <span>Accept Invitation</span>
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

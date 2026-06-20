@@ -223,9 +223,10 @@ const toolbar = computed(
       <ButtonGroup>
         <Button
           type="button"
-          variant="default"
+          variant="primary"
+          elevation="flat"
           size="sm"
-          class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+          class="flex:row-lg flex:center-y text-sm"
           :disabled="toolbar.attachmentsBlocked"
           @click="core.onSendMessage"
         >
@@ -242,9 +243,10 @@ const toolbar = computed(
         >
           <Button
             type="button"
-            variant="default"
+            variant="primary"
+            elevation="flat"
             size="sm"
-            class="shrink-0 border-0 bg-[#3A66FF] px-1.5 text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+            class="shrink-0 px-1.5"
             aria-label="Schedule options"
             :disabled="toolbar.attachmentsBlocked"
           >

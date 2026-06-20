@@ -28,7 +28,11 @@ const { channels } = useChannels();
 
     <Dialog>
       <DialogTrigger as-child>
-        <Button variant="brand" size="sm" class="flex:row-md flex:center-y m-8 mt-auto ml-auto text-sm">
+        <Button
+          variant="primary"
+          elevation="elevated"
+          class="flex:row-md flex:center-y m-8 mt-auto ml-auto text-sm"
+        >
           <IconChannel />
           Create Channel
         </Button>

@@ -6,17 +6,23 @@ import { cn } from "@/design-system/utils";
 
 interface Props extends /* @vue-ignore */ ButtonHTMLAttributes, PrimitiveProps {
   variant?: ButtonVariants["variant"];
+  elevation?: ButtonVariants["elevation"];
   size?: ButtonVariants["size"];
   class?: HTMLAttributes["class"];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   as: "button",
+  elevation: "flat",
 });
 </script>
 
 <template>
-  <Primitive :as="as" :as-child="asChild" :class="cn(buttonVariants({ variant, size }), props.class)">
+  <Primitive
+    :as="as"
+    :as-child="asChild"
+    :class="cn(buttonVariants({ variant, size, elevation }), props.class)"
+  >
     <slot />
   </Primitive>
 </template>

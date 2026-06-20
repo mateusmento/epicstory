@@ -22,8 +22,8 @@ Canonical Storybook compositions under `Product/Hero/*`. Each slice mirrors a re
 After any token or DS primitive change:
 
 - [ ] Theme: light + dark for each slice below (ConnectIntegration: light reference + layout check in dark)
-- [ ] AuthSignup / AuthSignin — brand CTA (`variant="brand"`), form fields
-- [ ] ConnectIntegration — Tier 3 page chrome + Tier 1/2 Cancel/Next vs `Design System/Button` DemoActionPair
+- [ ] AuthSignup / AuthSignin — primary elevated CTA (`variant="primary" elevation="elevated"`), form fields
+- [ ] ConnectIntegration — Tier 3 page chrome + Tier 1/2 Cancel/Next vs `Design System/Button` DemoActionPair (`outline` + `elevated` / `primary` + `elevated`)
 - [ ] IssueHeader — badges, menus, overflow title
 - [ ] Remaining slices — no provider errors; contrast acceptable in dark
 

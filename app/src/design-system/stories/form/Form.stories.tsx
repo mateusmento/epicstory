@@ -77,7 +77,7 @@ export const FieldWithValidation: Story = {
           </FormItem>
         </FormField>
 
-        <Button type="submit" variant="brand" size="lg">Sign up</Button>
+        <Button type="submit" variant="primary" elevation="elevated" size="lg">Sign up</Button>
       </Form>
     `,
   }),

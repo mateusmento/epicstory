@@ -123,7 +123,8 @@ function handleSelectWorkspace() {
 
               <Button
                 type="submit"
-                variant="brand"
+                variant="primary"
+                elevation="elevated"
                 size="lg"
                 class="w-full"
                 data-testid="create-workspace-submit-button"
