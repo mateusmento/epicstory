@@ -47,13 +47,7 @@ function onSubmit(data: SigninRequest) {
     </div>
 
     <div class="flex:col-2xl mt-3xl">
-      <Button
-        type="submit"
-        legacy
-        legacy-variant="invitational"
-        class="w-full"
-        data-testid="signin-submit-button"
-      >
+      <Button type="submit" variant="brand" size="lg" class="w-full" data-testid="signin-submit-button">
         Sign in
       </Button>
     </div>

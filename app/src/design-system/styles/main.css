@@ -57,6 +57,13 @@
     --code-block-header: 240 5% 92%;
     --code-block-shell: 240 4.8% 95.9%;
     --code-block-gutter: 240 5% 96%;
+
+    --brand: 240 100% 68%;
+    --brand-border: 241 55% 51%;
+    --brand-from: 240 100% 68%;
+    --brand-via: 240 86% 64%;
+    --brand-to: 240 72% 58%;
+    --link: 239 84% 67%;
   }
 
   .dark {
@@ -109,6 +116,13 @@
     --code-block: 0 0% 10%;
     --code-block-header: 0 0% 16%;
     --code-block-gutter: 0 0% 12%;
+
+    --brand: 240 85% 72%;
+    --brand-border: 240 60% 58%;
+    --brand-from: 240 90% 74%;
+    --brand-via: 240 85% 68%;
+    --brand-to: 240 75% 62%;
+    --link: 239 84% 75%;
   }
 }
 

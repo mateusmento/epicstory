@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { Code2Icon, PlusIcon, TrashIcon } from "lucide-vue-next";
+import { Button } from "@/design-system/ui/button";
 import {
   Menu,
   MenuCheckboxItem,
@@ -15,10 +16,9 @@ import {
   MenuSubContent,
   MenuSubTrigger,
   MenuTrigger,
-} from ".";
+} from "@/design-system/ui/menu";
 import { StoryContainer } from "@/presentationals/stories/story-container";
 import { h } from "vue";
-import { Button } from "../button";
 
 const meta = {
   title: "Design System/Menu",
@@ -31,8 +31,8 @@ const meta = {
         cellSize: 20,
         opacity: 0.5,
         cellAmount: 5,
-        offsetX: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
-        offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
+        offsetX: 16,
+        offsetY: 16,
       },
     },
   },
@@ -47,7 +47,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const ContextMenu: Story = {
   render: () => ({
     components: {
       Menu,

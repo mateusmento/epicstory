@@ -123,8 +123,8 @@ function handleSelectWorkspace() {
 
               <Button
                 type="submit"
-                legacy
-                legacy-variant="invitational"
+                variant="brand"
+                size="lg"
                 class="w-full"
                 data-testid="create-workspace-submit-button"
               >

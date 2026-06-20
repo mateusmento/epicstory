@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import {
+  ColorSwatch,
   ColorSwatchGrid,
   DemoMappingTable,
   DarkThemeIsland,
   LightThemeIsland,
-  PlannedBrandSwatch,
   TokenCallout,
   TokenSection,
   TokenStoryFrame,
@@ -106,16 +106,19 @@ function ColorsReference() {
       </TokenSection>
 
       <TokenSection
-        title="Brand tokens (planned)"
-        description="From ConnectIntegrationDemo — to be added to main.css in Phase 3. White text on brand gradient requires sufficient contrast (WCAG AA target)."
+        title="Brand tokens"
+        description="From ConnectIntegrationDemo — canonical in main.css (light + dark). White text on brand gradient requires sufficient contrast (WCAG AA target)."
       >
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {plannedBrandColors.map((token) => (
-            <PlannedBrandSwatch
+            <ColorSwatch
               key={token.name}
               name={token.name}
-              demoHex={token.demoHex ?? ""}
-              demoRole={token.demoRole ?? ""}
+              cssVar={token.cssVar}
+              tailwindClass={token.tailwindBg}
+              demoHex={token.demoHex}
+              demoRole={token.demoRole}
+              status={token.status}
             />
           ))}
         </div>

@@ -17,7 +17,7 @@ const { channels } = useChannels();
 </script>
 
 <template>
-  <div value="messages" :class="cn('flex:col-md flex-1 m-2', props.class)">
+  <div :class="cn('flex:col-md flex-1 m-2', props.class)">
     <ChannelContextMenuProvider>
       <ChannelContextMenu v-for="channel of channels" :key="channel.id" :channel="channel">
         <InboxMessage :channel="channel" :open="channel.id === currentChannel?.id" />
@@ -28,12 +28,7 @@ const { channels } = useChannels();
 
     <Dialog>
       <DialogTrigger as-child>
-        <Button
-          legacy
-          legacy-variant="primary"
-          legacy-size="sm"
-          class="flex:row-md flex:center-y m-8 mt-auto ml-auto text-sm"
-        >
+        <Button variant="brand" size="sm" class="flex:row-md flex:center-y m-8 mt-auto ml-auto text-sm">
           <IconChannel />
           Create Channel
         </Button>

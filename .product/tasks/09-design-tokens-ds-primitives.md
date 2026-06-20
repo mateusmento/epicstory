@@ -1,6 +1,6 @@
 # 09 — Design tokens & design system primitives
 
-**Status:** In progress (Phase 0–2 complete)  
+**Status:** In progress (Phase 0–3 complete)  
 **Depends on:** [08 — UI redesign foundation](./08-ui-redesign-foundation.md) (Storybook infra, hero slices, presentational layer)  
 **Session question:** Can we change Epicstory’s visual language by editing tokens and primitives in Storybook—and see the impact on real product surfaces before touching container wiring?
 
@@ -274,15 +274,15 @@ Story **variants**, not every sub-part file (e.g. no separate story per `DialogH
 
 ### Phase 3 — Core primitive stories (~2–3 sessions)
 
-- [ ] **Button** — variants `default` (neutral), `brand` (demo blue CTA), `outline` (demo cancel); see **Button variants** section; migrate 5 legacy call sites; remove `legacy` API
-- [ ] ~~**LegacyButton**~~ — **removed** after Button migration (do not extend)
-- [ ] **Input** — default, disabled, invalid, with label; align to demo (`h-10`, `rounded-lg`, slate borders/placeholders)
-- [ ] **Label** — standalone + `for` association; align to demo (`text-[0.8125rem] font-semibold`)
-- [ ] **Badge** — variants
-- [ ] **Dialog** — trigger, open, destructive confirm pattern (aligns with `ConfirmDialog` presentational)
-- [ ] **Menu** — migrate/extend existing story to `design-system/stories/`
-- [ ] **Tooltip** — hover/focus preview
-- [ ] **Form** — migrate existing story; field error states
+- [x] **Button** — variants `default` (neutral), `brand` (demo blue CTA), `outline` (demo cancel); see **Button variants** section; migrate 5 legacy call sites; remove `legacy` API
+- [x] ~~**LegacyButton**~~ — **removed** after Button migration (do not extend)
+- [x] **Input** — default, disabled, invalid, with label; align to demo (`h-10`, `rounded-lg`, slate borders/placeholders)
+- [x] **Label** — standalone + `for` association; align to demo (`text-[0.8125rem] font-semibold`)
+- [x] **Badge** — variants
+- [x] **Dialog** — trigger, open, destructive confirm pattern (aligns with `ConfirmDialog` presentational)
+- [x] **Menu** — migrate/extend existing story to `design-system/stories/`
+- [x] **Tooltip** — hover/focus preview
+- [x] **Form** — migrate existing story; field error states
 
 ### Phase 4 — Validate on hero slices (~1 session)
 
@@ -501,9 +501,9 @@ Validate on hero slices: **`AuthSignup`**, **`AuthSignin`**, and any slice using
 - [ ] Token source of truth documented; no new tokens added to `variables.scss`
 - [ ] Demo Tier 1 semantic colors promoted to `main.css`; Tier 2 shadows/gradients in `tailwind.config.ts`
 - [x] Token stories exist: Colors, Typography, Spacing, Radius, Elevation, DeferredPatterns
-- [ ] Tier A primitives storied: Button (with `brand` + demo-aligned `outline`), Input, Label, Badge, Dialog, Menu, Tooltip, Form (minimum)
-- [ ] Legacy button API removed; 5 call sites migrated to `variant="brand"`
-- [ ] `Design System/Button` Cancel + Next pair matches `ConnectIntegrationDemo`
+- [x] Tier A primitives storied: Button (with `brand` + demo-aligned `outline`), Input, Label, Badge, Dialog, Menu, Tooltip, Form (minimum)
+- [x] Legacy button API removed; 5 call sites migrated to `variant="brand"`
+- [x] `Design System/Button` Cancel + Next pair matches `ConnectIntegrationDemo`
 - [ ] Hero slices (`Product/Hero/*`) reviewed in both themes after at least one token change
 - [ ] Task 08 “Design system primitives storied with token-aware variants” can be checked off
 

@@ -47,6 +47,7 @@ export default {
       },
       borderRadius: {
         sm: "0.250rem",
+        "card-lg": "1.35rem",
         "4xl": "2rem",
         "5xl": "2.5rem",
         "6xl": "4rem",
@@ -87,6 +88,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        brand: {
+          DEFAULT: "hsl(var(--brand) / <alpha-value>)",
+          border: "hsl(var(--brand-border) / <alpha-value>)",
+        },
+        link: "hsl(var(--link) / <alpha-value>)",
         codeBlock: {
           DEFAULT: "hsl(var(--code-block))",
           header: "hsl(var(--code-block-header))",
@@ -101,6 +107,26 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+      },
+      backgroundImage: {
+        "brand-gradient":
+          "linear-gradient(180deg, hsl(var(--brand-from)) 0%, hsl(var(--brand-via)) 52%, hsl(var(--brand-to)) 100%)",
+        "brand-gradient-hover":
+          "linear-gradient(180deg, hsl(240 100% 70%) 0%, hsl(240 88% 65%) 52%, hsl(240 78% 60%) 100%)",
+        "brand-gradient-active":
+          "linear-gradient(180deg, hsl(var(--brand-via)) 0%, hsl(var(--brand-to)) 100%)",
+      },
+      boxShadow: {
+        "btn-outline": "0 1px 2px rgb(15 23 42 / 0.05), 0 2px 6px rgb(15 23 42 / 0.06)",
+        "btn-outline-hover": "0 1px 2px rgb(15 23 42 / 0.06), 0 3px 8px rgb(15 23 42 / 0.08)",
+        "btn-outline-active": "0 1px 2px rgb(15 23 42 / 0.05)",
+        "btn-brand":
+          "inset 0 0 1px 1px rgb(255 255 255 / 0.5), 0 1px 0 rgb(63 62 200 / 0.22), 0 2px 4px rgb(58 57 180 / 0.4)",
+        "btn-brand-hover":
+          "inset 0 0 1px 1px rgb(255 255 255 / 0.52), 0 1px 0 rgb(63 62 200 / 0.22), 0 3px 6px rgb(58 57 180 / 0.28)",
+        "btn-brand-active":
+          "inset 0 1px 2px rgb(47 46 150 / 0.35), 0 1px 0 rgb(63 62 200 / 0.14), 0 1px 2px rgb(58 57 180 / 0.4)",
+        "card-elevated": "0 1px 2px rgb(15 23 42 / 0.04), 0 12px 40px rgb(15 23 42 / 0.1)",
       },
       keyframes: {
         "accordion-down": {

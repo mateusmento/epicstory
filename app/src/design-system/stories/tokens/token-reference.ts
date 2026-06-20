@@ -232,7 +232,7 @@ export const domainColors: DomainColorToken[] = [
   },
 ];
 
-/** Brand tokens — planned for Phase 3; demo values documented here */
+/** Brand tokens — in main.css (light + dark) */
 export const plannedBrandColors: SemanticColorToken[] = [
   {
     name: "brand",
@@ -240,7 +240,7 @@ export const plannedBrandColors: SemanticColorToken[] = [
     tailwindBg: "bg-brand",
     demoHex: "#5d5cff → #4a49e0",
     demoRole: "Brand CTA gradient base",
-    status: "planned",
+    status: "canonical",
   },
   {
     name: "brand-border",
@@ -248,7 +248,7 @@ export const plannedBrandColors: SemanticColorToken[] = [
     tailwindBg: "border-brand-border",
     demoHex: "#3f3ec8",
     demoRole: "Brand button border",
-    status: "planned",
+    status: "canonical",
   },
   {
     name: "link",
@@ -256,7 +256,7 @@ export const plannedBrandColors: SemanticColorToken[] = [
     tailwindBg: "text-link",
     demoHex: "#6366f1",
     demoRole: "Inline links",
-    status: "planned",
+    status: "canonical",
   },
 ];
 
@@ -283,10 +283,10 @@ export const demoColorMappings: DemoColorMapping[] = [
     demoHex: "#5d5cff → #4a49e0",
     demoRole: "Brand CTA",
     tokenProposal: "--brand, --brand-from/via/to",
-    status: "planned",
+    status: "canonical",
   },
-  { demoHex: "#3f3ec8", demoRole: "Brand border", tokenProposal: "--brand-border", status: "planned" },
-  { demoHex: "#6366f1", demoRole: "Links", tokenProposal: "--link", status: "planned" },
+  { demoHex: "#3f3ec8", demoRole: "Brand border", tokenProposal: "--brand-border", status: "canonical" },
+  { demoHex: "#6366f1", demoRole: "Links", tokenProposal: "--link", status: "canonical" },
 ];
 
 /** Tailwind extend.spacing — matches variables.scss active block */
@@ -316,10 +316,10 @@ export const radiusTokens: RadiusToken[] = [
   { name: "sm", value: "0.250rem", source: "tailwind", tailwindClass: "rounded-sm" },
   { name: "default", value: "var(--radius)", source: "css-var", tailwindClass: "rounded-md" },
   {
-    name: "card-lg (proposed)",
+    name: "card-lg",
     value: "1.35rem",
-    source: "demo",
-    tailwindClass: "rounded-[1.35rem]",
+    source: "tailwind",
+    tailwindClass: "rounded-card-lg",
     note: "ConnectIntegrationDemo card radius",
   },
   { name: "4xl", value: "2rem", source: "tailwind", tailwindClass: "rounded-4xl" },
@@ -406,7 +406,7 @@ export const elevationTokens: ElevationToken[] = [
     tailwindUtility: "shadow-card-elevated",
     demoKey: "tokens.shadows.card",
     shadow: "0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 40px rgba(15, 23, 42, 0.1)",
-    status: "planned",
+    status: "canonical",
     usedOn: "ConnectIntegrationDemo card",
   },
   {
@@ -414,7 +414,7 @@ export const elevationTokens: ElevationToken[] = [
     tailwindUtility: "shadow-btn-outline",
     demoKey: "tokens.shadows.btnCancel",
     shadow: "0 1px 2px rgba(15, 23, 42, 0.05), 0 2px 6px rgba(15, 23, 42, 0.06)",
-    status: "planned",
+    status: "canonical",
     usedOn: "Cancel button (outline variant)",
   },
   {
@@ -422,7 +422,7 @@ export const elevationTokens: ElevationToken[] = [
     tailwindUtility: "shadow-btn-outline-hover",
     demoKey: "tokens.shadows.btnCancelHover",
     shadow: "0 1px 2px rgba(15, 23, 42, 0.06), 0 3px 8px rgba(15, 23, 42, 0.08)",
-    status: "planned",
+    status: "canonical",
     usedOn: "Cancel button hover",
   },
   {
@@ -431,7 +431,7 @@ export const elevationTokens: ElevationToken[] = [
     demoKey: "tokens.shadows.btnNext",
     shadow:
       "inset 0 0 1px 1px rgba(255, 255, 255, 0.5), 0 1px 0 rgba(63, 62, 200, 0.22), 0 2px 4px rgba(58, 57, 180, 0.4)",
-    status: "planned",
+    status: "canonical",
     usedOn: "Next button (brand variant)",
   },
   {
@@ -440,7 +440,7 @@ export const elevationTokens: ElevationToken[] = [
     demoKey: "tokens.shadows.btnNextHover",
     shadow:
       "inset 0 0 1px 1px rgba(255, 255, 255, 0.52), 0 1px 0 rgba(63, 62, 200, 0.22), 0 3px 6px rgba(58, 57, 180, 0.28)",
-    status: "planned",
+    status: "canonical",
     usedOn: "Next button hover",
   },
   {
@@ -449,7 +449,7 @@ export const elevationTokens: ElevationToken[] = [
     demoKey: "tokens.shadows.btnNextActive",
     shadow:
       "inset 0 1px 2px rgba(47, 46, 150, 0.35), 0 1px 0 rgba(63, 62, 200, 0.14), 0 1px 2px rgba(58, 57, 180, 0.4)",
-    status: "planned",
+    status: "canonical",
     usedOn: "Next button active",
   },
 ];

@@ -21,12 +21,18 @@ const modelValue = defineModel<string>();
 const { forwardRef } = useForwardExpose();
 
 const styles = cva(
-  "flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+  [
+    "flex w-full rounded-lg border border-input bg-background px-3 text-[0.8125rem] shadow-sm transition-colors",
+    "file:border-0 file:bg-transparent file:text-sm file:font-medium",
+    "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+    "disabled:cursor-not-allowed disabled:opacity-50",
+    "aria-invalid:border-destructive aria-invalid:ring-destructive",
+  ].join(" "),
   {
     variants: {
       size: {
-        default: "h-9 px-4 py-2",
-        xs: "h-7 rounded px-2",
+        default: "h-10 px-3 py-2",
+        xs: "h-7 rounded px-2 text-xs",
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
         badge: "py-0.5 px-1 rounded text-xs",
