@@ -123,8 +123,8 @@ function handleSelectWorkspace() {
 
               <Button
                 type="submit"
-                variant="primary"
-                elevation="elevated"
+                variant="brand"
+                color="primary"
                 size="lg"
                 class="w-full"
                 data-testid="create-workspace-submit-button"
@@ -141,12 +141,12 @@ function handleSelectWorkspace() {
 
 <style lang="scss" scoped>
 main {
-  background-color: hsl(var(--background));
+  background-color: oklch(var(--background));
   font-family: "Plus Jakarta Sans";
 }
 
 .signup {
-  background-color: hsl(var(--card));
+  background-color: oklch(var(--card));
 }
 
 .signup-form {

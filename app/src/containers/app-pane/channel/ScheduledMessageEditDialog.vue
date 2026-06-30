@@ -169,7 +169,12 @@ async function save() {
       </DialogHeader>
       <p class="text-xs text-muted-foreground">
         Schedule: {{ displaySchedule }} ·
-        <Button type="button" variant="link" class="h-auto p-0 text-xs" @click="scheduleDialogOpen = true"
+        <Button
+          type="button"
+          variant="text"
+          color="primary"
+          class="h-auto p-0 text-xs"
+          @click="scheduleDialogOpen = true"
           >Change</Button
         >
       </p>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DotPattern, Input, Label } from "@/design-system";
+import { Button, DotPattern, Input, Label } from "@/design-system";
 import { Globe, Link2, Settings2 } from "lucide-vue-next";
 import { ref } from "vue";
 
@@ -28,21 +28,12 @@ const tokens = {
       "linear-gradient(90deg, rgba(0, 0, 0, 0.035) 1px, transparent 1px)",
     gridMask: "radial-gradient(ellipse 90% 80% at 50% 45%, black 20%, transparent 100%)",
     brandTradier: "linear-gradient(180deg, #5b8ba2 0%, #4a768d 100%)",
-    btnNext: "linear-gradient(180deg, #5d5cff 0%, #5453f2 52%, #4a49e0 100%)",
-    btnNextHover: "linear-gradient(180deg, #6564ff 0%, #5a59f4 52%, #504fe6 100%)",
-    btnNextActive: "linear-gradient(180deg, #5453f2 0%, #4a49e0 100%)",
   },
   shadows: {
     card: "0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 40px rgba(15, 23, 42, 0.1)",
     btnCancel: "0 1px 2px rgba(15, 23, 42, 0.05), 0 2px 6px rgba(15, 23, 42, 0.06)",
     btnCancelHover: "0 1px 2px rgba(15, 23, 42, 0.06), 0 3px 8px rgba(15, 23, 42, 0.08)",
     btnCancelActive: "0 1px 2px rgba(15, 23, 42, 0.05)",
-    btnNext:
-      "inset 0 0 1px 1px rgba(255, 255, 255, 0.5), 0 1px 0 rgba(63, 62, 200, 0.22), 0 2px 4px rgba(58, 57, 180, 0.4)",
-    btnNextHover:
-      "inset 0 0 1px 1px rgba(255, 255, 255, 0.52), 0 1px 0 rgba(63, 62, 200, 0.22), 0 3px 6px rgba(58, 57, 180, 0.28)",
-    btnNextActive:
-      "inset 0 1px 2px rgba(47, 46, 150, 0.35), 0 1px 0 rgba(63, 62, 200, 0.14), 0 1px 2px rgba(58, 57, 180, 0.4)",
   },
 } as const;
 </script>
@@ -138,7 +129,7 @@ const tokens = {
 
         <div :class="styles.actions">
           <button type="button" :class="[styles.btn, styles.btnCancel, 'fx-btn-cancel']">Cancel</button>
-          <button type="button" :class="[styles.btn, styles.btnNext, 'fx-btn-next']">Next</button>
+          <Button variant="brand" color="primary" size="lg" :class="styles.btnNext">Next</Button>
         </div>
 
         <p :class="[styles.disclaimer, styles.disclaimerMain]">
@@ -196,35 +187,35 @@ const styles = {
   linkBadge: cn(
     [
       "z-[1] -mx-[0.45rem] flex size-[1.625rem] items-center justify-center",
-      "rounded-full border border-[#e2e8f0] bg-white",
+      "rounded-full border border-slate-200 bg-white",
     ].join(" "),
   ),
   githubLogo: cn(["block size-8"].join(" ")),
-  linkIcon: cn(["size-3.5 text-[#94a3b8]"].join(" ")),
-  title: cn(["m-0 mb-2 text-lg font-bold leading-[1.35] text-[#0f172a]"].join(" ")),
-  subtitle: cn(["m-0 max-w-[19rem] text-[0.8125rem] leading-normal text-[#64748b]"].join(" ")),
+  linkIcon: cn(["size-3.5 text-slate-400"].join(" ")),
+  title: cn(["m-0 mb-2 text-lg font-bold leading-[1.35] text-slate-900"].join(" ")),
+  subtitle: cn(["m-0 max-w-[19rem] text-[0.8125rem] leading-normal text-slate-500"].join(" ")),
   form: cn(["flex flex-col gap-4"].join(" ")),
   field: cn(["flex flex-col gap-[0.4rem]"].join(" ")),
-  label: cn(["text-[0.8125rem] font-semibold text-[#334155]"].join(" ")),
+  label: cn(["text-[0.8125rem] font-semibold text-slate-700"].join(" ")),
   input: cn(
-    ["h-10 rounded-lg border-[#e2e8f0] bg-white text-[0.8125rem]", "placeholder:text-[#94a3b8]"].join(" "),
+    ["h-10 rounded-lg border-slate-200 bg-white text-[0.8125rem]", "placeholder:text-slate-400"].join(" "),
   ),
   urlGroup: cn(
-    ["flex items-stretch overflow-hidden rounded-lg", "border border-[#e2e8f0] bg-white"].join(" "),
+    ["flex items-stretch overflow-hidden rounded-lg", "border border-slate-200 bg-white"].join(" "),
   ),
   urlPrefix: cn(
     [
-      "flex items-center whitespace-nowrap border-r border-[#e2e8f0]",
-      "bg-[#f8fafc] px-3 text-[0.8125rem] text-[#94a3b8]",
+      "flex items-center whitespace-nowrap border-r border-slate-200",
+      "bg-slate-50 px-3 text-[0.8125rem] text-slate-400",
     ].join(" "),
   ),
   inputUrl: cn(["flex-1 rounded-none border-0 shadow-none"].join(" ")),
   divider: cn(["mt-[1.35rem] mb-[1.15rem] flex items-center gap-3"].join(" ")),
-  dividerLine: cn(["h-px flex-1 bg-[#e2e8f0]"].join(" ")),
+  dividerLine: cn(["h-px flex-1 bg-slate-200"].join(" ")),
   dividerIcon: cn(
     [
       "flex size-7 items-center justify-center rounded-full",
-      "border border-[#e2e8f0] bg-white text-[#94a3b8]",
+      "border border-slate-200 bg-white text-slate-400",
     ].join(" "),
   ),
   actions: cn(["grid grid-cols-2 gap-3"].join(" ")),
@@ -234,11 +225,11 @@ const styles = {
       "transition-[background,box-shadow,transform] duration-150 ease-in-out",
     ].join(" "),
   ),
-  btnCancel: cn(["border border-[#e5e7eb] bg-white text-[#374151] hover:bg-[#fafafa]"].join(" ")),
-  btnNext: cn(["rounded-xl border border-[#3f3ec8] font-semibold tracking-[-0.01em] text-white"].join(" ")),
-  disclaimer: cn(["mb-0 mt-4 text-[0.6875rem] leading-[1.55] text-[#94a3b8]"].join(" ")),
+  btnCancel: cn(["border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"].join(" ")),
+  btnNext: cn(["w-full rounded-xl"].join(" ")),
+  disclaimer: cn(["mb-0 mt-4 text-[0.6875rem] leading-[1.55] text-slate-400"].join(" ")),
   disclaimerMain: cn(["mt-[0.85rem]"].join(" ")),
-  link: cn(["text-[#6366f1] no-underline hover:underline"].join(" ")),
+  link: cn(["text-link no-underline hover:underline"].join(" ")),
   footer: cn(
     [
       "border-t border-[rgba(0,0,0,0.08)] px-8 pb-[1.35rem] pt-[1.15rem]",
@@ -249,11 +240,11 @@ const styles = {
   publicIcon: cn(
     [
       "flex size-8 shrink-0 items-center justify-center rounded-[0.45rem]",
-      "border border-dashed border-[#cbd5e1] bg-[rgba(255,255,255,0.65)]",
+      "border border-dashed border-slate-300 bg-[rgba(255,255,255,0.65)]",
     ].join(" "),
   ),
-  publicTitle: cn(["mb-[0.15rem] text-[0.8125rem] font-semibold text-[#0f172a]"].join(" ")),
-  publicDesc: cn(["text-xs leading-[1.45] text-[#64748b]"].join(" ")),
+  publicTitle: cn(["mb-[0.15rem] text-[0.8125rem] font-semibold text-slate-900"].join(" ")),
+  publicDesc: cn(["text-xs leading-[1.45] text-slate-500"].join(" ")),
 };
 </script>
 
@@ -287,20 +278,5 @@ const styles = {
 
 .fx-btn-cancel:active {
   box-shadow: v-bind("tokens.shadows.btnCancelActive");
-}
-
-.fx-btn-next {
-  background: v-bind("tokens.gradients.btnNext");
-  box-shadow: v-bind("tokens.shadows.btnNext");
-}
-
-.fx-btn-next:hover {
-  background: v-bind("tokens.gradients.btnNextHover");
-  box-shadow: v-bind("tokens.shadows.btnNextHover");
-}
-
-.fx-btn-next:active {
-  background: v-bind("tokens.gradients.btnNextActive");
-  box-shadow: v-bind("tokens.shadows.btnNextActive");
 }
 </style>

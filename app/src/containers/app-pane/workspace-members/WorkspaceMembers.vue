@@ -249,7 +249,7 @@ async function onSend() {
         </div>
         <Button
           type="button"
-          size="icon-sm"
+          size="icon"
           variant="ghost"
           title="Remove"
           class="self-start"

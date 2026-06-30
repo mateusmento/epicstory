@@ -1,28 +1,28 @@
 export const componentColors = {
   button: {
-    DEFAULT: "hsl(var(--accent))",
-    foreground: "hsl(var(--accent-foreground))",
+    DEFAULT: "oklch(var(--accent) / <alpha-value>)",
+    foreground: "oklch(var(--accent-foreground) / <alpha-value>)",
   },
   dropdown: {
-    DEFAULT: "hsl(var(--popover))",
-    foreground: "hsl(var(--popover-foreground))",
+    DEFAULT: "oklch(var(--popover) / <alpha-value>)",
+    foreground: "oklch(var(--popover-foreground) / <alpha-value>)",
   },
   drawer: {
-    DEFAULT: "hsl(var(--card))",
-    foreground: "hsl(var(--card-foreground))",
+    DEFAULT: "oklch(var(--card) / <alpha-value>)",
+    foreground: "oklch(var(--card-foreground) / <alpha-value>)",
   },
   unseenMessageCount: {
     DEFAULT: "var(--dark-blue)",
-    foreground: "hsl(var(--primary-foreground))",
+    foreground: "oklch(var(--primary-foreground) / <alpha-value>)",
   },
   /** @user mentions: chip background + link-colored text (non-self uses `chip`; self uses `mentionHighlight`) */
   mention: {
-    DEFAULT: "hsl(var(--mention))",
-    chip: "hsl(var(--mention-chip))",
+    DEFAULT: "oklch(var(--mention) / <alpha-value>)",
+    chip: "oklch(var(--mention-chip) / <alpha-value>)",
   },
   /** @current-user highlight chip */
   mentionHighlight: {
-    DEFAULT: "hsl(var(--mention-highlight))",
-    foreground: "hsl(var(--mention-highlight-foreground))",
+    DEFAULT: "oklch(var(--mention-highlight) / <alpha-value>)",
+    foreground: "oklch(var(--mention-highlight-foreground) / <alpha-value>)",
   },
 };

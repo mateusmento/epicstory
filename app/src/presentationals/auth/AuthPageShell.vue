@@ -23,12 +23,12 @@ import AuthMarketingAside from "./AuthMarketingAside.vue";
 
 <style lang="scss" scoped>
 .auth-page {
-  background-color: hsl(var(--background));
+  background-color: oklch(var(--background));
   font-family: "Plus Jakarta Sans";
 }
 
 .auth-card {
-  background-color: hsl(var(--card));
+  background-color: oklch(var(--card));
 }
 
 .auth-form-column {

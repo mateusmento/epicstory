@@ -228,9 +228,10 @@ const emit = defineEmits<{
       <template v-if="toolbar.isEditing">
         <Button
           type="button"
-          variant="default"
+          variant="flat"
+          color="primary"
           size="sm"
-          class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+          class="flex:row-lg flex:center-y text-sm"
           :disabled="toolbar.attachmentsBlocked"
           @click="emit('send')"
         >
@@ -241,9 +242,10 @@ const emit = defineEmits<{
       <slot v-else name="sendTrailing">
         <Button
           type="button"
-          variant="default"
+          variant="flat"
+          color="primary"
           size="sm"
-          class="flex:row-lg flex:center-y text-sm border-0 bg-[#3A66FF] text-white shadow-sm hover:bg-[#3A66FF]/90 focus-visible:ring-2 focus-visible:ring-white/30"
+          class="flex:row-lg flex:center-y text-sm"
           :disabled="toolbar.attachmentsBlocked"
           @click="emit('send')"
         >

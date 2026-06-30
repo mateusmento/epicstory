@@ -9,12 +9,7 @@ import {
   TokenSection,
   TokenStoryFrame,
 } from "./TokenDisplay";
-import {
-  demoColorMappings,
-  domainColors,
-  plannedBrandColors,
-  semanticColors,
-} from "./token-reference";
+import { demoColorMappings, domainColors, plannedBrandColors, semanticColors } from "./token-reference";
 
 const meta = {
   title: "Design System/Tokens/Colors",
@@ -29,9 +24,19 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const coreSemantic = semanticColors.filter((t) =>
-  ["background", "foreground", "primary", "secondary", "muted", "accent", "destructive", "border", "card", "popover", "ring"].some(
-    (key) => t.name === key || t.name.startsWith(`${key}-`),
-  ),
+  [
+    "background",
+    "foreground",
+    "primary",
+    "secondary",
+    "muted",
+    "accent",
+    "destructive",
+    "border",
+    "card",
+    "popover",
+    "ring",
+  ].some((key) => t.name === key || t.name.startsWith(`${key}-`)),
 );
 
 function ColorsReference() {
@@ -39,7 +44,7 @@ function ColorsReference() {
     <TokenStoryFrame>
       <TokenSection
         title="Semantic colors"
-        description="Canonical HSL tokens from main.css. Swatches follow the Storybook Theme toolbar (light / dark)."
+        description="Canonical OKLCH tokens from main.css. Swatches follow the Storybook Theme toolbar (light / dark)."
       >
         <ColorSwatchGrid tokens={coreSemantic} />
       </TokenSection>
@@ -58,7 +63,7 @@ function ColorsReference() {
                   <div key={name} class="flex items-center gap-2">
                     <div
                       class="size-8 rounded border border-border"
-                      style={{ background: `hsl(var(${token.cssVar}))` }}
+                      style={{ background: `oklch(var(${token.cssVar}))` }}
                     />
                     <code class="text-xs">{token.cssVar}</code>
                   </div>
@@ -75,7 +80,7 @@ function ColorsReference() {
                   <div key={name} class="flex items-center gap-2">
                     <div
                       class="size-8 rounded border border-border"
-                      style={{ background: `hsl(var(${token.cssVar}))` }}
+                      style={{ background: `oklch(var(${token.cssVar}))` }}
                     />
                     <code class="text-xs">{token.cssVar}</code>
                   </div>
@@ -86,13 +91,16 @@ function ColorsReference() {
         </div>
       </TokenSection>
 
-      <TokenSection title="Domain tokens" description="Product-specific tokens from main.css + component-colors.ts.">
+      <TokenSection
+        title="Domain tokens"
+        description="Product-specific tokens from main.css + component-colors.ts."
+      >
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {domainColors.map((token) => (
             <div key={token.name} class="flex items-start gap-3 rounded-lg border border-border bg-card p-3">
               <div
                 class="size-12 shrink-0 rounded-md border border-border"
-                style={{ background: `hsl(var(${token.cssVar}))` }}
+                style={{ background: `oklch(var(${token.cssVar}))` }}
               />
               <div class="min-w-0 space-y-0.5">
                 <code class="text-sm font-medium text-foreground">{token.name}</code>

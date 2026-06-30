@@ -315,14 +315,14 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
 
       <div v-if="routeName === 'backlog'" class="flex:row-md flex:center-y justify-end">
         <ProjectFilterDropdown :project-id="+projectId">
-          <Button variant="outline" size="badge" class="flex:row-sm flex:center-y" title="Add filter">
+          <Button variant="outline" size="icon" class="flex:row-sm flex:center-y" title="Add filter">
             <Icon name="bi-filter" />
           </Button>
         </ProjectFilterDropdown>
 
         <Menu>
           <MenuTrigger as-child>
-            <Button variant="outline" size="badge" class="flex:row-md flex:center-y h-fit">
+            <Button variant="outline" size="icon" class="flex:row-md flex:center-y h-fit">
               <Layers2Icon class="size-4 text-muted-foreground" />
               <div class="text-xs">{{ GROUP_BY_OPTIONS[groupBy ?? "none"] }}</div>
               <Icon name="oi-chevron-down" class="ml-auto text-muted-foreground" />

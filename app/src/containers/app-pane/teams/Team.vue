@@ -65,7 +65,7 @@ const selectedUser = ref<IUser>();
       content="teams"
       :as="Button"
       variant="ghost"
-      size="badge"
+      size="icon"
       class="flex:row-sm w-fit m-2"
     >
       <Icon name="hi-solid-arrow-sm-left" />

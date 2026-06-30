@@ -52,8 +52,8 @@ function onSubmit(data: SignupRequest) {
     <div class="flex:col-2xl mt-3xl">
       <Button
         type="submit"
-        variant="primary"
-        elevation="elevated"
+        variant="brand"
+        color="primary"
         size="lg"
         class="w-full"
         data-testid="signup-button"

@@ -87,7 +87,7 @@ function onLoadMore() {
         <div class="flex-1 truncate">{{ user.name }}</div>
         <Button
           type="button"
-          size="icon-sm"
+          size="icon"
           variant="ghost"
           :disabled="disabled"
           title="Remove"

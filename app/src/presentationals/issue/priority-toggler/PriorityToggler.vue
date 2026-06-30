@@ -28,7 +28,7 @@ const labels = ["No priority", "Low", "Medium", "High", "Urgent"];
 <template>
   <Popover>
     <PopoverTrigger as-child>
-      <Button variant="outline" size="badge" class="flex:row-md flex:center-y">
+      <Button variant="outline" size="icon" class="flex:row-md flex:center-y">
         <Urgent v-if="value === 4" />
         <Signal3Bars v-if="value === 3" />
         <Signal2Bars v-else-if="value === 2" />

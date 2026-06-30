@@ -73,7 +73,8 @@ defineExpose({ blur });
         v-else
         class="p-0.5"
         type="button"
-        variant="secondary"
+        variant="soft"
+        color="secondary"
         size="icon"
         :title="props.clearTitle"
         @mousedown.prevent

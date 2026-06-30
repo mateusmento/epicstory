@@ -1,0 +1,48 @@
+@layer base {
+  :root {
+    /**
+     * Palette anchors for Storybook relative-color demos only.
+     * Product UI uses Tailwind stops from color-shades.css directly.
+     */
+    --scale-indigo: oklch(58.5% 0.204 277);
+    --scale-red: oklch(63.7% 0.208 25);
+    --scale-amber: oklch(76.9% 0.165 70);
+    --scale-slate: oklch(55.4% 0.041 257);
+
+    --scale-l-step: 0.07;
+    --scale-c-step: 0.015;
+    --scale-h-step: 0.5;
+  }
+}
+
+@layer components {
+  .color-scale-shade {
+    --_shade: oklch(
+      from var(--scale-base) calc(l + var(--step) * var(--scale-l-step))
+        calc(max(0.005, c - abs(var(--step)) * var(--scale-c-step))) calc(h + var(--step) * var(--scale-h-step))
+    );
+    background-color: var(--_shade);
+  }
+
+  .color-scale-shade-text {
+    color: var(--_shade);
+  }
+
+  .color-scale-list-item {
+    --_bg: oklch(
+      from var(--scale-base) calc(l - var(--i) * 0.05) calc(max(0.005, c - var(--i) * 0.01))
+        calc(h - (var(--i) + 5))
+    );
+    background-color: var(--_bg);
+  }
+
+  .color-scale-highlight {
+    --_highlight: oklch(from var(--scale-base) 97% c h);
+    background: radial-gradient(circle at center, var(--_highlight), var(--scale-base));
+  }
+
+  .color-scale-header {
+    background-color: oklch(from var(--scale-base) 35% max(0.01, c * 0.05) h);
+    color: white;
+  }
+}

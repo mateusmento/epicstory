@@ -1,10 +1,6 @@
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import {
-  IssueKey,
-  IssueLabelTags,
-  IssueStatusDropdown,
-} from "@/presentationals/issue";
+import { IssueKey, IssueLabelTags, IssueStatusDropdown } from "@/presentationals/issue";
 import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
 import { UserAvatarStack } from "@/presentationals/user";
 import { DueDatePicker } from "@/presentationals/issue/due-date-picker";
@@ -121,7 +117,7 @@ export const IssueHeaderHarness = defineComponent({
             <div class="text-xs text-secondary-foreground">Due date</div>
             <DueDatePicker
               :model-value="state.dueDate ?? undefined"
-              size="badge"
+              size="icon"
               :disabled="disabled"
               @update:model-value="patch({ dueDate: $event ?? null })"
             />

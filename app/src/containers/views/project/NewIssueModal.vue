@@ -169,7 +169,7 @@ async function onCreateIssue() {
         <!-- Status -->
         <Menu>
           <MenuTrigger as-child>
-            <Button variant="outline" size="badge" class="flex items-center gap-2">
+            <Button variant="outline" size="icon" class="flex items-center gap-2">
               <span class="w-2 h-2 rounded-full ring-1 ring-border" :class="statusDotClass(status)" />
               {{ statusLabel[status] }}
               <Icon name="oi-chevron-down" class="w-3 h-3 text-muted-foreground" />
@@ -203,7 +203,7 @@ async function onCreateIssue() {
         <Button
           type="button"
           variant="outline"
-          size="badge"
+          size="icon"
           class="flex items-center gap-2"
           @click="priority = priority === 4 ? 0 : priority + 1"
         >
@@ -214,7 +214,7 @@ async function onCreateIssue() {
         <!-- Assignee -->
         <Menu type="dropdown-menu">
           <MenuTrigger as-child>
-            <Button type="button" variant="outline" size="badge" class="flex items-center gap-2">
+            <Button type="button" variant="outline" size="icon" class="flex items-center gap-2">
               <div v-if="selectedAssignees.length > 0" class="flex:row flex:center-y">
                 <UserAvatar
                   v-for="(assignee, i) in selectedAssignees"

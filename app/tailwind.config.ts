@@ -55,77 +55,96 @@ export default {
         "8xl": "6rem",
       },
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        border: "oklch(var(--border) / <alpha-value>)",
+        input: "oklch(var(--input) / <alpha-value>)",
+        ring: "oklch(var(--ring) / <alpha-value>)",
+        background: "oklch(var(--background) / <alpha-value>)",
+        foreground: "oklch(var(--foreground) / <alpha-value>)",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "oklch(var(--primary) / <alpha-value>)",
+          foreground: "oklch(var(--primary-foreground) / <alpha-value>)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "oklch(var(--secondary) / <alpha-value>)",
+          foreground: "oklch(var(--secondary-foreground) / <alpha-value>)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "oklch(var(--destructive) / <alpha-value>)",
+          foreground: "oklch(var(--destructive-foreground) / <alpha-value>)",
+          border: "oklch(var(--destructive-border) / <alpha-value>)",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "oklch(var(--muted) / <alpha-value>)",
+          foreground: "oklch(var(--muted-foreground) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "oklch(var(--accent) / <alpha-value>)",
+          foreground: "oklch(var(--accent-foreground) / <alpha-value>)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "oklch(var(--popover) / <alpha-value>)",
+          foreground: "oklch(var(--popover-foreground) / <alpha-value>)",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "oklch(var(--card) / <alpha-value>)",
+          foreground: "oklch(var(--card-foreground) / <alpha-value>)",
         },
         brand: {
-          DEFAULT: "hsl(var(--brand) / <alpha-value>)",
-          border: "hsl(var(--brand-border) / <alpha-value>)",
+          DEFAULT: "oklch(var(--brand) / <alpha-value>)",
+          border: "oklch(var(--brand-border) / <alpha-value>)",
         },
-        link: "hsl(var(--link) / <alpha-value>)",
+        link: "oklch(var(--link) / <alpha-value>)",
         codeBlock: {
-          DEFAULT: "hsl(var(--code-block))",
-          header: "hsl(var(--code-block-header))",
-          shell: "hsl(var(--code-block-shell))",
-          gutter: "hsl(var(--code-block-gutter))",
+          DEFAULT: "oklch(var(--code-block) / <alpha-value>)",
+          header: "oklch(var(--code-block-header) / <alpha-value>)",
+          shell: "oklch(var(--code-block-shell) / <alpha-value>)",
+          gutter: "oklch(var(--code-block-gutter) / <alpha-value>)",
         },
         ...componentColors,
         chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
+          "1": "oklch(var(--chart-1) / <alpha-value>)",
+          "2": "oklch(var(--chart-2) / <alpha-value>)",
+          "3": "oklch(var(--chart-3) / <alpha-value>)",
+          "4": "oklch(var(--chart-4) / <alpha-value>)",
+          "5": "oklch(var(--chart-5) / <alpha-value>)",
         },
       },
       backgroundImage: {
         "brand-gradient":
-          "linear-gradient(180deg, hsl(var(--brand-from)) 0%, hsl(var(--brand-via)) 52%, hsl(var(--brand-to)) 100%)",
+          "linear-gradient(180deg, oklch(var(--btn-brand-stop-top)) 0%, oklch(var(--btn-brand-stop-mid)) 52%, oklch(var(--btn-brand-stop-bottom)) 100%)",
         "brand-gradient-hover":
-          "linear-gradient(180deg, hsl(240 100% 70%) 0%, hsl(240 88% 65%) 52%, hsl(240 78% 60%) 100%)",
+          "linear-gradient(180deg, oklch(var(--btn-brand-stop-top-hover)) 0%, oklch(var(--btn-brand-stop-mid-hover)) 52%, oklch(var(--btn-brand-stop-bottom-hover)) 100%)",
         "brand-gradient-active":
-          "linear-gradient(180deg, hsl(var(--brand-via)) 0%, hsl(var(--brand-to)) 100%)",
+          "linear-gradient(180deg, oklch(var(--btn-brand-stop-mid)) 0%, oklch(var(--btn-brand-stop-bottom)) 100%)",
+        "destructive-gradient":
+          "linear-gradient(180deg, oklch(var(--btn-destructive-stop-top)) 0%, oklch(var(--btn-destructive-stop-mid)) 52%, oklch(var(--btn-destructive-stop-bottom)) 100%)",
+        "destructive-gradient-hover":
+          "linear-gradient(180deg, oklch(var(--btn-destructive-stop-top-hover)) 0%, oklch(var(--btn-destructive-stop-mid-hover)) 52%, oklch(var(--btn-destructive-stop-bottom-hover)) 100%)",
+        "destructive-gradient-active":
+          "linear-gradient(180deg, oklch(var(--btn-destructive-stop-mid)) 0%, oklch(var(--btn-destructive-stop-bottom)) 100%)",
       },
       boxShadow: {
         "btn-outline": "0 1px 2px rgb(15 23 42 / 0.05), 0 2px 6px rgb(15 23 42 / 0.06)",
         "btn-outline-hover": "0 1px 2px rgb(15 23 42 / 0.06), 0 3px 8px rgb(15 23 42 / 0.08)",
         "btn-outline-active": "0 1px 2px rgb(15 23 42 / 0.05)",
         "btn-brand":
-          "inset 0 0 1px 1px rgb(255 255 255 / 0.5), 0 1px 0 rgb(63 62 200 / 0.22), 0 2px 4px rgb(58 57 180 / 0.4)",
+          "inset 0 0 1px 1px rgb(255 255 255 / 0.35), 0 1px 0 rgb(63 62 200 / 0.18), 0 2px 4px rgb(58 57 180 / 0.28)",
         "btn-brand-hover":
-          "inset 0 0 1px 1px rgb(255 255 255 / 0.52), 0 1px 0 rgb(63 62 200 / 0.22), 0 3px 6px rgb(58 57 180 / 0.28)",
+          "inset 0 0 1px 1px rgb(255 255 255 / 0.38), 0 1px 0 rgb(63 62 200 / 0.18), 0 3px 6px rgb(58 57 180 / 0.22)",
         "btn-brand-active":
-          "inset 0 1px 2px rgb(47 46 150 / 0.35), 0 1px 0 rgb(63 62 200 / 0.14), 0 1px 2px rgb(58 57 180 / 0.4)",
+          "inset 0 1px 2px rgb(47 46 150 / 0.35), 0 1px 0 rgb(63 62 200 / 0.14), 0 1px 2px rgb(58 57 180 / 0.32)",
+        "btn-destructive":
+          "inset 0 0 1px 1px rgb(255 255 255 / 0.35), 0 1px 0 rgb(127 29 29 / 0.18), 0 2px 4px rgb(185 28 28 / 0.22)",
+        "btn-destructive-hover":
+          "inset 0 0 1px 1px rgb(255 255 255 / 0.38), 0 1px 0 rgb(127 29 29 / 0.18), 0 3px 6px rgb(185 28 28 / 0.18)",
+        "btn-destructive-active":
+          "inset 0 1px 2px rgb(100 20 20 / 0.3), 0 1px 0 rgb(127 29 29 / 0.14), 0 1px 2px rgb(153 27 27 / 0.26)",
+        "btn-warning":
+          "inset 0 0 1px 1px rgb(255 255 255 / 0.35), 0 1px 0 rgb(146 64 14 / 0.16), 0 2px 4px rgb(180 83 9 / 0.2)",
+        "btn-warning-hover":
+          "inset 0 0 1px 1px rgb(255 255 255 / 0.38), 0 1px 0 rgb(146 64 14 / 0.16), 0 3px 6px rgb(180 83 9 / 0.16)",
+        "btn-warning-active":
+          "inset 0 1px 2px rgb(120 53 15 / 0.28), 0 1px 0 rgb(146 64 14 / 0.12), 0 1px 2px rgb(180 83 9 / 0.22)",
         "card-elevated": "0 1px 2px rgb(15 23 42 / 0.04), 0 12px 40px rgb(15 23 42 / 0.1)",
       },
       keyframes: {

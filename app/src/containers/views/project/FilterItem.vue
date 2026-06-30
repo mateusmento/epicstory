@@ -119,14 +119,14 @@ const parentPreview = computed(() => {
 
 <template>
   <ButtonGroup>
-    <Button variant="outline" size="badge" class="flex:row-sm flex:center-y">
+    <Button variant="outline" size="icon" class="flex:row-sm flex:center-y">
       <Icon name="oi-filter" class="w-4 h-4 text-muted-foreground" />
       {{ FILTER_FIELDS[modelValue.field] }}
     </Button>
 
     <Menu>
       <MenuTrigger as-child>
-        <Button variant="outline" size="badge">{{ FILTER_OPERATORS[modelValue.operator] }}</Button>
+        <Button variant="outline" size="icon">{{ FILTER_OPERATORS[modelValue.operator] }}</Button>
       </MenuTrigger>
       <MenuContent class="w-56">
         <MenuRadioGroup
@@ -147,7 +147,7 @@ const parentPreview = computed(() => {
         @update:model-value="setValue($event)"
         v-slot="{ selectedLabels }"
       >
-        <Button variant="outline" size="badge" class="flex:row-sm flex:center-y text-muted-foreground">
+        <Button variant="outline" size="icon" class="flex:row-sm flex:center-y text-muted-foreground">
           <template v-if="selectedLabels.length === 0">Any</template>
           <span
             v-for="label in selectedLabels"
@@ -161,7 +161,7 @@ const parentPreview = computed(() => {
 
     <template v-else-if="modelValue.field === 'status'">
       <IssueStatusDropdown :value="(modelValue.value as string) ?? null" @select="setValue($event)">
-        <Button variant="outline" size="badge" class="flex:row-md flex:center-y text-muted-foreground">
+        <Button variant="outline" size="icon" class="flex:row-md flex:center-y text-muted-foreground">
           <span
             class="w-2 h-2 rounded-full ring-1 ring-border"
             :class="issueStatusDotClass(modelValue.value as string)"
@@ -174,7 +174,7 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'dueDate'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge" class="text-muted-foreground">{{ dueDatePreview }}</Button>
+          <Button variant="outline" size="icon" class="text-muted-foreground">{{ dueDatePreview }}</Button>
         </MenuTrigger>
         <MenuContent class="p-0" align="start" side="bottom">
           <IssueDueDateMenu :due-date="dueDateFilterValue" @change="setValue" />
@@ -185,7 +185,7 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'priority'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge" class="text-muted-foreground">{{ priorityPreview }}</Button>
+          <Button variant="outline" size="icon" class="text-muted-foreground">{{ priorityPreview }}</Button>
         </MenuTrigger>
         <MenuContent align="start" class="w-56">
           <MenuItem class="text-xs text-muted-foreground" @select.prevent="setValue(undefined)">Any</MenuItem>
@@ -200,7 +200,7 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'title'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge" class="max-w-56 truncate text-muted-foreground">{{
+          <Button variant="outline" size="icon" class="max-w-56 truncate text-muted-foreground">{{
             titlePreview
           }}</Button>
         </MenuTrigger>
@@ -232,7 +232,7 @@ const parentPreview = computed(() => {
     <template v-else-if="modelValue.field === 'parentIssueId'">
       <Menu>
         <MenuTrigger as-child>
-          <Button variant="outline" size="badge" class="text-muted-foreground">{{ parentPreview }}</Button>
+          <Button variant="outline" size="icon" class="text-muted-foreground">{{ parentPreview }}</Button>
         </MenuTrigger>
         <MenuContent as-child align="start" side="bottom" class="w-80 min-h-14">
           <IssuePickerMenu
@@ -245,7 +245,7 @@ const parentPreview = computed(() => {
       </Menu>
     </template>
 
-    <Button variant="outline" size="badge" title="Remove filter" @click="$emit('remove')">
+    <Button variant="outline" size="icon" title="Remove filter" @click="$emit('remove')">
       <!-- <Icon name="io-close" /> -->
       <Icon name="io-close" class="w-4 h-4 text-muted-foreground hover:text-foreground" />
     </Button>

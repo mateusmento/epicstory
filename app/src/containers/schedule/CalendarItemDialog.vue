@@ -147,7 +147,7 @@ const {
                   <Button
                     v-if="!form.editingEvent"
                     type="button"
-                    size="icon-sm"
+                    size="icon"
                     variant="ghost"
                     title="Remove"
                     @click="removeMeetingParticipant(p.id)"
@@ -206,7 +206,8 @@ const {
             <Button
               v-if="form.editingEvent"
               type="button"
-              variant="destructive"
+              variant="flat"
+              color="destructive"
               size="sm"
               class="mr-auto"
               :disabled="form.isCreating"

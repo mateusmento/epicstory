@@ -40,7 +40,7 @@ const emit = defineEmits<{
       <ToggleGroupItem value="week" aria-label="Week view"> Week </ToggleGroupItem>
       <ToggleGroupItem value="day" aria-label="Day view"> Day </ToggleGroupItem>
     </ToggleGroup>
-    <Button variant="default" size="sm" class="ml-4" @click="emit('create')">
+    <Button variant="flat" size="sm" class="ml-4" @click="emit('create')">
       <Icon name="hi-plus" class="w-4 h-4 mr-2" />
       Create
     </Button>

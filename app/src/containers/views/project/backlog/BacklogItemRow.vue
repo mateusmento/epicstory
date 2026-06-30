@@ -201,7 +201,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
     <!-- Due date -->
     <div class="justify-self-start">
       <DueDatePicker
-        size="badge"
+        size="icon"
         :model-value="issue.dueDate ?? undefined"
         @update:model-value="updateDueDate"
       />

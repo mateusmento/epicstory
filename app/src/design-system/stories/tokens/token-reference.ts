@@ -72,7 +72,7 @@ export type DeferredPattern = {
   previewClass?: string;
 };
 
-/** shadcn-style semantic colors in main.css (:root / .dark) */
+/** shadcn-style semantic colors in main.css (:root / .dark) — OKLCH components */
 export const semanticColors: SemanticColorToken[] = [
   {
     name: "background",

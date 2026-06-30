@@ -14,7 +14,7 @@ const emit = defineEmits<{
     <Button
       size="icon"
       variant="outline"
-      class="p-1 text-muted-foreground"
+      class="p-1"
       title="Join meeting"
       @click="emit('join-channel-meeting')"
     >
@@ -26,7 +26,7 @@ const emit = defineEmits<{
         <Button
           size="icon"
           variant="outline"
-          class="p-1 text-muted-foreground"
+          class="p-1"
           title="More meeting actions"
           aria-label="More meeting actions"
         >

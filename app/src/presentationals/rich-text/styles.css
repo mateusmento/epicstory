@@ -259,12 +259,12 @@
 }
 
 .dark .epicstory-rich-text-preview .epic-code-card-pre--peek::after {
-  background: linear-gradient(to bottom, hsl(var(--code-block) / 0), hsl(var(--code-block)));
+  background: linear-gradient(to bottom, oklch(var(--code-block) / 0), oklch(var(--code-block)));
 }
 
 /** Code block card chrome — original light palette (zinc-100 shell, #f8f8f8 body, subtle header). */
 .epic-code-card-shell {
-  @apply rounded-lg border border-zinc-200/90 bg-zinc-100 shadow-sm dark:border-border dark:bg-codeBlock-shell;
+  @apply rounded-lg border border-zinc-200/90 bg-zinc-100 dark:border-border dark:bg-codeBlock-shell;
 }
 
 .epic-code-card-header {

@@ -106,7 +106,13 @@ async function joinIncomingMeeting() {
           <Icon name="hi-external-link" class="w-6 h-6 text-muted-foreground" :stroke-width="1.5" />
         </Button>
 
-        <Button variant="destructive" size="icon" class="p-2.5 rounded-full" @click="leaveMeeting">
+        <Button
+          variant="flat"
+          color="destructive"
+          size="icon"
+          class="p-2.5 rounded-full"
+          @click="leaveMeeting"
+        >
           <Icon name="bi-telephone-x" class="w-6 h-6" />
         </Button>
       </template>
@@ -122,11 +128,17 @@ async function joinIncomingMeeting() {
           <IconMicrophoneOff v-else class="w-6 h-6 text-muted-foreground" />
         </Button>
 
-        <Button variant="destructive" size="icon" class="p-2.5 rounded-full" @click="rejectIncomingMeeting">
+        <Button
+          variant="flat"
+          color="destructive"
+          size="icon"
+          class="p-2.5 rounded-full"
+          @click="rejectIncomingMeeting"
+        >
           <Icon name="bi-telephone-x" class="w-6 h-6" />
         </Button>
 
-        <Button variant="default" size="icon" class="p-2.5 rounded-full" @click="joinIncomingMeeting">
+        <Button variant="flat" size="icon" class="p-2.5 rounded-full" @click="joinIncomingMeeting">
           <HeadphonesIcon class="w-6 h-6" />
         </Button>
       </template>

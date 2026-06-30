@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import type { ButtonHTMLAttributes, HTMLAttributes } from "vue";
 import { Primitive, type PrimitiveProps } from "radix-vue";
-import { type ButtonVariants, buttonVariants } from ".";
+import { type ButtonColor, type ButtonSurfaceVariant } from "./button-variant-classes";
+import { type ButtonVariants, buttonVariants } from "./button-variants";
 import { cn } from "@/design-system/utils";
 
 interface Props extends /* @vue-ignore */ ButtonHTMLAttributes, PrimitiveProps {
-  variant?: ButtonVariants["variant"];
-  elevation?: ButtonVariants["elevation"];
+  /** Surface style: flat, outline, surface, soft, ghost, text, brand */
+  variant?: ButtonSurfaceVariant;
+  /** Intent color: default, primary, secondary, destructive, warning */
+  color?: ButtonColor;
   size?: ButtonVariants["size"];
   class?: HTMLAttributes["class"];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   as: "button",
-  elevation: "flat",
+  variant: "flat",
+  color: "default",
 });
 </script>
 
@@ -21,7 +25,9 @@ const props = withDefaults(defineProps<Props>(), {
   <Primitive
     :as="as"
     :as-child="asChild"
-    :class="cn(buttonVariants({ variant, size, elevation }), props.class)"
+    :data-btn-variant="variant"
+    :data-btn-color="color"
+    :class="cn(buttonVariants({ size }), props.class)"
   >
     <slot />
   </Primitive>

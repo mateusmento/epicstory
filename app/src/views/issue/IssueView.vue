@@ -357,7 +357,7 @@ onMounted(() => {
               <div class="min-w-0">
                 <DueDatePicker
                   :model-value="issue?.dueDate ?? undefined"
-                  size="badge"
+                  size="icon"
                   :disabled="!issue"
                   @update:model-value="patchIssue({ dueDate: $event })"
                 />

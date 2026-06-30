@@ -279,7 +279,7 @@ onMounted(async () => {
         <div class="flex flex-wrap gap-2 pt-1 border-t border-border">
           <Button
             v-if="status?.appConfigured && canManageGithubInstallation"
-            variant="default"
+            variant="flat"
             :disabled="loading"
             :as="'a'"
             :href="installStartUrl()"
@@ -297,7 +297,8 @@ onMounted(async () => {
           </Button>
           <Button
             v-if="status?.installation && canManageGithubInstallation"
-            variant="destructive"
+            variant="flat"
+            color="destructive"
             :disabled="loading"
             @click="disconnectInstallation"
           >

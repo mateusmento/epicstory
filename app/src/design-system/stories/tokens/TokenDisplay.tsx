@@ -1,6 +1,6 @@
 import { cn } from "@/design-system/utils";
 import { defineComponent, type CSSProperties, type PropType } from "vue";
-import type { SemanticColorToken, SpacingToken } from "./token-reference";
+import type { DemoColorMapping, SemanticColorToken, SpacingToken } from "./token-reference";
 
 export const TokenSection = defineComponent({
   name: "TokenSection",
@@ -62,10 +62,8 @@ export const ColorSwatch = defineComponent({
             isForegroundToken && "ring-1 ring-inset ring-border",
           )}
           style={{
-            background: isForegroundToken
-              ? `hsl(var(--background))`
-              : `hsl(var(${props.cssVar}))`,
-            color: isForegroundToken ? `hsl(var(${props.cssVar}))` : undefined,
+            background: isForegroundToken ? `oklch(var(--background))` : `oklch(var(${props.cssVar}))`,
+            color: isForegroundToken ? `oklch(var(${props.cssVar}))` : undefined,
           }}
         >
           {props.showForegroundSample || isForegroundToken ? (
@@ -125,6 +123,12 @@ export const ColorSwatchGrid = defineComponent({
 
 export const DemoMappingTable = defineComponent({
   name: "DemoMappingTable",
+  props: {
+    rows: {
+      type: Array as PropType<DemoColorMapping[]>,
+      required: true,
+    },
+  },
   setup(_, { attrs }) {
     const rows = (attrs.rows ?? []) as Array<{
       demoHex: string;
@@ -245,10 +249,7 @@ export const RadiusPreview = defineComponent({
   setup(props) {
     return () => (
       <div class="flex flex-col items-center gap-2">
-        <div
-          class={cn("size-20 border-2 border-primary bg-muted", props.className)}
-          style={props.style}
-        />
+        <div class={cn("size-20 border-2 border-primary bg-muted", props.className)} style={props.style} />
         <div class="text-center">
           <code class="text-xs font-medium text-foreground">{props.name}</code>
           {props.value ? <p class="text-xs text-muted-foreground">{props.value}</p> : null}
@@ -312,15 +313,15 @@ export const LightThemeIsland = defineComponent({
   name: "LightThemeIsland",
   setup(_, { slots }) {
     const lightVars: CSSProperties = {
-      "--background": "240 5% 96%",
-      "--foreground": "240 4% 16%",
-      "--muted": "240 5% 93%",
-      "--muted-foreground": "240 4% 46%",
-      "--card": "0 0% 100%",
-      "--card-foreground": "240 10% 3.9%",
-      "--border": "240 5.9% 90%",
-      "--primary": "240 5.9% 10%",
-      "--primary-foreground": "0 0% 98%",
+      "--background": "96.8% 0.0014 286.4",
+      "--foreground": "27.5% 0.0060 286.0",
+      "--muted": "94.4% 0.0024 286.4",
+      "--muted-foreground": "55.0% 0.0144 285.9",
+      "--card": "100.0% 0.0000 none",
+      "--card-foreground": "14.1% 0.0044 285.8",
+      "--border": "92.0% 0.0040 286.3",
+      "--primary": "21.0% 0.0059 285.9",
+      "--primary-foreground": "98.5% 0.0000 none",
     };
 
     return () => (
@@ -339,15 +340,15 @@ export const DarkThemeIsland = defineComponent({
   name: "DarkThemeIsland",
   setup(_, { slots }) {
     const darkVars: CSSProperties = {
-      "--background": "0 0% 7%",
-      "--foreground": "0 0% 88%",
-      "--muted": "0 0% 16%",
-      "--muted-foreground": "0 0% 50%",
-      "--card": "0 0% 10%",
-      "--card-foreground": "0 0% 88%",
-      "--border": "0 0% 18%",
-      "--primary": "0 0% 98%",
-      "--primary-foreground": "0 0% 10%",
+      "--background": "18.2% 0.0000 none",
+      "--foreground": "90.8% 0.0000 none",
+      "--muted": "28.0% 0.0000 none",
+      "--muted-foreground": "59.8% 0.0000 none",
+      "--card": "21.6% 0.0000 none",
+      "--card-foreground": "90.8% 0.0000 none",
+      "--border": "30.1% 0.0000 none",
+      "--primary": "98.5% 0.0000 none",
+      "--primary-foreground": "21.6% 0.0000 none",
     };
 
     return () => (

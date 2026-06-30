@@ -79,8 +79,8 @@ export const Open: Story = {
             <DialogDescription>Review settings before connecting your workspace.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" elevation="elevated" @click="open = false">Cancel</Button>
-            <Button variant="primary" elevation="elevated" @click="open = false">Continue</Button>
+            <Button variant="surface" color="secondary" @click="open = false">Cancel</Button>
+            <Button variant="brand" color="primary" @click="open = false">Continue</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -115,7 +115,7 @@ export const DestructiveConfirm: Story = {
           </DialogHeader>
           <DialogFooter class="mt-2">
             <Button variant="outline" @click="open = false">Cancel</Button>
-            <Button variant="destructive" @click="open = false">Delete</Button>
+            <Button variant="brand" color="destructive" @click="open = false">Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
