@@ -2,7 +2,6 @@ import { type VariantProps, cva } from "class-variance-authority";
 
 export const buttonVariants = cva(
   [
-    "btn-intent",
     "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium",
     "transition-[background,border-color,box-shadow,color,background-image] duration-150 ease-in-out",
     "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",

@@ -67,24 +67,24 @@ watch(workspace, () =>
 
     <ScrollArea @reached-bottom="fetchMoreProjects()" class="flex-1 min-h-0">
       <div class="!flex flex-col gap-1 p-2 min-h-0 font-inter">
-        <RouterLink
+        <Button
           v-for="project of projects"
           :key="project.id"
+          :as="RouterLink"
           :to="`/${workspace.id}/project/${project.id}/backlog`"
-          class="flex:row-2xl flex:center-y py-2 px-3 rounded-lg hover:bg-secondary cursor-pointer"
-          :class="{ 'bg-secondary': +route.params.projectId === project.id }"
+          intent="secondary"
+          variant="ghost"
+          :active="+route.params.projectId === project.id"
+          class="flex:row-md flex:center-y"
         >
-          <div class="flex:row-md flex:center-y flex-1">
-            <BoxIcon class="size-4 text-muted-foreground" stroke-width="2" />
-
-            <div class="text-sm text-foreground flex-1 truncate">{{ project.name }}</div>
-            <div class="text-xs text-secondary-foreground">{{ project.issueCount }} issues</div>
-          </div>
+          <BoxIcon class="size-4 text-muted-foreground" stroke-width="2" />
+          <div class="text-sm text-foreground flex-1 truncate">{{ project.name }}</div>
+          <div class="text-xs text-secondary-foreground">{{ project.issueCount }} issues</div>
           <Trash2Icon
             @click.stop.prevent="removeProject(project.id)"
-            class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
+            class="size-4 ml-2 cursor-pointer text-foreground"
           />
-        </RouterLink>
+        </Button>
 
         <div v-if="projectsPage?.hasNext" class="py-2 px-3 text-xs text-secondary-foreground">
           {{ isFetchingMoreProjects ? "Loading more…" : "Scroll to load more" }}

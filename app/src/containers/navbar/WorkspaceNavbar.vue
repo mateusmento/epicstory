@@ -195,7 +195,7 @@ async function onJoinLiveScheduledMeeting() {
 
           <MenuSeparator />
 
-          <MenuItem @click="signOut" variant="destructive" class="text-[13px] w-44">
+          <MenuItem @click="signOut" intent="destructive" class="text-[13px] w-44">
             <LogOutIcon class="mr-2 h-4 w-4" />
             <span>Sign out</span>
             <MenuShortcut>⇧⌘Q</MenuShortcut>

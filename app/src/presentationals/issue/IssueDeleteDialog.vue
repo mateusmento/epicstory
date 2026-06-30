@@ -37,7 +37,7 @@ function onConfirm() {
 
       <DialogFooter class="mt-2">
         <Button type="button" variant="outline" :disabled="disabled" @click="close">Cancel</Button>
-        <Button type="button" variant="flat" color="destructive" :disabled="disabled" @click="onConfirm"
+        <Button type="button" variant="flat" intent="destructive" :disabled="disabled" @click="onConfirm"
           >Delete</Button
         >
       </DialogFooter>

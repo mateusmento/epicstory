@@ -2,7 +2,7 @@
 @import "@/presentationals/rich-text/styles.css";
 @import "./color-scales.css";
 @import "./color-shades.css";
-@import "./button-intents.css";
+@import "./surface-intents.css";
 
 @tailwind base;
 @tailwind components;

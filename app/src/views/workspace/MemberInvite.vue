@@ -133,8 +133,8 @@ async function acceptInvite() {
           <Button
             @click="acceptInvite"
             :disabled="isLoading"
-            variant="brand"
-            color="primary"
+            variant="flat"
+            intent="primary"
             size="lg"
             class="w-full"
           >

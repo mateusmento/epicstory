@@ -41,7 +41,7 @@ const { actionLoading, openRename, openDelete, leaveChannel, scheduleMeeting, st
         <div>Start meeting</div>
       </MenuItem>
       <MenuSeparator />
-      <MenuItem variant="destructive" @click="openDelete(channel)" :disabled="actionLoading">
+      <MenuItem intent="destructive" @click="openDelete(channel)" :disabled="actionLoading">
         <Trash2Icon class="size-3.5 shrink-0" stroke-width="2.5" />
         <div>Delete channel</div>
       </MenuItem>

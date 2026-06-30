@@ -229,7 +229,7 @@ const emit = defineEmits<{
         <Button
           type="button"
           variant="flat"
-          color="primary"
+          intent="primary"
           size="sm"
           class="flex:row-lg flex:center-y text-sm"
           :disabled="toolbar.attachmentsBlocked"
@@ -243,7 +243,7 @@ const emit = defineEmits<{
         <Button
           type="button"
           variant="flat"
-          color="primary"
+          intent="primary"
           size="sm"
           class="flex:row-lg flex:center-y text-sm"
           :disabled="toolbar.attachmentsBlocked"

@@ -109,42 +109,11 @@ export default {
           "5": "oklch(var(--chart-5) / <alpha-value>)",
         },
       },
-      backgroundImage: {
-        "brand-gradient":
-          "linear-gradient(180deg, oklch(var(--btn-brand-stop-top)) 0%, oklch(var(--btn-brand-stop-mid)) 52%, oklch(var(--btn-brand-stop-bottom)) 100%)",
-        "brand-gradient-hover":
-          "linear-gradient(180deg, oklch(var(--btn-brand-stop-top-hover)) 0%, oklch(var(--btn-brand-stop-mid-hover)) 52%, oklch(var(--btn-brand-stop-bottom-hover)) 100%)",
-        "brand-gradient-active":
-          "linear-gradient(180deg, oklch(var(--btn-brand-stop-mid)) 0%, oklch(var(--btn-brand-stop-bottom)) 100%)",
-        "destructive-gradient":
-          "linear-gradient(180deg, oklch(var(--btn-destructive-stop-top)) 0%, oklch(var(--btn-destructive-stop-mid)) 52%, oklch(var(--btn-destructive-stop-bottom)) 100%)",
-        "destructive-gradient-hover":
-          "linear-gradient(180deg, oklch(var(--btn-destructive-stop-top-hover)) 0%, oklch(var(--btn-destructive-stop-mid-hover)) 52%, oklch(var(--btn-destructive-stop-bottom-hover)) 100%)",
-        "destructive-gradient-active":
-          "linear-gradient(180deg, oklch(var(--btn-destructive-stop-mid)) 0%, oklch(var(--btn-destructive-stop-bottom)) 100%)",
-      },
+      backgroundImage: {},
       boxShadow: {
         "btn-outline": "0 1px 2px rgb(15 23 42 / 0.05), 0 2px 6px rgb(15 23 42 / 0.06)",
         "btn-outline-hover": "0 1px 2px rgb(15 23 42 / 0.06), 0 3px 8px rgb(15 23 42 / 0.08)",
         "btn-outline-active": "0 1px 2px rgb(15 23 42 / 0.05)",
-        "btn-brand":
-          "inset 0 0 1px 1px rgb(255 255 255 / 0.35), 0 1px 0 rgb(63 62 200 / 0.18), 0 2px 4px rgb(58 57 180 / 0.28)",
-        "btn-brand-hover":
-          "inset 0 0 1px 1px rgb(255 255 255 / 0.38), 0 1px 0 rgb(63 62 200 / 0.18), 0 3px 6px rgb(58 57 180 / 0.22)",
-        "btn-brand-active":
-          "inset 0 1px 2px rgb(47 46 150 / 0.35), 0 1px 0 rgb(63 62 200 / 0.14), 0 1px 2px rgb(58 57 180 / 0.32)",
-        "btn-destructive":
-          "inset 0 0 1px 1px rgb(255 255 255 / 0.35), 0 1px 0 rgb(127 29 29 / 0.18), 0 2px 4px rgb(185 28 28 / 0.22)",
-        "btn-destructive-hover":
-          "inset 0 0 1px 1px rgb(255 255 255 / 0.38), 0 1px 0 rgb(127 29 29 / 0.18), 0 3px 6px rgb(185 28 28 / 0.18)",
-        "btn-destructive-active":
-          "inset 0 1px 2px rgb(100 20 20 / 0.3), 0 1px 0 rgb(127 29 29 / 0.14), 0 1px 2px rgb(153 27 27 / 0.26)",
-        "btn-warning":
-          "inset 0 0 1px 1px rgb(255 255 255 / 0.35), 0 1px 0 rgb(146 64 14 / 0.16), 0 2px 4px rgb(180 83 9 / 0.2)",
-        "btn-warning-hover":
-          "inset 0 0 1px 1px rgb(255 255 255 / 0.38), 0 1px 0 rgb(146 64 14 / 0.16), 0 3px 6px rgb(180 83 9 / 0.16)",
-        "btn-warning-active":
-          "inset 0 1px 2px rgb(120 53 15 / 0.28), 0 1px 0 rgb(146 64 14 / 0.12), 0 1px 2px rgb(180 83 9 / 0.22)",
         "card-elevated": "0 1px 2px rgb(15 23 42 / 0.04), 0 12px 40px rgb(15 23 42 / 0.1)",
       },
       keyframes: {

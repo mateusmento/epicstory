@@ -75,7 +75,7 @@ function removeMember(user: IUser) {
           </MenuTrigger>
           <MenuContent side="bottom" align="end">
             <MenuGroup>
-              <MenuItem @click="removeMember(member)" variant="destructive">
+              <MenuItem @click="removeMember(member)" intent="destructive">
                 <Trash2Icon class="mr-2 h-4 w-4" />
                 <span class="whitespace-nowrap">Remove from channel</span>
               </MenuItem>

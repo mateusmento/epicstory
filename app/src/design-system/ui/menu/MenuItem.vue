@@ -9,14 +9,14 @@ import type {
 } from "reka-ui";
 import { ContextMenuItem, DropdownMenuItem, useForwardPropsEmits } from "reka-ui";
 import { computed, type HTMLAttributes } from "vue";
+import type { ButtonIntent } from "../button";
 import { useResolvedMenuImplementation } from "./_shared";
-import type { ButtonVariants } from "../button";
 
 type MenuItemProps = DropdownMenuItemProps &
   ContextMenuItemProps & {
     class?: HTMLAttributes["class"];
     inset?: boolean;
-    variant?: ButtonVariants["variant"];
+    intent?: ButtonIntent;
   };
 
 type MenuItemEmits = DropdownMenuItemEmits & ContextMenuItemEmits;
@@ -42,8 +42,7 @@ const itemComponent = computed(() => (impl.value === "dropdown-menu" ? DropdownM
         'relative flex cursor-default select-none items-center rounded-sm gap-2 px-2 py-1.5 text-sm outline-none transition-colors',
         'focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0',
         inset && 'pl-8',
-        props.variant === 'destructive' &&
-          'text-destructive data-[highlighted]:bg-destructive/20 data-[highlighted]:text-destructive',
+        props.intent === 'destructive' && 'text-destructive focus:bg-destructive/20 focus:text-destructive',
         props.class,
       )
     "

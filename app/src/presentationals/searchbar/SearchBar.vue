@@ -74,7 +74,7 @@ defineExpose({ blur });
         class="p-0.5"
         type="button"
         variant="soft"
-        color="secondary"
+        intent="secondary"
         size="icon"
         :title="props.clearTitle"
         @mousedown.prevent

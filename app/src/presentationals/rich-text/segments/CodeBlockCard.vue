@@ -142,7 +142,7 @@ onMounted(() => {
           <MenuTrigger as-child>
             <Button
               variant="soft"
-              color="secondary"
+              intent="secondary"
               size="sm"
               class="h-7 w-fit px-2 gap-1 font-mono text-[11px] font-normal text-foreground shadow-none"
               aria-label="Syntax highlighting language"
@@ -227,7 +227,7 @@ onMounted(() => {
             <Button
               type="button"
               variant="soft"
-              color="secondary"
+              intent="secondary"
               size="sm"
               class="pointer-events-auto gap-1 border border-border shadow-sm rounded-lg font-inter text-xs"
               :data-rich-text-json-code-expand="props.previewInteractionMarkers ? '' : undefined"
@@ -253,7 +253,7 @@ onMounted(() => {
         <Button
           type="button"
           variant="soft"
-          color="secondary"
+          intent="secondary"
           size="sm"
           class="pointer-events-auto gap-1 border border-border shadow-sm rounded-lg backdrop-blur-[2px] font-inter text-xs"
           :data-rich-text-json-code-collapse="props.previewInteractionMarkers ? '' : undefined"

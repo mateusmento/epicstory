@@ -298,7 +298,7 @@ onMounted(async () => {
           <Button
             v-if="status?.installation && canManageGithubInstallation"
             variant="flat"
-            color="destructive"
+            intent="destructive"
             :disabled="loading"
             @click="disconnectInstallation"
           >

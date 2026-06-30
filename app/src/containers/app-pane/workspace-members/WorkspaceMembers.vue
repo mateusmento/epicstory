@@ -170,7 +170,7 @@ async function onSend() {
             </MenuTrigger>
             <MenuContent side="bottom" align="end">
               <MenuGroup>
-                <MenuItem @click="removeMember(member.id)" variant="destructive">
+                <MenuItem @click="removeMember(member.id)" intent="destructive">
                   <Trash2Icon class="mr-2 h-4 w-4" />
                   <span class="whitespace-nowrap">Remove from workspace</span>
                 </MenuItem>

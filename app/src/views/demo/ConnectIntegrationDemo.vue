@@ -129,7 +129,7 @@ const tokens = {
 
         <div :class="styles.actions">
           <button type="button" :class="[styles.btn, styles.btnCancel, 'fx-btn-cancel']">Cancel</button>
-          <Button variant="brand" color="primary" size="lg" :class="styles.btnNext">Next</Button>
+          <Button variant="flat" intent="primary" size="lg" :class="styles.btnNext">Next</Button>
         </div>
 
         <p :class="[styles.disclaimer, styles.disclaimerMain]">

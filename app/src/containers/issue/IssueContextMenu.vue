@@ -145,7 +145,7 @@ async function onLabelsUpdate(nextIds: number[]) {
 
       <MenuSeparator />
 
-      <MenuItem :disabled="disabled" variant="destructive" @click="deleteOpen = true">
+      <MenuItem :disabled="disabled" intent="destructive" @click="deleteOpen = true">
         <Trash2Icon />
         <span>Delete</span>
       </MenuItem>

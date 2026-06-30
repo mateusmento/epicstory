@@ -174,12 +174,12 @@ function onSubmit(values: Record<string, unknown>) {
 
     <DialogFooter class="pt-2">
       <DialogClose as-child>
-        <Button type="button" variant="brand" color="secondary">Cancel</Button>
+        <Button type="button" variant="outline" intent="secondary">Cancel</Button>
       </DialogClose>
       <Button
         type="submit"
-        variant="brand"
-        color="primary"
+        variant="flat"
+        intent="primary"
         :disabled="channelType === 'direct' && members.length < 1"
         >Create</Button
       >

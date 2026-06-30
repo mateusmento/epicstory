@@ -224,7 +224,7 @@ const toolbar = computed(
         <Button
           type="button"
           variant="flat"
-          color="primary"
+          intent="primary"
           size="sm"
           class="flex:row-lg flex:center-y text-sm"
           :disabled="toolbar.attachmentsBlocked"
@@ -244,7 +244,7 @@ const toolbar = computed(
           <Button
             type="button"
             variant="flat"
-            color="primary"
+            intent="primary"
             size="sm"
             class="shrink-0 px-1.5"
             aria-label="Schedule options"

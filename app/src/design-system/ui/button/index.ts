@@ -1,8 +1,9 @@
 export { default as Button } from "./Button.vue";
 export { buttonVariants, type ButtonVariants } from "./button-variants";
 export {
-  buttonColors,
+  buttonIntents,
   buttonSurfaceVariants,
-  type ButtonColor,
+  btnClasses,
+  type ButtonIntent,
   type ButtonSurfaceVariant,
 } from "./button-variant-classes";

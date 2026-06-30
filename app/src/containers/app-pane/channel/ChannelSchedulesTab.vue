@@ -120,7 +120,7 @@ function previewText(m: IScheduledMessage) {
                 <span>Edit</span>
               </MenuItem>
               <MenuSeparator />
-              <MenuItem variant="destructive" @click="remove(m)">
+              <MenuItem intent="destructive" @click="remove(m)">
                 <Trash2 class="size-4" />
                 <span>Delete</span>
               </MenuItem>

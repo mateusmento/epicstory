@@ -1,13 +1,12 @@
-export const buttonColors = ["default", "primary", "secondary", "destructive", "warning", "gray"] as const;
-export type ButtonColor = (typeof buttonColors)[number];
+import { srfClasses, type SurfaceIntent, type SurfaceVariant } from "../surface/surface-intent-classes";
 
-export const buttonSurfaceVariants = [
-  "flat",
-  "outline",
-  "surface",
-  "soft",
-  "ghost",
-  "text",
-  "brand",
-] as const;
-export type ButtonSurfaceVariant = (typeof buttonSurfaceVariants)[number];
+export const buttonIntents = ["default", "primary", "brand", "secondary", "destructive", "warning"] as const;
+export type ButtonIntent = SurfaceIntent;
+
+export const buttonSurfaceVariants = ["flat", "outline", "soft", "ghost", "text"] as const;
+export type ButtonSurfaceVariant = SurfaceVariant;
+
+/** srf + srf-{variant} + srf-{intent} + srf-button */
+export function btnClasses(variant: ButtonSurfaceVariant, intent: ButtonIntent): string[] {
+  return [...srfClasses(variant, intent), "srf-button"];
+}

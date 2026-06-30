@@ -172,7 +172,7 @@ async function save() {
         <Button
           type="button"
           variant="text"
-          color="primary"
+          intent="primary"
           class="h-auto p-0 text-xs"
           @click="scheduleDialogOpen = true"
           >Change</Button

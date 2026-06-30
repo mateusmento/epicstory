@@ -98,7 +98,7 @@ defineExpose({
         </MenuItem>
         <template v-if="sender === 'me'">
           <MenuSeparator />
-          <MenuItem @click="emit('message-deleted')" variant="destructive">
+          <MenuItem @click="emit('message-deleted')" intent="destructive">
             <Trash2Icon name="fa-trash" class="w-5 h-5" />
             <span>Delete message</span>
           </MenuItem>

@@ -28,11 +28,11 @@ function hasMeetingLobby(event: ICalendarEvent) {
           Open lobby
         </MenuItem>
         <MenuItem v-else @click="emit('edit', props.event)">Edit</MenuItem>
-        <MenuItem variant="destructive" @click="emit('remove', props.event)"> Cancel series </MenuItem>
+        <MenuItem intent="destructive" @click="emit('remove', props.event)"> Cancel series </MenuItem>
       </template>
       <template v-else>
         <MenuItem @click="emit('edit', props.event)">Edit</MenuItem>
-        <MenuItem variant="destructive" @click="emit('remove', props.event)">Remove</MenuItem>
+        <MenuItem intent="destructive" @click="emit('remove', props.event)">Remove</MenuItem>
       </template>
     </MenuContent>
   </Menu>

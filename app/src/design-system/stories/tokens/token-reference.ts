@@ -415,7 +415,7 @@ export const elevationTokens: ElevationToken[] = [
     demoKey: "tokens.shadows.btnCancel",
     shadow: "0 1px 2px rgba(15, 23, 42, 0.05), 0 2px 6px rgba(15, 23, 42, 0.06)",
     status: "canonical",
-    usedOn: "Cancel button (outline variant)",
+    usedOn: "Outline button with elevated prop",
   },
   {
     name: "btn-outline-hover",
@@ -424,33 +424,6 @@ export const elevationTokens: ElevationToken[] = [
     shadow: "0 1px 2px rgba(15, 23, 42, 0.06), 0 3px 8px rgba(15, 23, 42, 0.08)",
     status: "canonical",
     usedOn: "Cancel button hover",
-  },
-  {
-    name: "btn-brand",
-    tailwindUtility: "shadow-btn-brand",
-    demoKey: "tokens.shadows.btnNext",
-    shadow:
-      "inset 0 0 1px 1px rgba(255, 255, 255, 0.5), 0 1px 0 rgba(63, 62, 200, 0.22), 0 2px 4px rgba(58, 57, 180, 0.4)",
-    status: "canonical",
-    usedOn: "Next button (brand variant)",
-  },
-  {
-    name: "btn-brand-hover",
-    tailwindUtility: "shadow-btn-brand-hover",
-    demoKey: "tokens.shadows.btnNextHover",
-    shadow:
-      "inset 0 0 1px 1px rgba(255, 255, 255, 0.52), 0 1px 0 rgba(63, 62, 200, 0.22), 0 3px 6px rgba(58, 57, 180, 0.28)",
-    status: "canonical",
-    usedOn: "Next button hover",
-  },
-  {
-    name: "btn-brand-active",
-    tailwindUtility: "shadow-btn-brand-active",
-    demoKey: "tokens.shadows.btnNextActive",
-    shadow:
-      "inset 0 1px 2px rgba(47, 46, 150, 0.35), 0 1px 0 rgba(63, 62, 200, 0.14), 0 1px 2px rgba(58, 57, 180, 0.4)",
-    status: "canonical",
-    usedOn: "Next button active",
   },
 ];
 

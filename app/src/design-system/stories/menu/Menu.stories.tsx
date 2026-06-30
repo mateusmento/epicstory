@@ -107,7 +107,7 @@ export const ContextMenu: Story = {
                 Developer Tools
               </MenuItem>
               <MenuSeparator />
-              <MenuItem variant="destructive">
+              <MenuItem intent="destructive">
                 <TrashIcon />
                 Delete
               </MenuItem>

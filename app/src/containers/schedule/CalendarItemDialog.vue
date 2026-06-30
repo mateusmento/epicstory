@@ -207,7 +207,7 @@ const {
               v-if="form.editingEvent"
               type="button"
               variant="flat"
-              color="destructive"
+              intent="destructive"
               size="sm"
               class="mr-auto"
               :disabled="form.isCreating"

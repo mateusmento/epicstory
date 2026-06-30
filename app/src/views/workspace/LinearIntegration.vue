@@ -152,7 +152,7 @@ onBeforeUnmount(stopPolling);
           <Button v-if="!connection" :disabled="loading" :as="'a'" :href="oauthStartUrl()">
             Connect Linear
           </Button>
-          <Button v-else variant="flat" color="destructive" :disabled="loading" @click="disconnect">
+          <Button v-else variant="flat" intent="destructive" :disabled="loading" @click="disconnect">
             Disconnect
           </Button>
         </div>

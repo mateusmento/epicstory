@@ -45,7 +45,7 @@ function ElevationReference() {
         ) : null}
       </TokenSection>
 
-      <TokenSection title="Button shadows (brand + outline)">
+      <TokenSection title="Button shadows (elevated)">
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {btnShadows.map((token) => (
             <ShadowCard

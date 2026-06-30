@@ -108,7 +108,7 @@ async function joinIncomingMeeting() {
 
         <Button
           variant="flat"
-          color="destructive"
+          intent="destructive"
           size="icon"
           class="p-2.5 rounded-full"
           @click="leaveMeeting"
@@ -130,7 +130,7 @@ async function joinIncomingMeeting() {
 
         <Button
           variant="flat"
-          color="destructive"
+          intent="destructive"
           size="icon"
           class="p-2.5 rounded-full"
           @click="rejectIncomingMeeting"

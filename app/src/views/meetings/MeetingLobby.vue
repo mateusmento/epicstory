@@ -227,7 +227,7 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
               content-align="start"
               @input-devices-change="onLobbyDeviceInputChange"
             />
-            <Button variant="flat" color="destructive" size="sm" @click="cancelSeries">
+            <Button variant="flat" intent="destructive" size="sm" @click="cancelSeries">
               Cancel series
             </Button>
             <Button variant="outline" size="sm" @click="toggleCamera" :disabled="!previewStream">

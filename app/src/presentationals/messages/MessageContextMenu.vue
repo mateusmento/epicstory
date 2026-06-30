@@ -121,7 +121,7 @@ async function copyMessage() {
 
     <template v-if="sender === 'me'">
       <MenuSeparator />
-      <MenuItem @click="emit('message-deleted')" variant="destructive">
+      <MenuItem @click="emit('message-deleted')" intent="destructive">
         <Trash2Icon name="fa-trash" class="" />
         <span>Delete message</span>
       </MenuItem>
