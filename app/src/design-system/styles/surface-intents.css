@@ -8,7 +8,6 @@
  *
  * Modifiers:
  *   srf-button    — interactive: hover and :active tokens
- *   srf--active   — forced active appearance
  *   srf--elevated — elevated shadow
  */
 
@@ -18,9 +17,9 @@
     --srf-default-flat-bg-hover: var(--background);
     --srf-default-flat-bg-active: var(--muted);
     --srf-default-flat-text: var(--primary-foreground);
-    --srf-default-outline-border: var(--slate-200);
-    --srf-default-outline-border-hover: var(--slate-200);
-    --srf-default-outline-border-active: var(--slate-400);
+    --srf-default-outline-border: var(--zinc-200);
+    --srf-default-outline-border-hover: var(--zinc-200);
+    --srf-default-outline-border-active: var(--zinc-400);
     --srf-default-outline-bg: var(--card);
     --srf-default-outline-bg-hover: var(--background);
     --srf-default-outline-bg-active: var(--muted);
@@ -28,10 +27,10 @@
     --srf-default-soft-bg: var(--zinc-200);
     --srf-default-soft-bg-hover: var(--zinc-300);
     --srf-default-soft-bg-active: var(--zinc-400);
-    --srf-default-soft-text: var(--slate-600);
-    --srf-default-text: var(--slate-800);
-    --srf-default-text-hover: var(--slate-800);
-    --srf-default-text-active: var(--slate-900);
+    --srf-default-soft-text: var(--zinc-600);
+    --srf-default-text: var(--zinc-800);
+    --srf-default-text-hover: var(--zinc-800);
+    --srf-default-text-active: var(--zinc-900);
 
     --srf-primary-flat-bg: var(--indigo-600);
     --srf-primary-flat-bg-hover: var(--indigo-700);
@@ -47,7 +46,7 @@
     --srf-primary-soft-bg: var(--indigo-50);
     --srf-primary-soft-bg-hover: var(--indigo-100);
     --srf-primary-soft-bg-active: var(--indigo-200);
-    --srf-primary-soft-text: var(--slate-600);
+    --srf-primary-soft-text: var(--zinc-600);
     --srf-primary-text: var(--indigo-700);
     --srf-primary-text-hover: var(--indigo-700);
     --srf-primary-text-active: var(--indigo-800);
@@ -92,7 +91,7 @@
     --srf-brand-soft-bg: var(--indigo-50);
     --srf-brand-soft-bg-hover: var(--indigo-100);
     --srf-brand-soft-bg-active: var(--indigo-200);
-    --srf-brand-soft-text: var(--slate-600);
+    --srf-brand-soft-text: var(--zinc-600);
     --srf-brand-text: var(--indigo-700);
     --srf-brand-text-hover: var(--indigo-700);
     --srf-brand-text-active: var(--indigo-800);
@@ -101,9 +100,9 @@
     --srf-secondary-flat-bg-hover: var(--zinc-500);
     --srf-secondary-flat-bg-active: var(--zinc-600);
     --srf-secondary-flat-text: var(--zinc-50);
-    --srf-secondary-outline-border: var(--slate-200);
-    --srf-secondary-outline-border-hover: var(--slate-300);
-    --srf-secondary-outline-border-active: var(--slate-400);
+    --srf-secondary-outline-border: var(--zinc-200);
+    --srf-secondary-outline-border-hover: var(--zinc-300);
+    --srf-secondary-outline-border-active: var(--zinc-400);
     --srf-secondary-outline-bg: var(--card);
     --srf-secondary-outline-bg-hover: var(--background);
     --srf-secondary-outline-bg-active: var(--muted);
@@ -111,8 +110,8 @@
     --srf-secondary-soft-bg: var(--muted);
     --srf-secondary-soft-bg-hover: var(--secondary);
     --srf-secondary-soft-bg-active: var(--accent);
-    --srf-secondary-soft-text: var(--slate-600);
-    --srf-secondary-text: var(--slate-600);
+    --srf-secondary-soft-text: var(--zinc-600);
+    --srf-secondary-text: var(--zinc-600);
     --srf-secondary-text-hover: var(--foreground);
     --srf-secondary-text-active: var(--zinc-600);
 
@@ -163,20 +162,20 @@
     --srf-default-flat-bg-hover: var(--accent);
     --srf-default-flat-bg-active: var(--card);
     --srf-default-flat-text: var(--foreground);
-    --srf-default-outline-border: var(--slate-700);
-    --srf-default-outline-border-hover: var(--slate-700);
-    --srf-default-outline-border-active: var(--slate-500);
+    --srf-default-outline-border: var(--card);
+    --srf-default-outline-border-hover: var(--card);
+    --srf-default-outline-border-active: var(--zinc-500);
     --srf-default-outline-bg: var(--card);
-    --srf-default-outline-bg-hover: var(--muted);
-    --srf-default-outline-bg-active: var(--slate-950);
+    --srf-default-outline-bg-hover: var(--secondary);
+    --srf-default-outline-bg-active: var(--zinc-950);
     --srf-default-outline-text: var(--foreground);
-    --srf-default-soft-bg: var(--slate-900);
-    --srf-default-soft-bg-hover: var(--muted);
+    --srf-default-soft-bg: var(--zinc-900);
+    --srf-default-soft-bg-hover: var(--secondary);
     --srf-default-soft-bg-active: var(--secondary);
     --srf-default-soft-text: var(--foreground);
-    --srf-default-text: var(--slate-200);
-    --srf-default-text-hover: var(--slate-200);
-    --srf-default-text-active: var(--slate-200);
+    --srf-default-text: var(--zinc-200);
+    --srf-default-text-hover: var(--zinc-200);
+    --srf-default-text-active: var(--zinc-200);
 
     --srf-primary-flat-bg: var(--indigo-500);
     --srf-primary-flat-bg-hover: var(--indigo-600);
@@ -185,13 +184,13 @@
     --srf-primary-outline-border: var(--indigo-800);
     --srf-primary-outline-border-hover: var(--indigo-700);
     --srf-primary-outline-border-active: var(--indigo-600);
-    --srf-primary-outline-bg: var(--slate-950);
-    --srf-primary-outline-bg-hover: var(--slate-900);
-    --srf-primary-outline-bg-active: var(--slate-950);
+    --srf-primary-outline-bg: var(--zinc-950);
+    --srf-primary-outline-bg-hover: var(--zinc-900);
+    --srf-primary-outline-bg-active: var(--zinc-950);
     --srf-primary-outline-text: var(--indigo-400);
-    --srf-primary-soft-bg: var(--slate-900);
-    --srf-primary-soft-bg-hover: var(--slate-800);
-    --srf-primary-soft-bg-active: var(--slate-950);
+    --srf-primary-soft-bg: var(--zinc-900);
+    --srf-primary-soft-bg-hover: var(--zinc-800);
+    --srf-primary-soft-bg-active: var(--zinc-950);
     --srf-primary-soft-text: var(--indigo-400);
     --srf-primary-text: var(--indigo-400);
     --srf-primary-text-hover: var(--indigo-600);
@@ -200,13 +199,13 @@
     --srf-brand-outline-border: var(--indigo-800);
     --srf-brand-outline-border-hover: var(--indigo-700);
     --srf-brand-outline-border-active: var(--indigo-600);
-    --srf-brand-outline-bg: var(--slate-950);
-    --srf-brand-outline-bg-hover: var(--slate-900);
-    --srf-brand-outline-bg-active: var(--slate-950);
+    --srf-brand-outline-bg: var(--zinc-950);
+    --srf-brand-outline-bg-hover: var(--zinc-900);
+    --srf-brand-outline-bg-active: var(--zinc-950);
     --srf-brand-outline-text: var(--indigo-400);
-    --srf-brand-soft-bg: var(--slate-900);
-    --srf-brand-soft-bg-hover: var(--slate-800);
-    --srf-brand-soft-bg-active: var(--slate-950);
+    --srf-brand-soft-bg: var(--zinc-900);
+    --srf-brand-soft-bg-hover: var(--zinc-800);
+    --srf-brand-soft-bg-active: var(--zinc-950);
     --srf-brand-soft-text: var(--indigo-400);
     --srf-brand-text: var(--indigo-400);
     --srf-brand-text-hover: var(--indigo-600);
@@ -216,16 +215,16 @@
     --srf-secondary-flat-bg-hover: var(--zinc-500);
     --srf-secondary-flat-bg-active: var(--zinc-400);
     --srf-secondary-flat-text: var(--zinc-100);
-    --srf-secondary-outline-border: var(--slate-700);
-    --srf-secondary-outline-border-hover: var(--slate-600);
-    --srf-secondary-outline-border-active: var(--slate-500);
+    --srf-secondary-outline-border: var(--zinc-700);
+    --srf-secondary-outline-border-hover: var(--zinc-600);
+    --srf-secondary-outline-border-active: var(--zinc-500);
     --srf-secondary-outline-bg: var(--card);
     --srf-secondary-outline-bg-hover: var(--muted);
-    --srf-secondary-outline-bg-active: var(--slate-900);
+    --srf-secondary-outline-bg-active: var(--zinc-900);
     --srf-secondary-outline-text: var(--foreground);
     --srf-secondary-soft-bg: var(--muted);
     --srf-secondary-soft-bg-hover: var(--accent);
-    --srf-secondary-soft-bg-active: var(--slate-800);
+    --srf-secondary-soft-bg-active: var(--zinc-800);
     --srf-secondary-soft-text: var(--foreground);
     --srf-secondary-text: var(--foreground);
     --srf-secondary-text-hover: var(--foreground);
@@ -238,13 +237,13 @@
     --srf-destructive-outline-border: var(--red-800);
     --srf-destructive-outline-border-hover: var(--red-700);
     --srf-destructive-outline-border-active: var(--red-600);
-    --srf-destructive-outline-bg: var(--slate-950);
-    --srf-destructive-outline-bg-hover: var(--slate-900);
-    --srf-destructive-outline-bg-active: var(--slate-950);
+    --srf-destructive-outline-bg: var(--zinc-950);
+    --srf-destructive-outline-bg-hover: var(--zinc-900);
+    --srf-destructive-outline-bg-active: var(--zinc-950);
     --srf-destructive-outline-text: var(--red-400);
-    --srf-destructive-soft-bg: var(--slate-900);
-    --srf-destructive-soft-bg-hover: var(--slate-800);
-    --srf-destructive-soft-bg-active: var(--slate-950);
+    --srf-destructive-soft-bg: var(--zinc-900);
+    --srf-destructive-soft-bg-hover: var(--zinc-800);
+    --srf-destructive-soft-bg-active: var(--zinc-950);
     --srf-destructive-soft-text: var(--red-400);
     --srf-destructive-text: var(--red-400);
     --srf-destructive-text-hover: var(--red-600);
@@ -257,13 +256,13 @@
     --srf-warning-outline-border: var(--amber-800);
     --srf-warning-outline-border-hover: var(--amber-700);
     --srf-warning-outline-border-active: var(--amber-600);
-    --srf-warning-outline-bg: var(--slate-900);
-    --srf-warning-outline-bg-hover: var(--slate-800);
-    --srf-warning-outline-bg-active: var(--slate-950);
+    --srf-warning-outline-bg: var(--zinc-900);
+    --srf-warning-outline-bg-hover: var(--zinc-800);
+    --srf-warning-outline-bg-active: var(--zinc-950);
     --srf-warning-outline-text: var(--amber-100);
-    --srf-warning-soft-bg: var(--slate-800);
-    --srf-warning-soft-bg-hover: var(--slate-700);
-    --srf-warning-soft-bg-active: var(--slate-900);
+    --srf-warning-soft-bg: var(--zinc-800);
+    --srf-warning-soft-bg-hover: var(--zinc-700);
+    --srf-warning-soft-bg-active: var(--zinc-900);
     --srf-warning-soft-text: var(--amber-100);
     --srf-warning-text: var(--amber-100);
     --srf-warning-text-hover: var(--amber-600);
@@ -275,68 +274,32 @@
   /* flat */
 
   .srf.srf-flat.srf-default {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: oklch(var(--srf-default-flat-bg));
     --srf-bg-hover: oklch(var(--srf-default-flat-bg-hover));
     --srf-bg-active: oklch(var(--srf-default-flat-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-default-flat-text));
   }
 
   .srf.srf-flat.srf-primary {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: oklch(var(--srf-primary-flat-bg));
     --srf-bg-hover: oklch(var(--srf-primary-flat-bg-hover));
     --srf-bg-active: oklch(var(--srf-primary-flat-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-primary-flat-text));
   }
 
-  .srf.srf-flat.srf-secondary {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
-    --srf-bg: oklch(var(--srf-secondary-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-secondary-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-secondary-flat-bg-active));
-    --srf-text: oklch(var(--srf-secondary-flat-text));
-  }
-
-  .srf.srf-flat.srf-destructive {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
-    --srf-bg: oklch(var(--srf-destructive-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-destructive-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-destructive-flat-bg-active));
-    --srf-text: oklch(var(--srf-destructive-flat-text));
-  }
-
-  .srf.srf-flat.srf-warning {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
-    --srf-bg: oklch(var(--srf-warning-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-warning-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-warning-flat-bg-active));
-    --srf-text: oklch(var(--srf-warning-flat-text));
-  }
-
   .srf.srf-flat.srf-brand {
-    --srf-border-width: 1px;
-    --srf-border: oklch(var(--brand-border));
-    --srf-border-hover: oklch(var(--brand-border));
-    --srf-border-active: oklch(var(--brand-border));
     --srf-bg: transparent;
     --srf-bg-hover: transparent;
     --srf-bg-active: transparent;
+    --srf-border: oklch(var(--brand-border));
+    --srf-border-hover: oklch(var(--brand-border));
+    --srf-border-active: oklch(var(--brand-border));
     --srf-bg-image: var(--srf-brand-gradient);
     --srf-bg-image-hover: var(--srf-brand-gradient-hover);
     --srf-bg-image-active: var(--srf-brand-gradient-active);
@@ -348,10 +311,39 @@
     letter-spacing: -0.01em;
   }
 
+  .srf.srf-flat.srf-secondary {
+    --srf-bg: oklch(var(--srf-secondary-flat-bg));
+    --srf-bg-hover: oklch(var(--srf-secondary-flat-bg-hover));
+    --srf-bg-active: oklch(var(--srf-secondary-flat-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-secondary-flat-text));
+  }
+
+  .srf.srf-flat.srf-destructive {
+    --srf-bg: oklch(var(--srf-destructive-flat-bg));
+    --srf-bg-hover: oklch(var(--srf-destructive-flat-bg-hover));
+    --srf-bg-active: oklch(var(--srf-destructive-flat-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-destructive-flat-text));
+  }
+
+  .srf.srf-flat.srf-warning {
+    --srf-bg: oklch(var(--srf-warning-flat-bg));
+    --srf-bg-hover: oklch(var(--srf-warning-flat-bg-hover));
+    --srf-bg-active: oklch(var(--srf-warning-flat-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-warning-flat-text));
+  }
+
   /* outline */
 
   .srf.srf-outline.srf-default {
-    --srf-border-width: 1px;
     --srf-border: oklch(var(--srf-default-outline-border));
     --srf-border-hover: oklch(var(--srf-default-outline-border-hover));
     --srf-border-active: oklch(var(--srf-default-outline-border-active));
@@ -362,7 +354,6 @@
   }
 
   .srf.srf-outline.srf-primary {
-    --srf-border-width: 1px;
     --srf-border: oklch(var(--srf-primary-outline-border));
     --srf-border-hover: oklch(var(--srf-primary-outline-border-hover));
     --srf-border-active: oklch(var(--srf-primary-outline-border-active));
@@ -372,8 +363,17 @@
     --srf-text: oklch(var(--srf-primary-outline-text));
   }
 
+  .srf.srf-outline.srf-brand {
+    --srf-border: oklch(var(--srf-brand-outline-border));
+    --srf-border-hover: oklch(var(--srf-brand-outline-border-hover));
+    --srf-border-active: oklch(var(--srf-brand-outline-border-active));
+    --srf-bg: oklch(var(--srf-brand-outline-bg));
+    --srf-bg-hover: oklch(var(--srf-brand-outline-bg-hover));
+    --srf-bg-active: oklch(var(--srf-brand-outline-bg-active));
+    --srf-text: oklch(var(--srf-brand-outline-text));
+  }
+
   .srf.srf-outline.srf-secondary {
-    --srf-border-width: 1px;
     --srf-border: oklch(var(--srf-secondary-outline-border));
     --srf-border-hover: oklch(var(--srf-secondary-outline-border-hover));
     --srf-border-active: oklch(var(--srf-secondary-outline-border-active));
@@ -384,7 +384,6 @@
   }
 
   .srf.srf-outline.srf-destructive {
-    --srf-border-width: 1px;
     --srf-border: oklch(var(--srf-destructive-outline-border));
     --srf-border-hover: oklch(var(--srf-destructive-outline-border-hover));
     --srf-border-active: oklch(var(--srf-destructive-outline-border-active));
@@ -395,7 +394,6 @@
   }
 
   .srf.srf-outline.srf-warning {
-    --srf-border-width: 1px;
     --srf-border: oklch(var(--srf-warning-outline-border));
     --srf-border-hover: oklch(var(--srf-warning-outline-border-hover));
     --srf-border-active: oklch(var(--srf-warning-outline-border-active));
@@ -405,255 +403,214 @@
     --srf-text: oklch(var(--srf-warning-outline-text));
   }
 
-  .srf.srf-outline.srf-brand {
-    --srf-border-width: 1px;
-    --srf-border: oklch(var(--srf-brand-outline-border));
-    --srf-border-hover: oklch(var(--srf-brand-outline-border-hover));
-    --srf-border-active: oklch(var(--srf-brand-outline-border-active));
-    --srf-bg: oklch(var(--srf-brand-outline-bg));
-    --srf-bg-hover: oklch(var(--srf-brand-outline-bg-hover));
-    --srf-bg-active: oklch(var(--srf-brand-outline-bg-active));
-    --srf-text: oklch(var(--srf-brand-outline-text));
-  }
-
   /* soft */
 
   .srf.srf-soft.srf-default {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: oklch(var(--srf-default-soft-bg));
     --srf-bg-hover: oklch(var(--srf-default-soft-bg-hover));
     --srf-bg-active: oklch(var(--srf-default-soft-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-default-soft-text));
     --srf-text-active: oklch(var(--srf-default-text-active));
   }
 
   .srf.srf-soft.srf-primary {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: oklch(var(--srf-primary-soft-bg));
     --srf-bg-hover: oklch(var(--srf-primary-soft-bg-hover));
     --srf-bg-active: oklch(var(--srf-primary-soft-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-primary-soft-text));
     --srf-text-active: oklch(var(--srf-primary-text-active));
   }
 
+  .srf.srf-soft.srf-brand {
+    --srf-bg: oklch(var(--srf-brand-soft-bg));
+    --srf-bg-hover: oklch(var(--srf-brand-soft-bg-hover));
+    --srf-bg-active: oklch(var(--srf-brand-soft-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-brand-soft-text));
+    --srf-text-active: oklch(var(--srf-brand-text-active));
+  }
+
   .srf.srf-soft.srf-secondary {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: oklch(var(--srf-secondary-soft-bg));
     --srf-bg-hover: oklch(var(--srf-secondary-soft-bg-hover));
     --srf-bg-active: oklch(var(--srf-secondary-soft-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-secondary-soft-text));
     --srf-text-active: oklch(var(--srf-secondary-text-active));
   }
 
   .srf.srf-soft.srf-destructive {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: oklch(var(--srf-destructive-soft-bg));
     --srf-bg-hover: oklch(var(--srf-destructive-soft-bg-hover));
     --srf-bg-active: oklch(var(--srf-destructive-soft-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-destructive-soft-text));
     --srf-text-active: oklch(var(--srf-destructive-text-active));
   }
 
   .srf.srf-soft.srf-warning {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: oklch(var(--srf-warning-soft-bg));
     --srf-bg-hover: oklch(var(--srf-warning-soft-bg-hover));
     --srf-bg-active: oklch(var(--srf-warning-soft-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-warning-soft-text));
     --srf-text-active: oklch(var(--srf-warning-text-active));
-  }
-
-  .srf.srf-soft.srf-brand {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
-    --srf-bg: oklch(var(--srf-brand-soft-bg));
-    --srf-bg-hover: oklch(var(--srf-brand-soft-bg-hover));
-    --srf-bg-active: oklch(var(--srf-brand-soft-bg-active));
-    --srf-text: oklch(var(--srf-brand-soft-text));
-    --srf-text-active: oklch(var(--srf-brand-text-active));
   }
 
   /* ghost */
 
   .srf.srf-ghost.srf-default {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: transparent;
     --srf-bg-hover: oklch(var(--srf-default-soft-bg));
     --srf-bg-active: oklch(var(--srf-default-soft-bg-hover));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-default-soft-text));
     --srf-text-active: oklch(var(--srf-default-text-active));
   }
 
   .srf.srf-ghost.srf-primary {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: transparent;
     --srf-bg-hover: oklch(var(--srf-primary-soft-bg));
     --srf-bg-active: oklch(var(--srf-primary-soft-bg-hover));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-primary-soft-text));
     --srf-text-active: oklch(var(--srf-primary-text-active));
   }
 
+  .srf.srf-ghost.srf-brand {
+    --srf-bg: transparent;
+    --srf-bg-hover: oklch(var(--srf-brand-soft-bg));
+    --srf-bg-active: oklch(var(--srf-brand-soft-bg-hover));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-brand-soft-text));
+    --srf-text-active: oklch(var(--srf-brand-text-active));
+  }
+
   .srf.srf-ghost.srf-secondary {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: transparent;
     --srf-bg-hover: oklch(var(--srf-secondary-soft-bg));
     --srf-bg-active: oklch(var(--srf-secondary-soft-bg-hover));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-secondary-soft-text));
     --srf-text-active: oklch(var(--srf-secondary-text-active));
   }
 
   .srf.srf-ghost.srf-destructive {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: transparent;
     --srf-bg-hover: oklch(var(--srf-destructive-soft-bg));
     --srf-bg-active: oklch(var(--srf-destructive-soft-bg-hover));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-destructive-soft-text));
     --srf-text-active: oklch(var(--srf-destructive-text-active));
   }
 
   .srf.srf-ghost.srf-warning {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: transparent;
     --srf-bg-hover: oklch(var(--srf-warning-soft-bg));
     --srf-bg-active: oklch(var(--srf-warning-soft-bg-hover));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-warning-soft-text));
     --srf-text-active: oklch(var(--srf-warning-text-active));
-  }
-
-  .srf.srf-ghost.srf-brand {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
-    --srf-bg: transparent;
-    --srf-bg-hover: oklch(var(--srf-brand-soft-bg));
-    --srf-bg-active: oklch(var(--srf-brand-soft-bg-hover));
-    --srf-text: oklch(var(--srf-brand-soft-text));
-    --srf-text-active: oklch(var(--srf-brand-text-active));
   }
 
   /* text */
 
   .srf.srf-text.srf-default {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: transparent;
     --srf-bg-hover: transparent;
     --srf-bg-active: transparent;
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-default-text));
     --srf-text-hover: oklch(var(--srf-default-text-hover));
     --srf-text-active: oklch(var(--srf-default-text-active));
-    --srf-text-decoration-hover: underline;
-    text-underline-offset: 4px;
   }
 
   .srf.srf-text.srf-primary {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: transparent;
     --srf-bg-hover: transparent;
     --srf-bg-active: transparent;
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-primary-text));
     --srf-text-hover: oklch(var(--srf-primary-text-hover));
     --srf-text-active: oklch(var(--srf-primary-text-active));
-    --srf-text-decoration-hover: underline;
-    text-underline-offset: 4px;
-  }
-
-  .srf.srf-text.srf-secondary {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
-    --srf-bg: transparent;
-    --srf-bg-hover: transparent;
-    --srf-bg-active: transparent;
-    --srf-text: oklch(var(--srf-secondary-text));
-    --srf-text-hover: oklch(var(--srf-secondary-text-hover));
-    --srf-text-active: oklch(var(--srf-secondary-text-active));
-    --srf-text-decoration-hover: underline;
-    text-underline-offset: 4px;
-  }
-
-  .srf.srf-text.srf-destructive {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
-    --srf-bg: transparent;
-    --srf-bg-hover: transparent;
-    --srf-bg-active: transparent;
-    --srf-text: oklch(var(--srf-destructive-text));
-    --srf-text-hover: oklch(var(--srf-destructive-text-hover));
-    --srf-text-active: oklch(var(--srf-destructive-text-active));
-    --srf-text-decoration-hover: underline;
-    text-underline-offset: 4px;
-  }
-
-  .srf.srf-text.srf-warning {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
-    --srf-bg: transparent;
-    --srf-bg-hover: transparent;
-    --srf-bg-active: transparent;
-    --srf-text: oklch(var(--srf-warning-text));
-    --srf-text-hover: oklch(var(--srf-warning-text-hover));
-    --srf-text-active: oklch(var(--srf-warning-text-active));
-    --srf-text-decoration-hover: underline;
-    text-underline-offset: 4px;
   }
 
   .srf.srf-text.srf-brand {
-    --srf-border-width: 0;
-    --srf-border: transparent;
-    --srf-border-hover: transparent;
-    --srf-border-active: transparent;
     --srf-bg: transparent;
     --srf-bg-hover: transparent;
     --srf-bg-active: transparent;
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-brand-text));
     --srf-text-hover: oklch(var(--srf-brand-text-hover));
     --srf-text-active: oklch(var(--srf-brand-text-active));
-    --srf-text-decoration-hover: underline;
-    text-underline-offset: 4px;
+  }
+
+  .srf.srf-text.srf-secondary {
+    --srf-bg: transparent;
+    --srf-bg-hover: transparent;
+    --srf-bg-active: transparent;
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-secondary-text));
+    --srf-text-hover: oklch(var(--srf-secondary-text-hover));
+    --srf-text-active: oklch(var(--srf-secondary-text-active));
+  }
+
+  .srf.srf-text.srf-destructive {
+    --srf-bg: transparent;
+    --srf-bg-hover: transparent;
+    --srf-bg-active: transparent;
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-destructive-text));
+    --srf-text-hover: oklch(var(--srf-destructive-text-hover));
+    --srf-text-active: oklch(var(--srf-destructive-text-active));
+  }
+
+  .srf.srf-text.srf-warning {
+    --srf-bg: transparent;
+    --srf-bg-hover: transparent;
+    --srf-bg-active: transparent;
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-warning-text));
+    --srf-text-hover: oklch(var(--srf-warning-text-hover));
+    --srf-text-active: oklch(var(--srf-warning-text-active));
   }
 
   .srf--elevated {
@@ -662,7 +619,7 @@
   }
 
   .srf {
-    border-width: var(--srf-border-width, 0);
+    border-width: var(--srf-border-width, 1px);
     border-style: solid;
     border-color: var(--srf-border);
     background-color: var(--srf-bg);
@@ -677,18 +634,9 @@
     background-image: var(--srf-bg-image-hover, var(--srf-bg-image, none));
     color: var(--srf-text-hover, var(--srf-text));
     box-shadow: var(--srf-shadow-hover, var(--srf-shadow, none));
-    text-decoration: var(--srf-text-decoration-hover, none);
   }
 
   .srf.srf-button:active:not(:disabled) {
-    border-color: var(--srf-border-active, var(--srf-border-hover));
-    background-color: var(--srf-bg-active, var(--srf-bg));
-    background-image: var(--srf-bg-image-active, var(--srf-bg-image-hover, var(--srf-bg-image, none)));
-    color: var(--srf-text-active, var(--srf-text-hover, var(--srf-text)));
-    box-shadow: var(--srf-shadow-active, var(--srf-shadow-hover, var(--srf-shadow, none)));
-  }
-
-  .srf.srf--active {
     border-color: var(--srf-border-active, var(--srf-border-hover));
     background-color: var(--srf-bg-active, var(--srf-bg));
     background-image: var(--srf-bg-image-active, var(--srf-bg-image-hover, var(--srf-bg-image, none)));

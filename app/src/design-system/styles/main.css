@@ -22,8 +22,8 @@
     --card: 100% 0 none;
     --card-foreground: 14.1% 0.0044 285.8;
 
-    --border: var(--slate-200);
-    --input: var(--slate-200);
+    --border: var(--zinc-200);
+    --input: var(--zinc-200);
 
     --primary: 21% 0.0059 285.9;
     --primary-foreground: 98.5% 0 none;
@@ -79,8 +79,8 @@
     --background: 18.2% 0 none;
     --foreground: 90.8% 0 none;
 
-    --muted: 28% 0 none;
-    --muted-foreground: 59.8% 0 none;
+    --muted: var(--zinc-800);
+    --muted-foreground: var(--zinc-200);
 
     --popover: 21.6% 0 none;
     --popover-foreground: 90.8% 0 none;

@@ -73,8 +73,7 @@ watch(workspace, () =>
           :as="RouterLink"
           :to="`/${workspace.id}/project/${project.id}/backlog`"
           intent="secondary"
-          variant="ghost"
-          :active="+route.params.projectId === project.id"
+          :variant="+route.params.projectId === project.id ? 'soft' : 'ghost'"
           class="flex:row-md flex:center-y"
         >
           <BoxIcon class="size-4 text-muted-foreground" stroke-width="2" />

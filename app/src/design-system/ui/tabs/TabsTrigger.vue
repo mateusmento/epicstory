@@ -1,17 +1,32 @@
 <script setup lang="ts">
+import { omit } from "lodash";
 import { type HTMLAttributes, computed } from "vue";
 import { TabsTrigger, type TabsTriggerProps, useForwardProps } from "radix-vue";
+import {
+  srfClasses,
+  srfModifiers,
+  type SurfaceIntent,
+} from "@/design-system/ui/surface/surface-intent-classes";
 import { cn } from "@/design-system/utils";
+import { useTabActive } from "./tabs.context";
 
-const props = defineProps<TabsTriggerProps & { class?: HTMLAttributes["class"] }>();
+const props = withDefaults(
+  defineProps<TabsTriggerProps & { class?: HTMLAttributes["class"]; intent?: SurfaceIntent }>(),
+  { intent: "secondary" },
+);
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = computed(() => omit(props, "class", "intent"));
 
 const forwardedProps = useForwardProps(delegatedProps);
+
+const isActive = useTabActive(props.value);
+
+const surfaceClasses = computed(() => {
+  return [
+    ...(isActive.value ? srfClasses("outline", "default") : srfClasses("text", props.intent)),
+    ...srfModifiers({ elevated: isActive.value, button: !isActive.value }),
+  ];
+});
 </script>
 
 <template>
@@ -19,6 +34,7 @@ const forwardedProps = useForwardProps(delegatedProps);
     v-bind="forwardedProps"
     :class="
       cn(
+        surfaceClasses,
         `
           flex
           flex-1
@@ -38,12 +54,6 @@ const forwardedProps = useForwardProps(delegatedProps);
           focus-visible:ring-offset-2
           disabled:pointer-events-none
           disabled:opacity-50
-          border
-          border-transparent
-          data-[state=active]:border-input
-          data-[state=active]:bg-card
-          data-[state=active]:text-foreground
-          data-[state=active]:shadow
         `,
         props.class,
       )

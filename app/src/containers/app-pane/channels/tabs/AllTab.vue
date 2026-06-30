@@ -115,8 +115,8 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
           <div class="text-xs text-secondary-foreground">{{ item.title }}</div>
           <Dialog v-model:open="createDialogOpen[item.createKey]">
             <DialogTrigger as-child>
-              <Button size="icon" variant="ghost" class="h-6 w-6" :title="item.createTitle">
-                <PlusIcon class="h-4 w-4" />
+              <Button size="sm" variant="ghost" :title="item.createTitle">
+                <PlusIcon class="size-4" />
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -131,9 +131,11 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
         </div>
 
         <ChannelContextMenu v-for="channel of item.list.items" :key="channel.id" :channel="channel">
-          <div class="flex:row-sm">
-            <div
-              class="flex:row-lg flex:center-y flex-1 p-1.5 rounded-lg hover:bg-secondary cursor-pointer"
+          <div class="flex:row-md flex:center-y">
+            <Button
+              size="sm"
+              variant="ghost"
+              class="flex:row-lg flex:center-y flex-1 justify-start"
               @click="openChannel(channel)"
             >
               <UserAvatar
@@ -155,11 +157,12 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
                 class="w-2 h-2 shrink-0 bg-green-400 rounded-full"
                 title="Online"
               ></div>
-            </div>
-            <button
+            </Button>
+            <Button
               v-if="channel.type === 'meeting' || channel.meeting"
-              type="button"
-              class="p-2 rounded-lg hover:bg-secondary cursor-pointer shrink-0"
+              size="sm"
+              variant="ghost"
+              class="shrink-0"
               @mousedown.prevent
               @touchstart.prevent
               @click.stop="
@@ -170,7 +173,7 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
               title="Join meeting"
             >
               <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-            </button>
+            </Button>
           </div>
         </ChannelContextMenu>
 
