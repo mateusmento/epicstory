@@ -21,6 +21,8 @@ body.sb-show-main {
   overflow: auto !important;
   height: auto !important;
   max-height: none !important;
+  background-color: oklch(var(--background));
+  color: oklch(var(--foreground));
 }
 
 /* Docs embeds every story in one long document */

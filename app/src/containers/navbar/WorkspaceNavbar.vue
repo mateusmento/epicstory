@@ -3,6 +3,9 @@ import { ThemePicker } from "@/presentationals/theme";
 import { UserProfile } from "@/containers/user";
 import {
   Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Menu,
   MenuContent,
   MenuGroup,
@@ -19,7 +22,7 @@ import { isLiveJoinableMeeting, useLiveMeeting, useMeeting } from "@/domain/meet
 import { useNotifications } from "@/domain/notifications";
 import { useWorkspace } from "@/domain/workspace";
 import { ArrowLeft, ArrowRight, LogOutIcon, MonitorCogIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
-import { computed, onMounted } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { NavListItem } from "@/presentationals/layout";
 import CurrentMeetingControlsCard from "./CurrentMeetingControlsCard.vue";
@@ -27,7 +30,7 @@ import LiveMeetingJoinCard from "@/presentationals/navbar/LiveMeetingJoinCard.vu
 
 defineProps<{ isAppPaneOpen: boolean }>();
 
-const { workspace } = useWorkspace();
+const { workspace, projects, fetchProjects } = useWorkspace();
 const { user, signOut } = useAuth();
 const router = useRouter();
 
@@ -66,6 +69,24 @@ async function onJoinLiveScheduledMeeting() {
     },
   });
 }
+
+onMounted(async () => {
+  fetchProjects({
+    order: "asc",
+    orderBy: "createdAt",
+    page: 0,
+    count: 50,
+  });
+});
+
+watch(workspace, () =>
+  fetchProjects({
+    order: "asc",
+    orderBy: "createdAt",
+    page: 0,
+    count: 50,
+  }),
+);
 </script>
 
 <template>
@@ -123,22 +144,37 @@ async function onJoinLiveScheduledMeeting() {
         <Icon name="oi-apps" />
         Issues
       </NavListItem>
+      <Collapsible as-child>
+        <CollapsibleTrigger as-child>
+          <Button variant="ghost" size="sm" class="flex:row-md flex:center-y w-full justify-start">
+            <MonitorCogIcon class="size-4" stroke-width="2.5" />
+            Projects
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <NavListItem
+            v-for="project of projects"
+            :key="project.id"
+            :to="`/${workspace.id}/project/${project.id}/backlog`"
+            class="flex:row-md flex:center-y"
+          >
+            <MonitorCogIcon class="size-4" stroke-width="2.5" />
+            {{ project.name }}
+          </NavListItem>
+          <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y">
+            <MonitorCogIcon class="size-4" stroke-width="2.5" />
+            More projects...
+          </NavListItem>
+        </CollapsibleContent>
+      </Collapsible>
+      <!-- <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y">
+        <MonitorCogIcon class="size-4" stroke-width="2.5" />
+        Projects
+      </NavListItem> -->
       <NavListItem view="app-pane" content="channels" class="flex:row-md flex:center-y">
         <Icon name="fa-slack-hash" />
         Channels
         <Icon name="bi-chevron-expand" class="ml-auto" />
-      </NavListItem>
-      <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y">
-        <MonitorCogIcon class="size-4" stroke-width="2.5" />
-        Projects
-      </NavListItem>
-      <NavListItem view="app-pane" content="teams" class="flex:row-md flex:center-y">
-        <Icon name="bi-person-workspace" />
-        Teams
-      </NavListItem>
-      <NavListItem view="app-pane" content="workspace-members" class="flex:row-md flex:center-y">
-        <Icon name="bi-people-fill" />
-        Members
       </NavListItem>
       <NavListItem
         view="app-pane"
@@ -148,6 +184,14 @@ async function onJoinLiveScheduledMeeting() {
       >
         <Icon name="oi-calendar" />
         Schedule
+      </NavListItem>
+      <NavListItem view="app-pane" content="teams" class="flex:row-md flex:center-y">
+        <Icon name="bi-person-workspace" />
+        Teams
+      </NavListItem>
+      <NavListItem view="app-pane" content="workspace-members" class="flex:row-md flex:center-y">
+        <Icon name="bi-people-fill" />
+        Members
       </NavListItem>
     </nav>
 

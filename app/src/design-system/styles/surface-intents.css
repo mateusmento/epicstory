@@ -4,7 +4,9 @@
  * Required: srf + srf-{variant} + srf-{intent}
  *   e.g. srf srf-ghost srf-secondary
  *
- * Variant × intent rules read palette tokens directly (no intent alias layer).
+ * Default uses explicit semantic/zinc tokens. Secondary and chromatic intents (--sfr-*)
+ * derive variant tokens via color-mix (light: toward white/black; dark: toward theme surfaces).
+ * Resolved tokens are full colors — component rules use var() directly, not oklch().
  *
  * Modifiers:
  *   srf--elevated — elevated shadow
@@ -12,43 +14,45 @@
 
 @layer base {
   :root {
-    --srf-default-flat-bg: var(--zinc-800);
-    --srf-default-flat-bg-hover: var(--zinc-900);
-    --srf-default-flat-bg-active: var(--zinc-950);
-    --srf-default-flat-text: var(--primary-foreground);
-    --srf-default-outline-border: var(--border);
-    --srf-default-outline-border-hover: var(--border);
-    --srf-default-outline-border-active: var(--border);
-    --srf-default-outline-bg: var(--card);
-    --srf-default-outline-bg-hover: var(--background);
-    --srf-default-outline-bg-active: var(--muted);
-    --srf-default-outline-text: var(--foreground);
-    --srf-default-soft-bg: var(--zinc-200);
-    --srf-default-soft-bg-hover: var(--zinc-300);
-    --srf-default-soft-bg-active: var(--zinc-400);
-    --srf-default-soft-text: var(--zinc-600);
-    --srf-default-text: var(--zinc-800);
-    --srf-default-text-hover: var(--zinc-800);
-    --srf-default-text-active: var(--zinc-900);
+    --srf-default-flat-bg: oklch(var(--zinc-800));
+    --srf-default-flat-bg-hover: oklch(var(--zinc-900));
+    --srf-default-flat-bg-active: oklch(var(--zinc-950));
+    --srf-default-flat-text: oklch(var(--primary-foreground));
+    --srf-default-outline-border: oklch(var(--border));
+    --srf-default-outline-border-hover: oklch(var(--border));
+    --srf-default-outline-border-active: oklch(var(--border));
+    --srf-default-outline-bg: oklch(var(--card));
+    --srf-default-outline-bg-hover: oklch(var(--background));
+    --srf-default-outline-bg-active: oklch(var(--muted));
+    --srf-default-outline-text: oklch(var(--foreground));
+    --srf-default-soft-bg: oklch(var(--zinc-200));
+    --srf-default-soft-bg-hover: oklch(var(--zinc-300));
+    --srf-default-soft-bg-active: oklch(var(--zinc-400));
+    --srf-default-soft-text: oklch(var(--zinc-600));
+    --srf-default-text: oklch(var(--zinc-800));
+    --srf-default-text-hover: oklch(var(--zinc-800));
+    --srf-default-text-active: oklch(var(--zinc-900));
 
-    --srf-primary-flat-bg: var(--indigo-600);
-    --srf-primary-flat-bg-hover: var(--indigo-700);
-    --srf-primary-flat-bg-active: var(--indigo-800);
-    --srf-primary-flat-text: var(--primary-foreground);
-    --srf-primary-outline-border: var(--indigo-200);
-    --srf-primary-outline-border-hover: var(--indigo-300);
-    --srf-primary-outline-border-active: var(--indigo-400);
-    --srf-primary-outline-bg: var(--indigo-100);
-    --srf-primary-outline-bg-hover: var(--indigo-200);
-    --srf-primary-outline-bg-active: var(--indigo-300);
-    --srf-primary-outline-text: var(--indigo-700);
-    --srf-primary-soft-bg: var(--indigo-100);
-    --srf-primary-soft-bg-hover: var(--indigo-200);
-    --srf-primary-soft-bg-active: var(--indigo-300);
-    --srf-primary-soft-text: var(--indigo-700);
-    --srf-primary-text: var(--indigo-700);
-    --srf-primary-text-hover: var(--indigo-700);
-    --srf-primary-text-active: var(--indigo-800);
+    --sfr-primary: oklch(var(--indigo-600));
+    --sfr-primary-foreground: oklch(98.5% 0 none);
+    --srf-primary-flat-bg: var(--sfr-primary);
+    --srf-primary-flat-bg-hover: color-mix(in oklch, var(--sfr-primary) 90%, black);
+    --srf-primary-flat-bg-active: color-mix(in oklch, var(--sfr-primary) 80%, black);
+    --srf-primary-flat-text: var(--sfr-primary-foreground);
+    --srf-primary-outline-border: color-mix(in oklch, var(--sfr-primary) 30%, white);
+    --srf-primary-outline-border-hover: color-mix(in oklch, var(--sfr-primary) 50%, white);
+    --srf-primary-outline-border-active: color-mix(in oklch, var(--sfr-primary) 70%, white);
+    --srf-primary-outline-bg: color-mix(in oklch, var(--sfr-primary) 15%, white);
+    --srf-primary-outline-bg-hover: color-mix(in oklch, var(--sfr-primary) 30%, white);
+    --srf-primary-outline-bg-active: color-mix(in oklch, var(--sfr-primary) 50%, white);
+    --srf-primary-outline-text: color-mix(in oklch, var(--sfr-primary) 90%, black);
+    --srf-primary-soft-bg: color-mix(in oklch, var(--sfr-primary) 30%, white);
+    --srf-primary-soft-bg-hover: color-mix(in oklch, var(--sfr-primary) 50%, white);
+    --srf-primary-soft-bg-active: color-mix(in oklch, var(--sfr-primary) 70%, white);
+    --srf-primary-soft-text: color-mix(in oklch, var(--sfr-primary) 90%, black);
+    --srf-primary-text: color-mix(in oklch, var(--sfr-primary) 90%, black);
+    --srf-primary-text-hover: var(--sfr-primary);
+    --srf-primary-text-active: color-mix(in oklch, var(--sfr-primary) 80%, black);
 
     /* brand — CTA gradient (flat) + indigo family for other variants */
     --srf-brand-stop-top: 57.6% 0.2347 276.4;
@@ -80,230 +84,283 @@
       0 3px 6px rgb(58 57 180 / 0.22);
     --srf-brand-shadow-active: inset 0 1px 2px rgb(47 46 150 / 0.35), 0 1px 0 rgb(63 62 200 / 0.14),
       0 1px 2px rgb(58 57 180 / 0.32);
-    --srf-brand-outline-border: var(--indigo-200);
-    --srf-brand-outline-border-hover: var(--indigo-300);
-    --srf-brand-outline-border-active: var(--indigo-400);
-    --srf-brand-outline-bg: var(--indigo-50);
-    --srf-brand-outline-bg-hover: var(--indigo-100);
-    --srf-brand-outline-bg-active: var(--indigo-200);
-    --srf-brand-outline-text: var(--indigo-700);
-    --srf-brand-soft-bg: var(--indigo-50);
-    --srf-brand-soft-bg-hover: var(--indigo-100);
-    --srf-brand-soft-bg-active: var(--indigo-200);
-    --srf-brand-soft-text: var(--zinc-600);
-    --srf-brand-text: var(--indigo-700);
-    --srf-brand-text-hover: var(--indigo-700);
-    --srf-brand-text-active: var(--indigo-800);
+    --srf-brand-flat-border: oklch(var(--brand-border));
+    --srf-brand-flat-text: var(--sfr-primary-foreground);
+    --srf-brand-outline-border: var(--srf-primary-outline-border);
+    --srf-brand-outline-border-hover: var(--srf-primary-outline-border-hover);
+    --srf-brand-outline-border-active: var(--srf-primary-outline-border-active);
+    --srf-brand-outline-bg: var(--srf-primary-outline-bg);
+    --srf-brand-outline-bg-hover: var(--srf-primary-outline-bg-hover);
+    --srf-brand-outline-bg-active: var(--srf-primary-outline-bg-active);
+    --srf-brand-outline-text: var(--srf-primary-outline-text);
+    --srf-brand-soft-bg: var(--srf-primary-soft-bg);
+    --srf-brand-soft-bg-hover: var(--srf-primary-soft-bg-hover);
+    --srf-brand-soft-bg-active: var(--srf-primary-soft-bg-active);
+    --srf-brand-soft-text: var(--srf-primary-soft-text);
+    --srf-brand-text: var(--srf-primary-text);
+    --srf-brand-text-hover: var(--srf-primary-text-hover);
+    --srf-brand-text-active: var(--srf-primary-text-active);
 
-    --srf-secondary-flat-bg: var(--zinc-400);
-    --srf-secondary-flat-bg-hover: var(--zinc-500);
-    --srf-secondary-flat-bg-active: var(--zinc-600);
-    --srf-secondary-flat-text: var(--zinc-50);
-    --srf-secondary-outline-border: var(--zinc-200);
-    --srf-secondary-outline-border-hover: var(--zinc-300);
-    --srf-secondary-outline-border-active: var(--zinc-400);
-    --srf-secondary-outline-bg: var(--card);
-    --srf-secondary-outline-bg-hover: var(--background);
-    --srf-secondary-outline-bg-active: var(--muted);
-    --srf-secondary-outline-text: var(--foreground);
-    --srf-secondary-soft-bg: var(--muted);
-    --srf-secondary-soft-bg-hover: var(--secondary);
-    --srf-secondary-soft-bg-active: var(--accent);
-    --srf-secondary-soft-text: var(--zinc-600);
-    --srf-secondary-text: var(--zinc-600);
-    --srf-secondary-text-hover: var(--foreground);
-    --srf-secondary-text-active: var(--zinc-600);
+    --sfr-secondary: oklch(var(--zinc-400));
+    --sfr-secondary-foreground: oklch(var(--zinc-50));
+    --srf-secondary-flat-bg: var(--sfr-secondary);
+    --srf-secondary-flat-bg-hover: color-mix(in oklch, var(--sfr-secondary) 90%, black);
+    --srf-secondary-flat-bg-active: color-mix(in oklch, var(--sfr-secondary) 80%, black);
+    --srf-secondary-flat-text: var(--sfr-secondary-foreground);
+    --srf-secondary-outline-border: color-mix(in oklch, var(--sfr-secondary) 30%, white);
+    --srf-secondary-outline-border-hover: color-mix(in oklch, var(--sfr-secondary) 50%, white);
+    --srf-secondary-outline-border-active: color-mix(in oklch, var(--sfr-secondary) 70%, white);
+    --srf-secondary-outline-bg: color-mix(in oklch, var(--sfr-secondary) 15%, white);
+    --srf-secondary-outline-bg-hover: color-mix(in oklch, var(--sfr-secondary) 30%, white);
+    --srf-secondary-outline-bg-active: color-mix(in oklch, var(--sfr-secondary) 50%, white);
+    --srf-secondary-outline-text: color-mix(in oklch, var(--sfr-secondary) 90%, black);
+    --srf-secondary-soft-bg: color-mix(in oklch, var(--sfr-secondary) 30%, white);
+    --srf-secondary-soft-bg-hover: color-mix(in oklch, var(--sfr-secondary) 50%, white);
+    --srf-secondary-soft-bg-active: color-mix(in oklch, var(--sfr-secondary) 70%, white);
+    --srf-secondary-soft-text: color-mix(in oklch, var(--sfr-secondary) 90%, black);
+    --srf-secondary-text: color-mix(in oklch, var(--sfr-secondary) 90%, black);
+    --srf-secondary-text-hover: var(--sfr-secondary);
+    --srf-secondary-text-active: color-mix(in oklch, var(--sfr-secondary) 80%, black);
 
-    --srf-destructive-flat-bg: var(--red-500);
-    --srf-destructive-flat-bg-hover: var(--red-600);
-    --srf-destructive-flat-bg-active: var(--red-700);
-    --srf-destructive-flat-text: var(--destructive-foreground);
-    --srf-destructive-outline-border: var(--red-200);
-    --srf-destructive-outline-border-hover: var(--red-300);
-    --srf-destructive-outline-border-active: var(--red-400);
-    --srf-destructive-outline-bg: var(--red-100);
-    --srf-destructive-outline-bg-hover: var(--red-200);
-    --srf-destructive-outline-bg-active: var(--red-300);
-    --srf-destructive-outline-text: var(--red-700);
-    --srf-destructive-soft-bg: var(--red-100);
-    --srf-destructive-soft-bg-hover: var(--red-100);
-    --srf-destructive-soft-bg-active: var(--red-300);
-    --srf-destructive-soft-text: var(--red-700);
-    --srf-destructive-text: var(--red-700);
-    --srf-destructive-text-hover: var(--red-600);
-    --srf-destructive-text-active: var(--red-700);
+    --sfr-destructive: oklch(var(--red-500));
+    --sfr-destructive-foreground: oklch(98.5% 0 none);
+    --srf-destructive-flat-bg: var(--sfr-destructive);
+    --srf-destructive-flat-bg-hover: color-mix(in oklch, var(--sfr-destructive) 90%, black);
+    --srf-destructive-flat-bg-active: color-mix(in oklch, var(--sfr-destructive) 80%, black);
+    --srf-destructive-flat-text: var(--sfr-destructive-foreground);
+    --srf-destructive-outline-border: color-mix(in oklch, var(--sfr-destructive) 30%, white);
+    --srf-destructive-outline-border-hover: color-mix(in oklch, var(--sfr-destructive) 50%, white);
+    --srf-destructive-outline-border-active: color-mix(in oklch, var(--sfr-destructive) 70%, white);
+    --srf-destructive-outline-bg: color-mix(in oklch, var(--sfr-destructive) 15%, white);
+    --srf-destructive-outline-bg-hover: color-mix(in oklch, var(--sfr-destructive) 30%, white);
+    --srf-destructive-outline-bg-active: color-mix(in oklch, var(--sfr-destructive) 50%, white);
+    --srf-destructive-outline-text: color-mix(in oklch, var(--sfr-destructive) 90%, black);
+    --srf-destructive-soft-bg: color-mix(in oklch, var(--sfr-destructive) 30%, white);
+    --srf-destructive-soft-bg-hover: color-mix(in oklch, var(--sfr-destructive) 50%, white);
+    --srf-destructive-soft-bg-active: color-mix(in oklch, var(--sfr-destructive) 70%, white);
+    --srf-destructive-soft-text: color-mix(in oklch, var(--sfr-destructive) 90%, black);
+    --srf-destructive-text: color-mix(in oklch, var(--sfr-destructive) 90%, black);
+    --srf-destructive-text-hover: var(--sfr-destructive);
+    --srf-destructive-text-active: color-mix(in oklch, var(--sfr-destructive) 80%, black);
 
-    --srf-warning-flat-bg: var(--amber-500);
-    --srf-warning-flat-bg-hover: var(--amber-600);
-    --srf-warning-flat-bg-active: var(--amber-700);
-    --srf-warning-flat-text: var(--primary-foreground);
-    --srf-warning-outline-border: var(--amber-200);
-    --srf-warning-outline-border-hover: var(--amber-300);
-    --srf-warning-outline-border-active: var(--amber-300);
-    --srf-warning-outline-bg: var(--amber-50);
-    --srf-warning-outline-bg-hover: var(--amber-100);
-    --srf-warning-outline-bg-active: var(--amber-200);
-    --srf-warning-outline-text: var(--amber-800);
-    --srf-warning-soft-bg: var(--amber-50);
-    --srf-warning-soft-bg-hover: var(--amber-100);
-    --srf-warning-soft-bg-active: var(--amber-200);
-    --srf-warning-soft-text: var(--amber-800);
-    --srf-warning-text: var(--amber-800);
-    --srf-warning-text-hover: var(--amber-600);
-    --srf-warning-text-active: var(--amber-800);
+    --sfr-warning: oklch(var(--amber-500));
+    --sfr-warning-foreground: oklch(98.5% 0 none);
+    --srf-warning-flat-bg: var(--sfr-warning);
+    --srf-warning-flat-bg-hover: color-mix(in oklch, var(--sfr-warning) 90%, black);
+    --srf-warning-flat-bg-active: color-mix(in oklch, var(--sfr-warning) 80%, black);
+    --srf-warning-flat-text: var(--sfr-warning-foreground);
+    --srf-warning-outline-border: color-mix(in oklch, var(--sfr-warning) 30%, white);
+    --srf-warning-outline-border-hover: color-mix(in oklch, var(--sfr-warning) 50%, white);
+    --srf-warning-outline-border-active: color-mix(in oklch, var(--sfr-warning) 70%, white);
+    --srf-warning-outline-bg: color-mix(in oklch, var(--sfr-warning) 15%, white);
+    --srf-warning-outline-bg-hover: color-mix(in oklch, var(--sfr-warning) 30%, white);
+    --srf-warning-outline-bg-active: color-mix(in oklch, var(--sfr-warning) 50%, white);
+    --srf-warning-outline-text: color-mix(in oklch, var(--sfr-warning) 90%, black);
+    --srf-warning-soft-bg: color-mix(in oklch, var(--sfr-warning) 30%, white);
+    --srf-warning-soft-bg-hover: color-mix(in oklch, var(--sfr-warning) 50%, white);
+    --srf-warning-soft-bg-active: color-mix(in oklch, var(--sfr-warning) 70%, white);
+    --srf-warning-soft-text: color-mix(in oklch, var(--sfr-warning) 90%, black);
+    --srf-warning-text: color-mix(in oklch, var(--sfr-warning) 90%, black);
+    --srf-warning-text-hover: var(--sfr-warning);
+    --srf-warning-text-active: color-mix(in oklch, var(--sfr-warning) 80%, black);
 
-    --srf-success-flat-bg: var(--green-500);
-    --srf-success-flat-bg-hover: var(--green-600);
-    --srf-success-flat-bg-active: var(--green-700);
-    --srf-success-flat-text: var(--primary-foreground);
-    --srf-success-outline-border: var(--green-200);
-    --srf-success-outline-border-hover: var(--green-300);
-    --srf-success-outline-border-active: var(--green-400);
-    --srf-success-outline-bg: var(--green-50);
-    --srf-success-outline-bg-hover: var(--green-100);
-    --srf-success-outline-bg-active: var(--green-200);
-    --srf-success-outline-text: var(--green-800);
-    --srf-success-soft-bg: var(--green-50);
-    --srf-success-soft-bg-hover: var(--green-100);
-    --srf-success-soft-bg-active: var(--green-200);
-    --srf-success-soft-text: var(--green-800);
-    --srf-success-text: var(--green-800);
-    --srf-success-text-hover: var(--green-600);
-    --srf-success-text-active: var(--green-800);
+    --sfr-success: oklch(var(--green-500));
+    --sfr-success-foreground: oklch(98.5% 0 none);
+    --srf-success-flat-bg: var(--sfr-success);
+    --srf-success-flat-bg-hover: color-mix(in oklch, var(--sfr-success) 90%, black);
+    --srf-success-flat-bg-active: color-mix(in oklch, var(--sfr-success) 80%, black);
+    --srf-success-flat-text: var(--sfr-success-foreground);
+    --srf-success-outline-border: color-mix(in oklch, var(--sfr-success) 30%, white);
+    --srf-success-outline-border-hover: color-mix(in oklch, var(--sfr-success) 50%, white);
+    --srf-success-outline-border-active: color-mix(in oklch, var(--sfr-success) 70%, white);
+    --srf-success-outline-bg: color-mix(in oklch, var(--sfr-success) 15%, white);
+    --srf-success-outline-bg-hover: color-mix(in oklch, var(--sfr-success) 30%, white);
+    --srf-success-outline-bg-active: color-mix(in oklch, var(--sfr-success) 50%, white);
+    --srf-success-outline-text: color-mix(in oklch, var(--sfr-success) 90%, black);
+    --srf-success-soft-bg: color-mix(in oklch, var(--sfr-success) 30%, white);
+    --srf-success-soft-bg-hover: color-mix(in oklch, var(--sfr-success) 50%, white);
+    --srf-success-soft-bg-active: color-mix(in oklch, var(--sfr-success) 70%, white);
+    --srf-success-soft-text: color-mix(in oklch, var(--sfr-success) 90%, black);
+    --srf-success-text: color-mix(in oklch, var(--sfr-success) 90%, black);
+    --srf-success-text-hover: var(--sfr-success);
+    --srf-success-text-active: color-mix(in oklch, var(--sfr-success) 80%, black);
 
     --srf-elevated-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 2px 6px rgb(15 23 42 / 0.06);
     --srf-elevated-shadow-hover: 0 1px 2px rgb(15 23 42 / 0.06), 0 3px 8px rgb(15 23 42 / 0.08);
+
+    --srf-chrome-text-svg: oklch(var(--secondary-foreground));
+    --srf-chrome-text-em: oklch(var(--foreground));
+    --srf-chrome-text-span: oklch(var(--secondary-foreground));
+    --srf-chrome-text-small: oklch(var(--secondary-foreground));
   }
 
   .dark {
-    --srf-default-flat-bg: var(--secondary);
-    --srf-default-flat-bg-hover: var(--accent);
-    --srf-default-flat-bg-active: var(--card);
-    --srf-default-flat-text: var(--foreground);
-    --srf-default-outline-border: var(--border);
-    --srf-default-outline-border-hover: var(--border);
-    --srf-default-outline-border-active: var(--border);
-    --srf-default-outline-bg: var(--card);
-    --srf-default-outline-bg-hover: var(--secondary);
-    --srf-default-outline-bg-active: var(--zinc-950);
-    --srf-default-outline-text: var(--foreground);
-    --srf-default-soft-bg: var(--zinc-900);
-    --srf-default-soft-bg-hover: var(--secondary);
-    --srf-default-soft-bg-active: var(--secondary);
-    --srf-default-soft-text: var(--foreground);
-    --srf-default-text: var(--zinc-200);
-    --srf-default-text-hover: var(--zinc-200);
-    --srf-default-text-active: var(--zinc-200);
+    --srf-mix-canvas: oklch(var(--card));
+    --srf-mix-muted: oklch(var(--muted));
+    --srf-mix-accent: oklch(var(--accent));
+    --srf-mix-border: oklch(var(--border));
+    --srf-mix-ink: oklch(var(--foreground));
 
-    --srf-primary-flat-bg: var(--indigo-500);
-    --srf-primary-flat-bg-hover: var(--indigo-600);
-    --srf-primary-flat-bg-active: var(--indigo-700);
-    --srf-primary-flat-text: var(--primary-foreground);
-    --srf-primary-outline-border: var(--indigo-800);
-    --srf-primary-outline-border-hover: var(--indigo-700);
-    --srf-primary-outline-border-active: var(--indigo-600);
-    --srf-primary-outline-bg: var(--zinc-950);
-    --srf-primary-outline-bg-hover: var(--zinc-900);
-    --srf-primary-outline-bg-active: var(--zinc-950);
-    --srf-primary-outline-text: var(--indigo-400);
-    --srf-primary-soft-bg: var(--zinc-900);
-    --srf-primary-soft-bg-hover: var(--zinc-800);
-    --srf-primary-soft-bg-active: var(--zinc-950);
-    --srf-primary-soft-text: var(--indigo-400);
-    --srf-primary-text: var(--indigo-400);
-    --srf-primary-text-hover: var(--indigo-600);
-    --srf-primary-text-active: var(--indigo-700);
+    --srf-default-flat-bg: oklch(var(--secondary));
+    --srf-default-flat-bg-hover: oklch(var(--accent));
+    --srf-default-flat-bg-active: oklch(var(--card));
+    --srf-default-flat-text: oklch(var(--foreground));
+    --srf-default-outline-border: oklch(var(--border));
+    --srf-default-outline-border-hover: oklch(var(--border));
+    --srf-default-outline-border-active: oklch(var(--border));
+    --srf-default-outline-bg: oklch(var(--secondary));
+    --srf-default-outline-bg-hover: oklch(var(--secondary));
+    --srf-default-outline-bg-active: oklch(var(--card));
+    --srf-default-outline-text: oklch(var(--foreground));
+    --srf-default-soft-bg: oklch(var(--zinc-900));
+    --srf-default-soft-bg-hover: oklch(var(--secondary));
+    --srf-default-soft-bg-active: oklch(var(--secondary));
+    --srf-default-soft-text: oklch(var(--foreground));
+    --srf-default-text: oklch(var(--zinc-200));
+    --srf-default-text-hover: oklch(var(--zinc-200));
+    --srf-default-text-active: oklch(var(--zinc-200));
 
-    --srf-brand-outline-border: var(--indigo-800);
-    --srf-brand-outline-border-hover: var(--indigo-700);
-    --srf-brand-outline-border-active: var(--indigo-600);
-    --srf-brand-outline-bg: var(--zinc-950);
-    --srf-brand-outline-bg-hover: var(--zinc-900);
-    --srf-brand-outline-bg-active: var(--zinc-950);
-    --srf-brand-outline-text: var(--indigo-400);
-    --srf-brand-soft-bg: var(--zinc-900);
-    --srf-brand-soft-bg-hover: var(--zinc-800);
-    --srf-brand-soft-bg-active: var(--zinc-950);
-    --srf-brand-soft-text: var(--indigo-400);
-    --srf-brand-text: var(--indigo-400);
-    --srf-brand-text-hover: var(--indigo-600);
-    --srf-brand-text-active: var(--indigo-700);
+    --sfr-primary: oklch(var(--indigo-500));
+    --sfr-primary-foreground: oklch(98.5% 0 none);
+    --srf-primary-flat-bg: var(--sfr-primary);
+    --srf-primary-flat-bg-hover: color-mix(in oklch, var(--sfr-primary) 90%, black);
+    --srf-primary-flat-bg-active: color-mix(in oklch, var(--sfr-primary) 80%, black);
+    --srf-primary-flat-text: var(--sfr-primary-foreground);
+    --srf-primary-outline-border: color-mix(in oklch, var(--sfr-primary) 38%, var(--srf-mix-border));
+    --srf-primary-outline-border-hover: color-mix(in oklch, var(--sfr-primary) 52%, var(--srf-mix-border));
+    --srf-primary-outline-border-active: color-mix(in oklch, var(--sfr-primary) 66%, var(--srf-mix-border));
+    --srf-primary-outline-bg: color-mix(in oklch, var(--sfr-primary) 14%, var(--srf-mix-canvas));
+    --srf-primary-outline-bg-hover: color-mix(in oklch, var(--sfr-primary) 20%, var(--srf-mix-muted));
+    --srf-primary-outline-bg-active: color-mix(in oklch, var(--sfr-primary) 26%, var(--srf-mix-accent));
+    --srf-primary-outline-text: color-mix(in oklch, var(--sfr-primary) 72%, var(--srf-mix-ink));
+    --srf-primary-soft-bg: color-mix(in oklch, var(--sfr-primary) 22%, var(--srf-mix-muted));
+    --srf-primary-soft-bg-hover: color-mix(in oklch, var(--sfr-primary) 28%, var(--srf-mix-accent));
+    --srf-primary-soft-bg-active: color-mix(in oklch, var(--sfr-primary) 34%, var(--srf-mix-accent));
+    --srf-primary-soft-text: color-mix(in oklch, var(--sfr-primary) 72%, var(--srf-mix-ink));
+    --srf-primary-text: color-mix(in oklch, var(--sfr-primary) 72%, var(--srf-mix-ink));
+    --srf-primary-text-hover: color-mix(in oklch, var(--sfr-primary) 82%, var(--srf-mix-ink));
+    --srf-primary-text-active: var(--sfr-primary);
 
-    --srf-secondary-flat-bg: var(--zinc-600);
-    --srf-secondary-flat-bg-hover: var(--zinc-500);
-    --srf-secondary-flat-bg-active: var(--zinc-400);
-    --srf-secondary-flat-text: var(--zinc-100);
-    --srf-secondary-outline-border: var(--zinc-700);
-    --srf-secondary-outline-border-hover: var(--zinc-600);
-    --srf-secondary-outline-border-active: var(--zinc-500);
-    --srf-secondary-outline-bg: var(--card);
-    --srf-secondary-outline-bg-hover: var(--muted);
-    --srf-secondary-outline-bg-active: var(--zinc-900);
-    --srf-secondary-outline-text: var(--foreground);
-    --srf-secondary-soft-bg: var(--muted);
-    --srf-secondary-soft-bg-hover: var(--accent);
-    --srf-secondary-soft-bg-active: var(--zinc-800);
-    --srf-secondary-soft-text: var(--foreground);
-    --srf-secondary-text: var(--foreground);
-    --srf-secondary-text-hover: var(--foreground);
-    --srf-secondary-text-active: var(--zinc-400);
+    --srf-brand-outline-border: var(--srf-primary-outline-border);
+    --srf-brand-outline-border-hover: var(--srf-primary-outline-border-hover);
+    --srf-brand-outline-border-active: var(--srf-primary-outline-border-active);
+    --srf-brand-outline-bg: var(--srf-primary-outline-bg);
+    --srf-brand-outline-bg-hover: var(--srf-primary-outline-bg-hover);
+    --srf-brand-outline-bg-active: var(--srf-primary-outline-bg-active);
+    --srf-brand-outline-text: var(--srf-primary-outline-text);
+    --srf-brand-soft-bg: var(--srf-primary-soft-bg);
+    --srf-brand-soft-bg-hover: var(--srf-primary-soft-bg-hover);
+    --srf-brand-soft-bg-active: var(--srf-primary-soft-bg-active);
+    --srf-brand-soft-text: var(--srf-primary-soft-text);
+    --srf-brand-text: var(--srf-primary-text);
+    --srf-brand-text-hover: var(--srf-primary-text-hover);
+    --srf-brand-text-active: var(--srf-primary-text-active);
+    --srf-brand-flat-border: oklch(var(--brand-border));
+    --srf-brand-flat-text: var(--sfr-primary-foreground);
 
-    --srf-destructive-flat-bg: var(--red-500);
-    --srf-destructive-flat-bg-hover: var(--red-600);
-    --srf-destructive-flat-bg-active: var(--red-700);
-    --srf-destructive-flat-text: var(--destructive-foreground);
-    --srf-destructive-outline-border: var(--red-800);
-    --srf-destructive-outline-border-hover: var(--red-700);
-    --srf-destructive-outline-border-active: var(--red-600);
-    --srf-destructive-outline-bg: var(--zinc-950);
-    --srf-destructive-outline-bg-hover: var(--zinc-900);
-    --srf-destructive-outline-bg-active: var(--zinc-950);
-    --srf-destructive-outline-text: var(--red-400);
-    --srf-destructive-soft-bg: var(--zinc-900);
-    --srf-destructive-soft-bg-hover: var(--zinc-800);
-    --srf-destructive-soft-bg-active: var(--zinc-950);
-    --srf-destructive-soft-text: var(--red-400);
-    --srf-destructive-text: var(--red-400);
-    --srf-destructive-text-hover: var(--red-600);
-    --srf-destructive-text-active: var(--red-400);
+    --sfr-secondary: oklch(var(--zinc-600));
+    --sfr-secondary-foreground: oklch(var(--zinc-100));
+    --srf-secondary-flat-bg: var(--sfr-secondary);
+    --srf-secondary-flat-bg-hover: color-mix(in oklch, var(--sfr-secondary) 90%, black);
+    --srf-secondary-flat-bg-active: color-mix(in oklch, var(--sfr-secondary) 80%, black);
+    --srf-secondary-flat-text: var(--sfr-secondary-foreground);
+    --srf-secondary-outline-border: color-mix(in oklch, var(--sfr-secondary) 38%, var(--srf-mix-border));
+    --srf-secondary-outline-border-hover: color-mix(
+      in oklch,
+      var(--sfr-secondary) 52%,
+      var(--srf-mix-border)
+    );
+    --srf-secondary-outline-border-active: color-mix(
+      in oklch,
+      var(--sfr-secondary) 66%,
+      var(--srf-mix-border)
+    );
+    --srf-secondary-outline-bg: color-mix(in oklch, var(--sfr-secondary) 14%, var(--srf-mix-canvas));
+    --srf-secondary-outline-bg-hover: color-mix(in oklch, var(--sfr-secondary) 20%, var(--srf-mix-muted));
+    --srf-secondary-outline-bg-active: color-mix(in oklch, var(--sfr-secondary) 26%, var(--srf-mix-accent));
+    --srf-secondary-outline-text: color-mix(in oklch, var(--sfr-secondary) 72%, var(--srf-mix-ink));
+    --srf-secondary-soft-bg: color-mix(in oklch, var(--sfr-secondary) 22%, var(--srf-mix-muted));
+    --srf-secondary-soft-bg-hover: color-mix(in oklch, var(--sfr-secondary) 28%, var(--srf-mix-accent));
+    --srf-secondary-soft-bg-active: color-mix(in oklch, var(--sfr-secondary) 34%, var(--srf-mix-accent));
+    --srf-secondary-soft-text: color-mix(in oklch, var(--sfr-secondary) 72%, var(--srf-mix-ink));
+    --srf-secondary-text: color-mix(in oklch, var(--sfr-secondary) 72%, var(--srf-mix-ink));
+    --srf-secondary-text-hover: color-mix(in oklch, var(--sfr-secondary) 82%, var(--srf-mix-ink));
+    --srf-secondary-text-active: var(--sfr-secondary);
 
-    --srf-warning-flat-bg: var(--amber-500);
-    --srf-warning-flat-bg-hover: var(--amber-600);
-    --srf-warning-flat-bg-active: var(--amber-700);
-    --srf-warning-flat-text: var(--background);
-    --srf-warning-outline-border: var(--amber-800);
-    --srf-warning-outline-border-hover: var(--amber-700);
-    --srf-warning-outline-border-active: var(--amber-600);
-    --srf-warning-outline-bg: var(--zinc-900);
-    --srf-warning-outline-bg-hover: var(--zinc-800);
-    --srf-warning-outline-bg-active: var(--zinc-950);
-    --srf-warning-outline-text: var(--amber-100);
-    --srf-warning-soft-bg: var(--zinc-800);
-    --srf-warning-soft-bg-hover: var(--zinc-700);
-    --srf-warning-soft-bg-active: var(--zinc-900);
-    --srf-warning-soft-text: var(--amber-100);
-    --srf-warning-text: var(--amber-100);
-    --srf-warning-text-hover: var(--amber-600);
-    --srf-warning-text-active: var(--amber-100);
+    --sfr-destructive: oklch(var(--red-500));
+    --sfr-destructive-foreground: oklch(98.5% 0 none);
+    --srf-destructive-flat-bg: var(--sfr-destructive);
+    --srf-destructive-flat-bg-hover: color-mix(in oklch, var(--sfr-destructive) 90%, black);
+    --srf-destructive-flat-bg-active: color-mix(in oklch, var(--sfr-destructive) 80%, black);
+    --srf-destructive-flat-text: var(--sfr-destructive-foreground);
+    --srf-destructive-outline-border: color-mix(in oklch, var(--sfr-destructive) 38%, var(--srf-mix-border));
+    --srf-destructive-outline-border-hover: color-mix(
+      in oklch,
+      var(--sfr-destructive) 52%,
+      var(--srf-mix-border)
+    );
+    --srf-destructive-outline-border-active: color-mix(
+      in oklch,
+      var(--sfr-destructive) 66%,
+      var(--srf-mix-border)
+    );
+    --srf-destructive-outline-bg: color-mix(in oklch, var(--sfr-destructive) 14%, var(--srf-mix-canvas));
+    --srf-destructive-outline-bg-hover: color-mix(in oklch, var(--sfr-destructive) 20%, var(--srf-mix-muted));
+    --srf-destructive-outline-bg-active: color-mix(
+      in oklch,
+      var(--sfr-destructive) 26%,
+      var(--srf-mix-accent)
+    );
+    --srf-destructive-outline-text: color-mix(in oklch, var(--sfr-destructive) 72%, var(--srf-mix-ink));
+    --srf-destructive-soft-bg: color-mix(in oklch, var(--sfr-destructive) 22%, var(--srf-mix-muted));
+    --srf-destructive-soft-bg-hover: color-mix(in oklch, var(--sfr-destructive) 28%, var(--srf-mix-accent));
+    --srf-destructive-soft-bg-active: color-mix(in oklch, var(--sfr-destructive) 34%, var(--srf-mix-accent));
+    --srf-destructive-soft-text: color-mix(in oklch, var(--sfr-destructive) 72%, var(--srf-mix-ink));
+    --srf-destructive-text: color-mix(in oklch, var(--sfr-destructive) 72%, var(--srf-mix-ink));
+    --srf-destructive-text-hover: color-mix(in oklch, var(--sfr-destructive) 82%, var(--srf-mix-ink));
+    --srf-destructive-text-active: var(--sfr-destructive);
 
-    --srf-success-flat-bg: var(--green-500);
-    --srf-success-flat-bg-hover: var(--green-600);
-    --srf-success-flat-bg-active: var(--green-700);
-    --srf-success-flat-text: var(--background);
-    --srf-success-outline-border: var(--green-800);
-    --srf-success-outline-border-hover: var(--green-700);
-    --srf-success-outline-border-active: var(--green-600);
-    --srf-success-outline-bg: var(--zinc-900);
-    --srf-success-outline-bg-hover: var(--zinc-800);
-    --srf-success-outline-bg-active: var(--zinc-950);
-    --srf-success-outline-text: var(--green-100);
-    --srf-success-soft-bg: var(--zinc-800);
-    --srf-success-soft-bg-hover: var(--zinc-700);
-    --srf-success-soft-bg-active: var(--zinc-900);
-    --srf-success-soft-text: var(--green-100);
-    --srf-success-text: var(--green-400);
-    --srf-success-text-hover: var(--green-600);
-    --srf-success-text-active: var(--green-400);
+    --sfr-warning: oklch(var(--amber-500));
+    --sfr-warning-foreground: oklch(var(--background));
+    --srf-warning-flat-bg: var(--sfr-warning);
+    --srf-warning-flat-bg-hover: color-mix(in oklch, var(--sfr-warning) 90%, black);
+    --srf-warning-flat-bg-active: color-mix(in oklch, var(--sfr-warning) 80%, black);
+    --srf-warning-flat-text: var(--sfr-warning-foreground);
+    --srf-warning-outline-border: color-mix(in oklch, var(--sfr-warning) 38%, var(--srf-mix-border));
+    --srf-warning-outline-border-hover: color-mix(in oklch, var(--sfr-warning) 52%, var(--srf-mix-border));
+    --srf-warning-outline-border-active: color-mix(in oklch, var(--sfr-warning) 66%, var(--srf-mix-border));
+    --srf-warning-outline-bg: color-mix(in oklch, var(--sfr-warning) 14%, var(--srf-mix-canvas));
+    --srf-warning-outline-bg-hover: color-mix(in oklch, var(--sfr-warning) 20%, var(--srf-mix-muted));
+    --srf-warning-outline-bg-active: color-mix(in oklch, var(--sfr-warning) 26%, var(--srf-mix-accent));
+    --srf-warning-outline-text: color-mix(in oklch, var(--sfr-warning) 72%, var(--srf-mix-ink));
+    --srf-warning-soft-bg: color-mix(in oklch, var(--sfr-warning) 22%, var(--srf-mix-muted));
+    --srf-warning-soft-bg-hover: color-mix(in oklch, var(--sfr-warning) 28%, var(--srf-mix-accent));
+    --srf-warning-soft-bg-active: color-mix(in oklch, var(--sfr-warning) 34%, var(--srf-mix-accent));
+    --srf-warning-soft-text: color-mix(in oklch, var(--sfr-warning) 72%, var(--srf-mix-ink));
+    --srf-warning-text: color-mix(in oklch, var(--sfr-warning) 72%, var(--srf-mix-ink));
+    --srf-warning-text-hover: color-mix(in oklch, var(--sfr-warning) 82%, var(--srf-mix-ink));
+    --srf-warning-text-active: var(--sfr-warning);
+
+    --sfr-success: oklch(var(--green-500));
+    --sfr-success-foreground: oklch(var(--background));
+    --srf-success-flat-bg: var(--sfr-success);
+    --srf-success-flat-bg-hover: color-mix(in oklch, var(--sfr-success) 90%, black);
+    --srf-success-flat-bg-active: color-mix(in oklch, var(--sfr-success) 80%, black);
+    --srf-success-flat-text: var(--sfr-success-foreground);
+    --srf-success-outline-border: color-mix(in oklch, var(--sfr-success) 38%, var(--srf-mix-border));
+    --srf-success-outline-border-hover: color-mix(in oklch, var(--sfr-success) 52%, var(--srf-mix-border));
+    --srf-success-outline-border-active: color-mix(in oklch, var(--sfr-success) 66%, var(--srf-mix-border));
+    --srf-success-outline-bg: color-mix(in oklch, var(--sfr-success) 14%, var(--srf-mix-canvas));
+    --srf-success-outline-bg-hover: color-mix(in oklch, var(--sfr-success) 20%, var(--srf-mix-muted));
+    --srf-success-outline-bg-active: color-mix(in oklch, var(--sfr-success) 26%, var(--srf-mix-accent));
+    --srf-success-outline-text: color-mix(in oklch, var(--sfr-success) 72%, var(--srf-mix-ink));
+    --srf-success-soft-bg: color-mix(in oklch, var(--sfr-success) 22%, var(--srf-mix-muted));
+    --srf-success-soft-bg-hover: color-mix(in oklch, var(--sfr-success) 28%, var(--srf-mix-accent));
+    --srf-success-soft-bg-active: color-mix(in oklch, var(--sfr-success) 34%, var(--srf-mix-accent));
+    --srf-success-soft-text: color-mix(in oklch, var(--sfr-success) 72%, var(--srf-mix-ink));
+    --srf-success-text: color-mix(in oklch, var(--sfr-success) 72%, var(--srf-mix-ink));
+    --srf-success-text-hover: color-mix(in oklch, var(--sfr-success) 82%, var(--srf-mix-ink));
+    --srf-success-text-active: var(--sfr-success);
   }
 }
 
@@ -311,36 +368,36 @@
   /* flat */
 
   .srf.srf-flat.srf-default {
-    --srf-bg: oklch(var(--srf-default-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-default-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-default-flat-bg-active));
+    --srf-bg: var(--srf-default-flat-bg);
+    --srf-bg-hover: var(--srf-default-flat-bg-hover);
+    --srf-bg-active: var(--srf-default-flat-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-default-flat-text));
+    --srf-text: var(--srf-default-flat-text);
   }
 
   .srf.srf-flat.srf-primary {
-    --srf-bg: oklch(var(--srf-primary-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-primary-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-primary-flat-bg-active));
+    --srf-bg: var(--srf-primary-flat-bg);
+    --srf-bg-hover: var(--srf-primary-flat-bg-hover);
+    --srf-bg-active: var(--srf-primary-flat-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-primary-flat-text));
+    --srf-text: var(--srf-primary-flat-text);
   }
 
   .srf.srf-flat.srf-brand {
     --srf-bg: transparent;
     --srf-bg-hover: transparent;
     --srf-bg-active: transparent;
-    --srf-border: oklch(var(--brand-border));
-    --srf-border-hover: oklch(var(--brand-border));
-    --srf-border-active: oklch(var(--brand-border));
+    --srf-border: var(--srf-brand-flat-border);
+    --srf-border-hover: var(--srf-brand-flat-border);
+    --srf-border-active: var(--srf-brand-flat-border);
     --srf-bg-image: var(--srf-brand-gradient);
     --srf-bg-image-hover: var(--srf-brand-gradient-hover);
     --srf-bg-image-active: var(--srf-brand-gradient-active);
-    --srf-text: oklch(var(--primary-foreground));
+    --srf-text: var(--srf-brand-flat-text);
     --srf-shadow: var(--srf-brand-shadow);
     --srf-shadow-hover: var(--srf-brand-shadow-hover);
     --srf-shadow-active: var(--srf-brand-shadow-active);
@@ -349,273 +406,273 @@
   }
 
   .srf.srf-flat.srf-secondary {
-    --srf-bg: oklch(var(--srf-secondary-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-secondary-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-secondary-flat-bg-active));
+    --srf-bg: var(--srf-secondary-flat-bg);
+    --srf-bg-hover: var(--srf-secondary-flat-bg-hover);
+    --srf-bg-active: var(--srf-secondary-flat-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-secondary-flat-text));
+    --srf-text: var(--srf-secondary-flat-text);
   }
 
   .srf.srf-flat.srf-destructive {
-    --srf-bg: oklch(var(--srf-destructive-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-destructive-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-destructive-flat-bg-active));
+    --srf-bg: var(--srf-destructive-flat-bg);
+    --srf-bg-hover: var(--srf-destructive-flat-bg-hover);
+    --srf-bg-active: var(--srf-destructive-flat-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-destructive-flat-text));
+    --srf-text: var(--srf-destructive-flat-text);
   }
 
   .srf.srf-flat.srf-warning {
-    --srf-bg: oklch(var(--srf-warning-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-warning-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-warning-flat-bg-active));
+    --srf-bg: var(--srf-warning-flat-bg);
+    --srf-bg-hover: var(--srf-warning-flat-bg-hover);
+    --srf-bg-active: var(--srf-warning-flat-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-warning-flat-text));
+    --srf-text: var(--srf-warning-flat-text);
   }
 
   .srf.srf-flat.srf-success {
-    --srf-bg: oklch(var(--srf-success-flat-bg));
-    --srf-bg-hover: oklch(var(--srf-success-flat-bg-hover));
-    --srf-bg-active: oklch(var(--srf-success-flat-bg-active));
+    --srf-bg: var(--srf-success-flat-bg);
+    --srf-bg-hover: var(--srf-success-flat-bg-hover);
+    --srf-bg-active: var(--srf-success-flat-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-success-flat-text));
+    --srf-text: var(--srf-success-flat-text);
   }
 
   /* outline */
 
   .srf.srf-outline.srf-default {
-    --srf-border: oklch(var(--srf-default-outline-border));
-    --srf-border-hover: oklch(var(--srf-default-outline-border-hover));
-    --srf-border-active: oklch(var(--srf-default-outline-border-active));
-    --srf-bg: oklch(var(--srf-default-outline-bg));
-    --srf-bg-hover: oklch(var(--srf-default-outline-bg-hover));
-    --srf-bg-active: oklch(var(--srf-default-outline-bg-active));
-    --srf-text: oklch(var(--srf-default-outline-text));
+    --srf-border: var(--srf-default-outline-border);
+    --srf-border-hover: var(--srf-default-outline-border-hover);
+    --srf-border-active: var(--srf-default-outline-border-active);
+    --srf-bg: var(--srf-default-outline-bg);
+    --srf-bg-hover: var(--srf-default-outline-bg-hover);
+    --srf-bg-active: var(--srf-default-outline-bg-active);
+    --srf-text: var(--srf-default-outline-text);
   }
 
   .srf.srf-outline.srf-primary {
-    --srf-border: oklch(var(--srf-primary-outline-border));
-    --srf-border-hover: oklch(var(--srf-primary-outline-border-hover));
-    --srf-border-active: oklch(var(--srf-primary-outline-border-active));
-    --srf-bg: oklch(var(--srf-primary-outline-bg));
-    --srf-bg-hover: oklch(var(--srf-primary-outline-bg-hover));
-    --srf-bg-active: oklch(var(--srf-primary-outline-bg-active));
-    --srf-text: oklch(var(--srf-primary-outline-text));
+    --srf-border: var(--srf-primary-outline-border);
+    --srf-border-hover: var(--srf-primary-outline-border-hover);
+    --srf-border-active: var(--srf-primary-outline-border-active);
+    --srf-bg: var(--srf-primary-outline-bg);
+    --srf-bg-hover: var(--srf-primary-outline-bg-hover);
+    --srf-bg-active: var(--srf-primary-outline-bg-active);
+    --srf-text: var(--srf-primary-outline-text);
   }
 
   .srf.srf-outline.srf-brand {
-    --srf-border: oklch(var(--srf-brand-outline-border));
-    --srf-border-hover: oklch(var(--srf-brand-outline-border-hover));
-    --srf-border-active: oklch(var(--srf-brand-outline-border-active));
-    --srf-bg: oklch(var(--srf-brand-outline-bg));
-    --srf-bg-hover: oklch(var(--srf-brand-outline-bg-hover));
-    --srf-bg-active: oklch(var(--srf-brand-outline-bg-active));
-    --srf-text: oklch(var(--srf-brand-outline-text));
+    --srf-border: var(--srf-brand-outline-border);
+    --srf-border-hover: var(--srf-brand-outline-border-hover);
+    --srf-border-active: var(--srf-brand-outline-border-active);
+    --srf-bg: var(--srf-brand-outline-bg);
+    --srf-bg-hover: var(--srf-brand-outline-bg-hover);
+    --srf-bg-active: var(--srf-brand-outline-bg-active);
+    --srf-text: var(--srf-brand-outline-text);
   }
 
   .srf.srf-outline.srf-secondary {
-    --srf-border: oklch(var(--srf-secondary-outline-border));
-    --srf-border-hover: oklch(var(--srf-secondary-outline-border-hover));
-    --srf-border-active: oklch(var(--srf-secondary-outline-border-active));
-    --srf-bg: oklch(var(--srf-secondary-outline-bg));
-    --srf-bg-hover: oklch(var(--srf-secondary-outline-bg-hover));
-    --srf-bg-active: oklch(var(--srf-secondary-outline-bg-active));
-    --srf-text: oklch(var(--srf-secondary-outline-text));
+    --srf-border: var(--srf-secondary-outline-border);
+    --srf-border-hover: var(--srf-secondary-outline-border-hover);
+    --srf-border-active: var(--srf-secondary-outline-border-active);
+    --srf-bg: var(--srf-secondary-outline-bg);
+    --srf-bg-hover: var(--srf-secondary-outline-bg-hover);
+    --srf-bg-active: var(--srf-secondary-outline-bg-active);
+    --srf-text: var(--srf-secondary-outline-text);
   }
 
   .srf.srf-outline.srf-destructive {
-    --srf-border: oklch(var(--srf-destructive-outline-border));
-    --srf-border-hover: oklch(var(--srf-destructive-outline-border-hover));
-    --srf-border-active: oklch(var(--srf-destructive-outline-border-active));
-    --srf-bg: oklch(var(--srf-destructive-outline-bg));
-    --srf-bg-hover: oklch(var(--srf-destructive-outline-bg-hover));
-    --srf-bg-active: oklch(var(--srf-destructive-outline-bg-active));
-    --srf-text: oklch(var(--srf-destructive-outline-text));
+    --srf-border: var(--srf-destructive-outline-border);
+    --srf-border-hover: var(--srf-destructive-outline-border-hover);
+    --srf-border-active: var(--srf-destructive-outline-border-active);
+    --srf-bg: var(--srf-destructive-outline-bg);
+    --srf-bg-hover: var(--srf-destructive-outline-bg-hover);
+    --srf-bg-active: var(--srf-destructive-outline-bg-active);
+    --srf-text: var(--srf-destructive-outline-text);
   }
 
   .srf.srf-outline.srf-warning {
-    --srf-border: oklch(var(--srf-warning-outline-border));
-    --srf-border-hover: oklch(var(--srf-warning-outline-border-hover));
-    --srf-border-active: oklch(var(--srf-warning-outline-border-active));
-    --srf-bg: oklch(var(--srf-warning-outline-bg));
-    --srf-bg-hover: oklch(var(--srf-warning-outline-bg-hover));
-    --srf-bg-active: oklch(var(--srf-warning-outline-bg-active));
-    --srf-text: oklch(var(--srf-warning-outline-text));
+    --srf-border: var(--srf-warning-outline-border);
+    --srf-border-hover: var(--srf-warning-outline-border-hover);
+    --srf-border-active: var(--srf-warning-outline-border-active);
+    --srf-bg: var(--srf-warning-outline-bg);
+    --srf-bg-hover: var(--srf-warning-outline-bg-hover);
+    --srf-bg-active: var(--srf-warning-outline-bg-active);
+    --srf-text: var(--srf-warning-outline-text);
   }
 
   .srf.srf-outline.srf-success {
-    --srf-border: oklch(var(--srf-success-outline-border));
-    --srf-border-hover: oklch(var(--srf-success-outline-border-hover));
-    --srf-border-active: oklch(var(--srf-success-outline-border-active));
-    --srf-bg: oklch(var(--srf-success-outline-bg));
-    --srf-bg-hover: oklch(var(--srf-success-outline-bg-hover));
-    --srf-bg-active: oklch(var(--srf-success-outline-bg-active));
-    --srf-text: oklch(var(--srf-success-outline-text));
+    --srf-border: var(--srf-success-outline-border);
+    --srf-border-hover: var(--srf-success-outline-border-hover);
+    --srf-border-active: var(--srf-success-outline-border-active);
+    --srf-bg: var(--srf-success-outline-bg);
+    --srf-bg-hover: var(--srf-success-outline-bg-hover);
+    --srf-bg-active: var(--srf-success-outline-bg-active);
+    --srf-text: var(--srf-success-outline-text);
   }
 
   /* soft */
 
   .srf.srf-soft.srf-default {
-    --srf-bg: oklch(var(--srf-default-soft-bg));
-    --srf-bg-hover: oklch(var(--srf-default-soft-bg-hover));
-    --srf-bg-active: oklch(var(--srf-default-soft-bg-active));
+    --srf-bg: var(--srf-default-soft-bg);
+    --srf-bg-hover: var(--srf-default-soft-bg-hover);
+    --srf-bg-active: var(--srf-default-soft-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-default-soft-text));
-    --srf-text-active: oklch(var(--srf-default-text-active));
+    --srf-text: var(--srf-default-soft-text);
+    --srf-text-active: var(--srf-default-text-active);
   }
 
   .srf.srf-soft.srf-primary {
-    --srf-bg: oklch(var(--srf-primary-soft-bg));
-    --srf-bg-hover: oklch(var(--srf-primary-soft-bg-hover));
-    --srf-bg-active: oklch(var(--srf-primary-soft-bg-active));
+    --srf-bg: var(--srf-primary-soft-bg);
+    --srf-bg-hover: var(--srf-primary-soft-bg-hover);
+    --srf-bg-active: var(--srf-primary-soft-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-primary-soft-text));
-    --srf-text-active: oklch(var(--srf-primary-text-active));
+    --srf-text: var(--srf-primary-soft-text);
+    --srf-text-active: var(--srf-primary-text-active);
   }
 
   .srf.srf-soft.srf-brand {
-    --srf-bg: oklch(var(--srf-brand-soft-bg));
-    --srf-bg-hover: oklch(var(--srf-brand-soft-bg-hover));
-    --srf-bg-active: oklch(var(--srf-brand-soft-bg-active));
+    --srf-bg: var(--srf-brand-soft-bg);
+    --srf-bg-hover: var(--srf-brand-soft-bg-hover);
+    --srf-bg-active: var(--srf-brand-soft-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-brand-soft-text));
-    --srf-text-active: oklch(var(--srf-brand-text-active));
+    --srf-text: var(--srf-brand-soft-text);
+    --srf-text-active: var(--srf-brand-text-active);
   }
 
   .srf.srf-soft.srf-secondary {
-    --srf-bg: oklch(var(--srf-secondary-soft-bg));
-    --srf-bg-hover: oklch(var(--srf-secondary-soft-bg-hover));
-    --srf-bg-active: oklch(var(--srf-secondary-soft-bg-active));
+    --srf-bg: var(--srf-secondary-soft-bg);
+    --srf-bg-hover: var(--srf-secondary-soft-bg-hover);
+    --srf-bg-active: var(--srf-secondary-soft-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-secondary-soft-text));
-    --srf-text-active: oklch(var(--srf-secondary-text-active));
+    --srf-text: var(--srf-secondary-soft-text);
+    --srf-text-active: var(--srf-secondary-text-active);
   }
 
   .srf.srf-soft.srf-destructive {
-    --srf-bg: oklch(var(--srf-destructive-soft-bg));
-    --srf-bg-hover: oklch(var(--srf-destructive-soft-bg-hover));
-    --srf-bg-active: oklch(var(--srf-destructive-soft-bg-active));
+    --srf-bg: var(--srf-destructive-soft-bg);
+    --srf-bg-hover: var(--srf-destructive-soft-bg-hover);
+    --srf-bg-active: var(--srf-destructive-soft-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-destructive-soft-text));
-    --srf-text-active: oklch(var(--srf-destructive-text-active));
+    --srf-text: var(--srf-destructive-soft-text);
+    --srf-text-active: var(--srf-destructive-text-active);
   }
 
   .srf.srf-soft.srf-warning {
-    --srf-bg: oklch(var(--srf-warning-soft-bg));
-    --srf-bg-hover: oklch(var(--srf-warning-soft-bg-hover));
-    --srf-bg-active: oklch(var(--srf-warning-soft-bg-active));
+    --srf-bg: var(--srf-warning-soft-bg);
+    --srf-bg-hover: var(--srf-warning-soft-bg-hover);
+    --srf-bg-active: var(--srf-warning-soft-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-warning-soft-text));
-    --srf-text-active: oklch(var(--srf-warning-text-active));
+    --srf-text: var(--srf-warning-soft-text);
+    --srf-text-active: var(--srf-warning-text-active);
   }
 
   .srf.srf-soft.srf-success {
-    --srf-bg: oklch(var(--srf-success-soft-bg));
-    --srf-bg-hover: oklch(var(--srf-success-soft-bg-hover));
-    --srf-bg-active: oklch(var(--srf-success-soft-bg-active));
+    --srf-bg: var(--srf-success-soft-bg);
+    --srf-bg-hover: var(--srf-success-soft-bg-hover);
+    --srf-bg-active: var(--srf-success-soft-bg-active);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-success-soft-text));
-    --srf-text-active: oklch(var(--srf-success-text-active));
+    --srf-text: var(--srf-success-soft-text);
+    --srf-text-active: var(--srf-success-text-active);
   }
 
   /* ghost */
 
   .srf.srf-ghost.srf-default {
     --srf-bg: transparent;
-    --srf-bg-hover: oklch(var(--srf-default-soft-bg));
-    --srf-bg-active: oklch(var(--srf-default-soft-bg-hover));
+    --srf-bg-hover: var(--srf-default-soft-bg);
+    --srf-bg-active: var(--srf-default-soft-bg-hover);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-default-soft-text));
-    --srf-text-active: oklch(var(--srf-default-text-active));
+    --srf-text: var(--srf-default-soft-text);
+    --srf-text-active: var(--srf-default-text-active);
   }
 
   .srf.srf-ghost.srf-primary {
     --srf-bg: transparent;
-    --srf-bg-hover: oklch(var(--srf-primary-soft-bg));
-    --srf-bg-active: oklch(var(--srf-primary-soft-bg-hover));
+    --srf-bg-hover: var(--srf-primary-soft-bg);
+    --srf-bg-active: var(--srf-primary-soft-bg-hover);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-primary-soft-text));
-    --srf-text-active: oklch(var(--srf-primary-text-active));
+    --srf-text: var(--srf-primary-soft-text);
+    --srf-text-active: var(--srf-primary-text-active);
   }
 
   .srf.srf-ghost.srf-brand {
     --srf-bg: transparent;
-    --srf-bg-hover: oklch(var(--srf-brand-soft-bg));
-    --srf-bg-active: oklch(var(--srf-brand-soft-bg-hover));
+    --srf-bg-hover: var(--srf-brand-soft-bg);
+    --srf-bg-active: var(--srf-brand-soft-bg-hover);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-brand-soft-text));
-    --srf-text-active: oklch(var(--srf-brand-text-active));
+    --srf-text: var(--srf-brand-soft-text);
+    --srf-text-active: var(--srf-brand-text-active);
   }
 
   .srf.srf-ghost.srf-secondary {
     --srf-bg: transparent;
-    --srf-bg-hover: oklch(var(--srf-secondary-soft-bg));
-    --srf-bg-active: oklch(var(--srf-secondary-soft-bg-hover));
+    --srf-bg-hover: var(--srf-secondary-soft-bg);
+    --srf-bg-active: var(--srf-secondary-soft-bg-hover);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-secondary-soft-text));
-    --srf-text-active: oklch(var(--srf-secondary-text-active));
+    --srf-text: var(--srf-secondary-soft-text);
+    --srf-text-active: var(--srf-secondary-text-active);
   }
 
   .srf.srf-ghost.srf-destructive {
     --srf-bg: transparent;
-    --srf-bg-hover: oklch(var(--srf-destructive-soft-bg));
-    --srf-bg-active: oklch(var(--srf-destructive-soft-bg-hover));
+    --srf-bg-hover: var(--srf-destructive-soft-bg);
+    --srf-bg-active: var(--srf-destructive-soft-bg-hover);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-destructive-soft-text));
-    --srf-text-active: oklch(var(--srf-destructive-text-active));
+    --srf-text: var(--srf-destructive-soft-text);
+    --srf-text-active: var(--srf-destructive-text-active);
   }
 
   .srf.srf-ghost.srf-warning {
     --srf-bg: transparent;
-    --srf-bg-hover: oklch(var(--srf-warning-soft-bg));
-    --srf-bg-active: oklch(var(--srf-warning-soft-bg-hover));
+    --srf-bg-hover: var(--srf-warning-soft-bg);
+    --srf-bg-active: var(--srf-warning-soft-bg-hover);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-warning-soft-text));
-    --srf-text-active: oklch(var(--srf-warning-text-active));
+    --srf-text: var(--srf-warning-soft-text);
+    --srf-text-active: var(--srf-warning-text-active);
   }
 
   .srf.srf-ghost.srf-success {
     --srf-bg: transparent;
-    --srf-bg-hover: oklch(var(--srf-success-soft-bg));
-    --srf-bg-active: oklch(var(--srf-success-soft-bg-hover));
+    --srf-bg-hover: var(--srf-success-soft-bg);
+    --srf-bg-active: var(--srf-success-soft-bg-hover);
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-success-soft-text));
-    --srf-text-active: oklch(var(--srf-success-text-active));
+    --srf-text: var(--srf-success-soft-text);
+    --srf-text-active: var(--srf-success-text-active);
   }
 
   /* text */
@@ -627,9 +684,9 @@
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-default-text));
-    --srf-text-hover: oklch(var(--srf-default-text-hover));
-    --srf-text-active: oklch(var(--srf-default-text-active));
+    --srf-text: var(--srf-default-text);
+    --srf-text-hover: var(--srf-default-text-hover);
+    --srf-text-active: var(--srf-default-text-active);
   }
 
   .srf.srf-text.srf-primary {
@@ -639,9 +696,9 @@
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-primary-text));
-    --srf-text-hover: oklch(var(--srf-primary-text-hover));
-    --srf-text-active: oklch(var(--srf-primary-text-active));
+    --srf-text: var(--srf-primary-text);
+    --srf-text-hover: var(--srf-primary-text-hover);
+    --srf-text-active: var(--srf-primary-text-active);
   }
 
   .srf.srf-text.srf-brand {
@@ -651,9 +708,9 @@
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-brand-text));
-    --srf-text-hover: oklch(var(--srf-brand-text-hover));
-    --srf-text-active: oklch(var(--srf-brand-text-active));
+    --srf-text: var(--srf-brand-text);
+    --srf-text-hover: var(--srf-brand-text-hover);
+    --srf-text-active: var(--srf-brand-text-active);
   }
 
   .srf.srf-text.srf-secondary {
@@ -663,9 +720,9 @@
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-secondary-text));
-    --srf-text-hover: oklch(var(--srf-secondary-text-hover));
-    --srf-text-active: oklch(var(--srf-secondary-text-active));
+    --srf-text: var(--srf-secondary-text);
+    --srf-text-hover: var(--srf-secondary-text-hover);
+    --srf-text-active: var(--srf-secondary-text-active);
   }
 
   .srf.srf-text.srf-destructive {
@@ -675,9 +732,9 @@
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-destructive-text));
-    --srf-text-hover: oklch(var(--srf-destructive-text-hover));
-    --srf-text-active: oklch(var(--srf-destructive-text-active));
+    --srf-text: var(--srf-destructive-text);
+    --srf-text-hover: var(--srf-destructive-text-hover);
+    --srf-text-active: var(--srf-destructive-text-active);
   }
 
   .srf.srf-text.srf-warning {
@@ -687,9 +744,9 @@
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-warning-text));
-    --srf-text-hover: oklch(var(--srf-warning-text-hover));
-    --srf-text-active: oklch(var(--srf-warning-text-active));
+    --srf-text: var(--srf-warning-text);
+    --srf-text-hover: var(--srf-warning-text-hover);
+    --srf-text-active: var(--srf-warning-text-active);
   }
 
   .srf.srf-text.srf-success {
@@ -699,9 +756,9 @@
     --srf-border: var(--srf-bg);
     --srf-border-hover: var(--srf-bg-hover);
     --srf-border-active: var(--srf-bg-active);
-    --srf-text: oklch(var(--srf-success-text));
-    --srf-text-hover: oklch(var(--srf-success-text-hover));
-    --srf-text-active: oklch(var(--srf-success-text-active));
+    --srf-text: var(--srf-success-text);
+    --srf-text-hover: var(--srf-success-text-hover);
+    --srf-text-active: var(--srf-success-text-active);
   }
 
   .srf--elevated {
@@ -747,10 +804,10 @@
   .srf.srf-soft,
   .srf.srf-ghost,
   .srf.srf-text {
-    --srf-text-svg: oklch(var(--secondary-foreground));
-    --srf-text-em: oklch(var(--foreground));
-    --srf-text-span: oklch(var(--secondary-foreground));
-    --srf-text-small: oklch(var(--secondary-foreground));
+    --srf-text-svg: var(--srf-chrome-text-svg);
+    --srf-text-em: var(--srf-chrome-text-em);
+    --srf-text-span: var(--srf-chrome-text-span);
+    --srf-text-small: var(--srf-chrome-text-small);
   }
 
   .srf.srf--hover:hover:not(:disabled) {

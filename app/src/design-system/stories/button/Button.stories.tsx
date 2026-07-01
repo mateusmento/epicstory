@@ -227,22 +227,22 @@ export const IntentOverview: Story = {
 
 function ButtonVariantIntentGrid() {
   return (
-    <div class="w-full max-w-5xl rounded-lg border border-slate-200 bg-white p-6 text-foreground">
+    <TokenStoryFrame>
       <TokenSection
         title="Variant × intent"
         description="Full matrix of surface variants and intents. Rows are variants; columns are intents."
       >
-        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <div class="overflow-x-auto rounded-xl border border-border bg-card">
           <table class="w-full min-w-[48rem] border-collapse text-sm">
             <thead>
-              <tr class="border-b border-slate-200 bg-zinc-50">
-                <th class="sticky left-0 z-10 bg-zinc-50 p-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <tr class="border-b border-border bg-muted/40">
+                <th class="sticky left-0 z-10 bg-muted/40 p-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Variant
                 </th>
                 {buttonIntents.map((intent) => (
                   <th
                     key={intent}
-                    class="bg-zinc-50 p-3 text-center text-xs font-medium capitalize tracking-wide text-muted-foreground"
+                    class="bg-muted/40 p-3 text-center text-xs font-medium capitalize tracking-wide text-muted-foreground"
                   >
                     {intent}
                   </th>
@@ -251,15 +251,15 @@ function ButtonVariantIntentGrid() {
             </thead>
             <tbody>
               {buttonSurfaceVariants.map((variant) => (
-                <tr key={variant} class="border-b border-slate-200 bg-white last:border-b-0">
+                <tr key={variant} class="border-b border-border bg-card last:border-b-0">
                   <th
                     scope="row"
-                    class="sticky left-0 z-10 bg-white p-3 text-left font-mono text-xs font-normal text-muted-foreground"
+                    class="sticky left-0 z-10 bg-card p-3 text-left font-mono text-xs font-normal text-muted-foreground"
                   >
                     {variant}
                   </th>
                   {buttonIntents.map((intent) => (
-                    <td key={intent} class="bg-white p-3 text-center">
+                    <td key={intent} class="bg-card p-3 text-center">
                       <Button variant={variant} intent={intent} size="lg" class="min-w-[5.5rem] capitalize">
                         {intent}
                       </Button>
@@ -271,15 +271,12 @@ function ButtonVariantIntentGrid() {
           </table>
         </div>
       </TokenSection>
-    </div>
+    </TokenStoryFrame>
   );
 }
 
 /** Every variant × intent combination in one scrollable grid */
 export const VariantIntentGrid: Story = {
-  parameters: {
-    backgrounds: { default: "white" },
-  },
   render: () => () => <ButtonVariantIntentGrid />,
 };
 
