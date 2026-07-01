@@ -8,7 +8,11 @@ const meta = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["default", "secondary", "destructive", "outline"],
+      options: ["flat", "outline", "soft", "ghost", "text"],
+    },
+    intent: {
+      control: "select",
+      options: ["default", "primary", "brand", "secondary", "destructive", "warning"],
     },
   },
 } satisfies Meta<typeof Badge>;
@@ -20,40 +24,51 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: () => ({
     components: { Badge },
-    template: '<Badge>Default</Badge>',
+    template: "<Badge>Secondary soft</Badge>",
   }),
 };
 
-export const Secondary: Story = {
+export const FlatDestructive: Story = {
   render: () => ({
     components: { Badge },
-    template: '<Badge variant="secondary">Secondary</Badge>',
-  }),
-};
-
-export const Destructive: Story = {
-  render: () => ({
-    components: { Badge },
-    template: '<Badge variant="destructive">Destructive</Badge>',
+    template: '<Badge variant="flat" intent="destructive">3</Badge>',
   }),
 };
 
 export const Outline: Story = {
   render: () => ({
     components: { Badge },
-    template: '<Badge variant="outline">Outline</Badge>',
+    template: '<Badge variant="outline" intent="default">Outline</Badge>',
   }),
 };
 
-export const AllVariants: Story = {
+export const AllIntents: Story = {
   render: () => ({
     components: { Badge },
     template: `
-      <div class="flex flex-wrap gap-2">
-        <Badge>Default</Badge>
-        <Badge variant="secondary">Secondary</Badge>
-        <Badge variant="destructive">Destructive</Badge>
-        <Badge variant="outline">Outline</Badge>
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-wrap gap-2">
+          <Badge variant="soft" intent="default">default</Badge>
+          <Badge variant="soft" intent="primary">primary</Badge>
+          <Badge variant="soft" intent="brand">brand</Badge>
+          <Badge variant="soft" intent="secondary">secondary</Badge>
+          <Badge variant="soft" intent="destructive">destructive</Badge>
+          <Badge variant="soft" intent="warning">warning</Badge>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <Badge variant="flat" intent="default">default</Badge>
+          <Badge variant="flat" intent="primary">primary</Badge>
+          <Badge variant="flat" intent="brand">brand</Badge>
+          <Badge variant="flat" intent="secondary">secondary</Badge>
+          <Badge variant="flat" intent="destructive">destructive</Badge>
+          <Badge variant="flat" intent="warning">warning</Badge>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <Badge variant="outline" intent="default">default</Badge>
+          <Badge variant="outline" intent="primary">primary</Badge>
+          <Badge variant="outline" intent="secondary">secondary</Badge>
+          <Badge variant="outline" intent="destructive">destructive</Badge>
+        </div>
       </div>
     `,
   }),

@@ -6,6 +6,7 @@ import { Icon } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import type { IBacklogItem, IIssue } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
+import { Badge, type BadgeIntent } from "@/design-system";
 
 defineProps<{ item: IBacklogItem }>();
 
@@ -22,17 +23,17 @@ function formatDueDate(date: Date | null | undefined) {
   return formatDistanceToNow(date, { addSuffix: true });
 }
 
-function issuePriorityBadge(priority: number | null | undefined) {
+function issuePriorityBadge(priority: number | null | undefined): { label: string; cls: BadgeIntent } | null {
   if (!priority || priority <= 0) return null;
-  if (priority >= 3) return { label: `P${priority}`, cls: "bg-red-100 text-red-700 border-red-200" };
-  if (priority >= 2) return { label: `P${priority}`, cls: "bg-orange-100 text-orange-700 border-orange-200" };
-  return { label: `P${priority}`, cls: "bg-yellow-100 text-yellow-800 border-yellow-200" };
+  if (priority >= 3) return { label: `P${priority}`, cls: "destructive" };
+  if (priority >= 2) return { label: `P${priority}`, cls: "warning" };
+  return { label: `P${priority}`, cls: "primary" };
 }
 
-function statusBadge(status: ColumnStatus) {
-  if (status === "doing") return { label: "In progress", cls: "bg-blue-100 text-blue-700 border-blue-200" };
-  if (status === "done") return { label: "Done", cls: "bg-green-100 text-green-700 border-green-200" };
-  return { label: "To do", cls: "bg-muted text-muted-foreground border-border" };
+function statusBadge(status: ColumnStatus): { label: string; cls: BadgeIntent } | null {
+  if (status === "doing") return { label: "In progress", cls: "primary" };
+  if (status === "done") return { label: "Done", cls: "success" };
+  return { label: "To do", cls: "secondary" };
 }
 
 function openIssue(issue: IIssue) {
@@ -55,43 +56,39 @@ function openIssue(issue: IIssue) {
   >
     <div
       v-if="item.issue.parentIssue?.title"
-      class="text-[11px] text-secondary-foreground truncate mb-1 flex items-center gap-1"
+      class="text-[11px] truncate mb-1 text-muted-foreground flex items-center gap-1"
     >
       <IssueKey :issue-key="item.issue.issueKey" class="shrink-0" />
-      <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
+      <Icon name="oi-chevron-right" class="w-3 h-3 shrink-0" />
       <span class="truncate">{{ item.issue.parentIssue.title }}</span>
     </div>
 
     <div class="flex items-start gap-2 min-w-0">
       <IssueKey :issue-key="item.issue.issueKey" class="shrink-0 mt-0.5" />
-      <div class="font-medium text-sm text-foreground line-clamp-2 min-w-0">
+      <em class="line-clamp-2 min-w-0">
         {{ item.issue.title || "Untitled issue" }}
-      </div>
+      </em>
     </div>
 
     <div class="mt-2 flex:row-md flex:center-y gap-2 flex-wrap">
-      <span
-        :class="[
-          'text-xs px-2 py-0.5 rounded border font-medium capitalize',
-          statusBadge(item.issue.status as ColumnStatus).cls,
-        ]"
+      <Badge
+        :intent="statusBadge(item.issue.status as ColumnStatus)?.cls ?? 'primary'"
+        variant="soft"
+        size="xs"
       >
-        {{ statusBadge(item.issue.status as ColumnStatus).label }}
-      </span>
+        {{ statusBadge(item.issue.status as ColumnStatus)?.label }}
+      </Badge>
 
-      <span
+      <Badge
         v-if="issuePriorityBadge(item.issue.priority)"
-        :class="[
-          'text-xs px-2 py-0.5 rounded border font-medium',
-          issuePriorityBadge(item.issue.priority)!.cls,
-        ]"
+        :intent="issuePriorityBadge(item.issue.priority)?.cls ?? 'primary'"
+        variant="soft"
+        size="xs"
       >
         {{ issuePriorityBadge(item.issue.priority)!.label }}
-      </span>
+      </Badge>
 
-      <span v-if="formatDueDate(item.issue.dueDate)" class="text-xs text-secondary-foreground">
-        Due {{ formatDueDate(item.issue.dueDate) }}
-      </span>
+      <small v-if="formatDueDate(item.issue.dueDate)">Due {{ formatDueDate(item.issue.dueDate) }}</small>
     </div>
 
     <div

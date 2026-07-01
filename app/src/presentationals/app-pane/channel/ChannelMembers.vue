@@ -35,35 +35,34 @@ function removeMember(user: IUser) {
       <div
         v-for="member in members"
         :key="member.id"
-        class="flex:row-lg flex:center-y hover:bg-secondary/40 cursor-pointer p-1 [&>:last-child]:mr-1 rounded-md"
+        class="flex:row-lg flex:center-y p-1 [&>:last-child]:mr-1"
       >
-        <div class="relative">
-          <UserAvatar :name="member.name" :picture="member.picture" size="base" />
+        <div class="relative flex">
+          <UserAvatar :name="member.name" :picture="member.picture" size="lg" />
           <div v-if="member.online" class="p-0.5 bg-card rounded-full absolute -bottom-0.5 -right-0.5">
             <div class="w-2 h-2 bg-green-400 rounded-full"></div>
           </div>
         </div>
 
-        <div class="flex:col flex:baseline flex-1 min-w-0">
-          <div class="text-sm whitespace-nowrap">
-            {{ member.name }}
-          </div>
-          <div
-            class="text-xs text-secondary-foreground whitespace-nowrap text-ellipsis overflow-hidden hidden @xs:block"
-          >
-            {{ member.email }}
-          </div>
-        </div>
+        <div class="flex:col-md flex:baseline flex-1 min-w-0">
+          <div class="flex:row-lg flex:center-y">
+            <div class="text-sm whitespace-nowrap">
+              {{ member.name }}
+            </div>
 
-        <div class="ml-auto">
-          <div
-            v-if="member.role === 'admin'"
-            class="h-fit px-1 py-0.5 rounded-sm bg-green-200 text-xs text-green-500 border border-green-500"
-          >
-            Admin
+            <div
+              class="h-fit px-1 py-0.5 text-xs rounded-sm border capitalize"
+              :class="
+                member.role === 'admin'
+                  ? 'bg-green-200 text-green-500 border border-green-500'
+                  : 'bg-card border border-secondary'
+              "
+            >
+              {{ member.role ?? "Member" }}
+            </div>
           </div>
-          <div v-else class="h-fit px-1 py-0.5 rounded-sm bg-card text-xs border border-secondary">
-            Member
+          <div class="text-xs text-secondary-foreground truncate hidden @xs:block">
+            {{ member.email }}
           </div>
         </div>
 
@@ -77,7 +76,7 @@ function removeMember(user: IUser) {
             <MenuGroup>
               <MenuItem @click="removeMember(member)" intent="destructive">
                 <Trash2Icon class="mr-2 h-4 w-4" />
-                <span class="whitespace-nowrap">Remove from channel</span>
+                <div>Remove from channel</div>
               </MenuItem>
             </MenuGroup>
           </MenuContent>

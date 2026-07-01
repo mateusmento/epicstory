@@ -1,5 +1,13 @@
 /** Mirrors button intents / variants — keep in sync with button-variant-classes.ts */
-export const surfaceIntents = ["default", "primary", "brand", "secondary", "destructive", "warning"] as const;
+export const surfaceIntents = [
+  "default",
+  "primary",
+  "brand",
+  "secondary",
+  "destructive",
+  "warning",
+  "success",
+] as const;
 export type SurfaceIntent = (typeof surfaceIntents)[number];
 
 export const surfaceVariants = ["flat", "outline", "soft", "ghost", "text"] as const;
@@ -12,13 +20,15 @@ export function srfClasses(variant: SurfaceVariant, intent: SurfaceIntent): stri
 
 export type SurfaceModifiers = {
   /** Interactive surface — enables hover and :active styling */
-  button?: boolean;
+  click?: boolean;
+  hover?: boolean;
   elevated?: boolean;
 };
 
 export function srfModifiers(modifiers: SurfaceModifiers): string[] {
   const classes: string[] = [];
-  if (modifiers.button) classes.push("srf-button");
+  if (modifiers.click) classes.push("srf--click");
+  if (modifiers.hover) classes.push("srf--hover");
   if (modifiers.elevated) classes.push("srf--elevated");
   return classes;
 }

@@ -1,10 +1,10 @@
 <script lang="tsx" setup>
-import type { AsyncDataView } from "@/lib/async";
-import { MessageAttachments } from "@/presentationals/messages";
-import { IconClose } from "@/design-system/icons/meeting";
 import { Button, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from "@/design-system";
 import { IconChannel } from "@/design-system/icons";
+import type { AsyncDataView } from "@/lib/async";
+import { MessageAttachments } from "@/presentationals/messages";
 import type { UploadedAttachment } from "@epicstory/contracts";
+import { SidebarOpen } from "lucide-vue-next";
 import { type FunctionalComponent as FC } from "vue";
 
 defineProps<{
@@ -36,8 +36,8 @@ const Attribute: FC<{ label: string; value: string }> = ({ label, value }) => {
     <div class="flex:row-lg flex:center-y px-2 min-h-10 whitespace-nowrap">
       <IconChannel class="overflow-visible" />
       <div class="text-sm">Channel</div>
-      <Button variant="ghost" size="icon" class="ml-auto" @click="emit('close')">
-        <IconClose class="w-4 h-4" />
+      <Button variant="outline" size="icon" class="ml-auto" @click="emit('close')">
+        <SidebarOpen class="w-4 h-4" />
       </Button>
     </div>
 

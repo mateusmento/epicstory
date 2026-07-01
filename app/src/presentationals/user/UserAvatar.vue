@@ -111,8 +111,6 @@ const ariaLabel = computed(() => props.title ?? props.name);
       :class="cn('h-full w-full object-cover', imgClass)"
       @error="emit('error')"
     />
-    <span v-else :class="textClass" class="w-full h-full flex items-center justify-center">{{
-      initials
-    }}</span>
+    <div v-else :class="textClass" class="w-full h-full flex items-center justify-center">{{ initials }}</div>
   </div>
 </template>

@@ -72,7 +72,7 @@ onMounted(() => {
         type="button"
         size="icon"
         class="px-2 text-xs"
-        :variant="layoutMode === 'speaker' ? 'secondary' : 'ghost'"
+        :variant="layoutMode === 'speaker' ? 'outline' : 'ghost'"
         @click="setLayoutMode('speaker')"
       >
         Speaker
@@ -81,7 +81,7 @@ onMounted(() => {
         type="button"
         size="icon"
         class="px-2 text-xs"
-        :variant="layoutMode === 'grid' ? 'secondary' : 'ghost'"
+        :variant="layoutMode === 'grid' ? 'outline' : 'ghost'"
         @click="setLayoutMode('grid')"
       >
         Grid

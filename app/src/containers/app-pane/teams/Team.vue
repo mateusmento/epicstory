@@ -6,6 +6,10 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
   NavTrigger,
   Separator,
   Tooltip,
@@ -18,6 +22,7 @@ import { useTeam } from "@/domain/team";
 import { format } from "date-fns";
 import { Trash2Icon, UserPlus } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
+import { DotsHorizontalIcon } from "@radix-icons/vue";
 
 const props = defineProps<{
   teamId: number;
@@ -73,13 +78,7 @@ const selectedUser = ref<IUser>();
     </NavTrigger>
 
     <div class="flex:col-md p-2">
-      <div
-        v-for="member in members"
-        :key="member.id"
-        view="app-pane"
-        content="team"
-        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
-      >
+      <div v-for="member in members" :key="member.id" class="flex:row-2xl flex:center-y p-2">
         <UserAvatar :name="member.user.name" :picture="member.user.picture" size="lg" class="flex-shrink-0" />
 
         <div class="flex:col flex:center-y">
@@ -88,10 +87,20 @@ const selectedUser = ref<IUser>();
             Member since {{ format(member.joinedAt, "MMM do, yyyy") }}
           </div>
         </div>
-        <Trash2Icon
-          @click="removeMember(member.id)"
-          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
-        />
+
+        <Menu>
+          <MenuTrigger as-child>
+            <Button variant="ghost" size="icon" class="ml-auto">
+              <DotsHorizontalIcon class="h-4 w-4" />
+            </Button>
+          </MenuTrigger>
+          <MenuContent side="bottom" align="end">
+            <MenuItem @click="removeMember(member.id)" intent="destructive">
+              <Trash2Icon class="h-4 w-4" />
+              Remove from team
+            </MenuItem>
+          </MenuContent>
+        </Menu>
       </div>
     </div>
   </div>

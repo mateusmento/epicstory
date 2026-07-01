@@ -2,7 +2,6 @@
 import { channelMessageComposerAttachmentHandlers, MessageComposer } from "@/containers/messages";
 import { useDependency } from "@/core/dependency-injection";
 import { Button, ScrollArea, Separator } from "@/design-system";
-import { Icon } from "@/design-system/icons";
 import { groupMessages, useChannel, useMessageThread } from "@/domain/channels";
 import type { IMessageGroup } from "@/domain/channels/types/message.type";
 import MessageGroup from "@/presentationals/channel/MessageGroup.vue";
@@ -11,6 +10,7 @@ import { ChannelApi } from "@epicstory/api-client";
 import type { IMessage, IReply, ReplyMessageBody, UpdateChannelMessageBody } from "@epicstory/contracts";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import { useThrottleFn } from "@vueuse/core";
+import { SidebarOpen } from "lucide-vue-next";
 import type { VNodeRef } from "vue";
 import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 
@@ -257,8 +257,8 @@ function onEditTarget(m: IMessage | IReply) {
     <div class="flex:row-xl flex:center-y justify-between h-10 p-4">
       <div class="text-base font-semibold">Thread</div>
 
-      <Button variant="ghost" size="icon" @click="emit('close')">
-        <Icon name="io-close" />
+      <Button variant="outline" size="icon" @click="emit('close')">
+        <SidebarOpen class="w-4 h-4" />
       </Button>
     </div>
 

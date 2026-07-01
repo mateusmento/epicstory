@@ -51,6 +51,7 @@ function insertAtMention() {
 
 <template>
   <Button
+    intent="default"
     variant="ghost"
     size="icon"
     :class="editor?.isActive('bold') ? 'bg-secondary' : ''"

@@ -84,12 +84,7 @@ const bubbleAttachmentTiles = computed(() =>
 );
 
 function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
-  return cn(
-    "border py-0.5 px-2 pr-3 rounded-full text-sm font-lato transition-colors",
-    reaction.reactedByMe || reaction.reactedBy.some((u) => u.id === props.meId)
-      ? "border-primary/50 bg-primary/10 text-primary font-medium"
-      : "border-border bg-card text-muted-foreground",
-  );
+  return cn("py-0.5 px-2 pr-3 rounded-full text-sm font-lato transition-colors");
 }
 </script>
 
@@ -200,6 +195,11 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
           <TooltipTrigger as-child>
             <Button
               variant="outline"
+              :intent="
+                reaction.reactedByMe || reaction.reactedBy.some((u) => u.id === props.meId)
+                  ? 'primary'
+                  : 'default'
+              "
               size="icon"
               @click="emit('reaction-toggled', reaction.emoji)"
               :class="reactionPillClass(reaction)"

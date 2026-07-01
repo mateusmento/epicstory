@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { Badge } from "@/design-system";
+import { cn } from "@/design-system/utils";
 import { UserAvatar } from "@/presentationals/user";
 import type { IChannel } from "@epicstory/contracts";
-import { useChannel } from "@/domain/channels";
 import { formatDate, isToday } from "date-fns";
+import { HashIcon } from "lucide-vue-next";
 import { ref } from "vue";
 
 const props = defineProps<{
@@ -10,10 +12,12 @@ const props = defineProps<{
   open?: boolean;
 }>();
 
-const { openChannel } = useChannel();
+const emits = defineEmits<{
+  (e: "open"): void;
+}>();
 
 function onOpenChannel() {
-  openChannel(props.channel);
+  emits("open");
 }
 
 function formatMessageDate(date: Date | string) {
@@ -27,8 +31,12 @@ const isHoveringImage = ref(false);
 
 <template>
   <div
-    class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
-    :class="{ 'bg-secondary': open }"
+    :class="
+      cn(
+        'srf flex:row-2xl flex:center-y p-2 rounded-lg cursor-pointer',
+        open ? 'srf-soft srf-primary' : 'srf-ghost srf-default srf--hover',
+      )
+    "
     @click="onOpenChannel()"
     @pointerover="isHoveringImage = true"
     @pointerleave="isHoveringImage = false"
@@ -41,32 +49,26 @@ const isHoveringImage = ref(false);
         size="lg"
         class="flex-shrink-0"
       />
-      <img v-else src="/images/hashtag.svg" alt="" class="w-8 h-8 rounded-full" />
+      <HashIcon v-else class="w-8 h-8 rounded-full" />
     </div>
 
-    <div class="flex:col flex-1 h-full overflow-hidden">
+    <div class="flex:col-sm flex-1 h-full overflow-hidden">
       <div class="flex:row-auto gap-1 flex:center-y">
-        <div class="text-sm text-foreground line-clamp-1">
+        <em class="truncate mr-4">
           {{ channel.name }}
-        </div>
-        <div class="text-xs text-secondary-foreground whitespace-nowrap">
+        </em>
+        <small class="truncate">
           {{ channel.lastMessage ? formatMessageDate(channel.lastMessage.sentAt) : "" }}
-        </div>
+        </small>
       </div>
 
       <div class="flex:row-auto flex:center-y">
-        <div
-          class="text-sm font-lato text-ellipsis overflow-hidden whitespace-nowrap"
-          :class="[channel.unreadMessagesCount > 0 ? 'text-foreground' : 'text-secondary-foreground']"
-        >
+        <span class="font-lato mr-4 truncate">
           {{ channel.lastMessage?.displayContent ?? channel.lastMessage?.content }}
-        </div>
-        <div
-          v-if="!channel.unreadMessagesCount"
-          class="w-fit px-1 py-0 rounded-sm bg-secondary text-secondary-foreground text-xs"
-        >
+        </span>
+        <Badge v-if="channel.unreadMessagesCount" variant="flat" intent="primary" size="xs">
           {{ channel.unreadMessagesCount }}
-        </div>
+        </Badge>
       </div>
     </div>
   </div>

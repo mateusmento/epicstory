@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import { UserAvatar } from "@/presentationals/user";
+import { useDependency } from "@/core/dependency-injection";
 import {
   Button,
   Input,
+  Label,
   Menu,
   MenuContent,
   MenuGroup,
@@ -15,15 +16,15 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
-import { useDependency } from "@/core/dependency-injection";
-import { UserApi } from "@epicstory/api-client";
 import { useWorkspace } from "@/domain/workspace";
+import { UserAvatar } from "@/presentationals/user";
+import { UserApi } from "@epicstory/api-client";
+import type { IUser } from "@epicstory/contracts";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { format } from "date-fns";
 import { debounce } from "lodash";
-import { ArrowLeft, Trash2Icon, UserPlus, X } from "lucide-vue-next";
+import { ArrowLeft, Trash2Icon, UserPlus } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
-import type { IUser as IUser } from "@epicstory/contracts";
 
 type PendingInvite = { email: string; user: IUser | null };
 
@@ -130,9 +131,9 @@ async function onSend() {
 <template>
   <div v-if="!inviteOpen" class="flex:col w-96">
     <div class="flex:row-auto flex:center-y justify-between px-4 py-2 h-10">
-      <h1 class="flex:row-md flex:center-y whitespace-nowrap">
+      <h1 class="flex:row-md flex:center-y">
         <Icon name="bi-people-fill" />
-        <div class="font-medium text-sm">Workspace Members</div>
+        <div class="font-medium">Workspace Members</div>
       </h1>
       <Tooltip>
         <TooltipTrigger as-child>
@@ -147,19 +148,13 @@ async function onSend() {
     <Separator />
 
     <div class="flex:col-md p-2">
-      <div
-        v-for="member in members"
-        :key="member.id"
-        class="flex:row-2xl flex:center-y p-2 rounded-lg hover:bg-secondary cursor-pointer"
-      >
+      <div v-for="member in members" :key="member.id" class="flex:row-2xl flex:center-y p-2">
         <UserAvatar :name="member.user.name" :picture="member.user.picture" size="lg" class="flex-shrink-0" />
         <div class="flex:col">
-          <div class="text-sm whitespace-nowrap">
+          <div class="truncate">
             {{ member.user.name }}
           </div>
-          <div class="text-xs text-secondary-foreground whitespace-nowrap">
-            Member since {{ format(member.joinedAt, "MMM do, yyyy") }}
-          </div>
+          <small class="truncate">Member since {{ format(member.joinedAt, "MMM do, yyyy") }}</small>
         </div>
         <div class="flex:col ml-auto">
           <Menu>
@@ -172,7 +167,7 @@ async function onSend() {
               <MenuGroup>
                 <MenuItem @click="removeMember(member.id)" intent="destructive">
                   <Trash2Icon class="mr-2 h-4 w-4" />
-                  <span class="whitespace-nowrap">Remove from workspace</span>
+                  <div>Remove from workspace</div>
                 </MenuItem>
               </MenuGroup>
             </MenuContent>
@@ -183,15 +178,19 @@ async function onSend() {
   </div>
 
   <div v-else class="flex:col w-96 min-h-0 flex-1 p-2 gap-3">
-    <div class="flex:row flex:center-y gap-1">
-      <Button variant="ghost" size="icon" type="button" @click="closeInvite">
-        <ArrowLeft class="h-4 w-4" />
-      </Button>
-      <div class="text-sm font-medium">Invite to workspace</div>
-    </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      type="button"
+      @click="closeInvite"
+      class="flex:row-md flex:center-y w-fit"
+    >
+      <ArrowLeft class="h-4 w-4" />
+      <div>Invite to workspace</div>
+    </Button>
 
-    <div class="flex:col-sm">
-      <label class="text-xs text-muted-foreground" for="wm-invite-email">Email</label>
+    <div class="flex:col-lg">
+      <Label for="wm-invite-email">Email</Label>
       <Input
         id="wm-invite-email"
         v-model="emailInput"
@@ -202,14 +201,21 @@ async function onSend() {
       />
     </div>
 
-    <div v-if="isSearching" class="text-xs text-muted-foreground px-0.5">Searching…</div>
+    <small v-if="isSearching">Searching…</small>
+
     <div v-else-if="primaryMatch" class="flex:row gap-3 pr-1 py-1 items-center">
-      <UserAvatar :name="primaryMatch.name" :picture="primaryMatch.picture" size="md" class="flex-shrink-0" />
-      <div class="flex:col min-w-0 text-sm">
-        <div class="font-medium leading-tight truncate">{{ primaryMatch.name }}</div>
-        <div class="text-xs text-muted-foreground leading-tight truncate">{{ primaryMatch.email }}</div>
+      <UserAvatar
+        :name="primaryMatch.name"
+        :picture="primaryMatch.picture"
+        size="base"
+        class="flex-shrink-0"
+      />
+      <div class="flex:col-sm min-w-0">
+        <em class="leading-tight truncate">{{ primaryMatch.name }}</em>
+        <small class="leading-tight truncate">{{ primaryMatch.email }}</small>
       </div>
     </div>
+
     <p v-else-if="showNotRegisteredHint" class="text-xs text-muted-foreground px-0.5">
       This address is not associated with a registered user on the platform. You can still send an invite —
       they will join after signing up.
@@ -217,45 +223,33 @@ async function onSend() {
 
     <div
       v-if="selectedInvites.length"
-      class="flex:col gap-2 rounded-lg border bg-card p-2 max-h-56 overflow-y-auto"
+      class="flex:col-lg flex:center-y rounded-lg border bg-card p-1 max-h-56 overflow-y-auto"
     >
       <div
         v-for="(inv, idx) in selectedInvites"
         :key="idx"
-        class="flex:row items-center gap-3 rounded-md p-1.5"
+        class="flex:row flex:center-y gap-3 rounded-md p-1.5"
       >
         <UserAvatar
           v-if="inv.user"
           :name="inv.user.name"
           :picture="inv.user.picture"
-          size="md"
+          size="base"
           class="flex-shrink-0"
         />
-        <div
-          v-else
-          class="h-10 w-10 flex-shrink-0 rounded-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]"
-        >
-          @
-        </div>
-        <div class="flex:col min-w-0 flex-1 text-sm">
+        <span v-else class="flex flex:center flex-shrink-0 size-8 rounded-full bg-muted text-md"> @ </span>
+        <div class="flex:col-sm min-w-0 flex-1">
           <template v-if="inv.user">
-            <div class="font-medium leading-tight truncate">{{ inv.user.name }}</div>
-            <div class="text-xs text-muted-foreground leading-tight truncate">{{ inv.email }}</div>
+            <em class="leading-tight truncate">{{ inv.user.name }}</em>
+            <small class="leading-tight truncate">{{ inv.email }}</small>
           </template>
           <template v-else>
-            <div class="font-medium leading-tight truncate">{{ inv.email }}</div>
-            <div class="text-xs text-muted-foreground">No account yet for this address</div>
+            <em class="leading-tight truncate">{{ inv.email }}</em>
+            <small>No account yet for this address</small>
           </template>
         </div>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          title="Remove"
-          class="self-start"
-          @click="removePending(inv.email)"
-        >
-          <X class="h-4 w-4" />
+        <Button type="button" size="icon" variant="ghost" title="Remove" @click="removePending(inv.email)">
+          <Trash2Icon class="size-4" />
         </Button>
       </div>
     </div>

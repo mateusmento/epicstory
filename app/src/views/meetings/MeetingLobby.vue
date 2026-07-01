@@ -242,6 +242,7 @@ const joined = computed(() => lobby.value?.meeting?.attendees ?? []);
             <div class="flex-1" />
 
             <Button
+              intent="brand"
               size="sm"
               @click="join"
               :disabled="isLoading || (!occurrenceAt && !meetingId) || !canJoinLobby"

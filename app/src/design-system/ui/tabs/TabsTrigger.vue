@@ -24,7 +24,7 @@ const isActive = useTabActive(props.value);
 const surfaceClasses = computed(() => {
   return [
     ...(isActive.value ? srfClasses("outline", "default") : srfClasses("text", props.intent)),
-    ...srfModifiers({ elevated: isActive.value, button: !isActive.value }),
+    ...srfModifiers({ elevated: isActive.value, click: !isActive.value, hover: !isActive.value }),
   ];
 });
 </script>

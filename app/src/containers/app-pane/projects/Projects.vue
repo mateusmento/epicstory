@@ -1,8 +1,21 @@
 <script setup lang="ts">
+import { cn } from "@/design-system/utils.js";
 import CreateProjectDialog from "./CreateProjectDialog.vue";
-import { Button, ScrollArea, Separator, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
+import {
+  Button,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+  ScrollArea,
+  Separator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/design-system";
 import { useWorkspace } from "@/domain/workspace";
-import { BoxIcon, MonitorCogIcon, SquarePen, Trash2Icon } from "lucide-vue-next";
+import { BoxIcon, MonitorCogIcon, Settings2, SquarePen, Trash2Icon } from "lucide-vue-next";
 import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
@@ -47,8 +60,8 @@ watch(workspace, () =>
   <div class="flex flex-col w-96 h-full min-h-0">
     <div class="flex:row-auto flex:center-y px-4 py-1.5 h-10">
       <h1 class="flex:row-md flex:center-y">
-        <MonitorCogIcon class="size-4 text-muted-foreground" stroke-width="2.5" />
-        <div class="font-medium text-sm">Projects</div>
+        <MonitorCogIcon class="size-4" stroke-width="2.5" />
+        <div class="font-medium">Projects</div>
       </h1>
 
       <Tooltip>
@@ -66,28 +79,46 @@ watch(workspace, () =>
     <Separator />
 
     <ScrollArea @reached-bottom="fetchMoreProjects()" class="flex-1 min-h-0">
-      <div class="!flex flex-col gap-1 p-2 min-h-0 font-inter">
-        <Button
-          v-for="project of projects"
-          :key="project.id"
-          :as="RouterLink"
-          :to="`/${workspace.id}/project/${project.id}/backlog`"
-          intent="secondary"
-          :variant="+route.params.projectId === project.id ? 'soft' : 'ghost'"
-          class="flex:row-md flex:center-y"
-        >
-          <BoxIcon class="size-4 text-muted-foreground" stroke-width="2" />
-          <div class="text-sm text-foreground flex-1 truncate">{{ project.name }}</div>
-          <div class="text-xs text-secondary-foreground">{{ project.issueCount }} issues</div>
-          <Trash2Icon
-            @click.stop.prevent="removeProject(project.id)"
-            class="size-4 ml-2 cursor-pointer text-foreground"
-          />
-        </Button>
+      <div class="!flex flex-col gap-1 p-2 min-h-0">
+        <Menu v-for="project of projects" :key="project.id" type="context-menu">
+          <MenuTrigger as-child>
+            <RouterLink
+              :to="`/${workspace.id}/project/${project.id}/backlog`"
+              :class="
+                cn(
+                  'srf flex:row-md flex:center-y p-2 rounded-lg cursor-pointer',
+                  +route.params.projectId === project.id
+                    ? 'srf-soft srf-primary'
+                    : 'srf-ghost srf-default srf--hover',
+                )
+              "
+              class="flex:row-md flex:center-y"
+            >
+              <BoxIcon class="size-4" stroke-width="2" />
+              <em class="flex-1 truncate">{{ project.name }}</em>
+              <small>{{ project.issueCount }} issues</small>
+            </RouterLink>
+          </MenuTrigger>
+          <MenuContent>
+            <MenuItem>
+              <SquarePen class="size-4" />
+              Rename project
+            </MenuItem>
+            <MenuItem>
+              <Settings2 class="size-4" />
+              Edit project
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem intent="destructive" @click="removeProject(project.id)">
+              <Trash2Icon class="size-4" />
+              Remove project
+            </MenuItem>
+          </MenuContent>
+        </Menu>
 
-        <div v-if="projectsPage?.hasNext" class="py-2 px-3 text-xs text-secondary-foreground">
+        <small v-if="projectsPage?.hasNext" class="py-2 px-3">
           {{ isFetchingMoreProjects ? "Loading more…" : "Scroll to load more" }}
-        </div>
+        </small>
       </div>
     </ScrollArea>
   </div>

@@ -43,14 +43,16 @@ const active = computed(() => {
     :view="view"
     :content="content"
     size="sm"
-    variant="ghost"
-    :class="cn('w-full justify-start gap-0', { 'bg-secondary': active })"
+    :variant="active ? 'soft' : 'ghost'"
+    :class="cn('w-full justify-start gap-0')"
   >
     <span class="flex flex-1 min-w-0 items-center gap-2">
       <slot />
     </span>
     <Badge
       v-if="badgeCount != null && badgeCount > 0"
+      variant="flat"
+      intent="default"
       size="xs"
       class="justify-center rounded-full tabular-nums font-semibold leading-none shadow-none"
       :class="{ 'w-6': badgeCount > 99 }"
@@ -65,15 +67,16 @@ const active = computed(() => {
     :content="content"
     :to="to!"
     size="sm"
-    variant="ghost"
-    :class="cn('w-full justify-start gap-0', { 'bg-secondary': active })"
+    :variant="active ? 'soft' : 'ghost'"
+    :class="cn('w-full justify-start gap-0')"
   >
     <span class="flex flex-1 min-w-0 items-center gap-2">
       <slot />
     </span>
     <Badge
       v-if="badgeCount != null && badgeCount > 0"
-      variant="destructive"
+      variant="flat"
+      intent="destructive"
       size="xs"
       class="shrink-0 justify-center rounded-full tabular-nums font-semibold leading-none shadow-none"
       :class="{ 'w-6': badgeCount > 99 }"

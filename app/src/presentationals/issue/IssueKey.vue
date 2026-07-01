@@ -33,11 +33,7 @@ async function onCopy(): Promise<void> {
 </script>
 
 <template>
-  <span
-    :class="
-      cn('inline-flex items-center gap-1 font-mono tabular-nums text-muted-foreground shrink-0', sizeClass)
-    "
-  >
+  <span :class="cn('inline-flex items-center gap-1 font-mono tabular-nums shrink-0', sizeClass)">
     <span :title="issueKey">{{ issueKey }}</span>
     <Button
       v-if="copyable"

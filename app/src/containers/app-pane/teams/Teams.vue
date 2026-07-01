@@ -6,6 +6,10 @@ import {
   CollapsibleTrigger,
   Field,
   Form,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
   NavTrigger,
   Separator,
   Tooltip,
@@ -55,23 +59,27 @@ watch(workspace, fetchTeams);
     <Separator />
 
     <div class="flex:col p-2">
-      <NavTrigger
-        v-for="team in teams"
-        :key="team.id"
-        view="app-pane"
-        content="team"
-        :props="{ teamId: team.id }"
-        class="flex:row-2xl flex:center-y py-2 px-4 rounded-lg hover:bg-secondary cursor-pointer"
-      >
-        <div class="flex:row-auto flex:center-y flex-1">
-          <div class="text-sm text-foreground">{{ team.name }}</div>
-          <div class="text-xs text-secondary-foreground">4 members</div>
-        </div>
-        <Trash2Icon
-          @click.stop="removeTeam(team.id)"
-          class="h-4 w-4 mr-2 ml-auto cursor-pointer text-foreground"
-        />
-      </NavTrigger>
+      <Menu v-for="team in teams" :key="team.id" type="context-menu">
+        <MenuTrigger as-child>
+          <NavTrigger
+            view="app-pane"
+            content="team"
+            :props="{ teamId: team.id }"
+            class="flex:row-2xl flex:center-y py-2 px-4 rounded-lg hover:bg-secondary cursor-pointer"
+          >
+            <div class="flex:row-auto flex:center-y flex-1">
+              <div class="text-sm text-foreground">{{ team.name }}</div>
+              <div class="text-xs text-secondary-foreground">4 members</div>
+            </div>
+          </NavTrigger>
+        </MenuTrigger>
+        <MenuContent side="bottom" align="start">
+          <MenuItem @click="removeTeam(team.id)" intent="destructive">
+            <Trash2Icon class="h-4 w-4" />
+            Remove team
+          </MenuItem>
+        </MenuContent>
+      </Menu>
     </div>
   </div>
 </template>

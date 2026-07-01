@@ -7,19 +7,18 @@
  * Variant × intent rules read palette tokens directly (no intent alias layer).
  *
  * Modifiers:
- *   srf-button    — interactive: hover and :active tokens
  *   srf--elevated — elevated shadow
  */
 
 @layer base {
   :root {
-    --srf-default-flat-bg: var(--primary);
-    --srf-default-flat-bg-hover: var(--background);
-    --srf-default-flat-bg-active: var(--muted);
+    --srf-default-flat-bg: var(--zinc-800);
+    --srf-default-flat-bg-hover: var(--zinc-900);
+    --srf-default-flat-bg-active: var(--zinc-950);
     --srf-default-flat-text: var(--primary-foreground);
-    --srf-default-outline-border: var(--zinc-200);
-    --srf-default-outline-border-hover: var(--zinc-200);
-    --srf-default-outline-border-active: var(--zinc-400);
+    --srf-default-outline-border: var(--border);
+    --srf-default-outline-border-hover: var(--border);
+    --srf-default-outline-border-active: var(--border);
     --srf-default-outline-bg: var(--card);
     --srf-default-outline-bg-hover: var(--background);
     --srf-default-outline-bg-active: var(--muted);
@@ -39,14 +38,14 @@
     --srf-primary-outline-border: var(--indigo-200);
     --srf-primary-outline-border-hover: var(--indigo-300);
     --srf-primary-outline-border-active: var(--indigo-400);
-    --srf-primary-outline-bg: var(--indigo-50);
-    --srf-primary-outline-bg-hover: var(--indigo-100);
-    --srf-primary-outline-bg-active: var(--indigo-200);
+    --srf-primary-outline-bg: var(--indigo-100);
+    --srf-primary-outline-bg-hover: var(--indigo-200);
+    --srf-primary-outline-bg-active: var(--indigo-300);
     --srf-primary-outline-text: var(--indigo-700);
-    --srf-primary-soft-bg: var(--indigo-50);
-    --srf-primary-soft-bg-hover: var(--indigo-100);
-    --srf-primary-soft-bg-active: var(--indigo-200);
-    --srf-primary-soft-text: var(--zinc-600);
+    --srf-primary-soft-bg: var(--indigo-100);
+    --srf-primary-soft-bg-hover: var(--indigo-200);
+    --srf-primary-soft-bg-active: var(--indigo-300);
+    --srf-primary-soft-text: var(--indigo-700);
     --srf-primary-text: var(--indigo-700);
     --srf-primary-text-hover: var(--indigo-700);
     --srf-primary-text-active: var(--indigo-800);
@@ -153,6 +152,25 @@
     --srf-warning-text-hover: var(--amber-600);
     --srf-warning-text-active: var(--amber-800);
 
+    --srf-success-flat-bg: var(--green-500);
+    --srf-success-flat-bg-hover: var(--green-600);
+    --srf-success-flat-bg-active: var(--green-700);
+    --srf-success-flat-text: var(--primary-foreground);
+    --srf-success-outline-border: var(--green-200);
+    --srf-success-outline-border-hover: var(--green-300);
+    --srf-success-outline-border-active: var(--green-400);
+    --srf-success-outline-bg: var(--green-50);
+    --srf-success-outline-bg-hover: var(--green-100);
+    --srf-success-outline-bg-active: var(--green-200);
+    --srf-success-outline-text: var(--green-800);
+    --srf-success-soft-bg: var(--green-50);
+    --srf-success-soft-bg-hover: var(--green-100);
+    --srf-success-soft-bg-active: var(--green-200);
+    --srf-success-soft-text: var(--green-800);
+    --srf-success-text: var(--green-800);
+    --srf-success-text-hover: var(--green-600);
+    --srf-success-text-active: var(--green-800);
+
     --srf-elevated-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 2px 6px rgb(15 23 42 / 0.06);
     --srf-elevated-shadow-hover: 0 1px 2px rgb(15 23 42 / 0.06), 0 3px 8px rgb(15 23 42 / 0.08);
   }
@@ -162,9 +180,9 @@
     --srf-default-flat-bg-hover: var(--accent);
     --srf-default-flat-bg-active: var(--card);
     --srf-default-flat-text: var(--foreground);
-    --srf-default-outline-border: var(--card);
-    --srf-default-outline-border-hover: var(--card);
-    --srf-default-outline-border-active: var(--zinc-500);
+    --srf-default-outline-border: var(--border);
+    --srf-default-outline-border-hover: var(--border);
+    --srf-default-outline-border-active: var(--border);
     --srf-default-outline-bg: var(--card);
     --srf-default-outline-bg-hover: var(--secondary);
     --srf-default-outline-bg-active: var(--zinc-950);
@@ -267,6 +285,25 @@
     --srf-warning-text: var(--amber-100);
     --srf-warning-text-hover: var(--amber-600);
     --srf-warning-text-active: var(--amber-100);
+
+    --srf-success-flat-bg: var(--green-500);
+    --srf-success-flat-bg-hover: var(--green-600);
+    --srf-success-flat-bg-active: var(--green-700);
+    --srf-success-flat-text: var(--background);
+    --srf-success-outline-border: var(--green-800);
+    --srf-success-outline-border-hover: var(--green-700);
+    --srf-success-outline-border-active: var(--green-600);
+    --srf-success-outline-bg: var(--zinc-900);
+    --srf-success-outline-bg-hover: var(--zinc-800);
+    --srf-success-outline-bg-active: var(--zinc-950);
+    --srf-success-outline-text: var(--green-100);
+    --srf-success-soft-bg: var(--zinc-800);
+    --srf-success-soft-bg-hover: var(--zinc-700);
+    --srf-success-soft-bg-active: var(--zinc-900);
+    --srf-success-soft-text: var(--green-100);
+    --srf-success-text: var(--green-400);
+    --srf-success-text-hover: var(--green-600);
+    --srf-success-text-active: var(--green-400);
   }
 }
 
@@ -341,6 +378,16 @@
     --srf-text: oklch(var(--srf-warning-flat-text));
   }
 
+  .srf.srf-flat.srf-success {
+    --srf-bg: oklch(var(--srf-success-flat-bg));
+    --srf-bg-hover: oklch(var(--srf-success-flat-bg-hover));
+    --srf-bg-active: oklch(var(--srf-success-flat-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-success-flat-text));
+  }
+
   /* outline */
 
   .srf.srf-outline.srf-default {
@@ -401,6 +448,16 @@
     --srf-bg-hover: oklch(var(--srf-warning-outline-bg-hover));
     --srf-bg-active: oklch(var(--srf-warning-outline-bg-active));
     --srf-text: oklch(var(--srf-warning-outline-text));
+  }
+
+  .srf.srf-outline.srf-success {
+    --srf-border: oklch(var(--srf-success-outline-border));
+    --srf-border-hover: oklch(var(--srf-success-outline-border-hover));
+    --srf-border-active: oklch(var(--srf-success-outline-border-active));
+    --srf-bg: oklch(var(--srf-success-outline-bg));
+    --srf-bg-hover: oklch(var(--srf-success-outline-bg-hover));
+    --srf-bg-active: oklch(var(--srf-success-outline-bg-active));
+    --srf-text: oklch(var(--srf-success-outline-text));
   }
 
   /* soft */
@@ -471,6 +528,17 @@
     --srf-text-active: oklch(var(--srf-warning-text-active));
   }
 
+  .srf.srf-soft.srf-success {
+    --srf-bg: oklch(var(--srf-success-soft-bg));
+    --srf-bg-hover: oklch(var(--srf-success-soft-bg-hover));
+    --srf-bg-active: oklch(var(--srf-success-soft-bg-active));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-success-soft-text));
+    --srf-text-active: oklch(var(--srf-success-text-active));
+  }
+
   /* ghost */
 
   .srf.srf-ghost.srf-default {
@@ -537,6 +605,17 @@
     --srf-border-active: var(--srf-bg-active);
     --srf-text: oklch(var(--srf-warning-soft-text));
     --srf-text-active: oklch(var(--srf-warning-text-active));
+  }
+
+  .srf.srf-ghost.srf-success {
+    --srf-bg: transparent;
+    --srf-bg-hover: oklch(var(--srf-success-soft-bg));
+    --srf-bg-active: oklch(var(--srf-success-soft-bg-hover));
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-success-soft-text));
+    --srf-text-active: oklch(var(--srf-success-text-active));
   }
 
   /* text */
@@ -613,6 +692,18 @@
     --srf-text-active: oklch(var(--srf-warning-text-active));
   }
 
+  .srf.srf-text.srf-success {
+    --srf-bg: transparent;
+    --srf-bg-hover: transparent;
+    --srf-bg-active: transparent;
+    --srf-border: var(--srf-bg);
+    --srf-border-hover: var(--srf-bg-hover);
+    --srf-border-active: var(--srf-bg-active);
+    --srf-text: oklch(var(--srf-success-text));
+    --srf-text-hover: oklch(var(--srf-success-text-hover));
+    --srf-text-active: oklch(var(--srf-success-text-active));
+  }
+
   .srf--elevated {
     --srf-shadow: var(--srf-elevated-shadow);
     --srf-shadow-hover: var(--srf-elevated-shadow-hover);
@@ -626,9 +717,43 @@
     background-image: var(--srf-bg-image, none);
     color: var(--srf-text);
     box-shadow: var(--srf-shadow, none);
+    --srf-text-svg: var(--srf-text);
+    --srf-text-em: var(--srf-text);
+    --srf-text-span: var(--srf-text);
+    --srf-text-small: var(--srf-text);
+
+    svg {
+      color: var(--srf-text-svg);
+    }
+
+    em {
+      color: var(--srf-text-em);
+      font-style: normal;
+    }
+
+    small {
+      color: var(--srf-text-small);
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+
+    span {
+      color: var(--srf-text-span);
+    }
   }
 
-  .srf.srf-button:hover:not(:disabled) {
+  /* em / span / small — flat inherits --srf-text; other variants match global base typography */
+  .srf.srf-outline,
+  .srf.srf-soft,
+  .srf.srf-ghost,
+  .srf.srf-text {
+    --srf-text-svg: oklch(var(--secondary-foreground));
+    --srf-text-em: oklch(var(--foreground));
+    --srf-text-span: oklch(var(--secondary-foreground));
+    --srf-text-small: oklch(var(--secondary-foreground));
+  }
+
+  .srf.srf--hover:hover:not(:disabled) {
     border-color: var(--srf-border-hover);
     background-color: var(--srf-bg-hover, var(--srf-bg));
     background-image: var(--srf-bg-image-hover, var(--srf-bg-image, none));
@@ -636,7 +761,7 @@
     box-shadow: var(--srf-shadow-hover, var(--srf-shadow, none));
   }
 
-  .srf.srf-button:active:not(:disabled) {
+  .srf.srf--click:active:not(:disabled) {
     border-color: var(--srf-border-active, var(--srf-border-hover));
     background-color: var(--srf-bg-active, var(--srf-bg));
     background-image: var(--srf-bg-image-active, var(--srf-bg-image-hover, var(--srf-bg-image, none)));

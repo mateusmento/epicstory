@@ -5,14 +5,14 @@ import { cn } from "@/design-system/utils";
 import { useChannel, useChannels } from "@/domain/channels";
 import CreateChannel from "../CreateChannel.vue";
 import ChannelContextMenu from "@/presentationals/app-pane/channels/ChannelContextMenu.vue";
+import InboxMessage from "@/presentationals/app-pane/channels/InboxMessage.vue";
 import ChannelContextMenuProvider from "../ChannelContextMenuProvider.vue";
-import InboxMessage from "../InboxMessage.vue";
 
 const props = defineProps<{
   class?: string;
 }>();
 
-const { channel: currentChannel } = useChannel();
+const { channel: currentChannel, openChannel } = useChannel();
 const { channels } = useChannels();
 </script>
 
@@ -20,7 +20,11 @@ const { channels } = useChannels();
   <div :class="cn('flex:col-md flex-1 m-2', props.class)">
     <ChannelContextMenuProvider>
       <ChannelContextMenu v-for="channel of channels" :key="channel.id" :channel="channel">
-        <InboxMessage :channel="channel" :open="channel.id === currentChannel?.id" />
+        <InboxMessage
+          :channel="channel"
+          :open="channel.id === currentChannel?.id"
+          @open="openChannel(channel)"
+        />
       </ChannelContextMenu>
     </ChannelContextMenuProvider>
 

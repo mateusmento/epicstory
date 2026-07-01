@@ -47,5 +47,9 @@ async function onLoadMore() {
     @remove="emit('remove', $event)"
     @search="onSearch"
     @load-more="onLoadMore"
-  />
+  >
+    <template #default="{ users, assignees }">
+      <slot :users="users" :assignees="assignees" />
+    </template>
+  </WorkspaceMemberDropdownView>
 </template>

@@ -156,11 +156,28 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground text-sm;
     font-family: "Inter", "Gabarito", "DM Sans";
   }
 
   [hidden] {
     display: none !important;
+  }
+
+  svg {
+    @apply text-secondary-foreground;
+  }
+
+  em {
+    @apply text-foreground;
+    font-style: normal;
+  }
+
+  span {
+    @apply text-secondary-foreground;
+  }
+
+  small {
+    @apply text-secondary-foreground text-xs;
   }
 }

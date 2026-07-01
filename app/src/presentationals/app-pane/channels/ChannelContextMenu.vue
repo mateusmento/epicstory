@@ -19,7 +19,7 @@ const { actionLoading, openRename, openDelete, leaveChannel, scheduleMeeting, st
 
 <template>
   <Menu type="context-menu">
-    <MenuTrigger>
+    <MenuTrigger as-child>
       <slot />
     </MenuTrigger>
     <MenuContent class="text-sm font-dmSans">
