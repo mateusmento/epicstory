@@ -71,7 +71,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
       :class="cn(props.dragHandleForceHidden && 'opacity-0')"
       :title="dragHandleTitle"
     >
-      <Icon name="bi-grip-vertical" class="text-muted-foreground" />
+      <Icon name="bi-grip-vertical" class="" />
     </div>
 
     <!-- Status + key -->
@@ -94,13 +94,11 @@ function updateDueDate(dueDate: Date | null | undefined) {
           <Tooltip>
             <TooltipTrigger as-child>
               <div class="min-w-0" @dblclick.stop="openIssue(issue)">
-                <div class="truncate text-sm text-foreground flex items-center gap-1 min-w-0">
-                  <span class="truncate min-w-0">{{ issue.title }}</span>
+                <div class="truncate flex items-center gap-1 min-w-0">
+                  <div class="truncate min-w-0">{{ issue.title }}</div>
                   <template v-if="issue.parentIssue?.title">
-                    <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
-                    <span class="text-muted-foreground truncate max-w-56 text-xs">{{
-                      issue.parentIssue.title
-                    }}</span>
+                    <Icon name="oi-chevron-right" class="w-3 h-3 shrink-0" />
+                    <small class="truncate max-w-56">{{ issue.parentIssue.title }}</small>
                   </template>
                 </div>
               </div>
@@ -108,7 +106,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
             <TooltipContent>
               <template v-if="issue.parentIssue?.title">
                 {{ issue.title }}
-                <Icon name="oi-chevron-right" class="inline w-3 h-3 text-muted-foreground" />
+                <Icon name="oi-chevron-right" class="inline w-3 h-3" />
                 {{ issue.parentIssue.title }}
               </template>
               <template v-else>
@@ -116,36 +114,39 @@ function updateDueDate(dueDate: Date | null | undefined) {
               </template>
             </TooltipContent>
           </Tooltip>
-          <Icon
-            name="fa-regular-edit"
-            class="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+          <Button
+            variant="ghost"
+            size="icon"
+            class="opacity-0 group-hover:opacity-100 transition-opacity"
             title="Edit title"
             @click="startEdit(issue)"
-          />
+          >
+            <Icon name="fa-regular-edit" />
+          </Button>
         </div>
       </div>
 
       <div v-else class="flex items-center gap-1 min-w-0">
-        <div class="flex items-center gap-1 min-w-0 text-sm">
+        <div class="flex items-center gap-1 min-w-0">
           <ContentEditable
             v-model="titleModel"
             v-model:editable="editableModel"
             as="div"
             placeholder="Issue title"
-            class="inline-block max-w-full whitespace-nowrap bg-transparent outline-none leading-5 text-foreground"
+            class="max-w-full leading-5"
             @submit="saveEdit"
             @cancel="cancelEdit"
           />
           <template v-if="issue.parentIssue?.title">
-            <Icon name="oi-chevron-right" class="w-3 h-3 text-muted-foreground shrink-0" />
-            <span class="text-muted-foreground truncate max-w-56">{{ issue.parentIssue.title }}</span>
+            <Icon name="oi-chevron-right" class="w-3 h-3 shrink-0" />
+            <small class="truncate max-w-56">{{ issue.parentIssue.title }}</small>
           </template>
         </div>
         <Button type="button" variant="ghost" size="icon" title="Save" @click="saveEdit">
-          <Icon name="bi-check" class="w-4 h-4 text-muted-foreground hover:text-foreground" />
+          <Icon name="bi-check" class="w-4 h-4 hover:text-foreground" />
         </Button>
         <Button type="button" variant="ghost" size="icon" title="Cancel" @click="cancelEdit">
-          <Icon name="io-close" class="w-4 h-4 text-muted-foreground hover:text-foreground" />
+          <Icon name="io-close" class="w-4 h-4 hover:text-foreground" />
         </Button>
       </div>
 

@@ -30,17 +30,16 @@ function formatDueDate(date: Date) {
 <template>
   <div class="px-2 py-2" @click.stop>
     <div class="flex items-center justify-between mb-2">
-      <div class="flex:row-sm items-center text-xs text-muted-foreground">
+      <small class="flex:row-sm items-center">
         <CalendarIcon class="mr-2 h-3 w-3" />
         {{ value ? formatDueDate(value) : "No due date" }}
-      </div>
+      </small>
 
       <Button
         v-if="dueDate"
         type="button"
         variant="ghost"
         size="xs"
-        class="text-xs"
         :disabled="disabled"
         @click="emit('change', null)"
       >

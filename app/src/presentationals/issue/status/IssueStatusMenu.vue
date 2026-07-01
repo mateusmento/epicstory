@@ -45,8 +45,8 @@ function onSelect(value: string) {
       class="flex items-center gap-2 text-xs"
       @click="onSelect(opt.value)"
     >
-      <span class="h-2 w-2 rounded-full ring-1 ring-border" :class="issueStatusDotClass(opt.value)" />
-      <span class="flex-1">{{ opt.label }}</span>
+      <div class="h-2 w-2 rounded-full ring-1 ring-border" :class="issueStatusDotClass(opt.value)" />
+      <div class="flex-1">{{ opt.label }}</div>
 
       <Check v-if="(props.value ?? 'todo') === opt.value" class="w-4 h-4 text-muted-foreground" />
     </MenuItem>

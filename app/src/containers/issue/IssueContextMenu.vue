@@ -70,7 +70,7 @@ async function onLabelsUpdate(nextIds: number[]) {
       <MenuSub>
         <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
           <Kanban class="size-4 text-muted-foreground" />
-          <span>Status</span>
+          <div>Status</div>
         </MenuSubTrigger>
         <MenuSubContent as-child>
           <IssueStatusMenu :value="issue.status" @select="updateIssue(issue.id, { status: $event })" />
@@ -80,7 +80,7 @@ async function onLabelsUpdate(nextIds: number[]) {
       <MenuSub>
         <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
           <UserIcon class="size-4 text-muted-foreground" />
-          <span>Assignee</span>
+          <div>Assignee</div>
         </MenuSubTrigger>
         <MenuSubContent as-child>
           <WorkspaceMemberMenu
@@ -97,7 +97,7 @@ async function onLabelsUpdate(nextIds: number[]) {
       <MenuSub>
         <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
           <Tags class="size-4 text-muted-foreground" />
-          <span>Labels</span>
+          <div>Labels</div>
         </MenuSubTrigger>
         <MenuSubContent as-child>
           <IssueLabelsMenu
@@ -111,7 +111,7 @@ async function onLabelsUpdate(nextIds: number[]) {
       <MenuSub>
         <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
           <CalendarClock class="size-4 text-muted-foreground" />
-          <span>{{ issue.dueDate ? "Change due date" : "Set due date" }}</span>
+          <div>{{ issue.dueDate ? "Change due date" : "Set due date" }}</div>
         </MenuSubTrigger>
         <MenuSubContent class="p-0">
           <IssueDueDateMenu
@@ -124,13 +124,13 @@ async function onLabelsUpdate(nextIds: number[]) {
 
       <MenuItem :disabled="disabled" @click="renameOpen = true">
         <SquarePen class="text-muted-foreground" />
-        <span>Rename</span>
+        <div>Rename</div>
       </MenuItem>
 
       <MenuSub>
         <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
           <GitBranch class="size-4 text-muted-foreground" />
-          <span>Mark as sub-issue of…</span>
+          <div>Mark as sub-issue of…</div>
         </MenuSubTrigger>
         <MenuSubContent class="w-96">
           <IssuePickerMenu
@@ -147,7 +147,7 @@ async function onLabelsUpdate(nextIds: number[]) {
 
       <MenuItem :disabled="disabled" intent="destructive" @click="deleteOpen = true">
         <Trash2Icon />
-        <span>Delete</span>
+        <div>Delete</div>
       </MenuItem>
     </MenuContent>
   </Menu>
