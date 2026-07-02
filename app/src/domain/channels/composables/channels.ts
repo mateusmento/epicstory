@@ -21,7 +21,7 @@ import { useChannelStore } from "./channel";
 
 const RECENT_SIDEBAR_LIMIT = 5;
 
-const useChannelsStore = defineStore("channels", () => {
+export const useChannelsStore = defineStore("channels", () => {
   const channels = ref<IChannel[]>([]);
 
   function findChannel(channelId: number) {
@@ -44,11 +44,22 @@ export function useChannels() {
 
   const channelApi = useDependency(ChannelApi);
 
+  const channelStore = useChannelStore();
+
   function onReceiveChannelActivity({ activity, channelId }: IncomingChannelActivityEvent) {
     if (activity.type === "message_sent" && activity.message) {
       store.updateChannel(channelId, {
         lastMessage: toMessageSummary(activity.message),
       });
+
+      if (channelId !== channelStore.channel?.id) {
+        const ch = store.findChannel(channelId);
+        if (ch) {
+          store.updateChannel(channelId, {
+            unreadMessagesCount: ch.unreadMessagesCount + 1,
+          });
+        }
+      }
     }
   }
 

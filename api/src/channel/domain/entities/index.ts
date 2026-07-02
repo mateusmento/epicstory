@@ -1,4 +1,5 @@
 export * from './channel-activity.entity';
+export * from './channel-member-read.entity';
 export * from './channel.entity';
 export * from './meeting-attendee.entity';
 export * from './meeting.entity';

@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import {
   AddChannelMember,
   CreateMultiDirectChannel,
   DeleteChannel,
+  MarkChannelRead,
   RemoveChannelMember,
   RenameChannel,
   SendDirectMessage,
@@ -214,6 +216,14 @@ export class ChannelController {
   ) {
     return this.commandBus.execute(
       new RemoveChannelMember({ channelId, userId, issuerId: issuer.id }),
+    );
+  }
+
+  @Put(':id/read')
+  @UseGuards(JwtAuthGuard)
+  markRead(@Param('id') channelId: number, @Auth() issuer: Issuer) {
+    return this.commandBus.execute(
+      new MarkChannelRead({ channelId, issuerId: issuer.id }),
     );
   }
 }

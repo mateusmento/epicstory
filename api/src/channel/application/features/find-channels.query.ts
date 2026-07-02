@@ -6,6 +6,7 @@ import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
+import { Message } from 'src/channel/domain/entities/message.entity';
 import { enrichChannelsForPreview } from '../utils/enrich-channel';
 import { ChannelType } from 'src/channel/domain';
 
@@ -48,12 +49,30 @@ export class FindChannelsQuery implements IQueryHandler<FindChannels> {
       .where('c.workspaceId = :workspaceId', { workspaceId })
       .andWhere(teamId ? 'c.teamId = :teamId' : 'TRUE', { teamId })
       .andWhere('c.type <> :type', { type: 'workspace_open' as ChannelType })
+      .addSelect(
+        (qb) =>
+          qb
+            .select('COUNT(unread_msg.id)', 'cnt')
+            .from(Message, 'unread_msg')
+            .where('unread_msg.channelId = c.id')
+            .andWhere(
+              `unread_msg.sentAt > COALESCE(
+                (SELECT cmr.last_read_at FROM channel.channel_member_read cmr
+                 WHERE cmr.user_id = :userId AND cmr.channel_id = c.id),
+                '-infinity'::timestamptz
+              )`,
+            ),
+        'unreadCount',
+      )
       .orderBy(
         'CASE WHEN msg.id is null THEN c.createdAt ELSE msg.sentAt END',
         'DESC',
       );
 
-    const channels = await query.getMany();
-    return enrichChannelsForPreview(channels, issuer.id);
+    const { entities, raw } = await query.getRawAndEntities();
+    const unreadCounts = entities.map((_, idx) =>
+      Number(raw[idx]?.unreadCount ?? 0),
+    );
+    return enrichChannelsForPreview(entities, issuer.id, unreadCounts);
   }
 }

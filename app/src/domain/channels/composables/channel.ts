@@ -3,6 +3,7 @@ import { useWebSockets } from "@/core/websockets";
 import { useMeetingSocket } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
 import { toMessageSummary } from "@/lib/channel";
+import { useChannelsStore } from "./channels";
 import { ChannelApi } from "@epicstory/api-client";
 import type {
   CreateScheduledMessageBody,
@@ -49,6 +50,7 @@ export const useChannelStore = defineStore("channel", () => {
 
 export function useChannel() {
   const store = useChannelStore();
+  const channelsStore = useChannelsStore();
   const sockets = useWebSockets();
   const channelApi = useDependency(ChannelApi);
   const { workspace } = useWorkspace();
@@ -59,6 +61,8 @@ export function useChannel() {
   const router = useRouter();
 
   function openChannel(channel: IChannel) {
+    channelApi.markChannelRead(channel.id).catch(() => {});
+    channelsStore.updateChannel(channel.id, { unreadMessagesCount: 0 });
     router.push(`/${workspace.value.id}/channel/${channel.id}`);
   }
 

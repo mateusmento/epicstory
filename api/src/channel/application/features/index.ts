@@ -28,6 +28,7 @@ export * from './reply-message.command';
 export * from './schedule-channel-message.command';
 export * from './search-channels-and-users.query';
 export * from './send-direct-message.command';
+export * from './mark-channel-read.command';
 export * from './send-message.command';
 export * from './toggle-message-reaction.command';
 export * from './toggle-reply-reaction.command';

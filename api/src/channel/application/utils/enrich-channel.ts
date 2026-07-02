@@ -16,6 +16,7 @@ import { Message } from 'src/channel/domain';
 export function enrichChannelForPreview(
   channel: Channel,
   viewerUserId: number,
+  unreadMessagesCount = 0,
 ): IChannel {
   const peers = channel.peers ?? [];
   const peerUsersMap = new Map(peers.map((u) => [u.id, u]));
@@ -38,7 +39,7 @@ export function enrichChannelForPreview(
     createdAt: channel.createdAt,
     directPeer,
     lastMessage,
-    unreadMessagesCount: 0,
+    unreadMessagesCount,
     meeting: (channel.meeting as IMeeting | undefined) ?? null,
     peers,
   };
@@ -67,8 +68,11 @@ function lastMessageSummary(
 export function enrichChannelsForPreview(
   channels: Channel[],
   viewerUserId: number,
+  unreadCounts: number[] = [],
 ): IChannel[] {
-  return channels.map((ch) => enrichChannelForPreview(ch, viewerUserId));
+  return channels.map((ch, idx) =>
+    enrichChannelForPreview(ch, viewerUserId, unreadCounts[idx] ?? 0),
+  );
 }
 
 function resolveChannelName(channel: Channel, viewerUserId: number): string {

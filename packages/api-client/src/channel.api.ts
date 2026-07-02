@@ -72,6 +72,12 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
+  markChannelRead(channelId: number) {
+    return this.axios
+      .put(`/channels/${channelId}/read`)
+      .then((res) => res.data);
+  }
+
   renameChannel(channelId: number, name: string) {
     return this.axios
       .post<IChannel>(`/channels/${channelId}/rename`, { name })
