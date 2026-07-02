@@ -16,7 +16,7 @@ import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/contai
 import { NotFoundException, UnauthorizedException } from "@/core/axios";
 import { useWorkspacePresence } from "@/domain/channels";
 import { useNotificationIncomingAlerts, useNotifications } from "@/domain/notifications";
-import { useWorkspace } from "@/domain/workspace";
+import { useRecentProjects, useWorkspace } from "@/domain/workspace";
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterView, useRoute, useRouter } from "vue-router";
 
@@ -42,6 +42,20 @@ const { fetchWorkspace } = useWorkspace();
 useNotifications({ manageConnection: true, pageSize: 100 });
 useNotificationIncomingAlerts();
 useWorkspacePresence();
+const { recordProjectAccess } = useRecentProjects();
+
+let lastTrackedProjectId: number | null = null;
+watch(
+  route,
+  (next) => {
+    const projectId = next.params.projectId ? Number(next.params.projectId) : null;
+    if (projectId && projectId !== lastTrackedProjectId) {
+      lastTrackedProjectId = projectId;
+      recordProjectAccess(projectId, workspaceId.value);
+    }
+  },
+  { immediate: true },
+);
 
 async function loadWorkspace() {
   try {

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ThemePicker } from "@/presentationals/theme";
 import { UserProfile } from "@/containers/user";
 import {
   Button,
@@ -18,19 +17,24 @@ import {
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
+import { useSyncedChannels } from "@/domain/channels";
 import { isLiveJoinableMeeting, useLiveMeeting, useMeeting } from "@/domain/meetings";
 import { useNotifications } from "@/domain/notifications";
-import { useWorkspace } from "@/domain/workspace";
+import { useRecentProjects, useWorkspace } from "@/domain/workspace";
+import { NavListItem } from "@/presentationals/layout";
+import LiveMeetingJoinCard from "@/presentationals/navbar/LiveMeetingJoinCard.vue";
+import { ThemePicker } from "@/presentationals/theme";
+import { UserAvatar } from "@/presentationals/user";
 import { ArrowLeft, ArrowRight, LogOutIcon, MonitorCogIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
 import { computed, onMounted, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
-import { NavListItem } from "@/presentationals/layout";
 import CurrentMeetingControlsCard from "./CurrentMeetingControlsCard.vue";
-import LiveMeetingJoinCard from "@/presentationals/navbar/LiveMeetingJoinCard.vue";
 
 defineProps<{ isAppPaneOpen: boolean }>();
 
-const { workspace, projects, fetchProjects } = useWorkspace();
+const { workspace } = useWorkspace();
+const { recentChannels } = useSyncedChannels();
+const { recentProjects, fetchRecentProjects } = useRecentProjects();
 const { user, signOut } = useAuth();
 const router = useRouter();
 
@@ -71,22 +75,16 @@ async function onJoinLiveScheduledMeeting() {
 }
 
 onMounted(async () => {
-  fetchProjects({
-    order: "asc",
-    orderBy: "createdAt",
-    page: 0,
-    count: 50,
-  });
+  if (workspace.value?.id) {
+    fetchRecentProjects(workspace.value.id);
+  }
 });
 
-watch(workspace, () =>
-  fetchProjects({
-    order: "asc",
-    orderBy: "createdAt",
-    page: 0,
-    count: 50,
-  }),
-);
+watch(workspace, () => {
+  if (workspace.value?.id) {
+    fetchRecentProjects(workspace.value.id);
+  }
+});
 </script>
 
 <template>
@@ -144,41 +142,7 @@ watch(workspace, () =>
         <Icon name="oi-apps" />
         Issues
       </NavListItem>
-      <Collapsible as-child>
-        <CollapsibleTrigger as-child>
-          <Button variant="ghost" size="sm" class="flex:row-md flex:center-y w-full justify-start">
-            <MonitorCogIcon class="size-4" stroke-width="2.5" />
-            Projects
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <NavListItem
-            v-for="project of projects"
-            :key="project.id"
-            :to="`/${workspace.id}/project/${project.id}/backlog`"
-            class="flex:row-md flex:center-y"
-          >
-            <MonitorCogIcon class="size-4" stroke-width="2.5" />
-            {{ project.name }}
-          </NavListItem>
-          <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y">
-            <MonitorCogIcon class="size-4" stroke-width="2.5" />
-            More projects...
-          </NavListItem>
-        </CollapsibleContent>
-      </Collapsible>
-      <!-- <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y">
-        <MonitorCogIcon class="size-4" stroke-width="2.5" />
-        Projects
-      </NavListItem> -->
-      <NavListItem view="app-pane" content="channels" class="flex:row-md flex:center-y">
-        <Icon name="fa-slack-hash" />
-        Channels
-        <Icon name="bi-chevron-expand" class="ml-auto" />
-      </NavListItem>
       <NavListItem
-        view="app-pane"
-        content="schedule"
         :to="{ name: 'schedule', params: { workspaceId: workspace.id } }"
         class="flex:row-md flex:center-y"
       >
@@ -193,6 +157,72 @@ watch(workspace, () =>
         <Icon name="bi-people-fill" />
         Members
       </NavListItem>
+      <Collapsible as-child v-slot="{ open }" default-open>
+        <div class="flex:row-sm flex:center-y w-full justify-start">
+          <NavListItem
+            view="app-pane"
+            content="channels"
+            class="flex:row-md flex:center-y w-full justify-start"
+          >
+            <Icon name="fa-slack-hash" />
+            Channels
+          </NavListItem>
+          <CollapsibleTrigger v-if="recentChannels.length > 0" as-child>
+            <Button variant="ghost" size="sm" class="w-fit flex:row-md flex:center-y text-muted-foreground">
+              <Icon v-if="open" name="oi-chevron-up" />
+              <Icon v-else name="oi-chevron-down" />
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          <div class="ml-3 pl-2 border-l border-border">
+            <NavListItem
+              v-for="channel of recentChannels"
+              :key="channel.id"
+              :to="`/${workspace.id}/channel/${channel.id}`"
+              :badge-count="channel.unreadMessagesCount"
+              class="flex:row-md flex:center-y"
+            >
+              <UserAvatar
+                v-if="channel.directPeer"
+                :name="channel.directPeer.name"
+                :picture="channel.directPeer.picture"
+                size="xs"
+                class="shrink-0"
+              />
+              <Icon v-else name="fa-slack-hash" class="shrink-0" />
+              <span class="truncate">{{ channel.directPeer?.name ?? channel.name }}</span>
+            </NavListItem>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+      <Collapsible as-child v-slot="{ open }" default-open>
+        <div class="flex:row-sm flex:center-y w-full">
+          <NavListItem view="app-pane" content="projects">
+            <MonitorCogIcon class="size-4" stroke-width="2.5" />
+            Projects
+          </NavListItem>
+          <CollapsibleTrigger v-if="recentProjects.length > 0" as-child>
+            <Button variant="ghost" size="sm" class="w-fit flex:row-md flex:center-y">
+              <Icon v-if="open" name="oi-chevron-up" />
+              <Icon v-else name="oi-chevron-down" />
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          <div class="ml-3 pl-2 border-l border-border">
+            <NavListItem
+              v-for="project of recentProjects"
+              :key="project.id"
+              :to="`/${workspace.id}/project/${project.id}/backlog`"
+              class="flex:row-md flex:center-y"
+            >
+              <MonitorCogIcon class="size-4 shrink-0" stroke-width="2.5" />
+              <span class="truncate">{{ project.name }}</span>
+            </NavListItem>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </nav>
 
     <div class="flex-1"></div>

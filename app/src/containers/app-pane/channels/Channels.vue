@@ -18,7 +18,7 @@ import MessagesTab from "./tabs/MessagesTab.vue";
 import { SearchBar } from "@/presentationals/searchbar";
 import { useDependency } from "@/core/dependency-injection";
 import type { IPage } from "@/core/types";
-import { useChannel, useSyncedChannels } from "@/domain/channels";
+import { useChannel, useChannels } from "@/domain/channels";
 import { ChannelApi } from "@epicstory/api-client";
 import type { ISearchChannelsAndUsersItem } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
@@ -42,7 +42,7 @@ function appendSearchResults<T>(previous: IPage<T> | null, next: IPage<T>): IPag
 const searchActive = defineModel<boolean>("searchActive", { default: false });
 
 const { openChannel } = useChannel();
-const { createChannel } = useSyncedChannels();
+const { createChannel } = useChannels();
 const { workspace } = useWorkspace();
 const channelApi = useDependency(ChannelApi);
 

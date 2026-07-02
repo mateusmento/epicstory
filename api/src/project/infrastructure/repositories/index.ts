@@ -5,3 +5,4 @@ export * from './issue-activity.repository';
 export * from './label.repository';
 export * from './project.repository';
 export * from './sprint.repository';
+export * from './user-project-access.repository';

@@ -43,7 +43,7 @@ const active = computed(() => {
 
 <template>
   <NavTrigger
-    v-if="'view' in props && props.view"
+    v-if="'view' in props && props.view && 'to' in props && !props.to"
     :as="Button"
     :view="props.view"
     :content="props.content"

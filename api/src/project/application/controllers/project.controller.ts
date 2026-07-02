@@ -4,8 +4,10 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +20,7 @@ import {
   CreateIssue,
   FindIssues,
   FindProject,
+  RecordProjectAccess,
   RemoveProject,
 } from '../features';
 
@@ -50,6 +53,18 @@ export class ProjectController {
   ) {
     return this.commandBus.execute(
       new CreateIssue({ ...data, projectId, issuer }),
+    );
+  }
+
+  @Put(':id/access')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter(
+    [ForbiddenException, ForbiddenException],
+    [NotFoundException, NotFoundException],
+  )
+  recordAccess(@Param('id') projectId: number, @Auth() issuer: Issuer) {
+    return this.commandBus.execute(
+      new RecordProjectAccess({ projectId, issuerId: issuer.id }),
     );
   }
 

@@ -16,4 +16,10 @@ export class ProjectApi {
       .post<Project>(`/workspaces/${workspaceId}/projects`, { name })
       .then((res) => res.data);
   }
+
+  recordAccess(projectId: number) {
+    return this.axios
+      .put(`/projects/${projectId}/access`)
+      .then((res) => res.data);
+  }
 }

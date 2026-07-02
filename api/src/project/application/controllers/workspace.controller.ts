@@ -20,6 +20,7 @@ import {
   FindIssues,
   FindLabels,
   FindProjects,
+  FindRecentProjects,
   UpdateLabel,
 } from '../features';
 import { ExceptionFilter } from 'src/core';
@@ -48,6 +49,18 @@ export class WorkspaceController {
   @UseGuards(JwtAuthGuard)
   findProjects(@Param('id') workspaceId: number, @Query() query: FindProjects) {
     return this.queryBus.execute(new FindProjects({ ...query, workspaceId }));
+  }
+
+  @Get(':id/projects/recent')
+  @UseGuards(JwtAuthGuard)
+  findRecentProjects(
+    @Param('id') workspaceId: number,
+    @Query('count') count: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.queryBus.execute(
+      new FindRecentProjects({ workspaceId, issuerId: issuer.id, count }),
+    );
   }
 
   @Post(':id/projects')

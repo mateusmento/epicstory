@@ -23,3 +23,5 @@ export * from './project/create-project.command';
 export * from './project/find-project.query';
 export * from './project/find-projects.query';
 export * from './project/remove-project.command';
+export * from './project/record-project-access.command';
+export * from './project/find-recent-projects.query';

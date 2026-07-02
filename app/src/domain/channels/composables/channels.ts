@@ -3,7 +3,7 @@ import { useWebSockets } from "@/core/websockets";
 import { useAuth } from "@/domain/auth";
 import { useMeetingSocket } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
-import { toMessageSummary } from "@/lib/channel";
+import { sortChannelsByRecentActivity, toMessageSummary } from "@/lib/channel";
 import { ChannelApi } from "@epicstory/api-client";
 import type {
   CreateChannelBody,
@@ -15,9 +15,11 @@ import type {
 } from "@epicstory/contracts";
 import { assign } from "lodash";
 import { defineStore, storeToRefs } from "pinia";
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useChannelStore } from "./channel";
+
+const RECENT_SIDEBAR_LIMIT = 5;
 
 const useChannelsStore = defineStore("channels", () => {
   const channels = ref<IChannel[]>([]);
@@ -103,8 +105,13 @@ export function useChannels() {
     return channel;
   }
 
+  const recentChannels = computed(() =>
+    sortChannelsByRecentActivity(store.channels).slice(0, RECENT_SIDEBAR_LIMIT),
+  );
+
   return {
     ...storeToRefs(store),
+    recentChannels,
     fetchChannels,
     subscribeMessages,
     unsubscribeMessages,

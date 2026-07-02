@@ -91,6 +91,14 @@ export class WorkspaceApi {
       .then((res) => res.data);
   }
 
+  findRecentProjects(workspaceId: number, query?: { count?: number }) {
+    return this.axios
+      .get<Project[]>(`workspaces/${workspaceId}/projects/recent`, {
+        params: query,
+      })
+      .then((res) => res.data);
+  }
+
   suggestProjectKeyPrefix(workspaceId: number, name: string) {
     return this.axios
       .get<{
