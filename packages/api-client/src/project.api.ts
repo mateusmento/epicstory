@@ -1,4 +1,4 @@
-import type { Project } from "@epicstory/contracts";
+import type { Project, UpdateProjectTeamBody } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
 import { Axios as AxiosImport } from "axios";
 import { inject, injectable } from "tsyringe";
@@ -14,6 +14,12 @@ export class ProjectApi {
   createProject(workspaceId: number, name: string) {
     return this.axios
       .post<Project>(`/workspaces/${workspaceId}/projects`, { name })
+      .then((res) => res.data);
+  }
+
+  updateProjectTeam(projectId: number, data: UpdateProjectTeamBody) {
+    return this.axios
+      .patch<Project>(`/projects/${projectId}/team`, data)
       .then((res) => res.data);
   }
 

@@ -1,20 +1,20 @@
-import { NotFoundException } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNumber } from 'class-validator';
-import { Issuer } from 'src/core/auth';
-import { patch } from 'src/core/objects';
-import { Backlog } from 'src/project/domain/entities';
 import {
-  ProjectRepository,
-  SprintRepository,
-} from 'src/project/infrastructure/repositories';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { patch } from 'src/core/objects';
+import { Issuer } from 'src/core/auth';
+import { SprintRepository } from 'src/project/infrastructure/repositories';
+import {
+  TeamRepository,
+  WorkspaceRepository,
+} from 'src/workspace/infrastructure/repositories';
 
 export class CreateSprint {
   issuer: Issuer;
-  @IsNumber()
-  projectId: number;
+  teamId: number;
 
   constructor(data: Partial<CreateSprint> = {}) {
     patch(this, data);
@@ -25,27 +25,34 @@ export class CreateSprint {
 export class CreateSprintCommand implements ICommandHandler<CreateSprint> {
   constructor(
     private sprintRepo: SprintRepository,
-    private projectRepo: ProjectRepository,
+    private teamRepo: TeamRepository,
     private workspaceRepo: WorkspaceRepository,
   ) {}
 
-  async execute({ issuer, ...data }: CreateSprint) {
-    const project = await this.projectRepo.findOne({
-      where: { id: data.projectId },
+  async execute({ issuer, teamId }: CreateSprint) {
+    const team = await this.teamRepo.findOne({ where: { id: teamId } });
+    if (!team) throw new NotFoundException('Team not found');
+
+    if (!(await this.workspaceRepo.memberExists(team.workspaceId, issuer.id)))
+      throw new ForbiddenException('Not a workspace member');
+
+    const plannedExists = await this.sprintRepo.exists({
+      where: { teamId, status: 'planned' },
     });
+    if (plannedExists)
+      throw new BadRequestException('Upcoming sprint already exists');
 
-    if (!project) throw new NotFoundException('Project not found');
-
-    const { workspaceId } = project;
-
-    if (!(await this.workspaceRepo.memberExists(workspaceId, issuer.id)))
-      throw new IssuerUserIsNotWorkspaceMember();
+    const count = await this.sprintRepo.count({ where: { teamId } });
+    const name = `Sprint ${count + 1}`;
 
     return this.sprintRepo.save({
-      ...data,
-      workspaceId,
+      teamId,
+      workspaceId: team.workspaceId,
+      name,
+      status: 'planned' as const,
+      startsAt: null,
+      endsAt: null,
       createdById: issuer.id,
-      backlog: new Backlog(),
     });
   }
 }

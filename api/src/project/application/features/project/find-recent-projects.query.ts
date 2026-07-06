@@ -26,6 +26,13 @@ export class FindRecentProjectsQuery
   constructor(private projectRepo: ProjectRepository) {}
 
   async execute({ issuerId, workspaceId, count }: FindRecentProjects) {
+    const frecencyScore = `
+      LN(access.access_count + 1) *
+      (1.0 / (
+        1 + 0.2 * EXTRACT(EPOCH FROM (now() - access.accessed_at)) / 86400
+      ))
+    `;
+
     const { entities, raw } = await this.projectRepo
       .createQueryBuilder('project')
       .innerJoin(
@@ -35,8 +42,7 @@ export class FindRecentProjectsQuery
         { issuerId },
       )
       .where('project.workspaceId = :workspaceId', { workspaceId })
-      .orderBy('access.accessedAt', 'DESC')
-      .limit(count)
+      .addSelect(frecencyScore, 'frecencyScore')
       .addSelect(
         (qb) =>
           qb
@@ -45,6 +51,9 @@ export class FindRecentProjectsQuery
             .where('issue.projectId = project.id'),
         'issueCount',
       )
+      .orderBy(frecencyScore, 'DESC')
+      .addOrderBy('access.accessedAt', 'DESC')
+      .limit(count)
       .getRawAndEntities();
 
     return entities.map((project: Project, idx: number) => ({

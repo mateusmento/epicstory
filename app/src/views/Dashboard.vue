@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false });
+
 import { Issues } from "@/presentationals/app-pane/issues";
 import {
   ChannelDetailsPane,
@@ -11,6 +13,7 @@ import {
 } from "@/containers/app-pane";
 import ThreadDrawer from "@/containers/channel/ThreadDrawer.vue";
 import { ConfirmDialogProvider } from "@/containers/confirm-dialog";
+import SprintPanel from "@/containers/sprint/SprintPanel.vue";
 import { AppLayout, DrawerPaneContent, NavbarContent } from "@/presentationals/layout";
 import { SettingsNavbar, SwitchWorkspaceNavbar, WorkspaceNavbar } from "@/containers/navbar";
 import { NotFoundException, UnauthorizedException } from "@/core/axios";
@@ -51,7 +54,7 @@ watch(
     const projectId = next.params.projectId ? Number(next.params.projectId) : null;
     if (projectId && projectId !== lastTrackedProjectId) {
       lastTrackedProjectId = projectId;
-      recordProjectAccess(projectId, workspaceId.value);
+      recordProjectAccess(projectId);
     }
   },
   { immediate: true },
@@ -102,6 +105,9 @@ watch(workspaceId, () => {
         <DrawerPaneContent content="teams" :as="Teams" />
         <DrawerPaneContent content="team" :as="Team" />
         <DrawerPaneContent content="workspace-members" :as="WorkspaceMembers" />
+        <DrawerPaneContent content="sprint-panel" #default="{ contentProps }">
+          <SprintPanel :workspace-id="String(workspaceId)" :team-id="contentProps.teamId" />
+        </DrawerPaneContent>
       </template>
 
       <template #main-content>

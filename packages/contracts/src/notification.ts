@@ -92,6 +92,16 @@ export type ReplyReactionNotificationPayload = {
   messageExcerpt?: string;
 };
 
+export type SprintCompletedNotificationPayload = {
+  sprintId: number;
+  sprintName: string;
+  teamId: number;
+  workspaceId: number;
+  completedBy: IUser;
+  itemCount: number;
+  completedItemCount: number;
+};
+
 export type NotificationPayload =
   | MentionNotificationPayload
   | ReplyNotificationPayload
@@ -101,7 +111,8 @@ export type NotificationPayload =
   | CalendarMeetingReminderNotificationPayload
   | CalendarEventReminderNotificationPayload
   | MessageReactionNotificationPayload
-  | ReplyReactionNotificationPayload;
+  | ReplyReactionNotificationPayload
+  | SprintCompletedNotificationPayload;
 
 export type NotificationWithPayload =
   | { type: "mention"; payload: MentionNotificationPayload }
@@ -118,7 +129,8 @@ export type NotificationWithPayload =
       payload: CalendarEventReminderNotificationPayload;
     }
   | { type: "message_reaction"; payload: MessageReactionNotificationPayload }
-  | { type: "reply_reaction"; payload: ReplyReactionNotificationPayload };
+  | { type: "reply_reaction"; payload: ReplyReactionNotificationPayload }
+  | { type: "sprint_completed"; payload: SprintCompletedNotificationPayload };
 
 export type NotificationBase = {
   id: string;

@@ -17,6 +17,9 @@ export class Team {
   @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
   workspace: Workspace;
 
+  @Column({ default: 14 })
+  sprintCadenceDays: number;
+
   static create(data: { name: string; workspaceId: number }) {
     return create(Team, data);
   }

@@ -9,22 +9,28 @@ import {
   DialogTitle,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/design-system";
 import { computed, ref, watch } from "vue";
 
 const open = defineModel<boolean>("open", { default: false });
 
 const emit = defineEmits<{
-  submit: [payload: { name: string; issueKeyPrefix?: string }];
+  submit: [payload: { name: string; issueKeyPrefix?: string; teamId?: number }];
 }>();
 
 const name = ref("");
 const issueKeyPrefix = ref("");
 const issueKeyPrefixTouched = ref(false);
+const teamId = ref<string>("none");
 const submitting = ref(false);
 const suggestingPrefix = ref(false);
 
-const { suggestProjectKeyPrefix } = useWorkspace();
+const { suggestProjectKeyPrefix, teams, fetchTeams } = useWorkspace();
 
 let nameDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 let lastSuggestRequestId = 0;
@@ -79,6 +85,7 @@ function resetForm() {
   name.value = "";
   issueKeyPrefix.value = "";
   issueKeyPrefixTouched.value = false;
+  teamId.value = "none";
   submitting.value = false;
   suggestingPrefix.value = false;
   lastSuggestRequestId += 1;
@@ -86,7 +93,10 @@ function resetForm() {
 }
 
 watch(open, (isOpen) => {
-  if (isOpen) resetForm();
+  if (isOpen) {
+    resetForm();
+    fetchTeams();
+  }
 });
 
 function close() {
@@ -100,9 +110,11 @@ async function handleSubmit() {
   submitting.value = true;
   try {
     const prefix = issueKeyPrefix.value.trim();
+    const selectedTeamId = teamId.value === "none" ? undefined : +teamId.value;
     emit("submit", {
       name: trimmedName,
       issueKeyPrefix: prefix.length > 0 ? prefix : undefined,
+      teamId: selectedTeamId,
     });
     close();
   } finally {
@@ -142,6 +154,24 @@ async function handleSubmit() {
           <p class="text-xs text-muted-foreground">
             Issues are labeled PREFIX-123. This field follows the name until you edit it (preview:
             {{ issueKeyPreview }}{{ suggestingPrefix ? ", checking…" : "" }}).
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <Label for="create-project-team">Team</Label>
+          <Select v-model="teamId">
+            <SelectTrigger id="create-project-team">
+              <SelectValue placeholder="No team" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No team</SelectItem>
+              <SelectItem v-for="team in teams" :key="team.id" :value="String(team.id)">
+                {{ team.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p class="text-xs text-muted-foreground">
+            Assign a team to enable sprints and sprint planning for this project.
           </p>
         </div>
 

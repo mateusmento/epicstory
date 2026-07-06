@@ -34,12 +34,17 @@ export class RecordProjectAccessCommand
     );
     if (!member) throw new ForbiddenException('Not a workspace member');
 
-    await this.accessRepo.upsert(
-      { userId: issuerId, projectId },
-      {
-        conflictPaths: ['userId', 'projectId'],
-        skipUpdateIfNoValuesChanged: false,
-      },
+    await this.accessRepo.query(
+      `
+        INSERT INTO "workspace"."user_project_access" AS "access"
+          ("user_id", "project_id", "access_count", "accessed_at")
+        VALUES ($1, $2, 1, now())
+        ON CONFLICT ("user_id", "project_id")
+        DO UPDATE SET
+          "access_count" = "access"."access_count" + 1,
+          "accessed_at" = now()
+      `,
+      [issuerId, projectId],
     );
   }
 }

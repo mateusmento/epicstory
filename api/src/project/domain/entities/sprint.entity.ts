@@ -5,8 +5,10 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Backlog } from './backlog.entity';
 import { PROJECT_SCHEMA } from 'src/project/constants';
+import { Team } from 'src/workspace/domain/entities/team.entity';
+
+export type SprintStatus = 'planned' | 'active' | 'completed';
 
 @Entity({ schema: PROJECT_SCHEMA })
 export class Sprint {
@@ -14,16 +16,25 @@ export class Sprint {
   id: number;
 
   @Column()
+  teamId: number;
+
+  @ManyToOne(() => Team, { onDelete: 'CASCADE' })
+  team: Team;
+
+  @Column()
   workspaceId: number;
 
   @Column()
-  projectId: number;
+  name: string;
 
-  @Column()
-  backlogId: number;
+  @Column({ default: 'planned' })
+  status: SprintStatus;
 
-  @ManyToOne(() => Backlog, { cascade: ['insert'] })
-  backlog: Backlog;
+  @Column({ type: 'timestamptz', nullable: true })
+  startsAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  endsAt: Date | null;
 
   @Column()
   createdById: number;

@@ -6,7 +6,12 @@ import {
   Menu,
   MenuContent,
   MenuItem,
+  MenuRadioGroup,
+  MenuRadioItem,
   MenuSeparator,
+  MenuSub,
+  MenuSubContent,
+  MenuSubTrigger,
   MenuTrigger,
   ScrollArea,
   Separator,
@@ -15,7 +20,8 @@ import {
   TooltipTrigger,
 } from "@/design-system";
 import { useWorkspace } from "@/domain/workspace";
-import { BoxIcon, MonitorCogIcon, Settings2, SquarePen, Trash2Icon } from "lucide-vue-next";
+import type { Project } from "@epicstory/contracts";
+import { BoxIcon, MonitorCogIcon, Settings2, SquarePen, Trash2Icon, UsersIcon } from "lucide-vue-next";
 import { onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 
@@ -23,18 +29,35 @@ const {
   workspace,
   projects,
   projectsPage,
+  teams,
   isFetchingMoreProjects,
   fetchMoreProjects,
   createProject,
   fetchProjects,
+  fetchTeams,
   removeProject,
+  updateProjectTeam,
 } = useWorkspace();
 
 const route = useRoute();
 const createProjectDialogOpen = ref(false);
 
-async function onCreateProjectSubmit(payload: { name: string; issueKeyPrefix?: string }) {
+async function onCreateProjectSubmit(payload: { name: string; issueKeyPrefix?: string; teamId?: number }) {
   await createProject(payload);
+}
+
+function teamRadioValue(project: Project): string {
+  return project.teamId != null ? String(project.teamId) : "none";
+}
+
+function teamLabel(project: Project): string {
+  if (project.teamId == null) return "No team";
+  return teams.value.find((team) => team.id === project.teamId)?.name ?? "Unknown team";
+}
+
+async function onProjectTeamChange(projectId: number, value: string) {
+  const teamId = value === "none" ? null : +value;
+  await updateProjectTeam(projectId, teamId);
 }
 
 onMounted(async () => {
@@ -44,16 +67,18 @@ onMounted(async () => {
     page: 0,
     count: 50,
   });
+  fetchTeams();
 });
 
-watch(workspace, () =>
+watch(workspace, () => {
   fetchProjects({
     order: "asc",
     orderBy: "createdAt",
     page: 0,
     count: 50,
-  }),
-);
+  });
+  fetchTeams();
+});
 </script>
 
 <template>
@@ -108,6 +133,26 @@ watch(workspace, () =>
               <Settings2 class="size-4" />
               Edit project
             </MenuItem>
+            <MenuSub>
+              <MenuSubTrigger class="flex:row-md">
+                <UsersIcon class="size-4" />
+                <span>Team</span>
+                <span class="ml-auto text-xs text-muted-foreground truncate max-w-28">
+                  {{ teamLabel(project) }}
+                </span>
+              </MenuSubTrigger>
+              <MenuSubContent>
+                <MenuRadioGroup
+                  :model-value="teamRadioValue(project)"
+                  @update:model-value="(value) => onProjectTeamChange(project.id, value)"
+                >
+                  <MenuRadioItem value="none">No team</MenuRadioItem>
+                  <MenuRadioItem v-for="team in teams" :key="team.id" :value="String(team.id)">
+                    {{ team.name }}
+                  </MenuRadioItem>
+                </MenuRadioGroup>
+              </MenuSubContent>
+            </MenuSub>
             <MenuSeparator />
             <MenuItem intent="destructive" @click="removeProject(project.id)">
               <Trash2Icon class="size-4" />

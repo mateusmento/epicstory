@@ -9,6 +9,7 @@ import {
   MessageNotification,
   MessageReactionNotification,
   ReplyNotification,
+  SprintCompletedNotification,
 } from "./notifications";
 
 defineProps<{
@@ -80,6 +81,11 @@ function notificationTypeLabel(n: INotification): string {
     <MessageReactionNotification
       v-else-if="notification.type === 'reply_reaction'"
       kind="reply_reaction"
+      :payload="notification.payload"
+      :createdAt="notification.createdAt"
+    />
+    <SprintCompletedNotification
+      v-else-if="notification.type === 'sprint_completed'"
       :payload="notification.payload"
       :createdAt="notification.createdAt"
     />

@@ -20,20 +20,8 @@ export function useRecentProjects() {
     store.recentProjects = await workspaceApi.findRecentProjects(workspaceId, { count });
   }
 
-  async function recordProjectAccess(projectId: number, workspaceId: number) {
-    // Optimistic reorder: instantly move the project to the front if already known
-    const existing = store.recentProjects.find((p) => p.id === projectId);
-    if (existing) {
-      store.recentProjects = [existing, ...store.recentProjects.filter((p) => p.id !== projectId)].slice(
-        0,
-        RECENT_LIMIT,
-      );
-    }
-
-    projectApi
-      .recordAccess(projectId)
-      .then(() => fetchRecentProjects(workspaceId))
-      .catch(() => {});
+  async function recordProjectAccess(projectId: number) {
+    projectApi.recordAccess(projectId).catch(() => {});
   }
 
   return { ...storeToRefs(store), fetchRecentProjects, recordProjectAccess };

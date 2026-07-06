@@ -21,12 +21,17 @@ export type Project = {
   workspaceId: number;
   issueKeyPrefix: string;
   issueCount: number;
+  teamId?: number | null;
 };
 
 export type CreateWorkspaceProjectBody = {
   name: string;
   issueKeyPrefix?: string;
   teamId?: number;
+};
+
+export type UpdateProjectTeamBody = {
+  teamId?: number | null;
 };
 
 export type Team = {

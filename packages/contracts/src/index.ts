@@ -21,6 +21,7 @@ export * from "./notification";
 export * from "./page";
 export * from "./scheduled-message";
 export * from "./socket-events";
+export * from "./sprint";
 export * from "./team";
 export * from "./tiptap-excerpt";
 export * from "./user";

@@ -24,6 +24,9 @@ export class UserProjectAccess {
   @ManyToOne(() => Project, { onDelete: 'CASCADE' })
   project: Project;
 
+  @Column({ name: 'access_count', default: 1 })
+  accessCount: number;
+
   @UpdateDateColumn({ name: 'accessed_at', type: 'timestamptz' })
   accessedAt: Date;
 }

@@ -3,18 +3,38 @@ import BoardColumn from "@/presentationals/board/BoardColumn.vue";
 import BoardItem from "@/presentationals/board/BoardItem.vue";
 import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
+import { useDependency } from "@/core/dependency-injection";
+import { ProjectApi } from "@epicstory/api-client";
+import { useSprint } from "@/domain/sprint";
 import type { IIssue, IBacklogItem } from "@epicstory/contracts";
 import { issueFiltersForQuery, useProjectFilters } from "@/domain/project";
 import type { IDnDPayload } from "@vue-dnd-kit/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import IssueCard from "@/containers/views/project/board/IssueCard.vue";
-import { ScrollArea } from "@/design-system";
+import { Button, ScrollArea } from "@/design-system";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
 const { backlogItems, fetchBacklogItems, updateIssue, moveBacklogItem, addLabel, removeLabel } = useBacklog();
 const { filters: activeFilters } = useProjectFilters(+props.projectId);
+
+const projectApi = useDependency(ProjectApi);
+const { sprints, sprintItems, fetchSprints, fetchSprintItems } = useSprint();
+const sprintView = ref(false);
+const teamId = ref<number | null>(null);
+
+const activeSprint = computed(() => sprints.value.find((s) => s.status === "active") ?? null);
+
+const sprintBacklogItems = computed<IBacklogItem[]>(() => {
+  if (!activeSprint.value) return [];
+  const sprintIssueIds = new Set((sprintItems.value.get(activeSprint.value.id) ?? []).map((i) => i.issueId));
+  return backlogItems.value.filter((b) => sprintIssueIds.has(b.issueId));
+});
+
+const displayedBacklogItems = computed<IBacklogItem[]>(() =>
+  sprintView.value ? sprintBacklogItems.value : backlogItems.value,
+);
 
 type ColumnStatus = "todo" | "doing" | "done";
 
@@ -29,11 +49,12 @@ function openIssue(issue: IIssue) {
 }
 
 function syncFromBacklogItems(items: IBacklogItem[]) {
+  const source = sprintView.value ? sprintBacklogItems.value : items;
   const nextTodo: IBacklogItem[] = [];
   const nextDoing: IBacklogItem[] = [];
   const nextDone: IBacklogItem[] = [];
 
-  for (const it of items) {
+  for (const it of source) {
     const s = (it?.issue?.status ?? "todo") as ColumnStatus;
     if (s === "doing") nextDoing.push(it);
     else if (s === "done") nextDone.push(it);
@@ -91,6 +112,15 @@ onMounted(async () => {
     filters: issueFiltersForQuery(activeFilters.value),
   });
 
+  // Load sprint data if the project has a team
+  const project = await projectApi.findProject(+props.projectId);
+  teamId.value = project.teamId ?? null;
+  if (teamId.value) {
+    await fetchSprints(teamId.value);
+    const active = sprints.value.find((s) => s.status === "active");
+    if (active) await fetchSprintItems(active.id);
+  }
+
   // The watch below will do the initial sync.
 });
 
@@ -123,6 +153,13 @@ watch(
   { immediate: true },
 );
 
+watch(sprintView, () => {
+  todo.value.splice(0);
+  doing.value.splice(0);
+  done.value.splice(0);
+  syncFromBacklogItems(backlogItems.value);
+});
+
 const BOARD_COLUMN_CLASSES = "flex:col-lg flex-shrink-0 w-96 min-w-96 rounded-xl bg-muted/40";
 
 const BOARD_COLUMN_INNER = "!flex flex:col-md flex-1 min-h-0 m-2 rounded-lg";
@@ -130,6 +167,33 @@ const BOARD_COLUMN_INNER = "!flex flex:col-md flex-1 min-h-0 m-2 rounded-lg";
 
 <template>
   <div class="flex:col-xl w-full h-full p-2">
+    <!-- Sprint filter toggle -->
+    <div v-if="teamId" class="flex:row-md flex:center-y mb-2">
+      <Button
+        :variant="!sprintView ? 'outline' : 'ghost'"
+        size="sm"
+        class="text-xs"
+        @click="
+          sprintView = false;
+          syncFromBacklogItems(backlogItems);
+        "
+      >
+        All issues
+      </Button>
+      <Button
+        :variant="sprintView ? 'outline' : 'ghost'"
+        size="sm"
+        class="text-xs"
+        @click="
+          sprintView = true;
+          syncFromBacklogItems(backlogItems);
+        "
+      >
+        Sprint view
+        <span v-if="activeSprint" class="ml-1 text-muted-foreground">({{ activeSprint.name }})</span>
+      </Button>
+    </div>
+
     <div class="flex:row gap-lg flex-1 min-h-0">
       <!-- TODO column -->
       <BoardColumn

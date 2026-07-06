@@ -3,6 +3,7 @@ export * from './issue-activity.entity';
 export * from './label.entity';
 export * from './project.entity';
 export * from './sprint.entity';
+export * from './sprint-item.entity';
 export * from './backlog.entity';
 export * from './backlog-item.entity';
 export * from './user-project-access.entity';

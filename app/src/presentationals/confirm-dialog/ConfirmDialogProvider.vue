@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+defineOptions({ inheritAttrs: false });
+
 import { Dialog, DialogContent } from "@/design-system";
 import { provide, reactive, readonly, ref } from "vue";
 import ConfirmDialog from "@/presentationals/confirm-dialog/ConfirmDialog.vue";

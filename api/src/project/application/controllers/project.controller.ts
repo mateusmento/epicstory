@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Delete,
+  BadRequestException,
   ForbiddenException,
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -15,13 +17,18 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { create } from 'src/core/objects';
-import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
+import { IssuerUserCanNotCreateProject } from 'src/project/domain/exceptions';
+import {
+  IssuerUserIsNotWorkspaceMember,
+  TeamNotFound,
+} from 'src/workspace/domain/exceptions';
 import {
   CreateIssue,
   FindIssues,
   FindProject,
   RecordProjectAccess,
   RemoveProject,
+  UpdateProjectTeam,
 } from '../features';
 
 @Controller('projects')
@@ -65,6 +72,25 @@ export class ProjectController {
   recordAccess(@Param('id') projectId: number, @Auth() issuer: Issuer) {
     return this.commandBus.execute(
       new RecordProjectAccess({ projectId, issuerId: issuer.id }),
+    );
+  }
+
+  @Patch(':id/team')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter(
+    [IssuerUserIsNotWorkspaceMember, ForbiddenException],
+    [IssuerUserCanNotCreateProject, ForbiddenException],
+    [TeamNotFound, NotFoundException],
+    [BadRequestException, BadRequestException],
+    [NotFoundException, NotFoundException],
+  )
+  updateProjectTeam(
+    @Param('id') projectId: number,
+    @Body() data: UpdateProjectTeam,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new UpdateProjectTeam({ ...data, projectId, issuerId: issuer.id }),
     );
   }
 

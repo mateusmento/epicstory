@@ -134,6 +134,18 @@ async function openNotification(notification: INotification) {
         },
       });
     }
+    return;
+  }
+
+  if (notification.type === "sprint_completed") {
+    const payload = notification.payload;
+    if (workspaceId) {
+      router.push({
+        name: "team",
+        params: { workspaceId, teamId: String(payload.teamId) },
+        query: { reviewSprint: String(payload.sprintId) },
+      });
+    }
   }
 }
 </script>

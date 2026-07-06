@@ -2,6 +2,7 @@
 import { UnauthorizedException } from "@/core/axios";
 import { TooltipProvider } from "@/design-system";
 import { Toaster } from "@/design-system/ui/sonner";
+import SprintDragOverlay from "@/presentationals/sprint/SprintDragOverlay.vue";
 import { onErrorCaptured, ref } from "vue";
 import { RouterView, useRouter } from "vue-router";
 
@@ -33,6 +34,7 @@ onErrorCaptured((err) => {
     <Teleport to="body">
       <Toaster position="top-center" :expand="true" :rich-colors="true" close-button />
     </Teleport>
+    <SprintDragOverlay />
 
     <!-- Matches Vue docs: Suspense #default must be one immediate child (no v-if on it). -->
     <div

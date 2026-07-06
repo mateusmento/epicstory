@@ -13,6 +13,7 @@ export { default as IssueKey } from "./IssueKey.vue";
 export { default as IssueLabelTags } from "./IssueLabelTags.vue";
 export { default as IssueNotificationLabel } from "./IssueNotificationLabel.vue";
 export { default as IssueRenameDialog } from "./IssueRenameDialog.vue";
+export { default as IssueList, BacklogHeadCell } from "./IssueList.vue";
 export * from "./due-date-picker";
 export * from "./priority-toggler";
 export * from "./status";

@@ -31,6 +31,7 @@ import {
   ToggleGroupItem,
 } from "@/design-system";
 import { Icon, IconSearch } from "@/design-system/icons";
+import { NavTrigger } from "@/design-system";
 import type { Project } from "@epicstory/contracts";
 import { IssueApi, ProjectApi } from "@epicstory/api-client";
 import type { IIssue } from "@epicstory/contracts";
@@ -47,6 +48,7 @@ import {
   SquareChartGanttIcon,
   SquareKanbanIcon,
   SquarePen,
+  TimerIcon,
   User,
 } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
@@ -73,6 +75,8 @@ const routeName = computed(() => {
       return "board";
     case "project-timeline":
       return "timeline";
+    case "project-sprint":
+      return "sprint";
     default:
       return undefined;
   }
@@ -271,7 +275,17 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
         </DialogContent>
       </Dialog>
 
-      <div class="flex:row flex:center-y justify-end flex-1">
+      <div class="flex:row flex:center-y justify-end flex-1 gap-2">
+        <NavTrigger
+          v-if="project?.teamId"
+          view="app-pane"
+          content="sprint-panel"
+          :props="{ teamId: project.teamId }"
+        >
+          <Button variant="outline" size="icon" title="Sprint planning">
+            <TimerIcon class="size-4 text-muted-foreground" />
+          </Button>
+        </NavTrigger>
         <Dialog>
           <DialogTrigger as-child>
             <Button variant="outline" size="icon">
@@ -307,6 +321,12 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
           <RouterLink :to="`/${workspaceId}/project/${projectId}/timeline`" class="flex:row-md flex:center-y">
             <SquareChartGanttIcon class="size-4 text-muted-foreground" />
             Timeline
+          </RouterLink>
+        </ToggleGroupItem>
+        <ToggleGroupItem value="sprint" variant="outline" size="sm" as-child>
+          <RouterLink :to="`/${workspaceId}/project/${projectId}/sprint`" class="flex:row-md flex:center-y">
+            <TimerIcon class="size-4 text-muted-foreground" />
+            Sprint
           </RouterLink>
         </ToggleGroupItem>
       </ToggleGroup>

@@ -2,34 +2,27 @@
 import { Badge, Button, NavTrigger } from "@/design-system";
 import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { cn } from "@/design-system/utils";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import type { RouteLocationRaw } from "vue-router";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
-const props = defineProps<
-  {
-    /** Unread / unseen count; shown when greater than zero. */
-    badgeCount?: number;
-  } & (
-    | {
-        view: string;
-        content: string;
-      }
-    | {
-        to: RouteLocationRaw;
-      }
-  )
->();
+const props = defineProps<{
+  /** Unread / unseen count; shown when greater than zero. */
+  badgeCount?: number;
+  view?: string;
+  content?: string;
+  to?: RouteLocationRaw;
+}>();
 
 const route = useRoute();
 const router = useRouter();
-const { content: currentContent } = "view" in props ? useNavTrigger(props.view) : { content: ref(null) };
+const { content: currentContent } = useNavTrigger(props.view ?? "navbar");
 
-// If 'to' is provided, use RouterLink and check route match
-// Otherwise, use NavTrigger and check content match
+const isNavTrigger = computed(() => props.view != null && props.content != null);
+const isRouterLink = computed(() => props.to != null);
+
 const active = computed(() => {
-  if ("to" in props && props.to) {
-    // For RouterLink, check if current route matches
+  if (isRouterLink.value && props.to) {
     try {
       const resolved = router.resolve(props.to);
       return route.path === resolved.path;
@@ -37,16 +30,19 @@ const active = computed(() => {
       return false;
     }
   }
-  return "content" in props && props.content === currentContent.value;
+  if (isNavTrigger.value) {
+    return props.content === currentContent.value;
+  }
+  return false;
 });
 </script>
 
 <template>
   <NavTrigger
-    v-if="'view' in props && props.view && 'to' in props && !props.to"
+    v-if="isNavTrigger"
     :as="Button"
-    :view="props.view"
-    :content="props.content"
+    :view="props.view!"
+    :content="props.content!"
     size="sm"
     :variant="active ? 'soft' : 'ghost'"
     :class="cn('w-full justify-start gap-0')"
@@ -66,9 +62,9 @@ const active = computed(() => {
     </Badge>
   </NavTrigger>
   <Button
-    v-else-if="'to' in props && props.to"
+    v-else-if="isRouterLink"
     :as="RouterLink"
-    :to="props.to"
+    :to="props.to!"
     size="sm"
     :variant="active ? 'soft' : 'ghost'"
     :class="cn('w-full justify-start gap-0')"

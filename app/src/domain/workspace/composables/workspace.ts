@@ -3,7 +3,7 @@ import type { IPageQuery } from "@/core/types";
 import { StorageSerializers, useStorage } from "@vueuse/core";
 import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
-import { WorkspaceApi } from "@epicstory/api-client";
+import { ProjectApi, WorkspaceApi } from "@epicstory/api-client";
 import type { Project, Team, IWorkspace, WorkspaceMember } from "@epicstory/contracts";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
@@ -31,6 +31,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
 export function useWorkspace() {
   const store = useWorkspaceStore();
   const workspaceApi = useDependency(WorkspaceApi);
+  const projectApi = useDependency(ProjectApi);
 
   const workspaceId = computed(() => {
     if (!store.workspace) {
@@ -90,9 +91,17 @@ export function useWorkspace() {
     }
   }
 
-  async function createProject(data: { name: string; issueKeyPrefix?: string }) {
+  async function createProject(data: { name: string; issueKeyPrefix?: string; teamId?: number }) {
     const project = await workspaceApi.createProject(workspaceId.value, data);
     store.projects.push(project);
+  }
+
+  async function updateProjectTeam(projectId: number, teamId: number | null) {
+    const updated = await projectApi.updateProjectTeam(projectId, { teamId });
+    const index = store.projects.findIndex((project) => project.id === projectId);
+    if (index >= 0) {
+      store.projects[index] = { ...store.projects[index], teamId: updated.teamId ?? null };
+    }
   }
 
   async function suggestProjectKeyPrefix(name: string): Promise<string> {
@@ -136,6 +145,7 @@ export function useWorkspace() {
     fetchProjects,
     fetchMoreProjects,
     createProject,
+    updateProjectTeam,
     suggestProjectKeyPrefix,
     removeProject,
     fetchTeams,

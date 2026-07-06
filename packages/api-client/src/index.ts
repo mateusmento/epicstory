@@ -1,4 +1,5 @@
 export * from "./auth.api";
+export * from "./sprint.api";
 export * from "./backlog.api";
 export * from "./calendar-event.api";
 export * from "./channel.api";

@@ -20,12 +20,21 @@ import { useAuth } from "@/domain/auth";
 import { useSyncedChannels } from "@/domain/channels";
 import { isLiveJoinableMeeting, useLiveMeeting, useMeeting } from "@/domain/meetings";
 import { useNotifications } from "@/domain/notifications";
+import { useTeams } from "@/domain/team";
 import { useRecentProjects, useWorkspace } from "@/domain/workspace";
 import { NavListItem } from "@/presentationals/layout";
 import LiveMeetingJoinCard from "@/presentationals/navbar/LiveMeetingJoinCard.vue";
 import { ThemePicker } from "@/presentationals/theme";
 import { UserAvatar } from "@/presentationals/user";
-import { ArrowLeft, ArrowRight, LogOutIcon, MonitorCogIcon, SettingsIcon, UserIcon } from "lucide-vue-next";
+import {
+  ArrowLeft,
+  ArrowRight,
+  LogOutIcon,
+  MonitorCogIcon,
+  SettingsIcon,
+  UserIcon,
+  UsersIcon,
+} from "lucide-vue-next";
 import { computed, onMounted, watch } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import CurrentMeetingControlsCard from "./CurrentMeetingControlsCard.vue";
@@ -35,6 +44,7 @@ defineProps<{ isAppPaneOpen: boolean }>();
 const { workspace } = useWorkspace();
 const { recentChannels } = useSyncedChannels();
 const { recentProjects, fetchRecentProjects } = useRecentProjects();
+const { teams, fetchTeams } = useTeams();
 const { user, signOut } = useAuth();
 const router = useRouter();
 
@@ -77,12 +87,14 @@ async function onJoinLiveScheduledMeeting() {
 onMounted(async () => {
   if (workspace.value?.id) {
     fetchRecentProjects(workspace.value.id);
+    fetchTeams(workspace.value.id);
   }
 });
 
 watch(workspace, () => {
   if (workspace.value?.id) {
     fetchRecentProjects(workspace.value.id);
+    fetchTeams(workspace.value.id);
   }
 });
 </script>
@@ -149,10 +161,33 @@ watch(workspace, () => {
         <Icon name="oi-calendar" />
         Schedule
       </NavListItem>
-      <NavListItem view="app-pane" content="teams" class="flex:row-md flex:center-y">
-        <Icon name="bi-person-workspace" />
-        Teams
-      </NavListItem>
+      <Collapsible as-child v-slot="{ open }" default-open>
+        <div class="flex:row-sm flex:center-y w-full justify-start">
+          <NavListItem view="app-pane" content="teams" class="flex:row-md flex:center-y w-full justify-start">
+            <UsersIcon class="size-4 shrink-0" stroke-width="2.5" />
+            Teams
+          </NavListItem>
+          <CollapsibleTrigger v-if="teams.length > 0" as-child>
+            <Button variant="ghost" size="sm" class="w-fit flex:row-md flex:center-y text-muted-foreground">
+              <Icon v-if="open" name="oi-chevron-up" />
+              <Icon v-else name="oi-chevron-down" />
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent>
+          <div class="ml-3 pl-2 border-l border-border">
+            <NavListItem
+              v-for="team of teams"
+              :key="team.id"
+              :to="`/${workspace.id}/team/${team.id}`"
+              class="flex:row-md flex:center-y"
+            >
+              <UsersIcon class="size-4 shrink-0" stroke-width="2.5" />
+              <span class="truncate">{{ team.name }}</span>
+            </NavListItem>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
       <NavListItem view="app-pane" content="workspace-members" class="flex:row-md flex:center-y">
         <Icon name="bi-people-fill" />
         Members

@@ -46,6 +46,10 @@ export function getNotificationToastTitle(notification: INotification): string {
       const when = resolveCalendarReminderStartsInLabel(p.notifyMinutesBefore, p.occurrenceAt);
       return `${name} is about to start ${when}`;
     }
+    case "sprint_completed": {
+      const p = notification.payload;
+      return `${p.sprintName} completed`;
+    }
     default:
       return "New notification";
   }
@@ -74,6 +78,10 @@ export function getNotificationToastDescription(notification: INotification): st
     case "calendar_meeting_reminder":
     case "calendar_event_reminder":
       return formatCalendarOccurrenceSubtitle(notification.payload.occurrenceAt);
+    case "sprint_completed": {
+      const p = notification.payload;
+      return `${p.completedItemCount} of ${p.itemCount} issues done`;
+    }
     default:
       return undefined;
   }

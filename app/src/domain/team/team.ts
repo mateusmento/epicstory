@@ -1,8 +1,25 @@
 import { useDependency } from "@/core/dependency-injection";
-import { TeamApi } from "@epicstory/api-client";
+import { TeamApi, WorkspaceApi } from "@epicstory/api-client";
 import type { ITeam, ITeamMember } from "@epicstory/contracts";
 import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
+
+const useTeamsStore = defineStore("teams", () => {
+  const teams = ref<ITeam[]>([]);
+  return { teams };
+});
+
+export function useTeams() {
+  const store = useTeamsStore();
+  const workspaceApi = useDependency(WorkspaceApi);
+
+  async function fetchTeams(workspaceId: number) {
+    store.teams = await workspaceApi.findTeams(workspaceId);
+    return store.teams;
+  }
+
+  return { ...storeToRefs(store), fetchTeams };
+}
 
 export const useTeamStore = defineStore("team", () => {
   const team = ref<ITeam>();
