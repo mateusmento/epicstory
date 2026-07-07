@@ -109,7 +109,7 @@ export class WorkspaceApi {
 
   createProject(
     workspaceId: number,
-    data: { name: string; issueKeyPrefix?: string; teamId?: number },
+    data: { name: string; issueKeyPrefix?: string; teamId: number },
   ) {
     return this.axios
       .post(`workspaces/${workspaceId}/projects`, data)

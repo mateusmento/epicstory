@@ -371,6 +371,7 @@ onMounted(() => {
             <div class="flex flex-wrap items-center gap-1.5">
               <IssueLabelTags
                 :disabled="!issue"
+                :issue-labels="issue?.labels ?? []"
                 :model-value="(issue?.labels ?? []).map((l) => l.id)"
                 @add-label="addLabel"
                 @remove-label="removeLabel"

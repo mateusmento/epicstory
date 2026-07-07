@@ -25,12 +25,6 @@ export function useSprint() {
     return items;
   }
 
-  async function createSprint(teamId: number): Promise<ISprint> {
-    const sprint = await sprintApi.createSprint(teamId);
-    store.sprints = [sprint, ...store.sprints];
-    return sprint;
-  }
-
   async function startSprint(sprintId: number): Promise<ISprint> {
     const updated = await sprintApi.startSprint(sprintId);
     store.sprints = store.sprints.map((s) => (s.id === sprintId ? updated : s));
@@ -97,7 +91,6 @@ export function useSprint() {
     ...storeToRefs(store),
     fetchSprints,
     fetchSprintItems,
-    createSprint,
     startSprint,
     completeSprint,
     addSprintItem,

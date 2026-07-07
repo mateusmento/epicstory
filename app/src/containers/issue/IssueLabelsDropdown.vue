@@ -3,7 +3,7 @@ import { Menu, MenuContent, MenuTrigger } from "@/design-system";
 import IssueLabelsDropdownView from "@/presentationals/issue/IssueLabelsDropdown.vue";
 import type { ILabel } from "@epicstory/contracts";
 import { useLabels } from "@/domain/labels";
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 
 const props = defineProps<{
@@ -19,11 +19,7 @@ const emit = defineEmits<{
   (e: "remove-label", id: number): void;
 }>();
 
-const { labelsById, labels, fetchLabels } = useLabels();
-
-onMounted(() => {
-  fetchLabels();
-});
+const { labelsById, labels } = useLabels();
 
 const catalog = computed(() => props.catalog ?? labels.value);
 

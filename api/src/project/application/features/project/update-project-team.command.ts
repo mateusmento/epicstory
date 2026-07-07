@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { IsNumber, IsOptional, ValidateIf } from 'class-validator';
+import { IsNumber } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { IssuerUserCanNotCreateProject } from 'src/project/domain/exceptions';
 import { ProjectRepository } from 'src/project/infrastructure/repositories/project.repository';
@@ -18,11 +18,8 @@ export class UpdateProjectTeam {
 
   projectId: number;
 
-  /** Omit or pass `null` to unassign the project from its team. */
-  @IsOptional()
-  @ValidateIf((_, value) => value !== null)
   @IsNumber()
-  teamId?: number | null;
+  teamId: number;
 
   constructor(data: Partial<UpdateProjectTeam> = {}) {
     patch(this, data);
@@ -52,16 +49,12 @@ export class UpdateProjectTeamCommand
     if (!issuer.hasRole(WorkspaceRole.ADMIN))
       throw new IssuerUserCanNotCreateProject();
 
-    if (teamId != null) {
-      const team = await this.teamRepo.findOneBy({ id: teamId });
-      if (!team) throw new TeamNotFound();
-      if (team.workspaceId !== project.workspaceId) {
-        throw new BadRequestException('Team does not belong to the workspace');
-      }
-      project.teamId = teamId;
-    } else {
-      project.teamId = null;
+    const team = await this.teamRepo.findOneBy({ id: teamId });
+    if (!team) throw new TeamNotFound();
+    if (team.workspaceId !== project.workspaceId) {
+      throw new BadRequestException('Team does not belong to the workspace');
     }
+    project.teamId = teamId;
 
     return this.projectRepo.save(project);
   }

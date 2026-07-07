@@ -154,6 +154,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
         v-if="issue.labels?.length"
         class="flex flex-1 justify-end mt-0.5 min-w-0 shrink"
         :disabled="!issue"
+        :issue-labels="issue.labels"
         :model-value="(issue?.labels ?? []).map((l) => l.id)"
         @add-label="addLabel(issue.id, $event)"
         @remove-label="removeLabel(issue.id, $event)"

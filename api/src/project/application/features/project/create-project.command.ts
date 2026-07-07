@@ -28,9 +28,9 @@ export class CreateProject {
 
   workspaceId: number;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsNumber()
-  teamId?: number;
+  teamId: number;
 
   @IsNotEmpty()
   name: string;
@@ -70,12 +70,10 @@ export class CreateProjectCommand implements ICommandHandler<CreateProject> {
     const issuer = await this.workspaceRepo.findMember(workspaceId, issuerId);
     if (!issuer)
       throw new ForbiddenException('Issuer is not a workspace member');
-    if (teamId) {
-      const team = await this.teamRepo.findOneBy({ id: teamId });
-      if (!team) throw new TeamNotFound();
-      if (team.workspaceId !== workspace.id) {
-        throw new BadRequestException('Team does not belong to the workspace');
-      }
+    const team = await this.teamRepo.findOneBy({ id: teamId });
+    if (!team) throw new TeamNotFound();
+    if (team.workspaceId !== workspace.id) {
+      throw new BadRequestException('Team does not belong to the workspace');
     }
     let project = workspace.createProject(issuer, teamId, name);
     project.issueKeyPrefix = await this.issueKeys.resolvePrefixForNewProject({

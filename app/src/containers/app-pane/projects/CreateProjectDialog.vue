@@ -20,13 +20,13 @@ import { computed, ref, watch } from "vue";
 const open = defineModel<boolean>("open", { default: false });
 
 const emit = defineEmits<{
-  submit: [payload: { name: string; issueKeyPrefix?: string; teamId?: number }];
+  submit: [payload: { name: string; issueKeyPrefix?: string; teamId: number }];
 }>();
 
 const name = ref("");
 const issueKeyPrefix = ref("");
 const issueKeyPrefixTouched = ref(false);
-const teamId = ref<string>("none");
+const teamId = ref<string>("");
 const submitting = ref(false);
 const suggestingPrefix = ref(false);
 
@@ -85,17 +85,20 @@ function resetForm() {
   name.value = "";
   issueKeyPrefix.value = "";
   issueKeyPrefixTouched.value = false;
-  teamId.value = "none";
+  teamId.value = "";
   submitting.value = false;
   suggestingPrefix.value = false;
   lastSuggestRequestId += 1;
   if (nameDebounceTimer) clearTimeout(nameDebounceTimer);
 }
 
-watch(open, (isOpen) => {
+watch(open, async (isOpen) => {
   if (isOpen) {
     resetForm();
-    fetchTeams();
+    await fetchTeams();
+    if (teams.value.length > 0 && !teamId.value) {
+      teamId.value = String(teams.value[0].id);
+    }
   }
 });
 
@@ -105,12 +108,12 @@ function close() {
 
 async function handleSubmit() {
   const trimmedName = name.value.trim();
-  if (!trimmedName || submitting.value) return;
+  const selectedTeamId = teamId.value ? +teamId.value : undefined;
+  if (!trimmedName || !selectedTeamId || submitting.value) return;
 
   submitting.value = true;
   try {
     const prefix = issueKeyPrefix.value.trim();
-    const selectedTeamId = teamId.value === "none" ? undefined : +teamId.value;
     emit("submit", {
       name: trimmedName,
       issueKeyPrefix: prefix.length > 0 ? prefix : undefined,
@@ -159,25 +162,22 @@ async function handleSubmit() {
 
         <div class="flex flex-col gap-2">
           <Label for="create-project-team">Team</Label>
-          <Select v-model="teamId">
+          <Select v-model="teamId" :disabled="teams.length === 0">
             <SelectTrigger id="create-project-team">
-              <SelectValue placeholder="No team" />
+              <SelectValue placeholder="Select team" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">No team</SelectItem>
               <SelectItem v-for="team in teams" :key="team.id" :value="String(team.id)">
                 {{ team.name }}
               </SelectItem>
             </SelectContent>
           </Select>
-          <p class="text-xs text-muted-foreground">
-            Assign a team to enable sprints and sprint planning for this project.
-          </p>
+          <p class="text-xs text-muted-foreground">Every project belongs to a team for sprint planning.</p>
         </div>
 
         <DialogFooter class="gap-2 sm:gap-0">
           <Button type="button" variant="outline" :disabled="submitting" @click="close"> Cancel </Button>
-          <Button type="submit" :disabled="submitting || !name.trim()">Create</Button>
+          <Button type="submit" :disabled="submitting || !name.trim() || !teamId">Create</Button>
         </DialogFooter>
       </form>
     </DialogContent>

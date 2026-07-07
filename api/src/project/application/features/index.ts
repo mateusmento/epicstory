@@ -26,7 +26,6 @@ export * from './project/remove-project.command';
 export * from './project/update-project-team.command';
 export * from './project/record-project-access.command';
 export * from './project/find-recent-projects.query';
-export * from './sprint/create-sprint.command';
 export * from './sprint/start-sprint.command';
 export * from './sprint/complete-sprint.command';
 export * from './sprint/add-sprint-item.command';

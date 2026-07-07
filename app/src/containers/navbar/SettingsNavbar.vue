@@ -24,30 +24,19 @@ const { workspace } = useWorkspace();
     </div>
 
     <nav class="flex:col-md p-2">
-      <NavListItem
-        view="app-pane"
-        content="settings-profile"
-        :to="`/${workspace.id}/settings/user-account`"
-        class="flex:row-md flex:center-y"
-      >
+      <NavListItem :to="`/${workspace.id}/settings/user-account`" class="flex:row-md flex:center-y">
         <Icon name="fa-user-circle" />
         Profile
       </NavListItem>
-      <NavListItem
-        view="app-pane"
-        content="settings-integrations-github"
-        :to="`/${workspace.id}/settings/integrations/github`"
-        class="flex:row-md flex:center-y"
-      >
+      <NavListItem view="app-pane" content="workspace-members" class="flex:row-md flex:center-y">
+        <Icon name="bi-people-fill" />
+        Members
+      </NavListItem>
+      <NavListItem :to="`/${workspace.id}/settings/integrations/github`" class="flex:row-md flex:center-y">
         <Icon name="bi-box-arrow-up-right" />
         GitHub
       </NavListItem>
-      <NavListItem
-        view="app-pane"
-        content="settings-integrations-linear"
-        :to="`/${workspace.id}/settings/integrations/linear`"
-        class="flex:row-md flex:center-y"
-      >
+      <NavListItem :to="`/${workspace.id}/settings/integrations/linear`" class="flex:row-md flex:center-y">
         <Icon name="hi-clipboard-list" />
         Linear
       </NavListItem>

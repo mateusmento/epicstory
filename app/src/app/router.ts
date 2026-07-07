@@ -103,12 +103,6 @@ const authenticatedRoutes = defineRoutes({
               component: () => import("@/views/project/board/Board.vue"),
             },
             {
-              path: "timeline",
-              name: "project-timeline",
-              props: true,
-              component: () => import("@/views/project/timeline/Timeline.vue"),
-            },
-            {
               path: "sprint",
               name: "project-sprint",
               props: true,
@@ -126,6 +120,12 @@ const authenticatedRoutes = defineRoutes({
           path: "team/:teamId",
           name: "team",
           component: () => import("@/views/team/Team.vue"),
+          props: true,
+        },
+        {
+          path: "team/:teamId/timeline",
+          name: "team-timeline",
+          component: () => import("@/views/team/TeamTimeline.vue"),
           props: true,
         },
         {

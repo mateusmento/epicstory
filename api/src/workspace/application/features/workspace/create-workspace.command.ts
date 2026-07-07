@@ -4,6 +4,7 @@ import { patch } from 'src/core/objects';
 import { WorkspaceMember } from 'src/workspace/domain/entities/workspace-member.entity';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
+import { TeamRepository } from 'src/workspace/infrastructure/repositories/team.repository';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories/workspace-member.repository';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 
@@ -25,6 +26,7 @@ export class CreateWorkspaceCommand
   constructor(
     private workspaceRepo: WorkspaceRepository,
     private workspaceMemberRepo: WorkspaceMemberRepository,
+    private teamRepo: TeamRepository,
   ) {}
 
   async execute({ issuerId, ...data }: CreateWorkspace) {
@@ -35,6 +37,8 @@ export class CreateWorkspaceCommand
       role: WorkspaceRole.ADMIN,
     });
     await this.workspaceMemberRepo.save(member);
+    const team = workspace.createTeam(member, data.name);
+    await this.teamRepo.save(team);
     return workspace;
   }
 }

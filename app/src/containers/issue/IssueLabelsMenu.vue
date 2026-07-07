@@ -3,7 +3,7 @@ import { Button, Checkbox, MenuInput, MenuItem, MenuSeparator } from "@/design-s
 import type { ILabel } from "@epicstory/contracts";
 import { useLabels } from "@/domain/labels";
 import { EditIcon, PlusIcon } from "lucide-vue-next";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -38,17 +38,13 @@ const COLOR_PRESETS = {
   slate: "#64748B",
 };
 
-const { labels, fetchLabels, createLabel, updateLabel } = useLabels();
-
-onMounted(() => {
-  fetchLabels();
-});
+const { labels, ensureLabelsLoaded, createLabel, updateLabel } = useLabels();
 
 watch(
   open,
-  async (isOpen) => {
+  (isOpen) => {
     if (!isOpen) return;
-    await fetchLabels();
+    ensureLabelsLoaded().catch(() => {});
   },
   { immediate: false },
 );

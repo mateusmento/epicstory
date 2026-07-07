@@ -19,6 +19,7 @@ const emit = defineEmits<{
         <IssueLabelTags
           class="shrink-0"
           :disabled="!item.issue"
+          :issue-labels="item.issue.labels"
           :model-value="(item.issue?.labels ?? []).map((l) => l.id)"
           @add-label="emit('add-label', $event)"
           @remove-label="emit('remove-label', $event)"

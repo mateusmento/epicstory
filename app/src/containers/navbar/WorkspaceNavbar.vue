@@ -26,12 +26,13 @@ import { NavListItem } from "@/presentationals/layout";
 import LiveMeetingJoinCard from "@/presentationals/navbar/LiveMeetingJoinCard.vue";
 import { ThemePicker } from "@/presentationals/theme";
 import { UserAvatar } from "@/presentationals/user";
+import type { Project } from "@epicstory/contracts";
 import {
-  ArrowLeft,
-  ArrowRight,
+  ListIcon,
   LogOutIcon,
   MonitorCogIcon,
   SettingsIcon,
+  SquareChartGanttIcon,
   UserIcon,
   UsersIcon,
 } from "lucide-vue-next";
@@ -49,9 +50,7 @@ const { user, signOut } = useAuth();
 const router = useRouter();
 
 const { currentMeeting, incomingMeeting, subscribeMeetings } = useMeeting();
-
 const { liveScheduledMeeting } = useLiveMeeting();
-
 const { unseenCount } = useNotifications();
 
 const showHuddleCard = computed(() => {
@@ -62,6 +61,25 @@ const showHuddleCard = computed(() => {
 const huddlePeers = computed(() => {
   return (liveScheduledMeeting.value?.participantsPreview ?? []).slice(0, 4);
 });
+
+const projectsByTeamId = computed(() => {
+  const map = new Map<number, Project[]>();
+  for (const project of recentProjects.value) {
+    const list = map.get(project.teamId) ?? [];
+    list.push(project);
+    map.set(project.teamId, list);
+  }
+  return map;
+});
+
+const teamsWithRecentProjects = computed(() =>
+  teams.value.map((team) => ({
+    team,
+    projects: projectsByTeamId.value.get(team.id) ?? [],
+  })),
+);
+
+const hasWorkNestedItems = computed(() => teams.value.length > 0 || recentProjects.value.length > 0);
 
 onMounted(() => {
   subscribeMeetings();
@@ -102,17 +120,7 @@ watch(workspace, () => {
 <template>
   <div class="flex:col-xl h-full">
     <div class="flex:col-xl w-full p-2 mr-auto">
-      <div class="flex:row-auto flex:center-y">
-        <div class="text-xs text-secondary-foreground">Workspace</div>
-        <div class="flex:row-md flex:center-y h-fit">
-          <Button variant="outline" size="icon" class="bg-card">
-            <ArrowLeft class="w-4 h-4 text-secondary-foreground" />
-          </Button>
-          <Button variant="outline" size="icon" class="bg-card">
-            <ArrowRight class="w-4 h-4 text-secondary-foreground" />
-          </Button>
-        </div>
-      </div>
+      <div class="text-xs text-secondary-foreground px-1 mb-1">Workspace</div>
 
       <div class="flex:row-auto flex:center-y">
         <NavTrigger
@@ -140,7 +148,9 @@ watch(workspace, () => {
       />
     </div>
 
-    <nav class="flex:col-md">
+    <nav class="flex:col-md px-1">
+      <!-- My work -->
+      <div class="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">My work</div>
       <NavListItem
         view="app-pane"
         content="inbox"
@@ -152,7 +162,7 @@ watch(workspace, () => {
       </NavListItem>
       <NavListItem view="app-pane" content="issues" class="flex:row-md flex:center-y">
         <Icon name="oi-apps" />
-        Issues
+        My issues
       </NavListItem>
       <NavListItem
         :to="{ name: 'schedule', params: { workspaceId: workspace.id } }"
@@ -161,13 +171,20 @@ watch(workspace, () => {
         <Icon name="oi-calendar" />
         Schedule
       </NavListItem>
+
+      <!-- Work: teams & projects -->
+      <div class="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">Work</div>
       <Collapsible as-child v-slot="{ open }" default-open>
         <div class="flex:row-sm flex:center-y w-full justify-start">
-          <NavListItem view="app-pane" content="teams" class="flex:row-md flex:center-y w-full justify-start">
-            <UsersIcon class="size-4 shrink-0" stroke-width="2.5" />
-            Teams
+          <NavListItem
+            view="app-pane"
+            content="projects"
+            class="flex:row-md flex:center-y w-full justify-start"
+          >
+            <MonitorCogIcon class="size-4 shrink-0" stroke-width="2.5" />
+            Teams &amp; projects
           </NavListItem>
-          <CollapsibleTrigger v-if="teams.length > 0" as-child>
+          <CollapsibleTrigger v-if="hasWorkNestedItems" as-child>
             <Button variant="ghost" size="sm" class="w-fit flex:row-md flex:center-y text-muted-foreground">
               <Icon v-if="open" name="oi-chevron-up" />
               <Icon v-else name="oi-chevron-down" />
@@ -175,23 +192,42 @@ watch(workspace, () => {
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <div class="ml-3 pl-2 border-l border-border">
-            <NavListItem
-              v-for="team of teams"
-              :key="team.id"
-              :to="`/${workspace.id}/team/${team.id}`"
-              class="flex:row-md flex:center-y"
-            >
-              <UsersIcon class="size-4 shrink-0" stroke-width="2.5" />
-              <span class="truncate">{{ team.name }}</span>
+          <div class="ml-3 pl-2 border-l border-border flex:col gap-0.5">
+            <template v-for="{ team, projects } in teamsWithRecentProjects" :key="team.id">
+              <NavListItem :to="`/${workspace.id}/team/${team.id}`" class="flex:row-md flex:center-y">
+                <UsersIcon class="size-4 shrink-0" stroke-width="2.5" />
+                <span class="truncate">{{ team.name }}</span>
+              </NavListItem>
+              <NavListItem
+                :to="`/${workspace.id}/team/${team.id}/timeline`"
+                class="flex:row-md flex:center-y ml-3"
+              >
+                <SquareChartGanttIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
+                <span class="truncate text-sm">Timeline</span>
+              </NavListItem>
+              <NavListItem
+                v-for="project in projects"
+                :key="project.id"
+                :to="`/${workspace.id}/project/${project.id}/backlog`"
+                class="flex:row-md flex:center-y ml-3"
+              >
+                <MonitorCogIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
+                <span class="truncate text-sm">{{ project.name }}</span>
+              </NavListItem>
+            </template>
+
+            <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y mt-1">
+              <ListIcon class="size-4 shrink-0 text-muted-foreground" />
+              <span class="text-sm text-muted-foreground">All projects</span>
             </NavListItem>
           </div>
         </CollapsibleContent>
       </Collapsible>
-      <NavListItem view="app-pane" content="workspace-members" class="flex:row-md flex:center-y">
-        <Icon name="bi-people-fill" />
-        Members
-      </NavListItem>
+
+      <!-- Communication -->
+      <div class="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        Communication
+      </div>
       <Collapsible as-child v-slot="{ open }" default-open>
         <div class="flex:row-sm flex:center-y w-full justify-start">
           <NavListItem
@@ -227,33 +263,6 @@ watch(workspace, () => {
               />
               <Icon v-else name="fa-slack-hash" class="shrink-0" />
               <span class="truncate">{{ channel.directPeer?.name ?? channel.name }}</span>
-            </NavListItem>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-      <Collapsible as-child v-slot="{ open }" default-open>
-        <div class="flex:row-sm flex:center-y w-full">
-          <NavListItem view="app-pane" content="projects">
-            <MonitorCogIcon class="size-4" stroke-width="2.5" />
-            Projects
-          </NavListItem>
-          <CollapsibleTrigger v-if="recentProjects.length > 0" as-child>
-            <Button variant="ghost" size="sm" class="w-fit flex:row-md flex:center-y">
-              <Icon v-if="open" name="oi-chevron-up" />
-              <Icon v-else name="oi-chevron-down" />
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-        <CollapsibleContent>
-          <div class="ml-3 pl-2 border-l border-border">
-            <NavListItem
-              v-for="project of recentProjects"
-              :key="project.id"
-              :to="`/${workspace.id}/project/${project.id}/backlog`"
-              class="flex:row-md flex:center-y"
-            >
-              <MonitorCogIcon class="size-4 shrink-0" stroke-width="2.5" />
-              <span class="truncate">{{ project.name }}</span>
             </NavListItem>
           </div>
         </CollapsibleContent>

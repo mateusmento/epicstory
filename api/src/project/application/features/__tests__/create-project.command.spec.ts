@@ -10,6 +10,7 @@ import { AddWorkspaceMember } from 'src/workspace/application/features/workspace
 import { CreateWorkspace } from 'src/workspace/application/features/workspace/create-workspace.command';
 import { Workspace } from 'src/workspace/domain/entities/workspace.entity';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
+import { TeamRepository } from 'src/workspace/infrastructure/repositories/team.repository';
 import { CreateProject } from '../project/create-project.command';
 
 describe('Create project command', () => {
@@ -42,15 +43,22 @@ describe('Create project command', () => {
 
     const PROJECT_NAME = 'My project';
 
+    const teamRepo = module.get(TeamRepository);
+    const defaultTeam = await teamRepo.findOneByOrFail({
+      workspaceId: workspace.id,
+    });
+
     const project: Project = await commandBus.execute(
       new CreateProject({
         issuerId: ISSUER_ID,
         name: PROJECT_NAME,
         workspaceId: workspace.id,
+        teamId: defaultTeam.id,
       }),
     );
 
     expect(project.name).toBe(PROJECT_NAME);
     expect(project.workspaceId).toBe(workspace.id);
+    expect(project.teamId).toBe(defaultTeam.id);
   });
 });

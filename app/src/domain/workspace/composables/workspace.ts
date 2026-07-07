@@ -91,16 +91,16 @@ export function useWorkspace() {
     }
   }
 
-  async function createProject(data: { name: string; issueKeyPrefix?: string; teamId?: number }) {
+  async function createProject(data: { name: string; issueKeyPrefix?: string; teamId: number }) {
     const project = await workspaceApi.createProject(workspaceId.value, data);
     store.projects.push(project);
   }
 
-  async function updateProjectTeam(projectId: number, teamId: number | null) {
+  async function updateProjectTeam(projectId: number, teamId: number) {
     const updated = await projectApi.updateProjectTeam(projectId, { teamId });
     const index = store.projects.findIndex((project) => project.id === projectId);
     if (index >= 0) {
-      store.projects[index] = { ...store.projects[index], teamId: updated.teamId ?? null };
+      store.projects[index] = { ...store.projects[index], teamId: updated.teamId };
     }
   }
 

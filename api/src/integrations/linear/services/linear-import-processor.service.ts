@@ -3,7 +3,10 @@ import { CommandBus } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserRepository } from 'src/auth';
-import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
+import {
+  TeamRepository,
+  WorkspaceRepository,
+} from 'src/workspace/infrastructure/repositories';
 import { CreateTeam, AddTeamMember } from 'src/workspace/application/features';
 import { CreateProject } from 'src/project/application/features/project/create-project.command';
 import { CreateBacklogItem } from 'src/project/application/features/backlog/create-backlog-item.command';
@@ -46,6 +49,7 @@ export class LinearImportProcessorService {
     private commandBus: CommandBus,
     private userRepo: UserRepository,
     private workspaceRepo: WorkspaceRepository,
+    private teamRepo: TeamRepository,
     private connectionRepo: LinearConnectionRepository,
     private linearApi: LinearApiService,
     private tokenCrypto: LinearTokenCryptoService,
@@ -275,6 +279,24 @@ export class LinearImportProcessorService {
             `Failed importing team members for team ${linearTeamId}: ${e?.message ?? e}`,
           );
         }
+      }
+
+      if (!epicTeamId) {
+        const defaultTeam = await this.teamRepo.findOne({
+          where: { workspaceId: job.workspaceId },
+          order: { id: 'ASC' },
+        });
+        epicTeamId = defaultTeam?.id;
+      }
+
+      if (!epicTeamId) {
+        await this.addMismatch(
+          job.id,
+          'no_team_for_project',
+          `No Epicstory team available for Linear project ${lp.id}`,
+          { linearProjectId: lp.id },
+        );
+        continue;
       }
 
       // Resolve Linear project -> Epic project

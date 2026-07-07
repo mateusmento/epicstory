@@ -33,8 +33,8 @@ export class Project {
   @ManyToOne(() => Workspace, { onDelete: 'CASCADE' })
   workspace: Workspace;
 
-  @Column({ nullable: true })
-  teamId?: number;
+  @Column()
+  teamId: number;
 
   @Column({ nullable: true })
   backlogId: number;
@@ -48,7 +48,7 @@ export class Project {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  static create(data: { name: string; workspaceId: number; teamId?: number }) {
+  static create(data: { name: string; workspaceId: number; teamId: number }) {
     return create(Project, data);
   }
 }

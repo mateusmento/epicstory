@@ -32,9 +32,9 @@ import {
 } from "@/design-system";
 import { Icon, IconSearch } from "@/design-system/icons";
 import { NavTrigger } from "@/design-system";
-import type { Project } from "@epicstory/contracts";
-import { IssueApi, ProjectApi } from "@epicstory/api-client";
+import { IssueApi } from "@epicstory/api-client";
 import type { IIssue } from "@epicstory/contracts";
+import { useProjectScreen } from "@/domain/project";
 import { useMagicKeys, useStorage, whenever } from "@vueuse/core";
 import {
   Calculator,
@@ -45,7 +45,6 @@ import {
   Rows3Icon,
   Settings,
   Smile,
-  SquareChartGanttIcon,
   SquareKanbanIcon,
   SquarePen,
   TimerIcon,
@@ -54,6 +53,7 @@ import {
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import NewIssueModal from "@/containers/views/project/NewIssueModal.vue";
+import ProjectTeamTabs from "@/containers/project/ProjectTeamTabs.vue";
 import ProjectFilterDropdown from "@/containers/views/project/filters/ProjectFilterDropdown.vue";
 import ProjectFiltersBar from "@/containers/views/project/filters/ProjectFiltersBar.vue";
 
@@ -73,8 +73,6 @@ const routeName = computed(() => {
       return "backlog";
     case "project-board":
       return "board";
-    case "project-timeline":
-      return "timeline";
     case "project-sprint":
       return "sprint";
     default:
@@ -82,11 +80,14 @@ const routeName = computed(() => {
   }
 });
 
-const projectApi = useDependency(ProjectApi);
-const project = ref<Project | null>(null);
-onMounted(async () => {
-  project.value = await projectApi.findProject(+props.projectId);
-});
+const showProjectTeamTabs = computed(
+  () =>
+    teamId.value != null &&
+    (routeName.value === "backlog" || routeName.value === "board" || routeName.value === "sprint"),
+);
+
+const projectIdNum = computed(() => +props.projectId);
+const { project, teamId } = useProjectScreen(projectIdNum);
 
 const issueApi = useDependency(IssueApi);
 const issue = ref<IIssue | null>(null);
@@ -276,12 +277,7 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
       </Dialog>
 
       <div class="flex:row flex:center-y justify-end flex-1 gap-2">
-        <NavTrigger
-          v-if="project?.teamId"
-          view="app-pane"
-          content="sprint-panel"
-          :props="{ teamId: project.teamId }"
-        >
+        <NavTrigger v-if="teamId" view="app-pane" content="sprint-panel" :props="{ teamId }">
           <Button variant="outline" size="icon" title="Sprint planning">
             <TimerIcon class="size-4 text-muted-foreground" />
           </Button>
@@ -302,34 +298,47 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
 
     <Separator />
 
-    <div class="grid grid-cols-[1fr_auto_1fr] gap-md items-center px-4 py-1.5 h-10">
-      <ToggleGroup as="nav" type="single" :model-value="routeName" class="flex:row-lg bg-transparent">
-        <ToggleGroupItem value="backlog" variant="outline" size="sm" as-child>
-          <RouterLink :to="`/${workspaceId}/project/${projectId}/backlog`" class="flex:row-md flex:center-y">
-            <Rows3Icon class="size-4 text-muted-foreground" />
-            Backlog
-          </RouterLink>
-        </ToggleGroupItem>
-        <ToggleGroupItem value="board" variant="outline" size="sm" as-child>
-          <RouterLink :to="`/${workspaceId}/project/${projectId}/board`" class="flex:row-md flex:center-y">
-            <SquareKanbanIcon class="size-4 text-muted-foreground" />
-            <!-- <LayoutDashboardIcon class="size-4 text-muted-foreground" /> -->
-            Board
-          </RouterLink>
-        </ToggleGroupItem>
-        <ToggleGroupItem value="timeline" variant="outline" size="sm" as-child>
-          <RouterLink :to="`/${workspaceId}/project/${projectId}/timeline`" class="flex:row-md flex:center-y">
-            <SquareChartGanttIcon class="size-4 text-muted-foreground" />
-            Timeline
-          </RouterLink>
-        </ToggleGroupItem>
-        <ToggleGroupItem value="sprint" variant="outline" size="sm" as-child>
-          <RouterLink :to="`/${workspaceId}/project/${projectId}/sprint`" class="flex:row-md flex:center-y">
-            <TimerIcon class="size-4 text-muted-foreground" />
-            Sprint
-          </RouterLink>
-        </ToggleGroupItem>
-      </ToggleGroup>
+    <div class="grid grid-cols-[1fr_auto_1fr] gap-md items-center px-4 py-1.5 min-h-10">
+      <div class="flex items-center gap-2 min-w-0 overflow-x-auto">
+        <ToggleGroup
+          as="nav"
+          type="single"
+          :model-value="routeName"
+          class="flex:row-lg shrink-0 bg-transparent"
+        >
+          <ToggleGroupItem value="backlog" variant="outline" size="sm" as-child>
+            <RouterLink
+              :to="`/${workspaceId}/project/${projectId}/backlog`"
+              class="flex:row-md flex:center-y"
+            >
+              <Rows3Icon class="size-4 text-muted-foreground" />
+              Backlog
+            </RouterLink>
+          </ToggleGroupItem>
+          <ToggleGroupItem value="board" variant="outline" size="sm" as-child>
+            <RouterLink :to="`/${workspaceId}/project/${projectId}/board`" class="flex:row-md flex:center-y">
+              <SquareKanbanIcon class="size-4 text-muted-foreground" />
+              Board
+            </RouterLink>
+          </ToggleGroupItem>
+          <ToggleGroupItem value="sprint" variant="outline" size="sm" as-child>
+            <RouterLink :to="`/${workspaceId}/project/${projectId}/sprint`" class="flex:row-md flex:center-y">
+              <TimerIcon class="size-4 text-muted-foreground" />
+              Sprint
+            </RouterLink>
+          </ToggleGroupItem>
+        </ToggleGroup>
+
+        <Separator v-if="showProjectTeamTabs && teamId" orientation="vertical" class="h-6 shrink-0" />
+
+        <ProjectTeamTabs
+          v-if="showProjectTeamTabs && teamId"
+          :workspace-id="+workspaceId"
+          :project-id="+projectId"
+          :team-id="teamId"
+          :view="routeName"
+        />
+      </div>
 
       <ProjectFiltersBar :project-id="+projectId" />
 

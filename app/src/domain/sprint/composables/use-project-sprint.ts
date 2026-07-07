@@ -1,16 +1,15 @@
-import { useDependency } from "@/core/dependency-injection";
-import { ProjectApi } from "@epicstory/api-client";
+import { useProjectContext } from "@/domain/project";
+import { useSprint } from "@/domain/sprint";
 import type { ISprintItem } from "@epicstory/contracts";
 import { computed, onMounted, ref } from "vue";
-import { useSprint } from "./sprint";
 
 export type ProjectSprintProps = { workspaceId: string; projectId: string };
 
 export function useProjectSprint(props: ProjectSprintProps) {
-  const projectApi = useDependency(ProjectApi);
+  const { ensureProjectContext } = useProjectContext();
   const { sprints, sprintItems, fetchSprints, fetchSprintItems } = useSprint();
 
-  const teamId = ref<number | null>(null);
+  const teamId = ref<number>(0);
   const loading = ref(true);
 
   const activeSprint = computed(() => sprints.value.find((s) => s.status === "active") ?? null);
@@ -31,14 +30,12 @@ export function useProjectSprint(props: ProjectSprintProps) {
   const doneItems = computed(() => activeSprintItems.value.filter((i) => i.issue?.status === "done"));
 
   onMounted(async () => {
-    const project = await projectApi.findProject(+props.projectId);
-    teamId.value = project.teamId ?? null;
+    const project = await ensureProjectContext(+props.projectId);
+    teamId.value = project.teamId;
 
-    if (teamId.value) {
-      await fetchSprints(teamId.value);
-      const active = sprints.value.find((s) => s.status === "active");
-      if (active) await fetchSprintItems(active.id);
-    }
+    await fetchSprints(teamId.value);
+    const active = sprints.value.find((s) => s.status === "active");
+    if (active) await fetchSprintItems(active.id);
     loading.value = false;
   });
 

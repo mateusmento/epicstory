@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button, ScrollArea } from "@/design-system";
+import { Button, NavTrigger, ScrollArea } from "@/design-system";
 import { useProjectSprint } from "@/domain/sprint";
 import { ArrowRightIcon, TimerIcon } from "lucide-vue-next";
 import { useRouter } from "vue-router";
@@ -20,18 +20,7 @@ const COLUMN_CLASSES = "flex:col gap-2 flex-shrink-0 w-80 min-w-80 rounded-xl bg
 
 <template>
   <div class="flex:col h-full">
-    <!-- No team assigned -->
-    <div v-if="!loading && !teamId" class="flex:col flex:center h-64 gap-3 text-muted-foreground">
-      <TimerIcon class="size-8" />
-      <p class="text-sm">This project is not assigned to a team.</p>
-      <p class="text-xs">Assign the project to a team to see sprint progress here.</p>
-    </div>
-
-    <!-- No active sprint -->
-    <div
-      v-else-if="!loading && teamId && !activeSprint"
-      class="flex:col flex:center h-64 gap-3 text-muted-foreground"
-    >
+    <div v-if="!loading && !activeSprint" class="flex:col flex:center h-64 gap-3 text-muted-foreground">
       <TimerIcon class="size-8" />
       <p class="text-sm">No active sprint for this team.</p>
       <Button variant="outline" size="sm" @click="router.push(`/${workspaceId}/team/${teamId}`)">
@@ -40,7 +29,6 @@ const COLUMN_CLASSES = "flex:col gap-2 flex-shrink-0 w-80 min-w-80 rounded-xl bg
       </Button>
     </div>
 
-    <!-- Sprint board -->
     <template v-else-if="activeSprint">
       <div class="flex:row-md flex:center-y justify-between px-4 py-2 border-b border-border">
         <div>
@@ -49,15 +37,16 @@ const COLUMN_CLASSES = "flex:col gap-2 flex-shrink-0 w-80 min-w-80 rounded-xl bg
             {{ activeSprintItems.length }} issues in this project
           </span>
         </div>
-        <Button variant="outline" size="sm" @click="router.push(`/${workspaceId}/team/${teamId}/plan`)">
-          Sprint plan
-          <ArrowRightIcon class="ml-1 size-4" />
-        </Button>
+        <NavTrigger view="app-pane" content="sprint-panel" :props="{ teamId }">
+          <Button variant="outline" size="sm">
+            Sprint planning
+            <ArrowRightIcon class="ml-1 size-4" />
+          </Button>
+        </NavTrigger>
       </div>
 
       <ScrollArea class="flex-1">
         <div class="flex:row gap-4 p-4">
-          <!-- Todo column -->
           <div :class="COLUMN_CLASSES">
             <div class="flex:row-md flex:center-y justify-between px-1 mb-1">
               <span class="text-sm font-semibold">To do</span>
@@ -81,7 +70,6 @@ const COLUMN_CLASSES = "flex:col gap-2 flex-shrink-0 w-80 min-w-80 rounded-xl bg
             </div>
           </div>
 
-          <!-- Doing column -->
           <div :class="COLUMN_CLASSES">
             <div class="flex:row-md flex:center-y justify-between px-1 mb-1">
               <span class="text-sm font-semibold">In progress</span>
@@ -105,7 +93,6 @@ const COLUMN_CLASSES = "flex:col gap-2 flex-shrink-0 w-80 min-w-80 rounded-xl bg
             </div>
           </div>
 
-          <!-- Done column -->
           <div :class="COLUMN_CLASSES">
             <div class="flex:row-md flex:center-y justify-between px-1 mb-1">
               <span class="text-sm font-semibold">Done</span>

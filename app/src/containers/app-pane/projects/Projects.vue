@@ -42,22 +42,20 @@ const {
 const route = useRoute();
 const createProjectDialogOpen = ref(false);
 
-async function onCreateProjectSubmit(payload: { name: string; issueKeyPrefix?: string; teamId?: number }) {
+async function onCreateProjectSubmit(payload: { name: string; issueKeyPrefix?: string; teamId: number }) {
   await createProject(payload);
 }
 
 function teamRadioValue(project: Project): string {
-  return project.teamId != null ? String(project.teamId) : "none";
+  return String(project.teamId);
 }
 
 function teamLabel(project: Project): string {
-  if (project.teamId == null) return "No team";
   return teams.value.find((team) => team.id === project.teamId)?.name ?? "Unknown team";
 }
 
 async function onProjectTeamChange(projectId: number, value: string) {
-  const teamId = value === "none" ? null : +value;
-  await updateProjectTeam(projectId, teamId);
+  await updateProjectTeam(projectId, +value);
 }
 
 onMounted(async () => {
@@ -146,7 +144,6 @@ watch(workspace, () => {
                   :model-value="teamRadioValue(project)"
                   @update:model-value="(value) => onProjectTeamChange(project.id, value)"
                 >
-                  <MenuRadioItem value="none">No team</MenuRadioItem>
                   <MenuRadioItem v-for="team in teams" :key="team.id" :value="String(team.id)">
                     {{ team.name }}
                   </MenuRadioItem>

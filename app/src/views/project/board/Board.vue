@@ -3,11 +3,9 @@ import BoardColumn from "@/presentationals/board/BoardColumn.vue";
 import BoardItem from "@/presentationals/board/BoardItem.vue";
 import { cn } from "@/design-system/utils";
 import { useBacklog } from "@/domain/backlog";
-import { useDependency } from "@/core/dependency-injection";
-import { ProjectApi } from "@epicstory/api-client";
+import { issueFiltersForQuery, useProjectContext, useProjectFilters } from "@/domain/project";
 import { useSprint } from "@/domain/sprint";
 import type { IIssue, IBacklogItem } from "@epicstory/contracts";
-import { issueFiltersForQuery, useProjectFilters } from "@/domain/project";
 import type { IDnDPayload } from "@vue-dnd-kit/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -19,17 +17,17 @@ const props = defineProps<{ workspaceId: string; projectId: string }>();
 const { backlogItems, fetchBacklogItems, updateIssue, moveBacklogItem, addLabel, removeLabel } = useBacklog();
 const { filters: activeFilters } = useProjectFilters(+props.projectId);
 
-const projectApi = useDependency(ProjectApi);
+const { ensureProjectContext } = useProjectContext();
 const { sprints, sprintItems, fetchSprints, fetchSprintItems } = useSprint();
 const sprintView = ref(false);
-const teamId = ref<number | null>(null);
+const teamId = ref<number>(0);
 
 const activeSprint = computed(() => sprints.value.find((s) => s.status === "active") ?? null);
 
 const sprintBacklogItems = computed<IBacklogItem[]>(() => {
   if (!activeSprint.value) return [];
-  const sprintIssueIds = new Set((sprintItems.value.get(activeSprint.value.id) ?? []).map((i) => i.issueId));
-  return backlogItems.value.filter((b) => sprintIssueIds.has(b.issueId));
+  const sprintIssueIds = new Set((sprintItems.value.get(activeSprint.value.id) ?? []).map((i) => i.issue.id));
+  return backlogItems.value.filter((b) => sprintIssueIds.has(b.issue.id));
 });
 
 const displayedBacklogItems = computed<IBacklogItem[]>(() =>
@@ -103,25 +101,22 @@ async function onColumnDrop(targetStatus: ColumnStatus, args: { payload: IDnDPay
 }
 
 onMounted(async () => {
-  await fetchBacklogItems({
-    projectId: +props.projectId,
-    page: 0,
-    count: 200,
-    orderBy: "manual",
-    order: "asc",
-    filters: issueFiltersForQuery(activeFilters.value),
-  });
+  const [, project] = await Promise.all([
+    fetchBacklogItems({
+      projectId: +props.projectId,
+      page: 0,
+      count: 200,
+      orderBy: "manual",
+      order: "asc",
+      filters: issueFiltersForQuery(activeFilters.value),
+    }),
+    ensureProjectContext(+props.projectId),
+  ]);
 
-  // Load sprint data if the project has a team
-  const project = await projectApi.findProject(+props.projectId);
-  teamId.value = project.teamId ?? null;
-  if (teamId.value) {
-    await fetchSprints(teamId.value);
-    const active = sprints.value.find((s) => s.status === "active");
-    if (active) await fetchSprintItems(active.id);
-  }
-
-  // The watch below will do the initial sync.
+  teamId.value = project.teamId;
+  await fetchSprints(teamId.value);
+  const active = sprints.value.find((s) => s.status === "active");
+  if (active) await fetchSprintItems(active.id);
 });
 
 watch(

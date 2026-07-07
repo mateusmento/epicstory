@@ -18,7 +18,6 @@ import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
   AddSprintItem,
   CompleteSprint,
-  CreateSprint,
   FindSprintItems,
   FindSprints,
   RemoveSprintItem,
@@ -43,16 +42,6 @@ export class SprintController {
     return this.queryBus.execute(
       new FindSprints({ teamId, status: status as any }),
     );
-  }
-
-  @Post('teams/:teamId/sprints')
-  @UseGuards(JwtAuthGuard)
-  @ExceptionFilter(
-    [ForbiddenException, ForbiddenException],
-    [NotFoundException, NotFoundException],
-  )
-  createSprint(@Param('teamId') teamId: number, @Auth() issuer: Issuer) {
-    return this.commandBus.execute(new CreateSprint({ teamId, issuer }));
   }
 
   @Put('sprints/:id/start')

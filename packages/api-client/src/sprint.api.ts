@@ -19,12 +19,6 @@ export class SprintApi {
       .then((res) => res.data);
   }
 
-  createSprint(teamId: number): Promise<ISprint> {
-    return this.axios
-      .post<ISprint>(`/teams/${teamId}/sprints`)
-      .then((res) => res.data);
-  }
-
   startSprint(sprintId: number): Promise<ISprint> {
     return this.axios
       .put<ISprint>(`/sprints/${sprintId}/start`)
