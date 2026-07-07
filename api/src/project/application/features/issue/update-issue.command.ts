@@ -1,8 +1,10 @@
 import { normalizeTiptapDoc } from '@epicstory/tiptap';
+import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { JSONContent } from '@tiptap/core';
 import {
   IsDate,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsObject,
@@ -12,6 +14,7 @@ import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import {
   IssueActivityRepository,
+  IssueDependencyRepository,
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
@@ -56,6 +59,10 @@ export class UpdateIssue {
   @IsOptional()
   parentIssueId?: number | null;
 
+  @IsOptional()
+  @IsIn(['task', 'epic'])
+  issueType?: 'task' | 'epic';
+
   constructor(data: Partial<UpdateIssue> = {}) {
     patch(this, data);
   }
@@ -65,6 +72,7 @@ export class UpdateIssue {
 export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
   constructor(
     private issueRepo: IssueRepository,
+    private issueDependencyRepo: IssueDependencyRepository,
     private workspaceRepo: WorkspaceRepository,
     private scheduledJobRepo: ScheduledJobRepository,
     private projectGateway: ProjectGateway,
@@ -109,6 +117,24 @@ export class UpdateIssueCommand implements ICommandHandler<UpdateIssue> {
 
     if (data.description !== undefined) {
       (data as any).description = normalizeTiptapDoc(data.description);
+    }
+
+    if (data.issueType !== undefined && data.issueType !== issue.issueType) {
+      if (data.issueType === 'task' && issue.issueType === 'epic') {
+        if (issue.startsAt != null || issue.endsAt != null) {
+          throw new BadRequestException(
+            'Clear schedule dates before changing epic to task',
+          );
+        }
+        const depCount = await this.issueDependencyRepo.count({
+          where: [{ issueId }, { dependsOnIssueId: issueId }],
+        });
+        if (depCount > 0) {
+          throw new BadRequestException(
+            'Remove dependencies before changing epic to task',
+          );
+        }
+      }
     }
 
     patch(issue, data);

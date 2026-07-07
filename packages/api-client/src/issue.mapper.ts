@@ -28,6 +28,9 @@ export function toISOString(value: Date | null | undefined): string | null {
 export function mapIssue(apiIssue: IIssueWire): IIssue {
   return {
     ...apiIssue,
+    issueType: apiIssue.issueType ?? "task",
+    startsAt: apiIssue.startsAt ?? null,
+    endsAt: apiIssue.endsAt ?? null,
     dueDate: parseDate(apiIssue.dueDate),
     parentIssue:
       apiIssue.parentIssue != null

@@ -58,6 +58,15 @@ export class Issue {
   @Column({ default: 'todo' })
   status: string;
 
+  @Column({ name: 'issue_type', default: 'task' })
+  issueType: 'task' | 'epic';
+
+  @Column({ name: 'starts_at', type: 'timestamptz', nullable: true })
+  startsAt: Date | null;
+
+  @Column({ name: 'ends_at', type: 'timestamptz', nullable: true })
+  endsAt: Date | null;
+
   @Column({ nullable: true })
   dueDate: Date;
 

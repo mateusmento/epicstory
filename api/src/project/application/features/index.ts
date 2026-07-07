@@ -1,3 +1,4 @@
+export * from './team/find-team-timeline.query';
 export * from './backlog/create-backlog-item.command';
 export * from './backlog/find-backlog-items.query';
 export * from './backlog/find-project-backlog-items.query';
@@ -9,6 +10,9 @@ export * from './issue/add-label.command';
 export * from './issue/create-issue-comment.command';
 export * from './issue/reply-to-issue-comment.command';
 export * from './issue/create-issue.command';
+export * from './issue/create-issue-dependency.command';
+export * from './issue/remove-issue-dependency.command';
+export * from './issue/update-issue-schedule.command';
 export * from './issue/find-issue.query';
 export * from './issue/find-issue-feed.query';
 export * from './issue/find-issues.query';

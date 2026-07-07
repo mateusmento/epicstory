@@ -1,10 +1,14 @@
 import type {
+  CreateIssueDependencyBody,
   FindIssuesQuery,
   IIssue,
   IIssueAttachmentListItem,
   IIssueFeed,
+  IssueDependency,
   IPage,
+  IssueType,
   UpdateIssueData,
+  UpdateIssueScheduleBody,
   UploadedAttachment,
 } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
@@ -37,7 +41,12 @@ export class IssueApi {
 
   createIssue(
     projectId: number,
-    data: { title: string; description?: JSONContent; parentIssueId?: number },
+    data: {
+      title: string;
+      description?: JSONContent;
+      parentIssueId?: number;
+      issueType?: IssueType;
+    },
   ): Promise<IIssue> {
     return this.axios
       .post<IIssueWire>(`/projects/${projectId}/issues`, data)
@@ -48,6 +57,30 @@ export class IssueApi {
     return this.axios
       .patch<IIssueWire>(`/issues/${issueId}`, wireUpdateIssueData(data))
       .then((res) => mapIssue(res.data));
+  }
+
+  updateIssueSchedule(
+    issueId: number,
+    data: UpdateIssueScheduleBody,
+  ): Promise<IIssue> {
+    return this.axios
+      .patch<IIssueWire>(`/issues/${issueId}/schedule`, data)
+      .then((res) => mapIssue(res.data));
+  }
+
+  createIssueDependency(
+    issueId: number,
+    data: CreateIssueDependencyBody,
+  ): Promise<IssueDependency> {
+    return this.axios
+      .post<IssueDependency>(`/issues/${issueId}/dependencies`, data)
+      .then((res) => res.data);
+  }
+
+  removeIssueDependency(issueId: number, dependencyId: number): Promise<void> {
+    return this.axios
+      .delete(`/issues/${issueId}/dependencies/${dependencyId}`)
+      .then(() => undefined);
   }
 
   async removeIssue(issueId: number): Promise<void> {

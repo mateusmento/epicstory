@@ -33,6 +33,9 @@ import {
   CreateIssueComment,
   ReplyToIssueComment,
   UploadIssueAttachment,
+  UpdateIssueSchedule,
+  CreateIssueDependency,
+  RemoveIssueDependency,
 } from '../features';
 import { FindIssue } from '../features/issue/find-issue.query';
 import { FindIssueFeed } from '../features/issue/find-issue-feed.query';
@@ -136,6 +139,45 @@ export class IssueController {
   ) {
     return this.commandBus.execute(
       new UpdateIssue({ ...data, issueId, issuer }),
+    );
+  }
+
+  @Patch(':id/schedule')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  updateIssueSchedule(
+    @Param('id') issueId: number,
+    @Body() data: UpdateIssueSchedule,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new UpdateIssueSchedule({ ...data, issueId, issuer }),
+    );
+  }
+
+  @Post(':id/dependencies')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  createIssueDependency(
+    @Param('id') issueId: number,
+    @Body() data: CreateIssueDependency,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new CreateIssueDependency({ ...data, issueId, issuer }),
+    );
+  }
+
+  @Delete(':id/dependencies/:dependencyId')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  removeIssueDependency(
+    @Param('id') issueId: number,
+    @Param('dependencyId') dependencyId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new RemoveIssueDependency({ issueId, dependencyId, issuer }),
     );
   }
 

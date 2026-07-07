@@ -18,6 +18,7 @@ export * from "./ui/label";
 export * from "./ui/menu";
 export * from "./ui/nav-view";
 export * from "./ui/overflow";
+export * from "./ui/gantt";
 export * from "./ui/popover";
 export * from "./ui/radio-group";
 export * from "./ui/range-calendar";

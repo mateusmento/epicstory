@@ -1,7 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { JSONContent } from '@tiptap/core';
-import { IsNotEmpty, IsNumber, IsObject, IsOptional } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+} from 'class-validator';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -30,6 +36,10 @@ export class CreateIssue {
   @IsNumber()
   @IsOptional()
   parentIssueId?: number;
+
+  @IsOptional()
+  @IsIn(['task', 'epic'])
+  issueType?: 'task' | 'epic';
 
   constructor(data: Partial<CreateIssue> = {}) {
     patch(this, data);
@@ -83,6 +93,7 @@ export class CreateIssueCommand implements ICommandHandler<CreateIssue> {
         ...data,
         issueNumber,
         issueKey,
+        issueType: data.issueType ?? 'task',
         description: normalizeTiptapDoc(data.description ?? EMPTY_TIPTAP_DOC),
         workspaceId,
         parentIssueId,

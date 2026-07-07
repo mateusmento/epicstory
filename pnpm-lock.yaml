@@ -15016,10 +15016,10 @@ packages:
         integrity: sha512-YbGqHZ5/eW4SnkPNR44mKVc6ZKQoRs/Rux1sxC6rdwXb4qpbOSYfDr9DsTHolOTGmIKgM9j141mZbBeg05R1pw==,
       }
 
-  vue-component-type-helpers@3.2.9:
+  vue-component-type-helpers@3.3.6:
     resolution:
       {
-        integrity: sha512-S3BiWYaLSzHxTpln665ELSrMR9UYmrIDUmhik7nVZxmJjTKL2/a+ew1hvGxksKelivm0ujjWfG1fYOiU/2e8rA==,
+        integrity: sha512-FkljacAwJ9BUoSUdpFe3VDy0sGigNlTH9+2zcXUWmZOjN8swiCkl3t48wOJun0OsUd2cEIda1l04tsxMiKIIrQ==,
       }
 
   vue-demi@0.12.5:
@@ -18194,7 +18194,7 @@ snapshots:
       ts-dedent: 2.2.0
       type-fest: 2.19.0
       vue: 3.5.32(typescript@5.4.5)
-      vue-component-type-helpers: 3.2.9
+      vue-component-type-helpers: 3.3.6
 
   "@swc/helpers@0.5.21":
     dependencies:
@@ -25253,7 +25253,7 @@ snapshots:
 
   vue-component-type-helpers@2.2.12: {}
 
-  vue-component-type-helpers@3.2.9: {}
+  vue-component-type-helpers@3.3.6: {}
 
   vue-demi@0.12.5(vue@3.5.32(typescript@5.4.5)):
     dependencies:

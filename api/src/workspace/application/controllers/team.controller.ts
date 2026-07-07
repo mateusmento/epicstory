@@ -17,6 +17,7 @@ import {
   IssuerUserIsNotWorkspaceMember,
   TeamNotFound,
 } from 'src/workspace/domain/exceptions';
+import { FindTeamTimeline } from 'src/project/application/features/team/find-team-timeline.query';
 import { AddTeamMember, FindTeam, FindTeamMembers } from '../features';
 import { RemoveTeam } from '../features/team/remove-team.command';
 
@@ -51,6 +52,13 @@ export class TeamController {
   @ExceptionFilter()
   findTeamMembers(@Param('id') teamId: number, @Auth() issuer: Issuer) {
     return this.queryBus.execute(new FindTeamMembers({ teamId, issuer }));
+  }
+
+  @Get(':id/timeline')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter()
+  findTeamTimeline(@Param('id') teamId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(new FindTeamTimeline({ teamId, issuer }));
   }
 
   @Post(':id/members')

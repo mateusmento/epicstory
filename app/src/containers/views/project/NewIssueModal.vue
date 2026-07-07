@@ -18,7 +18,7 @@ import { staticMentionView } from "@/containers/issue/map-issue-mention-view";
 import { RichTextComposer } from "@/presentationals/rich-text";
 import { useAuth } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
-import type { IUser as IUser } from "@epicstory/contracts";
+import type { IssueType, IUser as IUser } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
 import { EMPTY_TIPTAP_DOC, normalizeTiptapDoc } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
@@ -43,6 +43,7 @@ function setDescriptionEditor(ed: Editor | null) {
   descriptionEditor.value = ed;
 }
 const status = ref<"todo" | "doing" | "done">("todo");
+const issueType = ref<IssueType>("task");
 const priority = ref<number>(0);
 const selectedAssignees = ref<IUser[]>([]);
 const createMore = ref(false);
@@ -90,6 +91,7 @@ async function onCreateIssue() {
     await updateIssue(item.issue.id, {
       status: status.value,
       priority: priority.value,
+      issueType: issueType.value,
     });
 
     if (selectedAssignees.value.length > 0) {
@@ -109,6 +111,7 @@ async function onCreateIssue() {
       title.value = "";
       descriptionEditor.value?.commands.setContent(EMPTY_TIPTAP_DOC, { emitUpdate: false });
       status.value = "todo";
+      issueType.value = "task";
       priority.value = 0;
       selectedAssignees.value = [];
       selectedLabelIds.value = [];
@@ -195,6 +198,22 @@ async function onCreateIssue() {
                 </template>
                 Done
               </MenuRadioItem>
+            </MenuRadioGroup>
+          </MenuContent>
+        </Menu>
+
+        <!-- Issue type -->
+        <Menu>
+          <MenuTrigger as-child>
+            <Button variant="outline" size="icon" class="flex items-center gap-2">
+              {{ issueType === "epic" ? "Epic" : "Task" }}
+              <Icon name="oi-chevron-down" class="w-3 h-3 text-muted-foreground" />
+            </Button>
+          </MenuTrigger>
+          <MenuContent align="start" class="w-36">
+            <MenuRadioGroup v-model="issueType">
+              <MenuRadioItem value="task">Task</MenuRadioItem>
+              <MenuRadioItem value="epic">Epic</MenuRadioItem>
             </MenuRadioGroup>
           </MenuContent>
         </Menu>

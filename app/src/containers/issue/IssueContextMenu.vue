@@ -11,9 +11,19 @@ import {
   MenuTrigger,
 } from "@/design-system";
 import { useBacklog } from "@/domain/backlog";
-import type { IIssue, IUser as IUser } from "@epicstory/contracts";
-import { CalendarClock, GitBranch, Kanban, SquarePen, Tags, Trash2Icon, UserIcon } from "lucide-vue-next";
+import type { IIssue, IssueType, IUser as IUser } from "@epicstory/contracts";
+import {
+  CalendarClock,
+  GitBranch,
+  Kanban,
+  Layers2,
+  SquarePen,
+  Tags,
+  Trash2Icon,
+  UserIcon,
+} from "lucide-vue-next";
 import { computed, ref, watch } from "vue";
+import { toast } from "vue-sonner";
 import IssueDeleteDialog from "@/presentationals/issue/IssueDeleteDialog.vue";
 import IssueDueDateMenu from "@/presentationals/issue/IssueDueDateMenu.vue";
 import IssueLabelsMenu from "./IssueLabelsMenu.vue";
@@ -28,7 +38,10 @@ const props = defineProps<{
 
 const renameOpen = ref(false);
 const deleteOpen = ref(false);
+const isTogglingEpic = ref(false);
 const labelIds = computed(() => (props.issue?.labels ?? []).map((l) => l.id));
+const isEpic = computed(() => props.issue.issueType === "epic");
+const epicToggleLabel = computed(() => (isEpic.value ? "Unmark as epic" : "Mark as epic"));
 
 const { addLabel, removeLabel, updateIssue, addAssignee, removeAssignee, removeIssue, markAsSubIssueOf } =
   useBacklog();
@@ -56,6 +69,27 @@ async function onLabelsUpdate(nextIds: number[]) {
     if (!next.has(id)) {
       await removeLabel(props.issue.id, id);
     }
+  }
+}
+
+function epicToggleErrorMessage(error: unknown): string {
+  const response = (error as { response?: { data?: { message?: string | string[] } } })?.response?.data
+    ?.message;
+  if (Array.isArray(response)) return response.join(", ");
+  if (typeof response === "string") return response;
+  return "Could not update issue type";
+}
+
+async function toggleEpicType() {
+  if (isTogglingEpic.value || props.disabled) return;
+  const nextType: IssueType = isEpic.value ? "task" : "epic";
+  isTogglingEpic.value = true;
+  try {
+    await updateIssue(props.issue.id, { issueType: nextType });
+  } catch (error) {
+    toast.error(epicToggleErrorMessage(error));
+  } finally {
+    isTogglingEpic.value = false;
   }
 }
 </script>
@@ -125,6 +159,11 @@ async function onLabelsUpdate(nextIds: number[]) {
       <MenuItem :disabled="disabled" @click="renameOpen = true">
         <SquarePen class="text-muted-foreground" />
         <div>Rename</div>
+      </MenuItem>
+
+      <MenuItem :disabled="disabled || isTogglingEpic" @click="toggleEpicType">
+        <Layers2 class="size-4 text-muted-foreground" />
+        <div>{{ epicToggleLabel }}</div>
       </MenuItem>
 
       <MenuSub>

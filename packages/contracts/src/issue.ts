@@ -11,6 +11,8 @@ export type IIssueProject = Pick<
   "id" | "name" | "workspaceId" | "issueKeyPrefix"
 >;
 
+export type IssueType = "task" | "epic";
+
 export type IIssue = {
   id: number;
   /** Stable external id, e.g. `EPIC-42`. */
@@ -24,6 +26,9 @@ export type IIssue = {
   createdById: number;
   createdAt: string;
   status: string;
+  issueType: IssueType;
+  startsAt: string | null;
+  endsAt: string | null;
   dueDate: Date | null;
   assignees: IUser[];
   priority: number;
@@ -44,6 +49,7 @@ export type UpdateIssueData = {
   title?: string;
   description?: JSONContent;
   status?: string;
+  issueType?: IssueType;
   dueDate?: Date | null;
   priority?: number | null;
   parentIssueId?: number | null;
