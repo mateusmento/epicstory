@@ -17,8 +17,6 @@ export * from './find-message-replies.query';
 export * from './list-scheduled-channel-messages.query';
 export * from './meeting/create-meeting.command';
 export * from './meeting/join-channel-meeting.command';
-export * from './meeting/join-meeting.command';
-export * from './meeting/join-scheduled-meeting.command';
 export * from './meeting/send-scheduled-meeting-reminder.command';
 export * from './meeting/start-meeting.command';
 export * from './meeting/start-scheduled-meeting.command';

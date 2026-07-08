@@ -11,7 +11,8 @@ import {
   Teams,
   WorkspaceMembers,
 } from "@/containers/app-pane";
-import ThreadDrawer from "@/containers/channel/ThreadDrawer.vue";
+import ChatboxThread from "@/containers/channel/ChatboxThread.vue";
+import MeetingChatPanel from "@/containers/meeting/MeetingChatPanel.vue";
 import { ConfirmDialogProvider } from "@/containers/confirm-dialog";
 import SprintPanel from "@/containers/sprint/SprintPanel.vue";
 import { AppLayout, DrawerPaneContent, NavbarContent } from "@/presentationals/layout";
@@ -119,11 +120,15 @@ watch(workspaceId, () => {
           <ChannelDetailsPane @close="isDetailsPaneOpen = false" />
         </DrawerPaneContent>
         <DrawerPaneContent content="replies" #default="{ contentProps }">
-          <ThreadDrawer
+          <ChatboxThread
+            :key="contentProps.message?.id"
             v-model:message="contentProps.message"
             :meId="contentProps.meId"
             @close="isDetailsPaneOpen = false"
           />
+        </DrawerPaneContent>
+        <DrawerPaneContent content="meeting-chat" #default="{ contentProps }">
+          <MeetingChatPanel :meeting="contentProps.meeting" @close="isDetailsPaneOpen = false" />
         </DrawerPaneContent>
       </template>
     </AppLayout>

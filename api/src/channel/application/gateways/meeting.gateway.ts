@@ -3,8 +3,6 @@ import type {
   IMeeting,
   IMeetingAttendee,
   JoinChannelMeetingBody,
-  JoinMeetingBody,
-  JoinScheduledMeetingBody,
   LeaveMeetingBody,
   MeetingHeartbeatBody,
   MeetingMediaToggleBody,
@@ -21,8 +19,6 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { UUID } from 'crypto';
-import { isDate } from 'date-fns';
 import { CalendarEventRepository } from 'src/calendar/repositories';
 import { Meeting, MeetingAttendee } from 'src/channel/domain';
 import { ChannelRepository } from 'src/channel/infrastructure';
@@ -31,8 +27,6 @@ import { RedisService } from 'src/core/redis.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import { MeetingNotFoundException } from '../exceptions';
 import { JoinChannelMeeting } from '../features/meeting/join-channel-meeting.command';
-import { JoinMeeting } from '../features/meeting/join-meeting.command';
-import { JoinScheduledMeeting } from '../features/meeting/join-scheduled-meeting.command';
 import { MeetingService } from '../services/meeting.service';
 
 const channelMeetingRoom = (channelId) =>
@@ -260,74 +254,6 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
   @SubscribeMessage('join-meeting')
   async joinMeeting(
-    @MessageBody()
-    { meetingId, remoteId, isCameraOn, isMicrophoneOn }: JoinMeetingBody,
-    @ConnectedSocket() socket: AuthenticatedSocket,
-  ) {
-    const { userId: issuerId } = socket.data;
-    if (!Number.isFinite(issuerId)) throw new UnauthorizedException();
-
-    if (!meetingId) throw new Error('Invalid request: missing meetingId');
-
-    socket.leave(userRoom(issuerId));
-    socket.join(userRoom(issuerId));
-
-    const meeting: Meeting = await this.commandBus.execute(
-      new JoinMeeting({
-        meetingId,
-        issuerId,
-        remoteId,
-        isCameraOn,
-        isMicrophoneOn,
-      }),
-    );
-
-    return meeting;
-  }
-
-  @SubscribeMessage('join-scheduled-meeting')
-  async joinScheduledMeeting(
-    @MessageBody()
-    {
-      calendarEventId,
-      occurrenceAt,
-      remoteId,
-      isCameraOn,
-      isMicrophoneOn,
-    }: JoinScheduledMeetingBody,
-    @ConnectedSocket() socket: AuthenticatedSocket,
-  ) {
-    const { userId: issuerId } = socket.data;
-    if (!Number.isFinite(issuerId)) throw new UnauthorizedException();
-
-    if (!calendarEventId || !occurrenceAt) {
-      throw new Error(
-        'Invalid request: missing calendarEventId or occurrenceAt',
-      );
-    }
-
-    const d = new Date(occurrenceAt);
-    if (!isDate(d)) throw new Error('Invalid occurrenceAt');
-
-    socket.leave(userRoom(issuerId));
-    socket.join(userRoom(issuerId));
-
-    const meeting: Meeting = await this.commandBus.execute(
-      new JoinScheduledMeeting({
-        calendarEventId: calendarEventId as UUID,
-        occurrenceAt: d,
-        issuerId,
-        remoteId,
-        isCameraOn,
-        isMicrophoneOn,
-      }),
-    );
-
-    return meeting;
-  }
-
-  @SubscribeMessage('join-channel-meeting')
-  async joinChannelMeeting(
     @MessageBody()
     { channelId, remoteId, isCameraOn, isMicrophoneOn }: JoinChannelMeetingBody,
     @ConnectedSocket() socket: AuthenticatedSocket,

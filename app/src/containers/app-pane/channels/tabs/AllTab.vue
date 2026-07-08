@@ -23,7 +23,7 @@ const props = defineProps<{
 }>();
 
 const { openChannel } = useChannel();
-const { joinMeeting, joinChannelMeeting } = useMeeting();
+const { joinMeeting } = useMeeting();
 const { workspace } = useWorkspace();
 const meetingSocket = useMeetingSocket();
 const { isUserOnline } = useWorkspaceOnline();
@@ -165,11 +165,7 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
               class="shrink-0"
               @mousedown.prevent
               @touchstart.prevent
-              @click.stop="
-                channel.type === 'meeting'
-                  ? joinChannelMeeting({ channelId: channel.id })
-                  : channel.meeting && joinMeeting({ meetingId: channel.meeting.id })
-              "
+              @click.stop="joinMeeting({ channelId: channel.id })"
               title="Join meeting"
             >
               <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />

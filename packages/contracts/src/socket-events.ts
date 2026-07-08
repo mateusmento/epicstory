@@ -24,8 +24,6 @@ import type {
   EndMeetingBody,
   IncomingAttendeeEvent,
   JoinChannelMeetingBody,
-  JoinMeetingBody,
-  JoinScheduledMeetingBody,
   LeaveMeetingBody,
   LeavingAttendeeEvent,
   MeetingHeartbeatBody,
@@ -88,14 +86,6 @@ export interface ClientToServerEvents {
   "subscribe-meetings": (body: SubscribeMeetingsBody) => void;
   "meeting-heartbeat": (body: MeetingHeartbeatBody) => void;
   "join-meeting": (
-    body: JoinMeetingBody,
-    ack: (meeting: IMeeting) => void,
-  ) => void;
-  "join-scheduled-meeting": (
-    body: JoinScheduledMeetingBody,
-    ack: (meeting: IMeeting) => void,
-  ) => void;
-  "join-channel-meeting": (
     body: JoinChannelMeetingBody,
     ack: (meeting: IMeeting) => void,
   ) => void;

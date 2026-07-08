@@ -14,9 +14,7 @@ import type {
   IncomingMeetingEvent,
   IUser,
   JoinChannelMeetingBody,
-  JoinMeetingBody,
   JoinMeetingMediaBody,
-  JoinScheduledMeetingBody,
   LeaveMeetingBody,
   MeetingEndedEvent,
   MeetingMediaToggleBody,
@@ -456,45 +454,12 @@ const useMeetingStore = defineStore("meeting", () => {
     return meeting;
   }
 
-  async function joinMeeting({ meetingId, camera }: { meetingId: number; camera?: MediaStream }) {
-    incomingMeeting.value = null;
-    return connectMeeting({ camera }, async (data) => {
-      return await new Promise<IMeeting>((res) => {
-        const body = { ...data, meetingId } satisfies JoinMeetingBody;
-        console.log("join-meeting", body);
-        sockets.websocket.emit("join-meeting", body, (m: IMeeting) => res(m));
-      });
-    });
-  }
-
-  function joinScheduledMeeting({
-    calendarEventId,
-    occurrenceAt,
-    camera,
-  }: {
-    calendarEventId: string;
-    occurrenceAt: Date;
-    camera?: MediaStream;
-  }) {
-    incomingMeeting.value = null;
-    return connectMeeting({ camera }, async (data) => {
-      const body = {
-        ...data,
-        calendarEventId,
-        occurrenceAt: occurrenceAt.toISOString(),
-      } satisfies JoinScheduledMeetingBody;
-      return await new Promise<IMeeting>((res) => {
-        sockets.websocket.emit("join-scheduled-meeting", body, (m: IMeeting) => res(m));
-      });
-    });
-  }
-
-  function joinChannelMeeting({ channelId, camera }: { channelId: number; camera?: MediaStream }) {
+  function joinMeeting({ channelId, camera }: { channelId: number; camera?: MediaStream }) {
     incomingMeeting.value = null;
     return connectMeeting({ camera }, async (data) => {
       const body = { ...data, channelId } satisfies JoinChannelMeetingBody;
       return await new Promise<IMeeting>((res) => {
-        sockets.websocket.emit("join-channel-meeting", body, (m: IMeeting) => res(m));
+        sockets.websocket.emit("join-meeting", body, (m: IMeeting) => res(m));
       });
     });
   }
@@ -556,8 +521,8 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   async function acceptIncomingMeeting() {
-    if (!incomingMeeting.value) return;
-    await joinMeeting({ meetingId: incomingMeeting.value.id });
+    if (!incomingMeeting.value?.channelId) return;
+    await joinMeeting({ channelId: incomingMeeting.value.channelId });
     incomingMeeting.value = null;
   }
 
@@ -689,8 +654,6 @@ const useMeetingStore = defineStore("meeting", () => {
     unpinSpeaker,
     togglePinSpeaker,
     joinMeeting,
-    joinScheduledMeeting,
-    joinChannelMeeting,
     acceptIncomingMeeting,
     rejectIncomingMeeting,
     leaveMeeting,

@@ -14,9 +14,7 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
   CreateCalendarEvent,
-  EnsureCalendarMeetingSession,
   FindCalendarEvents,
-  GetCalendarMeetingLobby,
   RemoveCalendarEvent,
   UpdateCalendarEvent,
 } from '../features';
@@ -48,36 +46,6 @@ export class CalendarEventController {
   ) {
     query.issuerId = issuer.id;
     return this.queryBus.execute(query);
-  }
-
-  @Get('/lobby')
-  @UseGuards(JwtAuthGuard)
-  getMeetingLobby(
-    @Query() query: GetCalendarMeetingLobby,
-    @Auth() issuer: Issuer,
-  ) {
-    return this.queryBus.execute(
-      new GetCalendarMeetingLobby({
-        ...query,
-        issuerId: issuer.id,
-      }),
-    );
-  }
-
-  @Post(':id/ensure-session')
-  @UseGuards(JwtAuthGuard)
-  ensureMeetingSession(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: { occurrenceAt: string },
-    @Auth() issuer: Issuer,
-  ) {
-    return this.commandBus.execute(
-      new EnsureCalendarMeetingSession({
-        calendarEventId: id,
-        occurrenceAt: new Date(body.occurrenceAt),
-        issuerId: issuer.id,
-      }),
-    );
   }
 
   @Patch(':id')

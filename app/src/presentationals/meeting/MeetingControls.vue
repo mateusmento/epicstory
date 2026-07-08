@@ -8,22 +8,26 @@ import {
   IconMicrophoneOff,
   IconMicrophoneOn,
 } from "@/design-system/icons/meeting";
+import IconReplies from "@/design-system/icons/IconReplies.vue";
+
 withDefaults(
   defineProps<{
     isCameraOn: boolean;
     isMicrophoneOn: boolean;
     isScreenSharing?: boolean;
     showEnd?: boolean;
+    chatOpen?: boolean;
     /** Show ⋮ menu for camera / mic / speaker (in-call). */
     showDeviceMenu?: boolean;
   }>(),
-  { showDeviceMenu: true, isScreenSharing: false },
+  { showDeviceMenu: true, isScreenSharing: false, chatOpen: false },
 );
 
 const emit = defineEmits([
   "toggle-camera",
   "toggle-microphone",
   "toggle-screen-share",
+  "toggle-chat",
   "leave-meeting",
   "end-meeting",
   "apply-input-devices",
@@ -53,6 +57,14 @@ const controlBtnClass =
       @click="emit('toggle-screen-share')"
     >
       <Monitor class="h-5 w-5" />
+    </button>
+    <button
+      type="button"
+      :class="[controlBtnClass, chatOpen ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-transparent' : '']"
+      title="Toggle chat"
+      @click="emit('toggle-chat')"
+    >
+      <IconReplies class="h-5 w-5" />
     </button>
     <slot v-if="showDeviceMenu" name="device-menu" />
     <button type="button" :class="controlBtnClass" @click="emit('leave-meeting')">

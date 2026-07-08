@@ -157,7 +157,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   }
 
   async function fetchReplies() {
-    if (isLoadingReplies.value) return;
+    if (!message.value.id || isLoadingReplies.value) return;
     isLoadingReplies.value = true;
     try {
       await resetAndLoadLatestReplies();
@@ -169,7 +169,7 @@ export function useMessageThread(message: Ref<IMessage>, options: UseMessageThre
   }
 
   async function sendReply(payload: ReplyMessageBody) {
-    if (!me.value) return;
+    if (!me.value || !message.value.id) return;
 
     try {
       const reply = await channelApi.replyMessage(message.value?.id, payload);

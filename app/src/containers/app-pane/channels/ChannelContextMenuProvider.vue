@@ -23,7 +23,7 @@ const props = defineProps<{
 
 const router = useRouter();
 const { workspace } = useWorkspace();
-const { joinChannelMeeting } = useMeeting();
+const { joinMeeting } = useMeeting();
 const channelActions = useChannelActions();
 
 const renamingChannel = ref<IChannel | null>(null);
@@ -80,7 +80,7 @@ function scheduleMeeting(channel: IChannel) {
 }
 
 function startMeeting(channel: IChannel) {
-  joinChannelMeeting({ channelId: channel.id });
+  joinMeeting({ channelId: channel.id });
 }
 
 const api: ChannelContextMenuApi = {

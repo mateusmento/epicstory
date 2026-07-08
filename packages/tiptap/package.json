@@ -23,8 +23,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
-    "build:dev": "SKIP_TSUP_DTS=1 tsup && tsc --emitDeclarationOnly",
+    "build:prod": "tsup",
+    "build": "SKIP_TSUP_DTS=1 tsup && tsc --emitDeclarationOnly",
     "build:types": "tsc --emitDeclarationOnly",
     "test": "vitest run",
     "test:watch": "vitest"

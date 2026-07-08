@@ -37,7 +37,7 @@ import {
   UsersIcon,
 } from "lucide-vue-next";
 import { computed, onMounted, watch } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+import { RouterLink } from "vue-router";
 import CurrentMeetingControlsCard from "./CurrentMeetingControlsCard.vue";
 
 defineProps<{ isAppPaneOpen: boolean }>();
@@ -47,9 +47,7 @@ const { recentChannels } = useSyncedChannels();
 const { recentProjects, fetchRecentProjects } = useRecentProjects();
 const { teams, fetchTeams } = useTeams();
 const { user, signOut } = useAuth();
-const router = useRouter();
-
-const { currentMeeting, incomingMeeting, subscribeMeetings } = useMeeting();
+const { currentMeeting, incomingMeeting, subscribeMeetings, joinMeeting } = useMeeting();
 const { liveScheduledMeeting } = useLiveMeeting();
 const { unseenCount } = useNotifications();
 
@@ -87,19 +85,8 @@ onMounted(() => {
 
 async function onJoinLiveScheduledMeeting() {
   const meeting = liveScheduledMeeting.value?.meeting;
-  if (!meeting || !isLiveJoinableMeeting(meeting)) return;
-  const calendarEventId = liveScheduledMeeting.value?.meeting.calendarEventId;
-  const scheduledStartsAt = meeting.scheduledStartsAt;
-  const occurrenceAt = scheduledStartsAt != null ? new Date(scheduledStartsAt).toISOString() : undefined;
-  router.push({
-    name: "meeting-lobby",
-    params: { workspaceId: String(workspace.value.id) },
-    query: {
-      ...(occurrenceAt != null ? { occurrenceAt } : {}),
-      ...(calendarEventId != null ? { calendarEventId: String(calendarEventId) } : {}),
-      meetingId: String(liveScheduledMeeting.value?.meeting.id),
-    },
-  });
+  if (!meeting || !isLiveJoinableMeeting(meeting) || !meeting.channelId) return;
+  await joinMeeting({ channelId: meeting.channelId });
 }
 
 onMounted(async () => {

@@ -24,7 +24,6 @@ const emit = defineEmits<{
   slotMouseDown: [date: Date, hour: number, event: MouseEvent];
   edit: [event: ICalendarEvent];
   remove: [event: ICalendarEvent];
-  openLobby: [event: ICalendarEvent];
   resizeStart: [event: ICalendarEvent, type: "start" | "end", mouseEvent: MouseEvent];
   panStart: [event: ICalendarEvent, mouseEvent: MouseEvent];
 }>();
@@ -74,7 +73,6 @@ const emit = defineEmits<{
                 :event="event"
                 @edit="emit('edit', $event)"
                 @remove="emit('remove', $event)"
-                @open-lobby="emit('openLobby', $event)"
               >
                 <CalendarTimedEventBlock
                   :event="event"

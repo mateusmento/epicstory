@@ -1,45 +1,33 @@
 <script lang="ts" setup>
 import { channelMessageComposerAttachmentHandlers, MessageComposer } from "@/containers/messages";
 import { useDependency } from "@/core/dependency-injection";
-import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { useAuth } from "@/domain/auth";
-import {
-  chatTimelineMessageIds,
-  useChannel,
-  useChatboxComposerSession,
-  useWorkspaceOnline,
-} from "@/domain/channels";
+import { chatTimelineMessageIds, useChannel, useChatboxComposerSession } from "@/domain/channels";
 import { isLiveJoinableMeeting, useMeeting } from "@/domain/meetings";
-import { SCHEDULE_CHANNEL_ID_QUERY_KEY } from "@/domain/schedule";
-import { useWorkspace } from "@/domain/workspace";
 import { toOlderPageState } from "@/lib/async";
 import {
   ChannelActivityRow,
-  ChatboxHeader,
   ChatboxIntro,
-  ChatboxMeetingActions,
-  ChatboxPresenceStrip,
   Chatbox as ChatboxShell,
   ChatboxTimeline,
   ChatboxTypingBanner,
 } from "@/presentationals/channel";
+import { useNavTrigger } from "@/design-system";
 import { ChannelApi } from "@epicstory/api-client";
 import type {
   CreateScheduledMessageBody,
   IChannel,
   IChannelActivity,
+  IMessage,
   SendMessageBody,
   UpdateChannelMessageBody,
 } from "@epicstory/contracts";
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 import Message from "./Message.vue";
 
 const { user } = useAuth();
-const { workspace } = useWorkspace();
-const router = useRouter();
+const { joinMeeting } = useMeeting();
 const { viewContent } = useNavTrigger("details-pane");
-const { joinMeeting, joinChannelMeeting } = useMeeting();
 
 const {
   channel,
@@ -53,8 +41,6 @@ const {
   loadingOlderActivities,
   loadOlderActivitiesPage,
 } = useChannel();
-
-const { isUserOnline } = useWorkspaceOnline();
 
 const olderPage = computed(() =>
   toOlderPageState({
@@ -93,16 +79,7 @@ function canJoinMeetingFromActivity(activity: IChannelActivity) {
 
 function meetingAttendeesFromActivity(activity: IChannelActivity) {
   if (!canJoinMeetingFromActivity(activity)) return [];
-  return channel.value?.meeting?.attendees.map((a) => a.user) ?? [];
-}
-
-function onScheduleMeetingForChannel() {
-  if (!channel.value) return;
-  router.push({
-    name: "schedule",
-    params: { workspaceId: String(workspace.value.id) },
-    query: { [SCHEDULE_CHANNEL_ID_QUERY_KEY]: String(channel.value.id) },
-  });
+  return channel.value?.meeting?.attendees?.map((a) => a.user) ?? [];
 }
 
 function onMessageDeleted(messageId: number) {
@@ -125,23 +102,30 @@ async function onSubmitEdit(messageId: number, payload: UpdateChannelMessageBody
   await updateMessage(messageId, payload);
   onCancelEdit();
 }
+
+function openMeetingThread(activity: IChannelActivity) {
+  if (!user.value || !channel.value || !activity.messageId) return;
+  const message: IMessage =
+    activity.message ??
+    ({
+      id: activity.messageId,
+      channelId: channel.value.id,
+      content: { type: "doc", content: [] },
+      sentAt: new Date(activity.createdAt),
+      senderId: activity.actor?.id ?? 0,
+      sender: activity.actor,
+      repliesCount: 0,
+      repliers: [],
+      reactions: [],
+    } as IMessage);
+  viewContent("replies", { message, meId: user.value.id });
+}
 </script>
 
 <template>
   <ChatboxShell v-if="user && channel">
-    <template #header>
-      <ChatboxHeader :channel-name="channel.name" @more-details="viewContent('channel')">
-        <template #presence>
-          <ChatboxPresenceStrip :peers="channel.peers" :me-id="user.id" :is-user-online="isUserOnline" />
-        </template>
-        <template #meeting-actions>
-          <ChatboxMeetingActions
-            @join-channel-meeting="joinChannelMeeting({ channelId: channel.id })"
-            @start-meeting="joinChannelMeeting({ channelId: channel.id })"
-            @schedule-meeting="onScheduleMeetingForChannel"
-          />
-        </template>
-      </ChatboxHeader>
+    <template v-if="$slots.header" #header>
+      <slot name="header" />
     </template>
 
     <template #timeline>
@@ -172,7 +156,8 @@ async function onSubmitEdit(messageId: number, payload: UpdateChannelMessageBody
             :me-id="user.id"
             :can-join-meeting="canJoinMeetingFromActivity(activity)"
             :meeting-attendees="meetingAttendeesFromActivity(activity)"
-            @join-meeting="joinMeeting({ meetingId: $event })"
+            @join-meeting="joinMeeting({ channelId: channel.id })"
+            @open-thread="openMeetingThread(activity)"
           />
         </template>
       </ChatboxTimeline>

@@ -89,10 +89,12 @@ export class JoinChannelMeetingHandler
     meeting = await this.meetingRepo.save(meeting);
 
     if (createdNewMeeting && meeting.channelId) {
-      await this.channelActivityService.publishMeetingStarted({
-        meetingId: meeting.id,
-        actorId: issuerId,
-      });
+      const { threadMessageId } =
+        await this.channelActivityService.publishMeetingStarted({
+          meetingId: meeting.id,
+          actorId: issuerId,
+        });
+      meeting.threadMessageId = threadMessageId;
     }
 
     this.meetingGateway.emitAttendeeJoined(meeting, attendee);

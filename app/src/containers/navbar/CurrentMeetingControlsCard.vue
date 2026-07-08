@@ -45,10 +45,12 @@ const people = computed(() => {
 });
 
 function openMeeting() {
-  if (!currentMeeting.value) return;
+  const meeting = currentMeeting.value;
+  const channelId = meeting?.channelId;
+  if (!channelId) return;
   router.push({
-    name: "meeting-session",
-    params: { workspaceId: workspace.value.id, meetingId: currentMeeting.value?.id },
+    name: "channel",
+    params: { workspaceId: workspace.value.id, channelId },
   });
 }
 

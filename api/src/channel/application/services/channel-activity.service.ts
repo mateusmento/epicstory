@@ -6,9 +6,11 @@ import type {
   IPage,
 } from '@epicstory/contracts';
 import { ChannelActivity } from 'src/channel/domain/entities/channel-activity.entity';
+import { Message } from 'src/channel/domain/entities/message.entity';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { ChannelActivityRepository } from 'src/channel/infrastructure/repositories/channel-activity.repository';
 import { MeetingRepository } from 'src/channel/infrastructure/repositories/meeting.repository';
+import { MessageRepository } from 'src/channel/infrastructure/repositories/message.repository';
 import { create } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -25,6 +27,7 @@ export class ChannelActivityService {
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private meetingRepo: MeetingRepository,
+    private messageRepo: MessageRepository,
     private messageService: MessageService,
     private messageGateway: MessageGateway,
   ) {}
@@ -225,12 +228,38 @@ export class ChannelActivityService {
   async publishMeetingStarted(options: {
     meetingId: number;
     actorId: number | null;
-  }): Promise<void> {
+    organizerUserId?: number | null;
+  }): Promise<{ threadMessageId: number | null }> {
     const meeting = await this.meetingRepo.findOne({
       where: { id: options.meetingId },
     });
 
-    if (!meeting?.channelId) return;
+    if (!meeting?.channelId) return { threadMessageId: null };
+
+    const channel = await this.channelRepo.findOneBy({
+      id: meeting.channelId,
+    });
+
+    // Meeting channels are persistent voice rooms — no activity card is created.
+    if (channel?.type === 'meeting') return { threadMessageId: null };
+
+    // Channel meetings seed a hidden message to anchor the reply thread.
+    // Saved directly (bypassing MessageService) so Channel.lastMessageId is not updated.
+    const seedSenderId = options.actorId ?? options.organizerUserId ?? null;
+    let threadMessageId: number | null = null;
+    if (seedSenderId != null) {
+      const seedMessage = await this.messageRepo.save(
+        create(Message, {
+          channelId: meeting.channelId,
+          senderId: seedSenderId,
+          content: { type: 'doc', content: [] },
+          sentAt: new Date(),
+        }),
+      );
+      threadMessageId = seedMessage.id;
+      meeting.threadMessageId = threadMessageId;
+      await this.meetingRepo.save(meeting);
+    }
 
     const row = await this.activityRepo.save(
       create(ChannelActivity, {
@@ -238,6 +267,7 @@ export class ChannelActivityService {
         type: 'meeting_started',
         actorId: options.actorId,
         meetingId: meeting.id,
+        messageId: threadMessageId,
         payload: null,
       }),
     );
@@ -249,6 +279,8 @@ export class ChannelActivityService {
 
     const client = this.rowToClient(full!, {});
     this.messageGateway.emitIncomingChannelActivity(client);
+
+    return { threadMessageId };
   }
 
   private rowToClient(

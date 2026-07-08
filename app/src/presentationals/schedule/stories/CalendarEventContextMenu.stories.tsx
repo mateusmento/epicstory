@@ -38,7 +38,6 @@ export const Default: Story = {
           :event="eventItem"
           @remove="removed = true"
           @edit="removed = false"
-          @open-lobby="removed = false"
         >
           <div class="rounded border p-3 text-sm cursor-context-menu">
             Right click this block

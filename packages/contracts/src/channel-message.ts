@@ -91,6 +91,7 @@ export type IMeeting = {
   calendarEventId?: string | null;
   scheduledStartsAt?: Date | null;
   scheduledEndsAt?: Date | null;
+  threadMessageId?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 };

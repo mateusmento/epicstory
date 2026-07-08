@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { UserAvatar } from "@/presentationals/user";
 import { Button } from "@/design-system";
+import IconReplies from "@/design-system/icons/IconReplies.vue";
 import type { IChannelActivity, IUser } from "@epicstory/contracts";
 import { HeadphonesIcon } from "lucide-vue-next";
 import { computed } from "vue";
@@ -15,7 +16,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "join-meeting", meetingId: number): void;
+  (e: "open-thread"): void;
 }>();
+
+const hasMeetingThread = computed(
+  () => props.activity.type === "meeting_started" && props.activity.messageId != null,
+);
 
 const avatarUser = computed(() => {
   const a = props.activity;
@@ -107,6 +113,17 @@ const rowClass = computed(() =>
             />
           </span>
           Join meeting
+        </Button>
+      </div>
+      <div v-if="hasMeetingThread" class="mt-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          class="h-auto gap-1.5 px-1 py-0.5 text-xs text-muted-foreground hover:text-foreground"
+          @click="emit('open-thread')"
+        >
+          <IconReplies class="size-3.5" />
+          Open thread
         </Button>
       </div>
     </div>

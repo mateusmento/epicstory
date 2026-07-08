@@ -48,18 +48,6 @@ const authenticatedRoutes = defineRoutes({
           component: () => import("@/views/schedule/Schedule.vue"),
         },
         {
-          path: "meetings",
-          name: "meeting-lobby",
-          component: () => import("@/views/meetings/MeetingLobby.vue"),
-          props: true,
-        },
-        {
-          path: "meetings/session/:meetingId",
-          name: "meeting-session",
-          component: () => import("@/views/meetings/MeetingSession.vue"),
-          props: true,
-        },
-        {
           path: "settings/user-account",
           name: "user-account-settings",
           component: () => import("@/views/user/UserAccountSettings.vue"),
@@ -78,11 +66,6 @@ const authenticatedRoutes = defineRoutes({
           path: "channel/:channelId",
           name: "channel",
           component: () => import("@/views/channel/Channel.vue"),
-        },
-        {
-          path: "channel/:channelId/meeting",
-          name: "channel-meeting",
-          component: () => import("@/views/channel/Meeting.vue"),
         },
         {
           path: "project/:projectId",

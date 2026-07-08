@@ -71,22 +71,4 @@ export class CalendarEventApi {
   removeCalendarEvent(id: string) {
     return this.axios.delete(`/calendar-events/${id}`).then((r) => r.data);
   }
-
-  getMeetingLobby(
-    params:
-      | { calendarEventId: string; occurrenceAt: Date }
-      | { meetingId: number },
-  ) {
-    return this.axios
-      .get(`/calendar-events/lobby`, { params })
-      .then((r) => r.data);
-  }
-
-  ensureMeetingSession(calendarEventId: string, occurrenceAt: Date) {
-    return this.axios
-      .post(`/calendar-events/${calendarEventId}/ensure-session`, {
-        occurrenceAt: occurrenceAt.toISOString(),
-      })
-      .then((r) => r.data);
-  }
 }

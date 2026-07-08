@@ -14,7 +14,7 @@ import { SidebarOpen } from "lucide-vue-next";
 import type { VNodeRef } from "vue";
 import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 
-const props = defineProps<{ meId: number }>();
+defineProps<{ meId: number }>();
 
 const message = defineModel<IMessage>("message", { required: true });
 
@@ -253,7 +253,7 @@ function onEditTarget(m: IMessage | IReply) {
 </script>
 
 <template>
-  <div class="flex:col max-w-[32rem] border-l border-l-zinc-300/60">
+  <div class="flex:col h-full min-h-0 w-[32rem] shrink-0 border-l">
     <div class="flex:row-xl flex:center-y justify-between h-10 p-4">
       <div class="text-base font-semibold">Thread</div>
 
@@ -265,7 +265,7 @@ function onEditTarget(m: IMessage | IReply) {
     <Separator />
 
     <ScrollArea class="flex-1 min-h-0" ref="scrollAreaRef">
-      <div class="flex:col-2xl !flex p-4 min-w-96 min-h-full bg-card">
+      <div class="flex:col-2xl !flex min-h-full w-full min-w-0 p-4 bg-card">
         <div
           class="w-full"
           :style="{
@@ -274,32 +274,34 @@ function onEditTarget(m: IMessage | IReply) {
           }"
         >
           <div ref="threadHeaderEl" class="flex:col-2xl absolute left-0 right-0 top-0 z-[1] bg-card">
-            <MessageGroup :sender="message.sender" :meId="meId" :sentAt="message.sentAt">
-              <MessageBox
-                :message="message"
-                :meId="meId"
-                :allow-quote="false"
-                :poll-voting-option-id="pollVotingOptionId"
-                @reaction-toggled="toggleReaction($event)"
-                @message-deleted="onMessageDeleted"
-                @quote="onQuoteTarget"
-                @edit="onEditTarget"
-                @poll-voted="onPollVoted"
-                hide-replies-count
-              />
-            </MessageGroup>
+            <slot name="root">
+              <MessageGroup :sender="message.sender" :meId="meId" :sentAt="message.sentAt">
+                <MessageBox
+                  :message="message"
+                  :meId="meId"
+                  :allow-quote="false"
+                  :poll-voting-option-id="pollVotingOptionId"
+                  @reaction-toggled="toggleReaction($event)"
+                  @message-deleted="onMessageDeleted"
+                  @quote="onQuoteTarget"
+                  @edit="onEditTarget"
+                  @poll-voted="onPollVoted"
+                  hide-replies-count
+                />
+              </MessageGroup>
 
-            <div class="flex:row-lg flex:center-y">
-              <Separator class="flex-1" />
-              <span v-if="message.repliesCount === 0" class="text-sm text-secondary-foreground"
-                >No replies yet</span
-              >
-              <span v-else class="text-sm text-secondary-foreground">
-                {{ message.repliesCount }}
-                {{ message.repliesCount === 1 ? "reply" : "replies" }}
-              </span>
-              <Separator class="flex-1" />
-            </div>
+              <div class="flex:row-lg flex:center-y">
+                <Separator class="flex-1" />
+                <span v-if="message.repliesCount === 0" class="text-sm text-secondary-foreground"
+                  >No replies yet</span
+                >
+                <span v-else class="text-sm text-secondary-foreground">
+                  {{ message.repliesCount }}
+                  {{ message.repliesCount === 1 ? "reply" : "replies" }}
+                </span>
+                <Separator class="flex-1" />
+              </div>
+            </slot>
           </div>
 
           <div
@@ -338,6 +340,7 @@ function onEditTarget(m: IMessage | IReply) {
     </ScrollArea>
 
     <MessageComposer
+      :key="message.id"
       :channel-id="message.channelId"
       :attachment-handlers="composerAttachmentHandlers"
       :mentionables="channel?.peers ?? []"

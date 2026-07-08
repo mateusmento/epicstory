@@ -19,6 +19,10 @@ export class StartMeeting {
   @IsDate()
   startedAt?: Date;
 
+  @IsOptional()
+  @IsNumber()
+  organizerUserId?: number | null;
+
   constructor(data: Partial<StartMeeting> = {}) {
     patch(this, data);
   }
@@ -51,10 +55,13 @@ export class StartMeetingHandler implements ICommandHandler<StartMeeting> {
       await this.meetingRepo.save(meeting);
       this.meetingGateway.emitIncomingMeeting(meeting);
       if (meeting.channelId) {
-        await this.channelActivityService.publishMeetingStarted({
-          meetingId: meeting.id,
-          actorId: null,
-        });
+        const { threadMessageId } =
+          await this.channelActivityService.publishMeetingStarted({
+            meetingId: meeting.id,
+            actorId: null,
+            organizerUserId: command.organizerUserId ?? null,
+          });
+        meeting.threadMessageId = threadMessageId;
       }
     }
 

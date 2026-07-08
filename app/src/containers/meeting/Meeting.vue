@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Button, Separator } from "@/design-system";
+import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { useMeeting, useMeetingLayout, useMeetingMediaDevicesStore } from "@/domain/meetings";
 import type { MeetingGridLayoutView, MeetingSpeakerLayoutView } from "@/lib/meetings";
 import { storeToRefs } from "pinia";
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { MeetingControls, MeetingGrid, MeetingSpeakerView } from "@/presentationals/meeting";
 import MeetingDeviceMenu from "./MeetingDeviceMenu.vue";
 
@@ -18,6 +19,7 @@ const {
   startScreenShare,
   stopScreenShare,
   currentMeetingChannelType,
+  currentMeeting,
   pinnedSpeakerId,
   togglePinSpeaker,
   layoutMode,
@@ -26,6 +28,22 @@ const {
   speakingIds,
   applySelectedInputDevices,
 } = useMeeting();
+
+const { content: detailsPaneContent, viewContent } = useNavTrigger("details-pane");
+const chatOpen = ref(false);
+
+watch(detailsPaneContent, (v) => {
+  if (v !== "meeting-chat") chatOpen.value = false;
+});
+
+watch(currentMeeting, (meeting) => {
+  if (!meeting) chatOpen.value = false;
+});
+
+function toggleChat() {
+  chatOpen.value = !chatOpen.value;
+  viewContent("meeting-chat", { meeting: currentMeeting.value });
+}
 
 function toggleScreenShare() {
   if (isScreenSharing.value) stopScreenShare();
@@ -67,7 +85,7 @@ onMounted(() => {
 <template>
   <section class="relative h-full w-full min-h-0 flex flex-col">
     <!-- Mode switch -->
-    <div class="sticky top-0 z-20 px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-2 min-h-10">
+    <div class="sticky top-0 z-20 px-3 py-2 flex flex-wrap items-center gap-x-2 gap-y-2 h-10">
       <Button
         type="button"
         size="icon"
@@ -122,9 +140,11 @@ onMounted(() => {
         :isMicrophoneOn="isMicrophoneOn"
         :isScreenSharing="isScreenSharing"
         :showEnd="canEndMeeting"
+        :chatOpen="chatOpen"
         @toggle-camera="stopCamera"
         @toggle-microphone="stopMicrophone"
         @toggle-screen-share="toggleScreenShare"
+        @toggle-chat="toggleChat"
         @apply-input-devices="onMeetingInputDevicesChange"
         @leave-meeting="leaveMeeting"
         @end-meeting="endMeeting"

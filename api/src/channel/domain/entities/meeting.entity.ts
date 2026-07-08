@@ -59,6 +59,9 @@ export class Meeting {
   @Column({ type: 'timestamptz', nullable: true })
   scheduledEndsAt?: Date | null;
 
+  @Column({ name: 'thread_message_id', type: 'int', nullable: true })
+  threadMessageId: number | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

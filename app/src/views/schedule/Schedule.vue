@@ -46,18 +46,6 @@ const dayViewProps = computed(() => ({
   ...resizingProps.value,
   ...timedGridProps.value,
 }));
-
-function goToMeetingLobby(event: ICalendarEvent) {
-  if (!workspace.value?.id) return;
-  router.push({
-    name: "meeting-lobby",
-    params: { workspaceId: workspace.value.id },
-    query: {
-      calendarEventId: event.id,
-      occurrenceAt: new Date(event.startsAt).toISOString(),
-    },
-  });
-}
 </script>
 
 <template>
@@ -78,7 +66,6 @@ function goToMeetingLobby(event: ICalendarEvent) {
         @day-click="openCreateDialog"
         @edit="openEditCalendarDialog"
         @remove="removeCalendarItem"
-        @open-lobby="goToMeetingLobby"
       />
       <ScheduleWeekView
         v-else-if="currentView === 'week'"
@@ -86,7 +73,6 @@ function goToMeetingLobby(event: ICalendarEvent) {
         @slot-mouse-down="(day, hour, e) => handleSlotMouseDown(day, hour, e)"
         @edit="openEditCalendarDialog"
         @remove="removeCalendarItem"
-        @open-lobby="goToMeetingLobby"
         @resize-start="resize.handleResizeStart"
         @pan-start="pan.handlePanStart"
       />
@@ -96,7 +82,6 @@ function goToMeetingLobby(event: ICalendarEvent) {
         @slot-mouse-down="(day, hour, e) => handleSlotMouseDown(day, hour, e)"
         @edit="openEditCalendarDialog"
         @remove="removeCalendarItem"
-        @open-lobby="goToMeetingLobby"
         @resize-start="resize.handleResizeStart"
         @pan-start="pan.handlePanStart"
       />

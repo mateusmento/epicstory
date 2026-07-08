@@ -15,7 +15,6 @@ const emit = defineEmits<{
   dayClick: [date: Date];
   edit: [event: ICalendarEvent];
   remove: [event: ICalendarEvent];
-  openLobby: [event: ICalendarEvent];
 }>();
 </script>
 
@@ -57,7 +56,6 @@ const emit = defineEmits<{
                 :event="event"
                 @edit="emit('edit', $event)"
                 @remove="emit('remove', $event)"
-                @open-lobby="emit('openLobby', $event)"
               >
                 <div
                   class="px-2 py-1 rounded bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"

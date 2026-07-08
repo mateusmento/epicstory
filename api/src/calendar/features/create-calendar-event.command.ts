@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Transform } from 'class-transformer';
 import {
@@ -101,6 +102,12 @@ export class CreateCalendarEventCommand
       user: true,
     });
     if (!member) throw new Error('Issuer is not a workspace member');
+
+    if (command.type === 'meeting' && !channelId && !participantIds?.length) {
+      throw new BadRequestException(
+        'Scheduled meeting events require either a channelId or at least one participant',
+      );
+    }
 
     const channelPeerIds: number[] = channelId
       ? await this.findChannelMembers(channelId, workspaceId)

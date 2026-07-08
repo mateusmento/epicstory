@@ -108,16 +108,8 @@ async function openNotification(notification: INotification) {
   }
 
   if (notification.type === "calendar_meeting_reminder") {
-    const payload = notification.payload as CalendarMeetingReminderNotificationPayload;
-    if (workspaceId && payload?.calendarEventId && payload?.occurrenceAt) {
-      router.push({
-        name: "meeting-lobby",
-        params: { workspaceId },
-        query: {
-          calendarEventId: payload.calendarEventId,
-          occurrenceAt: payload.occurrenceAt,
-        },
-      });
+    if (workspaceId) {
+      router.push({ name: "schedule", params: { workspaceId } });
     }
     return;
   }
