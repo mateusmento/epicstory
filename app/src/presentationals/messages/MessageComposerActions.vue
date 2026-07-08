@@ -8,6 +8,7 @@ import {
   OverflowContainer,
   OverflowEllipsis,
   OverflowItem,
+  Separator,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import type { Editor } from "@tiptap/core";
@@ -51,6 +52,8 @@ const props = withDefaults(
     showPollToggle?: boolean;
     pollActive?: boolean;
     class?: HTMLAttributes["class"];
+    /** Constrained slot width from the composer footer (preferred over self-measurement). */
+    layoutWidthPx?: number;
   }>(),
   { editor: null, showPollToggle: false, pollActive: false },
 );
@@ -199,7 +202,7 @@ function hiddenMenuItems(keys: string[]) {
 </script>
 
 <template>
-  <OverflowContainer :gap="0" :class="['min-w-0', props.class]">
+  <OverflowContainer :gap="0" :layout-width-px="layoutWidthPx" :class="['min-w-0 max-w-full', props.class]">
     <OverflowItem v-for="action in markActions" :key="action.key" :segment-key="action.key">
       <Button
         variant="ghost"
@@ -213,6 +216,8 @@ function hiddenMenuItems(keys: string[]) {
       </Button>
     </OverflowItem>
 
+    <Separator orientation="vertical" />
+
     <OverflowItem v-for="action in structureActions" :key="action.key" :segment-key="action.key">
       <Button
         variant="ghost"
@@ -225,6 +230,8 @@ function hiddenMenuItems(keys: string[]) {
         <component :is="action.icon" class="w-5 h-5" />
       </Button>
     </OverflowItem>
+
+    <Separator orientation="vertical" />
 
     <OverflowItem
       v-for="action in insertActions"
@@ -254,11 +261,11 @@ function hiddenMenuItems(keys: string[]) {
       <!-- Always mount the trigger so ellipsis width is measurable on first paint. -->
       <Menu type="dropdown-menu">
         <MenuTrigger as-child>
-          <Button variant="ghost" size="icon" title="More formatting" aria-label="More formatting">
+          <Button variant="ghost" size="icon" title="More" aria-label="More">
             <MoreHorizontal class="w-5 h-5" />
           </Button>
         </MenuTrigger>
-        <MenuContent v-if="collapsed" align="start" class="min-w-[10rem]">
+        <MenuContent v-if="collapsed" align="end" class="min-w-[10rem]">
           <MenuItem
             v-for="action in hiddenMenuItems(hiddenSegmentKeys)"
             :key="action.key"

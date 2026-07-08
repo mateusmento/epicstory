@@ -299,7 +299,7 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
     <Separator />
 
     <div class="grid grid-cols-[1fr_auto_1fr] gap-md items-center px-4 py-1.5 min-h-10">
-      <div class="flex items-center gap-2 min-w-0 overflow-x-auto">
+      <div class="flex items-center gap-2 min-w-0 overflow-hidden">
         <ToggleGroup
           as="nav"
           type="single"
@@ -331,13 +331,14 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
 
         <Separator v-if="showProjectTeamTabs && teamId" orientation="vertical" class="h-6 shrink-0" />
 
-        <ProjectTeamTabs
-          v-if="showProjectTeamTabs && teamId"
-          :workspace-id="+workspaceId"
-          :project-id="+projectId"
-          :team-id="teamId"
-          :view="routeName"
-        />
+        <div v-if="showProjectTeamTabs && teamId" class="min-w-0 flex-1">
+          <ProjectTeamTabs
+            :workspace-id="+workspaceId"
+            :project-id="+projectId"
+            :team-id="teamId"
+            :view="routeName"
+          />
+        </div>
       </div>
 
       <ProjectFiltersBar :project-id="+projectId" />

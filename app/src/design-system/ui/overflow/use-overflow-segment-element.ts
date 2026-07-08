@@ -78,6 +78,16 @@ export function useOverflowSegmentElement(options: { id: symbol; context: Overfl
     });
   });
 
+  watch(
+    () => options.context.remeasureGeneration.value,
+    () => {
+      nextTick(() => {
+        remeasure();
+        requestAnimationFrame(remeasure);
+      });
+    },
+  );
+
   /**
    * Always shrink-0. Pre-ready flex-shrink was used for an overlap prototype, but measuring
    * shrunk boxes poisoned layout widths (clipped icons, missing ellipsis until a reflow).

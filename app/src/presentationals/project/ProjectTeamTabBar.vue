@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { Button, Menu, MenuContent, MenuItem, MenuTrigger } from "@/design-system";
+import {
+  Button,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+  OverflowContainer,
+  OverflowEllipsis,
+  OverflowItem,
+} from "@/design-system";
 import type { ProjectTeamTab } from "@/lib/project";
-import { ChevronDownIcon } from "lucide-vue-next";
+import { ChevronDownIcon, MoreHorizontal } from "lucide-vue-next";
+import { computed } from "vue";
 import { RouterLink } from "vue-router";
 
-defineProps<{
+const props = defineProps<{
   tabs: ProjectTeamTab[];
   activeProjectId: number;
   showMoreMenu: boolean;
@@ -19,44 +29,84 @@ const emit = defineEmits<{
 function onMoreMenuOpen(value: unknown) {
   emit("moreMenuOpen", value === true);
 }
+
+const tabsById = computed(() => new Map(props.tabs.map((tab) => [String(tab.id), tab])));
+
+function layoutHiddenTabs(hiddenSegmentKeys: string[]): ProjectTeamTab[] {
+  return hiddenSegmentKeys
+    .map((key) => tabsById.value.get(key))
+    .filter((tab): tab is ProjectTeamTab => tab != null);
+}
 </script>
 
 <template>
-  <nav class="flex items-center gap-1 min-w-0 overflow-x-auto" aria-label="Team projects">
-    <Button
+  <OverflowContainer as="nav" :gap="4" class="min-w-0" aria-label="Team projects">
+    <OverflowItem
       v-for="tab in tabs"
       :key="tab.id"
-      as-child
-      variant="soft"
-      size="sm"
-      class="shrink-0"
-      :intent="tab.id === activeProjectId ? 'primary' : 'secondary'"
+      :segment-key="String(tab.id)"
+      :pinned="tab.id === activeProjectId"
     >
-      <RouterLink :to="tab.to" class="truncate max-w-40">
-        {{ tab.name }}
-      </RouterLink>
-    </Button>
+      <Button
+        as-child
+        variant="soft"
+        size="sm"
+        class="shrink-0"
+        :intent="tab.id === activeProjectId ? 'primary' : 'secondary'"
+      >
+        <RouterLink :to="tab.to" class="truncate max-w-40">
+          {{ tab.name }}
+        </RouterLink>
+      </Button>
+    </OverflowItem>
 
-    <Menu v-if="showMoreMenu" type="dropdown-menu" @update:open="onMoreMenuOpen">
-      <MenuTrigger as-child>
-        <Button variant="soft" intent="secondary" size="sm" class="shrink-0">
-          More
-          <ChevronDownIcon class="size-3.5 opacity-70" />
-        </Button>
-      </MenuTrigger>
-      <MenuContent align="start" class="max-h-72 overflow-y-auto">
-        <MenuItem v-if="overflowLoading" disabled class="text-xs text-muted-foreground">
-          Loading projects…
-        </MenuItem>
-        <MenuItem v-else-if="overflowTabs.length === 0" disabled class="text-xs text-muted-foreground">
-          No other projects
-        </MenuItem>
-        <MenuItem v-for="tab in overflowTabs" :key="tab.id" as-child>
-          <RouterLink :to="tab.to" class="w-full cursor-pointer truncate">
-            {{ tab.name }}
-          </RouterLink>
-        </MenuItem>
-      </MenuContent>
-    </Menu>
-  </nav>
+    <OverflowEllipsis v-slot="{ collapsed, hiddenSegmentKeys }">
+      <!-- Always mount the trigger so ellipsis width is measurable on first paint. -->
+      <Menu type="dropdown-menu">
+        <MenuTrigger as-child>
+          <Button
+            variant="soft"
+            intent="secondary"
+            size="sm"
+            class="shrink-0"
+            title="Hidden projects"
+            aria-label="Hidden projects"
+          >
+            <MoreHorizontal class="size-4" />
+          </Button>
+        </MenuTrigger>
+        <MenuContent v-if="collapsed" align="start" class="max-h-72 overflow-y-auto">
+          <MenuItem v-for="tab in layoutHiddenTabs(hiddenSegmentKeys)" :key="tab.id" as-child>
+            <RouterLink :to="tab.to" class="w-full cursor-pointer truncate">
+              {{ tab.name }}
+            </RouterLink>
+          </MenuItem>
+        </MenuContent>
+      </Menu>
+    </OverflowEllipsis>
+
+    <OverflowItem v-if="showMoreMenu" segment-key="more" pinned>
+      <Menu type="dropdown-menu" @update:open="onMoreMenuOpen">
+        <MenuTrigger as-child>
+          <Button variant="soft" intent="secondary" size="sm" class="shrink-0">
+            More
+            <ChevronDownIcon class="size-3.5 opacity-70" />
+          </Button>
+        </MenuTrigger>
+        <MenuContent align="start" class="max-h-72 overflow-y-auto">
+          <MenuItem v-if="overflowLoading" disabled class="text-xs text-muted-foreground">
+            Loading projects…
+          </MenuItem>
+          <MenuItem v-else-if="overflowTabs.length === 0" disabled class="text-xs text-muted-foreground">
+            No other projects
+          </MenuItem>
+          <MenuItem v-for="tab in overflowTabs" :key="tab.id" as-child>
+            <RouterLink :to="tab.to" class="w-full cursor-pointer truncate">
+              {{ tab.name }}
+            </RouterLink>
+          </MenuItem>
+        </MenuContent>
+      </Menu>
+    </OverflowItem>
+  </OverflowContainer>
 </template>

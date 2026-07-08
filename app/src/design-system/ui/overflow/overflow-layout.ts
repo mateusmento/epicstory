@@ -55,8 +55,11 @@ function hideRightmost(indices: number[], segments: OverflowSegment[], visible: 
 
 /**
  * Given measured segment widths and container width, decide which segments are visible.
- * Collapse hides items from the longer side of the ellipsis anchor first, then alternates when balanced.
- * Without an ellipsis segment, truncates from the trailing edge.
+ *
+ * - Ellipsis at the **end**: collapse the left group with `hideRightmost` (items adjacent to ⋯ first).
+ * - Ellipsis at the **start**: collapse the right group with `hideLeftmost` (items adjacent to ⋯ first).
+ * - Ellipsis in the **middle**: hide from outer edges of each side inward (breadcrumb-style).
+ * - Without an ellipsis segment: truncates from the trailing edge.
  */
 export function computeOverflowLayout(options: {
   containerWidthPx: number;
@@ -108,6 +111,8 @@ export function computeOverflowLayout(options: {
 
   const leftIndices = itemIndices.filter((index) => index < ellipsisIndex);
   const rightIndices = itemIndices.filter((index) => index > ellipsisIndex);
+  const ellipsisAtStart = leftIndices.length === 0;
+  const ellipsisAtEnd = rightIndices.length === 0;
 
   const visible = segments.map((segment) => segment.kind === "item");
   visible[ellipsisIndex] = false;
@@ -143,7 +148,11 @@ export function computeOverflowLayout(options: {
 
     let hid = false;
 
-    if (leftCount > rightCount) {
+    if (ellipsisAtEnd && leftCount > 0) {
+      hid = hideRightmost(leftIndices, segments, visible);
+    } else if (ellipsisAtStart && rightCount > 0) {
+      hid = hideLeftmost(rightIndices, segments, visible);
+    } else if (leftCount > rightCount) {
       hid = hideLeftmost(leftIndices, segments, visible);
     } else if (rightCount > leftCount) {
       hid = hideRightmost(rightIndices, segments, visible);
@@ -153,9 +162,9 @@ export function computeOverflowLayout(options: {
         : hideRightmost(rightIndices, segments, visible);
       hideFromLeft = !hideFromLeft;
     } else if (leftCount > 0) {
-      hid = hideLeftmost(leftIndices, segments, visible);
+      hid = hideRightmost(leftIndices, segments, visible);
     } else {
-      hid = hideRightmost(rightIndices, segments, visible);
+      hid = hideLeftmost(rightIndices, segments, visible);
     }
 
     if (!hid) break;

@@ -1,4 +1,4 @@
-import { computed, inject, provide, reactive, type ComputedRef, type InjectionKey } from "vue";
+import { computed, inject, provide, reactive, ref, type ComputedRef, type InjectionKey } from "vue";
 import {
   computeOverflowLayout,
   type OverflowLayoutResult,
@@ -36,6 +36,8 @@ export type OverflowContextValue = {
   updateSegment: (id: symbol, options: OverflowRegisterOptions) => void;
   containerWidthPx: ComputedRef<number>;
   layoutReady: ComputedRef<boolean>;
+  remeasureGeneration: ComputedRef<number>;
+  requestRemeasure: () => void;
   segmentEdge: (id: symbol) => OverflowEdge;
   isSegmentVisible: (id: symbol) => boolean;
   ellipsisSlotProps: ComputedRef<OverflowEllipsisSlotProps>;
@@ -50,6 +52,18 @@ export function provideOverflowContext(options: {
 }) {
   const segments = reactive(new Map<symbol, SegmentRecord>());
   let orderCounter = 0;
+  const remeasureGeneration = ref(0);
+
+  function resetSegmentWidths() {
+    for (const segment of segments.values()) {
+      segment.widthPx = 0;
+    }
+  }
+
+  function requestRemeasure() {
+    resetSegmentWidths();
+    remeasureGeneration.value += 1;
+  }
 
   function sortedSegments(): SegmentRecord[] {
     return [...segments.values()].sort((a, b) => a.order - b.order);
@@ -66,12 +80,18 @@ export function provideOverflowContext(options: {
 
   /** Reserved when the ellipsis trigger is not measured yet (empty slot or v-show:false). */
   const DEFAULT_ELLIPSIS_WIDTH_PX = 36;
+  const DEFAULT_ITEM_WIDTH_PX = 36;
+
+  function segmentWidthForLayout(segment: SegmentRecord): number {
+    if (segment.widthPx > 0) return segment.widthPx;
+    return segment.kind === "ellipsis" ? DEFAULT_ELLIPSIS_WIDTH_PX : DEFAULT_ITEM_WIDTH_PX;
+  }
 
   const layoutResult = computed(() => {
     const list = sortedSegments();
-    if (!layoutReady.value) {
+    if (options.containerWidthPx.value <= 0 || list.length === 0) {
       return {
-        visible: list.map(() => true),
+        visible: list.map(() => false),
         showEllipsis: false,
         hiddenCount: 0,
         hiddenBefore: 0,
@@ -85,8 +105,7 @@ export function provideOverflowContext(options: {
       gapPx: options.gapPx.value,
       segments: list.map((segment) => ({
         kind: segment.kind,
-        widthPx:
-          segment.kind === "ellipsis" && segment.widthPx <= 0 ? DEFAULT_ELLIPSIS_WIDTH_PX : segment.widthPx,
+        widthPx: segmentWidthForLayout(segment),
         pinned: segment.pinned,
       })),
     });
@@ -175,6 +194,8 @@ export function provideOverflowContext(options: {
     updateSegment,
     containerWidthPx: options.containerWidthPx,
     layoutReady,
+    remeasureGeneration: computed(() => remeasureGeneration.value),
+    requestRemeasure,
     segmentEdge,
     isSegmentVisible,
     ellipsisSlotProps,

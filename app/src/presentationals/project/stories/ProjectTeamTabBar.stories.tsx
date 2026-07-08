@@ -43,3 +43,26 @@ export const WithMoreMenu: Story = {
     overflowTabs,
   },
 };
+
+const longNameTabs: ProjectTeamTab[] = [
+  { id: 1, name: "Epicstory Prototype v0.1", to: "/1/project/1/backlog" },
+  { id: 2, name: "Epicstory v0.1", to: "/1/project/2/backlog" },
+  { id: 3, name: "Epicstory Interface v0.1", to: "/1/project/3/backlog" },
+  { id: 4, name: "Epicstory Platform v0.2", to: "/1/project/4/backlog" },
+  { id: 5, name: "Epicstory Docs", to: "/1/project/5/backlog" },
+];
+
+export const NarrowWidthOverflow: Story = {
+  name: "Narrow width (layout overflow)",
+  decorators: [
+    (story) => ({
+      render: () => <StoryContainer class="w-[280px]">{h(story())}</StoryContainer>,
+    }),
+  ],
+  args: {
+    tabs: longNameTabs,
+    activeProjectId: 1,
+    showMoreMenu: true,
+    overflowTabs,
+  },
+};

@@ -144,6 +144,40 @@ describe("computeOverflowLayout", () => {
     expect(result.hiddenBefore).toBe(0);
     expect(result.hiddenAfter).toBe(1);
   });
+
+  it("hides rightmost items first when ellipsis is trailing", () => {
+    const result = computeOverflowLayout({
+      containerWidthPx: 120,
+      gapPx: gap,
+      segments: [
+        { kind: "item", widthPx: 40 },
+        { kind: "item", widthPx: 40 },
+        { kind: "item", widthPx: 40 },
+        { kind: "ellipsis", widthPx: 24 },
+      ],
+    });
+
+    expect(result.visible).toEqual([true, true, false, true]);
+    expect(result.hiddenBefore).toBe(1);
+    expect(result.hiddenAfter).toBe(0);
+  });
+
+  it("hides leftmost items first when ellipsis is leading", () => {
+    const result = computeOverflowLayout({
+      containerWidthPx: 120,
+      gapPx: gap,
+      segments: [
+        { kind: "ellipsis", widthPx: 24 },
+        { kind: "item", widthPx: 40 },
+        { kind: "item", widthPx: 40 },
+        { kind: "item", widthPx: 40 },
+      ],
+    });
+
+    expect(result.visible).toEqual([true, false, true, true]);
+    expect(result.hiddenBefore).toBe(0);
+    expect(result.hiddenAfter).toBe(1);
+  });
 });
 
 function rowWidth(segments: OverflowSegment[], visible: boolean[], gapPx: number): number {
