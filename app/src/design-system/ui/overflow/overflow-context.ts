@@ -59,8 +59,13 @@ export function provideOverflowContext(options: {
     if (options.containerWidthPx.value <= 0) return false;
     const list = sortedSegments();
     if (list.length === 0) return false;
+    // Items must be measured. Ellipsis may still be 0 when its slot is empty / display:none —
+    // layout falls back to DEFAULT_ELLIPSIS_WIDTH_PX until a real measure sticks.
     return list.every((segment) => segment.kind === "ellipsis" || segment.widthPx > 0);
   });
+
+  /** Reserved when the ellipsis trigger is not measured yet (empty slot or v-show:false). */
+  const DEFAULT_ELLIPSIS_WIDTH_PX = 36;
 
   const layoutResult = computed(() => {
     const list = sortedSegments();
@@ -80,7 +85,8 @@ export function provideOverflowContext(options: {
       gapPx: options.gapPx.value,
       segments: list.map((segment) => ({
         kind: segment.kind,
-        widthPx: segment.widthPx,
+        widthPx:
+          segment.kind === "ellipsis" && segment.widthPx <= 0 ? DEFAULT_ELLIPSIS_WIDTH_PX : segment.widthPx,
         pinned: segment.pinned,
       })),
     });
@@ -132,7 +138,10 @@ export function provideOverflowContext(options: {
   function setSegmentWidth(id: symbol, widthPx: number) {
     const segment = segments.get(id);
     if (!segment) return;
-    if (widthPx > 0 || segment.widthPx === 0) {
+    // Ignore 0 after a real measure (e.g. ellipsis display:none via v-show).
+    if (widthPx <= 0) return;
+    // Prefer larger readings so a cramped early paint cannot permanently under-measure.
+    if (widthPx >= segment.widthPx) {
       segment.widthPx = widthPx;
     }
   }

@@ -165,8 +165,9 @@ const emit = defineEmits<{
       />
     </div>
 
-    <div class="flex:row-md flex:center-y mt-2 shrink-0 text-secondary-foreground">
+    <div class="flex:row-md flex:center-y mt-2 min-w-0 shrink-0 text-secondary-foreground">
       <MessageComposerActions
+        class="min-w-0 flex-1"
         :editor="editor"
         :show-poll-toggle="toolbar.showPollToggle"
         :poll-active="toolbar.pollActive"
@@ -176,7 +177,7 @@ const emit = defineEmits<{
 
       <div
         v-if="!toolbar.isEditing && toolbar.scheduleSummary"
-        class="flex:row items-center gap-1 text-xs text-muted-foreground min-w-0"
+        class="flex:row items-center gap-1 text-xs text-muted-foreground min-w-0 shrink"
       >
         <span class="truncate max-w-[14rem]">{{ toolbar.scheduleSummary }}</span>
         <Button
@@ -191,68 +192,68 @@ const emit = defineEmits<{
         </Button>
       </div>
 
-      <div class="flex-1"></div>
+      <div class="flex:row-md flex:center-y shrink-0">
+        <Button
+          v-if="toolbar.isEditing"
+          type="button"
+          variant="ghost"
+          size="sm"
+          class="text-muted-foreground"
+          @click="emit('cancel-edit')"
+        >
+          Cancel
+        </Button>
 
-      <Button
-        v-if="toolbar.isEditing"
-        type="button"
-        variant="ghost"
-        size="sm"
-        class="text-muted-foreground"
-        @click="emit('cancel-edit')"
-      >
-        Cancel
-      </Button>
+        <Button variant="ghost" size="icon" @click="emit('toggle-recording')">
+          <Icon v-if="!toolbar.isRecording" name="bi-camera-video" class="w-6 h-6" />
+          <template v-else>
+            <Icon name="ri-record-circle-fill" class="w-6 h-6 text-red-500" />
+            <span class="text-xs ml-1 text-red-400">{{ toolbar.recordingLabel }}</span>
+          </template>
+        </Button>
 
-      <Button variant="ghost" size="icon" @click="emit('toggle-recording')">
-        <Icon v-if="!toolbar.isRecording" name="bi-camera-video" class="w-6 h-6" />
-        <template v-else>
-          <Icon name="ri-record-circle-fill" class="w-6 h-6 text-red-500" />
-          <span class="text-xs ml-1 text-red-400">{{ toolbar.recordingLabel }}</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          title="Attach files"
+          class="shrink-0 mr-0.5"
+          aria-label="Attach files"
+          :disabled="attachments.stagingDisabled"
+          @click.stop="onOpenAttach"
+        >
+          <Paperclip class="size-5" />
+        </Button>
+
+        <template v-if="toolbar.isEditing">
+          <Button
+            type="button"
+            variant="flat"
+            intent="primary"
+            size="sm"
+            class="flex:row-lg flex:center-y text-sm"
+            :disabled="toolbar.attachmentsBlocked"
+            @click="emit('send')"
+          >
+            <Icon name="io-paper-plane" />
+            Save
+          </Button>
         </template>
-      </Button>
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        title="Attach files"
-        class="shrink-0 mr-0.5"
-        aria-label="Attach files"
-        :disabled="attachments.stagingDisabled"
-        @click.stop="onOpenAttach"
-      >
-        <Paperclip class="size-5" />
-      </Button>
-
-      <template v-if="toolbar.isEditing">
-        <Button
-          type="button"
-          variant="flat"
-          intent="primary"
-          size="sm"
-          class="flex:row-lg flex:center-y text-sm"
-          :disabled="toolbar.attachmentsBlocked"
-          @click="emit('send')"
-        >
-          <Icon name="io-paper-plane" />
-          Save
-        </Button>
-      </template>
-      <slot v-else name="sendTrailing">
-        <Button
-          type="button"
-          variant="flat"
-          intent="primary"
-          size="sm"
-          class="flex:row-lg flex:center-y text-sm"
-          :disabled="toolbar.attachmentsBlocked"
-          @click="emit('send')"
-        >
-          <Icon name="io-paper-plane" />
-          {{ toolbar.sendLabel }}
-        </Button>
-      </slot>
+        <slot v-else name="sendTrailing">
+          <Button
+            type="button"
+            variant="flat"
+            intent="primary"
+            size="sm"
+            class="flex:row-lg flex:center-y text-sm"
+            :disabled="toolbar.attachmentsBlocked"
+            @click="emit('send')"
+          >
+            <Icon name="io-paper-plane" />
+            {{ toolbar.sendLabel }}
+          </Button>
+        </slot>
+      </div>
     </div>
 
     <slot name="dialogs" />
