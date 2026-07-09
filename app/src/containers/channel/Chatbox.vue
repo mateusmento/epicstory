@@ -12,7 +12,6 @@ import {
   ChatboxTimeline,
   ChatboxTypingBanner,
 } from "@/presentationals/channel";
-import { useNavTrigger } from "@/design-system";
 import { ChannelApi } from "@epicstory/api-client";
 import type {
   CreateScheduledMessageBody,
@@ -25,9 +24,12 @@ import type {
 import { computed, ref } from "vue";
 import Message from "./Message.vue";
 
+const emit = defineEmits<{
+  (e: "open-thread", message: IMessage): void;
+}>();
+
 const { user } = useAuth();
 const { joinMeeting } = useMeeting();
-const { viewContent } = useNavTrigger("details-pane");
 
 const {
   channel,
@@ -105,13 +107,13 @@ async function onSubmitEdit(messageId: number, payload: UpdateChannelMessageBody
   onCancelEdit();
 }
 
-function openMeetingThread(activity: IChannelActivity) {
-  if (!user.value || !channel.value || !activity.messageId) return;
+function openMeetingThread(activity: IChannelActivity, channel: IChannel) {
+  if (!activity.messageId) return;
   const message: IMessage =
     activity.message ??
     ({
       id: activity.messageId,
-      channelId: channel.value.id,
+      channelId: channel.id,
       content: { type: "doc", content: [] },
       sentAt: new Date(activity.createdAt),
       senderId: activity.actor?.id ?? 0,
@@ -120,7 +122,7 @@ function openMeetingThread(activity: IChannelActivity) {
       repliers: [],
       reactions: [],
     } as IMessage);
-  viewContent("replies", { message, meId: user.value.id });
+  emit("open-thread", message);
 }
 </script>
 
@@ -149,6 +151,7 @@ function openMeetingThread(activity: IChannelActivity) {
             @message-deleted="onMessageDeleted"
             @quote="onQuote"
             @start-edit="onStartEdit"
+            @open-thread="emit('open-thread', message)"
           />
         </template>
         <template #activity="{ activity }">
@@ -159,7 +162,7 @@ function openMeetingThread(activity: IChannelActivity) {
             :can-join-meeting="canJoinMeetingFromActivity(activity)"
             :meeting-attendees="meetingAttendeesFromActivity(activity)"
             @join-meeting="joinMeeting({ channelId: channel.id })"
-            @open-thread="openMeetingThread(activity)"
+            @open-thread="openMeetingThread(activity, channel)"
           />
         </template>
       </ChatboxTimeline>

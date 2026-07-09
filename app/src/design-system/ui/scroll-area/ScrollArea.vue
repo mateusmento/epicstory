@@ -61,24 +61,70 @@ function applyScrollToBottom(viewport: HTMLElement) {
   viewport.scrollTop = viewport.scrollHeight - viewport.clientHeight;
 }
 
+function waitForAnimationFrame() {
+  return new Promise<void>((r) => requestAnimationFrame(() => r()));
+}
+
+/**
+ * Remounts inside a details pane (e.g. meeting chat thread → channel) often call
+ * scroll-to-bottom before the viewport element exists or has a non-zero height.
+ */
+function waitForScrollableViewport(): Promise<HTMLElement | null> {
+  const existing = container.value?.viewportElement;
+  if (existing && existing.clientHeight > 0) return Promise.resolve(existing);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (el: HTMLElement | null) => {
+      if (settled) return;
+      settled = true;
+      ro.disconnect();
+      clearTimeout(maxTimer);
+      clearInterval(poll);
+      resolve(el);
+    };
+
+    const tryResolve = () => {
+      const el = container.value?.viewportElement ?? null;
+      if (el && el.clientHeight > 0) finish(el);
+    };
+
+    const ro = new ResizeObserver(tryResolve);
+    const observeRoot = () => {
+      const el = container.value?.viewportElement;
+      if (el) ro.observe(el);
+    };
+    observeRoot();
+    // Radix may assign viewportElement after the component ref is set.
+    const poll = setInterval(() => {
+      observeRoot();
+      tryResolve();
+    }, 50);
+    const maxTimer = setTimeout(() => finish(container.value?.viewportElement ?? null), 2000);
+    tryResolve();
+  });
+}
+
 /**
  * `nextTick` is not enough: images and other async layout can change `scrollHeight` later.
- * After an initial scroll, watch the first content child for resizes and keep pinned to the
- * bottom until height is quiet, with a hard timeout.
+ * After an initial scroll, watch the viewport and first content child for resizes and keep
+ * pinned to the bottom until height is quiet, with a hard timeout.
+ *
+ * Also keep pinning while `scrollHeight <= clientHeight` (virtualizer still estimating):
+ * otherwise a quiet period can end before content becomes taller than the viewport.
  */
 function scrollToBottomStabilize(viewport: HTMLElement) {
   const content = viewport.firstElementChild;
-  if (!content) {
-    applyScrollToBottom(viewport);
-    return;
-  }
-
   applyScrollToBottom(viewport);
+  if (!content) return;
 
   let quietTimer: ReturnType<typeof setTimeout> | null = null;
   const ro = new ResizeObserver(() => {
     applyScrollToBottom(viewport);
     if (quietTimer) clearTimeout(quietTimer);
+    // Only stop stabilizing once content actually overflows — otherwise a remount with
+    // estimated virtualizer height can "quiet" while still not scrollable, then grow later.
+    if (viewport.scrollHeight <= viewport.clientHeight + 1) return;
     quietTimer = setTimeout(() => {
       quietTimer = null;
       applyScrollToBottom(viewport);
@@ -105,15 +151,18 @@ function scrollToBottomStabilize(viewport: HTMLElement) {
 
   cancelScrollStabilize?.();
   cancelScrollStabilize = cleanup;
+  // Viewport must be observed too: content can stay the same size while the pane
+  // gains height after a v-if remount (meeting chat back-to-channel).
+  ro.observe(viewport);
   ro.observe(content);
 }
 
 async function scrollContainerToBottom() {
   await nextTick();
-  // One frame so the browser can apply layout from the just-updated VDOM.
-  await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  const viewport = container.value?.viewportElement;
+  await waitForAnimationFrame();
+  const viewport = await waitForScrollableViewport();
   if (!viewport) return;
+  await waitForAnimationFrame();
   scrollToBottomStabilize(viewport);
 }
 

@@ -88,7 +88,7 @@ function pickSpeaker(v: AcceptableValue) {
       <button
         v-if="triggerVariant === 'control-circle'"
         type="button"
-        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-none bg-slate-400/20 text-white backdrop-blur-sm outline-none ring-offset-background transition hover:bg-slate-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-none bg-slate-400/20 text-white [&>svg]:text-white backdrop-blur-sm outline-none ring-offset-background transition hover:bg-slate-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         aria-label="Camera, microphone, and speaker settings"
       >
         <MoreVertical class="h-5 w-5" aria-hidden="true" />

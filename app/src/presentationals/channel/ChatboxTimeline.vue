@@ -23,6 +23,9 @@ const introEl = ref<HTMLElement | null>(null);
 const introHeight = ref(0);
 let introResizeObserver: ResizeObserver | null = null;
 
+/** Intro marks the true start of history — hide while older pages can still load. */
+const showIntro = computed(() => !props.olderPage.hasOlder);
+
 function timelineRowKey(item: ChatTimelineItem) {
   return item.kind === "messages" ? `g-${item.group.id}` : `a-${item.activity.id}`;
 }
@@ -62,11 +65,11 @@ const measureTimelineRow: VNodeRef = (el) => {
 };
 
 watch(
-  introEl,
-  (el) => {
+  [introEl, showIntro],
+  ([el, visible]) => {
     introResizeObserver?.disconnect();
     introResizeObserver = null;
-    if (!el) {
+    if (!el || !visible) {
       introHeight.value = 0;
       return;
     }
@@ -147,14 +150,25 @@ function timelineEndCursor(timeline: ChatTimelineItem[]): string | null {
 
 const prevMessageTotal = ref(-1);
 const prevTimelineEndCursor = ref<string | null>(null);
+/** Set when initial pin-to-bottom should run once ScrollArea is mounted. */
+const pendingInitialScroll = ref(false);
 
 watch(
   () => props.channelId,
   () => {
     prevMessageTotal.value = -1;
     prevTimelineEndCursor.value = null;
+    pendingInitialScroll.value = false;
   },
 );
+
+function requestScrollToBottom() {
+  if (scrollAreaRef.value) {
+    scrollAreaRef.value.scrollToBottom();
+    return true;
+  }
+  return false;
+}
 
 watch(
   () => chatTimelineRowCount(props.timeline),
@@ -164,7 +178,11 @@ watch(
     if (prev < 0) {
       prevMessageTotal.value = totalRows;
       prevTimelineEndCursor.value = endCur;
-      if (totalRows > 0) nextTick(() => scrollAreaRef.value?.scrollToBottom());
+      // Immediate: meeting chat (and remounts) often open with an already-loaded timeline,
+      // so this watch would never fire without `immediate` and we'd stay at scrollTop 0.
+      if (totalRows > 0) {
+        pendingInitialScroll.value = !requestScrollToBottom();
+      }
       return;
     }
     if (totalRows > prev) {
@@ -172,14 +190,22 @@ watch(
       prevMessageTotal.value = totalRows;
       prevTimelineEndCursor.value = endCur;
       if (endCur !== prevEnd) {
-        nextTick(() => scrollAreaRef.value?.scrollToBottom());
+        requestScrollToBottom();
       }
     } else {
       prevMessageTotal.value = totalRows;
       prevTimelineEndCursor.value = endCur;
     }
   },
+  { immediate: true, flush: "post" },
 );
+
+// Thread → channel remount can run the row-count watch before ScrollArea's template ref is set.
+watch(scrollAreaRef, (area) => {
+  if (!area || !pendingInitialScroll.value) return;
+  pendingInitialScroll.value = false;
+  area.scrollToBottom();
+});
 
 function scrollToBottom() {
   scrollAreaRef.value?.scrollToBottom();
@@ -201,7 +227,7 @@ defineExpose({
           position: 'relative',
         }"
       >
-        <div ref="introEl" class="absolute left-0 right-0 top-0 z-[1]">
+        <div v-if="showIntro" ref="introEl" class="absolute left-0 right-0 top-0 z-[1]">
           <slot name="intro" />
         </div>
 

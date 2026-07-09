@@ -254,13 +254,15 @@ function onEditTarget(m: IMessage | IReply) {
 
 <template>
   <div class="flex:col h-full min-h-0 w-[32rem] shrink-0 border-l">
-    <div class="flex:row-xl flex:center-y justify-between h-10 p-4">
-      <div class="text-base font-semibold">Thread</div>
+    <slot name="header">
+      <div class="flex:row-xl flex:center-y justify-between h-10 p-4">
+        <div class="text-base font-semibold">Thread</div>
 
-      <Button variant="outline" size="icon" @click="emit('close')">
-        <SidebarOpen class="w-4 h-4" />
-      </Button>
-    </div>
+        <Button variant="outline" size="icon" @click="emit('close')">
+          <SidebarOpen class="w-4 h-4" />
+        </Button>
+      </div>
+    </slot>
 
     <Separator />
 

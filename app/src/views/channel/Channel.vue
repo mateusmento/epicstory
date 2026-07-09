@@ -8,6 +8,7 @@ import { useMeeting } from "@/domain/meetings";
 import { SCHEDULE_CHANNEL_ID_QUERY_KEY } from "@/domain/schedule";
 import { useWorkspace } from "@/domain/workspace";
 import { ChatboxHeader, ChatboxMeetingActions, ChatboxPresenceStrip } from "@/presentationals/channel";
+import type { IMessage } from "@epicstory/contracts";
 import { useRouter } from "vue-router";
 
 const { channel } = useSyncedChannel();
@@ -26,6 +27,11 @@ function onScheduleMeetingForChannel() {
     query: { [SCHEDULE_CHANNEL_ID_QUERY_KEY]: String(channel.value.id) },
   });
 }
+
+function onOpenThread(message: IMessage) {
+  if (!user.value) return;
+  viewContent("replies", { message, meId: user.value.id });
+}
 </script>
 
 <template>
@@ -36,7 +42,12 @@ function onScheduleMeetingForChannel() {
       :meetingId="currentMeeting.id"
       :key="1"
     />
-    <Chatbox v-show="!currentMeeting || currentMeeting.channelId !== channel.id" class="flex-1" :key="2">
+    <Chatbox
+      v-show="!currentMeeting || currentMeeting.channelId !== channel.id"
+      class="flex-1"
+      :key="2"
+      @open-thread="onOpenThread"
+    >
       <template v-if="user" #header>
         <ChatboxHeader :channel-name="channel.name" @more-details="viewContent('channel')">
           <template #presence>

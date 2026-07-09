@@ -4,7 +4,7 @@ import { useNavTrigger } from "@/design-system/ui/nav-view/nav-view";
 import { useMeeting, useMeetingLayout, useMeetingMediaDevicesStore } from "@/domain/meetings";
 import type { MeetingGridLayoutView, MeetingSpeakerLayoutView } from "@/lib/meetings";
 import { storeToRefs } from "pinia";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { MeetingControls, MeetingGrid, MeetingSpeakerView } from "@/presentationals/meeting";
 import MeetingDeviceMenu from "./MeetingDeviceMenu.vue";
 
@@ -26,21 +26,18 @@ const {
   gridPage,
   speakingIds,
   applySelectedInputDevices,
+  chatOpen,
+  setChatOpen,
 } = useMeeting();
 
 const { content: detailsPaneContent, viewContent } = useNavTrigger("details-pane");
-const chatOpen = ref(false);
 
 watch(detailsPaneContent, (v) => {
-  if (v !== "meeting-chat") chatOpen.value = false;
-});
-
-watch(currentMeeting, (meeting) => {
-  if (!meeting) chatOpen.value = false;
+  if (v !== "meeting-chat") setChatOpen(false);
 });
 
 function toggleChat() {
-  chatOpen.value = !chatOpen.value;
+  setChatOpen(!chatOpen.value);
   viewContent("meeting-chat", { meeting: currentMeeting.value });
 }
 

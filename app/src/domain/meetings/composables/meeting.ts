@@ -78,6 +78,13 @@ const useMeetingStore = defineStore("meeting", () => {
   const isMicrophoneOn = ref(true);
   const isScreenSharing = ref(false);
 
+  /** Whether the meeting chat details pane is open (synced with MeetingControls). */
+  const chatOpen = ref(false);
+
+  function setChatOpen(open: boolean) {
+    chatOpen.value = open;
+  }
+
   // --- Layout mode (meeting grid) ---
   const layoutMode = ref<"speaker" | "grid">("speaker");
   const peersDock = ref<"both" | "top" | "right">("both");
@@ -572,6 +579,7 @@ const useMeetingStore = defineStore("meeting", () => {
     session.value?.close();
     removeCameras();
     currentMeeting.value = null;
+    chatOpen.value = false;
     teardownDetector();
   }
 
@@ -647,6 +655,8 @@ const useMeetingStore = defineStore("meeting", () => {
     isCameraOn,
     isMicrophoneOn,
     isScreenSharing,
+    chatOpen,
+    setChatOpen,
     layoutMode,
     peersDock,
     topDockMax,
