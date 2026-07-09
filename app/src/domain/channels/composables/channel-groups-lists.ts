@@ -1,7 +1,7 @@
 import { useDependency } from "@/core/dependency-injection";
 import { createPaginatedListEngine, createPaginatedListState, type PaginatedListState } from "@/domain/async";
 import { ChannelApi } from "@epicstory/api-client";
-import type { ChannelGroupsPage, IChannel, IPage } from "@epicstory/contracts";
+import type { ChannelGroupsPage, IChannel, IMeetingAttendee, IPage } from "@epicstory/contracts";
 import { toReactive } from "@vueuse/core";
 import { markRaw, toRefs } from "vue";
 
@@ -129,11 +129,25 @@ export function useChannelGroupsLists() {
     }
   }
 
+  function updateChannelMeetingAttendees(
+    channelId: number,
+    updater: (prev: IMeetingAttendee[]) => IMeetingAttendee[],
+  ): void {
+    for (const state of [groupState, meetingState, directState]) {
+      const channel = state.items.find((c) => c.id === channelId);
+      if (channel?.meeting) {
+        channel.meeting.attendees = updater(channel.meeting.attendees ?? []);
+        return;
+      }
+    }
+  }
+
   return toReactive({
     group: sectionBundle(groupState, groupEngine.loadMore),
     meeting: sectionBundle(meetingState, meetingEngine.loadMore),
     direct: sectionBundle(directState, directEngine.loadMore),
     loadAll: markRaw(loadAll),
     updateChannelMeeting: markRaw(updateChannelMeeting),
+    updateChannelMeetingAttendees: markRaw(updateChannelMeetingAttendees),
   });
 }

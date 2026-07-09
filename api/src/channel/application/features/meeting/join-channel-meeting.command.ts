@@ -90,6 +90,13 @@ export class JoinChannelMeetingHandler
 
     meeting = await this.meetingRepo.save(meeting);
 
+    // Reload with user relations so the ACK and broadcasts carry full attendee data.
+    const reloaded = await this.meetingRepo.findOne({
+      where: { id: meeting.id },
+      relations: { attendees: { user: true } },
+    });
+    if (reloaded) meeting = reloaded;
+
     meeting.channel = channel;
 
     if (createdNewMeeting && meeting.channelId) {
@@ -101,7 +108,9 @@ export class JoinChannelMeetingHandler
       meeting.threadMessageId = threadMessageId;
     }
 
-    this.meetingGateway.emitAttendeeJoined(meeting, attendee);
+    const loadedAttendee =
+      meeting.attendees.find((a) => a.remoteId === remoteId) ?? attendee;
+    this.meetingGateway.emitAttendeeJoined(meeting, loadedAttendee);
 
     this.meetingGateway.joinMeetingRoom(issuerId, meeting.id, remoteId);
 

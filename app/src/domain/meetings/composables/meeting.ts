@@ -372,8 +372,12 @@ const useMeetingStore = defineStore("meeting", () => {
   async function connectMeeting(
     {
       camera: existingCamera,
+      isCameraOn: cameraOverride,
+      isMicrophoneOn: micOverride,
     }: {
       camera?: MediaStream;
+      isCameraOn?: boolean;
+      isMicrophoneOn?: boolean;
     },
     meetingFactory: (data: JoinMeetingMediaBody) => Promise<IMeeting>,
   ) {
@@ -385,6 +389,10 @@ const useMeetingStore = defineStore("meeting", () => {
     }
 
     mycamera.value = camera;
+
+    // Apply overrides before broadcasting our media state to peers.
+    if (cameraOverride !== undefined) isCameraOn.value = cameraOverride;
+    if (micOverride !== undefined) isMicrophoneOn.value = micOverride;
 
     // Start (or refresh) active speaker detection once we have a local stream.
     syncDetectorSources();
@@ -458,7 +466,7 @@ const useMeetingStore = defineStore("meeting", () => {
 
   function joinMeeting({ channelId, camera }: { channelId: number; camera?: MediaStream }) {
     incomingMeeting.value = null;
-    return connectMeeting({ camera }, async (data) => {
+    return connectMeeting({ camera, isCameraOn: false }, async (data) => {
       const body = { ...data, channelId } satisfies JoinChannelMeetingBody;
       return await new Promise<IMeeting>((res) => {
         sockets.websocket.emit("join-meeting", body, (m: IMeeting) => res(m));

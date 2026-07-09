@@ -45,9 +45,11 @@ function onSprintCompleted(result: CompleteSprintResult) {
 
 <template>
   <div class="flex flex-col h-full min-h-0 overflow-hidden">
-    <div class="px-4 py-3 border-b">
+    <div class="flex:row-lg flex:center-y px-4 h-10">
       <h2 class="text-sm font-semibold">Sprint Planning</h2>
     </div>
+
+    <Separator />
 
     <div class="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col gap-4">
       <!-- Current sprint -->

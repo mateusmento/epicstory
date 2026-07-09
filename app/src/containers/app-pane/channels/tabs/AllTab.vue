@@ -2,11 +2,14 @@
 import { UserAvatar } from "@/presentationals/user";
 import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/design-system";
 import { cn } from "@/design-system/utils";
+import { useAuth } from "@/domain/auth";
 import { useChannel, useChannelGroupsLists, useWorkspaceOnline } from "@/domain/channels";
 import {
   useMeeting,
   useMeetingSocket,
+  type IncomingAttendeePayload,
   type IncomingMeetingPayload,
+  type LeavingAttendeePayload,
   type MeetingEndedPayload,
 } from "@/domain/meetings";
 import type { IChannel } from "@epicstory/contracts";
@@ -17,13 +20,15 @@ import { computed, onMounted, onUnmounted, reactive, watch } from "vue";
 import CreateChannel from "../CreateChannel.vue";
 import ChannelContextMenu from "@/presentationals/app-pane/channels/ChannelContextMenu.vue";
 import ChannelContextMenuProvider from "../ChannelContextMenuProvider.vue";
+import { srfClasses, srfModifiers } from "@/design-system/ui/surface/surface-intent-classes.js";
 
 const props = defineProps<{
   class?: string;
 }>();
 
+const { user } = useAuth();
 const { openChannel } = useChannel();
-const { joinMeeting } = useMeeting();
+const { joinMeeting, currentMeeting } = useMeeting();
 const { workspace } = useWorkspace();
 const meetingSocket = useMeetingSocket();
 const { isUserOnline } = useWorkspaceOnline();
@@ -33,6 +38,21 @@ const createDialogOpen = reactive({
   group: false,
   meeting: false,
   direct: false,
+});
+
+// The gateway excludes the local user from their own `incoming-attendee` /
+// `leaving-attendee` broadcasts (socket.to() vs server.to()).
+// Compensate by syncing against `currentMeeting` transitions directly.
+watch(currentMeeting, (meeting, prev) => {
+  if (meeting?.channelId) {
+    // Joined or updated — replace with the server-returned meeting (includes self).
+    channelGroups.updateChannelMeeting(meeting.channelId, meeting);
+  } else if (prev?.channelId) {
+    // Left the meeting — remove self from the attendee list.
+    channelGroups.updateChannelMeetingAttendees(prev.channelId, (list) =>
+      list.filter((a) => a.user?.id !== user.value?.id),
+    );
+  }
 });
 
 function onIncomingMeeting({ meeting, channelId }: IncomingMeetingPayload) {
@@ -45,15 +65,34 @@ function onMeetingEnded({ channelId }: MeetingEndedPayload) {
   channelGroups.updateChannelMeeting(channelId, null);
 }
 
+function onIncomingAttendee({ attendee, meeting }: IncomingAttendeePayload) {
+  if (!meeting.channelId) return;
+  channelGroups.updateChannelMeetingAttendees(meeting.channelId, (prev) => {
+    if (prev.some((a) => a.remoteId === attendee.remoteId)) return prev;
+    return [...prev, attendee];
+  });
+}
+
+function onLeavingAttendee({ channelId, remoteId }: LeavingAttendeePayload) {
+  if (!channelId) return;
+  channelGroups.updateChannelMeetingAttendees(channelId, (prev) =>
+    prev.filter((a) => a.remoteId !== remoteId),
+  );
+}
+
 function subscribeMeetingEvents() {
   meetingSocket.emitSubscribeMeetings(workspace.value.id);
   meetingSocket.onIncomingMeeting(onIncomingMeeting);
   meetingSocket.onMeetingEnded(onMeetingEnded);
+  meetingSocket.onIncomingAttendee(onIncomingAttendee);
+  meetingSocket.onLeavingAttendee(onLeavingAttendee);
 }
 
 function unsubscribeMeetingEvents() {
   meetingSocket.offIncomingMeeting(onIncomingMeeting);
   meetingSocket.offMeetingEnded(onMeetingEnded);
+  meetingSocket.offIncomingAttendee(onIncomingAttendee);
+  meetingSocket.offLeavingAttendee(onLeavingAttendee);
 }
 
 type ChannelSectionItem = {
@@ -115,7 +154,7 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
           <div class="text-xs text-secondary-foreground">{{ item.title }}</div>
           <Dialog v-model:open="createDialogOpen[item.createKey]">
             <DialogTrigger as-child>
-              <Button size="sm" variant="ghost" :title="item.createTitle">
+              <Button size="sm" variant="ghost" intent="primary" :title="item.createTitle">
                 <PlusIcon class="size-4" />
               </Button>
             </DialogTrigger>
@@ -131,45 +170,73 @@ async function onChannelCreated(item: { createKey: "group" | "meeting" | "direct
         </div>
 
         <ChannelContextMenu v-for="channel of item.list.items" :key="channel.id" :channel="channel">
-          <div class="flex:row-md flex:center-y">
-            <Button
-              size="sm"
-              variant="ghost"
-              class="flex:row-lg flex:center-y flex-1 justify-start"
-              @click="openChannel(channel)"
-            >
-              <UserAvatar
-                v-if="channel.directPeer"
-                :name="channel.directPeer.name"
-                :picture="channel.directPeer.picture"
+          <div class="flex:col-sm">
+            <div class="flex:row-md flex:center-y">
+              <Button
                 size="sm"
+                variant="ghost"
+                intent="primary"
+                class="flex:row-lg flex:center-y flex-1 justify-start"
+                @click="openChannel(channel)"
+              >
+                <UserAvatar
+                  v-if="channel.directPeer"
+                  :name="channel.directPeer.name"
+                  :picture="channel.directPeer.picture"
+                  size="sm"
+                  class="shrink-0"
+                />
+                <HeadphonesIcon
+                  v-else-if="channel.type === 'meeting'"
+                  class="h-4 w-4 text-muted-foreground"
+                  stroke-width="2.5"
+                />
+                <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+                <small>{{ channel.name }}</small>
+                <div
+                  v-if="
+                    channel.type === 'direct' && channel.directPeer && isUserOnline(channel.directPeer.id)
+                  "
+                  class="w-2 h-2 shrink-0 bg-green-400 rounded-full"
+                  title="Online"
+                ></div>
+              </Button>
+              <Button
+                v-if="channel.type === 'meeting' || channel.meeting"
+                size="sm"
+                variant="ghost"
+                intent="primary"
                 class="shrink-0"
-              />
-              <HeadphonesIcon
-                v-else-if="channel.type === 'meeting'"
-                class="h-4 w-4 text-muted-foreground"
-                stroke-width="2.5"
-              />
-              <HashIcon v-else class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-              <div class="text-xs">{{ channel.name }}</div>
-              <div
-                v-if="channel.type === 'direct' && channel.directPeer && isUserOnline(channel.directPeer.id)"
-                class="w-2 h-2 shrink-0 bg-green-400 rounded-full"
-                title="Online"
-              ></div>
-            </Button>
-            <Button
-              v-if="channel.type === 'meeting' || channel.meeting"
-              size="sm"
-              variant="ghost"
-              class="shrink-0"
-              @mousedown.prevent
-              @touchstart.prevent
-              @click.stop="joinMeeting({ channelId: channel.id })"
-              title="Join meeting"
+                @mousedown.prevent
+                @touchstart.prevent
+                @click.stop="joinMeeting({ channelId: channel.id })"
+                title="Join meeting"
+              >
+                <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
+              </Button>
+            </div>
+
+            <!-- Live attendees nested under meeting channels -->
+            <div
+              v-if="channel.type === 'meeting' && channel.meeting?.attendees?.length"
+              class="my-1 ml-6 mr-10 flex:col-lg"
             >
-              <HeadphonesIcon class="h-4 w-4 text-muted-foreground" stroke-width="2.5" />
-            </Button>
+              <template v-for="attendee in channel.meeting.attendees" :key="attendee.remoteId">
+                <div
+                  v-if="attendee.user"
+                  class="flex:row-lg flex:center-y p-1 rounded-lg"
+                  :class="[srfClasses('ghost', 'primary'), srfModifiers({ hover: true })]"
+                >
+                  <UserAvatar
+                    :name="attendee.user.name"
+                    :picture="attendee.user.picture"
+                    size="xs"
+                    class="shrink-0"
+                  />
+                  <small class="truncate">{{ attendee.user.name }}</small>
+                </div>
+              </template>
+            </div>
           </div>
         </ChannelContextMenu>
 

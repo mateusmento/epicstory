@@ -3,13 +3,17 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { IsInt, IsNumber, IsOptional, Max, Min } from 'class-validator';
 import { Channel } from 'src/channel/domain/entities/channel.entity';
 import { Meeting } from 'src/channel/domain/entities/meeting.entity';
-import { ChannelRepository } from 'src/channel/infrastructure/repositories';
+import {
+  ChannelRepository,
+  MeetingRepository,
+} from 'src/channel/infrastructure/repositories';
 import { Issuer } from 'src/core/auth';
 import { Page } from 'src/core/page';
 import { mapBy, patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { enrichChannelsForPreview } from '../utils/enrich-channel';
+import { In } from 'typeorm';
 
 export class FindChannelGroups {
   workspaceId: number;
@@ -52,6 +56,7 @@ export class FindChannelGroupsQuery
   constructor(
     private workspaceRepo: WorkspaceRepository,
     private channelRepo: ChannelRepository,
+    private meetingRepo: MeetingRepository,
   ) {}
 
   async execute(query: FindChannelGroups): Promise<ChannelGroupsPage> {
@@ -172,6 +177,22 @@ export class FindChannelGroupsQuery
       .leftJoinAndSelect('msg.sender', 'lastMsgSender')
       .where('c.id IN (:...ids)', { ids })
       .getMany();
+
+    // Batch-load attendees for all ongoing meetings in one query.
+    const meetingIds = channels
+      .map((c) => (c as any).meeting?.id)
+      .filter(Boolean) as number[];
+    if (meetingIds.length > 0) {
+      const meetings = await this.meetingRepo.find({
+        where: { id: In(meetingIds) },
+        relations: { attendees: { user: true } },
+      });
+      const byId = new Map(meetings.map((m) => [m.id, m]));
+      channels.forEach((c) => {
+        const m = (c as any).meeting;
+        if (m) (c as any).meeting = byId.get(m.id) ?? m;
+      });
+    }
 
     const enriched = enrichChannelsForPreview(channels, issuerId);
 
