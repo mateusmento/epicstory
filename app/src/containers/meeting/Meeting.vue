@@ -18,7 +18,6 @@ const {
   stopMicrophone,
   startScreenShare,
   stopScreenShare,
-  currentMeetingChannelType,
   currentMeeting,
   pinnedSpeakerId,
   togglePinSpeaker,
@@ -55,7 +54,7 @@ const { participants, featured, topDockPeers, rightDockPeers } = useMeetingLayou
 const mediaDevices = useMeetingMediaDevicesStore();
 const { selectedSpeakerId } = storeToRefs(mediaDevices);
 
-const canEndMeeting = computed(() => currentMeetingChannelType.value !== "meeting");
+const canEndMeeting = computed(() => currentMeeting.value?.channel?.type !== "meeting");
 
 const gridLayout = computed<MeetingGridLayoutView>(() => ({
   participants: participants.value,

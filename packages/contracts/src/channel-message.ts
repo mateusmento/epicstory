@@ -83,6 +83,8 @@ export type IMeetingAttendee = {
 export type IMeeting = {
   id: number;
   channelId?: number | null;
+  /** Populated on join-meeting ack; otherwise omitted. */
+  channel?: Pick<IChannel, "id" | "type"> | null;
   workspaceId?: number;
   attendees: IMeetingAttendee[];
   ongoing: boolean;

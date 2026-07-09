@@ -2,11 +2,10 @@ import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
 import { useWebSockets } from "@/core/websockets";
 import { useWorkspace } from "@/domain/workspace";
-import { ChannelApi, MeetingApi } from "@epicstory/api-client";
+import { MeetingApi } from "@epicstory/api-client";
 import type {
   AttendeeJoinedEvent,
   AttendeeLeftEvent,
-  ChannelType,
   CurrentMeetingEndedEvent,
   EndMeetingBody,
   IMeeting,
@@ -94,9 +93,6 @@ const useMeetingStore = defineStore("meeting", () => {
   const detector = shallowRef<ActiveSpeakerDetector | null>(null);
 
   const meetingApi = useDependency(MeetingApi);
-  const channelApi = useDependency(ChannelApi);
-
-  const currentMeetingChannelType = ref<ChannelType | null>(null);
 
   const sources = computed(() => {
     const src: { id: SpeakerId; stream: MediaStream | null }[] = [];
@@ -195,6 +191,20 @@ const useMeetingStore = defineStore("meeting", () => {
         return;
       }
     }
+  }
+
+  function setCameraState(stream: MediaStream, enabled: boolean) {
+    const videoTrack = stream.getVideoTracks()[0];
+    if (videoTrack) videoTrack.enabled = enabled;
+  }
+
+  function syncLocalMediaFromJoinAck(meeting: IMeeting, camera: MediaStream) {
+    const remoteId = localRemoteId.value;
+    if (remoteId) {
+      const self = meeting.attendees.find((a) => a.remoteId === remoteId);
+      if (self) isCameraOn.value = self.isCameraOn;
+    }
+    setCameraState(camera, isCameraOn.value);
   }
 
   /**
@@ -397,6 +407,7 @@ const useMeetingStore = defineStore("meeting", () => {
     } satisfies JoinMeetingMediaBody;
 
     const meeting = await meetingFactory(data);
+    syncLocalMediaFromJoinAck(meeting, camera);
 
     session.value = createPeersSession({
       rtc,
@@ -424,15 +435,6 @@ const useMeetingStore = defineStore("meeting", () => {
     });
 
     currentMeeting.value = meeting;
-    currentMeetingChannelType.value = null;
-    if (meeting?.channelId) {
-      try {
-        const channel = await channelApi.findChannel(meeting.channelId);
-        currentMeetingChannelType.value = channel.type;
-      } catch {
-        currentMeetingChannelType.value = null;
-      }
-    }
 
     subscribeMeetings();
 
@@ -543,7 +545,7 @@ const useMeetingStore = defineStore("meeting", () => {
   }
 
   function endMeeting() {
-    if (currentMeetingChannelType.value === "meeting") {
+    if (currentMeeting.value?.channel?.type === "meeting") {
       // Meeting channels are persistent; "end" behaves like leave.
       leaveMeeting();
       return;
@@ -562,7 +564,6 @@ const useMeetingStore = defineStore("meeting", () => {
     session.value?.close();
     removeCameras();
     currentMeeting.value = null;
-    currentMeetingChannelType.value = null;
     teardownDetector();
   }
 
@@ -630,7 +631,6 @@ const useMeetingStore = defineStore("meeting", () => {
   return {
     incomingMeeting,
     currentMeeting,
-    currentMeetingChannelType,
     subscribeMeetings,
     mycamera,
     localScreenShareTrack,

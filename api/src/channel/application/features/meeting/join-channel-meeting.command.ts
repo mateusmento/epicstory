@@ -77,16 +77,20 @@ export class JoinChannelMeetingHandler
       }
     }
 
+    const effectiveCameraOn = channel.type === 'meeting' ? false : isCameraOn;
+
     const attendee = MeetingAttendee.of({
       remoteId,
       userId: issuerId,
-      isCameraOn,
+      isCameraOn: effectiveCameraOn,
       isMicrophoneOn,
     });
 
     meeting.addAttendee(attendee);
 
     meeting = await this.meetingRepo.save(meeting);
+
+    meeting.channel = channel;
 
     if (createdNewMeeting && meeting.channelId) {
       const { threadMessageId } =
