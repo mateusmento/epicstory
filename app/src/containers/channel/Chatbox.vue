@@ -79,7 +79,9 @@ function canJoinMeetingFromActivity(activity: IChannelActivity) {
 
 function meetingAttendeesFromActivity(activity: IChannelActivity) {
   if (!canJoinMeetingFromActivity(activity)) return [];
-  return channel.value?.meeting?.attendees?.map((a) => a.user) ?? [];
+  const fromMeeting = channel.value?.meeting?.attendees?.map((a) => a.user) ?? [];
+  if (fromMeeting.length > 0) return fromMeeting;
+  return channel.value?.peers ?? [];
 }
 
 function onMessageDeleted(messageId: number) {

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { UserAvatar } from "@/presentationals/user";
+import { UserAvatarStack } from "@/presentationals/user";
 import { Button } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 import { useMeeting } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
-import { compact, take, uniqBy } from "lodash";
+import { compact, uniqBy } from "lodash";
 import { computed } from "vue";
 import {
   IconCameraOff,
@@ -40,9 +40,7 @@ const candidates = computed(() => {
   return compact([me, ...attendeeUsers]);
 });
 
-const people = computed(() => {
-  return take(uniqBy(candidates.value, "id"), 4);
-});
+const people = computed(() => uniqBy(candidates.value, "id"));
 
 function openMeeting() {
   const meeting = currentMeeting.value;
@@ -62,27 +60,17 @@ async function joinIncomingMeeting() {
 
 <template>
   <div v-if="currentMeeting || incomingMeeting" class="flex:col-xl mx-auto p-2 rounded-xl border bg-card">
-    <div class="self-stretch bg-secondary p-2 py-4 rounded-lg">
-      <div class="flow-root">
-        <div class="flex flex:center flex-wrap gap-2 place-content-center content-center">
-          <template v-for="(p, i) in people" :key="i">
-            <UserAvatar
-              :name="p.name ?? ''"
-              :picture="p.picture"
-              size="3xl"
-              variant="meetingNavbar"
-              :title="p.name"
-            />
-          </template>
-          <div
-            v-if="candidates.length > 4"
-            class="flex flex:center w-14 h-14 rounded-full text-lg font-semibold font-dmSans text-muted-foreground bg-muted"
-            :title="`${candidates.length} participants`"
-          >
-            +{{ candidates.length - 4 }}
-          </div>
-        </div>
-      </div>
+    <div class="self-stretch bg-secondary py-4 rounded-lg">
+      <UserAvatarStack
+        v-if="people.length"
+        :users="people"
+        size="3xl"
+        :overlapPx="12"
+        variant="meetingNavbar"
+        :min="1"
+        center
+        class="min-w-0 w-full max-w-full"
+      />
     </div>
 
     <div class="flex:row-md flex:center">

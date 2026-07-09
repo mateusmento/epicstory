@@ -129,7 +129,7 @@ export class FindLiveMeetingHandler implements IQueryHandler<FindLiveMeeting> {
           'id',
         ).slice(0, 4);
 
-        uniqueUsers.map((u: any) => ({
+        return uniqueUsers.map((u: any) => ({
           id: u.id,
           name: u.name,
           picture: u.picture ?? null,

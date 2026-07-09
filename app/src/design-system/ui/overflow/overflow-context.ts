@@ -89,9 +89,21 @@ export function provideOverflowContext(options: {
 
   const layoutResult = computed(() => {
     const list = sortedSegments();
-    if (options.containerWidthPx.value <= 0 || list.length === 0) {
+    if (list.length === 0) {
       return {
-        visible: list.map(() => false),
+        visible: [],
+        showEllipsis: false,
+        hiddenCount: 0,
+        hiddenBefore: 0,
+        hiddenAfter: 0,
+        collapsed: false,
+      } satisfies OverflowLayoutResult;
+    }
+
+    // Inline hosts (buttons, chips) can report 0px until content paints — show items so width can establish.
+    if (options.containerWidthPx.value <= 0) {
+      return {
+        visible: list.map((segment) => segment.kind === "item"),
         showEllipsis: false,
         hiddenCount: 0,
         hiddenBefore: 0,

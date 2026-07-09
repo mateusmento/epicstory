@@ -10,7 +10,7 @@ Ordered by **impact on developer workflow** and **readiness** (backend vs greenf
 | [04](./04-github-pr-lifecycle-comments.md) | PR merged/closed timeline comments | Deferred | Optional MVP; DB sync exists |
 | [05](./05-github-chat-commands.md) | Chat / command palette + GitHub | Deferred | See `.tasks/github-integration/07` |
 | [06](./06-github-manual-smoke.md) | GitHub integration manual smoke | Ongoing | Document checklist per env |
-| [07](./07-user-avatar-stack-adoption.md) | `UserAvatarStack` adoption (stacked avatars) | Not started | EPV1-98; 6 locations still hand-rolled |
+| [07](./07-user-avatar-stack-adoption.md) | `UserAvatarStack` adoption (stacked avatars) | Done | EPV1-98; 6 locations migrated |
 | [08](./08-ui-redesign-foundation.md) | UI redesign foundation (Storybook + presentational layer) | **Complete** | Hero slices + green Storybook catalog shipped |
 | [09](./09-design-tokens-ds-primitives.md) | Design tokens & DS primitives | **In progress** | Phase 0 done; token audit + primitive stories next |
 | [10](./10-redesign-rollout.md) | Redesign rollout (presentationals + app dogfood) | Not started | Surface-by-surface redesign; depends on 09 |

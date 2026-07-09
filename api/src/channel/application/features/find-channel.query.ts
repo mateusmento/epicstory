@@ -34,6 +34,8 @@ export class FindChannelQuery implements IQueryHandler<FindChannel> {
         'm',
         'm.channel_id = c.id AND m.ongoing = true',
       )
+      .leftJoinAndSelect('m.attendees', 'meetingAttendees')
+      .leftJoinAndSelect('meetingAttendees.user', 'meetingAttendeeUser')
       .where('c.id = :id', { id: channelId })
       .getOne();
 

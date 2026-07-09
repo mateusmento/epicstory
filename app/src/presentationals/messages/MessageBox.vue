@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RichTextPreview } from "@/presentationals/rich-text";
-import { UserAvatar } from "@/presentationals/user";
+import { UserAvatarStack } from "@/presentationals/user";
 import {
   Button,
   HoverCard,
@@ -77,6 +77,14 @@ const quotedExcerpt = computed(() => {
   const raw = q.displayContent ?? messageBodyPlainText(q);
   return truncatePlainText(raw, TIPTAP_MESSAGE_BOX_QUOTE_EXCERPT_MAX);
 });
+
+const replierUsers = computed(() =>
+  props.message.repliers.map((replier) => ({
+    id: replier.user.id,
+    name: replier.user.name,
+    picture: replier.user.picture,
+  })),
+);
 
 /** Omit attachment tiles already rendered inline in the body (listing APIs still return full set). */
 const bubbleAttachmentTiles = computed(() =>
@@ -171,18 +179,18 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
         v-if="!props.hideRepliesCount && props.message.repliesCount > 0"
         variant="ghost"
         size="icon"
-        class="flex:row-md flex:center-y"
+        class="flex min-w-0 max-w-full items-center gap-2"
         @click="emit('discussion-opened')"
       >
-        <UserAvatar
-          v-for="replier in props.message.repliers"
-          :key="replier.user.id"
-          :name="replier.user.name"
-          :picture="replier.user.picture"
+        <UserAvatarStack
+          v-if="replierUsers.length"
+          :users="replierUsers"
           size="md"
-          class="-ml-2 first:ml-0"
+          :min="1"
+          :overlap-px="8"
+          class="min-w-0 shrink"
         />
-        <span class="text-xs text-primary/40"> {{ props.message.repliesCount }} replies </span>
+        <span class="shrink-0 text-xs text-primary/40"> {{ props.message.repliesCount }} replies </span>
       </Button>
 
       <div v-if="props.message.reactions.length > 0" class="flex:row-md flex:center-y">

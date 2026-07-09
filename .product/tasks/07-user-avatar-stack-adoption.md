@@ -1,6 +1,6 @@
 # 07 — Adopt `UserAvatarStack` for stacked avatars
 
-**Status:** Not started  
+**Status:** Done  
 **Epic:** EPV1-98 (overflow container)  
 **Session question:** Do stacked participant/assignee faces collapse consistently in narrow layouts instead of clipping or wrapping ad hoc?
 
@@ -21,93 +21,79 @@ Several surfaces still render multiple `UserAvatar` components in a row with han
 
 ### 1. Channel activity — meeting join button
 
-**File:** `app/src/components/channel/ChannelActivityRow.vue` (lines ~103–110)
-
-**Today:** `UserAvatar` × `meetingAttendees.slice(0, 4)` inside `flex -space-x-1.5` on the “Join meeting” button.
+**File:** `app/src/presentationals/channel/ChannelActivityRow.vue`
 
 **Done when:**
 
-- [ ] Replace with `UserAvatarStack` using mapped users from `activity.meeting?.attendeeNames` (`{ id: index, name }` — names-only payload today).
-- [ ] Preserve `size="base"` and `avatar-class="ring-2 ring-background"`.
-- [ ] Stack truncates with `+N` when button width is tight (no hard cap at 4).
-
-**Notes:** `attendeeNames` is `string[]` in contracts; no pictures until API adds them.
+- [x] Replace with `UserAvatarStack` using `meetingAttendees` from parent.
+- [x] Preserve `size="base"` and `avatar-class="ring-2 ring-background"`.
+- [x] Stack truncates with `+N` when button width is tight (no hard cap at 4).
 
 ---
 
 ### 2. Navbar — live scheduled meeting card
 
-**File:** `app/src/components/navbar/LiveMeetingJoinCard.vue` (lines ~20–29)
-
-**Today:** `UserAvatar` × `people.slice(0, 4)` with `variant="liveJoin"`, parent passes capped list from `WorkspaceNavbar.vue`.
+**File:** `app/src/presentationals/navbar/LiveMeetingJoinCard.vue`
 
 **Done when:**
 
-- [ ] Replace inner stack with `UserAvatarStack` (`users={people}`, `size="md"`, `variant="liveJoin"`).
-- [ ] Pass full `participantsPreview` from `WorkspaceNavbar.vue`; remove `.slice(0, 4)` at call site.
-- [ ] Remove manual `-space-x-2` wrapper.
+- [x] Replace inner stack with `UserAvatarStack` (`users={people}`, `size="md"`, `variant="liveJoin"`).
+- [x] Pass full `participantsPreview` from `WorkspaceNavbar.vue`; remove `.slice(0, 4)` at call site.
+- [x] Remove manual `-space-x-2` wrapper.
 
 ---
 
 ### 3. Navbar — in-call / incoming meeting controls
 
-**File:** `app/src/components/navbar/CurrentMeetingControlsCard.vue` (lines ~60–76)
-
-**Today:** Up to 4 avatars via `take(uniqBy(candidates), 4)` plus a separate `+N` circle when `candidates.length > 4`.
+**File:** `app/src/containers/navbar/CurrentMeetingControlsCard.vue`
 
 **Done when:**
 
-- [ ] Replace with `UserAvatarStack` over full `candidates` list (deduped, me + attendees).
-- [ ] Preserve `size="3xl"` and `variant="meetingNavbar"`.
-- [ ] Remove bespoke `+{{ candidates.length - 4 }}` badge (stack ellipsis handles it).
+- [x] Replace with `UserAvatarStack` over full `candidates` list (deduped, me + attendees).
+- [x] Preserve `size="3xl"` and `variant="meetingNavbar"`.
+- [x] Remove bespoke `+{{ candidates.length - 4 }}` badge (stack ellipsis handles it).
 
 ---
 
 ### 4. Message thread — reply preview faces
 
-**File:** `app/src/components/messages/MessageBox.vue` (lines ~179–186)
-
-**Today:** `UserAvatar` per `message.repliers` with `-ml-2 first:ml-0` inside the replies button.
+**File:** `app/src/presentationals/messages/MessageBox.vue`
 
 **Done when:**
 
-- [ ] Map `repliers` → `{ id, name, picture }[]` and render `UserAvatarStack`.
-- [ ] Keep replies count label beside the stack; tune `overlap-px` / `min` for inline button layout.
-- [ ] Verify narrow message column: stack collapses without overlapping the “N replies” label.
+- [x] Map `repliers` → `{ id, name, picture }[]` and render `UserAvatarStack`.
+- [x] Keep replies count label beside the stack; tune `overlap-px` / `min` for inline button layout.
+- [x] Verify narrow message column: stack collapses without overlapping the “N replies” label.
 
 ---
 
 ### 5. Channel intro — member faces hero
 
-**File:** `app/src/components/channel/Chatbox.vue` (lines ~419–426)
-
-**Today:** `UserAvatar` × `channel.peers` with `size="tileXl"` and `-ml-10 first:ml-0`.
+**File:** `app/src/presentationals/channel/ChatboxIntro.vue`
 
 **Done when:**
 
-- [ ] Replace with `UserAvatarStack` (`users={channel.peers}`, `size="tileXl"`, generous overlap via `overlap-px`).
-- [ ] Intro row respects container width when many peers exist.
-- [ ] Text line below (“beginning of a conversation…”) unchanged.
+- [x] Replace with `UserAvatarStack` (`users={channel.peers}`, `size="tileXl"`, generous overlap via `overlap-px`).
+- [x] Intro row respects container width when many peers exist.
+- [x] Text line below (“beginning of a conversation…”) unchanged.
 
 ---
 
 ### 6. New issue modal — assignee badge trigger
 
-**File:** `app/src/views/project/NewIssueModal.vue` (lines ~215–223)
-
-**Today:** `UserAvatar` × `selectedAssignees` with `size="xs"` and `ml-[-0.45rem]` overlap in the assignee menu button.
+**File:** `app/src/containers/views/project/NewIssueModal.vue`
 
 **Done when:**
 
-- [ ] Replace with `UserAvatarStack` inside the assignee `Button` trigger.
-- [ ] Preserve `size="xs"`; match compact overlap for badge-sized control.
-- [ ] Empty state (person icon) unchanged when no assignees selected.
+- [x] Replace with `UserAvatarStack` inside the assignee `Button` trigger.
+- [x] Preserve `size="xs"`; match compact overlap for badge-sized control.
+- [x] Empty state (person icon) unchanged when no assignees selected.
 
 ## Explicitly out of scope (not stacked avatars)
 
 | File | Why skip |
 |------|----------|
-| `MeetingLobby.vue` | Avatar + name chips in a wrap grid, not a stack |
+| `MeetingLobby.vue` | Removed — was avatar + name chips in a wrap grid |
 | `CreateChannel.vue` member chips | Named removable chips; stack only on dropdown trigger |
 | `CalendarItemDialog.vue` | Participant list rows with name + email |
 | `IssueActivitySection.vue` | Single actor avatar per activity line |
@@ -122,5 +108,5 @@ Several surfaces still render multiple `UserAvatar` components in a row with han
 
 ## Acceptance
 
-- No remaining `UserAvatar` + `v-for` overlap patterns in the six files above (grep `/v-for[\s\S]*UserAvatar/` clean for those paths).
+- No remaining `UserAvatar` + `v-for` overlap patterns in the six files above.
 - Resize each surface (backlog-width, navbar, message column, channel intro): faces collapse with `+N` instead of clipping or wrapping mid-stack.

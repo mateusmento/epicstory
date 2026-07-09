@@ -56,9 +56,7 @@ const showHuddleCard = computed(() => {
   return Boolean(!currentMeeting.value && meeting && isLiveJoinableMeeting(meeting));
 });
 
-const huddlePeers = computed(() => {
-  return (liveScheduledMeeting.value?.participantsPreview ?? []).slice(0, 4);
-});
+const huddlePeers = computed(() => liveScheduledMeeting.value?.participantsPreview ?? []);
 
 const projectsByTeamId = computed(() => {
   const map = new Map<number, Project[]>();

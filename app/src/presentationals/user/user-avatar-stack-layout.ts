@@ -77,3 +77,20 @@ export function computeVisibleStackedAvatars(options: {
   if (total >= min && best < min) return 0;
   return best;
 }
+
+/** Pixel width of a stacked row showing `visibleCount` avatars (+ badge when truncated). */
+export function stackedRowWidthPx(options: {
+  total: number;
+  visibleCount: number;
+  itemWidthPx: number;
+  overlapPx: number;
+  overflowBadgeWidthPx: number;
+}): number {
+  const { total, visibleCount, itemWidthPx: d, overlapPx: o, overflowBadgeWidthPx: b } = options;
+  const k = Math.max(0, Math.min(visibleCount, total));
+  if (k <= 0) return 0;
+  const stride = d - o;
+  if (stride <= 0) return d;
+  const w = d + (k - 1) * stride;
+  return k < total ? w + b : w;
+}

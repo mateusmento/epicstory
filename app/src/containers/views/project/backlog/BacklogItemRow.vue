@@ -176,9 +176,8 @@ function updateDueDate(dueDate: Date | null | undefined) {
       #default="{ users }"
     >
       <div class="flex w-full min-w-0 cursor-pointer items-center justify-start">
-        <div class="flex w-full min-w-0 max-w-full items-center">
+        <div v-if="users.length" class="flex w-full min-w-0 max-w-full items-center">
           <UserAvatarStack
-            v-if="users.length"
             :users="users"
             size="sm"
             :min="1"
@@ -189,7 +188,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
         </div>
         <div
           v-if="users.length === 0"
-          class="ml-1 flex flex:center w-fit p-0.5 border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
+          class="flex flex:center w-fit p-0.5 border-2 border-dashed border-secondary-foreground/30 rounded-full group/assignee hover:border-secondary-foreground/60"
           title="Add assignee"
         >
           <Icon

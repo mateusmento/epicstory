@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { UserAvatar } from "@/presentationals/user";
+import { UserAvatarStack } from "@/presentationals/user";
 import type { IUser } from "@epicstory/contracts";
 
 defineProps<{
@@ -10,15 +10,8 @@ defineProps<{
 
 <template>
   <div class="flex:col-3xl p-xl mb-2xl">
-    <div class="flex:row-xl flex:center-y gap-2">
-      <UserAvatar
-        v-for="member of peers"
-        :key="member.id"
-        :name="member.name"
-        :picture="member.picture"
-        size="tileXl"
-        class="-ml-10 first:ml-0"
-      />
+    <div class="flex:row-xl flex:center-y gap-2 min-w-0">
+      <UserAvatarStack :users="peers" size="tileXl" :min="1" :overlap-px="24" class="min-w-0 w-full" />
     </div>
     <div class="text-xl text-accent-foreground font-lato">
       This is the begining of a conversation between

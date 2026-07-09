@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { UserAvatar } from "@/presentationals/user";
+import { UserAvatar, UserAvatarStack } from "@/presentationals/user";
 import { Button } from "@/design-system";
 import IconReplies from "@/design-system/icons/IconReplies.vue";
 import type { IChannelActivity, IUser } from "@epicstory/contracts";
@@ -101,17 +101,16 @@ const rowClass = computed(() =>
         {{ line }}
       </div>
       <div v-if="canJoinMeeting && activity.meetingId" class="mt-2">
-        <Button size="sm" variant="outline" class="gap-2" @click="emit('join-meeting', activity.meetingId)">
-          <span class="flex -space-x-1.5">
-            <UserAvatar
-              v-for="attendee of meetingAttendees?.slice(0, 4)"
-              :key="attendee.id"
-              :name="attendee.name"
-              :picture="attendee.picture"
-              size="base"
-              class="ring-2 ring-background"
-            />
-          </span>
+        <Button variant="outline" class="gap-2 h-fit" @click="emit('join-meeting', activity.meetingId)">
+          <UserAvatarStack
+            v-if="meetingAttendees?.length"
+            :users="meetingAttendees"
+            size="base"
+            :min="2"
+            :overlap-px="10"
+            avatar-class="ring-2 ring-background"
+            class="shrink-0"
+          />
           Join meeting
         </Button>
       </div>

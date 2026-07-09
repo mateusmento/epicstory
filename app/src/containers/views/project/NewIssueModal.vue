@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { IssueLabelTags } from "@/containers/issue";
 import { WorkspaceMemberMenu } from "@/containers/workspace-members";
-import { UserAvatar } from "@/presentationals/user";
+import { UserAvatarStack } from "@/presentationals/user";
 import {
   Button,
   DialogClose,
@@ -13,7 +13,6 @@ import {
   Switch,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { cn } from "@/design-system/utils";
 import { staticMentionView } from "@/containers/issue/map-issue-mention-view";
 import { RichTextComposer } from "@/presentationals/rich-text";
 import { useAuth } from "@/domain/auth";
@@ -234,16 +233,14 @@ async function onCreateIssue() {
         <Menu type="dropdown-menu">
           <MenuTrigger as-child>
             <Button type="button" variant="outline" size="icon" class="flex items-center gap-2">
-              <div v-if="selectedAssignees.length > 0" class="flex:row flex:center-y">
-                <UserAvatar
-                  v-for="(assignee, i) in selectedAssignees"
-                  :key="assignee.id"
-                  :name="assignee.name"
-                  :picture="assignee.picture"
-                  size="xs"
-                  :class="cn(i > 0 && 'ml-[-0.45rem]')"
-                />
-              </div>
+              <UserAvatarStack
+                v-if="selectedAssignees.length > 0"
+                :users="selectedAssignees"
+                size="xs"
+                :min="1"
+                :overlap-px="7"
+                class="min-w-0 shrink"
+              />
               <Icon v-else name="oi-person" class="w-4 h-4 text-muted-foreground" />
               Assignee
             </Button>
