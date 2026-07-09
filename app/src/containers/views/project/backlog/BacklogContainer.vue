@@ -36,7 +36,7 @@ const groupBy = useStorage<GroupBy>("backlog.groupBy", "status", localStorage, {
 });
 const collapsedGroups = useStorage<Record<string, boolean>>("backlog.groupCollapsed", {});
 
-const GRID_COLS = "grid-cols-[16px_88px_1fr_100px_100px_110px_32px]";
+const GRID_COLS = "grid-cols-[16px_88px_1fr_100px_80px_110px_32px]";
 
 function toggleOrder(column: string) {
   orderBy.value = column;

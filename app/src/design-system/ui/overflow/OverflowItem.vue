@@ -11,6 +11,8 @@ const props = withDefaults(
     as?: string;
     segmentKey?: string;
     pinned?: boolean;
+    segmentWidthPx?: number;
+    maxWidthPx?: number;
   }>(),
   {
     as: "div",
@@ -38,9 +40,11 @@ watch(
   },
 );
 
-const { setRootEl, contentClass, edge, visible, outerClass } = useOverflowSegmentElement({
+const { setRootEl, contentClass, edge, visible, outerClass, stackOffsetStyle } = useOverflowSegmentElement({
   id,
   context,
+  declaredWidthPx: computed(() => props.segmentWidthPx),
+  maxWidthPx: computed(() => props.maxWidthPx),
 });
 
 const rootClass = computed(() => outerClass(props.class));
@@ -54,6 +58,7 @@ const rootClass = computed(() => outerClass(props.class));
     data-slot="overflow-item"
     :data-overflow-edge="edge"
     :class="rootClass"
+    :style="stackOffsetStyle"
   >
     <Slot :class="contentClass">
       <slot />

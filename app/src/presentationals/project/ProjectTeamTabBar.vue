@@ -40,7 +40,7 @@ function layoutHiddenTabs(hiddenSegmentKeys: string[]): ProjectTeamTab[] {
 </script>
 
 <template>
-  <OverflowContainer as="nav" :gap="4" class="min-w-0" aria-label="Team projects">
+  <OverflowContainer as="nav" mode="auto" :gap="4" class="min-w-0" aria-label="Team projects">
     <OverflowItem
       v-for="tab in tabs"
       :key="tab.id"

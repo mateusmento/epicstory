@@ -1,21 +1,22 @@
 import { cn } from "@/design-system/utils";
 import { useResizeObserver } from "@vueuse/core";
-import { computed, nextTick, onMounted, ref, watch, type HTMLAttributes } from "vue";
+import { computed, nextTick, onMounted, ref, watch, type ComputedRef, type HTMLAttributes } from "vue";
 import type { OverflowContextValue } from "./overflow-context";
 import { resolveOverflowElement } from "./overflow-element-ref";
+import { resolveSegmentNaturalWidth } from "./overflow-segment-width";
 
-/**
- * Prefer intrinsic content width when the flex item is cramped.
- * getBoundingClientRect can report a clipped/shrunk box during early layout;
- * scrollWidth tracks the unshrunk content size more reliably.
- */
 function readIntrinsicWidth(el: HTMLElement): number {
   const rectW = el.getBoundingClientRect().width;
   const scrollW = el.scrollWidth;
   return Math.max(rectW, scrollW);
 }
 
-export function useOverflowSegmentElement(options: { id: symbol; context: OverflowContextValue }) {
+export function useOverflowSegmentElement(options: {
+  id: symbol;
+  context: OverflowContextValue;
+  declaredWidthPx?: ComputedRef<number | undefined>;
+  maxWidthPx?: ComputedRef<number | undefined>;
+}) {
   const rootEl = ref<HTMLElement | null>(null);
   const measureEl = ref<HTMLElement | null>(null);
 
@@ -24,14 +25,24 @@ export function useOverflowSegmentElement(options: { id: symbol; context: Overfl
     measureEl.value = first instanceof HTMLElement ? first : null;
   }
 
-  function publishWidth(widthPx: number) {
-    options.context.setSegmentWidth(options.id, widthPx);
+  function publishNaturalWidth(measuredWidthPx: number) {
+    const natural = resolveSegmentNaturalWidth({
+      measuredWidthPx,
+      declaredWidthPx: options.declaredWidthPx?.value,
+      maxWidthPx: options.maxWidthPx?.value,
+    });
+    options.context.setSegmentNaturalWidth(options.id, natural);
   }
 
   function remeasure() {
+    const declared = options.declaredWidthPx?.value;
+    if (declared != null && declared > 0) {
+      publishNaturalWidth(declared);
+      return;
+    }
     syncMeasureTarget();
     if (!measureEl.value) return;
-    publishWidth(readIntrinsicWidth(measureEl.value));
+    publishNaturalWidth(readIntrinsicWidth(measureEl.value));
   }
 
   function setRootEl(el: unknown) {
@@ -49,6 +60,13 @@ export function useOverflowSegmentElement(options: { id: symbol; context: Overfl
     remeasure();
   });
 
+  watch(
+    () => [options.declaredWidthPx?.value, options.maxWidthPx?.value] as const,
+    () => {
+      remeasure();
+    },
+  );
+
   onMounted(() => {
     nextTick(() => {
       remeasure();
@@ -65,11 +83,16 @@ export function useOverflowSegmentElement(options: { id: symbol; context: Overfl
   const visible = computed(() => options.context.isSegmentVisible(options.id));
   const layoutReady = computed(() => options.context.layoutReady.value);
 
+  const stackOffsetStyle = computed(() => {
+    if (!options.context.shouldApplyStackOverlap(options.id)) return undefined;
+    const overlap = options.context.overlapPx.value;
+    return { marginLeft: `-${overlap}px` };
+  });
+
   watch(visible, () => {
     nextTick(remeasure);
   });
 
-  // Once layout commits (or re-opens), re-read intrinsic sizes — early paint may have been cramped.
   watch(layoutReady, (ready) => {
     if (!ready) return;
     nextTick(() => {
@@ -88,10 +111,6 @@ export function useOverflowSegmentElement(options: { id: symbol; context: Overfl
     },
   );
 
-  /**
-   * Always shrink-0. Pre-ready flex-shrink was used for an overlap prototype, but measuring
-   * shrunk boxes poisoned layout widths (clipped icons, missing ellipsis until a reflow).
-   */
   function outerClass(propsClass?: HTMLAttributes["class"] | string) {
     return cn("flex min-w-0 shrink-0", propsClass);
   }
@@ -103,7 +122,6 @@ export function useOverflowSegmentElement(options: { id: symbol; context: Overfl
     visible,
     layoutReady,
     outerClass,
+    stackOffsetStyle,
   };
 }
-
-export type OverflowSegmentElement = ReturnType<typeof useOverflowSegmentElement>;

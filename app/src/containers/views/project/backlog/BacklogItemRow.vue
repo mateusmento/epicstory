@@ -179,6 +179,7 @@ function updateDueDate(dueDate: Date | null | undefined) {
         <div v-if="users.length" class="flex w-full min-w-0 max-w-full items-center">
           <UserAvatarStack
             :users="users"
+            mode="auto"
             size="sm"
             :min="1"
             :overlap-px="4"

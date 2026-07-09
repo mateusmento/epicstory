@@ -307,6 +307,7 @@ onMounted(() => {
                 <div class="flex min-w-0 w-full items-center cursor-pointer">
                   <UserAvatarStack
                     v-if="users.length"
+                    mode="auto"
                     :users="users"
                     size="md"
                     :min="1"

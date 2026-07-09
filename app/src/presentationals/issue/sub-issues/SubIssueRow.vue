@@ -64,6 +64,7 @@ const labelsOverflow = computed(() =>
 
       <div class="flex min-w-0 items-center">
         <UserAvatarStack
+          mode="auto"
           :users="sub.assignees ?? []"
           size="md"
           :min="1"

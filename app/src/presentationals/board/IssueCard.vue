@@ -7,6 +7,7 @@ import { cn } from "@/design-system/utils";
 import type { IBacklogItem, IIssue } from "@epicstory/contracts";
 import { formatDistanceToNow } from "date-fns";
 import { Badge, type BadgeIntent } from "@/design-system";
+import { Slot } from "reka-ui";
 
 defineProps<{ item: IBacklogItem }>();
 
@@ -93,18 +94,21 @@ function openIssue(issue: IIssue) {
 
     <div
       v-if="item.issue.assignees?.length || $slots.labels"
-      class="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2"
+      class="mt-3 flex min-w-0 items-center gap-x-2 gap-y-2"
     >
       <UserAvatarStack
         v-if="item.issue.assignees?.length"
+        mode="auto"
         :users="item.issue.assignees"
         size="md"
         :min="1"
         :overlap-px="4"
-        class="min-w-0 flex-1 basis-32"
+        class="min-w-0"
       />
 
-      <slot name="labels" />
+      <Slot class="shrink-0 flex-1">
+        <slot name="labels" />
+      </Slot>
     </div>
   </div>
 </template>

@@ -52,8 +52,6 @@ const props = withDefaults(
     showPollToggle?: boolean;
     pollActive?: boolean;
     class?: HTMLAttributes["class"];
-    /** Constrained slot width from the composer footer (preferred over self-measurement). */
-    layoutWidthPx?: number;
   }>(),
   { editor: null, showPollToggle: false, pollActive: false },
 );
@@ -202,7 +200,7 @@ function hiddenMenuItems(keys: string[]) {
 </script>
 
 <template>
-  <OverflowContainer :gap="0" :layout-width-px="layoutWidthPx" :class="['min-w-0 max-w-full', props.class]">
+  <OverflowContainer mode="auto" :gap="0" :class="['min-w-0 max-w-full', props.class]">
     <OverflowItem v-for="action in markActions" :key="action.key" :segment-key="action.key">
       <Button
         variant="ghost"

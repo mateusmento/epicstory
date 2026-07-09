@@ -17,7 +17,6 @@ const emit = defineEmits<{
     <IssueCardView :item="item" @open-issue="emit('openIssue', $event)">
       <template v-if="item.issue.labels?.length" #labels>
         <IssueLabelTags
-          class="shrink-0"
           :disabled="!item.issue"
           :issue-labels="item.issue.labels"
           :model-value="(item.issue?.labels ?? []).map((l) => l.id)"

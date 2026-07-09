@@ -32,9 +32,9 @@ export const Overflow: Story = {
       storyUsers.jean,
       { id: 4, name: "Pat", picture: storyUsers.sean.picture },
       { id: 5, name: "Sam", picture: storyUsers.daiana.picture },
-      { id: 6, name: "Riley", picture: undefined },
     ],
     size: "md",
+    mode: "fill",
   },
   decorators: [
     () => ({
@@ -50,16 +50,55 @@ export const SingleUser: Story = {
   },
 };
 
-export const MeetingNavbarVariant: Story = {
+export const JoinMeetingButton: Story = {
+  name: "Join meeting button (auto)",
+  render: (args) => ({
+    components: { UserAvatarStack },
+    setup() {
+      return {
+        args: {
+          ...args,
+          users: storyStackUsers.slice(0, 2),
+          size: "base",
+          min: 1,
+          avatarClass: "ring-2 ring-background",
+        },
+      };
+    },
+    template: `
+      <button type="button" class="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm">
+        <UserAvatarStack v-bind="args" class="shrink-0" />
+        Join meeting
+      </button>
+    `,
+  }),
+};
+
+export const CappedFit: Story = {
+  name: "Capped auto (max-w-20)",
   args: {
-    users: storyStackUsers.slice(0, 2),
-    size: "mdLg",
-    variant: "meetingNavbar",
-    avatarClass: "-ml-2 border-2 border-background",
+    users: storyStackUsers,
+    size: "md",
+    mode: "auto",
   },
   decorators: [
     () => ({
-      template: '<div class="w-32 p-4 bg-muted rounded"><story /></div>',
+      template: '<div class="max-w-20 p-4"><story /></div>',
+    }),
+  ],
+};
+
+export const MeetingNavbarCenter: Story = {
+  args: {
+    users: storyStackUsers,
+    size: "3xl",
+    variant: "meetingNavbar",
+    center: true,
+    overlapPx: 12,
+  },
+  decorators: [
+    () => ({
+      template: '<div class="w-48 p-4 bg-muted rounded"><story /></div>',
     }),
   ],
 };

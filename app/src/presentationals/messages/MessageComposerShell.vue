@@ -12,8 +12,7 @@ import type {
 import { RichTextComposer } from "@/presentationals/rich-text";
 import type { Editor } from "@tiptap/core";
 import { Paperclip } from "lucide-vue-next";
-import { ref, useTemplateRef } from "vue";
-import { useElementSize } from "@vueuse/core";
+import { ref } from "vue";
 
 defineSlots<{
   poll?: () => unknown;
@@ -34,8 +33,6 @@ defineProps<{
 
 const stagingFileInputRef = ref<HTMLInputElement | null>(null);
 const inlineImageInputRef = ref<HTMLInputElement | null>(null);
-const actionsSlotRef = useTemplateRef<HTMLElement>("actionsSlotRef");
-const { width: actionsSlotWidth } = useElementSize(actionsSlotRef);
 
 function onOpenAttach() {
   stagingFileInputRef.value?.click();
@@ -169,10 +166,9 @@ const emit = defineEmits<{
     </div>
 
     <div class="flex:row-md flex:center-y mt-2 min-w-0 shrink-0 text-secondary-foreground">
-      <div ref="actionsSlotRef" class="min-w-0 flex-1 basis-0 overflow-hidden">
+      <div class="min-w-0 flex-1 basis-0 overflow-hidden">
         <MessageComposerActions
           class="w-full"
-          :layout-width-px="Math.round(actionsSlotWidth)"
           :editor="editor"
           :show-poll-toggle="toolbar.showPollToggle"
           :poll-active="toolbar.pollActive"

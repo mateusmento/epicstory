@@ -177,6 +177,7 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
         <Breadcrumb class="min-w-0">
           <OverflowContainer
             :as="BreadcrumbList"
+            mode="auto"
             :gap="6"
             class="flex-nowrap items-center break-words text-sm text-muted-foreground"
           >

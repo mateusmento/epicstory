@@ -9,6 +9,7 @@ const props = withDefaults(
   defineProps<{
     class?: HTMLAttributes["class"];
     as?: string;
+    segmentWidthPx?: number;
   }>(),
   {
     as: "div",
@@ -25,9 +26,10 @@ onBeforeUnmount(() => {
   context.unregisterSegment(id);
 });
 
-const { setRootEl, contentClass, edge, visible, outerClass } = useOverflowSegmentElement({
+const { setRootEl, contentClass, edge, visible, outerClass, stackOffsetStyle } = useOverflowSegmentElement({
   id,
   context,
+  declaredWidthPx: computed(() => props.segmentWidthPx),
 });
 
 const rootClass = computed(() => outerClass(props.class));
@@ -42,6 +44,7 @@ const slotProps = computed(() => context.ellipsisSlotProps.value);
     data-slot="overflow-ellipsis"
     :data-overflow-edge="edge"
     :class="rootClass"
+    :style="stackOffsetStyle"
   >
     <Slot :class="contentClass">
       <slot v-bind="slotProps" />

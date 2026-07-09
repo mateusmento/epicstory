@@ -86,6 +86,7 @@ export const IssueHeaderHarness = defineComponent({
               <div class="flex min-w-0 w-full items-center cursor-pointer">
                 <UserAvatarStack
                   v-if="users.length"
+                  mode="fill"
                   :users="users"
                   size="md"
                   :min="1"

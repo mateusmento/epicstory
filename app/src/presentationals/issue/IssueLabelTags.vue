@@ -37,8 +37,13 @@ const selectedLabels = computed(() => {
 </script>
 
 <template>
-  <OverflowContainer :gap="4" :class="cn('min-w-0 max-w-full', props.class)">
-    <OverflowItem v-for="label in selectedLabels" :key="label.id" :segment-key="String(label.id)">
+  <OverflowContainer mode="auto" :gap="4" :class="cn('min-w-0 max-w-full', props.class)">
+    <OverflowItem
+      v-for="label in selectedLabels"
+      :key="label.id"
+      :segment-key="String(label.id)"
+      :max-width-px="128"
+    >
       <IssueLabelsDropdown
         :disabled="disabled"
         :catalog="catalog"
