@@ -29,10 +29,11 @@ export function useProjectFilters(projectId: MaybeRefOrGetter<number>) {
   }
 
   function updateFilter(field: IssueFilter["field"], next: IssueFilter) {
-    const normalized = issueFilterHasValue(next) ? next : null;
     const current = filters.value ?? [];
-    if (!normalized) return removeFilter(field);
-    filters.value = current.map((f) => (f.field === field ? normalized : f));
+    if (!current.some((f) => f.field === field)) return;
+    // Keep draft chips (no value yet) so changing operator before picking a value
+    // does not remove the filter. Empty filters are still omitted from queries.
+    filters.value = current.map((f) => (f.field === field ? next : f));
   }
 
   return {
