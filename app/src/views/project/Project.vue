@@ -6,14 +6,6 @@ import {
   BreadcrumbItem,
   BreadcrumbList,
   Button,
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
   Dialog,
   DialogContent,
   DialogTrigger,
@@ -30,28 +22,23 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/design-system";
-import { Icon, IconSearch } from "@/design-system/icons";
+import { Icon } from "@/design-system/icons";
 import { NavTrigger } from "@/design-system";
 import { IssueApi } from "@epicstory/api-client";
 import type { IIssue } from "@epicstory/contracts";
 import { useProjectScreen } from "@/domain/project";
 import { useMagicKeys, useStorage, whenever } from "@vueuse/core";
 import {
-  Calculator,
-  Calendar,
   ChevronRight,
-  CreditCard,
   Layers2Icon,
   Rows3Icon,
-  Settings,
-  Smile,
   SquareKanbanIcon,
   SquarePen,
   TimerIcon,
-  User,
 } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
+import { IssueSearchDialog } from "@/containers/issue";
 import NewIssueModal from "@/containers/views/project/NewIssueModal.vue";
 import ProjectTeamTabs from "@/containers/project/ProjectTeamTabs.vue";
 import ProjectFilterDropdown from "@/containers/views/project/filters/ProjectFilterDropdown.vue";
@@ -59,10 +46,10 @@ import ProjectFiltersBar from "@/containers/views/project/filters/ProjectFilters
 
 const props = defineProps<{ workspaceId: string; projectId: string; issueId?: string }>();
 
-const open = ref(false);
+const issueSearchOpen = ref(false);
 const { meta_j } = useMagicKeys();
 whenever(meta_j, () => {
-  open.value = true;
+  issueSearchOpen.value = true;
 });
 
 const route = useRoute();
@@ -227,55 +214,7 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
         </Breadcrumb>
       </div>
 
-      <Dialog>
-        <DialogTrigger as-child>
-          <div
-            class="flex:row-md flex:center w-96 h-7 mx-auto rounded-lg bg-secondary text-xs text-secondary-foreground"
-          >
-            <IconSearch /> Search
-          </div>
-        </DialogTrigger>
-        <DialogContent as-child>
-          <Command class="rounded-lg border shadow-md p-0 top-80 h-fit md:min-w-[450px]">
-            <CommandInput placeholder="Type a command or search..." />
-            <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup heading="Suggestions">
-                <CommandItem value="calendar">
-                  <Calendar />
-                  <span>Calendar</span>
-                </CommandItem>
-                <CommandItem value="emoji">
-                  <Smile />
-                  <span>Search Emoji</span>
-                </CommandItem>
-                <CommandItem disabled value="calculator">
-                  <Calculator />
-                  <span>Calculator</span>
-                </CommandItem>
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup heading="Settings">
-                <CommandItem value="profile">
-                  <User />
-                  <span>Profile</span>
-                  <CommandShortcut>⌘P</CommandShortcut>
-                </CommandItem>
-                <CommandItem value="billing">
-                  <CreditCard />
-                  <span>Billing</span>
-                  <CommandShortcut>⌘B</CommandShortcut>
-                </CommandItem>
-                <CommandItem value="settings">
-                  <Settings />
-                  <span>Settings</span>
-                  <CommandShortcut>⌘S</CommandShortcut>
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </DialogContent>
-      </Dialog>
+      <IssueSearchDialog v-model:open="issueSearchOpen" :workspace-id="workspaceId" :project-id="projectId" />
 
       <div class="flex:row flex:center-y justify-end flex-1 gap-2">
         <NavTrigger v-if="teamId" view="app-pane" content="sprint-panel" :props="{ teamId }">

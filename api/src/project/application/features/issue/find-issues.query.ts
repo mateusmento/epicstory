@@ -3,7 +3,6 @@ import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
-import { ILike } from 'typeorm';
 
 export class FindIssues {
   workspaceId: number;
@@ -37,6 +36,15 @@ export class FindIssues {
   }
 }
 
+const ORDER_COLUMNS: Record<string, string> = {
+  createdAt: 'issue.createdAt',
+  priority: 'issue.priority',
+  title: 'issue.title',
+  status: 'issue.status',
+  dueDate: 'issue.dueDate',
+  id: 'issue.id',
+};
+
 @QueryHandler(FindIssues)
 export class FindIssuesQuery implements IQueryHandler<FindIssues> {
   constructor(private issueRepo: IssueRepository) {}
@@ -50,34 +58,55 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
     page,
     count,
   }: FindIssues) {
-    const content = await this.issueRepo.find({
-      where: {
-        workspaceId,
-        projectId,
-        title: search ? ILike(`%${search}%`) : undefined,
-      },
-      relations: { assignees: true, labels: true, parentIssue: true },
-      order: {
-        createdAt: orderBy === 'createdAt' ? (order ?? 'asc') : undefined,
-        priority: orderBy === 'priority' ? (order ?? 'asc') : undefined,
-        title: orderBy === 'title' ? (order ?? 'asc') : undefined,
-        status: orderBy === 'status' ? (order ?? 'asc') : undefined,
-        dueDate: orderBy === 'dueDate' ? (order ?? 'asc') : undefined,
-        id: orderBy === 'id' ? (order ?? 'asc') : undefined,
-      },
-      skip: page * count,
-      take: count,
-    });
-    const total = await this.issueRepo.count({
-      where: {
-        workspaceId,
-        projectId,
-        title: search ? ILike(`%${search}%`) : undefined,
-      },
-    });
+    const qb = this.issueRepo
+      .createQueryBuilder('issue')
+      .leftJoinAndSelect('issue.assignees', 'assignees')
+      .leftJoinAndSelect('issue.labels', 'labels')
+      .leftJoinAndSelect('issue.parentIssue', 'parentIssue');
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Project list endpoint scopes by projectId only; workspace list by workspaceId.
+    // Match TypeORM `find` semantics: omit undefined filters (do not compare to NULL).
+    if (workspaceId != null) {
+      qb.andWhere('issue.workspaceId = :workspaceId', { workspaceId });
+    }
+    if (projectId != null) {
+      qb.andWhere('issue.projectId = :projectId', { projectId });
+    }
 
-    return Page.fromResult(content, total, { page, count });
+    const ftsQuery = search?.trim() || undefined;
+    if (ftsQuery) {
+      // websearch_to_tsquery: AND terms, "phrases", OR, -negation.
+      // Match against both configs so issue keys (simple) and prose (english) work.
+      qb.andWhere(
+        `(
+          issue.search_vector @@ websearch_to_tsquery('english', :ftsQuery)
+          OR issue.search_vector @@ websearch_to_tsquery('simple', :ftsQuery)
+        )`,
+        { ftsQuery },
+      );
+      qb.addSelect(
+        `GREATEST(
+          ts_rank(issue.search_vector, websearch_to_tsquery('english', :ftsQuery)),
+          ts_rank(issue.search_vector, websearch_to_tsquery('simple', :ftsQuery))
+        )`,
+        'rank',
+      );
+      qb.orderBy('rank', 'DESC');
+    }
+
+    const orderColumn = ORDER_COLUMNS[orderBy] ?? ORDER_COLUMNS.createdAt;
+    const orderDirection = order === 'desc' ? 'DESC' : 'ASC';
+    if (ftsQuery) {
+      qb.addOrderBy(orderColumn, orderDirection);
+    } else {
+      qb.orderBy(orderColumn, orderDirection);
+    }
+
+    const pageNum = Number(page) || 0;
+    const pageSize = Number(count) || 25;
+    qb.skip(pageNum * pageSize).take(pageSize);
+
+    const [content, total] = await qb.getManyAndCount();
+    return Page.fromResult(content, total, { page: pageNum, count: pageSize });
   }
 }

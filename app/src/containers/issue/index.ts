@@ -7,4 +7,5 @@ export { default as IssueLabelTags } from "./IssueLabelTags.vue";
 export { default as IssueLabelsDropdown } from "./IssueLabelsDropdown.vue";
 export { default as IssueLabelsMenu } from "./IssueLabelsMenu.vue";
 export { default as IssuePickerMenu } from "./IssuePickerMenu.vue";
+export { default as IssueSearchDialog } from "./IssueSearchDialog.vue";
 export { default as IssueSelectGithubRepoDialog } from "./IssueSelectGithubRepoDialog.vue";
