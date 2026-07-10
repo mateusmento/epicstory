@@ -38,8 +38,23 @@ export type SendChannelMessageResponse = {
   activity: IChannelActivity;
 };
 
+/**
+ * Channel activity timeline query.
+ *
+ * Modes (mutually exclusive):
+ * - latest: no cursor
+ * - older: `beforeCreatedAt` + `beforeId`
+ * - newer: `afterCreatedAt` + `afterId`
+ * - around: `aroundMessageId` (resets a contiguous window on the pivot message)
+ *
+ * `IPage.hasNext` = more older than `content[0]`.
+ * `IPage.hasPrevious` = more newer than `content[last]`.
+ */
 export type FindChannelActivities = {
   limit?: number;
   beforeCreatedAt?: string;
   beforeId?: number;
+  afterCreatedAt?: string;
+  afterId?: number;
+  aroundMessageId?: number;
 };

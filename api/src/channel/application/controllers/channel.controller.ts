@@ -155,6 +155,9 @@ export class ChannelController {
         limit: query.limit,
         beforeCreatedAt: query.beforeCreatedAt,
         beforeId: query.beforeId,
+        afterCreatedAt: query.afterCreatedAt,
+        afterId: query.afterId,
+        aroundMessageId: query.aroundMessageId,
       }),
     );
   }

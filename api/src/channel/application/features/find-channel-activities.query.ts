@@ -26,6 +26,20 @@ export class FindChannelActivities {
   @IsInt()
   beforeId?: number;
 
+  @IsOptional()
+  @IsDateString()
+  afterCreatedAt?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  afterId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  aroundMessageId?: number;
+
   constructor(data: Partial<FindChannelActivities>) {
     patch(this, data);
   }
@@ -41,10 +55,38 @@ export class FindChannelActivitiesQuery
     const hasBeforeAt =
       query.beforeCreatedAt != null && query.beforeCreatedAt !== '';
     const hasBeforeId = query.beforeId != null;
+    const hasAfterAt =
+      query.afterCreatedAt != null && query.afterCreatedAt !== '';
+    const hasAfterId = query.afterId != null;
+    const hasAround = query.aroundMessageId != null;
 
     if (hasBeforeAt !== hasBeforeId) {
       throw new BadRequestException(
         'beforeCreatedAt and beforeId must both be provided for pagination',
+      );
+    }
+    if (hasAfterAt !== hasAfterId) {
+      throw new BadRequestException(
+        'afterCreatedAt and afterId must both be provided for pagination',
+      );
+    }
+
+    const modeCount =
+      Number(hasBeforeAt) + Number(hasAfterAt) + Number(hasAround);
+    if (modeCount > 1) {
+      throw new BadRequestException(
+        'Provide only one of before*, after*, or aroundMessageId',
+      );
+    }
+
+    const limit = query.limit ?? 50;
+
+    if (hasAround) {
+      return this.channelActivityService.findAroundMessageForChannel(
+        query.channelId,
+        query.issuerId,
+        query.aroundMessageId!,
+        limit,
       );
     }
 
@@ -56,7 +98,13 @@ export class FindChannelActivitiesQuery
       }
     }
 
-    const limit = query.limit ?? 50;
+    let afterDate: Date | undefined;
+    if (hasAfterAt && query.afterCreatedAt) {
+      afterDate = new Date(query.afterCreatedAt);
+      if (Number.isNaN(afterDate.getTime())) {
+        throw new BadRequestException('Invalid afterCreatedAt');
+      }
+    }
 
     return this.channelActivityService.findPageForChannel(
       query.channelId,
@@ -65,6 +113,8 @@ export class FindChannelActivitiesQuery
         limit,
         beforeCreatedAt: beforeDate,
         beforeId: hasBeforeId ? query.beforeId : undefined,
+        afterCreatedAt: afterDate,
+        afterId: hasAfterId ? query.afterId : undefined,
       },
     );
   }

@@ -1,21 +1,34 @@
 <script lang="ts" setup>
 import { ScrollArea } from "@/design-system";
-import type { OlderPageState } from "@/lib/async";
+import type { NewerPageState, OlderPageState } from "@/lib/async";
 import type { ChatTimelineItem } from "@/lib/chat-timeline";
-import { chatTimelineRowCount } from "@/lib/chat-timeline";
+import { chatTimelineRowCount, findTimelineIndexForMessageId } from "@/lib/chat-timeline";
 import MessageGroup from "@/presentationals/channel/MessageGroup.vue";
 import { useVirtualizer } from "@tanstack/vue-virtual";
 import { useThrottleFn } from "@vueuse/core";
 import type { VNodeRef } from "vue";
 import { computed, nextTick, onUnmounted, ref, watch } from "vue";
 
-const props = defineProps<{
-  channelId: number;
-  timeline: ChatTimelineItem[];
-  olderPage: OlderPageState;
-  loadOlder: () => Promise<void>;
-  meId: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    channelId: number;
+    timeline: ChatTimelineItem[];
+    olderPage: OlderPageState;
+    loadOlder: () => Promise<void>;
+    newerPage?: NewerPageState;
+    loadNewer?: () => Promise<void>;
+    meId: number;
+    /** When true, do not auto-pin to bottom on tip growth (historical window). */
+    suppressAutoPinToBottom?: boolean;
+    highlightedMessageId?: number | null;
+  }>(),
+  {
+    newerPage: () => ({ hasNewer: false, loadingNewer: false }),
+    loadNewer: async () => {},
+    suppressAutoPinToBottom: false,
+    highlightedMessageId: null,
+  },
+);
 
 const scrollAreaRef = ref<InstanceType<typeof ScrollArea> | null>(null);
 
@@ -84,6 +97,7 @@ watch(
 );
 
 const prependBusy = ref(false);
+const appendBusy = ref(false);
 
 async function loadOlderWithScrollPreserve() {
   if (prependBusy.value || !props.olderPage.hasOlder || props.olderPage.loadingOlder) return;
@@ -111,13 +125,35 @@ async function loadOlderWithScrollPreserve() {
   }
 }
 
+async function loadNewerNearBottom() {
+  if (appendBusy.value || !props.newerPage.hasNewer || props.newerPage.loadingNewer) return;
+  appendBusy.value = true;
+  try {
+    await props.loadNewer();
+  } finally {
+    appendBusy.value = false;
+  }
+}
+
 const NEAR_TOP_PX = 200;
+const NEAR_BOTTOM_PX = 240;
 
 const onViewportScroll = useThrottleFn(() => {
   const el = scrollAreaRef.value?.getScrollElement();
-  if (!el || el.scrollTop > NEAR_TOP_PX) return;
-  if (!props.olderPage.hasOlder || props.olderPage.loadingOlder || prependBusy.value) return;
-  loadOlderWithScrollPreserve();
+  if (!el) return;
+
+  if (el.scrollTop <= NEAR_TOP_PX) {
+    if (props.olderPage.hasOlder && !props.olderPage.loadingOlder && !prependBusy.value) {
+      loadOlderWithScrollPreserve();
+    }
+  }
+
+  const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+  if (distanceFromBottom <= NEAR_BOTTOM_PX) {
+    if (props.newerPage.hasNewer && !props.newerPage.loadingNewer && !appendBusy.value) {
+      loadNewerNearBottom();
+    }
+  }
 }, 100);
 
 watch(
@@ -178,9 +214,8 @@ watch(
     if (prev < 0) {
       prevMessageTotal.value = totalRows;
       prevTimelineEndCursor.value = endCur;
-      // Immediate: meeting chat (and remounts) often open with an already-loaded timeline,
-      // so this watch would never fire without `immediate` and we'd stay at scrollTop 0.
-      if (totalRows > 0) {
+      // Live tip only: historical / jumped windows keep their scroll (pivot).
+      if (totalRows > 0 && !props.suppressAutoPinToBottom && !props.newerPage.hasNewer) {
         pendingInitialScroll.value = !requestScrollToBottom();
       }
       return;
@@ -189,7 +224,7 @@ watch(
       const prevEnd = prevTimelineEndCursor.value;
       prevMessageTotal.value = totalRows;
       prevTimelineEndCursor.value = endCur;
-      if (endCur !== prevEnd) {
+      if (endCur !== prevEnd && !props.suppressAutoPinToBottom && !props.newerPage.hasNewer) {
         requestScrollToBottom();
       }
     } else {
@@ -211,9 +246,25 @@ function scrollToBottom() {
   scrollAreaRef.value?.scrollToBottom();
 }
 
+async function scrollToMessageId(messageId: number): Promise<boolean> {
+  const index = findTimelineIndexForMessageId(props.timeline, messageId);
+  if (index == null) return false;
+
+  rowVirtualizer.value.scrollToIndex(index, { align: "center", behavior: "auto" });
+  await nextTick();
+  await new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+  const el = scrollAreaRef.value
+    ?.getScrollElement()
+    ?.querySelector(`[data-message-id="${messageId}"]`) as HTMLElement | null;
+  el?.scrollIntoView({ block: "center", behavior: "smooth" });
+  return true;
+}
+
 defineExpose({
   scrollToBottom,
   scrollMessagesToBottom: scrollToBottom,
+  scrollToMessageId,
 });
 </script>
 
@@ -250,13 +301,18 @@ defineExpose({
             :meId="meId"
             :sentAt="messageRow(virtualRow.index)!.group.sentAt"
           >
-            <slot
+            <div
               v-for="message of messageRow(virtualRow.index)!.group.messages"
               :key="message.id"
-              name="message"
-              :message="message"
-              :me-id="meId"
-            />
+              :data-message-id="message.id"
+              :class="
+                highlightedMessageId === message.id
+                  ? 'rounded-md ring-2 ring-primary/50 bg-primary/5 transition-colors'
+                  : undefined
+              "
+            >
+              <slot name="message" :message="message" :me-id="meId" />
+            </div>
           </MessageGroup>
           <slot
             v-else-if="activityRow(virtualRow.index)"

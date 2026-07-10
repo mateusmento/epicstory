@@ -46,6 +46,7 @@ const emit = defineEmits<{
   (e: "quote", message: IMessage | IReply): void;
   (e: "edit", message: IMessage | IReply): void;
   (e: "poll-voted", optionId: string): void;
+  (e: "jump-to-quote", messageId: number): void;
 }>();
 
 const messageActionsRef = ref<InstanceType<typeof MessageActions>>();
@@ -98,16 +99,18 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
 
 <template>
   <div class="flex:col">
-    <div
+    <button
       v-if="props.message.quotedMessage"
-      class="flex flex-row gap-2 items-stretch border-0 my-2 ml-3 rounded-md text-muted-foreground/90"
+      type="button"
+      class="flex flex-row gap-2 items-stretch border-0 my-2 ml-3 rounded-md text-left text-muted-foreground/90 hover:bg-muted/40 transition-colors cursor-pointer w-[calc(100%-0.75rem)]"
+      @click="emit('jump-to-quote', props.message.quotedMessage!.id)"
     >
       <Icon name="fa-quote-right" class="size-4 self-start mt-0.5" />
       <div class="min-w-0 flex-1 text-sm">
         <span class="font-medium text-foreground/80">{{ props.message.quotedMessage.sender.name }}</span>
         <p class="line-clamp-4 whitespace-pre-wrap">{{ quotedExcerpt }}</p>
       </div>
-    </div>
+    </button>
     <HoverCard :open-delay="100" :close-delay="0">
       <Menu type="context-menu">
         <HoverCardTrigger as-child>

@@ -15,7 +15,11 @@ import { create } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { userToIUser } from 'src/auth';
-import { ChannelNotFound, IssuerIsNotChannelMember } from '../exceptions';
+import {
+  ChannelNotFound,
+  IssuerIsNotChannelMember,
+  MessageNotFound,
+} from '../exceptions';
 import { MessageGateway } from '../gateways/message.gateway';
 import type { IMessage } from '@epicstory/contracts';
 import { MessageService } from './message.service';
@@ -32,15 +36,7 @@ export class ChannelActivityService {
     private messageGateway: MessageGateway,
   ) {}
 
-  async findPageForChannel(
-    channelId: number,
-    viewerId: number,
-    options: {
-      limit: number;
-      beforeCreatedAt?: Date;
-      beforeId?: number;
-    },
-  ): Promise<IPage<IChannelActivity>> {
+  private async assertCanReadChannel(channelId: number, viewerId: number) {
     const channel = await this.channelRepo.findOne({
       where: { id: channelId },
       relations: { peers: true },
@@ -55,7 +51,111 @@ export class ChannelActivityService {
       throw new IssuerIsNotChannelMember();
     }
 
-    const take = Math.min(Math.max(1, options.limit), 100) + 1;
+    return channel;
+  }
+
+  /** Drop duplicate activity ids and legacy duplicate message_sent rows for one message. */
+  private dedupeActivityRows(rows: ChannelActivity[]): ChannelActivity[] {
+    const seenIds = new Set<number>();
+    const seenMessageIds = new Set<number>();
+    const out: ChannelActivity[] = [];
+    for (const row of rows) {
+      if (seenIds.has(row.id)) continue;
+      if (
+        row.type === 'message_sent' &&
+        row.messageId != null &&
+        seenMessageIds.has(row.messageId)
+      ) {
+        continue;
+      }
+      seenIds.add(row.id);
+      if (row.type === 'message_sent' && row.messageId != null) {
+        seenMessageIds.add(row.messageId);
+      }
+      out.push(row);
+    }
+    return out;
+  }
+
+  private async enrichRows(
+    channelId: number,
+    viewerId: number,
+    rows: ChannelActivity[],
+  ): Promise<IChannelActivity[]> {
+    const unique = this.dedupeActivityRows(rows);
+    const messageIds = unique
+      .filter((r) => r.type === 'message_sent' && r.messageId != null)
+      .map((r) => r.messageId!);
+
+    const messagesMap = await this.messageService.findMessagesByIdsForChannel(
+      channelId,
+      messageIds,
+      viewerId,
+    );
+
+    return unique.map((r) => this.rowToClient(r, { messagesMap }));
+  }
+
+  /**
+   * Contiguous ASC page.
+   * - latest / before*: fetch DESC then reverse → content ASC; hasNext = more older
+   * - after*: fetch ASC → content ASC; hasPrevious = more newer
+   * hasPrevious/hasNext always reflect whether more newer/older exist beyond the window edges.
+   */
+  async findPageForChannel(
+    channelId: number,
+    viewerId: number,
+    options: {
+      limit: number;
+      beforeCreatedAt?: Date;
+      beforeId?: number;
+      afterCreatedAt?: Date;
+      afterId?: number;
+    },
+  ): Promise<IPage<IChannelActivity>> {
+    await this.assertCanReadChannel(channelId, viewerId);
+
+    const limit = Math.min(Math.max(1, options.limit), 100);
+    const take = limit + 1;
+    const fetchingNewer =
+      options.afterCreatedAt != null && options.afterId != null;
+    const fetchingOlder =
+      options.beforeCreatedAt != null && options.beforeId != null;
+
+    if (fetchingNewer) {
+      const qb = this.activityRepo
+        .createQueryBuilder('a')
+        .leftJoinAndSelect('a.actor', 'actor')
+        .leftJoinAndSelect('a.subjectUser', 'subjectUser')
+        .where('a.channelId = :channelId', { channelId })
+        .andWhere(
+          '(a.createdAt > :ac OR (a.createdAt = :ac AND a.id > :aid))',
+          {
+            ac: options.afterCreatedAt,
+            aid: options.afterId,
+          },
+        )
+        .orderBy('a.createdAt', 'ASC')
+        .addOrderBy('a.id', 'ASC')
+        .take(take);
+
+      const rawAsc = await qb.getMany();
+      const hasMoreNewer = rawAsc.length >= take;
+      const pageRows = hasMoreNewer ? rawAsc.slice(0, limit) : rawAsc;
+      const items = await this.enrichRows(channelId, viewerId, pageRows);
+
+      // Cursor itself (and anything before it) is older than content[0].
+      const hasMoreOlder = pageRows.length > 0;
+
+      return new Page({
+        content: items,
+        page: 0,
+        count: limit,
+        hasNext: hasMoreOlder,
+        hasPrevious: hasMoreNewer,
+        total: 0,
+      });
+    }
 
     const qb = this.activityRepo
       .createQueryBuilder('a')
@@ -66,7 +166,7 @@ export class ChannelActivityService {
       .addOrderBy('a.id', 'DESC')
       .take(take);
 
-    if (options.beforeCreatedAt != null && options.beforeId != null) {
+    if (fetchingOlder) {
       qb.andWhere(
         '(a.createdAt < :bc OR (a.createdAt = :bc AND a.id < :bid))',
         {
@@ -78,35 +178,102 @@ export class ChannelActivityService {
 
     const rawDesc = await qb.getMany();
     const hasMoreOlder = rawDesc.length >= take;
-    const pageRows = (hasMoreOlder ? rawDesc.slice(0, take - 1) : rawDesc)
+    const pageRows = (hasMoreOlder ? rawDesc.slice(0, limit) : rawDesc)
       .slice()
       .reverse();
+    const items = await this.enrichRows(channelId, viewerId, pageRows);
 
-    const messageIds = pageRows
-      .filter((r) => r.type === 'message_sent' && r.messageId != null)
-      .map((r) => r.messageId!);
-
-    const messagesMap = await this.messageService.findMessagesByIdsForChannel(
-      channelId,
-      messageIds,
-      viewerId,
-    );
-
-    const items = pageRows.map((r) =>
-      this.rowToClient(r, {
-        messagesMap,
-      }),
-    );
-
-    const hasCursor =
-      options.beforeCreatedAt != null && options.beforeId != null;
+    // Latest tip: no newer. Older page: acquiring older from a mid-window cursor
+    // means there is at least the previous window toward the tip (hasPrevious=true).
+    const hasMoreNewer = fetchingOlder;
 
     return new Page({
       content: items,
       page: 0,
-      count: Math.min(Math.max(1, options.limit), 100),
+      count: limit,
       hasNext: hasMoreOlder,
-      hasPrevious: hasCursor,
+      hasPrevious: hasMoreNewer,
+      total: 0,
+    });
+  }
+
+  /**
+   * Replace-window fetch centered on the message_sent activity for `messageId`.
+   * Returns a contiguous ASC slice; hasNext/hasPrevious reflect more older/newer.
+   */
+  async findAroundMessageForChannel(
+    channelId: number,
+    viewerId: number,
+    messageId: number,
+    limit: number,
+  ): Promise<IPage<IChannelActivity>> {
+    await this.assertCanReadChannel(channelId, viewerId);
+
+    // Prefer the oldest message_sent row if legacy duplicates exist for the same messageId.
+    const pivot = await this.activityRepo.findOne({
+      where: {
+        channelId,
+        messageId,
+        type: 'message_sent',
+      },
+      relations: { actor: true, subjectUser: true },
+      order: { createdAt: 'ASC', id: 'ASC' },
+    });
+    if (!pivot) {
+      throw new MessageNotFound();
+    }
+
+    const capped = Math.min(Math.max(1, limit), 100);
+    const olderTake = Math.floor((capped - 1) / 2);
+    const newerTake = capped - 1 - olderTake; // remaining slots after pivot
+
+    // Always probe +1 so hasMore* is correct even when one side of the window is empty.
+    const olderQb = this.activityRepo
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.actor', 'actor')
+      .leftJoinAndSelect('a.subjectUser', 'subjectUser')
+      .where('a.channelId = :channelId', { channelId })
+      .andWhere('(a.createdAt < :pc OR (a.createdAt = :pc AND a.id < :pid))', {
+        pc: pivot.createdAt,
+        pid: pivot.id,
+      })
+      .orderBy('a.createdAt', 'DESC')
+      .addOrderBy('a.id', 'DESC')
+      .take(olderTake + 1);
+
+    const newerQb = this.activityRepo
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.actor', 'actor')
+      .leftJoinAndSelect('a.subjectUser', 'subjectUser')
+      .where('a.channelId = :channelId', { channelId })
+      .andWhere('(a.createdAt > :pc OR (a.createdAt = :pc AND a.id > :pid))', {
+        pc: pivot.createdAt,
+        pid: pivot.id,
+      })
+      .orderBy('a.createdAt', 'ASC')
+      .addOrderBy('a.id', 'ASC')
+      .take(newerTake + 1);
+
+    const [olderRaw, newerRaw] = await Promise.all([
+      olderQb.getMany(),
+      newerQb.getMany(),
+    ]);
+
+    const hasMoreOlder = olderRaw.length > olderTake;
+    const hasMoreNewer = newerRaw.length > newerTake;
+    const olderAsc = olderRaw.slice(0, olderTake).slice().reverse();
+    const newerAsc = newerRaw.slice(0, newerTake);
+
+    // Dedupe by activity id, then by messageId for message_sent (legacy duplicate rows).
+    const rows = this.dedupeActivityRows([...olderAsc, pivot, ...newerAsc]);
+    const items = await this.enrichRows(channelId, viewerId, rows);
+
+    return new Page({
+      content: items,
+      page: 0,
+      count: capped,
+      hasNext: hasMoreOlder,
+      hasPrevious: hasMoreNewer,
       total: 0,
     });
   }

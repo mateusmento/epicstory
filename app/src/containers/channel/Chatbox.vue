@@ -4,7 +4,7 @@ import { useDependency } from "@/core/dependency-injection";
 import { useAuth } from "@/domain/auth";
 import { chatTimelineMessageIds, useChannel, useChatboxComposerSession } from "@/domain/channels";
 import { isLiveJoinableMeeting, useMeeting } from "@/domain/meetings";
-import { toOlderPageState } from "@/lib/async";
+import { toNewerPageState, toOlderPageState } from "@/lib/async";
 import {
   ChannelActivityRow,
   ChatboxIntro,
@@ -21,7 +21,7 @@ import type {
   SendMessageBody,
   UpdateChannelMessageBody,
 } from "@epicstory/contracts";
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import Message from "./Message.vue";
 
 const emit = defineEmits<{
@@ -40,14 +40,26 @@ const {
   deleteMessage,
   typingUserIds,
   hasMoreOlder,
+  hasMoreNewer,
   loadingOlderActivities,
+  loadingNewerActivities,
   loadOlderActivitiesPage,
+  loadNewerActivitiesPage,
+  resetAroundMessage,
+  resetAndLoadLatestActivities,
 } = useChannel();
 
 const olderPage = computed(() =>
   toOlderPageState({
     hasOlder: hasMoreOlder.value,
     loadingOlder: loadingOlderActivities.value,
+  }),
+);
+
+const newerPage = computed(() =>
+  toNewerPageState({
+    hasNewer: hasMoreNewer.value,
+    loadingNewer: loadingNewerActivities.value,
   }),
 );
 
@@ -66,6 +78,48 @@ const { quotedMessage, editingMessage, onQuote, onStartEdit, onCancelEdit, onCle
   useChatboxComposerSession({ messageIds });
 
 const timelineRef = ref<InstanceType<typeof ChatboxTimeline> | null>(null);
+/** Bump on window replace so the virtualizer remounts with a clean measured layout. */
+const timelineEpoch = ref(0);
+const highlightedMessageId = ref<number | null>(null);
+const jumpBusy = ref(false);
+let highlightClearTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flashHighlight(messageId: number) {
+  if (highlightClearTimer) clearTimeout(highlightClearTimer);
+  highlightedMessageId.value = messageId;
+  highlightClearTimer = setTimeout(() => {
+    highlightedMessageId.value = null;
+    highlightClearTimer = null;
+  }, 1600);
+}
+
+async function jumpToQuotedMessage(messageId: number) {
+  if (jumpBusy.value) return;
+  jumpBusy.value = true;
+  try {
+    if (await timelineRef.value?.scrollToMessageId(messageId)) {
+      flashHighlight(messageId);
+      return;
+    }
+    const ok = await resetAroundMessage(messageId);
+    if (!ok) return;
+    timelineEpoch.value += 1;
+    await nextTick();
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+    if (await timelineRef.value?.scrollToMessageId(messageId)) {
+      flashHighlight(messageId);
+    }
+  } finally {
+    jumpBusy.value = false;
+  }
+}
+
+async function jumpToLatest() {
+  await resetAndLoadLatestActivities();
+  timelineEpoch.value += 1;
+  await nextTick();
+  timelineRef.value?.scrollToBottom();
+}
 
 function isMeetingJoinable(meeting: NonNullable<IChannel["meeting"]>) {
   return isLiveJoinableMeeting(meeting);
@@ -133,39 +187,56 @@ function openMeetingThread(activity: IChannelActivity, channel: IChannel) {
     </template>
 
     <template #timeline>
-      <ChatboxTimeline
-        ref="timelineRef"
-        :channel-id="channel.id"
-        :timeline="chatTimeline"
-        :older-page="olderPage"
-        :load-older="loadOlderActivitiesPage"
-        :me-id="user.id"
-      >
-        <template #intro>
-          <ChatboxIntro :peers="channel.peers" :me-id="user.id" />
-        </template>
-        <template #message="{ message }">
-          <Message
-            :message="message"
-            :me-id="user.id"
-            @message-deleted="onMessageDeleted"
-            @quote="onQuote"
-            @start-edit="onStartEdit"
-            @open-thread="emit('open-thread', message)"
-          />
-        </template>
-        <template #activity="{ activity }">
-          <ChannelActivityRow
-            :activity="activity"
-            :channel-display-name="channel.name"
-            :me-id="user.id"
-            :can-join-meeting="canJoinMeetingFromActivity(activity)"
-            :meeting-attendees="meetingAttendeesFromActivity(activity)"
-            @join-meeting="joinMeeting({ channelId: channel.id })"
-            @open-thread="openMeetingThread(activity, channel)"
-          />
-        </template>
-      </ChatboxTimeline>
+      <div class="relative h-full min-h-0">
+        <ChatboxTimeline
+          :key="`${channel.id}-${timelineEpoch}`"
+          ref="timelineRef"
+          :channel-id="channel.id"
+          :timeline="chatTimeline"
+          :older-page="olderPage"
+          :load-older="loadOlderActivitiesPage"
+          :newer-page="newerPage"
+          :load-newer="loadNewerActivitiesPage"
+          :suppress-auto-pin-to-bottom="hasMoreNewer"
+          :highlighted-message-id="highlightedMessageId"
+          :me-id="user.id"
+        >
+          <template #intro>
+            <ChatboxIntro :peers="channel.peers" :me-id="user.id" />
+          </template>
+          <template #message="{ message }">
+            <Message
+              :message="message"
+              :me-id="user.id"
+              @message-deleted="onMessageDeleted"
+              @quote="onQuote"
+              @start-edit="onStartEdit"
+              @open-thread="emit('open-thread', message)"
+              @jump-to-quote="jumpToQuotedMessage"
+            />
+          </template>
+          <template #activity="{ activity }">
+            <ChannelActivityRow
+              :activity="activity"
+              :channel-display-name="channel.name"
+              :me-id="user.id"
+              :can-join-meeting="canJoinMeetingFromActivity(activity)"
+              :meeting-attendees="meetingAttendeesFromActivity(activity)"
+              @join-meeting="joinMeeting({ channelId: channel.id })"
+              @open-thread="openMeetingThread(activity, channel)"
+            />
+          </template>
+        </ChatboxTimeline>
+
+        <button
+          v-if="hasMoreNewer"
+          type="button"
+          class="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-muted"
+          @click="jumpToLatest"
+        >
+          Jump to latest
+        </button>
+      </div>
     </template>
 
     <template #typing>

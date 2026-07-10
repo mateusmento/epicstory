@@ -30,7 +30,7 @@ import { defineStore, storeToRefs } from "pinia";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { IMessageGroup } from "../types/message.type";
-import { buildChatTimeline } from "../utils/build-chat-timeline";
+import { buildChatTimeline, dedupeChannelActivities } from "../utils/build-chat-timeline";
 import { CHANNEL_TYPING_PRUNE_INTERVAL_MS, pruneStaleTyping } from "./typing";
 
 const CHANNEL_ACTIVITIES_PAGE_SIZE = 50;
@@ -44,8 +44,19 @@ export const useChannelStore = defineStore("channel", () => {
   const activities = ref<IChannelActivity[]>([]);
   const members = ref<IUser[]>([]);
   const hasMoreOlder = ref(false);
+  /** False while the window is attached to the live tip; true after jump-around / until loadNewer catches up. */
+  const hasMoreNewer = ref(false);
   const loadingOlderActivities = ref(false);
-  return { channel, activities, members, hasMoreOlder, loadingOlderActivities };
+  const loadingNewerActivities = ref(false);
+  return {
+    channel,
+    activities,
+    members,
+    hasMoreOlder,
+    hasMoreNewer,
+    loadingOlderActivities,
+    loadingNewerActivities,
+  };
 });
 
 export function useChannel() {
@@ -85,11 +96,33 @@ export function useChannel() {
     if (!store.channel) return;
     store.activities = [];
     store.hasMoreOlder = false;
+    store.hasMoreNewer = false;
     const page = await channelApi.findChannelActivities(store.channel.id, {
       limit: CHANNEL_ACTIVITIES_PAGE_SIZE,
     });
-    store.activities = page.content;
+    store.activities = dedupeChannelActivities(page.content);
     store.hasMoreOlder = page.hasNext;
+    store.hasMoreNewer = false;
+  }
+
+  /**
+   * Replace the timeline window with a contiguous slice around `messageId`.
+   * Returns false if the message/activity is not found.
+   */
+  async function resetAroundMessage(messageId: number): Promise<boolean> {
+    if (!store.channel) return false;
+    try {
+      const page = await channelApi.findChannelActivities(store.channel.id, {
+        limit: CHANNEL_ACTIVITIES_PAGE_SIZE,
+        aroundMessageId: messageId,
+      });
+      store.activities = dedupeChannelActivities(page.content);
+      store.hasMoreOlder = page.hasNext;
+      store.hasMoreNewer = page.hasPrevious;
+      return store.activities.some((a) => a.type === "message_sent" && a.messageId === messageId);
+    } catch {
+      return false;
+    }
   }
 
   async function loadOlderActivitiesPage() {
@@ -103,23 +136,45 @@ export function useChannel() {
         beforeCreatedAt: oldest.createdAt,
         beforeId: oldest.id,
       });
-      const existing = new Set(store.activities.map((a) => a.id));
-      store.activities = [
-        ...page.content.filter((i: IChannelActivity) => !existing.has(i.id)),
-        ...store.activities,
-      ];
+      store.activities = dedupeChannelActivities([...page.content, ...store.activities]);
+      // Only the older edge moves; stay on tip / historical newer flag unchanged.
       store.hasMoreOlder = page.hasNext;
     } finally {
       store.loadingOlderActivities = false;
     }
   }
 
+  async function loadNewerActivitiesPage() {
+    if (!store.channel || !store.hasMoreNewer || store.loadingNewerActivities) return;
+    const newest = store.activities[store.activities.length - 1];
+    if (!newest) return;
+    store.loadingNewerActivities = true;
+    try {
+      const page = await channelApi.findChannelActivities(store.channel.id, {
+        limit: CHANNEL_ACTIVITIES_PAGE_SIZE,
+        afterCreatedAt: newest.createdAt,
+        afterId: newest.id,
+      });
+      store.activities = dedupeChannelActivities([...store.activities, ...page.content]);
+      store.hasMoreNewer = page.hasPrevious;
+      // hasMoreOlder is unchanged (we only appended toward the tip).
+    } finally {
+      store.loadingNewerActivities = false;
+    }
+  }
+
   function onReceiveChannelActivity({ activity, channelId }: IncomingChannelActivityEvent) {
-    if (store.channel && store.channel.id === channelId) {
-      insertActivity(activity);
+    if (!store.channel || store.channel.id !== channelId) return;
+    // Historical window: keep contiguous; do not append tip events into a mid-history slice.
+    if (store.hasMoreNewer) {
       if (activity.type === "message_sent" && activity.message) {
         store.channel.lastMessage = toMessageSummary(activity.message);
       }
+      return;
+    }
+    insertActivity(activity);
+    if (activity.type === "message_sent" && activity.message) {
+      store.channel.lastMessage = toMessageSummary(activity.message);
     }
   }
 
@@ -266,7 +321,12 @@ export function useChannel() {
   async function sendMessage(body: SendMessageBody) {
     if (!store.channel) return;
     const { message, activity } = await channelApi.sendMessage(store.channel.id, body);
-    insertActivity(activity);
+    // Sending from a historical window: return to the live tip so the new message is visible.
+    if (store.hasMoreNewer) {
+      await resetAndLoadLatestActivities();
+    } else {
+      insertActivity(activity);
+    }
     if (store.channel) store.channel.lastMessage = toMessageSummary(message);
     return message;
   }
@@ -348,7 +408,9 @@ export function useChannel() {
     openChannel,
     fetchChannel,
     resetAndLoadLatestActivities,
+    resetAroundMessage,
     loadOlderActivitiesPage,
+    loadNewerActivitiesPage,
     joinChannel,
     leaveChannel,
     subscribeMeetings,

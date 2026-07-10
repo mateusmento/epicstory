@@ -10,7 +10,7 @@ defineProps<{
 
 const message = defineModel<IMessage>("message", { required: true });
 
-const emit = defineEmits(["message-deleted", "quote", "start-edit", "open-thread"]);
+const emit = defineEmits(["message-deleted", "quote", "start-edit", "open-thread", "jump-to-quote"]);
 
 const { toggleReaction } = useMessageThread(message);
 const { voteMessagePoll, votingPollMessageId, votingPollOptionId } = useChannel();
@@ -44,5 +44,6 @@ async function onPollVoted(optionId: string) {
     @quote="emit('quote', $event)"
     @edit="emit('start-edit', $event)"
     @poll-voted="onPollVoted"
+    @jump-to-quote="emit('jump-to-quote', $event)"
   />
 </template>
