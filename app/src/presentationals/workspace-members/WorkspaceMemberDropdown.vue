@@ -11,10 +11,15 @@ withDefaults(
     excludeUserIds?: number[];
     selectedLabel?: string;
     searchPlaceholder?: string;
+    density?: "default" | "compact";
+    currentUserId?: number;
+    currentUser?: IUser | null;
   }>(),
   {
     list: () => emptyPaginatedListView<WorkspaceMember>(),
     excludeUserIds: () => [],
+    density: "default",
+    currentUser: null,
   },
 );
 
@@ -42,6 +47,9 @@ const emit = defineEmits<{
         :exclude-user-ids="excludeUserIds"
         :selected-label="selectedLabel"
         :search-placeholder="searchPlaceholder"
+        :density="density"
+        :current-user-id="currentUserId"
+        :current-user="currentUser"
         @add="emit('add', $event)"
         @remove="emit('remove', $event)"
         @search="emit('search', $event)"

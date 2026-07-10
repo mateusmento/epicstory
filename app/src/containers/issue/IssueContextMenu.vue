@@ -10,6 +10,7 @@ import {
   MenuSubTrigger,
   MenuTrigger,
 } from "@/design-system";
+import { useAuth } from "@/domain/auth";
 import { useBacklog } from "@/domain/backlog";
 import { useProjectContext } from "@/domain/project";
 import { useSprint } from "@/domain/sprint";
@@ -44,6 +45,7 @@ const props = defineProps<{
 }>();
 
 const issueApi = useDependency(IssueApi);
+const { user: authUser } = useAuth();
 const { ensureProjectContext } = useProjectContext();
 const { sprints, sprintItems, fetchSprints, fetchSprintItems, removeSprintItem } = useSprint();
 
@@ -192,6 +194,8 @@ async function onConfirmDelete(payload: { deleteSubIssues: boolean }) {
             v-model:users="assigneeUsers"
             selected-label="Assignees"
             search-placeholder="Search assignees…"
+            density="compact"
+            :current-user-id="authUser?.id"
             :disabled="disabled"
             @add="addAssignee(issue.id, $event.id)"
             @remove="removeAssignee(issue.id, $event.id)"

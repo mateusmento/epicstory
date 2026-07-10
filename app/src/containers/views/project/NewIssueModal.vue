@@ -202,7 +202,8 @@ async function onCreateIssue() {
               v-model:users="selectedAssignees"
               selected-label="Assignees"
               search-placeholder="Search assignees…"
-              :exclude-user-ids="authUser ? [authUser.id] : []"
+              density="compact"
+              :current-user-id="authUser?.id"
             />
           </MenuContent>
         </Menu>

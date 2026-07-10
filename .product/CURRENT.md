@@ -4,25 +4,23 @@
 
 ## Session question (60–90 min)
 
-> Can someone insert issue badges into a channel message (paste, command, or Share), and share an issue comment as a quote-style preview that opens the issue comment in a new tab?
+> Can someone pick assignees or participants in one list—search, toggle, see who’s selected—without juggling two scroll panels and a separate remove button?
 
 ## Done when
 
-- [x] Paste issue URL and command “Issue” insert inline badges; multiple per message
-- [x] Fetch messages returns hydrated `referencedIssues`; badges show current key/title/status
-- [x] Share issue → channel submenu → drawer Chatbox with issue node in composer
-- [x] Share comment → same submenu → drawer with quote-style comment preview (issue title + excerpt)
-- [x] Comment preview click opens issue in new tab with scroll-to `messageId`
-- [x] Timeline renders issue badges; quote strip shows issue title + excerpt
+- [x] One ScrollArea; no dual selected/catalog panels
+- [x] Click toggles selection with a check indicator; remove-X list is gone
+- [x] Search clear works; empty copy reflects the query
+- [x] Compact density used from New Issue (and issue context menu)
+- [x] Assign me works when `currentUserId` is passed
+- [x] Channel / calendar / backlog assignee flows still add/remove correctly
 
 ## Active task
 
-→ Share issue / comment to channel
+→ Workspace member menu UX
 
 ## Explicitly deferred (this session)
 
-- Websocket live update of badges while a channel is open
-- Separate client-side second request to hydrate issues
-- Unfurl of non-Epicstory URLs
-- Auto-send on share (user always confirms in composer)
-- Cross-workspace issue insert
+- Redesigning triggers (Assignee chip, “Add participants” button)
+- Recent/suggested assignees beyond Assign me
+- Changing `useWorkspaceMemberSearch` pagination API
