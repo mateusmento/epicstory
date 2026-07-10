@@ -6,3 +6,4 @@ export * from './team-not-found';
 export * from './must-transfer-ownership';
 export * from './cannot-assign-workspace-owner';
 export * from './workspace-not-found';
+export * from './workspace-deleting';

@@ -142,4 +142,10 @@ export class WorkspaceApi {
   removeTeam(teamId: number) {
     return this.axios.delete(`/teams/${teamId}`).then((res) => res.data);
   }
+
+  deleteWorkspace(workspaceId: number) {
+    return this.axios
+      .delete<{ status: "deleting" }>(`/workspaces/${workspaceId}`)
+      .then((res) => res.data);
+  }
 }

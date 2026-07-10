@@ -3,6 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import { IsInt } from 'class-validator';
 import { patch } from 'src/core/objects';
+import { assertWorkspaceNotDeleting } from 'src/workspace/domain/assert-workspace-not-deleting';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 import {
   WorkspaceMemberRepository,
@@ -38,8 +39,9 @@ export class TransferWorkspaceOwnershipCommand
     workspaceId,
     newOwnerUserId,
   }: TransferWorkspaceOwnership) {
-    if (!(await this.workspaceRepository.existsBy({ id: workspaceId })))
-      throw new NotFoundException('Workspace not found');
+    const workspace = await this.workspaceRepository.get(workspaceId);
+    if (!workspace) throw new NotFoundException('Workspace not found');
+    assertWorkspaceNotDeleting(workspace);
 
     const issuer = await this.workspaceRepository.findMember(
       workspaceId,

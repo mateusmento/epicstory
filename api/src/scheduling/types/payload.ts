@@ -28,7 +28,8 @@ export type ScheduledJobPayload =
   | MeetingStartPayload
   | CalendarEventReminderPayload
   | DueIssueReminderPayload
-  | ScheduledMessagePayload;
+  | ScheduledMessagePayload
+  | WorkspacePurgePayload;
 
 export class MeetingReminderPayload {
   type: 'meeting_reminder';
@@ -151,6 +152,21 @@ export class ScheduledMessagePayload {
   }
 }
 
+export class WorkspacePurgePayload {
+  type: 'workspace_purge';
+
+  @IsNumber()
+  workspaceId: number;
+
+  @IsNumber()
+  requestedByUserId: number;
+
+  constructor(data: Partial<WorkspacePurgePayload>) {
+    patch(this, data);
+    this.type = 'workspace_purge';
+  }
+}
+
 export function buildScheduledJobPayload(
   type: ScheduledJobType,
   payload: Record<string, unknown> = {},
@@ -166,6 +182,8 @@ export function buildScheduledJobPayload(
       return new DueIssueReminderPayload(payload);
     case 'scheduled_message':
       return new ScheduledMessagePayload(payload);
+    case 'workspace_purge':
+      return new WorkspacePurgePayload(payload);
     default:
       throw new Error(`Invalid scheduled job type: ${type}`);
   }

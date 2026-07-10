@@ -7,6 +7,10 @@ import { IssuerCanNotCreateTeam } from '../exceptions/issuer-can-not-create-team
 import { WorkspaceMemberAlreadyExists } from '../exceptions/workspace-member-already-exists';
 import { AddWorkspaceMemberPrerequisite } from '../values/add-workspace-member-prerequisite.value';
 import { WorkspaceRole } from '../values/workspace-role.value';
+import {
+  WorkspaceStatus,
+  type WorkspaceStatus as WorkspaceStatusType,
+} from '../values/workspace-status.value';
 import { Team } from './team.entity';
 import { WorkspaceMember } from './workspace-member.entity';
 
@@ -18,10 +22,30 @@ export class Workspace {
   @Column()
   name: string;
 
+  @Column({ default: WorkspaceStatus.ACTIVE })
+  status: WorkspaceStatusType;
+
+  @Column({
+    name: 'deletion_requested_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  deletionRequestedAt?: Date | null;
+
+  @Column({ name: 'deletion_requested_by_user_id', nullable: true })
+  deletionRequestedByUserId?: number | null;
+
   onlineUsersSnapshot: number[];
 
   static create(data: { name: string }) {
-    return create(Workspace, data);
+    return create(Workspace, {
+      ...data,
+      status: WorkspaceStatus.ACTIVE,
+    });
+  }
+
+  get isDeleting() {
+    return this.status === WorkspaceStatus.DELETING;
   }
 
   addMember(

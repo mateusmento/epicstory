@@ -168,6 +168,36 @@ export class GithubWorkspaceIntegrationService {
     );
   }
 
+  /** Privileged: remote uninstall + local GitHub rows for workspace purge. */
+  async purgeGithubForWorkspaceDeletion(workspaceId: number): Promise<void> {
+    const installation =
+      await this.installationRepo.findByWorkspaceId(workspaceId);
+    if (installation) {
+      try {
+        await this.githubApi.uninstallInstallation(
+          installation.githubInstallationId,
+        );
+      } catch (ex) {
+        console.log(
+          'WARNING: GitHub remote uninstall failed during workspace purge',
+          ex,
+        );
+      }
+      try {
+        await this.githubCache.purgeInstallationCaches(
+          installation.githubInstallationId,
+        );
+      } catch (ex) {
+        console.log('WARNING: GitHub cache purge failed', ex);
+      }
+    }
+
+    await this.userConnRepo.delete({ workspaceId });
+    await this.githubWorkspaceInstallation.removeInstallationForWorkspace(
+      workspaceId,
+    );
+  }
+
   async disconnectUserGitHubLink(
     workspaceId: number,
     userId: number,

@@ -41,7 +41,7 @@ const isDetailsPaneOpen = computed({
 
 const workspaceId = computed(() => +route.params.workspaceId);
 
-const { fetchWorkspace } = useWorkspace();
+const { fetchWorkspace, workspace } = useWorkspace();
 
 useNotifications({ manageConnection: true, pageSize: 100 });
 useNotificationIncomingAlerts();
@@ -64,6 +64,9 @@ watch(
 async function loadWorkspace() {
   try {
     await fetchWorkspace(workspaceId.value);
+    if (workspace.value?.status === "deleting") {
+      router.push({ name: "select-workspace" });
+    }
   } catch (err) {
     if (err instanceof UnauthorizedException || err instanceof NotFoundException) {
       router.push({ name: "select-workspace" });

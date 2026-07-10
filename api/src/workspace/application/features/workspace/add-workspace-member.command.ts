@@ -7,6 +7,7 @@ import {
   IssuerUserCanNotAddWorkspaceMember,
   IssuerUserIsNotWorkspaceMember,
 } from 'src/workspace/domain/exceptions';
+import { assertWorkspaceNotDeleting } from 'src/workspace/domain/assert-workspace-not-deleting';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories/workspace-member.repository';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
@@ -40,6 +41,7 @@ export class AddWorkspaceMemberCommand
   async execute({ issuerId, workspaceId, userId, role }: AddWorkspaceMember) {
     const workspace = await this.workspaceRepo.findOneBy({ id: workspaceId });
     if (!workspace) throw new NotFoundException('Workspace not found');
+    assertWorkspaceNotDeleting(workspace);
     const prerequisites =
       await this.workspaceRepo.findAddWorkspaceMemberPrerequisite(
         issuerId,

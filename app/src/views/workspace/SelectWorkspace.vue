@@ -3,7 +3,7 @@ import { Button, Combobox, Field, Form } from "@/design-system";
 import type { IWorkspace } from "@epicstory/contracts";
 import { useWorkspaces } from "@/domain/workspace";
 import type { SubmissionHandler } from "vee-validate";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -17,13 +17,16 @@ onMounted(() => {
 const selectedWorkspace = ref<IWorkspace | undefined>();
 const searchTerm = ref("");
 
+const selectableWorkspaces = computed(() => (workspaces.value ?? []).filter((w) => w.status !== "deleting"));
+const deletingWorkspaces = computed(() => (workspaces.value ?? []).filter((w) => w.status === "deleting"));
+
 async function handleCreateWorkspace(data: { name: string }) {
   const workspace = await createWorkspace(data);
   router.push(`/${workspace.id}`);
 }
 
 function handleSelectWorkspace() {
-  if (selectedWorkspace.value) {
+  if (selectedWorkspace.value && selectedWorkspace.value.status !== "deleting") {
     router.push(`/${selectedWorkspace.value.id}`);
   }
 }
@@ -86,7 +89,7 @@ function handleSelectWorkspace() {
             <Combobox
               v-model="selectedWorkspace"
               v-model:searchTerm="searchTerm"
-              :options="workspaces"
+              :options="selectableWorkspaces"
               track-by="id"
               label-by="name"
               search-placeholder="Search workspaces..."
@@ -96,6 +99,10 @@ function handleSelectWorkspace() {
             <Button @click="handleSelectWorkspace" :disabled="!selectedWorkspace" class="w-full mt-2">
               Select Workspace
             </Button>
+            <p v-if="deletingWorkspaces.length" class="text-xs text-muted-foreground mt-2">
+              Deleting:
+              {{ deletingWorkspaces.map((w) => w.name).join(", ") }}
+            </p>
           </div>
 
           <!-- Divider -->

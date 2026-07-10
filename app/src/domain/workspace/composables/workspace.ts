@@ -140,6 +140,14 @@ export function useWorkspace() {
     await fetchWorkspaceMembers();
   }
 
+  async function deleteWorkspace() {
+    const result = await workspaceApi.deleteWorkspace(workspaceId.value);
+    if (store.workspace) {
+      store.workspace = { ...store.workspace, status: "deleting" };
+    }
+    return result;
+  }
+
   function memberRoleLabel(role: number) {
     if (role === WorkspaceRole.OWNER) return "Owner";
     if (role === WorkspaceRole.ADMIN) return "Admin";
@@ -165,6 +173,7 @@ export function useWorkspace() {
     removeTeam,
     removeMember,
     transferOwnership,
+    deleteWorkspace,
     memberRoleLabel,
   };
 }

@@ -2,6 +2,11 @@
 import { useDependency } from "@/core/dependency-injection";
 import {
   Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
   Menu,
@@ -26,6 +31,8 @@ import { format } from "date-fns";
 import { debounce } from "lodash";
 import { ArrowLeft, Crown, Trash2Icon, UserPlus } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 
 type PendingInvite = { email: string; user: IUser | null };
 
@@ -36,14 +43,22 @@ const {
   sendWorkspaceMemberInvite,
   removeMember,
   transferOwnership,
+  deleteWorkspace,
   memberRoleLabel,
 } = useWorkspace();
 const { user: authUser } = useAuth();
 const userApi = useDependency(UserApi);
+const router = useRouter();
 
 const meMember = computed(() => members.value.find((m) => m.userId === authUser.value?.id));
 const isOwner = computed(() => meMember.value?.role === WorkspaceRole.OWNER);
 const transferBusy = ref(false);
+
+const deleteOpen = ref(false);
+const deleteConfirmName = ref("");
+const isDeletingWorkspace = ref(false);
+const deleteError = ref("");
+const nameMatches = computed(() => deleteConfirmName.value.trim() === (workspace.value?.name ?? ""));
 
 async function onTransferOwnership(userId: number) {
   if (transferBusy.value) return;
@@ -52,6 +67,22 @@ async function onTransferOwnership(userId: number) {
     await transferOwnership(userId);
   } finally {
     transferBusy.value = false;
+  }
+}
+
+async function onConfirmDeleteWorkspace() {
+  if (!nameMatches.value || isDeletingWorkspace.value) return;
+  deleteError.value = "";
+  isDeletingWorkspace.value = true;
+  try {
+    await deleteWorkspace();
+    deleteOpen.value = false;
+    toast.message("Workspace is being deleted…");
+    await router.push({ name: "select-workspace" });
+  } catch (error: any) {
+    deleteError.value = error?.response?.data?.message || "Could not delete workspace.";
+  } finally {
+    isDeletingWorkspace.value = false;
   }
 }
 
@@ -212,6 +243,30 @@ async function onSend() {
         </div>
       </div>
     </div>
+
+    <template v-if="isOwner">
+      <Separator class="my-2" />
+      <div class="flex:col-md p-4 gap-2">
+        <h2 class="text-sm font-semibold text-destructive">Danger zone</h2>
+        <p class="text-xs text-muted-foreground">
+          Permanently delete this workspace and all of its data. Deletion runs in the background.
+        </p>
+        <Button
+          type="button"
+          variant="flat"
+          intent="destructive"
+          size="sm"
+          class="w-fit"
+          @click="
+            deleteConfirmName = '';
+            deleteError = '';
+            deleteOpen = true;
+          "
+        >
+          Delete workspace
+        </Button>
+      </div>
+    </template>
   </div>
 
   <div v-else class="flex:col w-96 min-h-0 flex-1 p-2 gap-3">
@@ -297,4 +352,36 @@ async function onSend() {
       </Button>
     </div>
   </div>
+
+  <Dialog :open="deleteOpen" @update:open="deleteOpen = $event">
+    <DialogContent class="max-w-md">
+      <DialogHeader>
+        <DialogTitle>Delete workspace</DialogTitle>
+      </DialogHeader>
+      <p class="text-sm text-muted-foreground">
+        This permanently deletes
+        <span class="font-medium text-foreground">{{ workspace?.name }}</span>
+        and all projects, issues, channels, and files. Type the workspace name to confirm.
+      </p>
+      <div class="mt-3 flex:col-lg">
+        <Label for="ws-delete-confirm">Workspace name</Label>
+        <Input id="ws-delete-confirm" v-model="deleteConfirmName" autocomplete="off" />
+      </div>
+      <p v-if="deleteError" class="mt-2 text-sm text-destructive">{{ deleteError }}</p>
+      <DialogFooter class="mt-2">
+        <Button type="button" variant="outline" :disabled="isDeletingWorkspace" @click="deleteOpen = false">
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="flat"
+          intent="destructive"
+          :disabled="!nameMatches || isDeletingWorkspace"
+          @click="onConfirmDeleteWorkspace"
+        >
+          {{ isDeletingWorkspace ? "Deleting…" : "Delete workspace" }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

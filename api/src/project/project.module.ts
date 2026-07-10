@@ -15,6 +15,7 @@ import * as entities from './domain/entities';
 import * as services from './domain/services';
 import * as repositories from './infrastructure/repositories';
 import { IssueKeyAllocationService } from './application/services/issue-key-allocation.service';
+import { IssuePurgeService } from './application/services/issue-purge.service';
 
 @Module({
   imports: [
@@ -35,7 +36,8 @@ import { IssueKeyAllocationService } from './application/services/issue-key-allo
     ...Object.values(gateways),
     ...Object.values(projectReactions),
     IssueKeyAllocationService,
+    IssuePurgeService,
   ],
-  exports: [],
+  exports: [IssuePurgeService],
 })
 export class ProjectModule {}

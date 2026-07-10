@@ -34,6 +34,13 @@ export class MeetingService {
     return this.meetingAttendeeRepo.find({ where: { userId } });
   }
 
+  findOngoingMeetingsByWorkspace(workspaceId: number) {
+    return this.meetingRepo.find({
+      where: { workspaceId, ongoing: true },
+      relations: { attendees: true },
+    });
+  }
+
   async endMeeting(meetingId: number) {
     await this.meetingAttendeeRepo.delete({ meetingId });
     return this.meetingRepo.update({ id: meetingId }, {

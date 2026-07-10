@@ -1,5 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ChannelRepository } from 'src/channel/infrastructure';
+import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories';
 import { MeetingGateway } from '../gateways/meeting.gateway';
 import { MeetingService } from './meeting.service';
 
@@ -8,6 +9,7 @@ export class MeetingKickService {
   constructor(
     private meetingService: MeetingService,
     private channelRepo: ChannelRepository,
+    private workspaceMemberRepo: WorkspaceMemberRepository,
     @Inject(forwardRef(() => MeetingGateway))
     private meetingGateway: MeetingGateway,
   ) {}
@@ -68,5 +70,45 @@ export class MeetingKickService {
     }
 
     await this.meetingGateway.disconnectUser(userId);
+  }
+
+  /** Drain all live meetings in a workspace and disconnect every member. */
+  async forceLeaveAndDisconnectWorkspace(workspaceId: number): Promise<void> {
+    const meetings =
+      await this.meetingService.findOngoingMeetingsByWorkspace(workspaceId);
+
+    for (const meeting of meetings) {
+      const attendees = meeting.attendees ?? [];
+      for (const attendee of attendees) {
+        try {
+          await this.removeAttendee({
+            meetingId: meeting.id,
+            remoteId: attendee.remoteId,
+            userId: attendee.userId,
+          });
+        } catch (ex) {
+          console.log('WARNING: workspace meeting kick failed', ex);
+        }
+      }
+      try {
+        await this.meetingService.endMeeting(meeting.id);
+        await this.meetingGateway.emitMeetingEnded(meeting);
+        this.meetingGateway.clearMeetingRoom(meeting.id);
+      } catch (ex) {
+        console.log('WARNING: end workspace meeting failed', ex);
+      }
+    }
+
+    const members = await this.workspaceMemberRepo.find({
+      where: { workspaceId },
+      select: { userId: true },
+    });
+    for (const member of members) {
+      try {
+        await this.meetingGateway.disconnectUser(member.userId);
+      } catch (ex) {
+        console.log('WARNING: disconnect workspace member failed', ex);
+      }
+    }
   }
 }

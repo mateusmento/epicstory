@@ -6,4 +6,5 @@ export const ScheduledJobTypes = {
   meeting_start: 'meeting_start',
   due_issue_reminder: 'due_issue_reminder',
   scheduled_message: 'scheduled_message',
+  workspace_purge: 'workspace_purge',
 } as const;

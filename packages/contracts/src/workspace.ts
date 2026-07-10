@@ -11,6 +11,7 @@ export type IWorkspace = {
   id: number;
   name: string;
   onlineUsersSnapshot: number[];
+  status?: "active" | "deleting";
 };
 
 export type WorkspaceMember = {

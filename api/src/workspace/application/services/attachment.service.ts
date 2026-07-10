@@ -1,4 +1,8 @@
-import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  ListObjectsV2Command,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import {
   BadRequestException,
@@ -271,6 +275,48 @@ export class AttachmentService {
       },
     });
     await this.deleteStoredFilesAndRows(rows, true);
+  }
+
+  /** Best-effort purge of all attachments for a workspace (DB rows + S3). */
+  async deleteAllForWorkspace(workspaceId: number): Promise<void> {
+    const rows = await this.attachments.find({ where: { workspaceId } });
+    await this.deleteStoredFilesAndRows(rows, true);
+    await this.deleteS3Prefix(`attachments/w-${workspaceId}/`);
+  }
+
+  private async deleteS3Prefix(prefix: string): Promise<void> {
+    try {
+      let continuationToken: string | undefined;
+      do {
+        const listed = await this.s3.send(
+          new ListObjectsV2Command({
+            Bucket: this.config.AWS_BUCKET,
+            Prefix: prefix,
+            ContinuationToken: continuationToken,
+          }),
+        );
+        const keys = (listed.Contents ?? [])
+          .map((o) => o.Key)
+          .filter((k): k is string => !!k);
+        for (const Key of keys) {
+          try {
+            await this.s3.send(
+              new DeleteObjectCommand({
+                Bucket: this.config.AWS_BUCKET,
+                Key,
+              }),
+            );
+          } catch {
+            // Best-effort orphan cleanup.
+          }
+        }
+        continuationToken = listed.IsTruncated
+          ? listed.NextContinuationToken
+          : undefined;
+      } while (continuationToken);
+    } catch {
+      // Best-effort: missing ListObjects permission should not block purge.
+    }
   }
 
   private async deleteStoredFilesAndRows(

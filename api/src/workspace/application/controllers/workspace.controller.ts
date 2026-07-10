@@ -7,6 +7,8 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   ParseIntPipe,
@@ -23,6 +25,7 @@ import {
   IssuerUserCanNotAddWorkspaceMember,
   IssuerUserIsNotWorkspaceMember,
   MustTransferOwnership,
+  WorkspaceDeleting,
   WorkspaceMemberAlreadyExists,
   WorkspaceNotFound,
 } from 'src/workspace/domain/exceptions';
@@ -30,6 +33,7 @@ import {
   AddWorkspaceMember,
   CreateTeam,
   CreateWorkspace,
+  DeleteWorkspace,
   FindTeams,
   FindWorkspace,
   FindWorkspaceMembers,
@@ -64,6 +68,19 @@ export class WorkspaceController {
   findWorkspace(@Param('id') workspaceId: number, @Auth() issuer: Issuer) {
     return this.queryBus.execute(
       new FindWorkspace({ workspaceId, issuerId: issuer.id }),
+    );
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ExceptionFilter(
+    [WorkspaceNotFound, NotFoundException],
+    [WorkspaceDeleting, ConflictException],
+  )
+  deleteWorkspace(@Param('id') workspaceId: number, @Auth() issuer: Issuer) {
+    return this.commandBus.execute(
+      new DeleteWorkspace({ workspaceId, issuer }),
     );
   }
 

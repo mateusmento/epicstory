@@ -117,6 +117,28 @@ export class GithubApiService {
     };
   }
 
+  /**
+   * Uninstalls a GitHub App installation (app JWT). Best-effort for workspace purge.
+   * @see https://docs.github.com/en/rest/apps/apps#delete-an-installation-for-the-authenticated-app
+   */
+  async uninstallInstallation(installationId: string): Promise<void> {
+    const jwt = this.requireAppJwt();
+    const url = `https://api.github.com/app/installations/${installationId}`;
+    const res = await githubHttpFetch({
+      url,
+      method: 'DELETE',
+      headers: githubRestJsonHeaders(jwt),
+      httpConfig: this.httpConfig,
+    });
+
+    if (res.status === 404) return;
+    if (!res.ok) {
+      throw new Error(
+        `GitHub installation uninstall failed (${res.status}): ${res.bodyText}`,
+      );
+    }
+  }
+
   /** Cached installation access token (re-mints before GitHub expiry per skew). */
   async getInstallationAccessToken(installationId: string): Promise<string> {
     const skewMs =
