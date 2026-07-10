@@ -4,22 +4,22 @@
 
 ## Session question (60–90 min)
 
-> **Can someone open a project search dialog and find an issue by key, title, or description text without leaving the project shell?**
+> Can someone take an issue out of sprint scope by dragging it onto the backlog or via the issue context menu, move items between current and upcoming sprints by drag, see real issue status on planning rows, and see a single clear drag overlay (status + assignees)?
 
 ## Done when
 
-- [x] Project header search opens an issue search dialog (⌘J).
-- [x] Debounced fulltext search hits title, issue key, and description.
-- [x] Selecting a result navigates to the issue detail route.
-- [x] Backend `FindIssues` search is no longer title-only (and no artificial delay).
-- [x] Postgres `search_vector` + GIN index with `ts_rank` ordering.
-- [x] Infinite scroll / load-more in the search dialog.
-- [x] Cross-project / workspace-wide issue search (All + multi-project toggles).
+- [x] Sprint Planning rows show the issue’s status color on the bullet
+- [x] Drag current ↔ upcoming persists and updates both lists
+- [x] Drop sprint item onto backlog dropzone (“Move item back to backlog”) removes it from that sprint
+- [x] Context menu **Remove from sprint** when in active/upcoming scope
+- [x] Dragging backlog or sprint items shows one overlay with status bullet + assignees
 
 ## Active task
 
-Ad-hoc: project issue search dialog (from Project.vue placeholder Command).
+→ Remove sprint items from scope (plan)
 
 ## Explicitly deferred (this session)
 
-- (none)
+- Drag onto completed sprints / pickers beyond current+upcoming
+- Undo toast after remove
+- Full backlog-grid clone as the overlay

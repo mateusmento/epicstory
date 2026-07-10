@@ -3,6 +3,7 @@ import { IssueContextMenu } from "@/containers/issue";
 import { Icon } from "@/design-system/icons";
 import { useBacklog } from "@/domain/backlog";
 import { issueFiltersForQuery, useProjectFilters } from "@/domain/project";
+import { useSprint } from "@/domain/sprint";
 import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
 import { useDraggingById } from "@/presentationals/board";
 import Signal1Bar from "@/presentationals/issue/priority-toggler/Signal1Bar.vue";
@@ -14,10 +15,10 @@ import SprintPlanItem from "@/presentationals/sprint/SprintPlanItem.vue";
 import { applySortableTransferById } from "@/presentationals/board/sortable";
 import { flyToPlaceTransition } from "@/presentationals/board/transition";
 import type { IIssue, IBacklogItem } from "@epicstory/contracts";
-import { useDroppable } from "@vue-dnd-kit/core";
+import { useDnDStore, useDroppable } from "@vue-dnd-kit/core";
 import { useStorage } from "@vueuse/core";
 import { concat, uniq } from "lodash";
-import { computed, onMounted, reactive, watch } from "vue";
+import { computed, onMounted, reactive, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import BacklogItemRow from "./BacklogItemRow.vue";
 import { provideBacklogRowContext } from "./backlog-row.context";
@@ -27,6 +28,8 @@ const props = defineProps<{ workspaceId: string; projectId: string }>();
 const { backlogItems, fetchBacklogItems, moveBacklogItem, updateIssue } = useBacklog();
 const { filters: activeFilters } = useProjectFilters(+props.projectId);
 const { isDragging } = useDraggingById();
+const { removeSprintItem } = useSprint();
+const dndStore = useDnDStore();
 
 const orderBy = useStorage("backlog.orderBy", "manual");
 const order = useStorage<"asc" | "desc">("backlog.order", "asc");
@@ -50,9 +53,26 @@ function resetOrder() {
 
 const isDndEnabled = computed(() => groupBy.value === "none" && orderBy.value === "manual");
 
+const draggingSourceType = computed(
+  () => dndStore.draggingElements.value.values().next().value?.data?.sourceType ?? null,
+);
+
+const showSprintBacklogDropzone = computed(
+  () => dndStore.isDragging.value && draggingSourceType.value === "sprint",
+);
+
+// Plain reactive object — vue-dnd-kit stores `data` by reference at register time.
+const droppableData = reactive<{ source: IBacklogItem[]; targetType: "backlog" }>({
+  source: backlogItems.value,
+  targetType: "backlog",
+});
+watchEffect(() => {
+  droppableData.source = backlogItems.value;
+});
+
 const { elementRef: itemsContainerRef } = useDroppable({
   groups: ["sprint-plan"],
-  data: computed(() => ({ source: backlogItems.value, targetType: "backlog" })),
+  data: droppableData,
   events: {
     onHover: (store) => {
       if (!isDndEnabled.value) return;
@@ -61,9 +81,23 @@ const { elementRef: itemsContainerRef } = useDroppable({
       applySortableTransferById(store);
     },
     onDrop: async (store, payload) => {
-      const activeId = payload.items[0]?.id;
-      if (typeof activeId !== "string" || !activeId.startsWith("b-"))
+      const active = payload.items[0] as
+        | { id?: string | number; data?: { sourceType?: string; sprintId?: number } }
+        | undefined;
+      const activeId = active?.id;
+      const sourceType = active?.data?.sourceType;
+
+      if (sourceType === "sprint" && typeof activeId === "number") {
+        const sprintId = active?.data?.sprintId;
+        if (typeof sprintId === "number") {
+          await removeSprintItem(activeId, sprintId);
+        }
         return flyToPlaceTransition(store, payload);
+      }
+
+      if (typeof activeId !== "string" || !activeId.startsWith("b-")) {
+        return flyToPlaceTransition(store, payload);
+      }
       if (!isDndEnabled.value) return flyToPlaceTransition(store, payload);
       const backlogItemId = +activeId.slice(2);
       const idx = backlogItems.value.findIndex((i) => i.id === backlogItemId);
@@ -219,16 +253,18 @@ provideBacklogRowContext({
 
 <template>
   <IssueList :order-by="orderBy" :order="order" @sort="toggleOrder" @reset-sort="resetOrder">
-    <div ref="itemsContainerRef" class="divide-y">
+    <div ref="itemsContainerRef" class="min-h-48 divide-y">
       <!-- Flat/manual mode: draggable with vue-dnd-kit -->
       <template v-if="groupBy === 'none'">
-        <IssueContextMenu v-for="{ id: itemId, issue } of backlogItems" :key="issue.id" :issue="issue">
-          <SprintPlanItem
-            group="sprint-plan"
-            :item-id="`b-${itemId}`"
-            :source="backlogItems"
-            :item-data="{ sourceType: 'backlog', backlogItemId: itemId, issue, issueId: issue.id }"
-          >
+        <SprintPlanItem
+          v-for="{ id: itemId, issue } of backlogItems"
+          :key="issue.id"
+          group="sprint-plan"
+          :item-id="`b-${itemId}`"
+          :source="backlogItems"
+          :item-data="{ sourceType: 'backlog', backlogItemId: itemId, issue, issueId: issue.id }"
+        >
+          <IssueContextMenu :issue="issue">
             <BacklogItemRow
               :item-id="itemId"
               :issue="issue"
@@ -236,8 +272,8 @@ provideBacklogRowContext({
               drag-handle-title="Drag to reorder or add to sprint"
               :drag-handle-force-hidden="orderBy !== 'manual'"
             />
-          </SprintPlanItem>
-        </IssueContextMenu>
+          </IssueContextMenu>
+        </SprintPlanItem>
       </template>
 
       <!-- Grouped mode: static rows, no DnD -->
@@ -282,5 +318,17 @@ provideBacklogRowContext({
         </template>
       </template>
     </div>
+
+    <template #overlay>
+      <div
+        v-if="showSprintBacklogDropzone"
+        class="absolute inset-0 z-10 p-4 flex bg-white pointer-events-none"
+        aria-hidden="true"
+      >
+        <div class="flex flex-1 items-center justify-center rounded-md border-2 border-dashed border-border">
+          <span class="px-4 text-center">Move item back to backlog</span>
+        </div>
+      </div>
+    </template>
   </IssueList>
 </template>

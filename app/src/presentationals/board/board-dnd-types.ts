@@ -61,5 +61,17 @@ export function readElementClientRect(element: Element | null): DOMRect | null {
 }
 
 export function findItemIndexById(list: SortableListItem[], id: string | number): number {
-  return list.findIndex((item) => item.id === id);
+  const direct = list.findIndex((item) => item.id === id);
+  if (direct >= 0) return direct;
+
+  // Backlog draggable ids are prefixed "b-" so they don't collide with sprint item ids
+  // in the shared "sprint-plan" DnD group, while list rows still use numeric backlog ids.
+  if (typeof id === "string" && id.startsWith("b-")) {
+    const raw = Number(id.slice(2));
+    if (Number.isFinite(raw)) {
+      return list.findIndex((item) => item.id === raw);
+    }
+  }
+
+  return -1;
 }

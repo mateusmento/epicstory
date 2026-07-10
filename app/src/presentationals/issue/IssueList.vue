@@ -105,9 +105,12 @@ const effectiveGridCols = computed(() => props.gridColsClass ?? GRID_COLS);
         </div>
       </div>
 
-      <!-- List body -->
-      <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-        <slot />
+      <!-- List body: scroll content + optional viewport-fixed overlay (sibling, not inside scroll) -->
+      <div class="relative flex-1 min-h-0 min-w-0">
+        <div class="h-full overflow-y-auto overflow-x-hidden">
+          <slot />
+        </div>
+        <slot name="overlay" />
       </div>
     </div>
   </div>

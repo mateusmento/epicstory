@@ -3,6 +3,7 @@ import { flyToPlaceTransition } from "@/presentationals/board/transition";
 import { applySortableTransferById } from "@/presentationals/board/sortable";
 import { useDroppable, type IDnDPayload, type IDnDStore } from "@vue-dnd-kit/core";
 import type { ISprintItem } from "@epicstory/contracts";
+import { reactive, watchEffect } from "vue";
 
 const props = defineProps<{
   group: string;
@@ -14,6 +15,21 @@ const emit = defineEmits<{
   drop: [{ store: IDnDStore; payload: IDnDPayload }];
 }>();
 
+const droppableData = reactive<{
+  source: ISprintItem[];
+  targetType: "sprint";
+  sprintId: number;
+}>({
+  source: props.source,
+  targetType: "sprint",
+  sprintId: props.sprintId,
+});
+
+watchEffect(() => {
+  droppableData.source = props.source;
+  droppableData.sprintId = props.sprintId;
+});
+
 function onHover(store: IDnDStore) {
   const dragging = store?.draggingElements?.value?.values?.().next?.().value ?? null;
   const data = dragging?.data;
@@ -24,7 +40,7 @@ function onHover(store: IDnDStore) {
 
 const { elementRef } = useDroppable({
   groups: [props.group],
-  data: { source: props.source, targetType: "sprint", sprintId: props.sprintId },
+  data: droppableData,
   events: {
     onHover,
     onDrop: (store, payload) => {

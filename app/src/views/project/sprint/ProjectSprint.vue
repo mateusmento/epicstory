@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { IssueContextMenu } from "@/containers/issue";
 import { Button, NavTrigger, ScrollArea } from "@/design-system";
 import { useProjectSprint } from "@/domain/sprint";
 import { ArrowRightIcon, TimerIcon } from "lucide-vue-next";
@@ -54,17 +55,17 @@ const COLUMN_CLASSES = "flex:col gap-2 flex-shrink-0 w-80 min-w-80 rounded-xl bg
                 {{ todoItems.length }}
               </span>
             </div>
-            <div
-              v-for="item in todoItems"
-              :key="item.id"
-              class="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow"
-              @click="openIssue(item.issue.id)"
-            >
-              <div class="text-xs text-muted-foreground font-mono mb-1">
-                {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
+            <IssueContextMenu v-for="item in todoItems" :key="item.id" :issue="item.issue">
+              <div
+                class="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow"
+                @click="openIssue(item.issue.id)"
+              >
+                <div class="text-xs text-muted-foreground font-mono mb-1">
+                  {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
+                </div>
+                <div class="text-sm">{{ item.issue?.title }}</div>
               </div>
-              <div class="text-sm">{{ item.issue?.title }}</div>
-            </div>
+            </IssueContextMenu>
             <div v-if="todoItems.length === 0" class="text-xs text-center text-muted-foreground py-4">
               No issues
             </div>
@@ -77,17 +78,17 @@ const COLUMN_CLASSES = "flex:col gap-2 flex-shrink-0 w-80 min-w-80 rounded-xl bg
                 {{ doingItems.length }}
               </span>
             </div>
-            <div
-              v-for="item in doingItems"
-              :key="item.id"
-              class="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow"
-              @click="openIssue(item.issue.id)"
-            >
-              <div class="text-xs text-muted-foreground font-mono mb-1">
-                {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
+            <IssueContextMenu v-for="item in doingItems" :key="item.id" :issue="item.issue">
+              <div
+                class="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow"
+                @click="openIssue(item.issue.id)"
+              >
+                <div class="text-xs text-muted-foreground font-mono mb-1">
+                  {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
+                </div>
+                <div class="text-sm">{{ item.issue?.title }}</div>
               </div>
-              <div class="text-sm">{{ item.issue?.title }}</div>
-            </div>
+            </IssueContextMenu>
             <div v-if="doingItems.length === 0" class="text-xs text-center text-muted-foreground py-4">
               No issues
             </div>
@@ -100,17 +101,17 @@ const COLUMN_CLASSES = "flex:col gap-2 flex-shrink-0 w-80 min-w-80 rounded-xl bg
                 {{ doneItems.length }}
               </span>
             </div>
-            <div
-              v-for="item in doneItems"
-              :key="item.id"
-              class="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow opacity-75"
-              @click="openIssue(item.issue.id)"
-            >
-              <div class="text-xs text-muted-foreground font-mono mb-1">
-                {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
+            <IssueContextMenu v-for="item in doneItems" :key="item.id" :issue="item.issue">
+              <div
+                class="bg-card border border-border rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow opacity-75"
+                @click="openIssue(item.issue.id)"
+              >
+                <div class="text-xs text-muted-foreground font-mono mb-1">
+                  {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
+                </div>
+                <div class="text-sm line-through text-muted-foreground">{{ item.issue?.title }}</div>
               </div>
-              <div class="text-sm line-through text-muted-foreground">{{ item.issue?.title }}</div>
-            </div>
+            </IssueContextMenu>
             <div v-if="doneItems.length === 0" class="text-xs text-center text-muted-foreground py-4">
               No issues
             </div>

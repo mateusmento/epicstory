@@ -4,6 +4,7 @@ import { pointerSensor } from "@/presentationals/board/sensor";
 import { applySortableTransferById } from "@/presentationals/board/sortable";
 import { useDraggingById } from "@/presentationals/board";
 import { useDraggable } from "@vue-dnd-kit/core";
+import { reactive, watchEffect } from "vue";
 
 const props = defineProps<{
   group: string;
@@ -12,10 +13,16 @@ const props = defineProps<{
   itemData?: Record<string, unknown>;
 }>();
 
+// vue-dnd-kit stores this object by reference at register time — keep `.source` current.
+const dndData = reactive<Record<string, unknown>>({ source: props.source });
+watchEffect(() => {
+  Object.assign(dndData, props.itemData ?? {}, { source: props.source });
+});
+
 const { elementRef, handleDragStart } = useDraggable({
   id: props.itemId,
   groups: [props.group],
-  data: { source: props.source, ...props.itemData },
+  data: dndData,
   sensor: { setup: pointerSensor, throttle: 16 },
   events: { onHover: applySortableTransferById },
 });

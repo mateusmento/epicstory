@@ -11,6 +11,8 @@ import {
   MenuTrigger,
 } from "@/design-system";
 import { useBacklog } from "@/domain/backlog";
+import { useProjectContext } from "@/domain/project";
+import { useSprint } from "@/domain/sprint";
 import type { IIssue, IssueType, IUser as IUser } from "@epicstory/contracts";
 import {
   CalendarClock,
@@ -19,6 +21,7 @@ import {
   Layers2,
   SquarePen,
   Tags,
+  TimerIcon,
   Trash2Icon,
   UserIcon,
 } from "lucide-vue-next";
@@ -39,11 +42,15 @@ const props = defineProps<{
 }>();
 
 const issueApi = useDependency(IssueApi);
+const { ensureProjectContext } = useProjectContext();
+const { sprints, sprintItems, fetchSprints, fetchSprintItems, removeSprintItem } = useSprint();
 
 const renameOpen = ref(false);
 const deleteOpen = ref(false);
 const nestedCount = ref(0);
 const isTogglingEpic = ref(false);
+const scopedSprintItem = ref<{ itemId: number; sprintId: number } | null>(null);
+const resolvingSprintScope = ref(false);
 const labelIds = computed(() => (props.issue?.labels ?? []).map((l) => l.id));
 const isEpic = computed(() => props.issue.issueType === "epic");
 const epicToggleLabel = computed(() => (isEpic.value ? "Unmark as epic" : "Mark as epic"));
@@ -98,6 +105,48 @@ async function toggleEpicType() {
   }
 }
 
+async function resolveSprintScope() {
+  resolvingSprintScope.value = true;
+  scopedSprintItem.value = null;
+  try {
+    const project = await ensureProjectContext(props.issue.projectId);
+    if (!project.teamId) return;
+
+    await fetchSprints(project.teamId);
+    const candidates = sprints.value.filter((s) => s.status === "active" || s.status === "planned");
+    for (const sprint of candidates) {
+      let items = sprintItems.value.get(sprint.id);
+      if (!items) {
+        items = await fetchSprintItems(sprint.id);
+      }
+      const found = items.find((item) => item.issue?.id === props.issue.id);
+      if (found) {
+        scopedSprintItem.value = { itemId: found.id, sprintId: sprint.id };
+        return;
+      }
+    }
+  } catch {
+    scopedSprintItem.value = null;
+  } finally {
+    resolvingSprintScope.value = false;
+  }
+}
+
+async function onMenuOpen(open: boolean) {
+  if (!open) {
+    scopedSprintItem.value = null;
+    return;
+  }
+  await resolveSprintScope();
+}
+
+async function onRemoveFromSprint() {
+  const scoped = scopedSprintItem.value;
+  if (!scoped || props.disabled) return;
+  await removeSprintItem(scoped.itemId, scoped.sprintId);
+  scopedSprintItem.value = null;
+}
+
 watch(deleteOpen, async (open) => {
   if (!open) return;
   nestedCount.value = props.issue.subIssues?.length ?? 0;
@@ -115,7 +164,7 @@ async function onConfirmDelete(payload: { deleteSubIssues: boolean }) {
 </script>
 
 <template>
-  <Menu type="context-menu">
+  <Menu type="context-menu" @update:open="onMenuOpen">
     <MenuTrigger as-child>
       <slot />
     </MenuTrigger>
@@ -201,6 +250,15 @@ async function onConfirmDelete(payload: { deleteSubIssues: boolean }) {
           />
         </MenuSubContent>
       </MenuSub>
+
+      <MenuItem
+        v-if="scopedSprintItem"
+        :disabled="disabled || resolvingSprintScope"
+        @click="onRemoveFromSprint"
+      >
+        <TimerIcon class="size-4 text-muted-foreground" />
+        <div>Remove from sprint</div>
+      </MenuItem>
 
       <MenuSeparator />
 

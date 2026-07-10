@@ -7,8 +7,10 @@ import {
   CollapsibleTrigger,
   Separator,
 } from "@/design-system";
+import { IssueContextMenu } from "@/containers/issue";
 import { useSprintPanel } from "@/domain/sprint";
 import { burndownProgress, sprintDateLabel, successPercent } from "@/lib/sprint";
+import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
 import SprintPlanItem from "@/presentationals/sprint/SprintPlanItem.vue";
 import SprintZone from "@/presentationals/sprint/SprintZone.vue";
 import type { CompleteSprintResult, ISprint } from "@epicstory/contracts";
@@ -104,13 +106,18 @@ function onSprintCompleted(result: CompleteSprintResult) {
                 issueId: item.issue?.id,
               }"
             >
-              <div class="flex items-center gap-2 px-3 py-2">
-                <div class="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
-                <span class="text-xs font-mono text-muted-foreground shrink-0">
-                  {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
-                </span>
-                <span class="text-sm truncate flex-1">{{ item.issue?.title }}</span>
-              </div>
+              <IssueContextMenu :issue="item.issue">
+                <div class="flex items-center gap-2 px-3 py-2">
+                  <div
+                    class="w-1.5 h-1.5 rounded-full ring-1 ring-border shrink-0"
+                    :class="issueStatusDotClass(item.issue?.status ?? '')"
+                  />
+                  <span class="text-xs font-mono text-muted-foreground shrink-0">
+                    {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
+                  </span>
+                  <span class="text-sm truncate flex-1">{{ item.issue?.title }}</span>
+                </div>
+              </IssueContextMenu>
             </SprintPlanItem>
             <div
               v-if="getLocalItems(currentSprint.id).length === 0"
@@ -164,13 +171,18 @@ function onSprintCompleted(result: CompleteSprintResult) {
                 issueId: item.issue?.id,
               }"
             >
-              <div class="flex items-center gap-2 px-3 py-2">
-                <div class="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
-                <span class="text-xs font-mono text-muted-foreground shrink-0">
-                  {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
-                </span>
-                <span class="text-sm truncate flex-1">{{ item.issue?.title }}</span>
-              </div>
+              <IssueContextMenu :issue="item.issue">
+                <div class="flex items-center gap-2 px-3 py-2">
+                  <div
+                    class="w-1.5 h-1.5 rounded-full ring-1 ring-border shrink-0"
+                    :class="issueStatusDotClass(item.issue?.status ?? '')"
+                  />
+                  <span class="text-xs font-mono text-muted-foreground shrink-0">
+                    {{ item.issue?.issueKey ?? `#${item.issue?.id}` }}
+                  </span>
+                  <span class="text-sm truncate flex-1">{{ item.issue?.title }}</span>
+                </div>
+              </IssueContextMenu>
             </SprintPlanItem>
             <div
               v-if="getLocalItems(upcomingSprint.id).length === 0"
