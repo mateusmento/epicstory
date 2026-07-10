@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { IMessage } from '@epicstory/contracts';
+import { InjectRepository } from '@nestjs/typeorm';
+import type { IMessage, IssueReference } from '@epicstory/contracts';
 import {
   enrichMentionLabels,
+  extractIssueIds,
   extractMentionIds,
   tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
@@ -12,6 +14,7 @@ import {
   buildQuotedMessagePreview,
   mapReactions,
   mapRepliers,
+  toIssueReference,
 } from 'src/channel/domain/utils';
 import {
   ChannelRepository,
@@ -20,8 +23,9 @@ import {
 } from 'src/channel/infrastructure';
 import { groupBy, mapBy } from 'src/core/objects';
 import type { UploadedAttachment } from '@epicstory/contracts';
+import { Issue } from 'src/project/domain/entities';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
-import { In } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { messageEntityToIMessageCore } from '../utils/message-entity-to-imessage';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { MessagePollService } from './message-poll.service';
@@ -37,6 +41,8 @@ export class MessagePreviewEnrichmentService {
     private attachmentService: AttachmentService,
     private readonly messagePolls: MessagePollService,
     private readonly workspaceRepo: WorkspaceRepository,
+    @InjectRepository(Issue)
+    private readonly issueRepo: Repository<Issue>,
   ) {}
 
   async findMessages(channelId: number, senderId: number) {
@@ -83,7 +89,7 @@ export class MessagePreviewEnrichmentService {
   }
 
   /**
-   * Channel message list enrichment (quotes, reactions, replies meta, mentions).
+   * Channel message list enrichment (quotes, reactions, replies meta, mentions, issues).
    */
   async enrichMessagesForPreview(
     messages: Message[],
@@ -118,6 +124,20 @@ export class MessagePreviewEnrichmentService {
       allMentionIds,
     );
 
+    const allIssueIds = uniq(
+      messages.flatMap((message) => extractIssueIds(message.content)),
+    );
+    const referencedIssueRows =
+      allIssueIds.length > 0
+        ? await this.issueRepo.find({
+            where: {
+              id: In(allIssueIds),
+              workspaceId: channel.workspaceId,
+            },
+          })
+        : [];
+    const issuesById = mapBy(referencedIssueRows, 'id');
+
     const quoteIds = uniq(
       messages
         .map((m) => m.quotedMessageId)
@@ -131,6 +151,22 @@ export class MessagePreviewEnrichmentService {
           })
         : [];
     const quotedById = mapBy(quotedRows, 'id');
+
+    const quoteChannelIds = uniq(quotedRows.map((q) => q.channelId));
+    const quoteIssues =
+      quoteChannelIds.length > 0
+        ? await this.issueRepo.find({
+            where: {
+              commentChannelId: In(quoteChannelIds),
+              workspaceId: channel.workspaceId,
+            },
+          })
+        : [];
+    const issueByCommentChannelId = new Map(
+      quoteIssues
+        .filter((i) => i.commentChannelId != null)
+        .map((i) => [i.commentChannelId!, i]),
+    );
 
     const attachmentsByMessageId = channel
       ? await this.attachmentService.listAnchoredForMessages(
@@ -168,8 +204,17 @@ export class MessagePreviewEnrichmentService {
         .map((id) => peerUsersMap.get(id))
         .filter((user) => user);
 
+      const issueIds = extractIssueIds(message.content);
+      const referencedIssues: IssueReference[] = issueIds
+        .map((id) => issuesById.get(id))
+        .filter((issue): issue is Issue => issue != null)
+        .map(toIssueReference);
+
       const quotedSrc = message.quotedMessageId
         ? quotedById.get(message.quotedMessageId)
+        : undefined;
+      const quoteIssue = quotedSrc
+        ? issueByCommentChannelId.get(quotedSrc.channelId)
         : undefined;
 
       const poll = message.poll
@@ -186,7 +231,12 @@ export class MessagePreviewEnrichmentService {
         reactions,
         displayContent,
         mentionedUsers,
-        quotedMessage: buildQuotedMessagePreview(quotedSrc, peerUsersMap),
+        referencedIssues,
+        quotedMessage: buildQuotedMessagePreview(
+          quotedSrc,
+          peerUsersMap,
+          quoteIssue ? toIssueReference(quoteIssue) : undefined,
+        ),
         attachments: attachmentsByMessageId.get(message.id) ?? [],
         ...(poll ? { poll } : {}),
       } satisfies IMessage;

@@ -23,11 +23,23 @@ export type MessagePollSummary = {
 
 export type MessagePollClient = MessagePollBody & MessagePollSummary;
 
+/** Compact issue fields for message badges / quote headers (hydrated on fetch). */
+export type IssueReference = {
+  id: number;
+  issueKey: string;
+  title: string;
+  status: string;
+  projectId: number;
+  workspaceId: number;
+};
+
 export type IQuotedMessagePreview = {
   id: number;
   sender: IUser;
   content: JSONContent;
   displayContent?: string;
+  /** Present when the quoted message is an issue comment. */
+  issue?: IssueReference;
 };
 
 export type IMessageAttachment = UploadedAttachment;
@@ -107,6 +119,8 @@ export type IMessage = {
   editedAt?: Date | null;
   isScheduled?: boolean;
   mentionedUsers?: IUser[];
+  /** Issues referenced by TipTap issue nodes in `content` (hydrated on fetch). */
+  referencedIssues?: IssueReference[];
   sentAt: Date;
   senderId: number;
   sender: IUser;

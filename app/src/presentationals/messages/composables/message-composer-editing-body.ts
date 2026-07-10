@@ -16,12 +16,19 @@ export function useMessageComposerEditingBody(options: {
 }) {
   watch(
     [options.editor, () => toValue(options.editingMessage)],
-    async ([editor, msg], [prevEditor, prevMsg]) => {
+    async ([editor, msg], prev) => {
       if (!editor) return;
       if (!msg) {
-        editor.commands.clearContent();
+        // Only clear when leaving edit mode. Clearing on every null (including first
+        // compose mount) races seed/draft hydrate and wipes share-to-channel content.
+        const prevMsg = prev?.[1];
+        if (prevMsg) {
+          editor.commands.clearContent();
+        }
         return;
       }
+      const prevEditor = prev?.[0];
+      const prevMsg = prev?.[1];
       if (prevMsg?.id === msg.id && prevEditor === editor) return;
       const doc = normalizeTiptapDoc(msg.content);
       editor.commands.setContent(doc);

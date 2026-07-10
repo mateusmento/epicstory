@@ -79,6 +79,20 @@ const quotedExcerpt = computed(() => {
   return truncatePlainText(raw, TIPTAP_MESSAGE_BOX_QUOTE_EXCERPT_MAX);
 });
 
+const quotedIssue = computed(() => props.message.quotedMessage?.issue);
+
+function onQuotedClick() {
+  const q = props.message.quotedMessage;
+  if (!q) return;
+  const issue = q.issue;
+  if (issue) {
+    const url = `/${issue.workspaceId}/project/${issue.projectId}/issue/${issue.id}?messageId=${q.id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    return;
+  }
+  emit("jump-to-quote", q.id);
+}
+
 const replierUsers = computed(() =>
   props.message.repliers.map((replier) => ({
     id: replier.user.id,
@@ -103,11 +117,16 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
       v-if="props.message.quotedMessage"
       type="button"
       class="flex flex-row gap-2 items-stretch border-0 my-2 ml-3 rounded-md text-left text-muted-foreground/90 hover:bg-muted/40 transition-colors cursor-pointer w-[calc(100%-0.75rem)]"
-      @click="emit('jump-to-quote', props.message.quotedMessage!.id)"
+      @click="onQuotedClick"
     >
       <Icon name="fa-quote-right" class="size-4 self-start mt-0.5" />
       <div class="min-w-0 flex-1 text-sm">
-        <span class="font-medium text-foreground/80">{{ props.message.quotedMessage.sender.name }}</span>
+        <span v-if="quotedIssue" class="block text-xs font-medium text-foreground/80 truncate">{{
+          quotedIssue.title || quotedIssue.issueKey
+        }}</span>
+        <span v-else class="font-medium text-foreground/80">{{
+          props.message.quotedMessage.sender.name
+        }}</span>
         <p class="line-clamp-4 whitespace-pre-wrap">{{ quotedExcerpt }}</p>
       </div>
     </button>
@@ -119,6 +138,9 @@ function reactionPillClass(reaction: (typeof props.message.reactions)[number]) {
               <RichTextPreview
                 :content="props.message.content"
                 :mentioned-users="props.message.mentionedUsers"
+                :referenced-issues="
+                  'referencedIssues' in props.message ? props.message.referencedIssues : undefined
+                "
                 :me-id="props.meId"
               />
               <ChannelPollPreview

@@ -16,6 +16,11 @@ export {
   type MediaUploadResult,
 } from "./extensions";
 export {
+  createIssueExtensionWithNodeView,
+  type CreateIssueExtensionOptions,
+  type IssueNodeAttrs,
+} from "./issue-extension";
+export {
   useEpicStoryRichTextEditor,
   type EpicStoryRichTextEditorOptions,
 } from "./use-epic-story-editor";

@@ -23,6 +23,7 @@ defineSlots<{
 defineProps<{
   mention?: MentionComposerView;
   meId?: number;
+  workspaceId?: number;
   placeholder: string;
   quote: ComposerQuoteView | null;
   showQuote: boolean;
@@ -71,7 +72,10 @@ const emit = defineEmits<{
     >
       <Icon name="fa-quote-right" class="size-4 self-start" />
       <div class="flex:col-md flex-1 min-w-0">
-        <span class="font-medium text-foreground/80">{{ quote.senderName }}</span>
+        <span v-if="quote.issueTitle" class="font-medium text-foreground/80 truncate">{{
+          quote.issueTitle
+        }}</span>
+        <span v-else class="font-medium text-foreground/80">{{ quote.senderName }}</span>
         <span class="text-muted-foreground/90"> {{ quote.excerpt }}</span>
       </div>
       <Button
@@ -90,6 +94,7 @@ const emit = defineEmits<{
       <RichTextComposer
         :mention="mention"
         :me-id="meId"
+        :workspace-id="workspaceId"
         :placeholder="placeholder"
         @mention-load-more="emit('mention-load-more')"
         @update:editor="emit('update:editor', $event)"

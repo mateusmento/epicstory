@@ -4,6 +4,7 @@ import { AuthModule } from 'src/auth';
 import { CalendarModule } from 'src/calendar/calendar.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { SchedulingModule } from 'src/scheduling/scheduling.module';
+import { Issue } from 'src/project/domain/entities';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import * as controllers from './application/controllers';
 import * as features from './application/features';
@@ -15,7 +16,7 @@ import * as repositories from './infrastructure/repositories';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature(Object.values(entities)),
+    TypeOrmModule.forFeature([...Object.values(entities), Issue]),
     AuthModule,
     WorkspaceModule,
     NotificationsModule,

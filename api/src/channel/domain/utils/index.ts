@@ -49,3 +49,4 @@ export function mapReactions(
 
 export * from './message-quote-display';
 export * from './reply-quote-display';
+export * from './issue-reference';

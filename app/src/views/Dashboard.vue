@@ -12,6 +12,7 @@ import {
   WorkspaceMembers,
 } from "@/containers/app-pane";
 import ChatboxThread from "@/containers/channel/ChatboxThread.vue";
+import ChannelComposePane from "@/containers/channel/ChannelComposePane.vue";
 import MeetingChatPanel from "@/containers/meeting/MeetingChatPanel.vue";
 import { ConfirmDialogProvider } from "@/containers/confirm-dialog";
 import SprintPanel from "@/containers/sprint/SprintPanel.vue";
@@ -132,6 +133,13 @@ watch(workspaceId, () => {
         </DrawerPaneContent>
         <DrawerPaneContent content="meeting-chat" #default="{ contentProps }">
           <MeetingChatPanel :meeting="contentProps.meeting" @close="isDetailsPaneOpen = false" />
+        </DrawerPaneContent>
+        <DrawerPaneContent content="channel-compose" #default="{ contentProps }">
+          <ChannelComposePane
+            :key="contentProps.channelId"
+            :channel-id="contentProps.channelId"
+            @close="isDetailsPaneOpen = false"
+          />
         </DrawerPaneContent>
       </template>
     </AppLayout>

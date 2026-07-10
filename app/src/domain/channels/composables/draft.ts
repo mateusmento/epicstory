@@ -59,6 +59,8 @@ export function useChannelMessageDraft(options: {
   channelId: ReadonlyRefOrGetter<number | undefined>;
   editingMessage: ReadonlyRefOrGetter<EditingMessage>;
   editor: ReadonlyRefOrGetter<Editor | null | undefined>;
+  /** When set, used instead of localStorage on the next editor hydrate (share-to-channel). */
+  seedContent?: ReadonlyRefOrGetter<JSONContent | null | undefined>;
   runWithEditorMutationSuppressed?: (fn: () => Promise<void>) => Promise<void>;
   /** When the channel changes before an editor instance exists, run this so typing suppression does not stay stuck (e.g. clear `suppressTypingSignals`). */
   whenEditorMissingAfterChannelChange?: () => void;
@@ -112,6 +114,15 @@ export function useChannelMessageDraft(options: {
     const channelId = toValue(options.channelId);
     if (!editor || channelId == null) return;
 
+    const seed = options.seedContent ? toValue(options.seedContent) : null;
+    if (seed) {
+      editor.commands.setContent(normalizeTiptapDoc(seed));
+      saveChannelDraft(channelId, { content: normalizeTiptapDoc(seed) });
+      options.onDraftRestored?.({ content: normalizeTiptapDoc(seed) });
+      await nextTick();
+      return;
+    }
+
     const draft = loadChannelDraft(channelId);
     if (draft?.content) {
       editor.commands.setContent(normalizeTiptapDoc(draft.content));
@@ -123,14 +134,22 @@ export function useChannelMessageDraft(options: {
   }
 
   watch(
-    () => toValue(options.channelId),
-    async () => {
+    () =>
+      [
+        toValue(options.channelId),
+        toValue(options.editor),
+        toValue(options.editingMessage)?.id ?? null,
+        options.seedContent ? toValue(options.seedContent) : null,
+      ] as const,
+    async ([channelId, editor]) => {
       cancelPendingDraftSave();
-      const editor = toValue(options.editor);
+      if (channelId == null) return;
       if (!editor) {
         options.whenEditorMissingAfterChannelChange?.();
         return;
       }
+      /* Editing body is owned by useMessageComposerEditingBody — don't clobber with draft. */
+      if (toValue(options.editingMessage)) return;
       if (options.runWithEditorMutationSuppressed) {
         await options.runWithEditorMutationSuppressed(() => loadDraftToEditor(editor));
       } else {

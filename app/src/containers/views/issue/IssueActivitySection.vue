@@ -23,7 +23,8 @@ import { ChannelApi, IssueApi } from "@epicstory/api-client";
 import type { MentionComposerView } from "@/presentationals/rich-text/mention.types";
 import type { IIssueFeedItem, IMessage, IReply } from "@epicstory/contracts";
 import type { JSONContent } from "@tiptap/core";
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const props = withDefaults(
   defineProps<{
@@ -39,6 +40,20 @@ const emit = defineEmits<{
   "mention-load-more": [];
 }>();
 
+const route = useRoute();
+const router = useRouter();
+const highlightedCommentId = ref<number | null>(null);
+let highlightClearTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flashCommentHighlight(messageId: number) {
+  if (highlightClearTimer) clearTimeout(highlightClearTimer);
+  highlightedCommentId.value = messageId;
+  highlightClearTimer = setTimeout(() => {
+    highlightedCommentId.value = null;
+    highlightClearTimer = null;
+  }, 2000);
+}
+
 const {
   loadAttachments,
   resolveAttachmentsForEntity: resolveCommentAttachments,
@@ -48,7 +63,7 @@ const {
 const issueApi = useDependency(IssueApi);
 const channels = useDependency(ChannelApi);
 const { workspace } = useWorkspace();
-const { deleteIssueComment, updateIssueComment } = useIssue();
+const { deleteIssueComment, updateIssueComment, issue } = useIssue();
 
 const composerAttachmentHandlers = computed(() =>
   issueActivityMessageComposerAttachmentHandlers({
@@ -78,6 +93,41 @@ const {
   channelApi: channels,
   onSyncAttachments: syncIssueAttachments,
 });
+
+async function scrollToCommentDeepLink() {
+  const raw = route.query.messageId;
+  const messageId = Number(Array.isArray(raw) ? raw[0] : raw);
+  if (!Number.isFinite(messageId) || messageId <= 0) return;
+
+  tab.value = "comments";
+  await nextTick();
+  if (loading.value) return;
+  await nextTick();
+
+  const el = document.querySelector(`[data-issue-comment-id="${messageId}"]`);
+  if (el instanceof HTMLElement) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    flashCommentHighlight(messageId);
+    const nextQuery = { ...route.query };
+    delete nextQuery.messageId;
+    await router.replace({ query: nextQuery });
+  }
+}
+
+watch(
+  () =>
+    [
+      loading.value,
+      commentMessages.value.length,
+      filteredFeedItems.value.length,
+      route.query.messageId,
+    ] as const,
+  async () => {
+    if (route.query.messageId == null) return;
+    if (loading.value) return;
+    await scrollToCommentDeepLink();
+  },
+);
 
 const composerMention = computed((): MentionComposerView | undefined => {
   if (props.mention?.mentionables.length) return props.mention;
@@ -225,11 +275,14 @@ defineExpose({
 
           <div
             class="overflow-hidden rounded-lg border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+            :data-issue-comment-id="item.message.id"
           >
             <IssueCommentCard
               :message="item.message"
               :me-id="meId"
               :attachments="resolveCommentAttachments(item.message)"
+              :share-issue="issue"
+              :highlighted="highlightedCommentId === item.message.id"
               variant="threadSegment"
               @message-deleted="onDelete(item.message)"
               @toggle-discussion="onToggleDiscussion(item.message)"
@@ -367,11 +420,13 @@ defineExpose({
     </ul>
 
     <ul v-else class="flex list-none flex-col gap-4">
-      <li v-for="msg in commentMessages" :key="msg.id">
+      <li v-for="msg in commentMessages" :key="msg.id" :data-issue-comment-id="msg.id">
         <IssueCommentCard
           :message="msg"
           :me-id="meId"
           :attachments="resolveCommentAttachments(msg)"
+          :share-issue="issue"
+          :highlighted="highlightedCommentId === msg.id"
           @message-deleted="onDelete(msg)"
           @toggle-discussion="onToggleDiscussion(msg)"
           @edit="startEdit(msg)"

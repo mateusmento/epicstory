@@ -84,6 +84,7 @@ export const InlineFragmentsTierB: Story = {
         :nodes="nodes"
         :mention-me-id="${storyUsers.sean.id}"
         :user-by-id="userById"
+        :issue-by-id="() => undefined"
       />
     `,
   }),

@@ -5,6 +5,7 @@ export {
   type TiptapToPlainTextOptions,
 } from "./doc/plain-text";
 export { enrichMentionLabels, extractMentionIds } from "./doc/mentions-doc";
+export { extractIssueIds, TIPTAP_ISSUE_NODE_TYPE } from "./doc/issues-doc";
 export { messageBodyPlainText } from "./doc/message";
 export {
   collectImageAttachmentIdsFromDoc,

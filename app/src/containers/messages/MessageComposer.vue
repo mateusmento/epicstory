@@ -2,6 +2,7 @@
 import { Button, ButtonGroup, ButtonGroupSeparator } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { loadChannelDraft, useChannelTypingPulse, useWorkspaceOnline } from "@/domain/channels";
+import { useWorkspace } from "@/domain/workspace";
 import { onlineUserIdsFrom, staticMentionView } from "@/containers/issue/map-issue-mention-view";
 import MessageComposerPollSection from "@/presentationals/messages/MessageComposerPollSection.vue";
 import MessageComposerShell from "@/presentationals/messages/MessageComposerShell.vue";
@@ -29,6 +30,7 @@ import { ChevronDown } from "lucide-vue-next";
 import { computed, ref, shallowRef, watch } from "vue";
 
 const { isUserOnline } = useWorkspaceOnline();
+const { workspace } = useWorkspace();
 
 const props = withDefaults(
   defineProps<{
@@ -45,11 +47,14 @@ const props = withDefaults(
     quotedMessage?: (IMessage | IReply) | null;
     attachmentHandlers: MessageComposerAttachmentHandlers;
     enableComposerPoll?: boolean;
+    /** One-shot TipTap doc applied when the editor hydrates (share issue). */
+    seedContent?: JSONContent | null;
   }>(),
   {
     editingMessage: null,
     quotedMessage: null,
     enableComposerPoll: false,
+    seedContent: null,
   },
 );
 
@@ -105,6 +110,7 @@ const core = useMessageComposerCore({
   onSendScheduled: (body) => emit("send-scheduled-message", body),
   onAfterSend: () => emitTypingStop(),
   draftExtensions: {
+    seedContent: () => props.seedContent,
     runWithEditorMutationSuppressed: (fn) => runWithTypingSuppressedDuringEditorMutation(fn),
     whenEditorMissingAfterChannelChange: () => {
       suppressTypingSignals.value = false;
@@ -195,6 +201,7 @@ const toolbar = computed(
   <MessageComposerShell
     :mention="mentionView"
     :me-id="meId"
+    :workspace-id="workspace?.id"
     :placeholder="core.composerPlaceholder.value"
     :quote="core.quoteView.value"
     :show-quote="core.showQuote.value"

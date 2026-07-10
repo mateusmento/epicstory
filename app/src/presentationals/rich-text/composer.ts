@@ -1,18 +1,23 @@
 import { Lowlight } from "@/core/lowlight";
 import { createFloatingSuggestion } from "@/core/tiptap";
-import type { IUser as IUser } from "@epicstory/contracts";
+import type { IUser as IUser, IssueReference } from "@epicstory/contracts";
 import {
+  createIssueExtensionWithNodeView,
   createMentionExtensionWithNodeView,
   createPlaceholderExtension,
   createRichTextExtensions,
 } from "@epicstory/tiptap/vue";
 import type { ComputedRef } from "vue";
 import type { MentionSuggestionItem } from "./mention-suggestion.types";
-import MentionList from "./node-views/MentionList.vue";
 import CodeBlockCardNodeView from "./node-views/CodeBlockCardNodeView.vue";
+import MentionList from "./node-views/MentionList.vue";
 import MentionNodeView from "./node-views/MentionNodeView.vue";
+import IssueNodeView from "./node-views/IssueNodeView.vue";
+import SlashCommandList from "./node-views/SlashCommandList.vue";
+import { createSlashCommandExtension, type SlashCommandItem } from "./slash-command-extension";
 
 export type { MentionSuggestionItem } from "./mention-suggestion.types";
+export type { SlashCommandItem } from "./slash-command-extension";
 
 export const EPICSTORY_RICH_TEXT_COMPOSER = "epicstory-rich-text epicstory-rich-text-composer";
 
@@ -48,6 +53,32 @@ export function buildMentionSuggestion(
   });
 }
 
+function buildSlashCommandSuggestion() {
+  return createFloatingSuggestion({
+    items: ({ query }): SlashCommandItem[] => {
+      const q = (query ?? "").trim().toLowerCase();
+      const commands: SlashCommandItem[] = [
+        {
+          id: "issue",
+          label: "Issue",
+          description: "Insert an issue badge",
+        },
+      ];
+      if (!q) return commands;
+      return commands.filter((c) => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
+    },
+    listComponent: SlashCommandList,
+    mapProps: ({ items, command }) => ({
+      items,
+      command,
+    }),
+    placement: "bottom-start",
+    mainAxisOffset: 8,
+    zIndex: 80,
+    className: "outline-none",
+  });
+}
+
 /**
  * Composer TipTap bodies for channel-style messages: text + mentions + code blocks + embedded images (insert action).
  * Clipboard/dropped files are handled by the shell ({@link RichTextComposer} → staging), not TipTap FileHandler.
@@ -61,6 +92,9 @@ export function createRichTextComposerExtensions(args: {
   getMentionListHasMore?: () => boolean;
   getMentionListLoadingMore?: () => boolean;
   getOnlineUserIds?: () => ReadonlySet<number> | undefined;
+  issueById?: (id: number) => IssueReference | undefined;
+  /** Called after `/Issue` is chosen (slash range already deleted by the command). */
+  onRequestInsertIssue?: () => void;
 }): any[] {
   const mentionSuggestion = buildMentionSuggestion(args.mentionablesForSuggestion, {
     getOnMentionListReachedBottom: args.getOnMentionListReachedBottom,
@@ -68,6 +102,9 @@ export function createRichTextComposerExtensions(args: {
     getMentionListLoadingMore: args.getMentionListLoadingMore,
     getOnlineUserIds: args.getOnlineUserIds,
   });
+
+  const slashBase = buildSlashCommandSuggestion();
+
   const base = [
     ...createRichTextExtensions({
       linkOpenOnClick: false,
@@ -77,6 +114,9 @@ export function createRichTextComposerExtensions(args: {
     }),
   ];
   base.push(
+    createIssueExtensionWithNodeView(IssueNodeView, {
+      issueById: args.issueById,
+    }),
     createMentionExtensionWithNodeView(MentionNodeView, {
       HTMLAttributes: {
         class:
@@ -89,6 +129,16 @@ export function createRichTextComposerExtensions(args: {
       mentionContext: args.mentionContext,
       suggestion: mentionSuggestion,
     } as any),
+    createSlashCommandExtension({
+      items: slashBase.items,
+      render: slashBase.render,
+      command: ({ editor, range, props: item }) => {
+        editor.chain().focus().deleteRange(range).run();
+        if ((item as SlashCommandItem).id === "issue") {
+          args.onRequestInsertIssue?.();
+        }
+      },
+    }),
     createPlaceholderExtension(() => args.getPlaceholder()),
   );
   return base;

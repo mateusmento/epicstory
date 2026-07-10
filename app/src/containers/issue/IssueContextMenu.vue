@@ -19,6 +19,7 @@ import {
   GitBranch,
   Kanban,
   Layers2,
+  Share2,
   SquarePen,
   Tags,
   TimerIcon,
@@ -35,6 +36,7 @@ import IssueLabelsMenu from "./IssueLabelsMenu.vue";
 import IssuePickerMenu from "./IssuePickerMenu.vue";
 import IssueRenameDialog from "@/presentationals/issue/IssueRenameDialog.vue";
 import IssueStatusMenu from "@/presentationals/issue/status/IssueStatusMenu.vue";
+import ShareToChannelSubmenu from "@/containers/channel/ShareToChannelSubmenu.vue";
 
 const props = defineProps<{
   issue: IIssue;
@@ -259,6 +261,16 @@ async function onConfirmDelete(payload: { deleteSubIssues: boolean }) {
         <TimerIcon class="size-4 text-muted-foreground" />
         <div>Remove from sprint</div>
       </MenuItem>
+
+      <MenuSub>
+        <MenuSubTrigger :disabled="disabled" class="flex:row-md text-sm">
+          <Share2 class="size-4 text-muted-foreground" />
+          <div>Share to channel</div>
+        </MenuSubTrigger>
+        <MenuSubContent class="p-0">
+          <ShareToChannelSubmenu mode="issue" :issue="issue" :disabled="disabled" />
+        </MenuSubContent>
+      </MenuSub>
 
       <MenuSeparator />
 

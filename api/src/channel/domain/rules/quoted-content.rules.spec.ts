@@ -1,4 +1,5 @@
 import {
+  assertQuotedParentMessageAllowed,
   assertQuotedParentMessageInChannel,
   assertQuotedReplyInThread,
   QuotedContentRuleError,
@@ -25,6 +26,28 @@ describe('quoted-content.rules', () => {
       expect(() =>
         assertQuotedParentMessageInChannel({ channelId: 10 }, 10),
       ).not.toThrow();
+    });
+  });
+
+  describe('assertQuotedParentMessageAllowed', () => {
+    it('allows same-channel quotes', () => {
+      expect(() =>
+        assertQuotedParentMessageAllowed({ channelId: 10 }, 10),
+      ).not.toThrow();
+    });
+
+    it('allows cross-channel when issue comment channel', () => {
+      expect(() =>
+        assertQuotedParentMessageAllowed({ channelId: 2 }, 10, {
+          isIssueCommentChannel: true,
+        }),
+      ).not.toThrow();
+    });
+
+    it('rejects cross-channel without issue comment flag', () => {
+      expect(() =>
+        assertQuotedParentMessageAllowed({ channelId: 2 }, 10),
+      ).toThrow('Quoted message must belong to this channel');
     });
   });
 

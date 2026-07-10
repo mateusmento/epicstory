@@ -13,6 +13,8 @@ export type MessageComposerAttachmentHandlers = {
 export type ComposerQuoteView = {
   senderName: string;
   excerpt: string;
+  /** When quoting an issue comment, show issue title above the excerpt. */
+  issueTitle?: string;
 };
 
 export type ComposerAttachmentsView = {

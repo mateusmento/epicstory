@@ -1,4 +1,7 @@
-import { IQuotedMessagePreview } from '@epicstory/contracts';
+import type {
+  IssueReference,
+  IQuotedMessagePreview,
+} from '@epicstory/contracts';
 import {
   enrichMentionLabels,
   tiptapDocToPlainDisplayText,
@@ -9,6 +12,7 @@ import type { Message } from '../entities/message.entity';
 export function buildQuotedMessagePreview(
   m: Message | null | undefined,
   peerUsersMap: Map<number, User>,
+  issue?: IssueReference | null,
 ): IQuotedMessagePreview | undefined {
   if (!m?.sender) return undefined;
   return {
@@ -18,5 +22,6 @@ export function buildQuotedMessagePreview(
     displayContent: tiptapDocToPlainDisplayText(
       enrichMentionLabels(m.content, peerUsersMap),
     ),
+    ...(issue ? { issue } : {}),
   };
 }

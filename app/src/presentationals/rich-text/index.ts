@@ -1,11 +1,14 @@
 export { default as RichTextComposer } from "./RichTextComposer.vue";
 export { default as RichTextPreview } from "./RichTextPreview.vue";
 export { default as RichTextSubtree } from "./RichTextSubtree.vue";
+export { default as InsertIssueDialog } from "./InsertIssueDialog.vue";
 export * from "./collect-preview-images";
 export * from "./composer";
 export * from "./mention-suggestion-bump";
 export * from "./mention-suggestion.types";
 export * from "./mention.types";
 export * from "./node-views";
+export * from "./parse-issue-url";
 export * from "./preview";
 export * from "./segments";
+export * from "./slash-command-extension";

@@ -12,7 +12,14 @@ import {
 import { Icon, IconReplies } from "@/design-system/icons";
 import type { IMessage, IReply } from "@epicstory/contracts";
 import { messageBodyPlainText } from "@epicstory/tiptap";
-import { CopyIcon, MessageSquareShareIcon, SmilePlusIcon, SquarePen, Trash2Icon } from "lucide-vue-next";
+import {
+  CopyIcon,
+  MessageSquareShareIcon,
+  Share2Icon,
+  SmilePlusIcon,
+  SquarePen,
+  Trash2Icon,
+} from "lucide-vue-next";
 import { computed } from "vue";
 import { emojis } from "../channel/emojis";
 
@@ -22,8 +29,9 @@ const props = withDefaults(
     senderId: number;
     message: IMessage | IReply;
     allowQuote?: boolean;
+    allowShareToChannel?: boolean;
   }>(),
-  { allowQuote: true },
+  { allowQuote: true, allowShareToChannel: false },
 );
 
 const emit = defineEmits<{
@@ -118,6 +126,16 @@ async function copyMessage() {
       <Icon name="fa-quote-right" class="text-muted-foreground" />
       <span>Quote message</span>
     </MenuItem>
+
+    <MenuSub v-if="props.allowShareToChannel">
+      <MenuSubTrigger class="flex:row-md text-sm">
+        <Share2Icon class="size-4 text-muted-foreground" />
+        <span>Share to channel</span>
+      </MenuSubTrigger>
+      <MenuSubContent class="p-0">
+        <slot name="share-submenu" />
+      </MenuSubContent>
+    </MenuSub>
 
     <template v-if="sender === 'me'">
       <MenuSeparator />

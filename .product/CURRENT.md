@@ -4,22 +4,25 @@
 
 ## Session question (60–90 min)
 
-> Can someone take an issue out of sprint scope by dragging it onto the backlog or via the issue context menu, move items between current and upcoming sprints by drag, see real issue status on planning rows, and see a single clear drag overlay (status + assignees)?
+> Can someone insert issue badges into a channel message (paste, command, or Share), and share an issue comment as a quote-style preview that opens the issue comment in a new tab?
 
 ## Done when
 
-- [x] Sprint Planning rows show the issue’s status color on the bullet
-- [x] Drag current ↔ upcoming persists and updates both lists
-- [x] Drop sprint item onto backlog dropzone (“Move item back to backlog”) removes it from that sprint
-- [x] Context menu **Remove from sprint** when in active/upcoming scope
-- [x] Dragging backlog or sprint items shows one overlay with status bullet + assignees
+- [x] Paste issue URL and command “Issue” insert inline badges; multiple per message
+- [x] Fetch messages returns hydrated `referencedIssues`; badges show current key/title/status
+- [x] Share issue → channel submenu → drawer Chatbox with issue node in composer
+- [x] Share comment → same submenu → drawer with quote-style comment preview (issue title + excerpt)
+- [x] Comment preview click opens issue in new tab with scroll-to `messageId`
+- [x] Timeline renders issue badges; quote strip shows issue title + excerpt
 
 ## Active task
 
-→ Remove sprint items from scope (plan)
+→ Share issue / comment to channel
 
 ## Explicitly deferred (this session)
 
-- Drag onto completed sprints / pickers beyond current+upcoming
-- Undo toast after remove
-- Full backlog-grid clone as the overlay
+- Websocket live update of badges while a channel is open
+- Separate client-side second request to hydrate issues
+- Unfurl of non-Epicstory URLs
+- Auto-send on share (user always confirms in composer)
+- Cross-workspace issue insert

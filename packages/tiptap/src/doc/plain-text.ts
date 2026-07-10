@@ -37,6 +37,15 @@ function walk(node: JSONContent, ctx?: WalkCtx): string {
     return label === undefined || label === null ? "@" : `@${label}`;
   }
 
+  if (type === "issue") {
+    const key = node.attrs?.issueKey;
+    const title = node.attrs?.title;
+    if (key && title) return `${key} ${title}`;
+    if (key) return String(key);
+    const id = node.attrs?.issueId ?? node.attrs?.id;
+    return id != null ? `#${id}` : "";
+  }
+
   if (type === "taskList") {
     return (node.content ?? []).map((c) => walk(c, ctx)).join("");
   }

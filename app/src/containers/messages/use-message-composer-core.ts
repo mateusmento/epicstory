@@ -34,7 +34,7 @@ import {
   stripImageNodesFromDoc,
   tiptapToPlainText,
 } from "@epicstory/tiptap";
-import type { Editor } from "@tiptap/core";
+import type { Editor, JSONContent } from "@tiptap/core";
 import { computed, shallowRef, watch, type Ref } from "vue";
 
 export type MessageComposerDraftExtensions = {
@@ -42,6 +42,7 @@ export type MessageComposerDraftExtensions = {
   whenEditorMissingAfterChannelChange?: () => void;
   getPollDraft?: () => MessagePollBody | null;
   onDraftRestored?: (draft: { poll?: MessagePollBody | null } | null) => void;
+  seedContent?: ReadonlyRefOrGetter<JSONContent | null | undefined>;
 };
 
 export type MessageComposerEditorListeners = {
@@ -82,9 +83,11 @@ export function useMessageComposerCore(options: {
   const quoteView = computed((): ComposerQuoteView | null => {
     const quoted = toValue(options.quotedMessage);
     if (!quoted) return null;
+    const shareIssue = (quoted as IMessage & { shareIssue?: { title?: string } }).shareIssue;
     return {
       senderName: quoted.sender.name,
       excerpt: quotedMessageExcerpt(quoted),
+      issueTitle: shareIssue?.title,
     };
   });
 
@@ -94,6 +97,7 @@ export function useMessageComposerCore(options: {
     channelId: options.channelId,
     editingMessage: options.editingMessage,
     editor,
+    seedContent: options.draftExtensions?.seedContent,
     runWithEditorMutationSuppressed: options.draftExtensions?.runWithEditorMutationSuppressed,
     whenEditorMissingAfterChannelChange: options.draftExtensions?.whenEditorMissingAfterChannelChange,
     getPollDraft: options.draftExtensions?.getPollDraft,

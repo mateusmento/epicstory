@@ -30,6 +30,10 @@ function lookupUser(id: number): IUser | undefined {
   return ctx.lookupUser(id);
 }
 
+function lookupIssue(id: number) {
+  return ctx.lookupIssue(id);
+}
+
 const taskAttrs = computed(() => props.node.attrs as { checked?: boolean } | undefined);
 
 const imageAriaLabel = computed(() => {
@@ -87,6 +91,7 @@ const imageLayoutStyle = computed(() => {
       :nodes="props.node.content"
       :mention-me-id="ctx.mentionMeId.value"
       :user-by-id="lookupUser"
+      :issue-by-id="lookupIssue"
     />
   </p>
 
@@ -99,6 +104,7 @@ const imageLayoutStyle = computed(() => {
       :nodes="props.node.content"
       :mention-me-id="ctx.mentionMeId.value"
       :user-by-id="lookupUser"
+      :issue-by-id="lookupIssue"
     />
   </component>
 

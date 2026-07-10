@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import { useDependency } from "@/core/dependency-injection";
 import type { Editor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
-import { computed, nextTick, onBeforeUnmount, reactive, useSlots, watch } from "vue";
+import { IssueApi } from "@epicstory/api-client";
+import type { IIssue } from "@epicstory/contracts";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, useSlots, watch } from "vue";
 import { createRichTextComposerExtensions, EPICSTORY_RICH_TEXT_COMPOSER } from "./composer";
+import InsertIssueDialog from "./InsertIssueDialog.vue";
 import { bumpActiveMentionSuggestionQuery } from "./mention-suggestion-bump";
 import type { MentionComposerView } from "./mention.types";
+import { issueNodeDocAttrs, parseEpicstoryIssueUrl } from "./parse-issue-url";
 
 defineSlots<{
   bubbleMenu?: (props: { editor: Editor }) => unknown;
@@ -36,11 +41,16 @@ const props = withDefaults(
     mention?: MentionComposerView;
     meId?: number;
     placeholder?: string;
+    /** When set, `/Issue` and paste-URL unfurl can resolve workspace issues. */
+    workspaceId?: number;
   }>(),
   {
     placeholder: "",
   },
 );
+
+const issueApi = useDependency(IssueApi);
+const insertIssueOpen = ref(false);
 
 const mentionablesForSuggestion = computed(() => {
   const list = props.mention?.mentionables ?? [];
@@ -65,15 +75,12 @@ function collectFilesFromClipboard(event: ClipboardEvent): File[] {
   const seen = new Set<string>();
   const pushUnique = (f: File | null, out: File[]) => {
     if (!f || f.size === 0) return;
-    // Do not use lastModified in the key: the same paste can appear once in `files` and again via
-    // `items[i].getAsFile()` with a 1ms different timestamp (same bytes, two File instances).
     const key = `${f.name}\0${f.size}\0${f.type}`;
     if (seen.has(key)) return;
     seen.add(key);
     out.push(f);
   };
 
-  // Prefer `files` only when present — iterating both `files` and `items` duplicates one image on many browsers.
   if (clipboardData.files?.length) {
     const out: File[] = [];
     for (const f of Array.from(clipboardData.files)) pushUnique(f, out);
@@ -92,6 +99,38 @@ function collectFilesFromClipboard(event: ClipboardEvent): File[] {
   return out;
 }
 
+function insertIssueIntoEditor(issue: IIssue) {
+  const ed = editor.value;
+  if (!ed) return;
+  ed.chain()
+    .focus()
+    .insertContent([
+      {
+        type: "issue",
+        attrs: issueNodeDocAttrs(issue),
+      },
+      { type: "text", text: " " },
+    ])
+    .run();
+}
+
+async function tryPasteIssueUrl(plainText: string): Promise<boolean> {
+  const text = plainText.trim();
+  if (!text || text.includes("\n")) return false;
+  const parsed = parseEpicstoryIssueUrl(text);
+  if (!parsed) return false;
+  try {
+    const issue = await issueApi.fetchIssue(parsed.issueId);
+    if (issue.workspaceId !== parsed.workspaceId || issue.projectId !== parsed.projectId) {
+      return false;
+    }
+    insertIssueIntoEditor(issue);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const editor = useEditor({
   extensions: createRichTextComposerExtensions({
     getPlaceholder: () => props.placeholder ?? "",
@@ -103,6 +142,11 @@ const editor = useEditor({
     getMentionListHasMore: () => props.mention?.list.hasMore ?? false,
     getMentionListLoadingMore: () => props.mention?.list.loadingMore ?? false,
     getOnlineUserIds: () => props.mention?.onlineUserIds,
+    onRequestInsertIssue: () => {
+      if (props.workspaceId != null && Number.isFinite(props.workspaceId)) {
+        insertIssueOpen.value = true;
+      }
+    },
   }),
   content: "",
   editorProps: {
@@ -118,10 +162,22 @@ const editor = useEditor({
     },
     handlePaste: (_view, event) => {
       const files = collectFilesFromClipboard(event);
-      if (files.length === 0) return false;
-      event.preventDefault();
-      emit("pasted-files", files);
-      return true;
+      if (files.length > 0) {
+        event.preventDefault();
+        emit("pasted-files", files);
+        return true;
+      }
+      const text = event.clipboardData?.getData("text/plain")?.trim() ?? "";
+      if (text && !text.includes("\n") && parseEpicstoryIssueUrl(text)) {
+        event.preventDefault();
+        tryPasteIssueUrl(text).then((ok) => {
+          if (!ok && editor.value) {
+            editor.value.chain().focus().insertContent(text).run();
+          }
+        });
+        return true;
+      }
+      return false;
     },
     handleDrop: (_view, event, _slice, moved) => {
       if (moved) return false;
@@ -159,13 +215,16 @@ onBeforeUnmount(() => {
 
 defineExpose({
   editor,
+  insertIssue: insertIssueIntoEditor,
+  openInsertIssue: () => {
+    insertIssueOpen.value = true;
+  },
 });
 </script>
 
 <template>
   <div class="min-h-0 min-w-0">
     <EditorContent v-if="editor" :editor="editor" />
-    <!-- Optional bubble toolbar (e.g. format actions on selection); append to body to escape overflow-hidden ancestors. -->
     <BubbleMenu
       v-if="editor && slots.bubbleMenu"
       plugin-key="epicstoryRichTextBubbleMenu"
@@ -175,5 +234,11 @@ defineExpose({
     >
       <slot name="bubbleMenu" :editor="editor" />
     </BubbleMenu>
+    <InsertIssueDialog
+      v-if="props.workspaceId != null"
+      v-model:open="insertIssueOpen"
+      :workspace-id="props.workspaceId"
+      @select="insertIssueIntoEditor"
+    />
   </div>
 </template>

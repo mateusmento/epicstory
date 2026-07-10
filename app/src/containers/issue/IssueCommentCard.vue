@@ -17,6 +17,7 @@ import { emojis } from "@/presentationals/channel/emojis";
 import { MessageAttachments } from "@/presentationals/messages";
 import MessageContextDropdown from "@/presentationals/messages/MessageContextDropdown.vue";
 import { RichTextPreview } from "@/presentationals/rich-text";
+import ShareToChannelSubmenu from "@/containers/channel/ShareToChannelSubmenu.vue";
 import { UserAvatar } from "@/presentationals/user";
 import { ChannelApi } from "@epicstory/api-client";
 import type { IAggregatedReaction, IMessage, IMessageAttachment, IReply } from "@epicstory/contracts";
@@ -33,10 +34,18 @@ const props = withDefaults(
     segmentDivider?: boolean;
     /** When set, overrides `message.attachments` (e.g. issue attachment store). */
     attachments?: IMessageAttachment[];
+    /** Issue context for “Share to channel” (comment share). */
+    shareIssue?: Pick<
+      import("@epicstory/contracts").IIssue,
+      "id" | "issueKey" | "title" | "status" | "projectId" | "workspaceId"
+    > | null;
+    highlighted?: boolean;
   }>(),
   {
     variant: "default",
     segmentDivider: false,
+    shareIssue: null,
+    highlighted: false,
   },
 );
 
@@ -112,13 +121,16 @@ async function toggleReaction(emoji: string) {
 const avatarSize = computed(() => (props.variant === "threadSegment" ? "md" : "base"));
 
 const rootClass = computed(() =>
-  props.variant === "threadSegment"
-    ? cn("flex gap-3", "px-4 py-3.5", props.segmentDivider ? "border-t border-border/75" : "")
-    : cn(
-        "flex gap-3",
-        "rounded-lg border border-border bg-card px-4 py-3.5",
-        "shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
-      ),
+  cn(
+    props.variant === "threadSegment"
+      ? cn("flex gap-3", "px-4 py-3.5", props.segmentDivider ? "border-t border-border/75" : "")
+      : cn(
+          "flex gap-3",
+          "rounded-lg border border-border bg-card px-4 py-3.5",
+          "shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+        ),
+    props.highlighted && "ring-2 ring-primary/40 bg-primary/5",
+  ),
 );
 </script>
 
@@ -128,13 +140,21 @@ const rootClass = computed(() =>
     :meId
     :senderId="message.sender.id"
     :allow-quote="false"
+    :allow-share-to-channel="shareIssue != null && !('messageId' in message)"
     @message-deleted="emit('message-deleted')"
     @emoji-selected="toggleReaction($event)"
     @toggle-discussion="emit('toggle-discussion')"
     @quote="emit('quote')"
     @edit="emit('edit')"
   >
-    <article :class="rootClass">
+    <template v-if="shareIssue && !('messageId' in message)" #share-submenu>
+      <ShareToChannelSubmenu
+        mode="comment"
+        :issue="shareIssue"
+        :comment="message as import('@epicstory/contracts').IMessage"
+      />
+    </template>
+    <article :class="rootClass" :data-issue-comment-id="'messageId' in message ? undefined : message.id">
       <UserAvatar
         class="shrink-0"
         :name="message.sender.name"
@@ -157,6 +177,7 @@ const rootClass = computed(() =>
           <RichTextPreview
             :content="message.content"
             :mentioned-users="message.mentionedUsers"
+            :referenced-issues="'referencedIssues' in message ? message.referencedIssues : undefined"
             :me-id="rmMeId()"
           />
         </div>

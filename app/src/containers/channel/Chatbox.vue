@@ -21,11 +21,20 @@ import type {
   SendMessageBody,
   UpdateChannelMessageBody,
 } from "@epicstory/contracts";
-import { computed, nextTick, ref } from "vue";
+import type { JSONContent } from "@tiptap/core";
+import { computed, nextTick, ref, watch } from "vue";
 import Message from "./Message.vue";
 
 const emit = defineEmits<{
   (e: "open-thread", message: IMessage): void;
+  (e: "clear-external-quote"): void;
+}>();
+
+const props = defineProps<{
+  /** Cross-channel quote (e.g. share issue comment) — not cleared when missing from timeline. */
+  externalQuotedMessage?: IMessage | null;
+  /** One-shot TipTap doc to apply when the composer editor is ready (share issue). */
+  seedContent?: JSONContent | null;
 }>();
 
 const { user } = useAuth();
@@ -75,7 +84,19 @@ const composerAttachmentHandlers = computed(() =>
 const messageIds = chatTimelineMessageIds(chatTimeline);
 
 const { quotedMessage, editingMessage, onQuote, onStartEdit, onCancelEdit, onClearQuote } =
-  useChatboxComposerSession({ messageIds });
+  useChatboxComposerSession({
+    messageIds,
+    channelId: () => channel.value?.id,
+    externalQuotedMessage: () => props.externalQuotedMessage ?? null,
+  });
+
+watch(
+  () => props.externalQuotedMessage,
+  (msg) => {
+    if (msg) onQuote(msg, { external: true });
+  },
+  { immediate: true },
+);
 
 const timelineRef = ref<InstanceType<typeof ChatboxTimeline> | null>(null);
 /** Bump on window replace so the virtualizer remounts with a clean measured layout. */
@@ -148,12 +169,14 @@ async function onSendMessage(payload: SendMessageBody) {
   await sendMessage(payload);
   timelineRef.value?.scrollToBottom();
   onClearQuote();
+  emit("clear-external-quote");
 }
 
 async function onSendScheduledMessage(payload: CreateScheduledMessageBody) {
   await sendScheduledMessage(payload);
   timelineRef.value?.scrollToBottom();
   onClearQuote();
+  emit("clear-external-quote");
 }
 
 async function onSubmitEdit(messageId: number, payload: UpdateChannelMessageBody) {
@@ -253,10 +276,14 @@ function openMeetingThread(activity: IChannelActivity, channel: IChannel) {
         :me-id="user.id"
         :quoted-message="quotedMessage"
         :editing-message="editingMessage"
+        :seed-content="props.seedContent"
         @send-message="onSendMessage"
         @send-scheduled-message="onSendScheduledMessage"
         @submit-edit="onSubmitEdit"
-        @clear-quote="onClearQuote"
+        @clear-quote="
+          onClearQuote();
+          emit('clear-external-quote');
+        "
         @cancel-edit="onCancelEdit"
         class="m-4 mt-0 bg-red-transparent"
       />

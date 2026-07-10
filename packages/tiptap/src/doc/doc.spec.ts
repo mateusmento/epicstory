@@ -1,6 +1,7 @@
 import type { JSONContent } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
 import { excludeInlineImageAttachmentsFromBubbleTiles } from "./exclude-inline-image-attachments";
+import { extractIssueIds } from "./issues-doc";
 import { extractMentionIds } from "./mentions-doc";
 import { normalizeTiptapDoc } from "./normalize";
 import { tiptapDocToPlainDisplayText } from "./tiptap-doc-to-plain-display-text";
@@ -211,6 +212,26 @@ describe("tiptapToPlainText", () => {
     };
     expect(tiptapToPlainText(doc)).toContain("[image:");
     expect(tiptapToPlainText(doc)).toContain("https://ex/img.png");
+  });
+});
+
+describe("extractIssueIds", () => {
+  it("collects unique issue ids", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "issue", attrs: { issueId: 1, issueKey: "A-1" } },
+            { type: "text", text: " " },
+            { type: "issue", attrs: { issueId: 2 } },
+            { type: "issue", attrs: { issueId: 1 } },
+          ],
+        },
+      ],
+    };
+    expect(extractIssueIds(doc as JSONContent).sort()).toEqual([1, 2]);
   });
 });
 

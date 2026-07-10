@@ -10,7 +10,16 @@ import { provideIssueAttachmentsContext } from "@/containers/issue/issue-attachm
 import IssueActivitySection from "@/containers/views/issue/IssueActivitySection.vue";
 import SubIssuesSection from "@/containers/views/issue/SubIssuesSection.vue";
 import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
-import { Button, Input, Tooltip, TooltipContent, TooltipTrigger } from "@/design-system";
+import {
+  Button,
+  Input,
+  Menu,
+  MenuContent,
+  MenuTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import { useAuth } from "@/domain/auth";
 import { useWorkspaceOnline } from "@/domain/channels";
@@ -21,7 +30,9 @@ import { issueStatusDotClass } from "@/presentationals/issue/status/status-fns";
 import { UserAvatarStack } from "@/presentationals/user";
 import { DueDatePicker } from "@/presentationals/issue/due-date-picker";
 import { PriorityToggler } from "@/presentationals/issue/priority-toggler";
+import ShareToChannelSubmenu from "@/containers/channel/ShareToChannelSubmenu.vue";
 import type { IUser, UpdateIssueData } from "@epicstory/contracts";
+import { Share2 } from "lucide-vue-next";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 
 const props = defineProps<{
@@ -184,6 +195,17 @@ onMounted(() => {
 
       <div class="flex:row-md flex:center-y">
         <div v-if="patchMutation.busy" class="text-xs text-secondary-foreground">Saving…</div>
+        <Menu v-if="issue" type="dropdown-menu">
+          <MenuTrigger as-child>
+            <Button variant="outline" size="sm" :disabled="patchMutation.busy">
+              <Share2 class="size-3.5" />
+              Share
+            </Button>
+          </MenuTrigger>
+          <MenuContent class="p-0">
+            <ShareToChannelSubmenu mode="issue" :issue="issue" />
+          </MenuContent>
+        </Menu>
         <Button variant="outline" size="sm" :disabled="!issue || patchMutation.busy" @click="saveMainFields"
           >Save</Button
         >

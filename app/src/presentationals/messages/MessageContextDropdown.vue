@@ -9,8 +9,9 @@ withDefaults(
     senderId: number;
     message: IMessage | IReply;
     allowQuote?: boolean;
+    allowShareToChannel?: boolean;
   }>(),
-  { allowQuote: true },
+  { allowQuote: true, allowShareToChannel: false },
 );
 
 const emit = defineEmits<{
@@ -33,12 +34,17 @@ const emit = defineEmits<{
         :senderId="senderId"
         :message="message"
         :allow-quote="allowQuote"
+        :allow-share-to-channel="allowShareToChannel"
         @message-deleted="emit('message-deleted')"
         @emoji-selected="emit('emoji-selected', $event)"
         @toggle-discussion="emit('toggle-discussion')"
         @quote="emit('quote')"
         @edit="emit('edit')"
-      />
+      >
+        <template v-if="$slots['share-submenu']" #share-submenu>
+          <slot name="share-submenu" />
+        </template>
+      </MessageContextMenu>
     </MenuContent>
   </Menu>
 </template>

@@ -1,11 +1,13 @@
 import type { IMessage, IQuotedMessagePreview } from '@epicstory/contracts';
 import {
   enrichMentionLabels,
+  extractIssueIds,
   extractMentionIds,
   normalizeTiptapDoc,
   tiptapDocToPlainDisplayText,
 } from '@epicstory/tiptap';
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import type { JSONContent } from '@tiptap/core';
 import { uniq } from 'lodash';
 import { UserRepository } from 'src/auth';
@@ -13,11 +15,12 @@ import {
   Channel,
   Message,
   MessageReaction,
-  assertQuotedParentMessageInChannel,
+  assertQuotedParentMessageAllowed,
 } from 'src/channel/domain';
 import {
   buildQuotedMessagePreview,
   mapReactions,
+  toIssueReference,
 } from 'src/channel/domain/utils';
 import {
   ChannelRepository,
@@ -25,9 +28,10 @@ import {
   MessageRepository,
 } from 'src/channel/infrastructure';
 import { create, mapBy } from 'src/core/objects';
+import { Issue } from 'src/project/domain/entities';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { In } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
 import type { MessagePollBody } from '../dtos/message-poll.dto';
 import { MessageNotFound } from '../exceptions';
@@ -49,6 +53,8 @@ export class MessageService {
     private readonly replyService: ReplyService,
     private readonly workspaceRepo: WorkspaceRepository,
     private readonly messagePreview: MessagePreviewEnrichmentService,
+    @InjectRepository(Issue)
+    private readonly issueRepo: Repository<Issue>,
   ) {}
 
   findMessages(channelId: number, senderId: number) {
@@ -131,13 +137,32 @@ export class MessageService {
       .map((id) => peerUsersMap.get(id))
       .filter((user) => user);
 
+    const issueIds = extractIssueIds(normalizedContent);
+    const referencedIssueRows =
+      issueIds.length > 0
+        ? await this.issueRepo.find({
+            where: { id: In(issueIds), workspaceId: channel.workspaceId },
+          })
+        : [];
+    const referencedIssues = referencedIssueRows.map(toIssueReference);
+
     let quotedMessage: IQuotedMessagePreview | undefined;
     if (resolvedQuote) {
       const q = await this.messageRepo.findOne({
         where: { id: resolvedQuote },
         relations: { sender: true },
       });
-      quotedMessage = buildQuotedMessagePreview(q, peerUsersMap);
+      let quoteIssueRef = undefined;
+      if (q) {
+        const quoteIssue = await this.issueRepo.findOne({
+          where: {
+            commentChannelId: q.channelId,
+            workspaceId: channel.workspaceId,
+          },
+        });
+        quoteIssueRef = quoteIssue ? toIssueReference(quoteIssue) : undefined;
+      }
+      quotedMessage = buildQuotedMessagePreview(q, peerUsersMap, quoteIssueRef);
     }
 
     const pollDto =
@@ -152,6 +177,7 @@ export class MessageService {
     return {
       ...messageEntityToIMessageCore(message!),
       mentionedUsers,
+      referencedIssues,
       displayContent,
       quotedMessage,
       attachments: [],
@@ -163,8 +189,8 @@ export class MessageService {
   }
 
   /**
-   * Validates that a quoted message exists and belongs to the same channel.
-   * Used by {@link createMessage}.
+   * Validates that a quoted message exists and belongs to the same channel,
+   * or is an issue comment (cross-channel share).
    */
   async resolveQuotedMessageId(
     quotedMessageId: number | null | undefined,
@@ -174,8 +200,23 @@ export class MessageService {
     const target = await this.messageRepo.findOne({
       where: { id: quotedMessageId },
     });
+    let isIssueCommentChannel = false;
+    if (target && target.channelId !== channelId) {
+      const issue = await this.issueRepo.findOne({
+        where: { commentChannelId: target.channelId },
+      });
+      if (issue) {
+        const dest = await this.channelRepo.findOne({
+          where: { id: channelId },
+        });
+        isIssueCommentChannel =
+          dest != null && dest.workspaceId === issue.workspaceId;
+      }
+    }
     try {
-      assertQuotedParentMessageInChannel(target, channelId);
+      assertQuotedParentMessageAllowed(target, channelId, {
+        isIssueCommentChannel,
+      });
     } catch (e) {
       rethrowQuotedRuleAsBadRequest(e);
     }
