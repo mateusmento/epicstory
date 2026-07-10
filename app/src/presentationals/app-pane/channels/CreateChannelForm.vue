@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { UserAvatar } from "@/presentationals/user";
 import {
   Button,
   DialogClose,
@@ -11,14 +10,19 @@ import {
   RadioGroupItem,
 } from "@/design-system";
 import type { IUser } from "@epicstory/contracts";
-import { Trash2Icon } from "lucide-vue-next";
+import { computed } from "vue";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     showTypeSelector?: boolean;
+    submitLabel?: string;
+    peopleLabel?: string;
+    submitting?: boolean;
   }>(),
   {
     showTypeSelector: true,
+    submitLabel: "Create",
+    submitting: false,
   },
 );
 
@@ -29,25 +33,44 @@ const emit = defineEmits<{
   (e: "submit", values: Record<string, unknown>): void;
 }>();
 
-function removeMember(userId: number) {
-  members.value = members.value.filter((member) => member.id !== userId);
-}
+const resolvedPeopleLabel = computed(() => {
+  if (props.peopleLabel) return props.peopleLabel;
+  return channelType.value === "direct" ? "People" : "Members";
+});
+
+const typeHint = computed(() => {
+  switch (channelType.value) {
+    case "direct":
+      return "Send direct messages to one or more people";
+    case "meeting":
+      return "Quickly join a meeting with one or more people.";
+    default:
+      return "Create focused conversations with one or more people.";
+  }
+});
+
+const needsName = computed(() => channelType.value === "group" || channelType.value === "meeting");
+
+const submitDisabled = computed(
+  () => props.submitting || (channelType.value === "direct" && members.value.length < 1),
+);
 
 function onSubmit(values: Record<string, unknown>) {
+  if (submitDisabled.value) return;
   emit("submit", values);
 }
 </script>
 
 <template>
   <Form @submit="onSubmit" class="flex:col-lg mt-4">
-    <div class="flex:col-md">
-      <div v-if="showTypeSelector" class="text-sm font-medium text-foreground">Channel type</div>
+    <div v-if="showTypeSelector" class="flex:col-md">
+      <div class="text-sm font-medium text-foreground">Channel type</div>
 
       <RadioGroup
-        v-if="showTypeSelector"
         v-model="channelType"
         type="single"
         class="grid grid-cols-3 gap-1 rounded-lg bg-secondary p-1"
+        :disabled="submitting"
       >
         <Label
           class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
@@ -71,118 +94,35 @@ function onSubmit(values: Record<string, unknown>) {
           Meeting
         </Label>
       </RadioGroup>
-
-      <div v-if="showTypeSelector" class="text-xs text-secondary-foreground">
-        <template v-if="channelType === 'direct'">
-          Start a direct message by selecting one or more people (2+ creates a multi-direct).
-        </template>
-        <template v-else-if="channelType === 'meeting'">
-          Create a persistent meeting room channel that people can join anytime.
-        </template>
-        <template v-else> Create a channel with a name and optionally invite members. </template>
-      </div>
     </div>
 
-    <template v-if="channelType === 'group' || channelType === 'meeting'">
-      <Field
-        label="Name"
-        name="name"
-        :placeholder="channelType === 'meeting' ? 'e.g. Daily Standup' : 'e.g. Design, Support...'"
-        required
-      />
+    <p class="text-xs text-muted-foreground">{{ typeHint }}</p>
 
-      <div class="flex:col-md">
-        <div class="flex:row-md flex:center-y justify-between">
-          <div class="text-sm font-medium text-foreground">Members</div>
-          <div class="text-xs text-secondary-foreground">{{ members.length }} selected</div>
-        </div>
+    <Field
+      v-if="needsName"
+      label="Name"
+      name="name"
+      :placeholder="channelType === 'meeting' ? 'e.g. Daily Standup' : 'e.g. Design, Support…'"
+      required
+      autofocus
+      :disabled="submitting"
+    />
 
-        <div class="rounded-md border bg-background p-2">
-          <div v-if="members.length === 0" class="text-xs text-secondary-foreground px-1 py-1.5">
-            No members added yet. Use the selector below to invite people.
-          </div>
-
-          <div v-else class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
-            <div
-              v-for="member in members"
-              :key="member.id"
-              class="inline-flex items-center gap-2 rounded-md border bg-secondary/40 px-2 py-1"
-            >
-              <UserAvatar :name="member.name" :picture="member.picture" size="sm" class="flex-shrink-0" />
-              <div class="text-xs font-medium text-foreground">{{ member.name }}</div>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                class="h-6 w-6"
-                @click="removeMember(member.id)"
-                title="Remove"
-              >
-                <Trash2Icon class="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
+    <div class="flex:col-md">
+      <div class="flex:row-md flex:center-y justify-between">
+        <div class="text-sm font-medium text-foreground">{{ resolvedPeopleLabel }}</div>
+        <div class="text-xs text-muted-foreground">{{ members.length }} selected</div>
       </div>
-
-      <div class="flex:col-md">
-        <div class="text-sm font-medium text-foreground">Add people</div>
-        <slot name="add-member" />
-      </div>
-    </template>
-
-    <template v-else>
-      <div class="flex:col-md">
-        <div class="flex:row-md flex:center-y justify-between">
-          <div class="text-sm font-medium text-foreground">People</div>
-          <div class="text-xs text-secondary-foreground">{{ members.length }} selected</div>
-        </div>
-
-        <div class="rounded-md border bg-background p-2">
-          <div v-if="members.length === 0" class="text-xs text-secondary-foreground px-1 py-1.5">
-            Pick at least one person to start a direct message. Add 2+ to create a multi-direct.
-          </div>
-
-          <div v-else class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
-            <div
-              v-for="member in members"
-              :key="member.id"
-              class="inline-flex items-center gap-2 rounded-md border bg-secondary/40 px-2 py-1"
-            >
-              <UserAvatar :name="member.name" :picture="member.picture" size="sm" class="flex-shrink-0" />
-              <div class="text-xs font-medium text-foreground">{{ member.name }}</div>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                class="h-6 w-6"
-                @click="removeMember(member.id)"
-                title="Remove"
-              >
-                <Trash2Icon class="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex:col-md">
-        <div class="text-sm font-medium text-foreground">Add people</div>
-        <slot name="add-member" />
-      </div>
-    </template>
+      <slot name="add-member" />
+    </div>
 
     <DialogFooter class="pt-2">
       <DialogClose as-child>
-        <Button type="button" variant="outline" intent="secondary">Cancel</Button>
+        <Button type="button" variant="outline" intent="secondary" :disabled="submitting"> Cancel </Button>
       </DialogClose>
-      <Button
-        type="submit"
-        variant="flat"
-        intent="primary"
-        :disabled="channelType === 'direct' && members.length < 1"
-        >Create</Button
-      >
+      <Button type="submit" variant="flat" intent="primary" :disabled="submitDisabled">
+        {{ submitting ? "Creating…" : submitLabel }}
+      </Button>
     </DialogFooter>
   </Form>
 </template>

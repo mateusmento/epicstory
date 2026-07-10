@@ -63,6 +63,7 @@ type Story = StoryObj<typeof meta>;
 function renderForm(options: {
   initialType?: "group" | "meeting" | "direct";
   showTypeSelector?: boolean;
+  submitLabel?: string;
 }) {
   return {
     components: { CreateChannelForm, WorkspaceMemberDropdown, Button, UserAvatarStack, ChevronsUpDown },
@@ -77,12 +78,21 @@ function renderForm(options: {
         hasMore: false,
       });
 
+      const submitLabel =
+        options.submitLabel ??
+        (options.initialType === "meeting"
+          ? "Create meeting"
+          : options.initialType === "direct"
+            ? "Message"
+            : "Create channel");
+
       return {
         channelType,
         members,
         lastAction,
         list,
-        showTypeSelector: options.showTypeSelector ?? true,
+        submitLabel,
+        showTypeSelector: options.showTypeSelector ?? false,
       };
     },
     template: `
@@ -91,13 +101,23 @@ function renderForm(options: {
           v-model:channel-type="channelType"
           v-model:members="members"
           :show-type-selector="showTypeSelector"
+          :submit-label="submitLabel"
           @submit="lastAction = 'submit:' + ($event.name ?? 'direct')"
         >
           <template #add-member>
-            <WorkspaceMemberDropdown v-model:users="members" :list="list" :exclude-user-ids="[1]">
-              <Button variant="ghost" class="h-auto w-full min-w-0 flex items-center justify-start gap-2 px-2">
-                <UserAvatarStack v-if="members.length" :users="members" size="sm" />
-                <div v-else class="text-xs text-muted-foreground">Choose workspace members</div>
+            <WorkspaceMemberDropdown
+              v-model:users="members"
+              :list="list"
+              :exclude-user-ids="[1]"
+              density="compact"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                class="h-auto w-full min-w-0 flex items-center justify-start gap-2 px-3 py-2 font-normal"
+              >
+                <UserAvatarStack v-if="members.length" :users="members" size="sm" class="min-w-0 shrink" />
+                <span v-else class="text-sm text-muted-foreground">Add people…</span>
                 <ChevronsUpDown class="ml-auto h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </WorkspaceMemberDropdown>
@@ -112,6 +132,10 @@ function renderForm(options: {
 }
 
 export const Default: Story = {
+  render: () => renderForm({ initialType: "group", showTypeSelector: false }),
+};
+
+export const WithTypeSelector: Story = {
   render: () => renderForm({ initialType: "group", showTypeSelector: true }),
 };
 

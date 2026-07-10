@@ -114,7 +114,7 @@ const items = computed((): ChannelSectionItem[] => [
   {
     title: "Meetings",
     createKey: "meeting",
-    createTitle: "Create meeting channel",
+    createTitle: "Create meeting",
     list: toPaginatedListView(channelGroups.meeting),
     onLoadMore: () => channelGroups.meeting.loadMore(workspace.value.id),
   },

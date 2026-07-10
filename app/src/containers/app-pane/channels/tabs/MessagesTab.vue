@@ -3,9 +3,10 @@ import { Button, Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/des
 import { IconChannel } from "@/design-system/icons";
 import { cn } from "@/design-system/utils";
 import { useChannel, useChannels } from "@/domain/channels";
-import CreateChannel from "../CreateChannel.vue";
 import ChannelContextMenu from "@/presentationals/app-pane/channels/ChannelContextMenu.vue";
 import InboxMessage from "@/presentationals/app-pane/channels/InboxMessage.vue";
+import { ref } from "vue";
+import CreateChannel from "../CreateChannel.vue";
 import ChannelContextMenuProvider from "../ChannelContextMenuProvider.vue";
 
 const props = defineProps<{
@@ -14,6 +15,12 @@ const props = defineProps<{
 
 const { channel: currentChannel, openChannel } = useChannel();
 const { channels } = useChannels();
+
+const createOpen = ref(false);
+
+function onCreated() {
+  createOpen.value = false;
+}
 </script>
 
 <template>
@@ -30,7 +37,7 @@ const { channels } = useChannels();
 
     <div class="w-fit mt-4 mx-auto text-xs text-secondary-foreground">You have no more messages</div>
 
-    <Dialog>
+    <Dialog v-model:open="createOpen">
       <DialogTrigger as-child>
         <Button variant="flat" intent="primary" class="flex:row-md flex:center-y m-8 mt-auto ml-auto text-sm">
           <IconChannel />
@@ -39,7 +46,7 @@ const { channels } = useChannels();
       </DialogTrigger>
       <DialogContent>
         <DialogTitle>Create channel</DialogTitle>
-        <CreateChannel />
+        <CreateChannel initial-type="group" :show-type-selector="false" @created="onCreated" />
       </DialogContent>
     </Dialog>
   </div>

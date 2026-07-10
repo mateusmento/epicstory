@@ -4,23 +4,25 @@
 
 ## Session question (60–90 min)
 
-> Can someone pick assignees or participants in one list—search, toggle, see who’s selected—without juggling two scroll panels and a separate remove button?
+> Can someone create a channel or DM by naming it (when needed) and toggling people in one list—without a second chip panel or guessing which type they meant?
 
 ## Done when
 
-- [x] One ScrollArea; no dual selected/catalog panels
-- [x] Click toggles selection with a check indicator; remove-X list is gone
-- [x] Search clear works; empty copy reflects the query
-- [x] Compact density used from New Issue (and issue context menu)
-- [x] Assign me works when `currentUserId` is passed
-- [x] Channel / calendar / backlog assignee flows still add/remove correctly
+- [x] Create form has one people control; chip/trash list gone
+- [x] Messages create is group-only and closes after success
+- [x] All-tab section creates stay type-locked with matching CTA labels
+- [x] Submit shows loading/disabled; name autofocuses for group/meeting
+- [x] Direct copy no longer says “multi-direct”; “you’ll be added” visible for group/meeting
+- [x] Stories updated to the simplified layout
 
 ## Active task
 
-→ Workspace member menu UX
+→ Create channel dialog UX
 
 ## Explicitly deferred (this session)
 
-- Redesigning triggers (Assignee chip, “Add participants” button)
-- Recent/suggested assignees beyond Assign me
-- Changing `useWorkspaceMemberSearch` pagination API
+- Three separate Messages CTAs (Channel / Meeting / DM)
+- Explicit “Open existing DM” UI (API already idempotent)
+- Recent/suggested people beyond current member search
+- Channel topic, privacy, or meeting schedule on create
+- Redesigning channel list rows / empty states

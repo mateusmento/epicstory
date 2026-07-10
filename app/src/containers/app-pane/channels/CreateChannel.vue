@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { UserAvatarStack } from "@/presentationals/user";
 import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
-import { CreateChannelForm } from "@/presentationals/app-pane/channels";
 import { Button } from "@/design-system";
 import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";
-import type { IUser } from "@epicstory/contracts";
 import { useWorkspace } from "@/domain/workspace";
+import { CreateChannelForm } from "@/presentationals/app-pane/channels";
+import { UserAvatarStack } from "@/presentationals/user";
+import type { IUser } from "@epicstory/contracts";
 import { ChevronsUpDown } from "lucide-vue-next";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -33,25 +33,43 @@ const { createChannel } = useChannels();
 
 const channelType = ref<"group" | "meeting" | "direct">(props.initialType);
 const members = ref<IUser[]>([]);
+const isSubmitting = ref(false);
 
 const excludeUserIds = computed(() => (authUser.value ? [authUser.value.id] : []));
 
-async function onCreateChannel(values: Record<string, unknown>) {
-  const payload: Record<string, unknown> = { ...values, type: channelType.value };
-
-  if (channelType.value === "direct") {
-    if (members.value.length === 1) {
-      payload.peerId = members.value[0]!.id;
-    } else {
-      payload.peers = members.value.map((member) => member.id);
-    }
-  } else {
-    payload.members = members.value.map((member) => member.id);
+const submitLabel = computed(() => {
+  switch (channelType.value) {
+    case "meeting":
+      return "Create meeting";
+    case "direct":
+      return "Message";
+    default:
+      return "Create channel";
   }
+});
 
-  const channel = await createChannel(payload as Parameters<typeof createChannel>[0]);
-  router.push(`/${workspace.value.id}/channel/${channel.id}`);
-  emit("created");
+async function onCreateChannel(values: Record<string, unknown>) {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
+  try {
+    const payload: Record<string, unknown> = { ...values, type: channelType.value };
+
+    if (channelType.value === "direct") {
+      if (members.value.length === 1) {
+        payload.peerId = members.value[0]!.id;
+      } else {
+        payload.peers = members.value.map((member) => member.id);
+      }
+    } else {
+      payload.members = members.value.map((member) => member.id);
+    }
+
+    const channel = await createChannel(payload as Parameters<typeof createChannel>[0]);
+    router.push(`/${workspace.value.id}/channel/${channel.id}`);
+    emit("created");
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>
 
@@ -60,13 +78,25 @@ async function onCreateChannel(values: Record<string, unknown>) {
     v-model:channel-type="channelType"
     v-model:members="members"
     :show-type-selector="showTypeSelector"
+    :submit-label="submitLabel"
+    :submitting="isSubmitting"
     @submit="onCreateChannel"
   >
     <template #add-member>
-      <WorkspaceMemberDropdown v-model:users="members" :exclude-user-ids="excludeUserIds">
-        <Button variant="ghost" class="h-auto w-full min-w-0 flex items-center justify-start gap-2 px-2">
-          <UserAvatarStack v-if="members.length" :users="members" size="sm" />
-          <div v-else class="text-xs text-muted-foreground">Choose workspace members</div>
+      <WorkspaceMemberDropdown
+        v-model:users="members"
+        :exclude-user-ids="excludeUserIds"
+        density="compact"
+        :disabled="isSubmitting"
+      >
+        <Button
+          type="button"
+          variant="outline"
+          class="h-auto w-full min-w-0 flex items-center justify-start gap-2 px-3 py-2 font-normal"
+          :disabled="isSubmitting"
+        >
+          <UserAvatarStack v-if="members.length" :users="members" size="sm" class="min-w-0 shrink" />
+          <span v-else class="text-sm text-muted-foreground">Add people…</span>
           <ChevronsUpDown class="ml-auto h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </WorkspaceMemberDropdown>
