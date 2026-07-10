@@ -49,10 +49,10 @@ function layoutHiddenTabs(hiddenSegmentKeys: string[]): ProjectTeamTab[] {
     >
       <Button
         as-child
-        variant="soft"
-        size="sm"
+        :variant="tab.id === activeProjectId ? 'soft' : 'ghost'"
+        size="icon"
         class="shrink-0"
-        :intent="tab.id === activeProjectId ? 'primary' : 'secondary'"
+        :intent="tab.id === activeProjectId ? 'primary' : 'default'"
       >
         <RouterLink :to="tab.to" class="truncate max-w-40">
           {{ tab.name }}
@@ -66,8 +66,8 @@ function layoutHiddenTabs(hiddenSegmentKeys: string[]): ProjectTeamTab[] {
         <MenuTrigger as-child>
           <Button
             variant="soft"
-            intent="secondary"
-            size="sm"
+            intent="default"
+            size="icon"
             class="shrink-0"
             title="Hidden projects"
             aria-label="Hidden projects"
@@ -88,7 +88,7 @@ function layoutHiddenTabs(hiddenSegmentKeys: string[]): ProjectTeamTab[] {
     <OverflowItem v-if="showMoreMenu" segment-key="more" pinned>
       <Menu type="dropdown-menu" @update:open="onMoreMenuOpen">
         <MenuTrigger as-child>
-          <Button variant="soft" intent="secondary" size="sm" class="shrink-0">
+          <Button variant="soft" intent="secondary" size="icon" class="shrink-0">
             More
             <ChevronDownIcon class="size-3.5 opacity-70" />
           </Button>

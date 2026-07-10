@@ -10,7 +10,7 @@ import type { IDnDPayload } from "@vue-dnd-kit/core";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import IssueCard from "@/containers/views/project/board/IssueCard.vue";
-import { Button, ScrollArea } from "@/design-system";
+import { Button, ScrollArea, Separator } from "@/design-system";
 
 const props = defineProps<{ workspaceId: string; projectId: string }>();
 
@@ -161,9 +161,9 @@ const BOARD_COLUMN_INNER = "!flex flex:col-md flex-1 min-h-0 m-2 rounded-lg";
 </script>
 
 <template>
-  <div class="flex:col-xl w-full h-full p-2">
+  <div class="flex:col w-full h-full">
     <!-- Sprint filter toggle -->
-    <div v-if="teamId" class="flex:row-md flex:center-y mb-2">
+    <div v-if="teamId" class="flex:row-md flex:center-y px-4 py-2">
       <Button
         :variant="!sprintView ? 'outline' : 'ghost'"
         size="sm"
@@ -189,7 +189,9 @@ const BOARD_COLUMN_INNER = "!flex flex:col-md flex-1 min-h-0 m-2 rounded-lg";
       </Button>
     </div>
 
-    <div class="flex:row gap-lg flex-1 min-h-0">
+    <Separator />
+
+    <div class="flex:row gap-lg flex-1 min-h-0 p-2">
       <!-- TODO column -->
       <BoardColumn
         group="project-board"

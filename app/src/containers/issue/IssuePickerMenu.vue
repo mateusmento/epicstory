@@ -24,6 +24,7 @@ const query = ref("");
 const { issues, isFetchingIssues, hasMoreIssues, fetchIssues, fetchMoreIssues } = useIssues();
 
 watchEffect(() => {
+  if (!Number.isFinite(props.projectId)) return;
   fetchIssues({
     projectId: props.projectId,
     page: 0,
@@ -35,6 +36,7 @@ watchEffect(() => {
 });
 
 function onReachedBottom() {
+  if (!Number.isFinite(props.projectId)) return;
   fetchMoreIssues({
     projectId: props.projectId,
     search: query.value.trim(),

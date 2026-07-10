@@ -87,9 +87,7 @@ const authenticatedRoutes = defineRoutes({
             },
             {
               path: "sprint",
-              name: "project-sprint",
-              props: true,
-              component: () => import("@/views/project/sprint/ProjectSprint.vue"),
+              redirect: { name: "project-board" },
             },
             {
               path: "issue/:issueId",

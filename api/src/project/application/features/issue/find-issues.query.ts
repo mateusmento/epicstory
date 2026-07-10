@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Transform } from 'class-transformer';
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
@@ -5,11 +6,21 @@ import { patch } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
 
+function toOptionalFiniteNumber(value: unknown): number | undefined {
+  if (value == null || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 export class FindIssues {
-  workspaceId: number;
+  @IsOptional()
+  @Transform(({ value }) => toOptionalFiniteNumber(value))
+  @IsNumber()
+  workspaceId?: number;
 
   @IsNumber()
   @IsOptional()
+  @Transform(({ value }) => toOptionalFiniteNumber(value))
   projectId?: number;
 
   @IsOptional()
@@ -27,6 +38,7 @@ export class FindIssues {
 
   @IsNumber()
   @IsOptional()
+  @Transform(({ value }) => toOptionalFiniteNumber(value))
   assigneeId?: number;
 
   @IsString()
@@ -73,6 +85,20 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
     page,
     count,
   }: FindIssues) {
+    const scopedWorkspaceId = toOptionalFiniteNumber(workspaceId);
+    const scopedProjectId = toOptionalFiniteNumber(projectId);
+    const scopedProjectIds = projectIds?.filter((id) => Number.isFinite(id));
+
+    if (
+      scopedWorkspaceId == null &&
+      scopedProjectId == null &&
+      (scopedProjectIds == null || scopedProjectIds.length === 0)
+    ) {
+      throw new BadRequestException(
+        'FindIssues requires a valid workspaceId or projectId',
+      );
+    }
+
     const qb = this.issueRepo
       .createQueryBuilder('issue')
       .leftJoinAndSelect('issue.assignees', 'assignees')
@@ -81,14 +107,21 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
 
     // Project list endpoint scopes by projectId only; workspace list by workspaceId.
     // Match TypeORM `find` semantics: omit undefined filters (do not compare to NULL).
-    if (workspaceId != null) {
-      qb.andWhere('issue.workspaceId = :workspaceId', { workspaceId });
+    // Do not use `!= null` alone — NaN passes that check and breaks Postgres integers.
+    if (scopedWorkspaceId != null) {
+      qb.andWhere('issue.workspaceId = :workspaceId', {
+        workspaceId: scopedWorkspaceId,
+      });
     }
 
-    if (projectIds != null && projectIds.length > 0) {
-      qb.andWhere('issue.projectId IN (:...projectIds)', { projectIds });
-    } else if (projectId != null) {
-      qb.andWhere('issue.projectId = :projectId', { projectId });
+    if (scopedProjectIds != null && scopedProjectIds.length > 0) {
+      qb.andWhere('issue.projectId IN (:...projectIds)', {
+        projectIds: scopedProjectIds,
+      });
+    } else if (scopedProjectId != null) {
+      qb.andWhere('issue.projectId = :projectId', {
+        projectId: scopedProjectId,
+      });
     }
 
     const ftsQuery = search?.trim() || undefined;

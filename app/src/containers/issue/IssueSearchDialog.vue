@@ -35,7 +35,14 @@ const loading = ref(false);
 const loadingMore = ref(false);
 let requestId = 0;
 
-const currentProjectId = computed(() => +props.projectId);
+const currentProjectId = computed(() => {
+  const id = Number(props.projectId);
+  return Number.isFinite(id) ? id : null;
+});
+const currentWorkspaceId = computed(() => {
+  const id = Number(props.workspaceId);
+  return Number.isFinite(id) ? id : null;
+});
 const isAllProjects = computed(() => selectedProjectIds.value === null);
 const showProjectLabel = computed(() => isAllProjects.value || (selectedProjectIds.value?.length ?? 0) !== 1);
 
@@ -47,18 +54,23 @@ const projectNameById = computed(() => {
   return map;
 });
 
-const listQuery = computed(() => ({
-  workspaceId: +props.workspaceId,
-  count: PAGE_SIZE,
-  orderBy: "createdAt" as const,
-  order: "desc" as const,
-  search: searchTerm.value.trim() || undefined,
-  projectIds: selectedProjectIds.value ?? undefined,
-}));
+const listQuery = computed(() => {
+  const workspaceId = currentWorkspaceId.value;
+  if (workspaceId == null) return null;
+  return {
+    workspaceId,
+    count: PAGE_SIZE,
+    orderBy: "createdAt" as const,
+    order: "desc" as const,
+    search: searchTerm.value.trim() || undefined,
+    projectIds: selectedProjectIds.value ?? undefined,
+  };
+});
 
 async function ensureProjectsLoaded() {
-  if (projects.value.length > 0) return;
-  const result = await workspaceApi.findProjects(+props.workspaceId, {
+  const workspaceId = currentWorkspaceId.value;
+  if (projects.value.length > 0 || workspaceId == null) return;
+  const result = await workspaceApi.findProjects(workspaceId, {
     page: 0,
     count: 200,
     orderBy: "name",
@@ -68,12 +80,15 @@ async function ensureProjectsLoaded() {
 }
 
 async function replaceIssues() {
+  const query = listQuery.value;
+  if (!query) return;
+
   const id = ++requestId;
   loading.value = true;
   loadingMore.value = false;
   try {
     const result = await issueApi.fetchIssues({
-      ...listQuery.value,
+      ...query,
       page: 0,
     });
     if (id !== requestId) return;
@@ -86,13 +101,14 @@ async function replaceIssues() {
 }
 
 async function appendIssues() {
-  if (!open.value || !hasNext.value || loading.value || loadingMore.value) return;
+  const query = listQuery.value;
+  if (!query || !open.value || !hasNext.value || loading.value || loadingMore.value) return;
 
   const id = requestId;
   loadingMore.value = true;
   try {
     const result = await issueApi.fetchIssues({
-      ...listQuery.value,
+      ...query,
       page: page.value + 1,
     });
     if (id !== requestId) return;
@@ -110,7 +126,7 @@ function resetList() {
   page.value = 0;
   hasNext.value = false;
   loadingMore.value = false;
-  selectedProjectIds.value = [currentProjectId.value];
+  selectedProjectIds.value = currentProjectId.value != null ? [currentProjectId.value] : null;
 }
 
 let ignoreProjectFilterWatch = false;
@@ -123,7 +139,7 @@ watch(
       return;
     }
     ignoreProjectFilterWatch = true;
-    selectedProjectIds.value = [currentProjectId.value];
+    selectedProjectIds.value = currentProjectId.value != null ? [currentProjectId.value] : null;
     ignoreProjectFilterWatch = false;
     await ensureProjectsLoaded();
     await replaceIssues();

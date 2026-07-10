@@ -33,6 +33,7 @@ import {
   MonitorCogIcon,
   SettingsIcon,
   SquareChartGanttIcon,
+  TimerIcon,
   UserIcon,
   UsersIcon,
 } from "lucide-vue-next";
@@ -135,7 +136,7 @@ watch(workspace, () => {
 
     <nav class="flex:col-md px-1">
       <!-- My work -->
-      <div class="px-2 py-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">My work</div>
+      <small class="px-2 py-1 tracking-wide">My work</small>
       <NavListItem
         view="app-pane"
         content="inbox"
@@ -158,7 +159,7 @@ watch(workspace, () => {
       </NavListItem>
 
       <!-- Work: teams & projects -->
-      <div class="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">Work</div>
+      <small class="px-2 pt-3 pb-1 text-muted-foreground tracking-wide">Work</small>
       <Collapsible as-child v-slot="{ open }" default-open>
         <div class="flex:row-sm flex:center-y w-full justify-start">
           <NavListItem
@@ -177,18 +178,27 @@ watch(workspace, () => {
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <div class="ml-3 pl-2 border-l border-border flex:col gap-0.5">
+          <div class="flex:col gap-0.5 ml-3 pl-2 border-l border-border">
             <template v-for="{ team, projects } in teamsWithRecentProjects" :key="team.id">
               <NavListItem :to="`/${workspace.id}/team/${team.id}`" class="flex:row-md flex:center-y">
                 <UsersIcon class="size-4 shrink-0" stroke-width="2.5" />
-                <span class="truncate">{{ team.name }}</span>
+                <small class="truncate">{{ team.name }}</small>
               </NavListItem>
               <NavListItem
                 :to="`/${workspace.id}/team/${team.id}/timeline`"
                 class="flex:row-md flex:center-y ml-3"
               >
                 <SquareChartGanttIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
-                <span class="truncate text-sm">Timeline</span>
+                <small>Timeline</small>
+              </NavListItem>
+              <NavListItem
+                view="app-pane"
+                content="sprint-panel"
+                :content-props="{ teamId: team.id }"
+                class="flex:row-md flex:center-y ml-3"
+              >
+                <TimerIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
+                <small>Sprints</small>
               </NavListItem>
               <NavListItem
                 v-for="project in projects"
@@ -197,22 +207,20 @@ watch(workspace, () => {
                 class="flex:row-md flex:center-y ml-3"
               >
                 <MonitorCogIcon class="size-3.5 shrink-0 text-muted-foreground" stroke-width="2.5" />
-                <span class="truncate text-sm">{{ project.name }}</span>
+                <small class="truncate">{{ project.name }}</small>
               </NavListItem>
             </template>
 
             <NavListItem view="app-pane" content="projects" class="flex:row-md flex:center-y mt-1">
               <ListIcon class="size-4 shrink-0 text-muted-foreground" />
-              <span class="text-sm text-muted-foreground">All projects</span>
+              <small>All projects</small>
             </NavListItem>
           </div>
         </CollapsibleContent>
       </Collapsible>
 
       <!-- Communication -->
-      <div class="px-2 pt-3 pb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        Communication
-      </div>
+      <small class="px-2 pt-3 pb-1 tracking-wide">Communication</small>
       <Collapsible as-child v-slot="{ open }" default-open>
         <div class="flex:row-sm flex:center-y w-full justify-start">
           <NavListItem
@@ -231,7 +239,7 @@ watch(workspace, () => {
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <div class="ml-3 pl-2 border-l border-border">
+          <div class="flex:col gap-0.5 ml-3 pl-2 border-l border-border">
             <NavListItem
               v-for="channel of recentChannels"
               :key="channel.id"

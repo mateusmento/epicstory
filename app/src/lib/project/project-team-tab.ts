@@ -1,6 +1,6 @@
 import type { Project } from "@epicstory/contracts";
 
-export type ProjectTeamView = "backlog" | "board" | "sprint";
+export type ProjectTeamView = "backlog" | "board";
 
 export type ProjectTeamTab = {
   id: number;

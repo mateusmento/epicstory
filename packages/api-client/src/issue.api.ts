@@ -33,22 +33,24 @@ export class IssueApi {
       ...(projectIds?.length ? { projectIds: projectIds.join(",") } : {}),
     };
 
-    if (workspaceId != null) {
+    const scopedWorkspaceId = Number(workspaceId);
+    if (Number.isFinite(scopedWorkspaceId)) {
       return this.axios
-        .get<IPage<IIssueWire>>(`/workspaces/${workspaceId}/issues`, {
+        .get<IPage<IIssueWire>>(`/workspaces/${scopedWorkspaceId}/issues`, {
           params: requestParams,
         })
         .then((res) => mapPageIssues(res.data));
     }
 
-    if (projectId == null) {
+    const scopedProjectId = Number(projectId);
+    if (!Number.isFinite(scopedProjectId)) {
       return Promise.reject(
         new Error("fetchIssues requires workspaceId or projectId"),
       );
     }
 
     return this.axios
-      .get<IPage<IIssueWire>>(`/projects/${projectId}/issues`, {
+      .get<IPage<IIssueWire>>(`/projects/${scopedProjectId}/issues`, {
         params: requestParams,
       })
       .then((res) => mapPageIssues(res.data));

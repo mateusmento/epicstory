@@ -23,19 +23,11 @@ import {
   ToggleGroupItem,
 } from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { NavTrigger } from "@/design-system";
 import { IssueApi } from "@epicstory/api-client";
 import type { IIssue } from "@epicstory/contracts";
 import { useProjectScreen } from "@/domain/project";
 import { useMagicKeys, useStorage, whenever } from "@vueuse/core";
-import {
-  ChevronRight,
-  Layers2Icon,
-  Rows3Icon,
-  SquareKanbanIcon,
-  SquarePen,
-  TimerIcon,
-} from "lucide-vue-next";
+import { ChevronRight, Layers2Icon, Rows3Icon, SquareKanbanIcon, SquarePen } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { IssueSearchDialog } from "@/containers/issue";
@@ -60,17 +52,13 @@ const routeName = computed(() => {
       return "backlog";
     case "project-board":
       return "board";
-    case "project-sprint":
-      return "sprint";
     default:
       return undefined;
   }
 });
 
 const showProjectTeamTabs = computed(
-  () =>
-    teamId.value != null &&
-    (routeName.value === "backlog" || routeName.value === "board" || routeName.value === "sprint"),
+  () => teamId.value != null && (routeName.value === "backlog" || routeName.value === "board"),
 );
 
 const projectIdNum = computed(() => +props.projectId);
@@ -214,14 +202,13 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
         </Breadcrumb>
       </div>
 
-      <IssueSearchDialog v-model:open="issueSearchOpen" :workspace-id="workspaceId" :project-id="projectId" />
+      <IssueSearchDialog
+        v-model:open="issueSearchOpen"
+        :workspace-id="props.workspaceId"
+        :project-id="props.projectId"
+      />
 
       <div class="flex:row flex:center-y justify-end flex-1 gap-2">
-        <NavTrigger v-if="teamId" view="app-pane" content="sprint-panel" :props="{ teamId }">
-          <Button variant="outline" size="icon" title="Sprint planning">
-            <TimerIcon class="size-4 text-muted-foreground" />
-          </Button>
-        </NavTrigger>
         <Dialog>
           <DialogTrigger as-child>
             <Button variant="outline" size="icon">
@@ -259,12 +246,6 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
             <RouterLink :to="`/${workspaceId}/project/${projectId}/board`" class="flex:row-md flex:center-y">
               <SquareKanbanIcon class="size-4 text-muted-foreground" />
               Board
-            </RouterLink>
-          </ToggleGroupItem>
-          <ToggleGroupItem value="sprint" variant="outline" size="sm" as-child>
-            <RouterLink :to="`/${workspaceId}/project/${projectId}/sprint`" class="flex:row-md flex:center-y">
-              <TimerIcon class="size-4 text-muted-foreground" />
-              Sprint
             </RouterLink>
           </ToggleGroupItem>
         </ToggleGroup>
@@ -311,6 +292,7 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
     </div>
 
     <Separator />
+
     <section class="flex-1 min-h-0 overflow-auto">
       <RouterView />
     </section>

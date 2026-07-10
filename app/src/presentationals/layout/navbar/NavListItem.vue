@@ -11,6 +11,8 @@ const props = defineProps<{
   badgeCount?: number;
   view?: string;
   content?: string;
+  /** Passed through to NavTrigger when opening a pane (e.g. `{ teamId }`). */
+  contentProps?: Record<string, unknown>;
   to?: RouteLocationRaw;
 }>();
 
@@ -43,9 +45,10 @@ const active = computed(() => {
     :as="Button"
     :view="props.view!"
     :content="props.content!"
+    :props="props.contentProps"
     size="sm"
     :variant="active ? 'soft' : 'ghost'"
-    :class="cn('w-full justify-start gap-0')"
+    :class="cn('justify-start gap-0')"
   >
     <span class="flex flex-1 min-w-0 items-center gap-2">
       <slot />
@@ -67,7 +70,7 @@ const active = computed(() => {
     :to="props.to!"
     size="sm"
     :variant="active ? 'soft' : 'ghost'"
-    :class="cn('w-full justify-start gap-0')"
+    :class="cn('justify-start gap-0')"
   >
     <span class="flex flex-1 min-w-0 items-center gap-2">
       <slot />
