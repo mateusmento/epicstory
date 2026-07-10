@@ -3,3 +3,6 @@ export * from './issuer-user-can-not-add-workspace-member';
 export * from './issuer-user-is-not-workspace-member';
 export * from './workspace-member-already-exists';
 export * from './team-not-found';
+export * from './must-transfer-ownership';
+export * from './cannot-assign-workspace-owner';
+export * from './workspace-not-found';

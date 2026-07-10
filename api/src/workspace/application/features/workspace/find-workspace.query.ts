@@ -2,7 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
-import { WorkspaceNotFound } from './add-workspace-owner.command';
+import { WorkspaceNotFound } from 'src/workspace/domain/exceptions';
 import { WorkspaceGateway } from '../../gateways';
 
 export class FindWorkspace {

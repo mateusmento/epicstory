@@ -2,20 +2,27 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
+  ForbiddenException,
   Patch,
   Put,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { userPictureUploadMulterOptions } from 'src/core/multer/user-picture-upload-options';
+import { Response } from 'express';
+import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { UserPictureUploadService } from '../services/user-picture-upload.service';
+import { userPictureUploadMulterOptions } from 'src/core/multer/user-picture-upload-options';
+import { MustTransferOwnership } from 'src/workspace/domain/exceptions';
 import { ChangePassword } from '../features/change-password.command';
+import { DeleteUserAccount } from '../features/delete-user-account.command';
 import { UpdateUserPicture } from '../features/update-user-picture.command';
 import { UpdateUser } from '../features/update-user.command';
+import { UserPictureUploadService } from '../services/user-picture-upload.service';
 
 @Controller('/users')
 export class UserController {
@@ -28,6 +35,20 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   updateUser(@Body() command: UpdateUser, @Auth() issuer: Issuer) {
     return this.commandBus.execute(new UpdateUser({ ...command, issuer }));
+  }
+
+  @Delete('/me')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([MustTransferOwnership, ForbiddenException])
+  async deleteAccount(
+    @Auth() issuer: Issuer,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.commandBus.execute(
+      new DeleteUserAccount({ issuer }),
+    );
+    res.clearCookie('token');
+    return result;
   }
 
   @Put('/picture')

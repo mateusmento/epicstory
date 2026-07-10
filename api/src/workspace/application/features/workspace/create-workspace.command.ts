@@ -34,7 +34,7 @@ export class CreateWorkspaceCommand
     const member = WorkspaceMember.create({
       workspaceId: workspace.id,
       userId: issuerId,
-      role: WorkspaceRole.ADMIN,
+      role: WorkspaceRole.OWNER,
     });
     await this.workspaceMemberRepo.save(member);
     const team = workspace.createTeam(member, data.name);

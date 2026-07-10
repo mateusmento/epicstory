@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -18,9 +19,12 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import {
+  CannotAssignWorkspaceOwner,
   IssuerUserCanNotAddWorkspaceMember,
   IssuerUserIsNotWorkspaceMember,
+  MustTransferOwnership,
   WorkspaceMemberAlreadyExists,
+  WorkspaceNotFound,
 } from 'src/workspace/domain/exceptions';
 import {
   AddWorkspaceMember,
@@ -32,10 +36,9 @@ import {
   FindWorkspaces,
   RemoveWorkspaceMember,
   SendWorkspaceMemberInvite,
+  TransferWorkspaceOwnership,
   UpdateWorkspaceMember,
-  WorkspaceNotFound,
 } from '../features';
-
 @Controller('workspaces')
 export class WorkspaceController {
   constructor(
@@ -100,6 +103,7 @@ export class WorkspaceController {
     [IssuerUserIsNotWorkspaceMember, ForbiddenException],
     [IssuerUserCanNotAddWorkspaceMember, ForbiddenException],
     [WorkspaceMemberAlreadyExists, ConflictException],
+    [CannotAssignWorkspaceOwner, BadRequestException],
   )
   addMember(
     @Param('id') workspaceId: number,
@@ -134,8 +138,32 @@ export class WorkspaceController {
     return this.commandBus.execute(command);
   }
 
+  @Post(':id/transfer-ownership')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter(
+    [WorkspaceNotFound, NotFoundException],
+    [IssuerUserIsNotWorkspaceMember, ForbiddenException],
+  )
+  transferOwnership(
+    @Param('id', ParseIntPipe) workspaceId: number,
+    @Body() body: TransferWorkspaceOwnership,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new TransferWorkspaceOwnership({
+        ...body,
+        workspaceId,
+        issuerId: issuer.id,
+      }),
+    );
+  }
+
   @Patch(':id/members/:memberId')
   @UseGuards(JwtAuthGuard)
+  @ExceptionFilter(
+    [CannotAssignWorkspaceOwner, BadRequestException],
+    [MustTransferOwnership, ForbiddenException],
+  )
   updateMember(
     @Param('id') workspaceId: number,
     @Param('memberId') memberId: number,
@@ -154,6 +182,7 @@ export class WorkspaceController {
 
   @Delete(':id/members/:memberId')
   @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([MustTransferOwnership, ForbiddenException])
   removeMember(
     @Param('id') workspaceId: number,
     @Param('memberId') memberId: number,

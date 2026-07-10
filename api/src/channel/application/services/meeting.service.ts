@@ -30,6 +30,10 @@ export class MeetingService {
     return this.meetingAttendeeRepo.countBy({ meetingId });
   }
 
+  findAttendeesByUserId(userId: number) {
+    return this.meetingAttendeeRepo.find({ where: { userId } });
+  }
+
   async endMeeting(meetingId: number) {
     await this.meetingAttendeeRepo.delete({ meetingId });
     return this.meetingRepo.update({ id: meetingId }, {

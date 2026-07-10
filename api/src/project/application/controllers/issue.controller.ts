@@ -16,9 +16,11 @@ import {
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { attachmentUploadMulterOptions } from 'src/core/multer/attachment-upload-options';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsOptional } from 'class-validator';
 import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
+import { attachmentUploadMulterOptions } from 'src/core/multer/attachment-upload-options';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
@@ -26,6 +28,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
   UpdateIssue,
   RemoveIssue,
+  CountIssueDescendants,
   AddAssignee,
   RemoveAssignee,
   AddLabel,
@@ -39,6 +42,13 @@ import {
 } from '../features';
 import { FindIssue } from '../features/issue/find-issue.query';
 import { FindIssueFeed } from '../features/issue/find-issue-feed.query';
+
+class RemoveIssueBody {
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  deleteSubIssues?: boolean;
+}
 
 @Controller('issues')
 export class IssueController {
@@ -181,11 +191,30 @@ export class IssueController {
     );
   }
 
+  @Get(':id/descendant-count')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  countDescendants(@Param('id') issueId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(
+      new CountIssueDescendants({ issueId, issuer }),
+    );
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
-  removeIssue(@Param('id') issueId: number, @Auth() issuer: Issuer) {
-    return this.commandBus.execute(new RemoveIssue({ issueId, issuer }));
+  removeIssue(
+    @Param('id') issueId: number,
+    @Body() body: RemoveIssueBody,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new RemoveIssue({
+        issueId,
+        issuer,
+        deleteSubIssues: body?.deleteSubIssues === true,
+      }),
+    );
   }
 
   @Post(':id/assignees')

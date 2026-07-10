@@ -22,6 +22,8 @@ import {
   Trash2Icon,
   UserIcon,
 } from "lucide-vue-next";
+import { useDependency } from "@/core/dependency-injection";
+import { IssueApi } from "@epicstory/api-client";
 import { computed, ref, watch } from "vue";
 import { toast } from "vue-sonner";
 import IssueDeleteDialog from "@/presentationals/issue/IssueDeleteDialog.vue";
@@ -36,8 +38,11 @@ const props = defineProps<{
   disabled?: boolean;
 }>();
 
+const issueApi = useDependency(IssueApi);
+
 const renameOpen = ref(false);
 const deleteOpen = ref(false);
+const nestedCount = ref(0);
 const isTogglingEpic = ref(false);
 const labelIds = computed(() => (props.issue?.labels ?? []).map((l) => l.id));
 const isEpic = computed(() => props.issue.issueType === "epic");
@@ -91,6 +96,21 @@ async function toggleEpicType() {
   } finally {
     isTogglingEpic.value = false;
   }
+}
+
+watch(deleteOpen, async (open) => {
+  if (!open) return;
+  nestedCount.value = props.issue.subIssues?.length ?? 0;
+  try {
+    const { count } = await issueApi.countIssueDescendants(props.issue.id);
+    nestedCount.value = count;
+  } catch {
+    // Keep direct-child fallback when the count endpoint fails.
+  }
+});
+
+async function onConfirmDelete(payload: { deleteSubIssues: boolean }) {
+  await removeIssue(props.issue.id, payload);
 }
 </script>
 
@@ -202,8 +222,9 @@ async function toggleEpicType() {
   <IssueDeleteDialog
     :open="deleteOpen"
     :title="issue.title ?? ''"
+    :nested-count="nestedCount"
     :disabled="disabled"
     @update:open="deleteOpen = $event"
-    @confirm="removeIssue(issue.id)"
+    @confirm="onConfirmDelete"
   />
 </template>

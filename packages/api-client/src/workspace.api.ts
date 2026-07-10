@@ -4,6 +4,7 @@ import type {
   Project,
   Team,
   IWorkspace,
+  TransferWorkspaceOwnershipBody,
   WorkspaceMember,
 } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
@@ -77,6 +78,12 @@ export class WorkspaceApi {
   removeMember(workspaceId: number, memberId: number) {
     return this.axios
       .delete(`workspaces/${workspaceId}/members/${memberId}`)
+      .then((res) => res.data);
+  }
+
+  transferOwnership(workspaceId: number, body: TransferWorkspaceOwnershipBody) {
+    return this.axios
+      .post(`workspaces/${workspaceId}/transfer-ownership`, body)
       .then((res) => res.data);
   }
 

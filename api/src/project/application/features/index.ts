@@ -18,6 +18,7 @@ export * from './issue/find-issue-feed.query';
 export * from './issue/find-issues.query';
 export * from './issue/remove-label.command';
 export * from './issue/remove-issue.command';
+export * from './issue/count-issue-descendants.query';
 export * from './issue/update-issue.command';
 export * from './issue/upload-issue-attachment.command';
 export * from './label/create-label.command';

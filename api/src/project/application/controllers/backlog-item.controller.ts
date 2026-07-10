@@ -59,7 +59,17 @@ export class BacklogItemController {
 
   @Delete('backlog-items/:id')
   @UseGuards(JwtAuthGuard)
-  removeProject(@Param('id') itemId: number) {
-    return this.commandBus.execute(create(RemoveBacklogItem, { itemId }));
+  removeProject(
+    @Param('id') itemId: number,
+    @Auth() issuer: Issuer,
+    @Body() body?: { deleteSubIssues?: boolean },
+  ) {
+    return this.commandBus.execute(
+      create(RemoveBacklogItem, {
+        itemId,
+        issuer,
+        deleteSubIssues: body?.deleteSubIssues === true,
+      }),
+    );
   }
 }

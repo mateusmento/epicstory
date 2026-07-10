@@ -1,5 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { Type } from 'class-transformer';
+import { IsInt } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 import {
@@ -11,7 +13,10 @@ import { Transactional } from 'typeorm-transactional';
 export class TransferWorkspaceOwnership {
   issuerId: number;
   workspaceId: number;
-  newOwnerId: number;
+
+  @Type(() => Number)
+  @IsInt()
+  newOwnerUserId: number;
 
   constructor(data: Partial<TransferWorkspaceOwnership>) {
     patch(this, data);
@@ -31,7 +36,7 @@ export class TransferWorkspaceOwnershipCommand
   async execute({
     issuerId,
     workspaceId,
-    newOwnerId,
+    newOwnerUserId,
   }: TransferWorkspaceOwnership) {
     if (!(await this.workspaceRepository.existsBy({ id: workspaceId })))
       throw new NotFoundException('Workspace not found');
@@ -44,25 +49,23 @@ export class TransferWorkspaceOwnershipCommand
     if (!issuer)
       throw new ForbiddenException('Issuer is not a workspace member');
 
-    if (!issuer.hasRole(WorkspaceRole.OWNER))
+    if (!issuer.isOwner)
       throw new ForbiddenException(
         'Issuer can not transfer workspace ownership',
       );
 
+    if (newOwnerUserId === issuerId) return;
+
     const newOwner = await this.workspaceMemberRepository.findOneBy({
       workspaceId,
-      userId: newOwnerId,
+      userId: newOwnerUserId,
     });
 
     if (!newOwner) throw new NotFoundException('New owner not found');
 
     newOwner.role = WorkspaceRole.OWNER;
+    issuer.role = WorkspaceRole.ADMIN;
 
-    await this.workspaceMemberRepository.save(newOwner);
-
-    await this.workspaceMemberRepository.update(
-      { id: issuerId },
-      { role: WorkspaceRole.ADMIN },
-    );
+    await this.workspaceMemberRepository.save([newOwner, issuer]);
   }
 }

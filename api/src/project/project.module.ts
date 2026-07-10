@@ -5,6 +5,7 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
 import { SchedulingModule } from 'src/scheduling/scheduling.module';
 import { WorkspaceModule } from 'src/workspace/workspace.module';
 import { ChannelModule } from 'src/channel/channel.module';
+import { CalendarModule } from 'src/calendar/calendar.module';
 import { GithubIntegrationModule } from 'src/integrations/github/github.module';
 import * as controllers from './application/controllers';
 import * as features from './application/features';
@@ -23,6 +24,7 @@ import { IssueKeyAllocationService } from './application/services/issue-key-allo
     NotificationsModule,
     SchedulingModule,
     ChannelModule,
+    CalendarModule,
     forwardRef(() => GithubIntegrationModule),
   ],
   controllers: [...Object.values(controllers)],

@@ -74,8 +74,8 @@ export function useBacklog() {
     return store.updateIssue(issue);
   }
 
-  async function removeIssue(issueId: number) {
-    await issueApi.removeIssue(issueId);
+  async function removeIssue(issueId: number, options?: { deleteSubIssues?: boolean }) {
+    await issueApi.removeIssue(issueId, options);
     store.backlogItems = store.backlogItems.filter((item) => item.issue.id !== issueId);
   }
 

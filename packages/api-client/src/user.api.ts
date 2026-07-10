@@ -34,4 +34,8 @@ export class UserApi {
   changePassword(data: { currentPassword: string; newPassword: string }) {
     return this.axios.patch(`/users/password`, data).then((res) => res.data);
   }
+
+  deleteAccount() {
+    return this.axios.delete(`/users/me`).then((res) => res.data);
+  }
 }

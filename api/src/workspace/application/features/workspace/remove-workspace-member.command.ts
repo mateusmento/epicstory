@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { patch } from 'src/core/objects';
+import { MustTransferOwnership } from 'src/workspace/domain/exceptions';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -32,10 +33,21 @@ export class RemoveWorkspaceMemberCommand
     const issuer = await this.workspaceRepo.findMember(workspaceId, issuerId);
     if (!issuer)
       throw new ForbiddenException('Issuer is not a workspace member');
-    if (!issuer.hasRole(WorkspaceRole.ADMIN))
+
+    const isSelf = issuer.id === memberId;
+    if (!isSelf && !issuer.hasRole(WorkspaceRole.ADMIN))
       throw new ForbiddenException('Issuer can not remove workspace member');
-    const result = await this.workspaceMemberRepo.delete({ id: memberId });
-    if (result.affected === 0)
-      throw new NotFoundException('Workspace member not found');
+
+    const member = await this.workspaceMemberRepo.findOneBy({
+      id: memberId,
+      workspaceId,
+    });
+    if (!member) throw new NotFoundException('Workspace member not found');
+
+    if (member.isOwner) {
+      throw new MustTransferOwnership();
+    }
+
+    await this.workspaceMemberRepo.delete({ id: memberId });
   }
 }

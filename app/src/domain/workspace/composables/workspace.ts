@@ -5,6 +5,7 @@ import { defineStore, storeToRefs } from "pinia";
 import { computed, ref } from "vue";
 import { ProjectApi, WorkspaceApi } from "@epicstory/api-client";
 import type { Project, Team, IWorkspace, WorkspaceMember } from "@epicstory/contracts";
+import { WorkspaceRole } from "@epicstory/contracts";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
   const workspace = useStorage<IWorkspace>("workspace", null, localStorage, {
@@ -134,6 +135,17 @@ export function useWorkspace() {
     store.members = store.members.filter((m) => m.id !== memberId);
   }
 
+  async function transferOwnership(newOwnerUserId: number) {
+    await workspaceApi.transferOwnership(workspaceId.value, { newOwnerUserId });
+    await fetchWorkspaceMembers();
+  }
+
+  function memberRoleLabel(role: number) {
+    if (role === WorkspaceRole.OWNER) return "Owner";
+    if (role === WorkspaceRole.ADMIN) return "Admin";
+    return "Collaborator";
+  }
+
   return {
     ...storeToRefs(store),
     isFetchingMoreProjects,
@@ -152,5 +164,7 @@ export function useWorkspace() {
     createTeam,
     removeTeam,
     removeMember,
+    transferOwnership,
+    memberRoleLabel,
   };
 }

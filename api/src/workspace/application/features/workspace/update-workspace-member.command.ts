@@ -2,11 +2,13 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { IsEnum } from 'class-validator';
 import { patch } from 'src/core/objects';
-import { WorkspaceMember } from 'src/workspace/domain/entities/workspace-member.entity';
+import {
+  CannotAssignWorkspaceOwner,
+  MustTransferOwnership,
+} from 'src/workspace/domain/exceptions';
 import { WorkspaceRole } from 'src/workspace/domain/values/workspace-role.value';
 import { WorkspaceMemberRepository } from 'src/workspace/infrastructure/repositories/workspace-member.repository';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
-import { FindOptionsWhere } from 'typeorm';
 
 export class UpdateWorkspaceMember {
   issuerId: number;
@@ -34,7 +36,7 @@ export class UpdateWorkspaceMemberCommand
     memberId,
     issuerId,
     workspaceId,
-    ...command
+    role,
   }: UpdateWorkspaceMember) {
     const issuer = await this.workspaceRepository.findMember(
       workspaceId,
@@ -46,12 +48,23 @@ export class UpdateWorkspaceMemberCommand
     if (!issuer.hasRole(WorkspaceRole.ADMIN))
       throw new ForbiddenException('Issuer can not update workspace member');
 
-    const result = await this.workspaceMemberRepository.update(
-      { id: memberId } as FindOptionsWhere<WorkspaceMember>,
-      command,
-    );
+    if (role === WorkspaceRole.OWNER) {
+      throw new CannotAssignWorkspaceOwner();
+    }
 
-    if (result.affected === 0)
-      throw new NotFoundException('Workspace member not found');
+    const member = await this.workspaceMemberRepository.findOneBy({
+      id: memberId,
+      workspaceId,
+    });
+    if (!member) throw new NotFoundException('Workspace member not found');
+
+    if (member.isOwner) {
+      throw new MustTransferOwnership(
+        'Transfer workspace ownership before changing the owner role',
+      );
+    }
+
+    member.role = role;
+    await this.workspaceMemberRepository.save(member);
   }
 }

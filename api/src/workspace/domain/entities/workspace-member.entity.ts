@@ -37,7 +37,15 @@ export class WorkspaceMember {
     return create(WorkspaceMember, data);
   }
 
+  /**
+   * Hierarchical role check: OWNER ⊇ ADMIN ⊇ COLLABORATOR.
+   * Exact equality would make OWNER fail ADMIN-gated workspace ops.
+   */
   hasRole(role: WorkspaceRole) {
-    return this.role === role;
+    return this.role <= role;
+  }
+
+  get isOwner() {
+    return this.role === WorkspaceRole.OWNER;
   }
 }

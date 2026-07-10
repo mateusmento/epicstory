@@ -1,4 +1,4 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -61,6 +61,25 @@ export class UserPictureUploadService {
       return Location;
     } finally {
       await unlink(tempPath).catch(() => undefined);
+    }
+  }
+
+  /** Best-effort delete of a previously uploaded profile picture. */
+  async deletePictureUrl(pictureUrl: string | null | undefined): Promise<void> {
+    if (!pictureUrl) return;
+    const marker = 'users/pictures/';
+    const idx = pictureUrl.indexOf(marker);
+    if (idx < 0) return;
+    const storageKey = pictureUrl.slice(idx).split('?')[0];
+    try {
+      await this.s3.send(
+        new DeleteObjectCommand({
+          Bucket: this.config.AWS_BUCKET,
+          Key: storageKey,
+        }),
+      );
+    } catch {
+      // Ignore storage errors during account teardown.
     }
   }
 }

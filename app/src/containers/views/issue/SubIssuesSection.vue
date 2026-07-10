@@ -2,9 +2,10 @@
 import { useDependency } from "@/core/dependency-injection";
 import { BacklogApi, IssueApi } from "@epicstory/api-client";
 import type { IIssue } from "@epicstory/contracts";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { IssueContextMenu } from "@/containers/issue";
+import IssueDeleteDialog from "@/presentationals/issue/IssueDeleteDialog.vue";
 import SubIssueRow from "@/presentationals/issue/sub-issues/SubIssueRow.vue";
 import SubIssuesCreateRow from "@/presentationals/issue/sub-issues/SubIssuesCreateRow.vue";
 import SubIssuesHeader from "@/presentationals/issue/sub-issues/SubIssuesHeader.vue";
@@ -28,6 +29,9 @@ const backlogItemApi = useDependency(BacklogApi);
 const isCollapsed = ref(false);
 const newTitle = ref("");
 const isCreating = ref(false);
+const deleteOpen = ref(false);
+const deletingSub = ref<IIssue | null>(null);
+const nestedCount = ref(0);
 
 const doneCount = computed(() => props.subIssues.filter((s) => (s.status ?? "") === "done").length);
 
@@ -41,9 +45,27 @@ async function toggleDone(sub: IIssue) {
   emit("changed");
 }
 
-async function removeSubIssue(subIssueId: number) {
-  // Backend remove-issue command also removes any backlog item that might exist.
-  await issueApi.removeIssue(subIssueId);
+function openDeleteDialog(subIssueId: number) {
+  const sub = props.subIssues.find((s) => s.id === subIssueId) ?? null;
+  deletingSub.value = sub;
+  nestedCount.value = sub?.subIssues?.length ?? 0;
+  deleteOpen.value = true;
+}
+
+watch(deleteOpen, async (open) => {
+  if (!open || !deletingSub.value) return;
+  try {
+    const { count } = await issueApi.countIssueDescendants(deletingSub.value.id);
+    nestedCount.value = count;
+  } catch {
+    // Keep direct-child fallback when the count endpoint fails.
+  }
+});
+
+async function confirmRemoveSubIssue(payload: { deleteSubIssues: boolean }) {
+  if (!deletingSub.value) return;
+  await issueApi.removeIssue(deletingSub.value.id, payload);
+  deletingSub.value = null;
   emit("changed");
 }
 
@@ -106,7 +128,7 @@ function focusNewInput() {
           :disabled="disabled"
           @open="openSubIssue"
           @toggle-done="toggleDone"
-          @remove="removeSubIssue"
+          @remove="openDeleteDialog"
         />
       </IssueContextMenu>
 
@@ -114,5 +136,14 @@ function focusNewInput() {
         No sub-issues yet
       </div>
     </div>
+
+    <IssueDeleteDialog
+      :open="deleteOpen"
+      :title="deletingSub?.title ?? ''"
+      :nested-count="nestedCount"
+      :disabled="disabled"
+      @update:open="deleteOpen = $event"
+      @confirm="confirmRemoveSubIssue"
+    />
   </div>
 </template>

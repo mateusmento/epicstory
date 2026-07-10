@@ -13,7 +13,7 @@ import { In } from 'typeorm';
 import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
-import { WorkspaceNotFound } from 'src/workspace/application/features';
+import { WorkspaceNotFound } from 'src/workspace/domain/exceptions';
 import { SendMessage } from './send-message.command';
 
 export class SendDirectMessage {

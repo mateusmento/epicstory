@@ -1,11 +1,21 @@
 <script lang="ts" setup>
-import { Button, Field, Form, Separator } from "@/design-system";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Field,
+  Form,
+  Separator,
+} from "@/design-system";
 import { ThemePicker } from "@/presentationals/theme";
 import UserPictureUpload from "@/containers/views/user/UserPictureUpload.vue";
 import { useUser } from "@/domain/user";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 
-const { user, updateUser, changePassword } = useUser();
+const { user, updateUser, changePassword, listOwnedWorkspaces, deleteAccount } = useUser();
 const isSaving = ref(false);
 const saveSuccess = ref(false);
 
@@ -18,6 +28,36 @@ const passwordFormData = ref({
   newPassword: "",
   confirmPassword: "",
 });
+
+const ownedWorkspaces = ref<{ id: number; name: string }[]>([]);
+const isLoadingOwned = ref(false);
+const deleteOpen = ref(false);
+const isDeletingAccount = ref(false);
+const deleteError = ref("");
+
+onMounted(async () => {
+  isLoadingOwned.value = true;
+  try {
+    ownedWorkspaces.value = await listOwnedWorkspaces();
+  } finally {
+    isLoadingOwned.value = false;
+  }
+});
+
+async function confirmDeleteAccount() {
+  deleteError.value = "";
+  isDeletingAccount.value = true;
+  try {
+    await deleteAccount();
+  } catch (error: any) {
+    deleteError.value =
+      error?.response?.data?.message ||
+      "Could not delete account. Transfer ownership of any owned workspaces first.";
+    ownedWorkspaces.value = await listOwnedWorkspaces().catch(() => ownedWorkspaces.value);
+  } finally {
+    isDeletingAccount.value = false;
+  }
+}
 
 async function handleSubmit(data: { name?: string }) {
   isSaving.value = true;
@@ -220,6 +260,65 @@ async function handlePasswordChange() {
           <p class="text-xs text-muted-foreground mt-3">Password must be at least 6 characters long.</p>
         </div>
       </div>
+
+      <Separator class="my-8" />
+
+      <div class="mb-8">
+        <h2 class="text-lg font-semibold text-destructive mb-2">Danger zone</h2>
+        <p class="text-sm text-muted-foreground mb-4">
+          Delete your account. Messages and issues you created stay attributed to “Deleted user”. You must
+          transfer ownership of every workspace you own first.
+        </p>
+
+        <div v-if="isLoadingOwned" class="mb-4 text-sm text-muted-foreground">Checking owned workspaces…</div>
+        <div
+          v-else-if="ownedWorkspaces.length > 0"
+          class="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <p class="text-sm font-medium text-foreground mb-2">Transfer ownership before deleting:</p>
+          <ul class="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+            <li v-for="ws in ownedWorkspaces" :key="ws.id">{{ ws.name }}</li>
+          </ul>
+        </div>
+
+        <Button
+          type="button"
+          variant="flat"
+          intent="destructive"
+          size="sm"
+          :disabled="isLoadingOwned || ownedWorkspaces.length > 0"
+          @click="deleteOpen = true"
+        >
+          Delete account
+        </Button>
+      </div>
+
+      <Dialog :open="deleteOpen" @update:open="deleteOpen = $event">
+        <DialogContent class="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete account</DialogTitle>
+          </DialogHeader>
+          <p class="text-sm text-muted-foreground">
+            This permanently removes your access, memberships, and sign-in credentials. Content you created
+            remains as “Deleted user”.
+          </p>
+          <p v-if="deleteError" class="mt-3 text-sm text-destructive">{{ deleteError }}</p>
+          <DialogFooter class="mt-2">
+            <Button type="button" variant="outline" :disabled="isDeletingAccount" @click="deleteOpen = false">
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="flat"
+              intent="destructive"
+              :disabled="isDeletingAccount"
+              @click="confirmDeleteAccount"
+            >
+              {{ isDeletingAccount ? "Deleting…" : "Delete account" }}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   </div>
 </template>

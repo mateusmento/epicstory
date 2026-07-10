@@ -83,8 +83,19 @@ export class IssueApi {
       .then(() => undefined);
   }
 
-  async removeIssue(issueId: number): Promise<void> {
-    await this.axios.delete(`/issues/${issueId}`);
+  countIssueDescendants(issueId: number): Promise<{ count: number }> {
+    return this.axios
+      .get<{ count: number }>(`/issues/${issueId}/descendant-count`)
+      .then((res) => res.data);
+  }
+
+  async removeIssue(
+    issueId: number,
+    options?: { deleteSubIssues?: boolean },
+  ): Promise<void> {
+    await this.axios.delete(`/issues/${issueId}`, {
+      data: { deleteSubIssues: options?.deleteSubIssues === true },
+    });
   }
 
   async addAssignee(issueId: number, userId: number): Promise<IIssue> {

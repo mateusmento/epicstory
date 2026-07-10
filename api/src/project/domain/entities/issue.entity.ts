@@ -102,7 +102,7 @@ export class Issue {
   @Column({ name: 'github_branch', type: 'jsonb', nullable: true })
   githubBranch: IIssueGithubBranchStored | null;
 
-  @ManyToOne(() => Issue, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Issue, { nullable: true, onDelete: 'SET NULL' })
   parentIssue: Issue;
 
   @OneToMany(() => Issue, (issue) => issue.parentIssue)

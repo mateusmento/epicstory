@@ -61,8 +61,8 @@ export function useIssues() {
     return issue;
   }
 
-  async function removeIssue(issueId: number) {
-    await issueApi.removeIssue(issueId);
+  async function removeIssue(issueId: number, options?: { deleteSubIssues?: boolean }) {
+    await issueApi.removeIssue(issueId, options);
     store.issues = store.issues.filter((i) => i.id !== issueId);
   }
 

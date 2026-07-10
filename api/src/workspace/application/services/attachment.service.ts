@@ -211,6 +211,29 @@ export class AttachmentService {
     await this.deleteStoredFilesAndRows([row], false);
   }
 
+  /** Best-effort purge of all attachments scoped to an issue (description + comment channel). */
+  async deleteAllForIssue(params: {
+    workspaceId: number;
+    issueId: number;
+    commentChannelId: number | null;
+  }): Promise<void> {
+    const { workspaceId, issueId, commentChannelId } = params;
+    let rows: Attachment[];
+    if (commentChannelId == null) {
+      rows = await this.attachments.find({ where: { workspaceId, issueId } });
+    } else {
+      rows = await this.attachments
+        .createQueryBuilder('a')
+        .where('a.workspace_id = :ws', { ws: workspaceId })
+        .andWhere(
+          '(a.issue_id = :issueId OR (a.channel_id = :cc AND (a.message_id IS NOT NULL OR a.message_reply_id IS NOT NULL)))',
+          { issueId, cc: commentChannelId },
+        )
+        .getMany();
+    }
+    await this.deleteStoredFilesAndRows(rows, true);
+  }
+
   /**
    * When a channel message (thread root) is deleted: remove all reply-anchored files first, then
    * message-anchored files. Matches {@link linkStagingToMessage} / {@link linkStagingToReply} scope.

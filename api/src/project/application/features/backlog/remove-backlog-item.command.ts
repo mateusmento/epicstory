@@ -1,13 +1,19 @@
 import { NotFoundException } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import {
-  BacklogItemRepository,
-  IssueRepository,
-} from 'src/project/infrastructure/repositories';
+import { CommandBus, CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { Issuer } from 'src/core/auth';
+import { patch } from 'src/core/objects';
+import { BacklogItemRepository } from 'src/project/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
+import { RemoveIssue } from '../issue/remove-issue.command';
 
 export class RemoveBacklogItem {
   itemId: number;
+  issuer: Issuer;
+  deleteSubIssues?: boolean;
+
+  constructor(data: Partial<RemoveBacklogItem> = {}) {
+    patch(this, data);
+  }
 }
 
 @CommandHandler(RemoveBacklogItem)
@@ -16,18 +22,23 @@ export class RemoveBacklogItemCommand
 {
   constructor(
     private backlogItemRepo: BacklogItemRepository,
-    private issueRepo: IssueRepository,
+    private commandBus: CommandBus,
   ) {}
 
   @Transactional()
-  async execute({ itemId }: RemoveBacklogItem) {
+  async execute({ itemId, issuer, deleteSubIssues }: RemoveBacklogItem) {
     const item = await this.backlogItemRepo.findOne({
       where: { id: itemId },
     });
     if (!item) throw new NotFoundException('Backlog item not found');
 
-    await this.backlogItemRepo.delete({ id: itemId });
-    await this.issueRepo.delete({ id: item.issueId });
+    await this.commandBus.execute(
+      new RemoveIssue({
+        issueId: item.issueId,
+        issuer,
+        deleteSubIssues,
+      }),
+    );
 
     return { deleted: true, id: itemId };
   }

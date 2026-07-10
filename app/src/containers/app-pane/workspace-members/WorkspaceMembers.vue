@@ -20,17 +20,40 @@ import { useWorkspace } from "@/domain/workspace";
 import { UserAvatar } from "@/presentationals/user";
 import { UserApi } from "@epicstory/api-client";
 import type { IUser } from "@epicstory/contracts";
+import { WorkspaceRole } from "@epicstory/contracts";
 import { DotsHorizontalIcon } from "@radix-icons/vue";
 import { format } from "date-fns";
 import { debounce } from "lodash";
-import { ArrowLeft, Trash2Icon, UserPlus } from "lucide-vue-next";
+import { ArrowLeft, Crown, Trash2Icon, UserPlus } from "lucide-vue-next";
 import { computed, onMounted, ref, watch } from "vue";
 
 type PendingInvite = { email: string; user: IUser | null };
 
-const { workspace, members, fetchWorkspaceMembers, sendWorkspaceMemberInvite, removeMember } = useWorkspace();
+const {
+  workspace,
+  members,
+  fetchWorkspaceMembers,
+  sendWorkspaceMemberInvite,
+  removeMember,
+  transferOwnership,
+  memberRoleLabel,
+} = useWorkspace();
 const { user: authUser } = useAuth();
 const userApi = useDependency(UserApi);
+
+const meMember = computed(() => members.value.find((m) => m.userId === authUser.value?.id));
+const isOwner = computed(() => meMember.value?.role === WorkspaceRole.OWNER);
+const transferBusy = ref(false);
+
+async function onTransferOwnership(userId: number) {
+  if (transferBusy.value) return;
+  transferBusy.value = true;
+  try {
+    await transferOwnership(userId);
+  } finally {
+    transferBusy.value = false;
+  }
+}
 
 onMounted(() => fetchWorkspaceMembers());
 watch(workspace, () => fetchWorkspaceMembers());
@@ -150,14 +173,16 @@ async function onSend() {
     <div class="flex:col-md p-2">
       <div v-for="member in members" :key="member.id" class="flex:row-2xl flex:center-y p-2">
         <UserAvatar :name="member.user.name" :picture="member.user.picture" size="lg" class="flex-shrink-0" />
-        <div class="flex:col">
+        <div class="flex:col min-w-0">
           <div class="truncate">
             {{ member.user.name }}
           </div>
-          <small class="truncate">Member since {{ format(member.joinedAt, "MMM do, yyyy") }}</small>
+          <small class="truncate">
+            {{ memberRoleLabel(member.role) }} · since {{ format(member.joinedAt, "MMM do, yyyy") }}
+          </small>
         </div>
         <div class="flex:col ml-auto">
-          <Menu>
+          <Menu v-if="member.userId !== authUser?.id || member.role !== WorkspaceRole.OWNER">
             <MenuTrigger as-child>
               <Button variant="ghost" size="icon" class="self-end">
                 <DotsHorizontalIcon />
@@ -165,7 +190,19 @@ async function onSend() {
             </MenuTrigger>
             <MenuContent side="bottom" align="end">
               <MenuGroup>
-                <MenuItem @click="removeMember(member.id)" intent="destructive">
+                <MenuItem
+                  v-if="isOwner && member.role !== WorkspaceRole.OWNER"
+                  :disabled="transferBusy"
+                  @click="onTransferOwnership(member.userId)"
+                >
+                  <Crown class="mr-2 h-4 w-4" />
+                  <div>Transfer ownership</div>
+                </MenuItem>
+                <MenuItem
+                  v-if="member.role !== WorkspaceRole.OWNER"
+                  @click="removeMember(member.id)"
+                  intent="destructive"
+                >
                   <Trash2Icon class="mr-2 h-4 w-4" />
                   <div>Remove from workspace</div>
                 </MenuItem>

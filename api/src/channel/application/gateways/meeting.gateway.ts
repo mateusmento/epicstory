@@ -8,7 +8,12 @@ import type {
   MeetingMediaToggleBody,
   SubscribeMeetingsBody,
 } from '@epicstory/contracts';
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  UnauthorizedException,
+  forwardRef,
+} from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import {
   ConnectedSocket,
@@ -27,6 +32,7 @@ import { RedisService } from 'src/core/redis.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories/workspace.repository';
 import { MeetingNotFoundException } from '../exceptions';
 import { JoinChannelMeeting } from '../features/meeting/join-channel-meeting.command';
+import { MeetingKickService } from '../services/meeting-kick.service';
 import { MeetingService } from '../services/meeting.service';
 
 const channelMeetingRoom = (channelId) =>
@@ -52,6 +58,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     private commandBus: CommandBus,
     private redis: RedisService,
     private calendarEventRepo: CalendarEventRepository,
+    @Inject(forwardRef(() => MeetingKickService))
+    private meetingKick: MeetingKickService,
   ) {}
 
   afterInit() {
@@ -138,6 +146,39 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
         .except(userRoom(attendee.userId))
         .emit('incoming-attendee', joined);
     }
+  }
+
+  emitAttendeeLeft(params: {
+    meetingId: number;
+    remoteId: string;
+    channelId?: number;
+    userId: number;
+  }) {
+    const { meetingId, remoteId, channelId, userId } = params;
+
+    this.server.to(meetingRoom(meetingId)).emit('attendee-left', { remoteId });
+    if (channelId) {
+      this.server.to(channelMeetingRoom(channelId)).emit('leaving-attendee', {
+        meetingId,
+        channelId,
+        remoteId,
+        userId,
+      });
+    }
+  }
+
+  clearMeetingRoom(meetingId: number) {
+    this.server.socketsLeave(meetingRoom(meetingId));
+  }
+
+  async disconnectUser(userId: number): Promise<void> {
+    const sockets = await this.server.in(userRoom(userId)).fetchSockets();
+    await Promise.all(
+      sockets.map(async (socket) => {
+        await this.clearSocketMeetingAttendee(socket.id);
+        socket.disconnect(true);
+      }),
+    );
   }
 
   async joinMeetingRoom(userId: number, meetingId: number, remoteId: string) {
@@ -346,35 +387,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     const meeting = await this.meetingService.findMeeting({ meetingId });
     if (!meeting) throw new Error('Meeting not found');
 
-    const channelId = meeting?.channelId;
-    const channel =
-      channelId !== null && channelId !== undefined
-        ? await this.channelRepo.findOneBy({ id: channelId })
-        : null;
-    const isPersistentMeetingChannel = channel?.type === 'meeting';
-
-    const attendeesCount = await this.meetingService.leaveMeeting(
-      meetingId,
-      remoteId,
-    );
-
-    // Always emit the attendee-left event. If the room is empty, there will be no receivers anyway.
-    socket.to(meetingRoom(meetingId)).emit('attendee-left', { remoteId });
-    if (channelId) {
-      socket
-        .to(channelMeetingRoom(channelId))
-        .emit('leaving-attendee', { meetingId, channelId, remoteId, userId });
-    }
+    await this.meetingKick.removeAttendee({ meetingId, remoteId, userId });
     socket.leave(meetingRoom(meetingId));
-
-    // For regular meetings, we end the meeting when the last attendee leaves.
-    // For "meeting channels", the meeting is persistent (always ongoing) and must never end.
-    if (attendeesCount <= 0 && !isPersistentMeetingChannel) {
-      await this.meetingService.endMeeting(meetingId);
-      this.emitMeetingEnded(meeting);
-      this.server.socketsLeave(meetingRoom(meetingId));
-    }
-
     await this.clearSocketMeetingAttendee(socket.id);
   }
 
@@ -400,8 +414,7 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     await this.meetingService.endMeeting(meetingId);
 
     this.emitMeetingEnded(meeting);
-
-    this.server.socketsLeave(meetingRoom(meetingId));
+    this.clearMeetingRoom(meetingId);
 
     await this.clearSocketMeetingAttendee(socket.id);
   }
