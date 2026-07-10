@@ -47,6 +47,11 @@ function onWeekdayPressed(idx: number, on: boolean) {
   if (on === byWeekday.value.includes(idx)) return;
   emit("toggleWeekday", idx, on);
 }
+
+function onFrequencyPick(v: AcceptableValue) {
+  if (v == null || v === "") return;
+  frequency.value = String(v) as RecurrenceFrequency;
+}
 </script>
 
 <template>
