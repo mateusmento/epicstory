@@ -34,6 +34,7 @@ import ShareToChannelSubmenu from "@/containers/channel/ShareToChannelSubmenu.vu
 import type { IUser, UpdateIssueData } from "@epicstory/contracts";
 import { Share2 } from "lucide-vue-next";
 import { computed, onMounted, reactive, ref, watch } from "vue";
+import { RouterLink } from "vue-router";
 
 const props = defineProps<{
   workspaceId: string;
@@ -168,6 +169,23 @@ async function onSaveDescription(description: any) {
   await issueAttachments.loadAttachments();
 }
 
+const parentIssueLink = computed(() => {
+  const parent = issue.value?.parentIssue;
+  if (!parent?.id || !parent.issueKey) return null;
+  return {
+    issueKey: parent.issueKey,
+    title: parent.title,
+    to: {
+      name: "project-issue" as const,
+      params: {
+        workspaceId: String(parent.workspaceId ?? props.workspaceId),
+        projectId: String(parent.projectId),
+        issueId: String(parent.id),
+      },
+    },
+  };
+});
+
 onMounted(() => {
   refreshIssue();
 });
@@ -180,11 +198,17 @@ onMounted(() => {
         <div class="text-xs text-secondary-foreground">
           <span class="font-medium">{{ issue?.project?.name ?? "Project" }}</span>
           <span class="mx-2">/</span>
+          <template v-if="parentIssueLink">
+            <RouterLink :to="parentIssueLink.to" :title="parentIssueLink.title || parentIssueLink.issueKey">
+              <IssueKey :issue-key="parentIssueLink.issueKey" size="xs" class="hover:underline" />
+            </RouterLink>
+            <span class="mx-2">/</span>
+          </template>
           <IssueKey
             v-if="issue?.issueKey"
             :issue-key="issue.issueKey"
             copyable
-            size="sm"
+            size="xs"
             class="text-foreground/80"
           />
           <span v-else class="text-foreground/80">Issue #{{ props.issueId }}</span>
