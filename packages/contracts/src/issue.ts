@@ -65,7 +65,12 @@ export type FindIssuesQuery = {
   order?: string;
   page: number;
   count: number;
-  projectId: number;
+  /** Project-scoped list (`GET /projects/:id/issues`). */
+  projectId?: number;
+  /** Workspace-scoped list (`GET /workspaces/:id/issues`). */
+  workspaceId?: number;
+  /** When set (workspace list), limit to these projects. Omit/empty = all projects. */
+  projectIds?: number[];
   search?: string;
   assigneeId?: number;
 };

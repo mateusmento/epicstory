@@ -4,11 +4,14 @@ import { Dialog, DialogContent, DialogTrigger, ScrollArea } from "@/design-syste
 import { IconSearch } from "@/design-system/icons";
 import { IssueKey } from "@/presentationals/issue";
 import { issueStatusDotClass } from "@/presentationals/issue/status";
-import { IssueApi } from "@epicstory/api-client";
-import type { IIssue } from "@epicstory/contracts";
+import { IssueApi, WorkspaceApi } from "@epicstory/api-client";
+import type { IIssue, Project } from "@epicstory/contracts";
 import { watchDebounced } from "@vueuse/core";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import IssueSearchProjectFilters from "./IssueSearchProjectFilters.vue";
+
+const PAGE_SIZE = 25;
 
 const props = defineProps<{
   workspaceId: string | number;
@@ -18,53 +21,129 @@ const props = defineProps<{
 const open = defineModel<boolean>("open", { default: false });
 
 const issueApi = useDependency(IssueApi);
+const workspaceApi = useDependency(WorkspaceApi);
 const router = useRouter();
 
 const searchTerm = ref("");
+const projects = ref<Project[]>([]);
+/** `null` = all projects in the workspace. */
+const selectedProjectIds = ref<number[] | null>(null);
 const issues = ref<IIssue[]>([]);
+const page = ref(0);
+const hasNext = ref(false);
 const loading = ref(false);
+const loadingMore = ref(false);
 let requestId = 0;
 
-async function fetchIssues(term: string) {
+const currentProjectId = computed(() => +props.projectId);
+const isAllProjects = computed(() => selectedProjectIds.value === null);
+const showProjectLabel = computed(() => isAllProjects.value || (selectedProjectIds.value?.length ?? 0) !== 1);
+
+const projectNameById = computed(() => {
+  const map = new Map<number, string>();
+  for (const project of projects.value) {
+    map.set(project.id, project.name);
+  }
+  return map;
+});
+
+const listQuery = computed(() => ({
+  workspaceId: +props.workspaceId,
+  count: PAGE_SIZE,
+  orderBy: "createdAt" as const,
+  order: "desc" as const,
+  search: searchTerm.value.trim() || undefined,
+  projectIds: selectedProjectIds.value ?? undefined,
+}));
+
+async function ensureProjectsLoaded() {
+  if (projects.value.length > 0) return;
+  const result = await workspaceApi.findProjects(+props.workspaceId, {
+    page: 0,
+    count: 200,
+    orderBy: "name",
+    order: "asc",
+  });
+  projects.value = result.content;
+}
+
+async function replaceIssues() {
   const id = ++requestId;
   loading.value = true;
+  loadingMore.value = false;
   try {
-    const page = await issueApi.fetchIssues({
-      projectId: +props.projectId,
+    const result = await issueApi.fetchIssues({
+      ...listQuery.value,
       page: 0,
-      count: 25,
-      orderBy: "createdAt",
-      order: "desc",
-      search: term.trim() || undefined,
     });
     if (id !== requestId) return;
-    issues.value = page.content;
+    issues.value = result.content;
+    page.value = result.page;
+    hasNext.value = result.hasNext;
   } finally {
     if (id === requestId) loading.value = false;
   }
 }
 
+async function appendIssues() {
+  if (!open.value || !hasNext.value || loading.value || loadingMore.value) return;
+
+  const id = requestId;
+  loadingMore.value = true;
+  try {
+    const result = await issueApi.fetchIssues({
+      ...listQuery.value,
+      page: page.value + 1,
+    });
+    if (id !== requestId) return;
+    issues.value = [...issues.value, ...result.content];
+    page.value = result.page;
+    hasNext.value = result.hasNext;
+  } finally {
+    if (id === requestId) loadingMore.value = false;
+  }
+}
+
+function resetList() {
+  searchTerm.value = "";
+  issues.value = [];
+  page.value = 0;
+  hasNext.value = false;
+  loadingMore.value = false;
+  selectedProjectIds.value = [currentProjectId.value];
+}
+
+let ignoreProjectFilterWatch = false;
+
 watch(
   open,
-  (isOpen) => {
+  async (isOpen) => {
     if (!isOpen) {
-      searchTerm.value = "";
-      issues.value = [];
+      resetList();
       return;
     }
-    fetchIssues("");
+    ignoreProjectFilterWatch = true;
+    selectedProjectIds.value = [currentProjectId.value];
+    ignoreProjectFilterWatch = false;
+    await ensureProjectsLoaded();
+    await replaceIssues();
   },
   { immediate: true },
 );
 
 watchDebounced(
   searchTerm,
-  (term) => {
+  () => {
     if (!open.value) return;
-    fetchIssues(term);
+    replaceIssues();
   },
   { debounce: 250 },
 );
+
+watch(selectedProjectIds, () => {
+  if (!open.value || ignoreProjectFilterWatch) return;
+  replaceIssues();
+});
 
 async function onSelect(issue: IIssue) {
   open.value = false;
@@ -72,7 +151,7 @@ async function onSelect(issue: IIssue) {
     name: "project-issue",
     params: {
       workspaceId: String(props.workspaceId),
-      projectId: String(props.projectId),
+      projectId: String(issue.projectId),
       issueId: String(issue.id),
     },
   });
@@ -104,8 +183,10 @@ async function onSelect(issue: IIssue) {
         />
       </div>
 
-      <ScrollArea class="max-h-80">
-        <div class="p-1">
+      <IssueSearchProjectFilters v-model="selectedProjectIds" :projects="projects" />
+
+      <ScrollArea class="h-80" @reached-bottom="appendIssues">
+        <div class="p-1 !block">
           <div v-if="issues.length === 0" class="px-3 py-6 text-center text-sm text-muted-foreground">
             <span v-if="loading">Searching…</span>
             <span v-else>No issues found.</span>
@@ -127,8 +208,14 @@ async function onSelect(issue: IIssue) {
                 :class="issueStatusDotClass(issue.status)"
               />
               <IssueKey :issue-key="issue.issueKey" />
-              <span class="flex-1 truncate">{{ issue.title }}</span>
+              <span class="min-w-0 flex-1 truncate">{{ issue.title }}</span>
+              <span v-if="showProjectLabel" class="max-w-24 shrink-0 truncate text-xs text-muted-foreground">
+                {{ projectNameById.get(issue.projectId) }}
+              </span>
             </button>
+
+            <div v-if="loadingMore" class="px-2 py-2 text-xs text-muted-foreground">Loading…</div>
+            <div v-else-if="!hasNext" class="px-2 py-2 text-xs text-muted-foreground">End of results</div>
           </template>
         </div>
       </ScrollArea>

@@ -13,6 +13,8 @@
 - [x] Selecting a result navigates to the issue detail route.
 - [x] Backend `FindIssues` search is no longer title-only (and no artificial delay).
 - [x] Postgres `search_vector` + GIN index with `ts_rank` ordering.
+- [x] Infinite scroll / load-more in the search dialog.
+- [x] Cross-project / workspace-wide issue search (All + multi-project toggles).
 
 ## Active task
 
@@ -20,5 +22,4 @@ Ad-hoc: project issue search dialog (from Project.vue placeholder Command).
 
 ## Explicitly deferred (this session)
 
-- Infinite scroll / load-more in the search dialog
-- Cross-project / workspace-wide issue search
+- (none)

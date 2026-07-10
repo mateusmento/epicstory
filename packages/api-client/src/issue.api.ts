@@ -27,9 +27,30 @@ export class IssueApi {
   constructor(@inject(AxiosImport) protected readonly axios: AxiosInstance) {}
 
   fetchIssues(query: FindIssuesQuery): Promise<IPage<IIssue>> {
-    const { projectId, ...params } = query;
+    const { projectId, workspaceId, projectIds, ...params } = query;
+    const requestParams = {
+      ...params,
+      ...(projectIds?.length ? { projectIds: projectIds.join(",") } : {}),
+    };
+
+    if (workspaceId != null) {
+      return this.axios
+        .get<IPage<IIssueWire>>(`/workspaces/${workspaceId}/issues`, {
+          params: requestParams,
+        })
+        .then((res) => mapPageIssues(res.data));
+    }
+
+    if (projectId == null) {
+      return Promise.reject(
+        new Error("fetchIssues requires workspaceId or projectId"),
+      );
+    }
+
     return this.axios
-      .get<IPage<IIssueWire>>(`/projects/${projectId}/issues`, { params })
+      .get<IPage<IIssueWire>>(`/projects/${projectId}/issues`, {
+        params: requestParams,
+      })
       .then((res) => mapPageIssues(res.data));
   }
 

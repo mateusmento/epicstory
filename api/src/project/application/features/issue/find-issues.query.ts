@@ -1,5 +1,6 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 import { patch } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
@@ -10,6 +11,19 @@ export class FindIssues {
   @IsNumber()
   @IsOptional()
   projectId?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value == null || value === '') return undefined;
+    const raw = Array.isArray(value) ? value : String(value).split(',');
+    const ids = raw
+      .map((item) => Number(item))
+      .filter((id) => Number.isFinite(id));
+    return ids.length > 0 ? ids : undefined;
+  })
+  @IsArray()
+  @IsNumber({}, { each: true })
+  projectIds?: number[];
 
   @IsNumber()
   @IsOptional()
@@ -52,6 +66,7 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
   async execute({
     workspaceId,
     projectId,
+    projectIds,
     search,
     orderBy,
     order,
@@ -69,7 +84,10 @@ export class FindIssuesQuery implements IQueryHandler<FindIssues> {
     if (workspaceId != null) {
       qb.andWhere('issue.workspaceId = :workspaceId', { workspaceId });
     }
-    if (projectId != null) {
+
+    if (projectIds != null && projectIds.length > 0) {
+      qb.andWhere('issue.projectId IN (:...projectIds)', { projectIds });
+    } else if (projectId != null) {
       qb.andWhere('issue.projectId = :projectId', { projectId });
     }
 
