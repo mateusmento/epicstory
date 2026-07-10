@@ -29,11 +29,11 @@ const labels = ["No priority", "Low", "Medium", "High", "Urgent"];
   <Popover>
     <PopoverTrigger as-child>
       <Button variant="outline" size="icon" class="flex:row-md flex:center-y">
-        <Urgent v-if="value === 4" />
-        <Signal3Bars v-if="value === 3" />
-        <Signal2Bars v-else-if="value === 2" />
-        <Signal1Bar v-else-if="value === 1" />
-        <div class="text-xs">{{ labels[value] }}</div>
+        <Urgent class="size-4" v-if="value === 4" />
+        <Signal3Bars class="size-4" v-if="value === 3" />
+        <Signal2Bars class="size-4" v-else-if="value === 2" />
+        <Signal1Bar class="size-4" v-else-if="value === 1" />
+        <div class="text-xs font-normal">{{ labels[value] }}</div>
       </Button>
     </PopoverTrigger>
     <PopoverContent as-child>

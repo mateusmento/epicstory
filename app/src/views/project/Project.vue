@@ -216,7 +216,7 @@ function crumbByKey(key: string): ProjectCrumb | undefined {
               <span class="ml-1 text-xs">New issue</span>
             </Button>
           </DialogTrigger>
-          <DialogContent as-child>
+          <DialogContent class="p-0">
             <NewIssueModal :project-id="+projectId" />
           </DialogContent>
         </Dialog>
