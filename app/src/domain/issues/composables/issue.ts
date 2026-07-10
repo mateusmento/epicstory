@@ -40,12 +40,28 @@ export function useIssue() {
     store.issue = await issueApi.fetchIssue(issueId);
   }
 
+  /** Merge mutation responses that omit nested relations (e.g. subIssues, project). */
+  function applyIssueUpdate(updated: IIssue) {
+    const prev = store.issue;
+    if (!prev) {
+      store.issue = updated;
+      return;
+    }
+    store.issue = {
+      ...prev,
+      ...updated,
+      subIssues: updated.subIssues ?? prev.subIssues,
+      project: updated.project ?? prev.project,
+      parentIssue: updated.parentIssue ?? prev.parentIssue,
+    };
+  }
+
   async function patchIssue(data: UpdateIssueData) {
     if (!store.issue) return;
     store.patchState.busy = true;
     store.patchState.error = null;
     try {
-      store.issue = await issueApi.updateIssue(store.issue.id, data);
+      applyIssueUpdate(await issueApi.updateIssue(store.issue.id, data));
     } catch (e: unknown) {
       store.patchState.error = e instanceof Error ? e.message : "Failed to save changes";
     } finally {
@@ -55,22 +71,22 @@ export function useIssue() {
 
   async function addAssignee(userId: number) {
     if (!store.issue) return;
-    store.issue = await issueApi.addAssignee(store.issue.id, userId);
+    applyIssueUpdate(await issueApi.addAssignee(store.issue.id, userId));
   }
 
   async function removeAssignee(userId: number) {
     if (!store.issue) return;
-    store.issue = await issueApi.removeAssignee(store.issue.id, userId);
+    applyIssueUpdate(await issueApi.removeAssignee(store.issue.id, userId));
   }
 
   async function addLabel(labelId: number) {
     if (!store.issue) return;
-    store.issue = await issueApi.addLabel(store.issue.id, labelId);
+    applyIssueUpdate(await issueApi.addLabel(store.issue.id, labelId));
   }
 
   async function removeLabel(labelId: number) {
     if (!store.issue) return;
-    store.issue = await issueApi.removeLabel(store.issue.id, labelId);
+    applyIssueUpdate(await issueApi.removeLabel(store.issue.id, labelId));
   }
 
   async function deleteIssueComment(entity: IMessage | IReply) {

@@ -78,7 +78,13 @@ export class AddAssigneeCommand implements ICommandHandler<AddAssignee> {
 
     const updated = await this.issueRepo.findOne({
       where: { id: issueId },
-      relations: { assignees: true, parentIssue: true, labels: true },
+      relations: {
+        assignees: true,
+        labels: true,
+        parentIssue: true,
+        project: true,
+        subIssues: { assignees: true, labels: true },
+      },
     });
     // Should exist since we just found it, but keep a defensive check
     if (!updated) throw new NotFoundException('Issue not found');
