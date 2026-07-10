@@ -471,8 +471,12 @@ const useMeetingStore = defineStore("meeting", () => {
     return meeting;
   }
 
-  function joinMeeting({ channelId, camera }: { channelId: number; camera?: MediaStream }) {
+  async function joinMeeting({ channelId, camera }: { channelId: number; camera?: MediaStream }) {
     incomingMeeting.value = null;
+    // Switching meetings without hangup left the previous attendee row in the DB.
+    if (currentMeeting.value != null) {
+      await leaveMeeting();
+    }
     return connectMeeting({ camera, isCameraOn: false }, async (data) => {
       const body = { ...data, channelId } satisfies JoinChannelMeetingBody;
       return await new Promise<IMeeting>((res) => {

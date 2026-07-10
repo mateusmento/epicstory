@@ -293,6 +293,50 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
     }
   }
 
+  /**
+   * Drop any in-progress attendance for this socket/user before joining another
+   * meeting. Without this, switching channels leaves orphan `meeting_attendees` rows
+   * (Redis only tracks one mapping per socket).
+   */
+  private async leaveAnyCurrentMeetings(
+    socket: AuthenticatedSocket,
+    userId: number,
+  ) {
+    const prev = await this.getSocketMeetingAttendee(socket.id);
+    if (prev) {
+      try {
+        await this.leaveMeeting(
+          { meetingId: prev.meetingId, remoteId: prev.remoteId },
+          socket,
+        );
+      } catch (ex) {
+        if (!(ex instanceof MeetingNotFoundException)) {
+          console.log('WARNING: leave previous meeting before join failed', ex);
+        }
+        await this.clearSocketMeetingAttendee(socket.id);
+      }
+    }
+
+    const stale = await this.meetingService.findAttendeesByUserId(userId);
+    for (const attendee of stale) {
+      try {
+        await this.meetingKick.removeAttendee({
+          meetingId: attendee.meetingId,
+          remoteId: attendee.remoteId,
+          userId,
+        });
+        socket.leave(meetingRoom(attendee.meetingId));
+      } catch (ex) {
+        console.log(
+          'WARNING: clear stale meeting attendee before join failed',
+          ex,
+        );
+      }
+    }
+
+    await this.clearSocketMeetingAttendee(socket.id);
+  }
+
   @SubscribeMessage('join-meeting')
   async joinMeeting(
     @MessageBody()
@@ -304,6 +348,8 @@ export class MeetingGateway implements OnGatewayDisconnect, OnGatewayInit {
 
     socket.leave(userRoom(issuerId));
     socket.join(userRoom(issuerId));
+
+    await this.leaveAnyCurrentMeetings(socket, issuerId);
 
     const meeting: Meeting = await this.commandBus.execute(
       new JoinChannelMeeting({
