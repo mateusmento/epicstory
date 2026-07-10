@@ -3,6 +3,7 @@ import { useAuth } from "@/domain/auth";
 import { useChannels } from "@/domain/channels";
 import { useMeetingSocket } from "@/domain/meetings";
 import { useWorkspace } from "@/domain/workspace";
+import { useConfirmDialog } from "@/presentationals/confirm-dialog";
 import { CalendarEventApi } from "@epicstory/api-client";
 import type {
   ICalendarEvent,
@@ -68,6 +69,27 @@ function createDefaultForm(): CalendarItemForm {
   };
 }
 
+/** Serializable form fields used to detect unsaved edits. */
+function formSnapshot(form: CalendarItemForm): string {
+  return JSON.stringify({
+    eventTitle: form.eventTitle,
+    eventDescription: form.eventDescription,
+    eventDateTimeMs: form.eventDateTime.getTime(),
+    eventTime: form.eventTime,
+    eventEndTime: form.eventEndTime,
+    meetingChannelId: form.meetingChannelId,
+    meetingIsPublic: form.meetingIsPublic,
+    meetingNotifyMinutesBefore: form.meetingNotifyMinutesBefore,
+    meetingParticipantIds: form.meetingParticipantUsers.map((u) => u.id),
+    meetingRecurrenceFrequency: form.meetingRecurrenceFrequency,
+    meetingRecurrenceInterval: form.meetingRecurrenceInterval,
+    meetingRecurrenceByWeekday: form.meetingRecurrenceByWeekday,
+    eventRecurrenceFrequency: form.eventRecurrenceFrequency,
+    eventRecurrenceInterval: form.eventRecurrenceInterval,
+    eventRecurrenceByWeekday: form.eventRecurrenceByWeekday,
+  });
+}
+
 export function useCalendarItemDialog(
   eventsApi: Pick<ScheduleEvents, "refresh">,
   options?: { clearDraft?: () => void },
@@ -77,13 +99,23 @@ export function useCalendarItemDialog(
   const { channels, fetchChannels } = useChannels();
   const calendarEventApi = useDependency(CalendarEventApi);
   const meetingSocket = useMeetingSocket();
+  const confirmDialog = useConfirmDialog();
 
   const form = reactive<CalendarItemForm>(createDefaultForm());
+  let initialSnapshot = "";
 
   const formattedDate = computed(() => format(form.eventDateTime, "EEEE, MMMM d, yyyy"));
 
   const channelList = computed((): IChannel[] => channels.value ?? []);
   const currentUser = computed(() => user.value);
+
+  function rememberOpenState() {
+    initialSnapshot = formSnapshot(form);
+  }
+
+  function hasUnsavedChanges(): boolean {
+    return formSnapshot(form) !== initialSnapshot;
+  }
 
   function ensureDialogDataLoaded() {
     if (workspace.value?.id) {
@@ -135,6 +167,7 @@ export function useCalendarItemDialog(
     form.eventEndTime = endTime || "10:00";
     if (date) form.eventDateTime = normalizeScheduleDay(date);
     form.showEventDialog = true;
+    rememberOpenState();
   }
 
   function openCreateMeetingWithChannel(channelId: number) {
@@ -145,6 +178,7 @@ export function useCalendarItemDialog(
     form.itemType = "meeting";
     form.meetingChannelId = channelId;
     form.showEventDialog = true;
+    rememberOpenState();
   }
 
   function populateCommonFields(event: ICalendarEvent) {
@@ -171,6 +205,7 @@ export function useCalendarItemDialog(
     form.eventRecurrenceInterval = parsed.interval;
     form.eventRecurrenceByWeekday = parsed.byWeekday;
     form.showEventDialog = true;
+    rememberOpenState();
   }
 
   function openEditMeetingFromCalendar(event: ICalendarEvent) {
@@ -188,6 +223,7 @@ export function useCalendarItemDialog(
     form.meetingRecurrenceInterval = parsed.interval;
     form.meetingRecurrenceByWeekday = parsed.byWeekday;
     form.showEventDialog = true;
+    rememberOpenState();
   }
 
   function handleTimeSlotClick(date: Date, hour: number, mouseEvent?: MouseEvent) {
@@ -220,24 +256,46 @@ export function useCalendarItemDialog(
     openCreateDialog(form.eventDateTime, startTimeStr, endTimeStr);
   }
 
+  /** Force-close without discard confirmation (save, remove, or confirmed discard). */
   function closeDialog() {
     if (!form.showEventDialog) {
       options?.clearDraft?.();
+      initialSnapshot = "";
       return;
     }
     form.showEventDialog = false;
     form.editingEvent = null;
     resetFormDefaults();
+    initialSnapshot = "";
     options?.clearDraft?.();
   }
 
-  /** Sync Radix Dialog close (overlay, Escape) with form reset and draft cleanup. */
+  async function requestClose() {
+    if (!form.showEventDialog) {
+      options?.clearDraft?.();
+      initialSnapshot = "";
+      return;
+    }
+    if (hasUnsavedChanges()) {
+      const discard = await confirmDialog.open({
+        title: "Discard changes?",
+        description: "You have unsaved changes. If you leave, they will be lost.",
+        confirmLabel: "Discard",
+        cancelLabel: "Keep editing",
+        destructive: true,
+      });
+      if (!discard) return;
+    }
+    closeDialog();
+  }
+
+  /** Sync Radix Dialog close (overlay, Escape, X) with dirty check. */
   function handleDialogOpenChange(open: boolean) {
     if (open) {
       form.showEventDialog = true;
       return;
     }
-    closeDialog();
+    void requestClose();
   }
 
   async function saveEvent() {
@@ -363,6 +421,7 @@ export function useCalendarItemDialog(
     openEditCalendarDialog,
     handleTimeSlotClick,
     closeDialog,
+    requestClose,
     handleDialogOpenChange,
     saveEvent,
     removeEvent,

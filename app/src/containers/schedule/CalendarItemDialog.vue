@@ -1,12 +1,39 @@
 <script lang="ts" setup>
 import { UserAvatar } from "@/presentationals/user";
 import { WorkspaceMemberDropdown } from "@/containers/workspace-members";
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from "@/design-system";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Label,
+  Menu,
+  MenuContent,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuTrigger,
+  ScrollArea,
+  Separator,
+  Switch,
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/design-system";
 import { Icon } from "@/design-system/icons";
-import { ToggleGroup, ToggleGroupItem } from "@/design-system/ui/toggle-group";
 import { SCHEDULE_DIALOG_KEY } from "@/domain/schedule";
-import { inject } from "vue";
-import { RecurrenceFields } from "@/presentationals/schedule";
+import {
+  addMinutesToTime,
+  DURATION_PRESETS_MINUTES,
+  durationMinutesBetween,
+  formatDurationLabel,
+  formatTimeDisplay,
+  isDurationPreset,
+} from "@/lib/schedule";
+import { RecurrenceFields, TimeSlotMenu } from "@/presentationals/schedule";
+import { ChevronDown } from "lucide-vue-next";
+import type { AcceptableValue } from "reka-ui";
+import { computed, inject } from "vue";
 
 const dialog = inject(SCHEDULE_DIALOG_KEY);
 if (!dialog) {
@@ -22,101 +49,273 @@ const {
   toggleMeetingWeekday,
   removeMeetingParticipant,
   removeEvent,
-  closeDialog,
+  requestClose,
 } = dialog;
+
+const NOTIFY_PRESETS = [
+  { minutes: 0, label: "At start" },
+  { minutes: 5, label: "5 min before" },
+  { minutes: 10, label: "10 min before" },
+  { minutes: 15, label: "15 min before" },
+  { minutes: 30, label: "30 min before" },
+] as const;
+
+const dialogTitle = computed(() => {
+  if (form.editingEvent) {
+    return form.itemType === "meeting" ? "Edit meeting" : "Edit event";
+  }
+  return form.itemType === "meeting" ? "New meeting" : "New event";
+});
+
+const durationMinutes = computed(() => durationMinutesBetween(form.eventTime, form.eventEndTime));
+
+const matchedDurationPreset = computed(() => {
+  const d = durationMinutes.value;
+  if (d == null || !isDurationPreset(d)) return null;
+  return d;
+});
+
+const showCustomEnd = computed(() => matchedDurationPreset.value == null);
+
+const timeRangeSummary = computed(
+  () => `${formatTimeDisplay(form.eventTime)} – ${formatTimeDisplay(form.eventEndTime)}`,
+);
+
+const durationToggleValue = computed(() =>
+  matchedDurationPreset.value != null ? String(matchedDurationPreset.value) : undefined,
+);
+
+const channelTriggerLabel = computed(() => {
+  if (form.meetingChannelId == null) return "No channel";
+  const c = channelList.value.find((ch) => ch.id === form.meetingChannelId);
+  return c?.name || `Channel ${form.meetingChannelId}`;
+});
+
+const notifyOptions = computed(() => {
+  const mins = form.meetingNotifyMinutesBefore;
+  if (NOTIFY_PRESETS.some((p) => p.minutes === mins)) {
+    return [...NOTIFY_PRESETS];
+  }
+  return [...NOTIFY_PRESETS, { minutes: mins, label: `${mins} min before` }].sort(
+    (a, b) => a.minutes - b.minutes,
+  );
+});
+
+const notifyTriggerLabel = computed(() => {
+  const preset = notifyOptions.value.find((p) => p.minutes === form.meetingNotifyMinutesBefore);
+  if (preset) return preset.label;
+  return `${form.meetingNotifyMinutesBefore} min before`;
+});
+
+const channelMenuValue = computed(() =>
+  form.meetingChannelId == null ? "none" : String(form.meetingChannelId),
+);
+
+function setStartTime(time: string) {
+  const prev = durationMinutes.value ?? 60;
+  form.eventTime = time;
+  form.eventEndTime = addMinutesToTime(time, prev);
+}
+
+function setEndTime(time: string) {
+  form.eventEndTime = time;
+}
+
+function setDurationPreset(minutes: number) {
+  const next = addMinutesToTime(form.eventTime, minutes);
+  if (next === form.eventEndTime) return;
+  form.eventEndTime = next;
+}
+
+function onDurationToggle(v: string | string[] | undefined) {
+  const raw = Array.isArray(v) ? v[0] : v;
+  if (!raw) return;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return;
+  setDurationPreset(n);
+}
+
+function onItemTypeChange(v: string | string[] | undefined) {
+  const raw = Array.isArray(v) ? v[0] : v;
+  if (raw !== "event" && raw !== "meeting") return;
+  if (form.itemType === raw) return;
+  form.itemType = raw;
+}
+
+function onChannelPick(v: AcceptableValue) {
+  if (v == null || v === "") return;
+  const s = String(v);
+  form.meetingChannelId = s === "none" ? null : Number(s);
+}
+
+function onNotifyPick(v: AcceptableValue) {
+  if (v == null || v === "") return;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return;
+  form.meetingNotifyMinutesBefore = n;
+}
 </script>
 
 <template>
   <Dialog :open="form.showEventDialog" @update:open="handleDialogOpenChange">
-    <DialogContent class="!p-0 sm:max-w-[560px]">
-      <div class="rounded-lg bg-card !p-0">
-        <DialogHeader class="px-3 pt-3 pb-1">
-          <DialogTitle class="text-sm font-medium text-muted-foreground">
-            {{
-              form.editingEvent
-                ? form.itemType === "meeting"
-                  ? "Edit meeting"
-                  : "Edit event"
-                : form.itemType === "meeting"
-                  ? "New meeting"
-                  : "New event"
-            }}
-          </DialogTitle>
-        </DialogHeader>
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
+      </DialogHeader>
 
-        <form class="px-3 pb-3" @submit.prevent="saveEvent">
-          <div class="mt-1 flex items-center justify-between gap-2">
-            <div class="text-[11px] text-muted-foreground">Type</div>
-            <ToggleGroup v-model="form.itemType" type="single" :disabled="Boolean(form.editingEvent)">
-              <ToggleGroupItem value="event">Event</ToggleGroupItem>
-              <ToggleGroupItem value="meeting">Meeting</ToggleGroupItem>
-            </ToggleGroup>
-          </div>
+      <form class="flex flex-col gap-4" @submit.prevent="saveEvent">
+        <ToggleGroup
+          v-if="!form.editingEvent"
+          type="single"
+          class="w-full justify-stretch"
+          :model-value="form.itemType"
+          @update:model-value="onItemTypeChange"
+        >
+          <ToggleGroupItem value="event" class="flex-1">Event</ToggleGroupItem>
+          <ToggleGroupItem value="meeting" class="flex-1">Meeting</ToggleGroupItem>
+        </ToggleGroup>
 
+        <div class="flex flex-col gap-1.5">
           <label for="event-title" class="sr-only">Title</label>
           <input
             id="event-title"
             v-model="form.eventTitle"
-            class="w-full text-[15px] font-medium text-foreground placeholder:text-muted-foreground outline-none"
+            class="w-full bg-transparent text-[15px] font-medium text-foreground placeholder:text-muted-foreground outline-none"
             placeholder="Event title"
             autofocus
             required
           />
-
           <label for="event-description" class="sr-only">Description</label>
           <textarea
             id="event-description"
             v-model="form.eventDescription"
             rows="3"
-            class="mt-1.5 w-full resize-none text-sm text-foreground placeholder:text-muted-foreground outline-none"
+            class="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             placeholder="Add description…"
           />
+        </div>
 
-          <div v-if="form.itemType === 'event'" class="mt-2.5 rounded-md border bg-muted p-2.5">
-            <RecurrenceFields
-              v-model:frequency="form.eventRecurrenceFrequency"
-              v-model:interval="form.eventRecurrenceInterval"
-              v-model:by-weekday="form.eventRecurrenceByWeekday"
-              @toggle-weekday="toggleEventWeekday"
-            />
-          </div>
-
-          <div v-if="form.itemType === 'meeting'" class="mt-2.5 rounded-md border bg-muted p-2.5">
-            <p v-if="form.editingEvent" class="mb-2 text-xs text-muted-foreground">
-              Channel and participant list are set when the meeting was created; other fields below can be
-              updated.
-            </p>
-            <div class="grid grid-cols-2 gap-2">
-              <label class="text-xs text-muted-foreground">
-                Channel (optional)
-                <select
-                  v-model.number="form.meetingChannelId"
-                  class="mt-1 w-full h-8 rounded-md border bg-background px-2 text-sm"
-                  :disabled="Boolean(form.editingEvent)"
+        <div class="flex flex-col gap-2">
+          <Label class="text-xs text-muted-foreground">{{ formattedDate }}</Label>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-col gap-1">
+              <span class="text-[11px] text-muted-foreground">Starts</span>
+              <TimeSlotMenu
+                :model-value="form.eventTime"
+                label="Start time"
+                @update:model-value="setStartTime"
+              />
+            </div>
+            <div class="flex flex-col gap-1">
+              <span class="text-[11px] text-muted-foreground">Duration</span>
+              <ToggleGroup
+                type="single"
+                size="sm"
+                class="flex-wrap"
+                :model-value="durationToggleValue"
+                @update:model-value="onDurationToggle"
+              >
+                <ToggleGroupItem
+                  v-for="mins in DURATION_PRESETS_MINUTES"
+                  :key="mins"
+                  :value="String(mins)"
+                  class="px-2"
                 >
-                  <option :value="null">No channel</option>
-                  <option v-for="c in channelList" :key="c.id" :value="c.id">
-                    {{ c.name || `Channel ${c.id}` }}
-                  </option>
-                </select>
-              </label>
+                  {{ formatDurationLabel(mins) }}
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            <div v-if="showCustomEnd" class="flex flex-col gap-1">
+              <span class="text-[11px] text-muted-foreground">Ends</span>
+              <TimeSlotMenu
+                :model-value="form.eventEndTime"
+                label="End time"
+                @update:model-value="setEndTime"
+              />
+            </div>
+          </div>
+          <p class="text-xs text-muted-foreground">{{ timeRangeSummary }}</p>
+        </div>
 
-              <label class="text-xs text-muted-foreground">
-                Notify (minutes before)
-                <input
-                  v-model.number="form.meetingNotifyMinutesBefore"
-                  type="number"
-                  min="0"
-                  class="mt-1 w-full h-8 rounded-md border bg-background px-2 text-sm outline-none"
-                />
-              </label>
+        <RecurrenceFields
+          v-if="form.itemType === 'event'"
+          v-model:frequency="form.eventRecurrenceFrequency"
+          v-model:interval="form.eventRecurrenceInterval"
+          v-model:by-weekday="form.eventRecurrenceByWeekday"
+          @toggle-weekday="toggleEventWeekday"
+        />
+
+        <template v-if="form.itemType === 'meeting'">
+          <Separator />
+          <div class="flex flex-col gap-3">
+            <p v-if="form.editingEvent" class="text-xs text-muted-foreground">
+              Channel and participants were set at creation and can’t be changed here.
+            </p>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <Label class="text-xs text-muted-foreground">Channel</Label>
+                <Menu>
+                  <MenuTrigger as-child>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      class="w-full justify-between gap-1.5 font-normal"
+                      :disabled="Boolean(form.editingEvent)"
+                    >
+                      <span class="truncate">{{ channelTriggerLabel }}</span>
+                      <ChevronDown class="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+                    </Button>
+                  </MenuTrigger>
+                  <MenuContent align="start" class="max-h-64 min-w-[12rem] overflow-y-auto">
+                    <MenuRadioGroup :model-value="channelMenuValue" @update:model-value="onChannelPick">
+                      <MenuRadioItem value="none">No channel</MenuRadioItem>
+                      <MenuRadioItem v-for="c in channelList" :key="c.id" :value="String(c.id)">
+                        {{ c.name || `Channel ${c.id}` }}
+                      </MenuRadioItem>
+                    </MenuRadioGroup>
+                  </MenuContent>
+                </Menu>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <Label class="text-xs text-muted-foreground">Notify</Label>
+                <Menu>
+                  <MenuTrigger as-child>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      class="w-full justify-between gap-1.5 font-normal"
+                    >
+                      <span class="truncate">{{ notifyTriggerLabel }}</span>
+                      <ChevronDown class="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />
+                    </Button>
+                  </MenuTrigger>
+                  <MenuContent align="start" class="min-w-[10rem]">
+                    <MenuRadioGroup
+                      :model-value="String(form.meetingNotifyMinutesBefore)"
+                      @update:model-value="onNotifyPick"
+                    >
+                      <MenuRadioItem v-for="p in notifyOptions" :key="p.minutes" :value="String(p.minutes)">
+                        {{ p.label }}
+                      </MenuRadioItem>
+                    </MenuRadioGroup>
+                  </MenuContent>
+                </Menu>
+              </div>
             </div>
 
-            <div class="mt-2 flex items-center justify-between">
-              <label class="flex items-center gap-2 text-xs text-muted-foreground">
-                <input v-model="form.meetingIsPublic" type="checkbox" class="h-4 w-4" />
-                Public (workspace members with link can join)
-              </label>
+            <div class="flex items-center gap-2">
+              <Switch
+                id="meeting-public"
+                :checked="form.meetingIsPublic"
+                @update:checked="(v) => (form.meetingIsPublic = v)"
+              />
+              <Label for="meeting-public" class="text-sm font-normal text-muted-foreground">
+                Public — workspace members with the link can join
+              </Label>
             </div>
 
             <RecurrenceFields
@@ -126,36 +325,35 @@ const {
               @toggle-weekday="toggleMeetingWeekday"
             />
 
-            <div v-if="!form.meetingChannelId" class="mt-2 space-y-2">
-              <div class="text-xs text-muted-foreground">Participants (notified)</div>
-              <ul
-                v-if="form.meetingParticipantUsers.length"
-                class="flex max-h-32 flex-col gap-1.5 overflow-y-auto rounded-md border bg-background p-2"
-              >
-                <li
-                  v-for="p in form.meetingParticipantUsers"
-                  :key="p.id"
-                  class="flex items-center gap-2 text-sm"
-                >
-                  <UserAvatar :name="p.name" :picture="p.picture" size="sm" />
-                  <div class="min-w-0 flex-1">
-                    <div class="font-medium leading-tight truncate">{{ p.name }}</div>
-                    <div v-if="p.email" class="text-xs text-muted-foreground leading-tight truncate">
-                      {{ p.email }}
-                    </div>
-                  </div>
-                  <Button
-                    v-if="!form.editingEvent"
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    title="Remove"
-                    @click="removeMeetingParticipant(p.id)"
+            <div v-if="!form.meetingChannelId" class="flex flex-col gap-2">
+              <Label class="text-xs text-muted-foreground">Participants (notified)</Label>
+              <ScrollArea v-if="form.meetingParticipantUsers.length" class="h-32 rounded-md border">
+                <ul class="!flex flex-col gap-1.5 p-2">
+                  <li
+                    v-for="p in form.meetingParticipantUsers"
+                    :key="p.id"
+                    class="flex items-center gap-2 text-sm"
                   >
-                    <Icon name="io-close" class="h-4 w-4" />
-                  </Button>
-                </li>
-              </ul>
+                    <UserAvatar :name="p.name" :picture="p.picture" size="sm" />
+                    <div class="min-w-0 flex-1">
+                      <div class="truncate font-medium leading-tight">{{ p.name }}</div>
+                      <div v-if="p.email" class="truncate text-xs leading-tight text-muted-foreground">
+                        {{ p.email }}
+                      </div>
+                    </div>
+                    <Button
+                      v-if="!form.editingEvent"
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      title="Remove"
+                      @click="removeMeetingParticipant(p.id)"
+                    >
+                      <Icon name="io-close" class="h-4 w-4" />
+                    </Button>
+                  </li>
+                </ul>
+              </ScrollArea>
               <WorkspaceMemberDropdown
                 v-model:users="form.meetingParticipantUsers"
                 :disabled="Boolean(form.editingEvent)"
@@ -173,54 +371,30 @@ const {
                 </Button>
               </WorkspaceMemberDropdown>
             </div>
-            <div v-else class="mt-2 text-xs text-muted-foreground">
-              Participants are derived from channel members.
-            </div>
+            <p v-else class="text-xs text-muted-foreground">Participants are derived from channel members.</p>
           </div>
+        </template>
 
-          <div class="mt-2.5 flex items-center gap-2">
-            <div class="min-w-0 flex-1">
-              <div class="text-[11px] text-muted-foreground truncate">{{ formattedDate }}</div>
-            </div>
-            <div class="flex items-center gap-2">
-              <label for="time" class="sr-only">Start time</label>
-              <input
-                id="time"
-                v-model="form.eventTime"
-                type="time"
-                class="h-8 rounded-md border bg-background px-2 text-sm outline-none"
-                required
-              />
-              <label for="endTime" class="sr-only">End time</label>
-              <input
-                id="endTime"
-                v-model="form.eventEndTime"
-                type="time"
-                class="h-8 rounded-md border bg-background px-2 text-sm outline-none"
-                required
-              />
-            </div>
-          </div>
-
-          <div class="mt-3 flex items-center justify-end gap-2 border-t pt-2.5">
-            <Button
-              v-if="form.editingEvent"
-              type="button"
-              variant="flat"
-              intent="destructive"
-              size="sm"
-              class="mr-auto"
-              :disabled="form.isCreating"
-              @click="removeEvent"
-            >
-              Remove
-            </Button>
+        <DialogFooter class="gap-2 sm:justify-between">
+          <Button
+            v-if="form.editingEvent"
+            type="button"
+            variant="flat"
+            intent="destructive"
+            size="sm"
+            :disabled="form.isCreating"
+            @click="removeEvent"
+          >
+            Remove
+          </Button>
+          <div v-else class="hidden sm:block" />
+          <div class="flex items-center gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               :disabled="form.isCreating"
-              @click="closeDialog"
+              @click="requestClose"
             >
               Cancel
             </Button>
@@ -228,8 +402,8 @@ const {
               {{ form.isCreating ? "Saving…" : form.editingEvent ? "Update" : "Create" }}
             </Button>
           </div>
-        </form>
-      </div>
+        </DialogFooter>
+      </form>
     </DialogContent>
   </Dialog>
 </template>
