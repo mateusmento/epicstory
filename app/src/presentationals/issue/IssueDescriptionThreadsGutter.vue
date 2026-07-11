@@ -1,5 +1,9 @@
 <script lang="ts" setup>
-import { compareDescriptionThreadsByAnchor, layoutDescriptionThreadCards } from "@/lib/issues";
+import {
+  compareDescriptionThreadsByAnchor,
+  findDescriptionThreadRanges,
+  layoutDescriptionThreadCards,
+} from "@/lib/issues";
 import type { IDescriptionThread } from "@epicstory/contracts";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
@@ -80,20 +84,23 @@ function measureAnchors() {
   const nextFrom = new Map<number, number>();
 
   for (const thread of props.threads) {
-    let from: number | null = null;
-    ed.state.doc.descendants((node, pos) => {
-      if (from != null) return false;
-      if (!node.isText) return;
-      for (const mark of node.marks) {
-        if (mark.type.name === "descriptionThread" && mark.attrs.markId === thread.markId) {
-          from = pos;
-          return false;
-        }
-      }
-    });
+    const ranges = findDescriptionThreadRanges(ed, thread.markId);
+    const from = ranges?.baseFrom ?? null;
+
+    // Prefer the painted mark node — matches what the user sees next to the gutter.
+    const markEl = root.querySelector(
+      `.epicstory-description-thread[data-mark-id="${CSS.escape(thread.markId)}"]`,
+    );
+    if (markEl instanceof HTMLElement) {
+      nextFrom.set(thread.id, from ?? Number.MAX_SAFE_INTEGER);
+      nextIdeal.set(thread.id, Math.max(0, Math.round(markEl.getBoundingClientRect().top - rootTop)));
+      continue;
+    }
 
     if (from == null) {
-      nextIdeal.set(thread.id, 0);
+      // Keep last known Y if the mark is temporarily missing; never invent 0.
+      const prevIdeal = idealTops.value.get(thread.id);
+      if (prevIdeal != null) nextIdeal.set(thread.id, prevIdeal);
       nextFrom.set(thread.id, Number.MAX_SAFE_INTEGER);
       continue;
     }
@@ -101,10 +108,10 @@ function measureAnchors() {
     nextFrom.set(thread.id, from);
     try {
       const coords = ed.view.coordsAtPos(from);
-      // Round to avoid subpixel churn retriggering layout while scrolling.
       nextIdeal.set(thread.id, Math.max(0, Math.round(coords.top - rootTop)));
     } catch {
-      nextIdeal.set(thread.id, 0);
+      const prevIdeal = idealTops.value.get(thread.id);
+      if (prevIdeal != null) nextIdeal.set(thread.id, prevIdeal);
     }
   }
 
@@ -134,16 +141,30 @@ const sortedThreads = computed(() => {
     .map((x) => x.thread);
 });
 
+/** Only pin when we have a real measured anchor — never active-layout at invented Y=0. */
+const activeThreadId = computed(() => {
+  const markId = props.activeMarkId;
+  if (!markId) return null;
+  const thread = props.threads.find((t) => t.markId === markId);
+  if (!thread) return null;
+  if (!idealTops.value.has(thread.id)) return null;
+  const from = anchorFrom.value.get(thread.id);
+  if (from == null || from === Number.MAX_SAFE_INTEGER) return null;
+  return thread.id;
+});
+
 const placed = computed(() => {
   const inputs = sortedThreads.value.map((t) => ({
     id: t.id,
     idealTop: idealTops.value.get(t.id) ?? 0,
     height: heights.value.get(t.id) ?? 120,
   }));
-  return layoutDescriptionThreadCards(inputs, 8);
+  return layoutDescriptionThreadCards(inputs, 8, activeThreadId.value);
 });
 
 const topById = computed(() => new Map(placed.value.map((p) => [p.id as number, p.top])));
+
+const hasActive = computed(() => !!props.activeMarkId);
 
 watch(
   () => [props.threads, props.editor, props.layoutRoot] as const,
@@ -155,15 +176,28 @@ watch(
 );
 
 watch(
+  () => props.activeMarkId,
+  async () => {
+    await nextTick();
+    scheduleMeasure();
+  },
+);
+
+watch(
   () => props.editor,
   (ed, _prev, onCleanup) => {
     if (!ed || ed.isDestroyed) return;
-    // Remeasure on doc changes only — not selectionUpdate (fires too often / fights scroll).
     const onUpdate = () => scheduleMeasure();
+    // Covers setContent({ emitUpdate: false }); ignore selection-only transactions.
+    const onTransaction = ({ transaction }: { transaction: { docChanged: boolean } }) => {
+      if (transaction.docChanged) scheduleMeasure();
+    };
     ed.on("update", onUpdate);
+    ed.on("transaction", onTransaction);
     window.addEventListener("resize", scheduleMeasure);
     onCleanup(() => {
       ed.off("update", onUpdate);
+      ed.off("transaction", onTransaction);
       window.removeEventListener("resize", scheduleMeasure);
     });
   },
@@ -204,7 +238,14 @@ onBeforeUnmount(() => {
       v-for="thread in sortedThreads"
       :key="thread.id"
       :ref="(el) => setCardEl(thread.id, el as Element | null)"
-      class="absolute left-0 right-0 [overflow-anchor:none]"
+      class="absolute left-0 right-0 [overflow-anchor:none] transition-[top,transform,opacity] duration-200 ease-out"
+      :class="
+        hasActive
+          ? activeMarkId === thread.markId
+            ? 'z-10 translate-x-2 opacity-100'
+            : 'opacity-40'
+          : 'translate-x-0 opacity-100'
+      "
       :style="{ top: `${topById.get(thread.id) ?? 0}px` }"
     >
       <IssueDescriptionThreadCard

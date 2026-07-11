@@ -376,6 +376,21 @@ function onSurfaceClick(e: MouseEvent) {
   if (!ed || ed.isDestroyed || props.disabled) return;
   const target = e.target;
   if (!(target instanceof Element)) return;
+
+  const markEl = target.closest(".epicstory-description-thread[data-mark-id]");
+  if (markEl instanceof HTMLElement) {
+    // Keep suggest / draft UX clean — don't steal focus to an existing thread.
+    if (suggestModeActive.value || draft.value) return;
+    const markId = markEl.getAttribute("data-mark-id");
+    if (markId) onFocusThread(markId);
+    return;
+  }
+
+  // Click away from a thread mark → restore default gutter stack.
+  if (!suggestModeActive.value && !draft.value) {
+    clearActiveThread();
+  }
+
   if (target.closest(".ProseMirror")) return;
   if (target.closest("[data-description-threads-gutter]")) return;
   ed.chain().focus("end").run();
@@ -533,8 +548,7 @@ async function onDeleteMessage(thread: IDescriptionThread, messageId: number) {
   }
 }
 
-function onFocusThread(markId: string) {
-  threadsApi.activeMarkId = markId;
+function syncMarkActiveAttrs(markId: string | null) {
   nextTick(() => {
     const root = layoutRoot.value;
     if (!root) return;
@@ -542,6 +556,7 @@ function onFocusThread(markId: string) {
       el.removeAttribute("data-active");
       el.classList.remove("is-active");
     });
+    if (!markId) return;
     root
       .querySelectorAll(`.epicstory-description-thread[data-mark-id="${CSS.escape(markId)}"]`)
       .forEach((el) => {
@@ -551,10 +566,21 @@ function onFocusThread(markId: string) {
   });
 }
 
+function onFocusThread(markId: string) {
+  threadsApi.activeMarkId = markId;
+  syncMarkActiveAttrs(markId);
+}
+
+function clearActiveThread() {
+  if (!threadsApi.activeMarkId) return;
+  threadsApi.activeMarkId = null;
+  syncMarkActiveAttrs(null);
+}
+
 watch(
   () => threadsApi.activeMarkId,
   (id) => {
-    if (id) onFocusThread(id);
+    syncMarkActiveAttrs(id);
   },
 );
 </script>

@@ -12,6 +12,7 @@
 - [x] Open threads appear **beside the description**, not in the Activity timeline
 - [x] Cards are ordered by **selection start**; nearby anchors stack; distant leave gutter whitespace
 - [x] Highlight ↔ card focus association works; resolve clears open highlight
+- [x] Focusing a thread (mark or card) reflows the gutter so the active card pins to its selection Y
 - [x] Suggest / Accept / Reject works with the same layout rules
 - [x] Suggest mode records add/delete/replace; caret leave commits (no note)
 - [x] Comment + reply use multiline rich text composers
