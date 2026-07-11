@@ -4,6 +4,7 @@ import IssueAttachmentTilesList from "./IssueAttachmentTilesList.vue";
 import type { IssueAttachmentTileRow } from "@/lib/issues";
 import type { AsyncDataView } from "@/lib/async";
 import { computed, ref } from "vue";
+import { cn } from "@/design-system/utils.js";
 
 function dragHasFiles(dt: DataTransfer | null): boolean {
   if (!dt?.types) return false;
@@ -120,7 +121,12 @@ const shellClass = computed(() =>
   >
     <div
       v-if="isDragActive"
-      class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-primary/45 bg-background/80 px-4 py-6 text-center backdrop-blur-[2px]"
+      :class="
+        cn(
+          'absolute inset-0 z-10 flex:col-lg flex:center px-4 py-6 text-center pointer-events-none',
+          'rounded-md border-2 border-dashed border-primary/45 bg-background/60 backdrop-blur-[2px]',
+        )
+      "
       aria-live="polite"
     >
       <span class="text-sm font-medium text-foreground">Drop files to upload</span>
@@ -129,7 +135,7 @@ const shellClass = computed(() =>
 
     <div :class="['flex flex-col gap-2', isDragActive ? 'opacity-40' : '']">
       <div v-if="!hideHeading" class="flex items-center justify-between gap-2">
-        <h3 class="text-xs font-semibold uppercase tracking-wide text-foreground">Files</h3>
+        <h3 class="text-xs font-medium text-foreground">Files</h3>
         <span v-if="uploadInProgress" class="text-xs text-muted-foreground"> Uploading… </span>
       </div>
       <div v-if="attachments.error" class="text-xs text-red-600">{{ attachments.error }}</div>

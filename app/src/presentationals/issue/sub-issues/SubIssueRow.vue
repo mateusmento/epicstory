@@ -38,7 +38,7 @@ const labelsOverflow = computed(() =>
 
     <div class="min-w-0 flex-1 cursor-pointer" @click="emit('open', sub.id)">
       <div class="flex items-center gap-2 min-w-0">
-        <IssueKey :issue-key="sub.issueKey" />
+        <IssueKey :issue-key="sub.issueKey" size="xs" />
         <span
           class="truncate text-xs"
           :class="sub.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground'"

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Button } from "@/design-system";
+import { Button, ScrollArea } from "@/design-system";
 import { Icon } from "@/design-system/icons";
 import AttachmentTilesList from "./AttachmentTilesList.vue";
 import MessageComposerActions from "./MessageComposerActions.vue";
@@ -90,8 +90,9 @@ const emit = defineEmits<{
       </Button>
     </div>
 
-    <div class="min-h-0 min-w-0 flex-auto overflow-y-auto overflow-x-auto py-0.5 font-lato">
+    <ScrollArea class="flex:col min-w-0 flex-auto overflow-y-auto py-0.5 font-lato min-h-[3rem]">
       <RichTextComposer
+        class="!block"
         :mention="mention"
         :me-id="meId"
         :workspace-id="workspaceId"
@@ -116,7 +117,7 @@ const emit = defineEmits<{
           </div>
         </template>
       </RichTextComposer>
-    </div>
+    </ScrollArea>
 
     <slot name="poll" />
 

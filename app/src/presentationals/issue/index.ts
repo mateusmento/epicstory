@@ -4,7 +4,8 @@ export { default as IssueCreateGithubBranchDialog } from "./IssueCreateGithubBra
 export { default as IssueSelectGithubRepoDialog } from "./IssueSelectGithubRepoDialog.vue";
 export { default as IssueDeleteDialog } from "./IssueDeleteDialog.vue";
 export { default as IssueDueDateMenu } from "./IssueDueDateMenu.vue";
-export { default as IssueGithubPullRequestsList } from "./IssueGithubPullRequestsList.vue";
+export { default as IssueGithubDevelopmentList } from "./IssueGithubDevelopmentList.vue";
+export { default as IssueGithubDevelopmentSection } from "./IssueGithubDevelopmentSection.vue";
 export { default as IssueGithubSidebar } from "./IssueGithubSidebar.vue";
 export { default as IssueGithubWorkflowPanel } from "./IssueGithubWorkflowPanel.vue";
 export { default as IssueLabelsDropdown } from "./IssueLabelsDropdown.vue";

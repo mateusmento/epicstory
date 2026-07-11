@@ -1,9 +1,9 @@
 import { withStoryContainer } from "@/presentationals/stories/story-container";
-import { groupGithubPullRequests } from "@/lib/github";
+import { groupIssueDevelopmentItems } from "@/lib/github";
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { computed, ref } from "vue";
 import IssueCreateGithubBranchDialog from "@/presentationals/issue/IssueCreateGithubBranchDialog.vue";
-import IssueGithubPullRequestsList from "@/presentationals/issue/IssueGithubPullRequestsList.vue";
+import IssueGithubDevelopmentList from "@/presentationals/issue/IssueGithubDevelopmentList.vue";
 import IssueGithubSidebar from "@/presentationals/issue/IssueGithubSidebar.vue";
 import IssueGithubWorkflowPanel from "@/presentationals/issue/IssueGithubWorkflowPanel.vue";
 import IssueSelectGithubRepoDialog from "@/presentationals/issue/IssueSelectGithubRepoDialog.vue";
@@ -29,42 +29,41 @@ type Story = StoryObj<typeof meta>;
 
 function renderGithubPanel(options: {
   prData: typeof storyIssuePullRequests;
+  branches?: typeof storyLinkedBranches;
   prLoading?: boolean;
   prError?: string | null;
 }) {
+  const branches = options.branches ?? storyLinkedBranches;
   return {
     components: {
       IssueGithubSidebar,
-      IssueGithubPullRequestsList,
+      IssueGithubDevelopmentList,
       IssueGithubWorkflowPanel,
       IssueCreateGithubBranchDialog,
       IssueSelectGithubRepoDialog,
     },
     setup() {
-      const prStatusFilter = ref<"all" | "open" | "merged" | "closed">("all");
-      const selectedLinkedBranchId = ref<number | null>(storyLinkedBranches[0]!.id);
-      const openPrAsDraft = ref(false);
+      const prStatusFilter = ref<"all" | "open" | "merged" | "closed">("open");
       const createBranchDialogOpen = ref(false);
       const repoPickerOpen = ref(false);
       const selectedRepoForCreate = ref(storyGithubRepos[0]!);
       const searchQuery = ref("");
       const lastAction = ref("none");
 
-      const pr = computed(() => ({
-        data: options.prData,
-        loading: options.prLoading ?? false,
-        error: options.prError ?? null,
-        groups: groupGithubPullRequests(options.prData, prStatusFilter.value),
-      }));
-
-      const linkedBranches = computed(() => ({
-        data: storyLinkedBranches,
+      const branchView = computed(() => ({
+        data: branches,
         loading: false,
         error: null,
       }));
 
-      const selectedLinkedBranch = computed(
-        () => linkedBranches.value.data?.find((branch) => branch.id === selectedLinkedBranchId.value) ?? null,
+      const pullRequests = computed(() => ({
+        data: options.prData,
+        loading: options.prLoading ?? false,
+        error: options.prError ?? null,
+      }));
+
+      const groups = computed(() =>
+        groupIssueDevelopmentItems(branches, options.prData, prStatusFilter.value),
       );
 
       const repoList = computed(() => ({
@@ -76,12 +75,10 @@ function renderGithubPanel(options: {
         issue: storyIssue,
         access: storyGithubAccess,
         mutation: storyGithubWorkflowMutation,
-        pr,
+        groups,
+        branchView,
+        pullRequests,
         prStatusFilter,
-        linkedBranches,
-        selectedLinkedBranch,
-        selectedLinkedBranchId,
-        openPrAsDraft,
         createBranchDialogOpen,
         repoPickerOpen,
         selectedRepoForCreate,
@@ -93,8 +90,13 @@ function renderGithubPanel(options: {
           createBranchDialogOpen.value = false;
           lastAction.value = `create:${payload.repo.fullName}:${payload.branchName}`;
         },
-        onOpenGithubPull: (payload: { owner: string; repoName: string; branchName: string }) => {
-          lastAction.value = `open-pr:${payload.owner}/${payload.repoName}:${payload.branchName}`;
+        onOpenPull: (payload: {
+          owner: string;
+          repoName: string;
+          branchName: string;
+          draft: boolean;
+        }) => {
+          lastAction.value = `open-pr${payload.draft ? "-draft" : ""}:${payload.owner}/${payload.repoName}:${payload.branchName}`;
         },
         onRepoSelected: (repo: (typeof storyGithubRepos)[number]) => {
           selectedRepoForCreate.value = repo;
@@ -105,24 +107,22 @@ function renderGithubPanel(options: {
     template: `
       <div class="flex flex-col gap-2 p-2">
         <IssueGithubSidebar :show-github-section="true">
-          <template #pull-requests>
-            <IssueGithubPullRequestsList
-              :issue="issue"
-              :pr="pr"
-              v-model:pr-status-filter="prStatusFilter"
-            />
-          </template>
-          <template #workflow>
+          <template #banners>
             <IssueGithubWorkflowPanel
               :access="access"
               :form-visible="true"
-              :linked-branches="linkedBranches"
               :mutation="mutation"
-              :selected-linked-branch="selectedLinkedBranch"
-              v-model:selected-linked-branch-id="selectedLinkedBranchId"
-              v-model:open-pr-as-draft="openPrAsDraft"
-              v-model:create-branch-dialog-open="createBranchDialogOpen"
-              @open-github-pull="onOpenGithubPull"
+            />
+          </template>
+          <template #list>
+            <IssueGithubDevelopmentList
+              :groups="groups"
+              :branches="branchView"
+              :pull-requests="pullRequests"
+              :can-open-pull="true"
+              :issue-key-hint="issue.issueKey"
+              v-model:pr-status-filter="prStatusFilter"
+              @open-pull="onOpenPull"
             />
           </template>
           <template #create-branch-dialog>

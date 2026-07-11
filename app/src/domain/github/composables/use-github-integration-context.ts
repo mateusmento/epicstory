@@ -23,8 +23,14 @@ export function useGithubIntegrationContext(workspaceId: Ref<string>) {
 
   const memberAccountLinked = computed(() => integrationStatus.data?.user != null);
 
+  /** True once we have a status payload (or a failed first load finished). Refreshes keep prior data. */
+  const statusReady = computed(
+    () => !integrationStatus.loading || integrationStatus.data != null || integrationStatus.error != null,
+  );
+
   const showGithubSection = computed(() => {
-    if (integrationStatus.loading) return true;
+    // Hide only on the initial load — refreshing status (e.g. before create PR) must not unmount Development.
+    if (!statusReady.value) return false;
     return githubWorkspaceEnabled.value;
   });
 
@@ -108,6 +114,7 @@ export function useGithubIntegrationContext(workspaceId: Ref<string>) {
     catalog,
     access,
     showGithubSection,
+    statusReady,
     workflowFormVisible,
     installationMissingOnGithub,
     memberAccountLinked,

@@ -34,7 +34,7 @@ const progressStyle = computed(() => ({
       @click="emit('toggle')"
     >
       <Icon :name="collapsed ? 'oi-chevron-down' : 'oi-chevron-up'" class="w-3 h-3" />
-      <span class="font-medium">Sub-issues</span>
+      <small class="font-medium">Sub-issues</small>
       <span
         class="inline-flex h-4 w-4 rounded-full ring-1 ring-border"
         :style="progressStyle"

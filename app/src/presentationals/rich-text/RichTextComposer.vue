@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDependency } from "@/core/dependency-injection";
 import type { Editor } from "@tiptap/core";
+import { isTextSelection } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { BubbleMenu } from "@tiptap/vue-3/menus";
 import { IssueApi } from "@epicstory/api-client";
@@ -33,7 +34,9 @@ const emit = defineEmits<{
   /** Clipboard paste or editor drop of files → shell staging upload (includes images). */
   "pasted-files": [files: File[]];
   "update:editor": [editor: Editor | null];
+  "update:json": [json: Record<string, unknown>];
   "mention-load-more": [];
+  "request-insert-image": [];
 }>();
 
 const props = withDefaults(
@@ -43,11 +46,51 @@ const props = withDefaults(
     placeholder?: string;
     /** When set, `/Issue` and paste-URL unfurl can resolve workspace issues. */
     workspaceId?: number;
+    /** When false, the format bubble stays hidden (e.g. insert context menu is open). */
+    bubbleMenuEnabled?: boolean;
   }>(),
   {
     placeholder: "",
+    bubbleMenuEnabled: true,
   },
 );
+
+/** Focus is in the bubble chrome or a portaled menu opened from it. */
+function isRichTextOverlayFocus(target: EventTarget | null | undefined): boolean {
+  if (!(target instanceof Element)) return false;
+  return !!(
+    target.closest("[data-epicstory-bubble-menu]") ||
+    target.closest('[role="menu"]') ||
+    target.closest("[data-reka-popper-content-wrapper]")
+  );
+}
+
+function shouldShowBubbleMenu({
+  editor: ed,
+  view,
+  state,
+  from,
+  to,
+}: {
+  editor: Editor;
+  view: { hasFocus: () => boolean };
+  state: {
+    doc: { textBetween: (a: number, b: number) => string };
+    selection: { empty: boolean };
+  };
+  from: number;
+  to: number;
+}) {
+  if (!props.bubbleMenuEnabled || !ed.isEditable) return false;
+
+  const { empty } = state.selection;
+  const isEmptyTextBlock =
+    !state.doc.textBetween(from, to).length && isTextSelection(state.selection as never);
+  if (empty || isEmptyTextBlock) return false;
+
+  const hasEditorFocus = view.hasFocus() || isRichTextOverlayFocus(document.activeElement);
+  return hasEditorFocus;
+}
 
 const issueApi = useDependency(IssueApi);
 const insertIssueOpen = ref(false);
@@ -147,8 +190,12 @@ const editor = useEditor({
         insertIssueOpen.value = true;
       }
     },
+    onRequestInsertImage: () => emit("request-insert-image"),
   }),
   content: "",
+  onUpdate: ({ editor: ed }) => {
+    emit("update:json", ed.getJSON());
+  },
   editorProps: {
     attributes: {
       class: EPICSTORY_RICH_TEXT_COMPOSER,
@@ -223,14 +270,19 @@ defineExpose({
 </script>
 
 <template>
-  <div class="min-h-0 min-w-0">
-    <EditorContent v-if="editor" :editor="editor" />
+  <div class="min-h-0 min-w-0 h-full">
+    <EditorContent
+      v-if="editor"
+      :editor="editor"
+      class="h-full min-h-0 [&_.ProseMirror]:h-full [&_.ProseMirror]:min-h-0"
+    />
     <BubbleMenu
       v-if="editor && slots.bubbleMenu"
       plugin-key="epicstoryRichTextBubbleMenu"
       :editor="editor"
       :append-to="appendBubbleToBody"
       :options="bubbleMenuOptions"
+      :should-show="shouldShowBubbleMenu"
     >
       <slot name="bubbleMenu" :editor="editor" />
     </BubbleMenu>

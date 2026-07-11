@@ -1,12 +1,13 @@
 import { config } from "@/config";
 import { useDependency } from "@/core/dependency-injection";
+import type { GithubWorkflowMutation } from "@/lib/github";
 import { GithubIntegrationApi } from "@epicstory/api-client";
 import type { IGithubCatalogRepository, IGithubIssueBranchLink, IIssue } from "@epicstory/contracts";
 import type { Ref } from "vue";
 import { computed, markRaw, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { toast } from "vue-sonner";
 import { githubApiParseError } from "../github-api-errors";
-import type { GithubWorkflowMutation } from "@/lib/github";
 import { suggestGithubBranchLeaf } from "../github-branch-name";
 import {
   clearGithubIssueWorkflowPending,
@@ -76,6 +77,30 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
   const openPrAsDraft = ref(false);
   const lastAutoResumeAttemptKey = ref<string | null>(null);
   const selectGithubRepoDialogOpen = ref(false);
+  let progressToastId: string | number | undefined;
+
+  function clearProgressToast() {
+    if (progressToastId == null) return;
+    toast.dismiss(progressToastId);
+    progressToastId = undefined;
+  }
+
+  function startProgressToast(message: string) {
+    clearProgressToast();
+    progressToastId = toast.loading(message);
+  }
+
+  /** Action failures are transient — toast and do not sticky-render in Development. */
+  function toastWorkflowError(message: string) {
+    clearProgressToast();
+    workflowMutation.error = null;
+    toast.error(message);
+  }
+
+  function toastWorkflowSuccess(message: string) {
+    clearProgressToast();
+    toast.success(message);
+  }
 
   const selectedGhRepo = computed(
     () => integration.catalog.items.find((r) => r.githubRepoId === selectedGhRepoId.value) ?? null,
@@ -236,23 +261,21 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
     action: GithubIssueWorkflowPendingAction,
   ): void {
     if (prereq.kind === "status_unavailable") {
-      workflowMutation.error =
-        integration.integrationStatus.error ?? "Could not load GitHub integration status. Try again.";
+      toastWorkflowError(
+        integration.integrationStatus.error ?? "Could not load GitHub integration status. Try again.",
+      );
       return;
     }
     if (prereq.kind === "installation_gone") {
-      workflowMutation.error =
-        "GitHub no longer has this workspace installation. Ask an admin to reinstall the app.";
+      // Covered by the Development setup callout (installationMissingOnGithub).
+      workflowMutation.error = null;
       return;
     }
     if (prereq.kind === "workspace_install") {
+      // Covered by the install callout; admins are redirected to settings.
+      workflowMutation.error = null;
       if (integration.canManageGithubSetup) {
-        workflowMutation.error =
-          "Install the GitHub App for this workspace before creating branches from issues.";
         redirectToGithubIntegrations();
-      } else {
-        workflowMutation.error =
-          "GitHub is not enabled for this workspace yet. Ask a workspace admin to install the GitHub App under Integrations.";
       }
       return;
     }
@@ -264,10 +287,11 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
       openSelectGithubRepoDialog();
       return;
     }
-    workflowMutation.error =
+    toastWorkflowError(
       action === "create_branch"
         ? "Could not create branch — check GitHub setup and linked repo."
-        : "Could not open pull request — check GitHub setup and linked repo.";
+        : "Could not open pull request — check GitHub setup and linked repo.",
+    );
   }
 
   function handleGithubWorkflowApiError(
@@ -287,11 +311,13 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
         openPrAsDraft: openPrAsDraft.value,
         selectedRepoGithubId: selectedGhRepoId.value,
       });
+      ghWorkflowGithubErrorCode.value = parsed.githubErrorCode;
+      workflowMutation.error = parsed.message;
       redirectToMemberGithubLink(issueId);
       return;
     }
-    workflowMutation.error = parsed.message;
     ghWorkflowGithubErrorCode.value = parsed.githubErrorCode;
+    toastWorkflowError(parsed.message);
   }
 
   type ExecuteGithubWorkflowOptions = {
@@ -318,6 +344,7 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
     workflowMutation.statusMessage = "Creating branch on GitHub…";
     workflowMutation.error = null;
     ghWorkflowGithubErrorCode.value = undefined;
+    startProgressToast("Creating branch on GitHub…");
     try {
       const branchName = headBranchLeaf.value.trim();
       const res = await githubIntegrationApi.createIssueGithubBranch(+ws, iss.id, {
@@ -331,19 +358,21 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
       await params.reloadPullRequests(iss.id);
       await params.refreshLinkedBranches(iss.id);
       await params.reloadIssueActivityFeed();
+      toastWorkflowSuccess(`Branch created: ${res.branchName}`);
     } catch (e: unknown) {
       const parsed = githubApiParseError(e, "Could not create branch");
       const existingBranch = parsed.message.match(/^Branch "([^"]+)" already exists/);
       if (existingBranch?.[1]) {
         headBranchLeaf.value = existingBranch[1];
         clearGithubIssueWorkflowPending();
-        workflowMutation.error = parsed.message;
+        toastWorkflowError(parsed.message);
         return;
       }
       handleGithubWorkflowApiError(e, "Could not create branch", iss.id, "create_branch");
     } finally {
       workflowMutation.busy = false;
       workflowMutation.statusMessage = null;
+      clearProgressToast();
     }
   }
 
@@ -364,7 +393,7 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
 
     const head = headBranchLeaf.value.trim();
     if (!head) {
-      workflowMutation.error = "Set a branch name (create a branch first, or paste the head branch).";
+      toastWorkflowError("Set a branch name (create a branch first, or paste the head branch).");
       return;
     }
 
@@ -373,6 +402,7 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
     workflowMutation.statusMessage = "Opening pull request on GitHub…";
     workflowMutation.error = null;
     ghWorkflowGithubErrorCode.value = undefined;
+    startProgressToast("Opening pull request on GitHub…");
     try {
       await githubIntegrationApi.createIssueGithubPull(+ws, iss.id, {
         owner: targetRepo.owner,
@@ -384,11 +414,13 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
       clearGithubIssueWorkflowPending();
       await params.reloadPullRequests(iss.id);
       await params.reloadIssueActivityFeed();
+      toastWorkflowSuccess(openPrAsDraft.value ? "Draft pull request opened" : "Pull request opened");
     } catch (e: unknown) {
       handleGithubWorkflowApiError(e, "Could not open pull request", iss.id, "open_pull");
     } finally {
       workflowMutation.busy = false;
       workflowMutation.statusMessage = null;
+      clearProgressToast();
     }
   }
 
@@ -494,7 +526,7 @@ export function useIssueGithubWorkflow(params: UseIssueGithubWorkflowParams) {
     }
 
     if (!headBranchLeaf.value.trim()) {
-      workflowMutation.error = "Select or create a branch before opening a pull request.";
+      toastWorkflowError("Select or create a branch before opening a pull request.");
       return;
     }
 

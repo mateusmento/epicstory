@@ -15,6 +15,7 @@ import MentionNodeView from "./node-views/MentionNodeView.vue";
 import IssueNodeView from "./node-views/IssueNodeView.vue";
 import SlashCommandList from "./node-views/SlashCommandList.vue";
 import { createSlashCommandExtension, type SlashCommandItem } from "./slash-command-extension";
+import { runComposerAction, slashCatalogItems } from "./composer-action-catalog";
 
 export type { MentionSuggestionItem } from "./mention-suggestion.types";
 export type { SlashCommandItem } from "./slash-command-extension";
@@ -57,15 +58,14 @@ function buildSlashCommandSuggestion() {
   return createFloatingSuggestion({
     items: ({ query }): SlashCommandItem[] => {
       const q = (query ?? "").trim().toLowerCase();
-      const commands: SlashCommandItem[] = [
-        {
-          id: "issue",
-          label: "Issue",
-          description: "Insert an issue badge",
-        },
-      ];
+      const commands = slashCatalogItems();
       if (!q) return commands;
-      return commands.filter((c) => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q));
+      return commands.filter(
+        (c) =>
+          c.label.toLowerCase().includes(q) ||
+          c.id.toLowerCase().includes(q) ||
+          (c.description?.toLowerCase().includes(q) ?? false),
+      );
     },
     listComponent: SlashCommandList,
     mapProps: ({ items, command }) => ({
@@ -95,6 +95,8 @@ export function createRichTextComposerExtensions(args: {
   issueById?: (id: number) => IssueReference | undefined;
   /** Called after `/Issue` is chosen (slash range already deleted by the command). */
   onRequestInsertIssue?: () => void;
+  /** Called when slash/image insert needs the file picker. */
+  onRequestInsertImage?: () => void;
 }): any[] {
   const mentionSuggestion = buildMentionSuggestion(args.mentionablesForSuggestion, {
     getOnMentionListReachedBottom: args.getOnMentionListReachedBottom,
@@ -104,6 +106,11 @@ export function createRichTextComposerExtensions(args: {
   });
 
   const slashBase = buildSlashCommandSuggestion();
+
+  const actionHooks = {
+    onInsertIssue: args.onRequestInsertIssue,
+    onInsertImage: args.onRequestInsertImage,
+  };
 
   const base = [
     ...createRichTextExtensions({
@@ -134,9 +141,8 @@ export function createRichTextComposerExtensions(args: {
       render: slashBase.render,
       command: ({ editor, range, props: item }) => {
         editor.chain().focus().deleteRange(range).run();
-        if ((item as SlashCommandItem).id === "issue") {
-          args.onRequestInsertIssue?.();
-        }
+        const id = (item as SlashCommandItem).id;
+        runComposerAction(editor, id, actionHooks);
       },
     }),
     createPlaceholderExtension(() => args.getPlaceholder()),

@@ -1,8 +1,9 @@
 <script lang="ts" setup>
 import { useIssueGithubSidebar } from "@/domain/github";
+import { countIssueDevelopmentItems, groupIssueDevelopmentItems } from "@/lib/github";
 import IssueCreateGithubBranchDialog from "@/presentationals/issue/IssueCreateGithubBranchDialog.vue";
-import IssueGithubPullRequestsList from "@/presentationals/issue/IssueGithubPullRequestsList.vue";
-import IssueGithubSidebar from "@/presentationals/issue/IssueGithubSidebar.vue";
+import IssueGithubDevelopmentList from "@/presentationals/issue/IssueGithubDevelopmentList.vue";
+import IssueGithubDevelopmentSection from "@/presentationals/issue/IssueGithubDevelopmentSection.vue";
 import IssueGithubWorkflowPanel from "@/presentationals/issue/IssueGithubWorkflowPanel.vue";
 import type { IGithubCatalogRepository, IIssue } from "@epicstory/contracts";
 import { computed, ref, watch } from "vue";
@@ -31,29 +32,73 @@ watch(
     }
   },
 );
+
+const developmentGroups = computed(() =>
+  groupIssueDevelopmentItems(
+    linkedBranches.linkedBranches.data ?? [],
+    pullRequests.prView.data ?? [],
+    pullRequests.prStatusFilter,
+  ),
+);
+
+const itemCount = computed(() => countIssueDevelopmentItems(developmentGroups.value));
+
+const openPrCount = computed(
+  () => (pullRequests.prView.data ?? []).filter((p) => !p.merged && p.state !== "closed").length,
+);
+
+const branchCount = computed(() => linkedBranches.linkedBranches.data?.length ?? 0);
+
+const setupBlocked = computed(
+  () => integration.access.adminNeedsWorkspaceInstall || integration.access.memberNeedsAccountLink,
+);
+
+const defaultOpen = computed(() => {
+  if (workflow.workflowMutationView.busy) return true;
+  if (setupBlocked.value) return true;
+  return itemCount.value > 0 || openPrCount.value > 0 || branchCount.value > 0;
+});
+
+async function onOpenPull(payload: { owner: string; repoName: string; branchName: string; draft: boolean }) {
+  workflow.openPrAsDraft = payload.draft;
+  await workflow.openGithubPull({
+    owner: payload.owner,
+    repoName: payload.repoName,
+    branchName: payload.branchName,
+  });
+}
 </script>
 
 <template>
-  <IssueGithubSidebar :show-github-section="integration.showGithubSection">
-    <template #pull-requests>
-      <IssueGithubPullRequestsList
-        :issue="issue"
-        :pr="pullRequests.prView"
-        v-model:pr-status-filter="pullRequests.prStatusFilter"
-      />
-    </template>
-
-    <template #workflow>
+  <IssueGithubDevelopmentSection
+    :show-github-section="integration.showGithubSection"
+    :status-ready="integration.statusReady"
+    :item-count="itemCount"
+    :default-open="defaultOpen"
+    :can-create-branch="integration.workflowFormVisible"
+    :setup-blocked="setupBlocked"
+    :create-branch-disabled="workflow.workflowMutationView.busy"
+    @create-branch="linkedBranches.createBranchDialogOpen = true"
+  >
+    <template #banners>
       <IssueGithubWorkflowPanel
         :access="integration.access"
         :form-visible="integration.workflowFormVisible"
-        :linked-branches="linkedBranches.linkedBranches"
         :mutation="workflow.workflowMutationView"
-        :selected-linked-branch="linkedBranches.selectedLinkedBranch"
-        v-model:selected-linked-branch-id="linkedBranches.selectedLinkedBranchId"
-        v-model:open-pr-as-draft="workflow.openPrAsDraft"
-        v-model:create-branch-dialog-open="linkedBranches.createBranchDialogOpen"
-        @open-github-pull="workflow.openGithubPull"
+      />
+    </template>
+
+    <template #list>
+      <IssueGithubDevelopmentList
+        v-if="!setupBlocked"
+        :groups="developmentGroups"
+        :branches="linkedBranches.linkedBranches"
+        :pull-requests="pullRequests.prView"
+        :mutation-busy="workflow.workflowMutationView.busy"
+        :can-open-pull="integration.workflowFormVisible"
+        :issue-key-hint="issue.issueKey"
+        v-model:pr-status-filter="pullRequests.prStatusFilter"
+        @open-pull="onOpenPull"
       />
     </template>
 
@@ -74,5 +119,5 @@ watch(
         @selected="selectedRepoForCreate = $event"
       />
     </template>
-  </IssueGithubSidebar>
+  </IssueGithubDevelopmentSection>
 </template>

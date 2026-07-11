@@ -50,7 +50,8 @@ export function useIssue() {
     store.issue = {
       ...prev,
       ...updated,
-      subIssues: updated.subIssues ?? prev.subIssues,
+      // Prefer client list: PATCH payloads often reshuffle subIssues and cause UI jumps.
+      subIssues: prev.subIssues ?? updated.subIssues,
       project: updated.project ?? prev.project,
       parentIssue: updated.parentIssue ?? prev.parentIssue,
     };

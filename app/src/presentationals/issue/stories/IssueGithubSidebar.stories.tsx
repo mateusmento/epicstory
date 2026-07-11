@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/vue3";
 import { computed, ref } from "vue";
-import { groupGithubPullRequests } from "@/lib/github";
+import { groupIssueDevelopmentItems } from "@/lib/github";
 import IssueCreateGithubBranchDialog from "../IssueCreateGithubBranchDialog.vue";
-import IssueGithubPullRequestsList from "../IssueGithubPullRequestsList.vue";
+import IssueGithubDevelopmentList from "../IssueGithubDevelopmentList.vue";
 import IssueGithubSidebar from "../IssueGithubSidebar.vue";
 import IssueGithubWorkflowPanel from "../IssueGithubWorkflowPanel.vue";
 import IssueSelectGithubRepoDialog from "../IssueSelectGithubRepoDialog.vue";
@@ -30,36 +30,37 @@ export const WiredSlotsHarness: Story = {
   render: () => ({
     components: {
       IssueGithubSidebar,
-      IssueGithubPullRequestsList,
+      IssueGithubDevelopmentList,
       IssueGithubWorkflowPanel,
       IssueCreateGithubBranchDialog,
       IssueSelectGithubRepoDialog,
     },
     setup() {
-      const prStatusFilter = ref<"all" | "open" | "merged" | "closed">("all");
-      const selectedLinkedBranchId = ref<number | null>(storyLinkedBranches[0]!.id);
-      const openPrAsDraft = ref(false);
+      const prStatusFilter = ref<"all" | "open" | "merged" | "closed">("open");
       const createBranchDialogOpen = ref(false);
       const repoPickerOpen = ref(false);
       const selectedRepoForCreate = ref(storyGithubRepos[0]!);
       const searchQuery = ref("");
       const lastAction = ref("none");
 
-      const pr = computed(() => ({
-        data: storyIssuePullRequests,
-        loading: false,
-        error: null,
-        groups: groupGithubPullRequests(storyIssuePullRequests, prStatusFilter.value),
-      }));
-
-      const linkedBranches = computed(() => ({
+      const branches = computed(() => ({
         data: storyLinkedBranches,
         loading: false,
         error: null,
       }));
 
-      const selectedLinkedBranch = computed(
-        () => linkedBranches.value.data?.find((branch) => branch.id === selectedLinkedBranchId.value) ?? null,
+      const pullRequests = computed(() => ({
+        data: storyIssuePullRequests,
+        loading: false,
+        error: null,
+      }));
+
+      const groups = computed(() =>
+        groupIssueDevelopmentItems(
+          storyLinkedBranches,
+          storyIssuePullRequests,
+          prStatusFilter.value,
+        ),
       );
 
       const repoList = computed(() => ({
@@ -71,67 +72,60 @@ export const WiredSlotsHarness: Story = {
         }),
       }));
 
-      function onCreateBranch(payload: { repo: (typeof storyGithubRepos)[number]; branchName: string }) {
-        selectedRepoForCreate.value = payload.repo;
-        createBranchDialogOpen.value = false;
-        lastAction.value = `create:${payload.repo.fullName}:${payload.branchName}`;
-      }
-
-      function onOpenGithubPull(payload: { owner: string; repoName: string; branchName: string }) {
-        lastAction.value = `open-pr:${payload.owner}/${payload.repoName}:${payload.branchName}`;
-      }
-
-      function onRepoSelected(repo: (typeof storyGithubRepos)[number]) {
-        selectedRepoForCreate.value = repo;
-        repoPickerOpen.value = false;
-      }
-
       return {
         issue: storyIssue,
         access: storyGithubAccess,
         mutation: storyGithubWorkflowMutation,
-        pr,
+        groups,
+        branches,
+        pullRequests,
         prStatusFilter,
-        linkedBranches,
-        selectedLinkedBranch,
-        selectedLinkedBranchId,
-        openPrAsDraft,
         createBranchDialogOpen,
         repoPickerOpen,
         selectedRepoForCreate,
         repoList,
         searchQuery,
         lastAction,
-        onCreateBranch,
-        onOpenGithubPull,
-        onRepoSelected,
+        onCreateBranch: (payload: { repo: (typeof storyGithubRepos)[number]; branchName: string }) => {
+          selectedRepoForCreate.value = payload.repo;
+          createBranchDialogOpen.value = false;
+          lastAction.value = `create:${payload.repo.fullName}:${payload.branchName}`;
+        },
+        onOpenPull: (payload: {
+          owner: string;
+          repoName: string;
+          branchName: string;
+          draft: boolean;
+        }) => {
+          lastAction.value = `open-pr${payload.draft ? "-draft" : ""}:${payload.owner}/${payload.repoName}:${payload.branchName}`;
+        },
+        onRepoSelected: (repo: (typeof storyGithubRepos)[number]) => {
+          selectedRepoForCreate.value = repo;
+          repoPickerOpen.value = false;
+        },
       };
     },
     template: `
       <div class="flex flex-col gap-2">
         <IssueGithubSidebar :show-github-section="true">
-          <template #pull-requests>
-            <IssueGithubPullRequestsList
-              :issue="issue"
-              :pr="pr"
-              v-model:pr-status-filter="prStatusFilter"
-            />
-          </template>
-
-          <template #workflow>
+          <template #banners>
             <IssueGithubWorkflowPanel
               :access="access"
               :form-visible="true"
-              :linked-branches="linkedBranches"
               :mutation="mutation"
-              :selected-linked-branch="selectedLinkedBranch"
-              v-model:selected-linked-branch-id="selectedLinkedBranchId"
-              v-model:open-pr-as-draft="openPrAsDraft"
-              v-model:create-branch-dialog-open="createBranchDialogOpen"
-              @open-github-pull="onOpenGithubPull"
             />
           </template>
-
+          <template #list>
+            <IssueGithubDevelopmentList
+              :groups="groups"
+              :branches="branches"
+              :pull-requests="pullRequests"
+              :can-open-pull="true"
+              :issue-key-hint="issue.issueKey"
+              v-model:pr-status-filter="prStatusFilter"
+              @open-pull="onOpenPull"
+            />
+          </template>
           <template #create-branch-dialog>
             <IssueCreateGithubBranchDialog
               v-model:open="createBranchDialogOpen"

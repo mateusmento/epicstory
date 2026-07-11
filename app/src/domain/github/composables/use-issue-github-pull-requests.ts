@@ -2,7 +2,7 @@ import { useDependency } from "@/core/dependency-injection";
 import { GithubIntegrationApi } from "@epicstory/api-client";
 import type { IGithubIssuePullRequestLink } from "@epicstory/contracts";
 import { toAsyncDataView } from "@/lib/async";
-import { groupGithubPullRequests, type GithubPrStatusFilter } from "@/lib/github";
+import type { GithubPrStatusFilter } from "@/lib/github";
 import type { Ref } from "vue";
 import { computed, markRaw, reactive, ref } from "vue";
 import { githubApiErrorMessage } from "../github-api-errors";
@@ -18,14 +18,9 @@ export function useIssueGithubPullRequests(_issueId: Ref<number | undefined>) {
     error: null as string | null,
   });
 
-  const prStatusFilter = ref<GithubPrStatusFilter>("all");
+  const prStatusFilter = ref<GithubPrStatusFilter>("open");
 
-  const prGroups = computed(() => groupGithubPullRequests(pr.data ?? [], prStatusFilter.value));
-
-  const prView = computed(() => ({
-    ...toAsyncDataView(pr),
-    groups: prGroups.value,
-  }));
+  const prView = computed(() => toAsyncDataView(pr));
 
   async function reload(issueNumericId: number): Promise<void> {
     pr.loading = true;

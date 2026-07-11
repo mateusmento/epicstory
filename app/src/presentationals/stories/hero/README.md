@@ -9,7 +9,7 @@ Canonical Storybook compositions under `Product/Hero/*`. Each slice mirrors a re
 | **InboxTriage** | Communication — notification list | `InboxTriage.stories.tsx` |
 | **ChatColumn** | Communication — timeline + composer | `ChatColumn.stories.tsx` |
 | **AppShell** | Workspace chrome — panes + drawer | `AppShell.stories.tsx` |
-| **IssueGithubPanel** | Git — PRs + branch workflow | `IssueGithubPanel.stories.tsx` |
+| **IssueGithubPanel** | Git — linked-work list (branches + PRs) | `IssueGithubPanel.stories.tsx` |
 | **MeetingRoom** | Communication — live meeting | `MeetingRoom.stories.tsx` |
 | **AuthSignup** | Onboarding — sign-up page | `AuthSignup.stories.tsx` |
 | **AuthSignin** | Onboarding — sign-in page | `AuthSignin.stories.tsx` |

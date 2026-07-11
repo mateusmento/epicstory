@@ -231,7 +231,7 @@ defineExpose({
 </script>
 
 <template>
-  <section class="mt-10 flex flex-col gap-6 border-t border-border pt-8">
+  <section class="mt-4 pt-4 flex flex-col gap-6 border-t border-border">
     <div class="flex items-center justify-between gap-4">
       <h2 class="text-[13px] font-semibold tracking-tight text-foreground">Activity</h2>
       <div class="flex rounded-md bg-muted p-0.5">
@@ -267,7 +267,7 @@ defineExpose({
 
     <ul v-else-if="tab === 'all'" class="flex list-none flex-col">
       <li v-for="(item, i) in filteredFeedItems" :key="item.activityId" class="flex min-w-0 items-stretch">
-        <div v-if="item.type === 'comment_created' && item.message?.id" class="flex:col">
+        <div v-if="item.type === 'comment_created' && item.message?.id" class="flex:col min-w-0 flex-1">
           <div
             v-if="filteredFeedItems[i - 1]?.type === 'comment_created'"
             :class="cn('ml-6 h-6 w-px shrink-0 bg-border')"

@@ -97,7 +97,7 @@ function focusNewInput() {
 </script>
 
 <template>
-  <div class="flex:col-md mt-2">
+  <div class="flex:col-md">
     <SubIssuesHeader
       :collapsed="isCollapsed"
       :done-count="doneCount"
@@ -112,7 +112,7 @@ function focusNewInput() {
       "
     />
 
-    <div v-show="!isCollapsed" class="flex:col-md mt-2 rounded-xl bg-card">
+    <div v-show="!isCollapsed" class="flex:col-md rounded-xl bg-card">
       <SubIssuesCreateRow
         v-model="newTitle"
         input-id="new-sub-issue"

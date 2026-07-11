@@ -32,7 +32,7 @@ onErrorCaptured((err) => {
 <template>
   <TooltipProvider>
     <Teleport to="body">
-      <Toaster position="top-center" :expand="true" :rich-colors="true" close-button />
+      <Toaster position="bottom-right" :expand="true" :rich-colors="true" close-button />
     </Teleport>
     <SprintDragOverlay />
 

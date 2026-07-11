@@ -4,6 +4,7 @@ import {
   Menu,
   MenuContent,
   MenuItem,
+  MenuSeparator,
   MenuTrigger,
   OverflowContainer,
   OverflowEllipsis,
@@ -39,6 +40,10 @@ type ComposerAction = {
   active?: boolean;
   run: () => void;
 };
+
+type OverflowMenuEntry =
+  | { kind: "item"; action: ComposerAction | { key: "mention"; label: string; run: () => void } }
+  | { kind: "separator"; key: string };
 
 const emit = defineEmits<{
   insertInlineImage: [];
@@ -185,17 +190,33 @@ const insertActions = computed<ComposerAction[]>(() => {
   return actions;
 });
 
-const actionsByKey = computed(() => {
-  const map = new Map<string, ComposerAction | { key: "mention"; label: string; run: () => void }>();
-  for (const action of [...markActions.value, ...structureActions.value, ...insertActions.value]) {
-    map.set(action.key, action);
-  }
-  map.set("mention", { key: "mention", label: "Mention", run: insertAtMention });
-  return map;
-});
+function hiddenMenuEntries(keys: string[]): OverflowMenuEntry[] {
+  const keySet = new Set(keys);
+  const groups = [
+    markActions.value.filter((a) => keySet.has(a.key)),
+    structureActions.value.filter((a) => keySet.has(a.key)),
+    insertActions.value.filter((a) => keySet.has(a.key)),
+    keySet.has("mention") ? [{ key: "mention" as const, label: "Mention", run: insertAtMention }] : [],
+  ].filter((g) => g.length > 0);
 
-function hiddenMenuItems(keys: string[]) {
-  return keys.map((key) => actionsByKey.value.get(key)).filter((a): a is NonNullable<typeof a> => !!a);
+  const out: OverflowMenuEntry[] = [];
+  groups.forEach((group, index) => {
+    if (index > 0) out.push({ kind: "separator", key: `sep-${index}` });
+    for (const action of group) {
+      out.push({ kind: "item", action });
+    }
+  });
+  return out;
+}
+
+/** TipTap may hide the bubble on blur (null relatedTarget); nudge a re-show while selection remains. */
+function onOverflowMenuOpen(isOpen: unknown) {
+  if (isOpen !== true || !props.editor || props.editor.isDestroyed) return;
+  requestAnimationFrame(() => {
+    const ed = props.editor;
+    if (!ed || ed.isDestroyed || ed.state.selection.empty) return;
+    ed.view.dispatch(ed.state.tr);
+  });
 }
 </script>
 
@@ -257,29 +278,30 @@ function hiddenMenuItems(keys: string[]) {
 
     <OverflowEllipsis v-slot="{ collapsed, hiddenSegmentKeys }">
       <!-- Always mount the trigger so ellipsis width is measurable on first paint. -->
-      <Menu type="dropdown-menu">
+      <Menu type="dropdown-menu" @update:open="onOverflowMenuOpen">
         <MenuTrigger as-child>
           <Button variant="ghost" size="icon" title="More" aria-label="More">
             <MoreHorizontal class="w-5 h-5" />
           </Button>
         </MenuTrigger>
         <MenuContent v-if="collapsed" align="end" class="min-w-[10rem]">
-          <MenuItem
-            v-for="action in hiddenMenuItems(hiddenSegmentKeys)"
-            :key="action.key"
-            class="flex:row-md flex:center-y gap-2"
-            @click="action.run()"
+          <template
+            v-for="entry in hiddenMenuEntries(hiddenSegmentKeys)"
+            :key="entry.kind === 'separator' ? entry.key : entry.action.key"
           >
-            <template v-if="action.key === 'mention'">
-              <Icon name="oi-mention" class="size-4 shrink-0 text-muted-foreground" />
-            </template>
-            <component
-              v-else
-              :is="(action as ComposerAction).icon"
-              class="size-4 shrink-0 text-muted-foreground"
-            />
-            <span>{{ action.label }}</span>
-          </MenuItem>
+            <MenuSeparator v-if="entry.kind === 'separator'" />
+            <MenuItem v-else class="flex:row-md flex:center-y gap-2" @click="entry.action.run()">
+              <template v-if="entry.action.key === 'mention'">
+                <Icon name="oi-mention" class="size-4 shrink-0 text-muted-foreground" />
+              </template>
+              <component
+                v-else
+                :is="(entry.action as ComposerAction).icon"
+                class="size-4 shrink-0 text-muted-foreground"
+              />
+              <span>{{ entry.action.label }}</span>
+            </MenuItem>
+          </template>
         </MenuContent>
       </Menu>
     </OverflowEllipsis>
