@@ -57,7 +57,7 @@ const visible = computed(() => {
 
 <template>
   <Collapsible v-if="visible" v-model:open="open" class="min-w-0 border rounded-lg bg-muted/20">
-    <div class="flex items-center py-1 px-1">
+    <div class="flex:row-lg flex:center-y h-10 p-2 min-w-0">
       <CollapsibleTrigger as-child>
         <button
           type="button"
