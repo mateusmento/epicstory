@@ -1,25 +1,30 @@
 # Current session
 
-**Updated:** 2026-07-10
+**Updated:** 2026-07-11
 
 ## Session question (60–90 min)
 
-> Can a developer see every branch and PR for this issue in one place, across repos, and open a PR from a branch that does not have one yet?
+> Can a teammate select text in an issue description, leave a comment or suggest an edit, and review those threads in a gutter next to the description—aligned to where they selected—without hunting the Activity timeline?
 
 ## Done when
 
-- [x] Development shows one linked-work list (branches + PRs), grouped by repo
-- [x] Matched branch+PR is a single PR row; unmatched branch shows Open PR menu (incl. draft)
-- [x] Create branch lives in the Development header; create-branch dialog still works
-- [x] Setup banners stay quiet; mini-form / radios / draft checkbox removed from the main surface
+- [x] Selecting description text can start a **comment** thread anchored to that range
+- [x] Open threads appear **beside the description**, not in the Activity timeline
+- [x] Cards are ordered by **selection start**; nearby anchors stack; distant leave gutter whitespace
+- [x] Highlight ↔ card focus association works; resolve clears open highlight
+- [x] Suggest / Accept / Reject works with the same layout rules
+- [x] Suggest mode records add/delete/replace; caret leave commits (no note)
+- [x] Comment + reply use multiline rich text composers
 
 ## Active task
 
-→ Development linked-work list
+→ [11 — Issue description comments and edit suggestions](./tasks/11-description-comments-suggestions.md)
 
 ## Explicitly deferred (this session)
 
-- Suggest/comment-on-description product
+- Listing each description thread in the Activity timeline
+- Replacing general Activity comments
 - App-wide Cmd+K navigation palette
-- PR title API enrichment
-- Redesigning activity feed
+- CRDT / multi-cursor collab
+- Connector lines / mobile-first gutter polish / GitHub PR export
+- Notifications for description threads

@@ -17,16 +17,6 @@ defineSlots<{
   bubbleMenu?: (props: { editor: Editor }) => unknown;
 }>();
 
-const appendBubbleToBody = () => document.body;
-
-const bubbleMenuOptions = {
-  strategy: "fixed" as const,
-  placement: "top" as const,
-  offset: 8,
-  flip: true,
-  shift: { padding: 8 },
-};
-
 const slots = useSlots();
 
 const emit = defineEmits<{
@@ -48,12 +38,47 @@ const props = withDefaults(
     workspaceId?: number;
     /** When false, the format bubble stays hidden (e.g. insert context menu is open). */
     bubbleMenuEnabled?: boolean;
+    /**
+     * When true, ProseMirror will not scroll the caret into view.
+     * Needed on long issue pages so focusing the description does not fight page scroll.
+     */
+    suppressScrollToSelection?: boolean;
+    /**
+     * Keep the format bubble inside this box (Floating UI boundary).
+     * Use the description column so the menu does not cover the threads gutter.
+     */
+    bubbleMenuBoundary?: HTMLElement | null | (() => HTMLElement | null);
   }>(),
   {
     placeholder: "",
     bubbleMenuEnabled: true,
+    suppressScrollToSelection: false,
+    bubbleMenuBoundary: null,
   },
 );
+
+const appendBubbleToBody = () => document.body;
+
+function resolveBubbleBoundary(): Element | undefined {
+  const b = props.bubbleMenuBoundary;
+  if (!b) return undefined;
+  return typeof b === "function" ? (b() ?? undefined) : b;
+}
+
+/** Floating UI options; shift/flip re-read boundary each update (Derivable). */
+const bubbleMenuOptions = {
+  strategy: "fixed" as const,
+  placement: "top" as const,
+  offset: 8,
+  flip: () => {
+    const boundary = resolveBubbleBoundary();
+    return boundary ? { padding: 8, boundary } : { padding: 8 };
+  },
+  shift: () => {
+    const boundary = resolveBubbleBoundary();
+    return boundary ? { padding: 8, boundary } : { padding: 8 };
+  },
+};
 
 /** Focus is in the bubble chrome or a portaled menu opened from it. */
 function isRichTextOverlayFocus(target: EventTarget | null | undefined): boolean {
@@ -200,6 +225,7 @@ const editor = useEditor({
     attributes: {
       class: EPICSTORY_RICH_TEXT_COMPOSER,
     },
+    handleScrollToSelection: () => props.suppressScrollToSelection,
     handleKeyDown: (_, event) => {
       if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
         emit("submit");

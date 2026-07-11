@@ -2,6 +2,7 @@ export { default as IssueAttachmentsStrip } from "./IssueAttachmentsStrip.vue";
 export { default as IssueCommentCard } from "./IssueCommentCard.vue";
 export { default as IssueContextMenu } from "./IssueContextMenu.vue";
 export { default as IssueDescriptionEditor } from "./IssueDescriptionEditor.vue";
+export { default as IssueDescriptionWithThreads } from "./IssueDescriptionWithThreads.vue";
 export { default as IssueGithubSidebarSection } from "./IssueGithubSidebarSection.vue";
 export { default as IssueLabelTags } from "./IssueLabelTags.vue";
 export { default as IssueLabelsDropdown } from "./IssueLabelsDropdown.vue";

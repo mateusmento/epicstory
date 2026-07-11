@@ -14,5 +14,6 @@ Ordered by **impact on developer workflow** and **readiness** (backend vs greenf
 | [08](./08-ui-redesign-foundation.md) | UI redesign foundation (Storybook + presentational layer) | **Complete** | Hero slices + green Storybook catalog shipped |
 | [09](./09-design-tokens-ds-primitives.md) | Design tokens & DS primitives | **In progress** | Phase 0 done; token audit + primitive stories next |
 | [10](./10-redesign-rollout.md) | Redesign rollout (presentationals + app dogfood) | Not started | Surface-by-surface redesign; depends on 09 |
+| [11](./11-description-comments-suggestions.md) | Description comments + edit suggestions | **In progress** | Linear-style gutter; not in Activity timeline |
 
 **GitHub integration spec:** [`.tasks/github-integration/`](../.tasks/github-integration/README.md)

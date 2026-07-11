@@ -5,3 +5,4 @@ export * from "./issue-comment-editing";
 export * from "./issue-comment-threads";
 export * from "./issue-comment-socket-sync";
 export * from "./issue-attachments";
+export * from "./use-issue-description-threads";

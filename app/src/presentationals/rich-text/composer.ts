@@ -6,6 +6,7 @@ import {
   createMentionExtensionWithNodeView,
   createPlaceholderExtension,
   createRichTextExtensions,
+  DescriptionThreadMark,
 } from "@epicstory/tiptap/vue";
 import type { ComputedRef } from "vue";
 import type { MentionSuggestionItem } from "./mention-suggestion.types";
@@ -146,6 +147,7 @@ export function createRichTextComposerExtensions(args: {
       },
     }),
     createPlaceholderExtension(() => args.getPlaceholder()),
+    DescriptionThreadMark,
   );
   return base;
 }

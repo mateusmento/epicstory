@@ -10,6 +10,7 @@ export * from "./channel-socket-events";
 export * from "./github";
 export * from "./issue";
 export * from "./issue-activity-payload";
+export * from "./issue-description-thread";
 export * from "./issue-feed";
 export * from "./issue-filter";
 export * from "./issue-key";

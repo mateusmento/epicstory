@@ -1,4 +1,8 @@
 export {
+  DescriptionThreadMark,
+  type DescriptionThreadMarkAttrs,
+} from "./description-thread-mark";
+export {
   collectImageAttachmentIdsFromDoc,
   docContainsImageNodes,
 } from "../doc/collect-image-attachment-ids";

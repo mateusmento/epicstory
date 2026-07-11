@@ -283,6 +283,41 @@
   @apply bg-gradient-to-t from-[#f8f8f8] from-35% via-[#f8f8f8]/85 to-transparent dark:from-codeBlock dark:via-codeBlock/85;
 }
 
+.epicstory-rich-text .epicstory-description-thread {
+  border-radius: 2px;
+}
+
+.epicstory-rich-text .epicstory-description-thread--comment {
+  @apply px-0.5;
+  background-color: color-mix(in oklab, var(--color-amber-400, #fbbf24) 28%, transparent);
+}
+
+.epicstory-rich-text .epicstory-description-thread--suggestion-base {
+  color: #9ca3af;
+  text-decoration: line-through solid #ef4444;
+  text-decoration-thickness: 1.5px;
+  background: transparent;
+}
+
+.epicstory-rich-text .epicstory-description-thread--suggestion-added {
+  color: #2563eb;
+  text-decoration: underline solid #2563eb;
+  text-underline-offset: 2px;
+  background: transparent;
+}
+
+.epicstory-rich-text .epicstory-description-thread.is-active,
+.epicstory-rich-text .epicstory-description-thread[data-active="true"] {
+  outline: 1px solid color-mix(in oklab, var(--color-amber-600, #d97706) 45%, transparent);
+}
+
+.epicstory-rich-text .epicstory-description-thread--suggestion-base.is-active,
+.epicstory-rich-text .epicstory-description-thread--suggestion-added.is-active,
+.epicstory-rich-text .epicstory-description-thread--suggestion-base[data-active="true"],
+.epicstory-rich-text .epicstory-description-thread--suggestion-added[data-active="true"] {
+  outline: 1px solid color-mix(in oklab, #3b82f6 50%, transparent);
+}
+
 /**
  * highlight.js themes set `.hljs { background: #fff / #0d1117 }` which paints over our
  * container chrome. Syntax colors stay from github/github-dark; background comes from above.

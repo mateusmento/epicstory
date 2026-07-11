@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {
   IssueAttachmentsStrip,
-  IssueDescriptionEditor,
+  IssueDescriptionWithThreads,
   IssueGithubSidebarSection,
   IssuePropertiesStrip,
 } from "@/containers/issue";
@@ -17,10 +17,16 @@ import { useIssue, useIssueAttachments } from "@/domain/issues";
 import { useScopedWorkspaceMemberSearch } from "@/domain/workspace";
 import { IssueKey } from "@/presentationals/issue";
 import type { IUser, UpdateIssueData } from "@epicstory/contracts";
+import type { JSONContent } from "@tiptap/core";
 import { Share2 } from "lucide-vue-next";
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { cn } from "@/design-system/utils";
+
+const EMPTY_DESCRIPTION: JSONContent = {
+  type: "doc",
+  content: [{ type: "paragraph", content: [] }],
+};
 
 const props = defineProps<{
   workspaceId: string;
@@ -251,15 +257,17 @@ onMounted(() => {
         @remove-label="removeLabel"
       />
 
-      <IssueDescriptionEditor
+      <IssueDescriptionWithThreads
         :key="props.issueId"
-        :description="issue?.description ?? { type: 'doc', content: [{ type: 'paragraph', content: [] }] }"
+        :description="issue?.description ?? EMPTY_DESCRIPTION"
         :issue-id="+props.issueId"
         :workspace-id="descriptionWorkspaceId"
         :disabled="!issue"
         :is-saving="patchMutation.busy"
         :mention="issueMentionView"
         :me-id="user?.id"
+        :me-name="user?.name"
+        :me-picture="user?.picture"
         @mention-load-more="onWorkspaceMentionListReachedBottom"
         @save-description="onSaveDescription"
       />

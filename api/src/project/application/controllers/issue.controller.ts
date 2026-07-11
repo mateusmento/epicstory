@@ -39,9 +39,20 @@ import {
   UpdateIssueSchedule,
   CreateIssueDependency,
   RemoveIssueDependency,
+  FindDescriptionThreads,
+  CreateDescriptionThread,
+  AddDescriptionThreadMessage,
+  UpdateDescriptionThread,
+  DeleteDescriptionThread,
+  DeleteDescriptionThreadMessage,
 } from '../features';
 import { FindIssue } from '../features/issue/find-issue.query';
 import { FindIssueFeed } from '../features/issue/find-issue-feed.query';
+import type {
+  AddDescriptionThreadMessageBody,
+  CreateDescriptionThreadBody,
+  UpdateDescriptionThreadBody,
+} from '@epicstory/contracts';
 
 class RemoveIssueBody {
   @IsOptional()
@@ -84,6 +95,98 @@ export class IssueController {
             ? Math.floor(parsed)
             : undefined,
       }),
+    );
+  }
+
+  @Get(':id/description-threads')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  findDescriptionThreads(@Param('id') issueId: number, @Auth() issuer: Issuer) {
+    return this.queryBus.execute(
+      new FindDescriptionThreads({ issueId, issuer }),
+    );
+  }
+
+  @Post(':id/description-threads')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  createDescriptionThread(
+    @Param('id') issueId: number,
+    @Body() body: CreateDescriptionThreadBody,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new CreateDescriptionThread({ ...body, issueId, issuer }),
+    );
+  }
+
+  @Post(':id/description-threads/:threadId/messages')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  addDescriptionThreadMessage(
+    @Param('id') issueId: number,
+    @Param('threadId') threadId: number,
+    @Body() body: AddDescriptionThreadMessageBody,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new AddDescriptionThreadMessage({
+        ...body,
+        issueId,
+        threadId,
+        issuer,
+      }),
+    );
+  }
+
+  @Patch(':id/description-threads/:threadId')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  updateDescriptionThread(
+    @Param('id') issueId: number,
+    @Param('threadId') threadId: number,
+    @Body() body: UpdateDescriptionThreadBody,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new UpdateDescriptionThread({
+        ...body,
+        issueId,
+        threadId,
+        issuer,
+      }),
+    );
+  }
+
+  @Delete(':id/description-threads/:threadId/messages/:messageId')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  deleteDescriptionThreadMessage(
+    @Param('id') issueId: number,
+    @Param('threadId') threadId: number,
+    @Param('messageId') messageId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new DeleteDescriptionThreadMessage({
+        issueId,
+        threadId,
+        messageId,
+        issuer,
+      }),
+    );
+  }
+
+  @Delete(':id/description-threads/:threadId')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  deleteDescriptionThread(
+    @Param('id') issueId: number,
+    @Param('threadId') threadId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    return this.commandBus.execute(
+      new DeleteDescriptionThread({ issueId, threadId, issuer }),
     );
   }
 

@@ -1,12 +1,16 @@
 import type {
+  AddDescriptionThreadMessageBody,
+  CreateDescriptionThreadBody,
   CreateIssueDependencyBody,
   FindIssuesQuery,
+  IDescriptionThread,
   IIssue,
   IIssueAttachmentListItem,
   IIssueFeed,
   IssueDependency,
   IPage,
   IssueType,
+  UpdateDescriptionThreadBody,
   UpdateIssueData,
   UpdateIssueScheduleBody,
   UploadedAttachment,
@@ -191,6 +195,71 @@ export class IssueApi {
   ): Promise<unknown> {
     return this.axios
       .post(`/issues/${issueId}/comments/${parentMessageId}/replies`, body)
+      .then((res) => res.data);
+  }
+
+  listDescriptionThreads(issueId: number): Promise<IDescriptionThread[]> {
+    return this.axios
+      .get<IDescriptionThread[]>(`/issues/${issueId}/description-threads`)
+      .then((res) => res.data);
+  }
+
+  createDescriptionThread(
+    issueId: number,
+    body: CreateDescriptionThreadBody,
+  ): Promise<IDescriptionThread> {
+    return this.axios
+      .post<IDescriptionThread>(`/issues/${issueId}/description-threads`, body)
+      .then((res) => res.data);
+  }
+
+  addDescriptionThreadMessage(
+    issueId: number,
+    threadId: number,
+    body: AddDescriptionThreadMessageBody,
+  ): Promise<IDescriptionThread> {
+    return this.axios
+      .post<IDescriptionThread>(
+        `/issues/${issueId}/description-threads/${threadId}/messages`,
+        body,
+      )
+      .then((res) => res.data);
+  }
+
+  updateDescriptionThread(
+    issueId: number,
+    threadId: number,
+    body: UpdateDescriptionThreadBody,
+  ): Promise<IDescriptionThread> {
+    return this.axios
+      .patch<IDescriptionThread>(
+        `/issues/${issueId}/description-threads/${threadId}`,
+        body,
+      )
+      .then((res) => res.data);
+  }
+
+  deleteDescriptionThread(
+    issueId: number,
+    threadId: number,
+  ): Promise<{ markId: string }> {
+    return this.axios
+      .delete<{
+        markId: string;
+      }>(`/issues/${issueId}/description-threads/${threadId}`)
+      .then((res) => res.data);
+  }
+
+  deleteDescriptionThreadMessage(
+    issueId: number,
+    threadId: number,
+    messageId: number,
+  ): Promise<{ deletedThread: boolean; markId: string | null }> {
+    return this.axios
+      .delete<{
+        deletedThread: boolean;
+        markId: string | null;
+      }>(`/issues/${issueId}/description-threads/${threadId}/messages/${messageId}`)
       .then((res) => res.data);
   }
 }
