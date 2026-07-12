@@ -53,6 +53,11 @@ const authenticatedRoutes = defineRoutes({
           component: () => import("@/views/user/UserAccountSettings.vue"),
         },
         {
+          path: "settings/workspace",
+          name: "workspace-settings",
+          component: () => import("@/views/workspace/WorkspaceSettings.vue"),
+        },
+        {
           path: "settings/integrations/github",
           name: "github-integration-settings",
           component: () => import("@/views/workspace/GithubIntegration.vue"),

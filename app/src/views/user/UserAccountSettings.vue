@@ -8,20 +8,23 @@ import {
   DialogTitle,
   Field,
   Form,
-  Separator,
+  Input,
+  Label,
+  ScrollArea,
 } from "@/design-system";
-import { ThemePicker } from "@/presentationals/theme";
 import UserPictureUpload from "@/containers/views/user/UserPictureUpload.vue";
 import { useUser } from "@/domain/user";
+import { ThemePicker } from "@/presentationals/theme";
+import { Loader2 } from "lucide-vue-next";
 import { onMounted, ref } from "vue";
+import { RouterLink } from "vue-router";
+import { toast } from "vue-sonner";
 
 const { user, updateUser, changePassword, listOwnedWorkspaces, deleteAccount } = useUser();
 const isSaving = ref(false);
-const saveSuccess = ref(false);
 
 const isChangingPassword = ref(false);
-const passwordChangeSuccess = ref(false);
-const passwordError = ref<string>("");
+const passwordError = ref("");
 
 const passwordFormData = ref({
   currentPassword: "",
@@ -49,10 +52,12 @@ async function confirmDeleteAccount() {
   isDeletingAccount.value = true;
   try {
     await deleteAccount();
-  } catch (error: any) {
-    deleteError.value =
-      error?.response?.data?.message ||
-      "Could not delete account. Transfer ownership of any owned workspaces first.";
+  } catch (error: unknown) {
+    const msg =
+      error && typeof error === "object" && "response" in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+    deleteError.value = msg || "Could not delete account. Transfer ownership of any owned workspaces first.";
     ownedWorkspaces.value = await listOwnedWorkspaces().catch(() => ownedWorkspaces.value);
   } finally {
     isDeletingAccount.value = false;
@@ -61,13 +66,11 @@ async function confirmDeleteAccount() {
 
 async function handleSubmit(data: { name?: string }) {
   isSaving.value = true;
-  saveSuccess.value = false;
   try {
     await updateUser(data);
-    saveSuccess.value = true;
-    setTimeout(() => {
-      saveSuccess.value = false;
-    }, 3000);
+    toast.success("Profile saved");
+  } catch (e: unknown) {
+    toast.error(e instanceof Error ? e.message : "Could not save profile.");
   } finally {
     isSaving.value = false;
   }
@@ -75,13 +78,6 @@ async function handleSubmit(data: { name?: string }) {
 
 async function handlePasswordChange() {
   passwordError.value = "";
-  passwordChangeSuccess.value = false;
-
-  // Validation
-  // if (!passwordFormData.value.currentPassword) {
-  //   passwordError.value = "Current password is required";
-  //   return;
-  // }
 
   if (!passwordFormData.value.newPassword) {
     passwordError.value = "New password is required";
@@ -111,19 +107,18 @@ async function handlePasswordChange() {
       newPassword: passwordFormData.value.newPassword,
     });
 
-    passwordChangeSuccess.value = true;
     passwordFormData.value = {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     };
-
-    setTimeout(() => {
-      passwordChangeSuccess.value = false;
-    }, 3000);
-  } catch (error: any) {
-    passwordError.value =
-      error?.response?.data?.message || "Failed to change password. Please check your current password.";
+    toast.success("Password updated");
+  } catch (error: unknown) {
+    const msg =
+      error && typeof error === "object" && "response" in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
+    passwordError.value = msg || "Failed to change password. Please check your current password.";
   } finally {
     isChangingPassword.value = false;
   }
@@ -131,194 +126,210 @@ async function handlePasswordChange() {
 </script>
 
 <template>
-  <div class="flex h-full overflow-y-auto">
-    <div v-if="user" class="max-w-2xl mx-auto px-6 py-8">
-      <!-- Page Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-semibold text-foreground mb-2">Profile Settings</h1>
-        <p class="text-sm text-muted-foreground">Manage your account information and preferences</p>
-      </div>
-
-      <!-- Profile Picture Section -->
-      <div class="mb-8">
-        <h2 class="text-lg font-semibold text-foreground mb-4">Profile Picture</h2>
-        <UserPictureUpload />
-      </div>
-
-      <Separator class="my-8" />
-
-      <!-- Account Information Section -->
-      <div class="mb-8">
-        <h2 class="text-lg font-semibold text-foreground mb-4">Account Information</h2>
-        <Form @submit="handleSubmit($event)" :initial-values="user" class="flex:col-lg">
-          <div class="space-y-4">
-            <Field name="name" label="Display Name" />
-
-            <!-- Email (Read-only) -->
-            <div class="field">
-              <label class="text-sm font-semibold text-foreground mb-2 block">Email</label>
-              <input
-                type="email"
-                :value="user.email"
-                disabled
-                class="w-full px-4 py-2 border border-input bg-muted rounded-md text-muted-foreground cursor-not-allowed"
-              />
-              <p class="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-3 mt-6">
-            <Button type="submit" :disabled="isSaving" size="sm">
-              {{ isSaving ? "Saving..." : "Save Changes" }}
-            </Button>
-            <span
-              v-if="saveSuccess"
-              class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              Saved successfully
-            </span>
-          </div>
-        </Form>
-      </div>
-
-      <Separator class="my-8" />
-
-      <!-- Appearance Section -->
-      <div class="mb-8">
-        <h2 class="text-lg font-semibold text-foreground mb-2">Appearance</h2>
-        <p class="text-sm text-muted-foreground mb-4">Choose light, dark, or match your system.</p>
-        <ThemePicker variant="segmented" />
-      </div>
-
-      <Separator class="my-8" />
-
-      <!-- Change Password Section -->
-      <div class="mb-8">
-        <h2 class="text-lg font-semibold text-foreground mb-4">Change Password</h2>
-        <div class="flex:col-lg">
-          <div class="space-y-4">
-            <div class="field">
-              <label class="text-sm font-semibold text-foreground mb-2 block">Current Password</label>
-              <input
-                type="password"
-                v-model="passwordFormData.currentPassword"
-                placeholder="Enter your current password"
-                class="w-full px-4 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                :disabled="isChangingPassword"
-              />
-            </div>
-
-            <div class="field">
-              <label class="text-sm font-semibold text-foreground mb-2 block">New Password</label>
-              <input
-                type="password"
-                v-model="passwordFormData.newPassword"
-                placeholder="Enter your new password"
-                class="w-full px-4 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                :disabled="isChangingPassword"
-              />
-            </div>
-
-            <div class="field">
-              <label class="text-sm font-semibold text-foreground mb-2 block">Confirm New Password</label>
-              <input
-                type="password"
-                v-model="passwordFormData.confirmPassword"
-                placeholder="Confirm your new password"
-                class="w-full px-4 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                :disabled="isChangingPassword"
-                @keyup.enter="handlePasswordChange"
-              />
-            </div>
-          </div>
-
-          <div
-            v-if="passwordError"
-            class="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md"
-          >
-            <p class="text-sm text-destructive">{{ passwordError }}</p>
-          </div>
-
-          <div class="flex items-center gap-3 mt-6">
-            <Button type="button" @click="handlePasswordChange" :disabled="isChangingPassword" size="sm">
-              {{ isChangingPassword ? "Changing Password..." : "Change Password" }}
-            </Button>
-            <span
-              v-if="passwordChangeSuccess"
-              class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              Password changed successfully
-            </span>
-          </div>
-
-          <p class="text-xs text-muted-foreground mt-3">Password must be at least 6 characters long.</p>
-        </div>
-      </div>
-
-      <Separator class="my-8" />
-
-      <div class="mb-8">
-        <h2 class="text-lg font-semibold text-destructive mb-2">Danger zone</h2>
-        <p class="text-sm text-muted-foreground mb-4">
-          Delete your account. Messages and issues you created stay attributed to “Deleted user”. You must
-          transfer ownership of every workspace you own first.
+  <div class="flex min-h-0 flex-1 flex-col">
+    <ScrollArea class="min-h-0 flex-1">
+      <div class="!block max-w-3xl p-6 pb-10">
+        <h1 class="text-lg font-semibold tracking-tight">Profile</h1>
+        <p class="mt-1 max-w-xl text-sm text-secondary-foreground">
+          Manage your account, appearance, and sign-in credentials.
         </p>
 
-        <div v-if="isLoadingOwned" class="mb-4 text-sm text-muted-foreground">Checking owned workspaces…</div>
         <div
-          v-else-if="ownedWorkspaces.length > 0"
-          class="mb-4 rounded-md border border-destructive/30 bg-destructive/5 p-3"
+          v-if="!user"
+          class="mt-6 flex items-center justify-center gap-2 rounded-lg border bg-card py-12 text-sm text-secondary-foreground shadow-sm"
         >
-          <p class="text-sm font-medium text-foreground mb-2">Transfer ownership before deleting:</p>
-          <ul class="list-disc pl-5 text-sm text-muted-foreground space-y-1">
-            <li v-for="ws in ownedWorkspaces" :key="ws.id">{{ ws.name }}</li>
-          </ul>
+          <Loader2 class="size-4 animate-spin" />
+          Loading profile…
         </div>
 
-        <Button
-          type="button"
-          variant="flat"
-          intent="destructive"
-          size="sm"
-          :disabled="isLoadingOwned || ownedWorkspaces.length > 0"
-          @click="deleteOpen = true"
-        >
-          Delete account
-        </Button>
-      </div>
+        <template v-else>
+          <!-- Photo -->
+          <section class="mt-6 rounded-lg border border-border bg-card shadow-sm">
+            <div class="border-b border-border px-4 py-3">
+              <h2 class="text-sm font-medium">Photo</h2>
+              <p class="mt-1 text-xs text-secondary-foreground">
+                Shown next to your name in issues, chat, and the member list.
+              </p>
+            </div>
+            <div class="p-4">
+              <UserPictureUpload />
+            </div>
+          </section>
 
-      <Dialog :open="deleteOpen" @update:open="deleteOpen = $event">
-        <DialogContent class="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete account</DialogTitle>
-          </DialogHeader>
-          <p class="text-sm text-muted-foreground">
-            This permanently removes your access, memberships, and sign-in credentials. Content you created
-            remains as “Deleted user”.
-          </p>
-          <p v-if="deleteError" class="mt-3 text-sm text-destructive">{{ deleteError }}</p>
-          <DialogFooter class="mt-2">
-            <Button type="button" variant="outline" :disabled="isDeletingAccount" @click="deleteOpen = false">
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="flat"
-              intent="destructive"
-              :disabled="isDeletingAccount"
-              @click="confirmDeleteAccount"
-            >
-              {{ isDeletingAccount ? "Deleting…" : "Delete account" }}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          <!-- Account -->
+          <section class="mt-4 rounded-lg border border-border bg-card shadow-sm">
+            <div class="border-b border-border px-4 py-3">
+              <h2 class="text-sm font-medium">Account</h2>
+              <p class="mt-1 text-xs text-secondary-foreground">
+                How you appear to teammates in this product.
+              </p>
+            </div>
+            <div class="p-4">
+              <Form @submit="handleSubmit($event)" :initial-values="user" class="space-y-4">
+                <Field name="name" label="Display name" />
+
+                <div class="space-y-1.5">
+                  <Label for="profile-email">Email</Label>
+                  <Input id="profile-email" type="email" :model-value="user.email" disabled />
+                  <p class="text-xs text-secondary-foreground">Email cannot be changed.</p>
+                </div>
+
+                <div class="flex items-center gap-2 border-t border-border pt-4">
+                  <Button type="submit" size="sm" :disabled="isSaving">
+                    <Loader2 v-if="isSaving" class="mr-1.5 size-3.5 animate-spin" />
+                    {{ isSaving ? "Saving…" : "Save changes" }}
+                  </Button>
+                </div>
+              </Form>
+            </div>
+          </section>
+
+          <!-- Appearance -->
+          <section class="mt-4 rounded-lg border border-border bg-card shadow-sm">
+            <div class="border-b border-border px-4 py-3">
+              <h2 class="text-sm font-medium">Appearance</h2>
+              <p class="mt-1 text-xs text-secondary-foreground">Choose light, dark, or match your system.</p>
+            </div>
+            <div class="p-4">
+              <ThemePicker variant="segmented" />
+            </div>
+          </section>
+
+          <!-- Password -->
+          <section class="mt-4 rounded-lg border border-border bg-card shadow-sm">
+            <div class="border-b border-border px-4 py-3">
+              <h2 class="text-sm font-medium">Password</h2>
+              <p class="mt-1 text-xs text-secondary-foreground">
+                Update the password you use to sign in. Must be at least 6 characters.
+              </p>
+            </div>
+            <div class="space-y-4 p-4">
+              <div class="space-y-1.5">
+                <Label for="profile-current-password">Current password</Label>
+                <Input
+                  id="profile-current-password"
+                  v-model="passwordFormData.currentPassword"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Enter current password"
+                  :disabled="isChangingPassword"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <Label for="profile-new-password">New password</Label>
+                <Input
+                  id="profile-new-password"
+                  v-model="passwordFormData.newPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Enter new password"
+                  :disabled="isChangingPassword"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <Label for="profile-confirm-password">Confirm new password</Label>
+                <Input
+                  id="profile-confirm-password"
+                  v-model="passwordFormData.confirmPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Confirm new password"
+                  :disabled="isChangingPassword"
+                  @keyup.enter="handlePasswordChange"
+                />
+              </div>
+
+              <div
+                v-if="passwordError"
+                class="rounded-md border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                role="alert"
+              >
+                {{ passwordError }}
+              </div>
+
+              <div class="flex items-center gap-2 border-t border-border pt-4">
+                <Button type="button" size="sm" :disabled="isChangingPassword" @click="handlePasswordChange">
+                  <Loader2 v-if="isChangingPassword" class="mr-1.5 size-3.5 animate-spin" />
+                  {{ isChangingPassword ? "Updating…" : "Update password" }}
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Danger zone -->
+          <section class="mt-4 rounded-lg border border-destructive/25 bg-card shadow-sm">
+            <div class="border-b border-destructive/20 px-4 py-3">
+              <h2 class="text-sm font-medium text-destructive">Danger zone</h2>
+              <p class="mt-1 text-xs text-secondary-foreground">
+                Delete your account. Messages and issues you created stay attributed to “Deleted user”.
+                Transfer ownership of every workspace you own first.
+              </p>
+            </div>
+            <div class="space-y-3 p-4">
+              <div v-if="isLoadingOwned" class="flex items-center gap-2 text-sm text-secondary-foreground">
+                <Loader2 class="size-4 animate-spin" />
+                Checking owned workspaces…
+              </div>
+
+              <div
+                v-else-if="ownedWorkspaces.length > 0"
+                class="rounded-md border border-destructive/35 bg-destructive/10 px-3 py-2 text-sm"
+                role="status"
+              >
+                <p class="text-destructive font-medium">Transfer ownership before deleting</p>
+                <ul class="mt-2 ml-2 space-y-1.5">
+                  <li v-for="ws in ownedWorkspaces" :key="ws.id">
+                    <RouterLink :to="`/${ws.id}/settings/workspace`" class="opacity-90 hover:opacity-100">
+                      <span>{{ ws.name }}</span>
+                    </RouterLink>
+                  </li>
+                </ul>
+              </div>
+
+              <Button
+                type="button"
+                variant="flat"
+                intent="destructive"
+                size="sm"
+                :disabled="isLoadingOwned || ownedWorkspaces.length > 0"
+                @click="deleteOpen = true"
+              >
+                Delete account
+              </Button>
+            </div>
+          </section>
+        </template>
+      </div>
+    </ScrollArea>
+
+    <Dialog :open="deleteOpen" @update:open="deleteOpen = $event">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Delete account</DialogTitle>
+        </DialogHeader>
+        <p class="text-sm text-secondary-foreground">
+          This permanently removes your access, memberships, and sign-in credentials. Content you created
+          remains as “Deleted user”.
+        </p>
+        <p v-if="deleteError" class="mt-3 text-sm text-destructive">{{ deleteError }}</p>
+        <DialogFooter class="mt-2">
+          <Button type="button" variant="outline" :disabled="isDeletingAccount" @click="deleteOpen = false">
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="flat"
+            intent="destructive"
+            :disabled="isDeletingAccount"
+            @click="confirmDeleteAccount"
+          >
+            <Loader2 v-if="isDeletingAccount" class="mr-1.5 size-3.5 animate-spin" />
+            {{ isDeletingAccount ? "Deleting…" : "Delete account" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

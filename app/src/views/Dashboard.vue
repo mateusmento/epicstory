@@ -2,15 +2,7 @@
 defineOptions({ inheritAttrs: false });
 
 import { Issues } from "@/presentationals/app-pane/issues";
-import {
-  ChannelDetailsPane,
-  Channels,
-  Inbox,
-  Projects,
-  Team,
-  Teams,
-  WorkspaceMembers,
-} from "@/containers/app-pane";
+import { ChannelDetailsPane, Channels, Inbox, Projects, Team, Teams } from "@/containers/app-pane";
 import ChatboxThread from "@/containers/channel/ChatboxThread.vue";
 import ChannelComposePane from "@/containers/channel/ChannelComposePane.vue";
 import MeetingChatPanel from "@/containers/meeting/MeetingChatPanel.vue";
@@ -109,14 +101,15 @@ watch(workspaceId, () => {
         <DrawerPaneContent content="channels" :as="Channels" />
         <DrawerPaneContent content="teams" :as="Teams" />
         <DrawerPaneContent content="team" :as="Team" />
-        <DrawerPaneContent content="workspace-members" :as="WorkspaceMembers" />
         <DrawerPaneContent content="sprint-panel" #default="{ contentProps }">
           <SprintPanel :workspace-id="String(workspaceId)" :team-id="contentProps.teamId" />
         </DrawerPaneContent>
       </template>
 
       <template #main-content>
-        <RouterView />
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <RouterView />
+        </div>
       </template>
 
       <template #details-pane>

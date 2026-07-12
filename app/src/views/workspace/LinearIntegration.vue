@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Checkbox,
+  ScrollArea,
   Select,
   SelectContent,
   SelectItem,
@@ -424,255 +425,257 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="p-6 max-w-3xl">
-    <h1 class="text-lg font-semibold tracking-tight">Linear</h1>
-    <p class="text-sm text-secondary-foreground mt-1 max-w-xl">
-      Connect a Linear organization, choose projects to import, and map them into your Epicstory backlog.
-    </p>
-
-    <!-- Connection -->
-    <section class="mt-6 rounded-lg border border-border bg-card shadow-md">
-      <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div class="min-w-0 space-y-1">
-          <div class="flex flex-wrap items-center gap-2">
-            <h2 class="text-sm font-medium">Connection</h2>
-            <Badge v-if="!loading" size="xs" variant="soft" :intent="connection ? 'success' : 'secondary'">
-              {{ connection ? "Connected" : "Not connected" }}
-            </Badge>
-            <Badge v-else size="xs" variant="soft" intent="secondary">Loading…</Badge>
-          </div>
-          <p v-if="connection" class="text-sm text-secondary-foreground truncate">
-            Organization
-            <span class="font-medium text-foreground">{{ connection.linearOrgName }}</span>
-          </p>
-          <p v-else class="text-sm text-secondary-foreground">
-            Authorize Epicstory to read your Linear workspace.
-          </p>
-        </div>
-        <div class="flex shrink-0 items-center gap-2">
-          <Button v-if="!connection" :disabled="loading" :as="'a'" :href="oauthStartUrl()">
-            Connect Linear
-          </Button>
-          <Button v-else variant="outline" intent="destructive" :disabled="loading" @click="disconnect">
-            Disconnect
-          </Button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Import -->
-    <section v-if="connection" class="mt-4 rounded-lg border border-border bg-card shadow-md">
-      <div class="border-b border-border px-4 py-3">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div class="min-w-0 space-y-1">
-            <h2 class="text-sm font-medium">Import projects</h2>
-            <p class="text-xs text-secondary-foreground">
-              Map Linear projects to existing Epicstory projects. Select <b>auto-create</b> to make new one.
-            </p>
-          </div>
-          <div class="text-xs text-secondary-foreground tabular-nums shrink-0">
-            {{ selectedProjectIds.length }} of {{ projects.length }} selected
-          </div>
-        </div>
-
-        <div class="mt-3 flex flex-wrap items-center gap-1.5">
-          <Button variant="ghost" size="xs" :disabled="!projects.length" @click="selectAll">
-            Select all
-          </Button>
-          <Button variant="ghost" size="xs" :disabled="!selectedProjectIds.length" @click="clearSelection">
-            Clear
-          </Button>
-          <Button
-            variant="ghost"
-            size="xs"
-            class="gap-1.5"
-            :disabled="refreshingProjects"
-            @click="loadProjects({ announce: true })"
-          >
-            <Loader2 v-if="refreshingProjects" class="size-3.5 animate-spin" />
-            <RefreshCw v-else class="size-3.5 opacity-70" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      <div class="max-h-[28rem] overflow-y-auto">
-        <div v-if="!projects.length" class="px-4 py-10 text-center">
-          <p class="text-sm font-medium">No Linear projects found</p>
-          <p class="mt-1 text-xs text-secondary-foreground">
-            Create a project in Linear, then refresh this list.
-          </p>
-        </div>
-
-        <ul v-else class="divide-y divide-border" role="list">
-          <li
-            v-for="p of projects"
-            :key="p.id"
-            class="px-4 py-3 transition-colors"
-            :class="isSelected(p.id) ? 'bg-muted/40' : 'hover:bg-muted/20'"
-          >
-            <div class="flex flex-col gap-3 items-center sm:flex-row sm:justify-between sm:gap-4">
-              <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
-                <Checkbox
-                  class="mt-0.5"
-                  :model-value="isSelected(p.id)"
-                  @update:model-value="setSelected(p.id, $event)"
-                />
-                <span class="min-w-0">
-                  <span class="block truncate text-sm font-medium leading-snug">
-                    {{ p.name || p.id }}
-                  </span>
-                  <span
-                    v-if="mapsByLinear.get(p.id)"
-                    class="mt-0.5 block text-[11px] text-secondary-foreground"
-                  >
-                    Previously linked
-                  </span>
-                </span>
-              </label>
-
-              <div class="flex w-full min-w-0 flex-col gap-1.5 sm:w-[15.5rem] sm:shrink-0">
-                <div class="flex items-center gap-2">
-                  <span
-                    class="text-[11px] font-medium uppercase tracking-wide text-secondary-foreground shrink-0"
-                  >
-                    Destination
-                  </span>
-                  <Select
-                    :model-value="destinationModel(p.id)"
-                    @update:model-value="onDestinationChange(p.id, String($event))"
-                    class="w-full"
-                  >
-                    <SelectTrigger class="h-8 flex-1 text-xs truncate">
-                      <SelectValue placeholder="Auto-create" class="truncate" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="null">Auto-create</SelectItem>
-                      <SelectItem v-for="ep of epicProjects" :key="ep.id" :value="String(ep.id)">
-                        {{ ep.name }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <p
-                  v-if="
-                    projectMappings[p.id] == null &&
-                    suggestionFor(p) &&
-                    !mappingTouched[p.id] &&
-                    !mapsByLinear.get(p.id)
-                  "
-                  class="text-[11px] text-secondary-foreground"
-                >
-                  Suggested
-                  <button
-                    type="button"
-                    class="font-medium text-foreground underline-offset-2 hover:underline"
-                    @click="
-                      mappingTouched[p.id] = true;
-                      projectMappings[p.id] = suggestionFor(p)!.id;
-                    "
-                  >
-                    {{ suggestionFor(p)!.name }}
-                  </button>
-                </p>
-                <p
-                  v-if="destinationWarning(p.id, projectMappings[p.id] ?? null)"
-                  class="text-[11px] text-amber-800 dark:text-amber-200"
-                >
-                  {{ destinationWarning(p.id, projectMappings[p.id] ?? null) }}
-                </p>
-              </div>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <div
-        class="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <p class="text-xs text-secondary-foreground">
-          Import runs in the background — leave this page open to watch progress.
-        </p>
-        <Button class="shrink-0" :disabled="!canStartImport" @click="startImport">
-          <Loader2 v-if="startingImport || jobRunning" class="mr-1.5 size-3.5 animate-spin" />
-          {{ startingImport || jobRunning ? "Importing…" : "Start import" }}
-        </Button>
-      </div>
-    </section>
-
-    <!-- Progress -->
-    <section v-if="job" class="mt-4 rounded-lg border border-border bg-card p-4 shadow-md">
-      <div class="flex flex-wrap items-center gap-2">
-        <h2 class="text-sm font-medium">Import progress</h2>
-        <Badge size="xs" variant="soft" :intent="jobStatusIntent(job.status)" class="capitalize">
-          {{ job.status }}
-        </Badge>
-      </div>
-      <p v-if="progressSummary" class="mt-2 text-xs text-secondary-foreground">
-        {{ progressSummary }}
+  <ScrollArea class="min-h-0 flex-1">
+    <div class="!block max-w-3xl p-6 pb-10">
+      <h1 class="text-lg font-semibold tracking-tight">Linear</h1>
+      <p class="text-sm text-secondary-foreground mt-1 max-w-xl">
+        Connect a Linear organization, choose projects to import, and map them into your Epicstory backlog.
       </p>
 
-      <div
-        v-if="outcomeSummary && (job.status === 'completed' || outcomeSummary.outcomes.length)"
-        class="mt-4 space-y-2"
-      >
-        <div class="flex flex-wrap items-center gap-2 text-sm">
-          <span class="font-medium">Results</span>
-          <Badge size="xs" variant="soft" intent="success">{{ outcomeSummary.created }} created</Badge>
-          <Badge size="xs" variant="soft" intent="primary">{{ outcomeSummary.mapped }} mapped</Badge>
-        </div>
-        <ul
-          v-if="outcomeSummary.outcomes.length"
-          class="divide-y divide-border rounded-md border border-border"
-        >
-          <li
-            v-for="o of outcomeSummary.outcomes"
-            :key="o.linearProjectId"
-            class="flex flex-wrap items-baseline justify-between gap-2 px-3 py-2 text-xs"
-          >
-            <span class="font-medium text-foreground">{{ o.name }}</span>
-            <span class="text-secondary-foreground">
-              <template v-if="o.mode === 'created'">Created new Epicstory project</template>
-              <template v-else>
-                Mapped to
-                {{ epicById.get(o.epicProjectId)?.name ?? `project #${o.epicProjectId}` }}
-              </template>
-            </span>
-          </li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Mismatches -->
-    <section
-      v-if="mismatchesByType.length"
-      class="mt-4 rounded-lg border border-border bg-card p-4 shadow-md"
-    >
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <h2 class="text-sm font-medium">Mismatches</h2>
-          <Badge size="xs" variant="soft" intent="warning">{{ mismatches.length }}</Badge>
-        </div>
-        <Button variant="ghost" size="xs" @click="downloadMismatches">Download JSON</Button>
-      </div>
-      <div class="mt-3 space-y-4">
-        <div v-for="group of mismatchesByType" :key="group.type">
-          <div class="flex items-center gap-2 text-sm">
-            <span class="font-medium capitalize">{{ humanMismatchType(group.type) }}</span>
-            <span class="text-xs text-secondary-foreground">{{ group.count }}</span>
+      <!-- Connection -->
+      <section class="mt-6 rounded-lg border border-border bg-card shadow-sm">
+        <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="min-w-0 space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-sm font-medium">Connection</h2>
+              <Badge v-if="!loading" size="xs" variant="soft" :intent="connection ? 'success' : 'secondary'">
+                {{ connection ? "Connected" : "Not connected" }}
+              </Badge>
+              <Badge v-else size="xs" variant="soft" intent="secondary">Loading…</Badge>
+            </div>
+            <p v-if="connection" class="text-sm text-secondary-foreground truncate">
+              Organization
+              <span class="font-medium text-foreground">{{ connection.linearOrgName }}</span>
+            </p>
+            <p v-else class="text-sm text-secondary-foreground">
+              Authorize Epicstory to read your Linear workspace.
+            </p>
           </div>
-          <ul class="mt-1.5 space-y-1 border-l-2 border-border pl-3">
-            <li
-              v-for="m of group.items"
-              :key="m.id"
-              class="text-xs text-secondary-foreground leading-relaxed"
+          <div class="flex shrink-0 items-center gap-2">
+            <Button v-if="!connection" :disabled="loading" :as="'a'" :href="oauthStartUrl()">
+              Connect Linear
+            </Button>
+            <Button v-else variant="outline" intent="destructive" :disabled="loading" @click="disconnect">
+              Disconnect
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Import -->
+      <section v-if="connection" class="mt-4 rounded-lg border border-border bg-card shadow-sm">
+        <div class="border-b border-border px-4 py-3">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0 space-y-1">
+              <h2 class="text-sm font-medium">Import projects</h2>
+              <p class="text-xs text-secondary-foreground">
+                Map Linear projects to existing Epicstory projects. Select <b>auto-create</b> to make new one.
+              </p>
+            </div>
+            <div class="text-xs text-secondary-foreground tabular-nums shrink-0">
+              {{ selectedProjectIds.length }} of {{ projects.length }} selected
+            </div>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-1.5">
+            <Button variant="ghost" size="xs" :disabled="!projects.length" @click="selectAll">
+              Select all
+            </Button>
+            <Button variant="ghost" size="xs" :disabled="!selectedProjectIds.length" @click="clearSelection">
+              Clear
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              class="gap-1.5"
+              :disabled="refreshingProjects"
+              @click="loadProjects({ announce: true })"
             >
-              {{ m.message }}
+              <Loader2 v-if="refreshingProjects" class="size-3.5 animate-spin" />
+              <RefreshCw v-else class="size-3.5 opacity-70" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        <div class="max-h-[28rem] overflow-y-auto">
+          <div v-if="!projects.length" class="px-4 py-10 text-center">
+            <p class="text-sm font-medium">No Linear projects found</p>
+            <p class="mt-1 text-xs text-secondary-foreground">
+              Create a project in Linear, then refresh this list.
+            </p>
+          </div>
+
+          <ul v-else class="divide-y divide-border" role="list">
+            <li
+              v-for="p of projects"
+              :key="p.id"
+              class="px-4 py-3 transition-colors"
+              :class="isSelected(p.id) ? 'bg-muted/40' : 'hover:bg-muted/20'"
+            >
+              <div class="flex flex-col gap-3 items-center sm:flex-row sm:justify-between sm:gap-4">
+                <label class="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
+                  <Checkbox
+                    class="mt-0.5"
+                    :model-value="isSelected(p.id)"
+                    @update:model-value="setSelected(p.id, $event)"
+                  />
+                  <span class="min-w-0">
+                    <span class="block truncate text-sm font-medium leading-snug">
+                      {{ p.name || p.id }}
+                    </span>
+                    <span
+                      v-if="mapsByLinear.get(p.id)"
+                      class="mt-0.5 block text-[11px] text-secondary-foreground"
+                    >
+                      Previously linked
+                    </span>
+                  </span>
+                </label>
+
+                <div class="flex w-full min-w-0 flex-col gap-1.5 sm:w-[15.5rem] sm:shrink-0">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="text-[11px] font-medium uppercase tracking-wide text-secondary-foreground shrink-0"
+                    >
+                      Destination
+                    </span>
+                    <Select
+                      :model-value="destinationModel(p.id)"
+                      @update:model-value="onDestinationChange(p.id, String($event))"
+                      class="w-full"
+                    >
+                      <SelectTrigger class="h-8 flex-1 text-xs truncate">
+                        <SelectValue placeholder="Auto-create" class="truncate" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="null">Auto-create</SelectItem>
+                        <SelectItem v-for="ep of epicProjects" :key="ep.id" :value="String(ep.id)">
+                          {{ ep.name }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <p
+                    v-if="
+                      projectMappings[p.id] == null &&
+                      suggestionFor(p) &&
+                      !mappingTouched[p.id] &&
+                      !mapsByLinear.get(p.id)
+                    "
+                    class="text-[11px] text-secondary-foreground"
+                  >
+                    Suggested
+                    <button
+                      type="button"
+                      class="font-medium text-foreground underline-offset-2 hover:underline"
+                      @click="
+                        mappingTouched[p.id] = true;
+                        projectMappings[p.id] = suggestionFor(p)!.id;
+                      "
+                    >
+                      {{ suggestionFor(p)!.name }}
+                    </button>
+                  </p>
+                  <p
+                    v-if="destinationWarning(p.id, projectMappings[p.id] ?? null)"
+                    class="text-[11px] text-amber-800 dark:text-amber-200"
+                  >
+                    {{ destinationWarning(p.id, projectMappings[p.id] ?? null) }}
+                  </p>
+                </div>
+              </div>
             </li>
           </ul>
         </div>
-      </div>
-    </section>
-  </div>
+
+        <div
+          class="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p class="text-xs text-secondary-foreground">
+            Import runs in the background — leave this page open to watch progress.
+          </p>
+          <Button class="shrink-0" :disabled="!canStartImport" @click="startImport">
+            <Loader2 v-if="startingImport || jobRunning" class="mr-1.5 size-3.5 animate-spin" />
+            {{ startingImport || jobRunning ? "Importing…" : "Start import" }}
+          </Button>
+        </div>
+      </section>
+
+      <!-- Progress -->
+      <section v-if="job" class="mt-4 rounded-lg border border-border bg-card p-4 shadow-sm">
+        <div class="flex flex-wrap items-center gap-2">
+          <h2 class="text-sm font-medium">Import progress</h2>
+          <Badge size="xs" variant="soft" :intent="jobStatusIntent(job.status)" class="capitalize">
+            {{ job.status }}
+          </Badge>
+        </div>
+        <p v-if="progressSummary" class="mt-2 text-xs text-secondary-foreground">
+          {{ progressSummary }}
+        </p>
+
+        <div
+          v-if="outcomeSummary && (job.status === 'completed' || outcomeSummary.outcomes.length)"
+          class="mt-4 space-y-2"
+        >
+          <div class="flex flex-wrap items-center gap-2 text-sm">
+            <span class="font-medium">Results</span>
+            <Badge size="xs" variant="soft" intent="success">{{ outcomeSummary.created }} created</Badge>
+            <Badge size="xs" variant="soft" intent="primary">{{ outcomeSummary.mapped }} mapped</Badge>
+          </div>
+          <ul
+            v-if="outcomeSummary.outcomes.length"
+            class="divide-y divide-border rounded-md border border-border"
+          >
+            <li
+              v-for="o of outcomeSummary.outcomes"
+              :key="o.linearProjectId"
+              class="flex flex-wrap items-baseline justify-between gap-2 px-3 py-2 text-xs"
+            >
+              <span class="font-medium text-foreground">{{ o.name }}</span>
+              <span class="text-secondary-foreground">
+                <template v-if="o.mode === 'created'">Created new Epicstory project</template>
+                <template v-else>
+                  Mapped to
+                  {{ epicById.get(o.epicProjectId)?.name ?? `project #${o.epicProjectId}` }}
+                </template>
+              </span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Mismatches -->
+      <section
+        v-if="mismatchesByType.length"
+        class="mt-4 rounded-lg border border-border bg-card p-4 shadow-sm"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-sm font-medium">Mismatches</h2>
+            <Badge size="xs" variant="soft" intent="warning">{{ mismatches.length }}</Badge>
+          </div>
+          <Button variant="ghost" size="xs" @click="downloadMismatches">Download JSON</Button>
+        </div>
+        <div class="mt-3 space-y-4">
+          <div v-for="group of mismatchesByType" :key="group.type">
+            <div class="flex items-center gap-2 text-sm">
+              <span class="font-medium capitalize">{{ humanMismatchType(group.type) }}</span>
+              <span class="text-xs text-secondary-foreground">{{ group.count }}</span>
+            </div>
+            <ul class="mt-1.5 space-y-1 border-l-2 border-border pl-3">
+              <li
+                v-for="m of group.items"
+                :key="m.id"
+                class="text-xs text-secondary-foreground leading-relaxed"
+              >
+                {{ m.message }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+  </ScrollArea>
 </template>

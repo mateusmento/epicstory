@@ -28,9 +28,9 @@ const { workspace } = useWorkspace();
         <Icon name="fa-user-circle" />
         Profile
       </NavListItem>
-      <NavListItem view="app-pane" content="workspace-members" class="flex:row-md flex:center-y">
+      <NavListItem :to="`/${workspace.id}/settings/workspace`" class="flex:row-md flex:center-y">
         <Icon name="bi-people-fill" />
-        Members
+        Workspace
       </NavListItem>
       <NavListItem :to="`/${workspace.id}/settings/integrations/github`" class="flex:row-md flex:center-y">
         <Icon name="bi-box-arrow-up-right" />

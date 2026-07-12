@@ -2,7 +2,9 @@
 import { Button } from "@/design-system";
 import { useUser } from "@/domain/user";
 import { useDropZone } from "@vueuse/core";
+import { Loader2 } from "lucide-vue-next";
 import { ref, watch } from "vue";
+import { toast } from "vue-sonner";
 
 const { user, updateUserPicture } = useUser();
 
@@ -10,10 +12,8 @@ const fileDrop = ref<HTMLElement>();
 const pictureFile = ref<File>();
 const pictureUrl = ref<string>(user.value?.picture ?? "");
 const isUploading = ref(false);
-const uploadSuccess = ref(false);
 const hasChanges = ref(false);
 
-// Watch for user picture changes
 watch(
   () => user.value?.picture,
   (newPicture) => {
@@ -26,21 +26,18 @@ watch(
 function setPicture(file: File | null) {
   if (!file) return;
 
-  // Validate file type
   if (!file.type.startsWith("image/")) {
-    alert("Please select an image file");
+    toast.error("Please select an image file");
     return;
   }
 
-  // Validate file size (max 5MB)
   if (file.size > 5 * 1024 * 1024) {
-    alert("Image size must be less than 5MB");
+    toast.error("Image size must be less than 5MB");
     return;
   }
 
   pictureFile.value = file;
   hasChanges.value = true;
-  uploadSuccess.value = false;
 
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
@@ -48,7 +45,7 @@ function setPicture(file: File | null) {
   });
   reader.addEventListener("error", (err) => {
     console.error("Error reading file:", err);
-    alert("Error reading image file");
+    toast.error("Error reading image file");
   });
   reader.readAsDataURL(file);
 }
@@ -74,7 +71,6 @@ async function onSave() {
   if (!pictureFile.value) return;
 
   isUploading.value = true;
-  uploadSuccess.value = false;
 
   try {
     const formData = new FormData();
@@ -83,14 +79,10 @@ async function onSave() {
 
     pictureFile.value = undefined;
     hasChanges.value = false;
-    uploadSuccess.value = true;
-
-    setTimeout(() => {
-      uploadSuccess.value = false;
-    }, 3000);
+    toast.success("Photo updated");
   } catch (error) {
     console.error("Error uploading picture:", error);
-    alert("Failed to upload picture. Please try again.");
+    toast.error("Failed to upload picture. Please try again.");
   } finally {
     isUploading.value = false;
   }
@@ -100,96 +92,64 @@ function onCancel() {
   pictureFile.value = undefined;
   pictureUrl.value = user.value?.picture ?? "";
   hasChanges.value = false;
-  uploadSuccess.value = false;
 }
 </script>
 
 <template>
-  <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-    <!-- Profile Picture Display -->
-    <div class="relative">
+  <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+    <div class="relative shrink-0">
       <label
         ref="fileDrop"
-        class="block cursor-pointer group relative"
+        class="group relative block cursor-pointer"
         :class="{ 'pointer-events-none': isUploading }"
       >
         <div
           v-if="!newPictureIsOver && pictureUrl"
-          class="relative w-32 h-32 rounded-full overflow-hidden border-4 border-border shadow-lg transition-all group-hover:shadow-xl group-hover:scale-105"
+          class="relative size-24 overflow-hidden rounded-full border border-border shadow-sm transition-opacity group-hover:opacity-90"
         >
-          <img :src="pictureUrl" :alt="user?.name || 'Profile'" class="w-full h-full object-cover" />
+          <img :src="pictureUrl" :alt="user?.name || 'Profile'" class="size-full object-cover" />
           <div
-            class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center"
+            class="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/25"
           >
-            <span class="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+            <span class="text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
               Change
             </span>
           </div>
         </div>
         <div
           v-else
-          class="dropzone flex flex-col items-center justify-center w-32 h-32 text-sm text-center rounded-full border-2 border-dashed transition-colors"
+          class="flex size-24 flex-col items-center justify-center rounded-full border-2 border-dashed text-center text-sm transition-colors"
           :class="
-            newPictureIsOver ? 'border-primary bg-primary/5' : 'border-border bg-muted/50 hover:bg-muted'
+            newPictureIsOver ? 'border-primary bg-primary/5' : 'border-border bg-muted/40 hover:bg-muted/60'
           "
         >
-          <svg
-            class="w-8 h-8 mb-2 text-muted-foreground"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <span class="text-xs text-muted-foreground">Drop image</span>
+          <span class="text-xs text-secondary-foreground">Drop image</span>
         </div>
         <input
           type="file"
           accept="image/*"
           hidden
-          @change="setPicture((($event.target as any).files ?? [])[0] || null)"
+          @change="setPicture((($event.target as HTMLInputElement).files ?? [])[0] || null)"
         />
       </label>
 
-      <!-- Upload indicator -->
       <div
         v-if="isUploading"
-        class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center"
+        class="absolute inset-0 flex items-center justify-center rounded-full bg-black/45"
       >
-        <div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        <Loader2 class="size-5 animate-spin text-white" />
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="flex flex-col gap-3">
-      <div class="flex flex-col sm:flex-row gap-2">
-        <Button v-if="hasChanges" size="sm" @click="onSave" :disabled="isUploading">
-          {{ isUploading ? "Uploading..." : "Save Picture" }}
+    <div class="flex min-w-0 flex-col gap-2">
+      <div v-if="hasChanges" class="flex flex-wrap gap-2">
+        <Button size="sm" :disabled="isUploading" @click="onSave">
+          <Loader2 v-if="isUploading" class="mr-1.5 size-3.5 animate-spin" />
+          {{ isUploading ? "Uploading…" : "Save photo" }}
         </Button>
-        <Button v-if="hasChanges" size="sm" variant="outline" @click="onCancel" :disabled="isUploading">
-          Cancel
-        </Button>
+        <Button size="sm" variant="outline" :disabled="isUploading" @click="onCancel">Cancel</Button>
       </div>
-
-      <p class="text-xs text-muted-foreground">JPG, PNG or GIF. Max size 5MB.</p>
-
-      <span v-if="uploadSuccess" class="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        Picture updated successfully
-      </span>
+      <p class="text-xs text-secondary-foreground">JPG, PNG, or GIF. Max 5MB. Click or drop to change.</p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.dropzone {
-  transition: all 0.2s ease;
-}
-</style>
