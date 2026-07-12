@@ -112,7 +112,28 @@ export class LinearImportProcessorService {
 
     let importedProjects = 0;
     let importedIssues = 0;
+    let createdProjects = 0;
+    let mappedProjects = 0;
     let lastProjectName = '';
+    const outcomes: Array<{
+      linearProjectId: string;
+      name: string;
+      mode: 'created' | 'mapped';
+      epicProjectId: number;
+    }> = [];
+
+    const writeProgress = async () => {
+      await this.jobRepo.update(job.id, {
+        progress: {
+          importedProjects,
+          importedIssues,
+          createdProjects,
+          mappedProjects,
+          lastProject: lastProjectName,
+          outcomes,
+        } as any,
+      } as any);
+    };
 
     for (const lp of projects) {
       lastProjectName = lp.name || lp.id;
@@ -126,6 +147,9 @@ export class LinearImportProcessorService {
         );
         continue;
       }
+
+      const projectName =
+        (linearProject as any).name ?? lp.name ?? lastProjectName;
 
       // If user mapped this Linear project into an existing Epic project, use it.
       const mappedEpicProjectId = mappedEpicProjectIds?.[lp.id];
@@ -163,6 +187,13 @@ export class LinearImportProcessorService {
         );
 
         importedProjects += 1;
+        mappedProjects += 1;
+        outcomes.push({
+          linearProjectId: lp.id,
+          name: projectName,
+          mode: 'mapped',
+          epicProjectId: epicProject.id,
+        });
         importedIssues += await this.importIssues({
           job,
           issuer,
@@ -172,13 +203,7 @@ export class LinearImportProcessorService {
           client,
         });
 
-        await this.jobRepo.update(job.id, {
-          progress: {
-            importedProjects,
-            importedIssues,
-            lastProject: lastProjectName,
-          } as any,
-        } as any);
+        await writeProgress();
         continue;
       }
 
@@ -308,7 +333,9 @@ export class LinearImportProcessorService {
       });
 
       let epicProject: any;
+      let mode: 'created' | 'mapped' = 'created';
       if (existingProjectMap) {
+        mode = 'mapped';
         epicProject = await this.epicProjectRepo.findOne({
           where: { id: existingProjectMap.epicProjectId },
         });
@@ -343,6 +370,14 @@ export class LinearImportProcessorService {
       }
 
       importedProjects += 1;
+      if (mode === 'created') createdProjects += 1;
+      else mappedProjects += 1;
+      outcomes.push({
+        linearProjectId: lp.id,
+        name: projectName,
+        mode,
+        epicProjectId: epicProject.id,
+      });
 
       importedIssues += await this.importIssues({
         job,
@@ -353,13 +388,7 @@ export class LinearImportProcessorService {
         client,
       });
 
-      await this.jobRepo.update(job.id, {
-        progress: {
-          importedProjects,
-          importedIssues,
-          lastProject: lastProjectName,
-        } as any,
-      } as any);
+      await writeProgress();
     }
   }
 

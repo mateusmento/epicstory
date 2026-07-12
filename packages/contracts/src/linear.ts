@@ -18,6 +18,28 @@ export type ILinearProject = {
   teamId?: string;
 };
 
+/** Existing Linear project ↔ Epicstory project link for a workspace connection. */
+export type ILinearProjectMap = {
+  linearProjectId: string;
+  epicProjectId: number;
+};
+
+export type ILinearImportProjectOutcome = {
+  linearProjectId: string;
+  name: string;
+  mode: "created" | "mapped";
+  epicProjectId: number;
+};
+
+export type ILinearImportProgress = {
+  importedProjects?: number;
+  importedIssues?: number;
+  lastProject?: string;
+  createdProjects?: number;
+  mappedProjects?: number;
+  outcomes?: ILinearImportProjectOutcome[];
+};
+
 export type ILinearImportJob = {
   id: string;
   linearConnectionId: number;

@@ -1,4 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { LinearProjectMap } from '../entities';
 import { LinearClientService } from './linear-client.service';
 import { LinearTokenCryptoService } from './linear-token-crypto.service';
 import { LinearConnectionRepository } from '../repositories';
@@ -9,6 +12,8 @@ export class LinearApiService {
     private connectionRepo: LinearConnectionRepository,
     private crypto: LinearTokenCryptoService,
     private clientService: LinearClientService,
+    @InjectRepository(LinearProjectMap)
+    private projectMapRepo: Repository<LinearProjectMap>,
   ) {}
 
   async getWorkspaceClient(workspaceId: number) {
@@ -54,6 +59,17 @@ export class LinearApiService {
       name: p.name,
       state: p.state,
       teamId: p.teamId ?? p.team?.id,
+    }));
+  }
+
+  async listProjectMaps(workspaceId: number) {
+    const { connection } = await this.getWorkspaceClient(workspaceId);
+    const rows = await this.projectMapRepo.find({
+      where: { linearConnectionId: connection.id },
+    });
+    return rows.map((r) => ({
+      linearProjectId: r.linearProjectId,
+      epicProjectId: r.epicProjectId,
     }));
   }
 }

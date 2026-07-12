@@ -37,6 +37,7 @@ Epicstory is a **workspace for software teams** that combines **issue tracking**
 | [CURRENT.md](./CURRENT.md) | Active session question + done-when |
 | [tasks/](./tasks/) | Product/engineering slices (backlog) |
 | [.tasks/github-integration/](../.tasks/github-integration/) | GitHub integration deep spec |
+| [.tasks/linear-integration/](../.tasks/linear-integration/) | Linear OAuth + import features & workflows |
 | [.product/local/](./local/) | Personal scratch (gitignored) |
 
 ## Keeping this honest

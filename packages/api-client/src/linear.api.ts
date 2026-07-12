@@ -3,6 +3,7 @@ import type {
   ILinearImportJob,
   ILinearMismatch,
   ILinearProject,
+  ILinearProjectMap,
 } from "@epicstory/contracts";
 import type { AxiosInstance } from "axios";
 import { Axios as AxiosImport } from "axios";
@@ -13,6 +14,7 @@ export type {
   ILinearImportJob as LinearImportJob,
   ILinearMismatch as LinearMismatch,
   ILinearProject as LinearProject,
+  ILinearProjectMap as LinearProjectMap,
 } from "@epicstory/contracts";
 
 @injectable()
@@ -38,6 +40,14 @@ export class LinearIntegrationApi {
       .get<
         ILinearProject[]
       >(`/integrations/linear/workspaces/${workspaceId}/projects`)
+      .then((r) => r.data);
+  }
+
+  listProjectMaps(workspaceId: number) {
+    return this.axios
+      .get<
+        ILinearProjectMap[]
+      >(`/integrations/linear/workspaces/${workspaceId}/project-maps`)
       .then((r) => r.data);
   }
 

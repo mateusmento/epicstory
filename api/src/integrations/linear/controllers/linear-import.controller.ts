@@ -74,6 +74,21 @@ export class LinearImportController {
     return this.linearApi.listProjects(workspaceId);
   }
 
+  @Get(':workspaceId/project-maps')
+  @UseGuards(JwtAuthGuard)
+  @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
+  async listProjectMaps(
+    @Param('workspaceId') workspaceId: number,
+    @Auth() issuer: Issuer,
+  ) {
+    const isMember = await this.workspaceRepo.memberExists(
+      workspaceId,
+      issuer.id,
+    );
+    if (!isMember) throw new IssuerUserIsNotWorkspaceMember();
+    return this.linearApi.listProjectMaps(workspaceId);
+  }
+
   @Post(':workspaceId/import-jobs')
   @UseGuards(JwtAuthGuard)
   @ExceptionFilter([IssuerUserIsNotWorkspaceMember, ForbiddenException])
