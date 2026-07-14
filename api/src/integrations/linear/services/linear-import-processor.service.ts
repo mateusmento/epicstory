@@ -12,11 +12,7 @@ import { CreateProject } from 'src/project/application/features/project/create-p
 import { CreateBacklogItem } from 'src/project/application/features/backlog/create-backlog-item.command';
 import { UpdateIssue } from 'src/project/application/features/issue/update-issue.command';
 import { AddAssignee } from 'src/project/application/features/issue/add-assignee.command';
-import {
-  LinearApiService,
-  LinearClientService,
-  LinearTokenCryptoService,
-} from './index';
+import { LinearApiService } from './index';
 import {
   LinearImportJob,
   LinearImportMismatch,
@@ -52,8 +48,6 @@ export class LinearImportProcessorService {
     private teamRepo: TeamRepository,
     private connectionRepo: LinearConnectionRepository,
     private linearApi: LinearApiService,
-    private tokenCrypto: LinearTokenCryptoService,
-    private clientService: LinearClientService,
     @InjectRepository(LinearTeamMap)
     private teamMapRepo: Repository<LinearTeamMap>,
     @InjectRepository(LinearProjectMap)
@@ -87,10 +81,8 @@ export class LinearImportProcessorService {
     });
     if (!connection) throw new Error('Linear connection not found');
 
-    const accessToken = this.tokenCrypto.decrypt(
-      connection.accessTokenEncrypted,
-    );
-    const client = this.clientService.create(accessToken);
+    // Refresh OAuth tokens (Linear access tokens expire ~24h) via the shared path.
+    const { client } = await this.linearApi.getWorkspaceClient(job.workspaceId);
 
     const params = job.params ?? {};
     const importAll = !!params.importAll;

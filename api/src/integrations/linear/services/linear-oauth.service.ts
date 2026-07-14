@@ -54,6 +54,45 @@ export class LinearOAuthService {
     return (await res.json()) as LinearTokenResponse;
   }
 
+  /**
+   * Exchange a refresh token for a new access + refresh pair.
+   * Linear rotates refresh tokens — always persist the returned refresh_token.
+   * @see https://linear.app/developers/oauth-2-0-authentication
+   */
+  async refreshAccessToken(refreshToken: string): Promise<LinearTokenResponse> {
+    const clientId = this.config.LINEAR_CLIENT_ID?.trim();
+    const clientSecret = this.config.LINEAR_CLIENT_SECRET?.trim();
+    if (!clientId || !clientSecret) {
+      throw new Error('Linear OAuth client is not configured');
+    }
+
+    const body = new URLSearchParams();
+    body.set('grant_type', 'refresh_token');
+    body.set('refresh_token', refreshToken);
+    body.set('client_id', clientId);
+    body.set('client_secret', clientSecret);
+
+    const res = await fetch('https://api.linear.app/oauth/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Linear token refresh failed (${res.status}): ${text}`);
+    }
+
+    const data = (await res.json()) as LinearTokenResponse & {
+      error?: string;
+      error_description?: string;
+    };
+    if (data.error) {
+      throw new Error(data.error_description || data.error);
+    }
+    return data;
+  }
+
   /** Best-effort revoke so Linear drops the grant (disconnect shouldn't leave a silent reconnect). */
   async revokeToken(
     token: string,

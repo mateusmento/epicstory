@@ -23,7 +23,7 @@ Inspection guide for Epicstory’s Linear integration (as implemented in code).
 | Push changes to Linear / bidirectional sync | **No** |
 | Webhooks / incremental updates after import | **No** |
 | Import comments, labels, attachments, cycles, relations, sub-issues | **No** |
-| Token refresh using stored refresh token | **No** (stored but unused) |
+| Token refresh using stored refresh token | Yes (skew + force-retry on auth errors; rotates refresh_token) |
 
 UI copy: *“Connect a Linear workspace, select projects, and import issues into your Epicstory backlog.”*
 
@@ -52,7 +52,7 @@ sequenceDiagram
 
 **Who can connect:** any workspace member (admin-only gate is not enforced yet).
 
-**Tokens:** encrypted at rest (`INTEGRATIONS_ENCRYPTION_KEY`). Connection GET responses never include token fields.
+**Tokens:** encrypted at rest (`INTEGRATIONS_ENCRYPTION_KEY`). Access tokens expire ~24h; `getWorkspaceClient` refreshes via the stored refresh token (and persists Linear’s rotated refresh_token). Connection GET responses never include token fields.
 
 **Disconnect:** `DELETE .../connection` revokes the token at Linear (best-effort), then hard-deletes the Epicstory connection (related maps/jobs cascade).
 
