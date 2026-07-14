@@ -126,7 +126,7 @@ function itemTitle(item: IssueDevelopmentItem): string {
             <MenuTrigger as-child>
               <Button
                 type="button"
-                variant="soft"
+                variant="ghost"
                 intent="secondary"
                 size="icon"
                 class="py-0.5"
