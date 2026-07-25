@@ -3,6 +3,7 @@ export * from './channel-member-read.entity';
 export * from './channel.entity';
 export * from './meeting-attendee.entity';
 export * from './meeting.entity';
+export * from './message-draft.entity';
 export * from './message-poll-vote.entity';
 export * from './message.entity';
 export * from './message-reply.entity';

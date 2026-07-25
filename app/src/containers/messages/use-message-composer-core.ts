@@ -19,6 +19,7 @@ import type {
 import type { ResolvedSchedule } from "@/presentationals/messages/schedule-builders";
 import type { ReadonlyRefOrGetter } from "@/utils";
 import { toValue } from "@/utils";
+import { ChannelApi } from "@epicstory/api-client";
 import type {
   CreateScheduledMessageBody,
   IMessage,
@@ -36,6 +37,7 @@ import {
 } from "@epicstory/tiptap";
 import type { Editor, JSONContent } from "@tiptap/core";
 import { computed, shallowRef, watch, type Ref } from "vue";
+import { useDependency } from "@/core/dependency-injection";
 
 export type MessageComposerDraftExtensions = {
   runWithEditorMutationSuppressed?: (fn: () => Promise<void>) => Promise<void>;
@@ -53,6 +55,8 @@ export type MessageComposerEditorListeners = {
 export function useMessageComposerCore(options: {
   editor?: Ref<Editor | null>;
   channelId: ReadonlyRefOrGetter<number>;
+  /** When set, draft is scoped as a reply draft for this thread root. */
+  threadMessageId?: ReadonlyRefOrGetter<number | null | undefined>;
   editingMessage: ReadonlyRefOrGetter<ComposerEditingView>;
   quotedMessage: ReadonlyRefOrGetter<(IMessage | IReply) | null>;
   placeholder?: ReadonlyRefOrGetter<string | undefined>;
@@ -69,6 +73,7 @@ export function useMessageComposerCore(options: {
   editorListeners?: MessageComposerEditorListeners;
 }) {
   const editor = options.editor ?? shallowRef<Editor | null>(null);
+  const channelApi = useDependency(ChannelApi);
 
   function onRichTextEditorUpdate(ed: Editor | null) {
     editor.value = ed;
@@ -93,8 +98,39 @@ export function useMessageComposerCore(options: {
 
   const showQuote = computed(() => quoteView.value != null && toValue(options.editingMessage) == null);
 
-  const { scheduleDraftSave, cancelPendingDraftSave } = useChannelMessageDraft({
+  function onEditorUpdateForTyping() {
+    options.editorListeners?.onUpdateExtra?.();
+  }
+
+  function onEditorBlur() {
+    options.editorListeners?.onBlur?.();
+  }
+
+  const {
+    editingExistingAttachments,
+    editingAttachmentRows,
+    removingEditingAttachment,
+    pendingAttachments,
+    scheduleAttachmentHint,
+    stagingAttachmentRows,
+    attachmentsStagingBlocked,
+    uploadStagingFiles,
+    dismissPendingTransfer,
+    resetStagingTransfers,
+    onStagingFilesSelected,
+    removeStagingAttachment,
+    onRemoveEditingAttachment,
+  } = useMessageComposerAttachments({
     channelId: options.channelId,
+    editingMessage: options.editingMessage,
+    attachmentHandlers: options.attachmentHandlers,
+    activeSchedule: options.activeSchedule,
+    onExistingAttachmentRemoved: options.onExistingAttachmentRemoved,
+  });
+
+  const { scheduleDraftSave, cancelPendingDraftSave, resetServerDraftState } = useChannelMessageDraft({
+    channelId: options.channelId,
+    threadMessageId: options.threadMessageId,
     editingMessage: options.editingMessage,
     editor,
     seedContent: options.draftExtensions?.seedContent,
@@ -102,6 +138,14 @@ export function useMessageComposerCore(options: {
     whenEditorMissingAfterChannelChange: options.draftExtensions?.whenEditorMissingAfterChannelChange,
     getPollDraft: options.draftExtensions?.getPollDraft,
     onDraftRestored: options.draftExtensions?.onDraftRestored,
+    channelApi,
+    getTileAttachmentIds: () => pendingAttachments.value.map((a) => a.id),
+    onServerDraftLoaded: (draft) => {
+      if (!draft) return;
+      // Prefer server join set for tile staging (minus inline images, applied at send).
+      const inline = collectImageAttachmentIdsFromDoc(draft.content);
+      pendingAttachments.value = (draft.attachments ?? []).filter((a) => !inline.includes(a.id));
+    },
   });
 
   function onEditorUpdateForDraft() {
@@ -123,36 +167,6 @@ export function useMessageComposerCore(options: {
     },
     { immediate: true },
   );
-
-  function onEditorUpdateForTyping() {
-    options.editorListeners?.onUpdateExtra?.();
-  }
-
-  function onEditorBlur() {
-    options.editorListeners?.onBlur?.();
-  }
-
-  const {
-    editingAttachmentRows,
-    removingEditingAttachment,
-    pendingAttachments,
-    scheduleAttachmentHint,
-    stagingAttachmentRows,
-    attachmentsStagingBlocked,
-    uploadStagingFiles,
-    dismissPendingTransfer,
-    resetStagingTransfers,
-    onStagingFilesSelected,
-    removeStagingAttachment,
-    onRemoveEditingAttachment,
-  } = useMessageComposerAttachments({
-    channelId: options.channelId,
-    editingMessage: options.editingMessage,
-    attachmentHandlers: options.attachmentHandlers,
-    activeSchedule: options.activeSchedule,
-    onExistingAttachmentRemoved: options.onExistingAttachmentRemoved,
-  });
-
   const { isRecording, secondsElapsed, onToggleRecording, formatRecordingElapsed } =
     useMessageComposerScreenRecording();
 
@@ -168,7 +182,7 @@ export function useMessageComposerCore(options: {
       scheduleHint: scheduleAttachmentHint.value,
       removingEditing: removingEditingAttachment.value,
       stagingBlocked: attachmentsStagingBlocked.value,
-      stagingDisabled: !!toValue(options.activeSchedule) || attachmentsStagingBlocked.value,
+      stagingDisabled: attachmentsStagingBlocked.value,
     }),
   );
 
@@ -236,13 +250,14 @@ export function useMessageComposerCore(options: {
 
     const editing = toValue(options.editingMessage);
     if (editing) {
+      const existingIds = editingExistingAttachments.value.map((a) => a.id);
       const stagedIds = pendingAttachments.value.map((a) => a.id);
       const inlineIds = collectImageAttachmentIdsFromDoc(doc);
-      const attachmentIds = [...new Set([...stagedIds, ...inlineIds])];
+      const attachmentIds = [...new Set([...existingIds, ...stagedIds, ...inlineIds])];
       const pollPatch = pollPayloadForEdit();
       options.onSubmitEdit({
         content: doc,
-        ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
+        attachmentIds,
         ...(pollPatch !== undefined ? { poll: pollPatch } : {}),
       });
       pendingAttachments.value = [];
@@ -255,7 +270,7 @@ export function useMessageComposerCore(options: {
     const stagedIds = pendingAttachments.value.map((a) => a.id);
     const inlineIds = collectImageAttachmentIdsFromDoc(doc);
     const schedule = toValue(options.activeSchedule);
-    const attachmentIds = schedule ? [] : [...new Set([...stagedIds, ...inlineIds])];
+    const attachmentIds = [...new Set([...stagedIds, ...inlineIds])];
     const quoteRef = toValue(options.quotedMessage) ? composerQuoteRef(toValue(options.quotedMessage)!) : {};
 
     if (schedule && options.features.schedule && options.onSendScheduled) {
@@ -264,6 +279,7 @@ export function useMessageComposerCore(options: {
         ...quoteRef,
         dueAt: schedule.dueAt.toISOString(),
         recurrence: schedule.recurrence,
+        ...(attachmentIds.length > 0 ? { attachmentIds } : {}),
         ...(pollPayload ? { poll: pollPayload } : {}),
       });
       options.activeSchedule.value = null;
@@ -281,8 +297,9 @@ export function useMessageComposerCore(options: {
     resetStagingTransfers();
     if (options.composerPollBody) options.composerPollBody.value = null;
     options.onAfterSend?.();
-    clearChannelDraft(toValue(options.channelId));
     cancelPendingDraftSave();
+    clearChannelDraft(toValue(options.channelId), toValue(options.threadMessageId) ?? null);
+    resetServerDraftState();
   }
 
   return {

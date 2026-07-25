@@ -2,11 +2,14 @@ import type { JSONContent } from '@tiptap/core';
 import { Exclude } from 'class-transformer';
 import { User } from 'src/auth';
 import { CHANNEL_SCHEMA } from 'src/channel/constants';
+import { Attachment } from 'src/workspace/domain/entities/attachment.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -63,6 +66,15 @@ export class Message {
   @Exclude()
   @OneToMany(() => MessageReply, (reply) => reply.message)
   allReplies: MessageReply[];
+
+  @ManyToMany(() => Attachment)
+  @JoinTable({
+    name: 'message_attachments',
+    schema: CHANNEL_SCHEMA,
+    joinColumn: { name: 'message_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'attachment_id', referencedColumnName: 'id' },
+  })
+  fileAttachments?: Attachment[];
 }
 
 @Unique('unique_message_reaction', ['messageId', 'emoji', 'userId'])

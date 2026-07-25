@@ -22,6 +22,7 @@ import { ExceptionFilter } from 'src/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
 import { attachmentUploadMulterOptions } from 'src/core/multer/attachment-upload-options';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
+import { AttachmentReferencesService } from 'src/channel/application/services/attachment-references.service';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -68,6 +69,7 @@ export class IssueController {
     private queryBus: QueryBus,
     private issues: IssueRepository,
     private attachments: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
     private workspaces: WorkspaceRepository,
   ) {}
 
@@ -423,12 +425,20 @@ export class IssueController {
     const issue = await this.issues.findOne({ where: { id: issueId } });
     if (!issue) throw new ForbiddenException('Issue not found');
     await this.workspaces.requiresMembership(issue.workspaceId, issuer.id);
-    await this.attachments.deleteForIssue({
+    await this.attachments.requireDeletableIssueAttachment({
       workspaceId: issue.workspaceId,
       issueId,
       attachmentId,
       commentChannelId: issue.commentChannelId ?? null,
       issuerId: issuer.id,
     });
+    await this.attachmentRefs.commit({
+      workspaceId: issue.workspaceId,
+      channelId: issue.commentChannelId ?? 0,
+      actor: { uploadedById: issuer.id, trustedDelivery: true },
+      ops: [{ op: 'releaseAttachment', attachmentId }],
+    });
+    await this.attachments.clearIssueId(attachmentId);
+    await this.attachments.deleteBlobsIfStillUnreferenced([attachmentId]);
   }
 }

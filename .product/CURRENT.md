@@ -1,31 +1,25 @@
 # Current session
 
-**Updated:** 2026-07-11
+**Updated:** 2026-07-24
 
 ## Session question (60–90 min)
 
-> Can a teammate select text in an issue description, leave a comment or suggest an edit, and review those threads in a gutter next to the description—aligned to where they selected—without hunting the Activity timeline?
+> Can the same uploaded file stay first-class and be referenced by a channel draft, a scheduled job, and each delivered message—while unused files (and S3 objects) are cleaned up, without breaking issue description media?
 
 ## Done when
 
-- [x] Selecting description text can start a **comment** thread anchored to that range
-- [x] Open threads appear **beside the description**, not in the Activity timeline
-- [x] Cards are ordered by **selection start**; nearby anchors stack; distant leave gutter whitespace
-- [x] Highlight ↔ card focus association works; resolve clears open highlight
-- [x] Focusing a thread (mark or card) reflows the gutter so the active card pins to its selection Y
-- [x] Suggest / Accept / Reject works with the same layout rules
-- [x] Suggest mode records add/delete/replace; caret leave commits (no note)
-- [x] Comment + reply use multiline rich text composers
+- [x] Join tables + `message_drafts`; migrate exclusive `message_id`/`message_reply_id` into joins
+- [x] Associate/detach/eager GC APIs; list via joins; S3 on GC; never GC `issue_id` rows
+- [x] Wire send/reply/update + schedule create/update/delete/fire
+- [x] Draft CRUD APIs + expired-draft purge + S3 orphan sweep cron
+- [ ] Channel UI: dual-write drafts, tiles=joins−doc, schedule attachments, drafts drawer + badge
 
 ## Active task
 
-→ [11 — Issue description comments and edit suggestions](./tasks/11-description-comments-suggestions.md)
+→ Attachment reference redesign (backend slice largely in place; frontend remaining)
 
 ## Explicitly deferred (this session)
 
-- Listing each description thread in the Activity timeline
-- Replacing general Activity comments
-- App-wide Cmd+K navigation palette
-- CRDT / multi-cursor collab
-- Connector lines / mobile-first gutter polish / GitHub PR export
-- Notifications for description threads
+- Media library browser / pick existing workspace file
+- Issue-description join migration (keep `issue_id`)
+- CRDT / multi-cursor drafts

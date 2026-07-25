@@ -1,6 +1,8 @@
+export { AttachmentReferencesService } from './attachment-references.service';
 export * from './channel-activity.service';
 export * from './meeting-kick.service';
 export * from './meeting.service';
+export * from './message-draft.service';
 export * from './message-poll.service';
 export * from './message-preview-enrichment.service';
 export * from './message.service';

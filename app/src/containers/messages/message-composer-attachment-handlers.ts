@@ -6,15 +6,20 @@ import type { MessageComposerAttachmentHandlers } from "@/presentationals/messag
 export type { MessageComposerAttachmentHandlers } from "@/presentationals/messages/message-composer.types";
 
 /**
- * Standard channel / thread composer: stage via `POST /channels/:id/attachments`;
- * remove-while-editing via `DELETE /channels/:id/attachments/:attachmentId`.
+ * Standard channel / thread composer: stage via `POST /channels/:id/attachments`.
+ * Edit-remove is local until submit syncs the message/reply anchor.
+ * `removeLinkedAttachment` remains for files-pane / intentional destroy.
  */
 export function channelMessageComposerAttachmentHandlers(deps: {
   channelApi: ChannelApi;
   channelId: () => number;
+  threadMessageId?: () => number | null;
 }): MessageComposerAttachmentHandlers {
   async function uploadOne(file: File): Promise<UploadedAttachment> {
-    return deps.channelApi.uploadAttachment(deps.channelId(), file);
+    const threadMessageId = deps.threadMessageId?.() ?? null;
+    return deps.channelApi.uploadAttachment(deps.channelId(), file, {
+      threadMessageId,
+    });
   }
 
   return {

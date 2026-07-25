@@ -29,7 +29,7 @@ import {
 } from 'src/channel/infrastructure';
 import { create, mapBy } from 'src/core/objects';
 import { Issue } from 'src/project/domain/entities';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { AttachmentReferencesService } from './attachment-references.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { In, Repository } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
@@ -48,7 +48,7 @@ export class MessageService {
     private messageReactionRepo: MessageReactionRepository,
     private channelRepo: ChannelRepository,
     private userRepo: UserRepository,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
     private readonly messagePolls: MessagePollService,
     private readonly replyService: ReplyService,
     private readonly workspaceRepo: WorkspaceRepository,
@@ -262,13 +262,20 @@ export class MessageService {
 
     await this.messageRepo.save(existing);
 
-    await this.attachmentService.linkStagingToMessage({
-      workspaceId: channel.workspaceId,
-      channelId: channel.id,
-      uploadedById: viewerId,
-      messageId,
-      attachmentIds,
-    });
+    if (attachmentIds !== undefined) {
+      await this.attachmentRefs.commit({
+        workspaceId: channel.workspaceId,
+        channelId: channel.id,
+        actor: { uploadedById: viewerId },
+        ops: [
+          {
+            op: 'sync',
+            anchor: { type: 'message', messageId },
+            attachmentIds,
+          },
+        ],
+      });
+    }
 
     const message = await this.messageRepo.findOne({
       where: { id: messageId },
@@ -307,10 +314,11 @@ export class MessageService {
     const usersMap = mapBy(users, 'id');
     const reactions = mapReactions(message.allReactions, viewerId, usersMap);
 
-    const attachments = await this.attachmentService.listAnchoredForMessage(
-      channel.workspaceId,
-      messageId,
-    );
+    const { byAnchor } = await this.attachmentRefs.load({
+      workspaceId: channel.workspaceId,
+      anchors: [{ type: 'message', messageId }],
+    });
+    const attachments = byAnchor.get(`message:${messageId}`) ?? [];
 
     const pollDto =
       message.poll != null

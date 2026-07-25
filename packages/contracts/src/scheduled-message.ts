@@ -1,4 +1,5 @@
 import type { JSONContent } from "@tiptap/core";
+import type { UploadedAttachment } from "./attachment";
 import type { MessagePollBody } from "./channel-message";
 
 export type ScheduledMessageRecurrence =
@@ -24,6 +25,7 @@ export type IScheduledMessage = {
   content: JSONContent;
   quotedMessageId?: number;
   poll?: MessagePollBody;
+  attachments?: UploadedAttachment[];
   dueAt: string;
   recurrence: ScheduledMessageRecurrence;
   notifyMinutesBefore: number;
@@ -39,6 +41,7 @@ export type CreateScheduledMessageBody = {
   poll?: MessagePollBody;
   dueAt: string;
   recurrence: ScheduledMessageRecurrence;
+  attachmentIds?: number[];
 };
 
 export type UpdateScheduledMessageBody = {
@@ -47,4 +50,5 @@ export type UpdateScheduledMessageBody = {
   poll?: MessagePollBody | null;
   dueAt?: string;
   recurrence?: ScheduledMessageRecurrence;
+  attachmentIds?: number[];
 };

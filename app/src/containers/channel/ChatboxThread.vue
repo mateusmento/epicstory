@@ -28,6 +28,7 @@ const composerAttachmentHandlers = computed(() =>
   channelMessageComposerAttachmentHandlers({
     channelApi,
     channelId: () => message.value.channelId,
+    threadMessageId: () => message.value.id,
   }),
 );
 
@@ -344,6 +345,7 @@ function onEditTarget(m: IMessage | IReply) {
     <MessageComposer
       :key="message.id"
       :channel-id="message.channelId"
+      :thread-message-id="message.id"
       :attachment-handlers="composerAttachmentHandlers"
       :mentionables="channel?.peers ?? []"
       :me-id="meId"

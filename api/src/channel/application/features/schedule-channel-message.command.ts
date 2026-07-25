@@ -2,6 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import type { JSONContent } from '@tiptap/core';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -16,6 +17,10 @@ import { ScheduledJob } from 'src/scheduling/entities';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import { ScheduledMessagePayload } from 'src/scheduling/types/payload';
+import {
+  AttachmentReferencesService,
+  attachmentAnchorKey,
+} from '../services/attachment-references.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { MessagePollBody } from '../dtos/message-poll.dto';
@@ -24,6 +29,8 @@ import {
   mapScheduledJobToMessage,
 } from '../dtos/scheduled-message.dto';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
+import { MessageDraftService } from '../services/message-draft.service';
+import { Transactional } from 'typeorm-transactional';
 
 export class ScheduleChannelMessage {
   channelId: number;
@@ -47,6 +54,11 @@ export class ScheduleChannelMessage {
   @Type(() => MessagePollBody)
   poll?: MessagePollBody;
 
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  attachmentIds?: number[];
+
   constructor(data: Partial<ScheduleChannelMessage>) {
     patch(this, data);
   }
@@ -60,8 +72,11 @@ export class ScheduleChannelMessageCommand
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private scheduledJobRepo: ScheduledJobRepository,
+    private attachmentRefs: AttachmentReferencesService,
+    private messageDrafts: MessageDraftService,
   ) {}
 
+  @Transactional()
   async execute(cmd: ScheduleChannelMessage): Promise<IScheduledMessage> {
     const channel = await this.channelRepo.findOne({
       where: { id: cmd.channelId },
@@ -78,7 +93,6 @@ export class ScheduleChannelMessageCommand
     const peerIds = channel.peers.map((p) => p.id);
     if (!peerIds.includes(cmd.senderId)) throw new SenderIsNotChannelMember();
 
-    /** Rich text only; staged file attachments are not supported (see app MessageComposer guard). */
     const payload = new ScheduledMessagePayload({
       channelId: cmd.channelId,
       senderId: cmd.senderId,
@@ -97,6 +111,34 @@ export class ScheduleChannelMessageCommand
     });
 
     const saved = await this.scheduledJobRepo.save(job);
-    return mapScheduledJobToMessage(saved);
+
+    const anchor = { type: 'scheduled' as const, scheduledJobId: saved.id };
+    await this.attachmentRefs.commit({
+      workspaceId: channel.workspaceId,
+      channelId: channel.id,
+      actor: { uploadedById: cmd.senderId },
+      ops: [
+        {
+          op: 'sync',
+          anchor,
+          attachmentIds: cmd.attachmentIds ?? [],
+        },
+      ],
+    });
+
+    await this.messageDrafts.delete({
+      channelId: channel.id,
+      authorId: cmd.senderId,
+      threadMessageId: null,
+    });
+
+    const { byAnchor } = await this.attachmentRefs.load({
+      workspaceId: channel.workspaceId,
+      anchors: [anchor],
+    });
+    return mapScheduledJobToMessage(
+      saved,
+      byAnchor.get(attachmentAnchorKey(anchor)) ?? [],
+    );
   }
 }

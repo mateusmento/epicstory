@@ -5,7 +5,7 @@ import {
   MessageReplyRepository,
 } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { AttachmentReferencesService } from '../services/attachment-references.service';
 import { Transactional } from 'typeorm-transactional';
 import {
   ChannelNotFound,
@@ -28,7 +28,7 @@ export class DeleteReplyCommand implements ICommandHandler<DeleteReply> {
     private messageReplyRepo: MessageReplyRepository,
     private messageReplyReactionRepo: MessageReplyReactionRepository,
     private channelRepo: ChannelRepository,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
   ) {}
 
   @Transactional()
@@ -46,9 +46,13 @@ export class DeleteReplyCommand implements ICommandHandler<DeleteReply> {
     });
     if (!channel) throw new ChannelNotFound();
 
-    await this.attachmentService.deleteAnchoredForDeletedReply({
+    await this.attachmentRefs.commit({
       workspaceId: channel.workspaceId,
-      replyId,
+      channelId: channel.id,
+      actor: { uploadedById: issuerId, trustedDelivery: true },
+      ops: [
+        { op: 'release', anchor: { type: 'reply', messageReplyId: replyId } },
+      ],
     });
 
     await this.messageReplyReactionRepo.delete({ messageReplyId: replyId });

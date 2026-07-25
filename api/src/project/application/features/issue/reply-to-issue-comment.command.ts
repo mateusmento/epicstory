@@ -21,7 +21,7 @@ import { MessageRepository } from 'src/channel/infrastructure/repositories';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
 import { IssueRepository } from 'src/project/infrastructure/repositories';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { AttachmentReferencesService } from 'src/channel/application/services/attachment-references.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { Transactional } from 'typeorm-transactional';
@@ -56,7 +56,7 @@ export class ReplyToIssueCommentCommand
     private workspaceRepo: WorkspaceRepository,
     private messageRepo: MessageRepository,
     private replyService: ReplyService,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
     private commandBus: CommandBus,
     private messageGateway: MessageGateway,
   ) {}
@@ -101,19 +101,24 @@ export class ReplyToIssueCommentCommand
 
     const channel = parentMessage.channel;
 
-    await this.attachmentService.linkStagingToReply({
+    await this.attachmentRefs.commit({
       workspaceId: issue.workspaceId,
       channelId: commentChannelId,
-      uploadedById: issuer.id,
-      messageReplyId: reply.id,
-      attachmentIds,
+      actor: { uploadedById: issuer.id },
       matchedIssueId: issue.id,
+      ops: [
+        {
+          op: 'sync',
+          anchor: { type: 'reply', messageReplyId: reply.id },
+          attachmentIds: attachmentIds ?? [],
+        },
+      ],
     });
-
-    reply.attachments = await this.attachmentService.listAnchoredForReply(
-      issue.workspaceId,
-      reply.id,
-    );
+    const { byAnchor } = await this.attachmentRefs.load({
+      workspaceId: issue.workspaceId,
+      anchors: [{ type: 'reply', messageReplyId: reply.id }],
+    });
+    reply.attachments = byAnchor.get(`reply:${reply.id}`) ?? [];
 
     await dispatchNotificationsForReplySent(
       this.commandBus,

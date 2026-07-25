@@ -19,7 +19,7 @@ import { ChannelRepository } from 'src/channel/infrastructure/repositories';
 import { MessageService } from 'src/channel/application/services/message.service';
 import { Issuer } from 'src/core/auth';
 import { patch } from 'src/core/objects';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { AttachmentReferencesService } from 'src/channel/application/services/attachment-references.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
@@ -59,7 +59,7 @@ export class CreateIssueCommentCommand
     private messageService: MessageService,
     private issueActivities: IssueActivityRepository,
     private commandBus: CommandBus,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
   ) {}
 
   @Transactional()
@@ -98,14 +98,24 @@ export class CreateIssueCommentCommand
       null,
     );
 
-    await this.attachmentService.linkStagingToMessage({
+    await this.attachmentRefs.commit({
       workspaceId: issue.workspaceId,
       channelId: commentChannelId,
-      uploadedById: issuer.id,
-      messageId: message.id,
-      attachmentIds,
+      actor: { uploadedById: issuer.id },
       matchedIssueId: issue.id,
+      ops: [
+        {
+          op: 'sync',
+          anchor: { type: 'message', messageId: message.id },
+          attachmentIds: attachmentIds ?? [],
+        },
+      ],
     });
+    const { byAnchor } = await this.attachmentRefs.load({
+      workspaceId: issue.workspaceId,
+      anchors: [{ type: 'message', messageId: message.id }],
+    });
+    message.attachments = byAnchor.get(`message:${message.id}`) ?? [];
 
     await this.issueActivities.save(
       this.issueActivities.create({

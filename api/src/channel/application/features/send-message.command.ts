@@ -14,12 +14,16 @@ import {
 import { ChannelRepository } from 'src/channel/infrastructure';
 import type { JSONContent } from '@tiptap/core';
 import { patch } from 'src/core/objects';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import type { SendChannelMessageResponse } from '@epicstory/contracts';
+import {
+  AttachmentReferencesService,
+  attachmentAnchorKey,
+} from '../services/attachment-references.service';
 import { ChannelActivityService } from '../services/channel-activity.service';
+import { MessageDraftService } from '../services/message-draft.service';
 import { MessageService } from '../services/message.service';
 import { dispatchNotificationsForMessageSent } from '../utils/dispatch-message-notifications';
 import { Transactional } from 'typeorm-transactional';
@@ -69,7 +73,8 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
     private messageService: MessageService,
     private channelActivityService: ChannelActivityService,
     private commandBus: CommandBus,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
+    private messageDrafts: MessageDraftService,
   ) {}
 
   @Transactional()
@@ -111,18 +116,36 @@ export class SendMessageCommand implements ICommandHandler<SendMessage> {
       { isScheduled: markAsScheduled === true, poll },
     );
 
-    await this.attachmentService.linkStagingToMessage({
+    const anchor = { type: 'message' as const, messageId: message.id };
+    await this.attachmentRefs.commit({
       workspaceId: channel.workspaceId,
       channelId: channel.id,
-      uploadedById: senderId,
-      messageId: message.id,
-      attachmentIds,
+      actor: {
+        uploadedById: senderId,
+        trustedDelivery: markAsScheduled === true,
+      },
+      ops: [
+        {
+          op: 'sync',
+          anchor,
+          attachmentIds: attachmentIds ?? [],
+        },
+      ],
     });
 
-    message.attachments = await this.attachmentService.listAnchoredForMessage(
-      channel.workspaceId,
-      message.id,
-    );
+    if (markAsScheduled !== true) {
+      await this.messageDrafts.delete({
+        channelId: channel.id,
+        authorId: senderId,
+        threadMessageId: null,
+      });
+    }
+
+    const { byAnchor } = await this.attachmentRefs.load({
+      workspaceId: channel.workspaceId,
+      anchors: [anchor],
+    });
+    message.attachments = byAnchor.get(attachmentAnchorKey(anchor)) ?? [];
 
     await dispatchNotificationsForMessageSent(
       this.commandBus,

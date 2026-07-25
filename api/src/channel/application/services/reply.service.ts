@@ -29,7 +29,7 @@ import {
 import { groupBy, mapBy } from 'src/core/objects';
 import { Page } from 'src/core/page';
 import { excerptFromTiptapDocWithWorkspaceMembers } from 'src/utils/tiptap-excerpt';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { AttachmentReferencesService } from './attachment-references.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { In } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
@@ -45,7 +45,7 @@ export class ReplyService {
     private messageRepo: MessageRepository,
     private messageReplyReactionRepo: MessageReplyReactionRepository,
     private userRepo: UserRepository,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
     private workspaceRepo: WorkspaceRepository,
     private readonly replyPreview: ReplyPreviewEnrichmentService,
   ) {}
@@ -238,13 +238,20 @@ export class ReplyService {
       { content: normalizedContent },
     );
 
-    await this.attachmentService.linkStagingToReply({
-      workspaceId: channel.workspaceId,
-      channelId: channel.id,
-      uploadedById: viewerId,
-      messageReplyId: replyId,
-      attachmentIds,
-    });
+    if (attachmentIds !== undefined) {
+      await this.attachmentRefs.commit({
+        workspaceId: channel.workspaceId,
+        channelId: channel.id,
+        actor: { uploadedById: viewerId },
+        ops: [
+          {
+            op: 'sync',
+            anchor: { type: 'reply', messageReplyId: replyId },
+            attachmentIds,
+          },
+        ],
+      });
+    }
 
     const reply = await this.replyRepo.findOne({
       where: { id: replyId },

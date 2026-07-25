@@ -1,4 +1,4 @@
-import type { MessagePollBody } from '@epicstory/contracts';
+import type { MessagePollBody, UploadedAttachment } from '@epicstory/contracts';
 import type { JSONContent } from '@tiptap/core';
 import { ScheduledJob } from 'src/scheduling/entities';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
@@ -14,6 +14,7 @@ export class IScheduledMessage {
   content: JSONContent;
   quotedMessageId?: number;
   poll?: MessagePollBody;
+  attachments?: UploadedAttachment[];
 
   dueAt: Date;
   recurrence: ScheduledJobRecurrence;
@@ -41,7 +42,10 @@ function assertScheduledMessageJob(
   }
 }
 
-export function mapScheduledJobToMessage(job: ScheduledJob): IScheduledMessage {
+export function mapScheduledJobToMessage(
+  job: ScheduledJob,
+  attachments: UploadedAttachment[] = [],
+): IScheduledMessage {
   assertScheduledMessageJob(job);
   const p = job.payload;
   const row = new IScheduledMessage();
@@ -51,6 +55,7 @@ export function mapScheduledJobToMessage(job: ScheduledJob): IScheduledMessage {
   row.content = p.content;
   row.quotedMessageId = p.quotedMessageId;
   row.poll = p.poll;
+  row.attachments = attachments;
   row.dueAt = job.dueAt;
   row.recurrence = job.recurrence;
   row.notifyMinutesBefore = job.notifyMinutesBefore;

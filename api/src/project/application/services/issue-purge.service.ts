@@ -7,6 +7,7 @@ import {
   IssueRepository,
 } from 'src/project/infrastructure/repositories';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
+import { AttachmentReferencesService } from 'src/channel/application/services/attachment-references.service';
 import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 
 /**
@@ -20,6 +21,7 @@ export class IssuePurgeService {
     private backlogItemRepo: BacklogItemRepository,
     private channelRepo: ChannelRepository,
     private attachments: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
     private scheduledJobs: ScheduledJobRepository,
     private calendarEventRepo: CalendarEventRepository,
   ) {}
@@ -60,11 +62,21 @@ export class IssuePurgeService {
       issueId: issue.id,
     });
 
-    await this.attachments.deleteAllForIssue({
+    const attachmentIds = await this.attachments.listIdsForIssuePurge({
       workspaceId: issue.workspaceId,
       issueId: issue.id,
       commentChannelId: issue.commentChannelId ?? null,
     });
+    for (const attachmentId of attachmentIds) {
+      await this.attachmentRefs.commit({
+        workspaceId: issue.workspaceId,
+        channelId: issue.commentChannelId ?? 0,
+        actor: { uploadedById: 0, trustedDelivery: true },
+        ops: [{ op: 'releaseAttachment', attachmentId }],
+      });
+      await this.attachments.clearIssueId(attachmentId);
+    }
+    await this.attachments.deleteBlobsIfStillUnreferenced(attachmentIds);
 
     if (issue.commentChannelId != null) {
       await this.channelRepo.delete({ id: issue.commentChannelId });

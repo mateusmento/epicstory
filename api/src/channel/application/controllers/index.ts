@@ -2,6 +2,7 @@ export * from './channel-attachment.controller';
 export * from './channel.controller';
 export * from './meeting.controller';
 export * from './message.controller';
+export * from './message-draft.controller';
 export * from './scheduled-message.controller';
 export * from './reply.controller';
 export * from './workspace-meeting.controller';

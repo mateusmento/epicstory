@@ -130,10 +130,18 @@ export class AppConfig {
   @IsOptional()
   INTEGRATIONS_ENCRYPTION_KEY?: string;
 
-  /** Unlinked composer uploads older than this are purged (DB rows). Default 72h. */
+  /** Channel message drafts expire after this many hours without a save. Default 72h. */
   @IsNumber()
   @Transform(({ value }) => (value == null || value === '' ? 72 : +value))
-  ATTACHMENT_STAGING_TTL_HOURS: number = 72;
+  DRAFT_MESSAGE_TTL_HOURS: number = 72;
+
+  /**
+   * S3 objects under attachments/ older than this with no DB row are swept.
+   * Also used as grace for unreferenced attachment rows. Default 24h.
+   */
+  @IsNumber()
+  @Transform(({ value }) => (value == null || value === '' ? 24 : +value))
+  ATTACHMENT_S3_ORPHAN_GRACE_HOURS: number = 24;
 
   // ---- Integrations (GitHub API — Redis/memory cache, HTTP backoff) ----
 

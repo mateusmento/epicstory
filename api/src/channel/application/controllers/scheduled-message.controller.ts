@@ -8,10 +8,12 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsDate,
   IsInt,
   IsObject,
@@ -22,7 +24,6 @@ import {
 } from 'class-validator';
 import type { JSONContent } from '@tiptap/core';
 import { Auth, Issuer, JwtAuthGuard } from 'src/core/auth';
-import { UseGuards } from '@nestjs/common';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
 import { DeleteScheduledChannelMessage } from '../features/delete-scheduled-channel-message.command';
 import { ListScheduledChannelMessages } from '../features/list-scheduled-channel-messages.query';
@@ -50,6 +51,11 @@ class CreateScheduledMessageBody {
   @ValidateNested()
   @Type(() => MessagePollBody)
   poll?: MessagePollBody;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  attachmentIds?: number[];
 }
 
 class UpdateScheduledMessageBody {
@@ -76,6 +82,11 @@ class UpdateScheduledMessageBody {
   @ValidateNested()
   @Type(() => MessagePollBody)
   poll?: MessagePollBody | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  attachmentIds?: number[];
 }
 
 @UseGuards(JwtAuthGuard)
@@ -112,6 +123,7 @@ export class ChannelScheduledMessageController {
         dueAt: body.dueAt,
         recurrence: body.recurrence,
         poll: body.poll,
+        attachmentIds: body.attachmentIds,
       }),
     );
   }
@@ -133,6 +145,7 @@ export class ChannelScheduledMessageController {
         dueAt: body.dueAt,
         recurrence: body.recurrence,
         poll: body.poll,
+        attachmentIds: body.attachmentIds,
       }),
     );
   }

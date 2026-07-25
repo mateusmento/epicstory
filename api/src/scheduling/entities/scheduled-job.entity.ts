@@ -1,10 +1,13 @@
 import { UUID } from 'crypto';
 import { patch } from 'src/core/objects';
+import { Attachment } from 'src/workspace/domain/entities/attachment.entity';
 import { Workspace } from 'src/workspace/domain/entities';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -81,6 +84,15 @@ export class ScheduledJob {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToMany(() => Attachment)
+  @JoinTable({
+    name: 'scheduled_job_attachments',
+    schema: SCHEDULING_SCHEMA,
+    joinColumn: { name: 'scheduled_job_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'attachment_id', referencedColumnName: 'id' },
+  })
+  fileAttachments?: Attachment[];
 
   occurrenceAt?: Date;
 

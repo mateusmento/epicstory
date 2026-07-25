@@ -18,6 +18,7 @@ export * from "./label";
 export * from "./linear";
 export * from "./meeting-live";
 export * from "./meeting-socket-events";
+export * from "./message-draft";
 export * from "./notification";
 export * from "./page";
 export * from "./scheduled-message";

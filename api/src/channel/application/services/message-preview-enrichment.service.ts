@@ -24,7 +24,7 @@ import {
 import { groupBy, mapBy } from 'src/core/objects';
 import type { UploadedAttachment } from '@epicstory/contracts';
 import { Issue } from 'src/project/domain/entities';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { AttachmentReferencesService } from './attachment-references.service';
 import { In, Repository } from 'typeorm';
 import { messageEntityToIMessageCore } from '../utils/message-entity-to-imessage';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -38,7 +38,7 @@ export class MessagePreviewEnrichmentService {
     private replyRepo: MessageReplyRepository,
     private channelRepo: ChannelRepository,
     private userRepo: UserRepository,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
     private readonly messagePolls: MessagePollService,
     private readonly workspaceRepo: WorkspaceRepository,
     @InjectRepository(Issue)
@@ -169,7 +169,7 @@ export class MessagePreviewEnrichmentService {
     );
 
     const attachmentsByMessageId = channel
-      ? await this.attachmentService.listAnchoredForMessages(
+      ? await this.attachmentRefs.loadForMessages(
           channel.workspaceId,
           messageIds,
         )

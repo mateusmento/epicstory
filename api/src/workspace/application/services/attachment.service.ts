@@ -5,7 +5,6 @@ import {
 } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -22,11 +21,37 @@ import { basename } from 'path';
 import { In, Repository } from 'typeorm';
 import { AppConfig } from 'src/core/app.config';
 import { createS3Client } from 'src/core/aws';
+import { CHANNEL_SCHEMA } from 'src/channel/constants';
+import { SCHEDULING_SCHEMA } from 'src/scheduling/constants';
 import { WORKSPACE_SCHEMA } from 'src/workspace/constants';
 import { Attachment } from '../../domain/entities/attachment.entity';
 import { isEmpty, uniq } from 'lodash';
 import { Readable } from 'stream';
 
+/** Shared SQL fragment: attachment has zero reference joins. */
+const ATTACHMENT_UNREFERENCED_SQL = `
+  NOT EXISTS (
+    SELECT 1 FROM "${CHANNEL_SCHEMA}".message_attachments ma
+    WHERE ma.attachment_id = a.id
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM "${CHANNEL_SCHEMA}".message_reply_attachments mra
+    WHERE mra.attachment_id = a.id
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM "${CHANNEL_SCHEMA}".message_draft_attachments mda
+    WHERE mda.attachment_id = a.id
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM "${SCHEDULING_SCHEMA}".scheduled_job_attachments sja
+    WHERE sja.attachment_id = a.id
+  )
+`;
+
+/**
+ * Workspace blob custody: upload, issue listing/delete helpers, S3 orphan sweep.
+ * Attachment reference joins / GC live in channel AttachmentReferencesService.
+ */
 @Injectable()
 export class AttachmentService {
   private readonly s3: S3Client;
@@ -43,7 +68,6 @@ export class AttachmentService {
     workspaceId: number;
     channelId?: number | null;
     issueId?: number | null;
-    messageId?: number | null;
     uploadedById: number;
     file: Express.Multer.File;
   }): Promise<UploadedAttachment> {
@@ -86,7 +110,6 @@ export class AttachmentService {
         workspaceId,
         channelId: params.channelId ?? null,
         issueId: params.issueId ?? null,
-        messageId: params.messageId ?? null,
         uploadedById,
         storageKey,
         publicUrl: Location,
@@ -96,14 +119,7 @@ export class AttachmentService {
       });
       await this.attachments.save(row);
 
-      return {
-        id: row.id,
-        url: row.publicUrl,
-        mimeType: row.mimeType,
-        originalFilename: row.originalFilename,
-        byteSize: file.size,
-        uploadedById: uploadedById,
-      } satisfies UploadedAttachment;
+      return this.toUploadedDto(row);
     } finally {
       if (!isEmpty(tempPath)) {
         await unlink(tempPath).catch(() => {});
@@ -111,97 +127,17 @@ export class AttachmentService {
     }
   }
 
-  /** Files linked to top-level channel messages (presentation below message body). */
-  async listAnchoredForMessage(
-    workspaceId: number,
-    messageId: number,
-  ): Promise<UploadedAttachment[]> {
-    const rows = await this.attachments.find({
-      where: { workspaceId, messageId },
-      order: { id: 'ASC' },
-    });
-    return rows.map((r) => this.toDto(r));
-  }
-
-  /** Files linked to thread replies (same shape as messages). */
-  async listAnchoredForReply(
-    workspaceId: number,
-    replyId: number,
-  ): Promise<UploadedAttachment[]> {
-    const rows = await this.attachments.find({
-      where: { workspaceId, messageReplyId: replyId },
-      order: { id: 'ASC' },
-    });
-    return rows.map((r) => this.toDto(r));
-  }
-
-  async listAnchoredForMessages(
-    workspaceId: number,
-    messageIds: number[],
-  ): Promise<Map<number, UploadedAttachment[]>> {
-    const ids = uniq(messageIds.filter(Boolean));
-    if (ids.length === 0) return new Map();
-    const rows = await this.attachments.find({
-      where: { workspaceId, messageId: In(ids) },
-      order: { id: 'ASC' },
-    });
-    const map = new Map<number, UploadedAttachment[]>();
-    for (const r of rows) {
-      if (r.messageId == null) continue;
-      const list = map.get(r.messageId) ?? [];
-      list.push(this.toDto(r));
-      map.set(r.messageId, list);
-    }
-    return map;
-  }
-
-  async listAnchoredForReplies(
-    workspaceId: number,
-    replyIds: number[],
-  ): Promise<Map<number, UploadedAttachment[]>> {
-    const ids = uniq(replyIds.filter(Boolean));
-    if (ids.length === 0) return new Map();
-    const rows = await this.attachments.find({
-      where: { workspaceId, messageReplyId: In(ids) },
-      order: { id: 'ASC' },
-    });
-    const map = new Map<number, UploadedAttachment[]>();
-    for (const r of rows) {
-      if (r.messageReplyId == null) continue;
-      const list = map.get(r.messageReplyId) ?? [];
-      list.push(this.toDto(r));
-      map.set(r.messageReplyId, list);
-    }
-    return map;
-  }
-
-  async listForChannel(
-    workspaceId: number,
-    channelId: number,
-    limit = 100,
-  ): Promise<UploadedAttachment[]> {
-    const rows = await this.attachments
-      .createQueryBuilder('a')
-      .where('a.workspace_id = :ws', { ws: workspaceId })
-      .andWhere('a.channel_id = :ch', { ch: channelId })
-      .andWhere('(a.message_id IS NOT NULL OR a.message_reply_id IS NOT NULL)')
-      .orderBy('a.created_at', 'DESC')
-      .take(Math.min(limit, 100))
-      .getMany();
-    return rows.map((r) => this.toDto(r));
-  }
-
   /**
-   * Permanently removes an attachment linked to an issue (description upload or issue thread),
-   * if it matches {@link listForIssue} scope. Deletes the S3 object then the row.
+   * Validates issue-scoped delete. Caller must release Attachment references
+   * first, then {@link clearIssueId} + {@link deleteBlobsIfStillUnreferenced}.
    */
-  async deleteForIssue(params: {
+  async requireDeletableIssueAttachment(params: {
     workspaceId: number;
     issueId: number;
     attachmentId: number;
     commentChannelId: number | null;
     issuerId: number;
-  }): Promise<void> {
+  }): Promise<Attachment> {
     const row = await this.findAttachmentForIssueScope(params);
     if (!row) {
       throw new NotFoundException('Attachment not found');
@@ -211,16 +147,14 @@ export class AttachmentService {
         'You can only remove attachments you uploaded',
       );
     }
-
-    await this.deleteStoredFilesAndRows([row], false);
+    return row;
   }
 
-  /** Best-effort purge of all attachments scoped to an issue (description + comment channel). */
-  async deleteAllForIssue(params: {
+  async listIdsForIssuePurge(params: {
     workspaceId: number;
     issueId: number;
     commentChannelId: number | null;
-  }): Promise<void> {
+  }): Promise<number[]> {
     const { workspaceId, issueId, commentChannelId } = params;
     let rows: Attachment[];
     if (commentChannelId == null) {
@@ -230,57 +164,31 @@ export class AttachmentService {
         .createQueryBuilder('a')
         .where('a.workspace_id = :ws', { ws: workspaceId })
         .andWhere(
-          '(a.issue_id = :issueId OR (a.channel_id = :cc AND (a.message_id IS NOT NULL OR a.message_reply_id IS NOT NULL)))',
+          `(
+            a.issue_id = :issueId
+            OR (
+              a.channel_id = :cc
+              AND (
+                EXISTS (
+                  SELECT 1 FROM "${CHANNEL_SCHEMA}".message_attachments ma
+                  WHERE ma.attachment_id = a.id
+                )
+                OR EXISTS (
+                  SELECT 1 FROM "${CHANNEL_SCHEMA}".message_reply_attachments mra
+                  WHERE mra.attachment_id = a.id
+                )
+              )
+            )
+          )`,
           { issueId, cc: commentChannelId },
         )
         .getMany();
     }
-    await this.deleteStoredFilesAndRows(rows, true);
+    return rows.map((r) => r.id);
   }
 
-  /**
-   * When a channel message (thread root) is deleted: remove all reply-anchored files first, then
-   * message-anchored files. Matches {@link linkStagingToMessage} / {@link linkStagingToReply} scope.
-   */
-  async deleteAnchoredForDeletedThreadRoot(params: {
-    workspaceId: number;
-    messageId: number;
-    replyIds: number[];
-  }): Promise<void> {
-    const replyIds = uniq(params.replyIds.filter((id) => id > 0));
-    if (replyIds.length > 0) {
-      const replyRows = await this.attachments.find({
-        where: {
-          workspaceId: params.workspaceId,
-          messageReplyId: In(replyIds),
-        },
-      });
-      await this.deleteStoredFilesAndRows(replyRows, true);
-    }
-    const messageRows = await this.attachments.find({
-      where: { workspaceId: params.workspaceId, messageId: params.messageId },
-    });
-    await this.deleteStoredFilesAndRows(messageRows, true);
-  }
-
-  /** When a thread reply is deleted: remove files anchored to that reply. */
-  async deleteAnchoredForDeletedReply(params: {
-    workspaceId: number;
-    replyId: number;
-  }): Promise<void> {
-    const rows = await this.attachments.find({
-      where: {
-        workspaceId: params.workspaceId,
-        messageReplyId: params.replyId,
-      },
-    });
-    await this.deleteStoredFilesAndRows(rows, true);
-  }
-
-  /** Best-effort purge of all attachments for a workspace (DB rows + S3). */
   async deleteAllForWorkspace(workspaceId: number): Promise<void> {
-    const rows = await this.attachments.find({ where: { workspaceId } });
-    await this.deleteStoredFilesAndRows(rows, true);
+    await this.attachments.delete({ workspaceId });
     await this.deleteS3Prefix(`attachments/w-${workspaceId}/`);
   }
 
@@ -319,57 +227,24 @@ export class AttachmentService {
     }
   }
 
-  private async deleteStoredFilesAndRows(
-    rows: Attachment[],
+  private async deleteS3Keys(
+    storageKeys: string[],
     bestEffortS3: boolean,
   ): Promise<void> {
-    for (const row of rows) {
+    for (const Key of storageKeys) {
       try {
         await this.s3.send(
           new DeleteObjectCommand({
             Bucket: this.config.AWS_BUCKET,
-            Key: row.storageKey,
+            Key,
           }),
         );
       } catch (err) {
         if (!bestEffortS3) {
           throw err;
         }
-        /* Best-effort: still drop DB row so we do not leak attachment references. */
       }
-      await this.attachments.delete({ id: row.id });
     }
-  }
-
-  /**
-   * Permanently removes an attachment linked to a channel message/reply (edit flow).
-   * Row must belong to the channel and be anchored; same uploader rule as {@link deleteForIssue}.
-   */
-  async deleteForChannel(params: {
-    workspaceId: number;
-    channelId: number;
-    attachmentId: number;
-    issuerId: number;
-  }): Promise<void> {
-    const row = await this.attachments.findOne({
-      where: { id: params.attachmentId, workspaceId: params.workspaceId },
-    });
-    if (!row) {
-      throw new NotFoundException('Attachment not found');
-    }
-    if (row.channelId !== params.channelId) {
-      throw new NotFoundException('Attachment not found');
-    }
-    if (row.messageId == null && row.messageReplyId == null) {
-      throw new NotFoundException('Attachment not found');
-    }
-    if (row.uploadedById !== params.issuerId) {
-      throw new ForbiddenException(
-        'You can only remove attachments you uploaded',
-      );
-    }
-
-    await this.deleteStoredFilesAndRows([row], false);
   }
 
   private async findAttachmentForIssueScope(params: {
@@ -390,7 +265,22 @@ export class AttachmentService {
       .where('a.id = :attachmentId', { attachmentId })
       .andWhere('a.workspace_id = :workspaceId', { workspaceId })
       .andWhere(
-        `(a.issue_id = :issueId OR (a.channel_id = :commentChannelId AND (a.message_id IS NOT NULL OR a.message_reply_id IS NOT NULL)))`,
+        `(
+          a.issue_id = :issueId
+          OR (
+            a.channel_id = :commentChannelId
+            AND (
+              EXISTS (
+                SELECT 1 FROM "${CHANNEL_SCHEMA}".message_attachments ma
+                WHERE ma.attachment_id = a.id
+              )
+              OR EXISTS (
+                SELECT 1 FROM "${CHANNEL_SCHEMA}".message_reply_attachments mra
+                WHERE mra.attachment_id = a.id
+              )
+            )
+          )
+        )`,
         { issueId, commentChannelId },
       )
       .getOne();
@@ -403,202 +293,223 @@ export class AttachmentService {
     commentChannelId?: number | null,
   ): Promise<IIssueAttachmentListItem[]> {
     const take = Math.min(limit, 100);
+    let rows: Attachment[];
     if (commentChannelId == null) {
-      const rows = await this.attachments.find({
+      rows = await this.attachments.find({
         where: { workspaceId, issueId },
         order: { createdAt: 'DESC' },
         take,
       });
-      return rows.map((r) => this.toIssueListItemDto(r));
+    } else {
+      rows = await this.attachments
+        .createQueryBuilder('a')
+        .where('a.workspace_id = :ws', { ws: workspaceId })
+        .andWhere(
+          `(
+            a.issue_id = :issueId
+            OR (
+              a.channel_id = :cc
+              AND (
+                EXISTS (
+                  SELECT 1 FROM "${CHANNEL_SCHEMA}".message_attachments ma
+                  WHERE ma.attachment_id = a.id
+                )
+                OR EXISTS (
+                  SELECT 1 FROM "${CHANNEL_SCHEMA}".message_reply_attachments mra
+                  WHERE mra.attachment_id = a.id
+                )
+              )
+            )
+          )`,
+          { issueId, cc: commentChannelId },
+        )
+        .orderBy('a.created_at', 'DESC')
+        .take(take)
+        .getMany();
     }
 
-    const qb = this.attachments
-      .createQueryBuilder('a')
-      .where('a.workspace_id = :ws', { ws: workspaceId })
-      .andWhere(
-        '(a.issue_id = :issueId OR (a.channel_id = :cc AND (a.message_id IS NOT NULL OR a.message_reply_id IS NOT NULL)))',
-        { issueId, cc: commentChannelId },
-      )
-      .orderBy('a.created_at', 'DESC')
-      .take(take);
-
-    const rows = await qb.getMany();
-    return rows.map((r) => this.toIssueListItemDto(r));
-  }
-
-  /**
-   * Bind staged uploads to a posted message (composer → send). Rows must match
-   * workspace/channel/uploader and still be unlinked; optional issue tag must match {@link matchedIssueId}.
-   */
-  async linkStagingToMessage(params: {
-    workspaceId: number;
-    channelId: number;
-    uploadedById: number;
-    messageId: number;
-    attachmentIds: number[] | undefined;
-    matchedIssueId?: number;
-  }): Promise<void> {
-    const ids = uniq((params.attachmentIds ?? []).filter((n) => n > 0));
-    if (ids.length === 0) {
-      return;
-    }
-    const rows = await this.lockStagingRows(ids);
-    if (rows.length !== ids.length) {
-      throw new BadRequestException(
-        'One or more attachments are unavailable, expired, or already linked',
-      );
-    }
-    const minCreatedAt = this.stagingFreshnessCutoff();
-    for (const row of rows) {
-      this.assertStagingRowEligible(row, params, minCreatedAt);
-    }
-    const patch: Partial<Attachment> = { messageId: params.messageId };
-    if (params.matchedIssueId != null) {
-      patch.issueId = params.matchedIssueId;
-    }
-    const upd = await this.attachments.update(
-      {
-        id: In(ids),
-        workspaceId: params.workspaceId,
-        channelId: params.channelId,
-      },
-      patch,
+    const parentByAttachment = await this.findPrimaryParentsForAttachments(
+      rows.map((r) => r.id),
     );
-    if ((upd.affected ?? 0) !== ids.length) {
-      throw new BadRequestException('Attachment link conflict');
-    }
-  }
-
-  /**
-   * Bind staged uploads to a thread reply.
-   */
-  async linkStagingToReply(params: {
-    workspaceId: number;
-    channelId: number;
-    uploadedById: number;
-    messageReplyId: number;
-    attachmentIds: number[] | undefined;
-    matchedIssueId?: number;
-  }): Promise<void> {
-    const ids = uniq((params.attachmentIds ?? []).filter((n) => n > 0));
-    if (ids.length === 0) {
-      return;
-    }
-    const rows = await this.lockStagingRows(ids);
-    if (rows.length !== ids.length) {
-      throw new BadRequestException(
-        'One or more attachments are unavailable, expired, or already linked',
-      );
-    }
-    const minCreatedAt = this.stagingFreshnessCutoff();
-    for (const row of rows) {
-      this.assertStagingRowEligible(row, params, minCreatedAt);
-    }
-    const patch: Partial<Attachment> = {
-      messageReplyId: params.messageReplyId,
-    };
-    if (params.matchedIssueId != null) {
-      patch.issueId = params.matchedIssueId;
-    }
-    const upd = await this.attachments.update(
-      {
-        id: In(ids),
-        workspaceId: params.workspaceId,
-        channelId: params.channelId,
-      },
-      patch,
+    return rows.map((r) =>
+      this.toIssueListItemDto(r, parentByAttachment.get(r.id)),
     );
-    if ((upd.affected ?? 0) !== ids.length) {
-      throw new BadRequestException('Attachment link conflict');
+  }
+
+  async sweepS3Orphans(): Promise<number> {
+    const graceHours = this.config.ATTACHMENT_S3_ORPHAN_GRACE_HOURS ?? 24;
+    const cutoff = new Date(Date.now() - graceHours * 60 * 60 * 1000);
+    let removed = 0;
+    try {
+      let continuationToken: string | undefined;
+      do {
+        const listed = await this.s3.send(
+          new ListObjectsV2Command({
+            Bucket: this.config.AWS_BUCKET,
+            Prefix: 'attachments/',
+            ContinuationToken: continuationToken,
+          }),
+        );
+        for (const obj of listed.Contents ?? []) {
+          if (!obj.Key || !obj.LastModified) continue;
+          if (obj.LastModified >= cutoff) continue;
+          const exists = await this.attachments.exists({
+            where: { storageKey: obj.Key },
+          });
+          if (exists) continue;
+          try {
+            await this.s3.send(
+              new DeleteObjectCommand({
+                Bucket: this.config.AWS_BUCKET,
+                Key: obj.Key,
+              }),
+            );
+            removed += 1;
+          } catch {
+            // best-effort
+          }
+        }
+        continuationToken = listed.IsTruncated
+          ? listed.NextContinuationToken
+          : undefined;
+      } while (continuationToken);
+    } catch {
+      // best-effort
     }
+    return removed;
   }
 
-  /** Removes unlinked attachment rows older than TTL (S3 orphans are out of scope). */
-  async purgeUnlinkedExpiredStaging(): Promise<number> {
-    const cutoff = this.stagingFreshnessCutoff();
-    const res = await this.attachments
-      .createQueryBuilder()
-      .delete()
-      .from(Attachment)
-      .where('message_id IS NULL')
-      .andWhere('message_reply_id IS NULL')
-      .andWhere('created_at < :cutoff', { cutoff })
-      .execute();
-    return res.affected ?? 0;
+  private async findPrimaryParentsForAttachments(
+    attachmentIds: number[],
+  ): Promise<
+    Map<number, { messageId: number | null; messageReplyId: number | null }>
+  > {
+    const ids = uniq(attachmentIds.filter(Boolean));
+    const map = new Map<
+      number,
+      { messageId: number | null; messageReplyId: number | null }
+    >();
+    if (ids.length === 0) return map;
+
+    const msgRows: { attachment_id: number; message_id: number }[] =
+      await this.attachments.manager.query(
+        `
+        SELECT DISTINCT ON (attachment_id) attachment_id, message_id
+        FROM "${CHANNEL_SCHEMA}".message_attachments
+        WHERE attachment_id = ANY($1::int[])
+        ORDER BY attachment_id, message_id ASC
+      `,
+        [ids],
+      );
+    const replyRows: { attachment_id: number; message_reply_id: number }[] =
+      await this.attachments.manager.query(
+        `
+        SELECT DISTINCT ON (attachment_id) attachment_id, message_reply_id
+        FROM "${CHANNEL_SCHEMA}".message_reply_attachments
+        WHERE attachment_id = ANY($1::int[])
+        ORDER BY attachment_id, message_reply_id ASC
+      `,
+        [ids],
+      );
+
+    for (const id of ids) {
+      map.set(id, { messageId: null, messageReplyId: null });
+    }
+    for (const r of msgRows) {
+      const cur = map.get(Number(r.attachment_id));
+      if (cur) cur.messageId = Number(r.message_id);
+    }
+    for (const r of replyRows) {
+      const cur = map.get(Number(r.attachment_id));
+      if (cur) cur.messageReplyId = Number(r.message_reply_id);
+    }
+    return map;
   }
 
-  private stagingFreshnessCutoff(): Date {
-    const hours = this.config.ATTACHMENT_STAGING_TTL_HOURS ?? 72;
-    return new Date(Date.now() - hours * 60 * 60 * 1000);
-  }
-
-  private async lockStagingRows(ids: number[]): Promise<
+  async lockRowsForAssociate(ids: number[]): Promise<
     {
       id: number;
       workspace_id: number;
       channel_id: number | null;
       uploaded_by_id: number;
-      message_id: number | null;
-      message_reply_id: number | null;
       issue_id: number | null;
-      created_at: Date;
     }[]
   > {
+    const unique = uniq(ids.filter((n) => n > 0));
+    if (unique.length === 0) return [];
     return this.attachments.manager.query(
       `
-      SELECT id, workspace_id, channel_id, uploaded_by_id, message_id, message_reply_id, issue_id, created_at
+      SELECT id, workspace_id, channel_id, uploaded_by_id, issue_id
       FROM "${WORKSPACE_SCHEMA}".attachments
       WHERE id = ANY($1::int[])
-      FOR UPDATE SKIP LOCKED
+      FOR UPDATE
     `,
-      [ids],
+      [unique],
     );
   }
 
-  private assertStagingRowEligible(
-    row: {
-      workspace_id: number;
-      channel_id: number | null;
-      uploaded_by_id: number;
-      message_id: number | null;
-      message_reply_id: number | null;
-      issue_id: number | null;
-      created_at: Date;
-    },
-    params: {
-      workspaceId: number;
-      channelId: number;
-      uploadedById: number;
-      matchedIssueId?: number;
-    },
-    minCreatedAt: Date,
-  ): void {
-    if (row.workspace_id !== params.workspaceId) {
-      throw new BadRequestException('Attachment workspace mismatch');
-    }
-    if (row.channel_id !== params.channelId) {
-      throw new BadRequestException('Attachment channel mismatch');
-    }
-    if (row.uploaded_by_id !== params.uploadedById) {
-      throw new BadRequestException('Attachment uploader mismatch');
-    }
-    if (row.message_id != null || row.message_reply_id != null) {
-      throw new BadRequestException('Attachment already linked');
-    }
-    if (row.created_at < minCreatedAt) {
-      throw new BadRequestException('Attachment staging expired');
-    }
-    const issue = row.issue_id;
-    if (params.matchedIssueId === undefined) {
-      if (issue != null) {
-        throw new BadRequestException('Attachment is scoped to an issue');
-      }
-    } else if (issue != null && issue !== params.matchedIssueId) {
-      throw new BadRequestException('Attachment issue mismatch');
-    }
+  async listUploadedByIds(
+    workspaceId: number,
+    ids: number[],
+  ): Promise<UploadedAttachment[]> {
+    const unique = uniq(ids.filter((n) => n > 0));
+    if (unique.length === 0) return [];
+    const rows = await this.attachments.find({
+      where: { workspaceId, id: In(unique) },
+      order: { id: 'ASC' },
+    });
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    return unique
+      .map((id) => byId.get(id))
+      .filter((r): r is Attachment => r != null)
+      .map((r) => this.toUploadedDto(r));
   }
 
-  private toDto(r: Attachment): UploadedAttachment {
+  async bindIssueId(
+    workspaceId: number,
+    ids: number[],
+    issueId: number,
+  ): Promise<void> {
+    const unique = uniq(ids.filter((n) => n > 0));
+    if (unique.length === 0) return;
+    await this.attachments.update({ id: In(unique), workspaceId }, { issueId });
+  }
+
+  /**
+   * Atomically delete attachment rows that are still unreferenced
+   * (`issue_id IS NULL` and zero joins), then best-effort S3 cleanup for
+   * returned keys. Concurrent sync that inserts a join loses the race safely.
+   * @returns ids that were actually deleted
+   */
+  async deleteBlobsIfStillUnreferenced(ids: number[]): Promise<number[]> {
+    const unique = uniq(ids.filter((n) => n > 0));
+    if (unique.length === 0) return [];
+
+    const deleted: { id: number; storage_key: string }[] =
+      await this.attachments.manager.query(
+        `
+        DELETE FROM "${WORKSPACE_SCHEMA}".attachments a
+        WHERE a.id = ANY($1::int[])
+          AND a.issue_id IS NULL
+          AND ${ATTACHMENT_UNREFERENCED_SQL}
+        RETURNING a.id, a.storage_key
+      `,
+        [unique],
+      );
+
+    if (deleted.length === 0) return [];
+    await this.deleteS3Keys(
+      deleted.map((r) => r.storage_key),
+      true,
+    );
+    return deleted.map((r) => Number(r.id));
+  }
+
+  async clearIssueId(attachmentId: number): Promise<void> {
+    await this.attachments.update({ id: attachmentId }, { issueId: null });
+  }
+
+  toUploadedDto(r: Attachment): UploadedAttachment {
     return {
       id: r.id,
       url: r.publicUrl,
@@ -609,12 +520,15 @@ export class AttachmentService {
     } satisfies UploadedAttachment;
   }
 
-  private toIssueListItemDto(r: Attachment): IIssueAttachmentListItem {
+  private toIssueListItemDto(
+    r: Attachment,
+    parent?: { messageId: number | null; messageReplyId: number | null },
+  ): IIssueAttachmentListItem {
     return {
-      ...this.toDto(r),
+      ...this.toUploadedDto(r),
       issueId: r.issueId ?? null,
-      messageId: r.messageId ?? null,
-      messageReplyId: r.messageReplyId ?? null,
+      messageId: parent?.messageId ?? null,
+      messageReplyId: parent?.messageReplyId ?? null,
     };
   }
 }

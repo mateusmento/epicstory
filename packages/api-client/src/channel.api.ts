@@ -19,6 +19,8 @@ import type {
   ISearchChannelsAndUsersItem,
   IUser,
   IPage,
+  IMessageDraft,
+  IMessageDraftListItem,
   ReplyMessageBody,
   SearchChannelsAndUsersQuery,
   SendChannelMessageResponse,
@@ -29,6 +31,7 @@ import type {
   UpdateChannelMessageBody,
   UpdateReplyBody,
   UpdateScheduledMessageBody,
+  UpsertMessageDraftBody,
   UploadedAttachment,
   VoteMessagePollBody,
   VoteMessagePollResponse,
@@ -279,13 +282,79 @@ export class ChannelApi {
       .then((res) => res.data);
   }
 
-  uploadAttachment(channelId: number, file: File) {
+  uploadAttachment(
+    channelId: number,
+    file: File,
+    opts?: { threadMessageId?: number | null },
+  ) {
     const form = new FormData();
     form.append("file", file);
+    const params =
+      opts?.threadMessageId != null
+        ? { threadMessageId: opts.threadMessageId }
+        : undefined;
     return this.axios
       .post<UploadedAttachment>(`/channels/${channelId}/attachments`, form, {
         headers: { "Content-Type": "multipart/form-data" },
+        params,
       })
+      .then((res) => res.data);
+  }
+
+  getMessageDraft(
+    channelId: number,
+    opts?: { threadMessageId?: number | null },
+  ) {
+    const params =
+      opts?.threadMessageId != null
+        ? { threadMessageId: opts.threadMessageId }
+        : undefined;
+    return this.axios
+      .get<IMessageDraft | null>(`/channels/${channelId}/drafts`, { params })
+      .then((res) => res.data);
+  }
+
+  putMessageDraft(
+    channelId: number,
+    body: UpsertMessageDraftBody,
+    opts?: { threadMessageId?: number | null },
+  ) {
+    const params =
+      opts?.threadMessageId != null
+        ? { threadMessageId: opts.threadMessageId }
+        : undefined;
+    return this.axios
+      .put<IMessageDraft>(`/channels/${channelId}/drafts`, body, { params })
+      .then((res) => res.data);
+  }
+
+  deleteMessageDraft(
+    channelId: number,
+    opts?: { threadMessageId?: number | null; version?: number },
+  ) {
+    const params: Record<string, number> = {};
+    if (opts?.threadMessageId != null) {
+      params.threadMessageId = opts.threadMessageId;
+    }
+    if (opts?.version != null) {
+      params.version = opts.version;
+    }
+    return this.axios
+      .delete(`/channels/${channelId}/drafts`, {
+        params: Object.keys(params).length > 0 ? params : undefined,
+      })
+      .then((res) => res.data);
+  }
+
+  listWorkspaceMessageDrafts(workspaceId: number) {
+    return this.axios
+      .get<IMessageDraftListItem[]>(`/workspaces/${workspaceId}/message-drafts`)
+      .then((res) => res.data);
+  }
+
+  countWorkspaceMessageDrafts(workspaceId: number) {
+    return this.axios
+      .get<{ count: number }>(`/workspaces/${workspaceId}/message-drafts/count`)
       .then((res) => res.data);
   }
 

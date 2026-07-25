@@ -78,6 +78,7 @@ const composerAttachmentHandlers = computed(() =>
   channelMessageComposerAttachmentHandlers({
     channelApi,
     channelId: () => channel.value?.id ?? 0,
+    threadMessageId: () => null,
   }),
 );
 

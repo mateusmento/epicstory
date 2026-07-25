@@ -1,6 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -15,6 +16,10 @@ import { patch } from 'src/core/objects';
 import { ScheduledMessagePayload } from 'src/scheduling/types/payload';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
 import type { ScheduledJobRecurrence } from 'src/scheduling/entities/scheduled-job.entity';
+import {
+  AttachmentReferencesService,
+  attachmentAnchorKey,
+} from '../services/attachment-references.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { MessagePollBody } from '../dtos/message-poll.dto';
@@ -24,6 +29,7 @@ import {
 } from '../dtos/scheduled-message.dto';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Transactional } from 'typeorm-transactional';
 
 export class UpdateScheduledChannelMessage {
   scheduledMessageId: string;
@@ -52,6 +58,11 @@ export class UpdateScheduledChannelMessage {
   @Type(() => MessagePollBody)
   poll?: MessagePollBody | null;
 
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  attachmentIds?: number[];
+
   constructor(data: Partial<UpdateScheduledChannelMessage>) {
     patch(this, data);
   }
@@ -65,8 +76,10 @@ export class UpdateScheduledChannelMessageCommand
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private scheduledJobRepo: ScheduledJobRepository,
+    private attachmentRefs: AttachmentReferencesService,
   ) {}
 
+  @Transactional()
   async execute(
     cmd: UpdateScheduledChannelMessage,
   ): Promise<IScheduledMessage> {
@@ -129,6 +142,30 @@ export class UpdateScheduledChannelMessageCommand
     if (cmd.recurrence) job.recurrence = cmd.recurrence;
 
     const saved = await this.scheduledJobRepo.save(job);
-    return mapScheduledJobToMessage(saved);
+
+    const anchor = { type: 'scheduled' as const, scheduledJobId: saved.id };
+    if (cmd.attachmentIds !== undefined) {
+      await this.attachmentRefs.commit({
+        workspaceId: channel.workspaceId,
+        channelId: channel.id,
+        actor: { uploadedById: cmd.issuerId },
+        ops: [
+          {
+            op: 'sync',
+            anchor,
+            attachmentIds: cmd.attachmentIds,
+          },
+        ],
+      });
+    }
+
+    const { byAnchor } = await this.attachmentRefs.load({
+      workspaceId: channel.workspaceId,
+      anchors: [anchor],
+    });
+    return mapScheduledJobToMessage(
+      saved,
+      byAnchor.get(attachmentAnchorKey(anchor)) ?? [],
+    );
   }
 }

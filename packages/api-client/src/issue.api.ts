@@ -259,7 +259,9 @@ export class IssueApi {
       .delete<{
         deletedThread: boolean;
         markId: string | null;
-      }>(`/issues/${issueId}/description-threads/${threadId}/messages/${messageId}`)
+      }>(
+        `/issues/${issueId}/description-threads/${threadId}/messages/${messageId}`,
+      )
       .then((res) => res.data);
   }
 }

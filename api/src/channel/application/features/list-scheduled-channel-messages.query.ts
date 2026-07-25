@@ -2,6 +2,7 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
+import { AttachmentReferencesService } from '../services/attachment-references.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import {
@@ -27,6 +28,7 @@ export class ListScheduledChannelMessagesQuery
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private scheduledJobRepo: ScheduledJobRepository,
+    private attachmentRefs: AttachmentReferencesService,
   ) {}
 
   async execute(q: ListScheduledChannelMessages): Promise<IScheduledMessage[]> {
@@ -50,6 +52,11 @@ export class ListScheduledChannelMessagesQuery
       workspaceId: channel.workspaceId,
     });
 
-    return jobs.map((j) => mapScheduledJobToMessage(j));
+    const byJob = await this.attachmentRefs.loadForScheduledJobs(
+      channel.workspaceId,
+      jobs.map((j) => j.id),
+    );
+
+    return jobs.map((j) => mapScheduledJobToMessage(j, byJob.get(j.id) ?? []));
   }
 }

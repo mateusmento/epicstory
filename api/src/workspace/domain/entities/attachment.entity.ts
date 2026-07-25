@@ -30,14 +30,6 @@ export class Attachment {
   @Column({ type: 'int', nullable: true })
   issueId: number | null;
 
-  /** Optional link after a message is created (set by future flows). */
-  @Column({ type: 'int', nullable: true })
-  messageId: number | null;
-
-  /** Anchors to a thread reply (mutually exclusive with top-level messageId for new uploads). */
-  @Column({ type: 'int', nullable: true })
-  messageReplyId: number | null;
-
   @Column()
   uploadedById: number;
 

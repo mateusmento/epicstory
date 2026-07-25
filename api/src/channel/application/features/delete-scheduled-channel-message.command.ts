@@ -4,9 +4,11 @@ import { ChannelRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
 import { ScheduledMessagePayload } from 'src/scheduling/types/payload';
 import { ScheduledJobRepository } from 'src/scheduling/repositories';
+import { AttachmentReferencesService } from '../services/attachment-references.service';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { ChannelNotFound, SenderIsNotChannelMember } from '../exceptions';
+import { Transactional } from 'typeorm-transactional';
 
 export class DeleteScheduledChannelMessage {
   scheduledMessageId: string;
@@ -26,8 +28,10 @@ export class DeleteScheduledChannelMessageCommand
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
     private scheduledJobRepo: ScheduledJobRepository,
+    private attachmentRefs: AttachmentReferencesService,
   ) {}
 
+  @Transactional()
   async execute(
     cmd: DeleteScheduledChannelMessage,
   ): Promise<{ success: true }> {
@@ -65,6 +69,17 @@ export class DeleteScheduledChannelMessageCommand
       );
     }
 
+    await this.attachmentRefs.commit({
+      workspaceId: channel.workspaceId,
+      channelId: channel.id,
+      actor: { uploadedById: cmd.issuerId, trustedDelivery: true },
+      ops: [
+        {
+          op: 'release',
+          anchor: { type: 'scheduled', scheduledJobId: job.id },
+        },
+      ],
+    });
     await this.scheduledJobRepo.remove(job);
     return { success: true };
   }

@@ -10,7 +10,7 @@ import { MessageReply } from 'src/channel/domain/entities';
 import { MessageReplyRepository } from 'src/channel/infrastructure';
 import { mapBy } from 'src/core/objects';
 import type { UploadedAttachment } from '@epicstory/contracts';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { AttachmentReferencesService } from './attachment-references.service';
 import { In } from 'typeorm';
 import { buildQuotedReplyPreview } from 'src/channel/domain/utils';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
@@ -19,7 +19,7 @@ import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 export class ReplyPreviewEnrichmentService {
   constructor(
     private replyRepo: MessageReplyRepository,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
     private workspaceRepo: WorkspaceRepository,
   ) {}
 
@@ -53,7 +53,7 @@ export class ReplyPreviewEnrichmentService {
     const replyIds = replies.map((r) => r.id);
     const attByReplyId =
       channel?.workspaceId != null
-        ? await this.attachmentService.listAnchoredForReplies(
+        ? await this.attachmentRefs.loadForReplies(
             channel.workspaceId,
             replyIds,
           )

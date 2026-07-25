@@ -10,8 +10,12 @@ import {
 } from 'class-validator';
 import { MessageRepository } from 'src/channel/infrastructure';
 import { patch } from 'src/core/objects';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
 import { MessageNotFound, SenderIsNotChannelMember } from '../exceptions';
+import {
+  AttachmentReferencesService,
+  attachmentAnchorKey,
+} from '../services/attachment-references.service';
+import { MessageDraftService } from '../services/message-draft.service';
 import { ReplyService } from '../services/reply.service';
 import type { JSONContent } from '@tiptap/core';
 import { dispatchNotificationsForReplySent } from '../utils/dispatch-reply-notifications';
@@ -48,7 +52,8 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
     private messageRepo: MessageRepository,
     private replyService: ReplyService,
     private commandBus: CommandBus,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
+    private messageDrafts: MessageDraftService,
   ) {}
 
   @Transactional()
@@ -82,18 +87,25 @@ export class ReplyMessageCommand implements ICommandHandler<ReplyMessage> {
 
     const channel = parentMessage.channel;
 
-    await this.attachmentService.linkStagingToReply({
+    const anchor = { type: 'reply' as const, messageReplyId: reply.id };
+    await this.attachmentRefs.commit({
       workspaceId: channel.workspaceId,
       channelId: channel.id,
-      uploadedById: senderId,
-      messageReplyId: reply.id,
-      attachmentIds,
+      actor: { uploadedById: senderId },
+      ops: [{ op: 'sync', anchor, attachmentIds: attachmentIds ?? [] }],
     });
 
-    reply.attachments = await this.attachmentService.listAnchoredForReply(
-      channel.workspaceId,
-      reply.id,
-    );
+    await this.messageDrafts.delete({
+      channelId: channel.id,
+      authorId: senderId,
+      threadMessageId: messageId,
+    });
+
+    const { byAnchor } = await this.attachmentRefs.load({
+      workspaceId: channel.workspaceId,
+      anchors: [anchor],
+    });
+    reply.attachments = byAnchor.get(attachmentAnchorKey(anchor)) ?? [];
 
     await dispatchNotificationsForReplySent(
       this.commandBus,

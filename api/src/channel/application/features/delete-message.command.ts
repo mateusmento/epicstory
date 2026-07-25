@@ -13,7 +13,7 @@ import {
 } from '../contracts/channel-message-deleted.event';
 import { patch } from 'src/core/objects';
 import { IssuerUserIsNotWorkspaceMember } from 'src/workspace/domain/exceptions';
-import { AttachmentService } from 'src/workspace/application/services/attachment.service';
+import { AttachmentReferencesService } from '../services/attachment-references.service';
 import { WorkspaceRepository } from 'src/workspace/infrastructure/repositories';
 import { In, Not } from 'typeorm';
 import { Transactional } from 'typeorm-transactional';
@@ -42,7 +42,7 @@ export class DeleteMessageCommand implements ICommandHandler<DeleteMessage> {
     private messageReplyReactionRepo: MessageReplyReactionRepository,
     private channelRepo: ChannelRepository,
     private workspaceRepo: WorkspaceRepository,
-    private attachmentService: AttachmentService,
+    private attachmentRefs: AttachmentReferencesService,
     private eventEmitter: EventEmitter2,
   ) {}
 
@@ -83,10 +83,12 @@ export class DeleteMessageCommand implements ICommandHandler<DeleteMessage> {
     });
     const replyIds = replies.map((r) => r.id);
 
-    await this.attachmentService.deleteAnchoredForDeletedThreadRoot({
+    await this.attachmentRefs.releaseThreadRoot({
       workspaceId: channel.workspaceId,
+      channelId: channel.id,
       messageId,
       replyIds,
+      actor: { uploadedById: issuerId, trustedDelivery: true },
     });
 
     if (replyIds.length) {

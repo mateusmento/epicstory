@@ -37,6 +37,8 @@ const props = withDefaults(
     mentionables?: IUser[];
     meId?: number;
     channelId: number;
+    /** When set, composer draft is a reply draft for this thread root. */
+    threadMessageId?: number | null;
     placeholder?: string;
     editingMessage?: {
       id: number;
@@ -94,6 +96,7 @@ const { customScheduleOpen, activeSchedule, scheduleSummary, onCustomScheduleCon
 const core = useMessageComposerCore({
   editor,
   channelId: () => props.channelId,
+  threadMessageId: () => props.threadMessageId ?? null,
   editingMessage: () => props.editingMessage,
   quotedMessage: () => props.quotedMessage,
   placeholder: () => props.placeholder,
@@ -150,7 +153,7 @@ watch(
         : null;
       return;
     }
-    const d = loadChannelDraft(props.channelId);
+    const d = loadChannelDraft(props.channelId, props.threadMessageId ?? null);
     composerPollBody.value = d?.poll ?? null;
   },
   { immediate: true },

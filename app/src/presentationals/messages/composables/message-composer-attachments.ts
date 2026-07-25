@@ -44,11 +44,7 @@ export function useMessageComposerAttachments(options: {
   const pendingTransfers = shallowRef<PendingComposerTransfer[]>([]);
   const stagingFileInputRef = ref<HTMLInputElement | null>(null);
 
-  const scheduleAttachmentHint = computed(() =>
-    options.activeSchedule.value && (pendingAttachments.value.length > 0 || pendingTransfers.value.length > 0)
-      ? "Attachments are not sent in scheduled messages. Clear the schedule or send now to include them."
-      : null,
-  );
+  const scheduleAttachmentHint = computed(() => null);
 
   const attachmentsStagingUploading = computed(() =>
     pendingTransfers.value.some((p) => p.status === "uploading"),
@@ -158,17 +154,11 @@ export function useMessageComposerAttachments(options: {
     pendingAttachments.value = pendingAttachments.value.filter((a) => a.id !== id);
   }
 
-  async function onRemoveEditingAttachment(id: number) {
-    removingEditingAttachment.value = true;
-    try {
-      await toValue(options.attachmentHandlers).removeLinkedAttachment(id);
-      editingExistingAttachments.value = editingExistingAttachments.value.filter((a) => a.id !== id);
-      options.onExistingAttachmentRemoved();
-    } catch {
-      /* non-blocking; list refetch can repair */
-    } finally {
-      removingEditingAttachment.value = false;
-    }
+  function onRemoveEditingAttachment(id: number) {
+    // Local-only until edit submit syncs the message/reply anchor (keeps shared
+    // blobs on schedules / other parents). Cancel edit restores from msg.attachments.
+    editingExistingAttachments.value = editingExistingAttachments.value.filter((a) => a.id !== id);
+    options.onExistingAttachmentRemoved();
   }
 
   function resetStagingTransfers() {
