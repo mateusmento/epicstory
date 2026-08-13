@@ -4,7 +4,7 @@ services:
       context: .
       target: dev
       dockerfile: app/Dockerfile
-    image: epicstory-app:latest
+    image: epicstory-app:dev
     container_name: epicstory-app
     working_dir: /home/node/ws/app
     entrypoint:
@@ -29,14 +29,14 @@ services:
       context: .
       target: dev
       dockerfile: api/Dockerfile
-    image: epicstory-api:latest
+    image: epicstory-api:dev
     container_name: epicstory-api
     working_dir: /home/node/app/api
     entrypoint:
       - docker-dev-entrypoint.sh
     # Use start:debug to enable debugging (attach with VS Code)
     # Use start:dev for normal development without debugging
-    command: pnpm start:debug
+    command: npm run start:debug
     ports:
       - 3000:3000
       - 9229:9229 # Node.js debug port for VS Code attachment
